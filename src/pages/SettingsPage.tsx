@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Save, Plus, Trash2, Download, Upload, Key, ExternalLink, AlertCircle, MessageSquare } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Save, Plus, Trash2, Download, Upload, Key, ExternalLink, AlertCircle, MessageSquare, Globe } from 'lucide-react';
 import CommentBankModal from '../components/Comments/CommentBankModal';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
@@ -7,11 +8,18 @@ import type { GradeScale, GradeRange } from '../types';
 import { exportFullBackup, importFullBackup } from '../store/storage';
 
 export default function SettingsPage() {
+    const { t, i18n } = useTranslation();
     const {
         settings, updateSettings, gradeScales, addGradeScale, updateGradeScale, deleteGradeScale, commentBank
     } = useApp();
     const [editingScaleId, setEditingScaleId] = useState<string | null>(null);
     const [showCommentBank, setShowCommentBank] = useState(false);
+
+    useEffect(() => {
+        if (settings.language && i18n.language !== settings.language) {
+            i18n.changeLanguage(settings.language);
+        }
+    }, [settings.language, i18n]);
 
     function handleBackupExport() {
         const json = exportFullBackup();
@@ -52,7 +60,7 @@ export default function SettingsPage() {
 
     return (
         <>
-            <Topbar title="Settings" />
+            <Topbar title={t('settings.title')} />
             <div className="page-content fade-in" style={{ maxWidth: 900 }}>
 
                 {/* General settings */}
@@ -67,7 +75,7 @@ export default function SettingsPage() {
                             </select>
                         </div>
                         <div className="form-group">
-                            <label>Theme</label>
+                            <label>{t('settings.theme')}</label>
                             <select value={settings.theme}
                                 onChange={e => updateSettings({ theme: e.target.value as 'light' | 'dark' })}>
                                 <option value="dark">Dark</option>
@@ -75,6 +83,25 @@ export default function SettingsPage() {
                             </select>
                         </div>
                     </div>
+                </div>
+
+                {/* Localization settings */}
+                <div className="card" style={{ marginBottom: 24, borderLeft: '4px solid var(--accent)' }}>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
+                        <Globe size={20} style={{ color: 'var(--accent)' }} />
+                        <h3 style={{ margin: 0 }}>Localization</h3>
+                    </div>
+                    <div className="form-group">
+                        <label>{t('settings.language_selection')}</label>
+                        <select value={settings.language}
+                            onChange={e => updateSettings({ language: e.target.value })}>
+                            <option value="en">English</option>
+                            {/* Future languages can be added here */}
+                        </select>
+                    </div>
+                    <p className="text-muted text-sm" style={{ marginTop: 12 }}>
+                        Choose your preferred language for the interface.
+                    </p>
                 </div>
 
                 {/* Standards Integration */}

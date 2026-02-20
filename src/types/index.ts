@@ -162,6 +162,7 @@ export interface CommentSnippet {
 export interface AppSettings {
     defaultGradeScaleId: string;
     theme: 'light' | 'dark';
+    language: string;
     accentColor: string;
     defaultFormat: RubricFormat;
     activeClassId?: string;

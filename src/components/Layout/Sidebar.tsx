@@ -4,21 +4,23 @@ import {
     LayoutDashboard, BookOpen, Users, FileText, Settings,
     Download, MessageSquare, BarChart3, Layers, ChevronRight
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
 
-const navItems = [
-    { to: '/', icon: LayoutDashboard, label: 'Dashboard', end: true },
-    { to: '/rubrics', icon: BookOpen, label: 'Rubrics' },
-    { to: '/students', icon: Users, label: 'Students & Classes' },
-    { to: '/attachments', icon: FileText, label: 'Attachments' },
-    { to: '/export', icon: Download, label: 'Export' },
-    { to: '/statistics', icon: BarChart3, label: 'Statistics' },
-    { to: '/comments', icon: MessageSquare, label: 'Comment Bank' },
-];
-
 export default function Sidebar() {
+    const { t } = useTranslation();
     const { rubrics, students } = useApp();
     const navigate = useNavigate();
+
+    const navItems = [
+        { to: '/', icon: LayoutDashboard, label: t('navigation.dashboard'), end: true },
+        { to: '/rubrics', icon: BookOpen, label: t('navigation.rubrics') },
+        { to: '/students', icon: Users, label: t('navigation.students') },
+        { to: '/attachments', icon: FileText, label: t('navigation.attachments') },
+        { to: '/export', icon: Download, label: t('navigation.export') },
+        { to: '/statistics', icon: BarChart3, label: t('navigation.statistics') },
+        { to: '/comments', icon: MessageSquare, label: t('navigation.comment_bank') },
+    ];
 
     return (
         <aside className="sidebar">
@@ -62,7 +64,7 @@ export default function Sidebar() {
                     className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
                 >
                     <Settings size={16} />
-                    Settings
+                    {t('common.settings')}
                 </NavLink>
             </div>
         </aside>

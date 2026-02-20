@@ -1,0 +1,25 @@
+{
+    "common": {
+        "save": "Save",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "edit": "Edit",
+        "add": "Add",
+        "settings": "Settings",
+        "language": "Language"
+    },
+    "settings": {
+        "title": "Settings",
+        "language_selection": "Select Language",
+        "theme": "Theme"
+    },
+    "navigation": {
+        "dashboard": "Dashboard",
+        "rubrics": "Rubrics",
+        "students": "Students",
+        "statistics": "Statistics",
+        "comment_bank": "Comment Bank",
+        "export": "Export",
+        "attachments": "Attachments"
+    }
+}
