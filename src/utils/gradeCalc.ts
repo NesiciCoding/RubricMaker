@@ -15,18 +15,21 @@ export function calcEntryPoints(entry: ScoreEntry, criterion: RubricCriterion): 
     const level = criterion.levels.find(l => l.id === entry.levelId);
     if (!level) return 0;
 
-    // Sub-items: sum of checked sub-item points
-    const subItemTotal = level.subItems.reduce((sum, si) => {
-        return entry.checkedSubItems.includes(si.id) ? sum + si.points : sum;
+    // Sub-items: sum of checked sub-item points across ALL levels in this criterion
+    const subItemTotal = criterion.levels.reduce((sum, lvl) => {
+        return sum + lvl.subItems.reduce((lvlSum, si) => {
+            return entry.checkedSubItems.includes(si.id) ? lvlSum + si.points : lvlSum;
+        }, 0);
     }, 0);
 
     // selectedPoints: teacher chosen value within [min, max] range
-    // (always present alongside sub-items for the range bonus)
     const rangePoints = entry.selectedPoints ?? level.minPoints;
 
-    // If level has sub-items: sub-item total + range points, capped at maxPoints
-    // If no sub-items: range points (bounded by the level range)
-    if (level.subItems.length > 0) {
+    const hasAnySubItems = criterion.levels.some(l => l.subItems.length > 0);
+
+    // If criterion has sub-items: combined sub-item total + range points, capped at selected level's maxPoints
+    // If no sub-items at all: just range points (bounded by the level range)
+    if (hasAnySubItems) {
         return Math.min(subItemTotal + rangePoints, level.maxPoints);
     }
     return Math.max(level.minPoints, Math.min(level.maxPoints, rangePoints));

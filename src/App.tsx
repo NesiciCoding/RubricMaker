@@ -12,6 +12,7 @@ const ExportPage = lazy(() => import('./pages/ExportPage'));
 const StatisticsPage = lazy(() => import('./pages/StatisticsPage'));
 const CommentBankPage = lazy(() => import('./pages/CommentBankPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const StudentProfilePage = lazy(() => import('./pages/StudentProfilePage'));
 
 const Spinner = () => (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
@@ -32,6 +33,7 @@ export default function App() {
                         <Route path="/rubrics/:id" element={<RubricBuilder />} />
                         <Route path="/rubrics/:rubricId/grade/:studentId" element={<GradeStudent />} />
                         <Route path="/students" element={<StudentsPage />} />
+                        <Route path="/students/:id" element={<StudentProfilePage />} />
                         <Route path="/attachments" element={<AttachmentsPage />} />
                         <Route path="/export" element={<ExportPage />} />
                         <Route path="/statistics" element={<StatisticsPage />} />

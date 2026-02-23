@@ -13,6 +13,10 @@ export default function ExportPage() {
     const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());
     const [exporting, setExporting] = useState(false);
 
+    // PDF Export Options
+    const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
+    const [combineAll, setCombineAll] = useState(false);
+
     // Template (for Word/DOCX export)
     const activeTemplateId = settings.exportTemplateId ?? '';
     const activeTemplate = exportTemplates.find(t => t.id === activeTemplateId) ?? null;
@@ -52,12 +56,12 @@ export default function ExportPage() {
             if (single) {
                 const sr = studentRubrics.find(s => s.rubricId === rubric.id && s.studentId === single);
                 const student = students.find(s => s.id === single);
-                if (sr && student) await exportSinglePdf(sr, rubric, student, scale);
+                if (sr && student) await exportSinglePdf(sr, rubric, student, scale, { orientation });
             } else {
                 const toExport = gradedStudents
                     .filter(x => selectedStudentIds.has(x.student!.id))
                     .map(x => ({ sr: x.sr, student: x.student! }));
-                await exportBatchPdf(toExport, rubric, scale);
+                await exportBatchPdf(toExport, rubric, scale, { orientation, combineAll });
             }
         } finally {
             setExporting(false);
@@ -145,14 +149,25 @@ export default function ExportPage() {
                                 </button>
                                 <span className="text-muted text-sm">{selectedStudentIds.size} of {gradedStudents.length} selected</span>
                             </div>
-                            <div style={{ display: 'flex', gap: 10 }}>
+                            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginRight: 10 }}>
+                                    <span style={{ fontSize: '0.85rem', fontWeight: 500 }}>Layout:</span>
+                                    <select value={orientation} onChange={e => setOrientation(e.target.value as 'portrait' | 'landscape')} style={{ padding: '4px 8px', fontSize: '0.85rem' }}>
+                                        <option value="portrait">Portrait</option>
+                                        <option value="landscape">Landscape</option>
+                                    </select>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 6, fontSize: '0.85rem', cursor: 'pointer' }}>
+                                        <input type="checkbox" checked={combineAll} onChange={e => setCombineAll(e.target.checked)} />
+                                        Combine into 1 PDF
+                                    </label>
+                                </div>
                                 <button
                                     className="btn btn-primary"
                                     disabled={selectedStudentIds.size === 0 || exporting}
                                     onClick={() => handleExport()}
                                 >
                                     {exporting ? <Loader size={15} className="spin" /> : <Download size={15} />}
-                                    {exporting ? 'Exporting…' : `Export Selected (${selectedStudentIds.size}) as ZIP`}
+                                    {exporting ? 'Exporting…' : (combineAll ? `Export ${selectedStudentIds.size} as Single PDF` : `Export ${selectedStudentIds.size} as ZIP`)}
                                 </button>
                             </div>
                         </div>

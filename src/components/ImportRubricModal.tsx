@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Upload, FileText, AlertTriangle, CheckCircle, X, Loader, ChevronRight } from 'lucide-react';
 import type { ParsedRubric } from '../utils/rubricImport';
-import { parseDocxToRubric, parsePdfToRubric } from '../utils/rubricImport';
+import { parseDocxToRubric, parsePdfToRubric, parseJsonToRubric } from '../utils/rubricImport';
 import type { RubricCriterion, RubricLevel } from '../types';
 
 interface Props {
@@ -22,8 +22,8 @@ export default function ImportRubricModal({ onClose, onImport }: Props) {
 
     const handleFile = useCallback(async (file: File) => {
         const ext = file.name.split('.').pop()?.toLowerCase();
-        if (ext !== 'docx' && ext !== 'pdf') {
-            setError('Please upload a .docx or .pdf file.');
+        if (ext !== 'docx' && ext !== 'pdf' && ext !== 'json') {
+            setError('Please upload a .docx, .pdf, or .json file.');
             return;
         }
         setError(null);
@@ -33,8 +33,10 @@ export default function ImportRubricModal({ onClose, onImport }: Props) {
             let result: ParsedRubric;
             if (ext === 'docx') {
                 result = await parseDocxToRubric(file);
-            } else {
+            } else if (ext === 'pdf') {
                 result = await parsePdfToRubric(file);
+            } else {
+                result = await parseJsonToRubric(file);
             }
 
             setParsed(result);
@@ -120,8 +122,8 @@ export default function ImportRubricModal({ onClose, onImport }: Props) {
                             >
                                 <FileText size={36} style={{ color: 'var(--text-dim)', marginBottom: 10 }} />
                                 <div style={{ fontWeight: 600, marginBottom: 6 }}>Drop a file here or click to browse</div>
-                                <div className="text-muted text-sm">Accepts .docx (Word) and .pdf files</div>
-                                <input ref={inputRef} type="file" accept=".docx,.pdf" style={{ display: 'none' }} onChange={onInputChange} />
+                                <div className="text-muted text-sm">Accepts .docx (Word), .pdf, and .json files</div>
+                                <input ref={inputRef} type="file" accept=".docx,.pdf,.json" style={{ display: 'none' }} onChange={onInputChange} />
                             </div>
 
                             {error && (

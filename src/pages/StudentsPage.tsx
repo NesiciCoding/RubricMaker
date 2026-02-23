@@ -1,19 +1,34 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Trash2, Edit2, Users as UsersIcon, Upload, Download } from 'lucide-react';
+import { Plus, Trash2, Edit2, Users as UsersIcon, Upload, Download, TrendingUp, MoreVertical } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import Papa from 'papaparse';
+import CsvImportModal from '../components/CsvImportModal';
 
 export default function StudentsPage() {
     const navigate = useNavigate();
-    const { students, classes, rubrics, studentRubrics, addStudent, updateStudent, deleteStudent, addClass } = useApp();
+    const { students, classes, rubrics, studentRubrics, addStudent, updateStudent, deleteStudent, addClass, updateClass, deleteClass, mergeClasses } = useApp();
     const [activeClass, setActiveClass] = useState(classes[0]?.id ?? '');
     const [showAddModal, setShowAddModal] = useState(false);
     const [editStudent, setEditStudent] = useState<null | { id: string; name: string; email: string }>(null);
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
+    const [editStudentClassId, setEditStudentClassId] = useState('');
     const [newClassName, setNewClassName] = useState('');
+    const [importFile, setImportFile] = useState<File | null>(null);
+
+    // Context Menu State for Classes
+    const [classMenuOpen, setClassMenuOpen] = useState<string | null>(null);
+
+    // Class Management Modal States
+    const [renameClassId, setRenameClassId] = useState<string | null>(null);
+    const [renameClassVal, setRenameClassVal] = useState('');
+
+    const [mergeClassId, setMergeClassId] = useState<string | null>(null);
+    const [mergeTargetId, setMergeTargetId] = useState('');
+
+    const [deleteClassId, setDeleteClassId] = useState<string | null>(null);
     const fileRef = useRef<HTMLInputElement>(null);
 
     const filteredStudents = students.filter(s => s.classId === activeClass);
@@ -21,7 +36,7 @@ export default function StudentsPage() {
     function handleAddStudent() {
         if (!name.trim()) return;
         if (editStudent) {
-            updateStudent({ ...students.find(s => s.id === editStudent.id)!, name, email });
+            updateStudent({ ...students.find(s => s.id === editStudent.id)!, name, email, classId: editStudentClassId });
         } else {
             addStudent({ name, email, classId: activeClass });
         }
@@ -31,14 +46,7 @@ export default function StudentsPage() {
     function handleCSVImport(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
         if (!file) return;
-        Papa.parse(file, {
-            header: true,
-            complete: ({ data }) => {
-                (data as { name?: string; email?: string }[]).forEach(row => {
-                    if (row.name) addStudent({ name: row.name, email: row.email ?? '', classId: activeClass });
-                });
-            }
-        });
+        setImportFile(file);
         e.target.value = '';
     }
 
@@ -50,6 +58,13 @@ export default function StudentsPage() {
         const a = document.createElement('a');
         a.href = url; a.download = 'students.csv'; a.click();
     }
+
+    // Helper to close all context menus on outside click
+    React.useEffect(() => {
+        const handleClick = () => setClassMenuOpen(null);
+        window.addEventListener('click', handleClick);
+        return () => window.removeEventListener('click', handleClick);
+    }, []);
 
     return (
         <>
@@ -75,14 +90,40 @@ export default function StudentsPage() {
                             <h3>Classes</h3>
                         </div>
                         {classes.map(c => (
-                            <button key={c.id} className={`nav-item ${c.id === activeClass ? 'active' : ''}`}
-                                onClick={() => setActiveClass(c.id)}>
-                                <UsersIcon size={15} />
-                                <span className="truncate">{c.name}</span>
-                                <span style={{ marginLeft: 'auto', fontSize: '0.75rem', opacity: 0.7 }}>
-                                    {students.filter(s => s.classId === c.id).length}
-                                </span>
-                            </button>
+                            <div key={c.id} style={{ position: 'relative' }}>
+                                <button className={`nav-item ${c.id === activeClass ? 'active' : ''}`}
+                                    onClick={() => setActiveClass(c.id)}>
+                                    <UsersIcon size={15} />
+                                    <span className="truncate">{c.name}</span>
+                                    <span style={{ marginLeft: 'auto', fontSize: '0.75rem', opacity: 0.7, paddingRight: 24 }}>
+                                        {students.filter(s => s.classId === c.id).length}
+                                    </span>
+                                </button>
+
+                                <button className="btn btn-ghost btn-icon btn-sm"
+                                    onClick={(e) => { e.stopPropagation(); setClassMenuOpen(classMenuOpen === c.id ? null : c.id); }}
+                                    style={{ position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)', opacity: classMenuOpen === c.id ? 1 : 0.4 }}
+                                >
+                                    <MoreVertical size={14} />
+                                </button>
+
+                                {classMenuOpen === c.id && (
+                                    <div className="card" style={{ position: 'absolute', right: 0, top: '100%', zIndex: 10, padding: 4, minWidth: 140, boxShadow: 'var(--shadow-lg)' }} onClick={e => e.stopPropagation()}>
+                                        <button className="btn btn-ghost btn-sm" style={{ width: '100%', justifyContent: 'flex-start' }}
+                                            onClick={() => { setRenameClassId(c.id); setRenameClassVal(c.name); setClassMenuOpen(null); }}>
+                                            Rename
+                                        </button>
+                                        <button className="btn btn-ghost btn-sm" style={{ width: '100%', justifyContent: 'flex-start' }}
+                                            onClick={() => { setMergeClassId(c.id); setMergeTargetId(''); setClassMenuOpen(null); }}>
+                                            Merge into...
+                                        </button>
+                                        <button className="btn btn-ghost btn-sm text-red" style={{ width: '100%', justifyContent: 'flex-start' }}
+                                            onClick={() => { setDeleteClassId(c.id); setClassMenuOpen(null); }}>
+                                            Delete
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         ))}
                         <div style={{ marginTop: 12, display: 'flex', gap: 6 }}>
                             <input type="text" placeholder="New class…" value={newClassName}
@@ -140,8 +181,12 @@ export default function StudentsPage() {
                                                                 Grade: {r.name.slice(0, 12)}{r.name.length > 12 ? '…' : ''}
                                                             </button>
                                                         ))}
+                                                        <button className="btn btn-secondary btn-icon btn-sm"
+                                                            onClick={() => navigate(`/students/${s.id}`)} title="View Profile">
+                                                            <TrendingUp size={14} />
+                                                        </button>
                                                         <button className="btn btn-ghost btn-icon btn-sm"
-                                                            onClick={() => { setEditStudent({ id: s.id, name: s.name, email: s.email ?? '' }); setName(s.name); setEmail(s.email ?? ''); setShowAddModal(true); }}>
+                                                            onClick={() => { setEditStudent({ id: s.id, name: s.name, email: s.email ?? '' }); setName(s.name); setEmail(s.email ?? ''); setEditStudentClassId(s.classId); setShowAddModal(true); }}>
                                                             <Edit2 size={14} />
                                                         </button>
                                                         <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--red)' }}
@@ -171,16 +216,125 @@ export default function StudentsPage() {
                                     <label>Full Name *</label>
                                     <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Student name" autoFocus />
                                 </div>
-                                <div className="form-group">
+                                <div className="form-group" style={{ marginBottom: 12 }}>
                                     <label>Email (optional)</label>
                                     <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="student@school.edu" />
                                 </div>
+                                {editStudent && (
+                                    <div className="form-group">
+                                        <label>Class</label>
+                                        <select value={editStudentClassId} onChange={e => setEditStudentClassId(e.target.value)}>
+                                            {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                        </select>
+                                    </div>
+                                )}
                             </div>
                             <div className="modal-footer">
                                 <button className="btn btn-secondary" onClick={() => { setShowAddModal(false); setEditStudent(null); }}>Cancel</button>
                                 <button className="btn btn-primary" onClick={handleAddStudent} disabled={!name.trim()}>
                                     {editStudent ? 'Save Changes' : 'Add Student'}
                                 </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {importFile && (
+                    <CsvImportModal
+                        file={importFile}
+                        onClose={() => setImportFile(null)}
+                        onSuccess={() => setImportFile(null)}
+                    />
+                )}
+
+                {/* Class Management Modals */}
+                {renameClassId && (
+                    <div className="modal-overlay" onClick={() => setRenameClassId(null)}>
+                        <div className="modal" onClick={e => e.stopPropagation()}>
+                            <div className="modal-header">
+                                <h3>Rename Class</h3>
+                                <button className="btn btn-ghost btn-icon" onClick={() => setRenameClassId(null)}>✕</button>
+                            </div>
+                            <div className="modal-body">
+                                <div className="form-group">
+                                    <label>New Name</label>
+                                    <input type="text" value={renameClassVal} onChange={e => setRenameClassVal(e.target.value)} autoFocus
+                                        onKeyDown={e => {
+                                            if (e.key === 'Enter' && renameClassVal.trim()) {
+                                                const c = classes.find(cl => cl.id === renameClassId);
+                                                if (c) updateClass({ ...c, name: renameClassVal.trim() });
+                                                setRenameClassId(null);
+                                            }
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                            <div className="modal-footer">
+                                <button className="btn btn-secondary" onClick={() => setRenameClassId(null)}>Cancel</button>
+                                <button className="btn btn-primary" disabled={!renameClassVal.trim()} onClick={() => {
+                                    const c = classes.find(cl => cl.id === renameClassId);
+                                    if (c) updateClass({ ...c, name: renameClassVal.trim() });
+                                    setRenameClassId(null);
+                                }}>Save</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {mergeClassId && (
+                    <div className="modal-overlay" onClick={() => setMergeClassId(null)}>
+                        <div className="modal" onClick={e => e.stopPropagation()}>
+                            <div className="modal-header">
+                                <h3>Merge Class</h3>
+                                <button className="btn btn-ghost btn-icon" onClick={() => setMergeClassId(null)}>✕</button>
+                            </div>
+                            <div className="modal-body">
+                                <p style={{ marginBottom: 16 }}>Select the target class to move all students into. The current class (<strong>{classes.find(c => c.id === mergeClassId)?.name}</strong>) will be deleted.</p>
+                                <div className="form-group">
+                                    <label>Target Class</label>
+                                    <select value={mergeTargetId} onChange={e => setMergeTargetId(e.target.value)}>
+                                        <option value="" disabled>Select a class...</option>
+                                        {classes.filter(c => c.id !== mergeClassId).map(c => (
+                                            <option key={c.id} value={c.id}>{c.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="modal-footer">
+                                <button className="btn btn-secondary" onClick={() => setMergeClassId(null)}>Cancel</button>
+                                <button className="btn btn-primary" disabled={!mergeTargetId} onClick={() => {
+                                    if (mergeTargetId) {
+                                        mergeClasses(mergeClassId!, mergeTargetId);
+                                        if (activeClass === mergeClassId) setActiveClass(mergeTargetId);
+                                        setMergeClassId(null);
+                                    }
+                                }}>Merge classes</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {deleteClassId && (
+                    <div className="modal-overlay" onClick={() => setDeleteClassId(null)}>
+                        <div className="modal" onClick={e => e.stopPropagation()}>
+                            <div className="modal-header">
+                                <h3>Delete Class?</h3>
+                                <button className="btn btn-ghost btn-icon" onClick={() => setDeleteClassId(null)}>✕</button>
+                            </div>
+                            <div className="modal-body">
+                                <p>Are you sure you want to delete <strong>{classes.find(c => c.id === deleteClassId)?.name}</strong>?</p>
+
+                                <div style={{ background: 'var(--red-soft)', color: 'var(--red)', padding: '12px 16px', borderRadius: 8, marginTop: 16, fontSize: '0.9rem' }}>
+                                    <strong>Warning:</strong> The {students.filter(s => s.classId === deleteClassId).length} student(s) currently in this class will also be permanently deleted. If you want to keep them, merge this class into another one instead.
+                                </div>
+                            </div>
+                            <div className="modal-footer">
+                                <button className="btn btn-secondary" onClick={() => setDeleteClassId(null)}>Cancel</button>
+                                <button className="btn btn-primary" style={{ background: 'var(--red)', borderColor: 'var(--red)' }} onClick={() => {
+                                    deleteClass(deleteClassId!, true);
+                                    if (activeClass === deleteClassId) setActiveClass(classes.find(c => c.id !== deleteClassId)?.id ?? '');
+                                    setDeleteClassId(null);
+                                }}>Delete</button>
                             </div>
                         </div>
                     </div>

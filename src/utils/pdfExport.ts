@@ -116,18 +116,21 @@ export async function exportSinglePdf(
   rubric: Rubric,
   student: Student,
   scale: GradeScale,
+  options: { orientation?: 'portrait' | 'landscape' } = {}
 ): Promise<void> {
   const { jsPDF, html2canvas } = await getLibs();
+  const orientation = options.orientation || 'portrait';
+  const widthStr = orientation === 'landscape' ? '1250px' : '900px';
 
   const container = document.createElement('div');
-  container.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:900px;background:#fff;';
+  container.style.cssText = `position:fixed;left:-9999px;top:-9999px;width:${widthStr};background:#fff;`;
   container.innerHTML = buildRubricHTML(sr, rubric, student, scale);
   document.body.appendChild(container);
 
   try {
     const canvas = await html2canvas(container, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' });
     const imgData = canvas.toDataURL('image/jpeg', 0.95);
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pdf = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
     const pageW = pdf.internal.pageSize.getWidth();
     const pageH = pdf.internal.pageSize.getHeight();
     const imgW = pageW;
@@ -149,46 +152,69 @@ export async function exportBatchPdf(
   entries: { sr: StudentRubric; student: Student }[],
   rubric: Rubric,
   scale: GradeScale,
+  options: { orientation?: 'portrait' | 'landscape', combineAll?: boolean } = {}
 ): Promise<void> {
   const { jsPDF, html2canvas, JSZip } = await getLibs();
+  const orientation = options.orientation || 'portrait';
+  const widthStr = orientation === 'landscape' ? '1250px' : '900px';
+
+  let combinedPdf: any = null;
+  if (options.combineAll) {
+    combinedPdf = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
+  }
   const zip = new JSZip();
+  let firstCombinedPage = true;
 
   for (const { sr, student } of entries) {
     const container = document.createElement('div');
-    container.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:900px;background:#fff;';
+    container.style.cssText = `position:fixed;left:-9999px;top:-9999px;width:${widthStr};background:#fff;`;
     container.innerHTML = buildRubricHTML(sr, rubric, student, scale);
     document.body.appendChild(container);
 
     try {
       const canvas = await html2canvas(container, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' });
       const imgData = canvas.toDataURL('image/jpeg', 0.95);
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pdf = options.combineAll ? combinedPdf : new jsPDF({ orientation, unit: 'mm', format: 'a4' });
+
       const pageW = pdf.internal.pageSize.getWidth();
       const pageH = pdf.internal.pageSize.getHeight();
       const imgW = pageW;
       const imgH = (canvas.height * imgW) / canvas.width;
 
       let yOffset = 0;
+      let studentFirstPage = true;
       while (yOffset < imgH) {
-        if (yOffset > 0) pdf.addPage();
+        if (options.combineAll) {
+          if (!firstCombinedPage) pdf.addPage();
+          firstCombinedPage = false;
+        } else {
+          if (!studentFirstPage) pdf.addPage();
+          studentFirstPage = false;
+        }
         pdf.addImage(imgData, 'JPEG', 0, -yOffset, imgW, imgH);
         yOffset += pageH;
       }
 
-      const pdfBlob = pdf.output('blob');
-      zip.file(`${student.name.replace(/[^a-z0-9]/gi, '_')}_${rubric.name.replace(/[^a-z0-9]/gi, '_')}.pdf`, pdfBlob);
+      if (!options.combineAll) {
+        const pdfBlob = pdf.output('blob');
+        zip.file(`${student.name.replace(/[^a-z0-9]/gi, '_')}_${rubric.name.replace(/[^a-z0-9]/gi, '_')}.pdf`, pdfBlob);
+      }
     } finally {
       document.body.removeChild(container);
     }
   }
 
-  const zipBlob = await zip.generateAsync({ type: 'blob' });
-  const url = URL.createObjectURL(zipBlob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${rubric.name.replace(/[^a-z0-9]/gi, '_')}_grades.zip`;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 60000);
+  if (options.combineAll) {
+    combinedPdf.save(`${rubric.name.replace(/[^a-z0-9]/gi, '_')}_all_grades.pdf`);
+  } else {
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(zipBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${rubric.name.replace(/[^a-z0-9]/gi, '_')}_grades.zip`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
 }
 
 function buildEmptyRubricHTML(rubric: Rubric): string {
@@ -255,18 +281,19 @@ function buildEmptyRubricHTML(rubric: Rubric): string {
 </html>`;
 }
 
-export async function exportRubricGridPdf(rubric: Rubric): Promise<void> {
+export async function exportRubricGridPdf(rubric: Rubric, orientation: 'portrait' | 'landscape' = 'portrait'): Promise<void> {
   const { jsPDF, html2canvas } = await getLibs();
+  const widthStr = orientation === 'landscape' ? '1250px' : '900px';
 
   const container = document.createElement('div');
-  container.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:900px;background:#fff;';
+  container.style.cssText = `position:fixed;left:-9999px;top:-9999px;width:${widthStr};background:#fff;`;
   container.innerHTML = buildEmptyRubricHTML(rubric);
   document.body.appendChild(container);
 
   try {
     const canvas = await html2canvas(container, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' });
     const imgData = canvas.toDataURL('image/jpeg', 0.95);
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pdf = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
     const pageW = pdf.internal.pageSize.getWidth();
     const pageH = pdf.internal.pageSize.getHeight();
     const imgW = pageW;

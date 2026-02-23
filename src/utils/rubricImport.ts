@@ -255,3 +255,48 @@ function emptyResult(warnings: string[]): ParsedRubric {
         warnings,
     };
 }
+
+// ─── JSON Parsing ──────────────────────────────────────────────────────────────
+
+export async function parseJsonToRubric(file: File): Promise<ParsedRubric> {
+    try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+
+        if (!data || !Array.isArray(data.criteria)) {
+            return emptyResult(['Invalid JSON format: missing criteria array.']);
+        }
+
+        // Deep clone and regenerate all IDs to prevent collisions when importing into the same workspace
+        const criteria: RubricCriterion[] = data.criteria.map((c: any) => ({
+            id: nanoid(),
+            title: c.title || 'Untitled Criterion',
+            description: c.description || '',
+            weight: typeof c.weight === 'number' ? c.weight : 0,
+            linkedStandard: c.linkedStandard ? { ...c.linkedStandard } : undefined,
+            levels: (c.levels || []).map((l: any) => ({
+                id: nanoid(),
+                label: l.label || 'Level',
+                minPoints: typeof l.minPoints === 'number' ? l.minPoints : 0,
+                maxPoints: typeof l.maxPoints === 'number' ? l.maxPoints : 0,
+                description: l.description || '',
+                subItems: (l.subItems || []).map((si: any) => ({
+                    id: nanoid(),
+                    label: si.label || '',
+                    points: typeof si.points === 'number' ? si.points : 0
+                }))
+            }))
+        }));
+
+        return {
+            name: data.name || file.name.replace(/\.[^.]+$/, ''),
+            subject: data.subject || '',
+            description: data.description || '',
+            criteria,
+            confidence: 'high',
+            warnings: [],
+        };
+    } catch (err: any) {
+        return emptyResult([`Failed to parse JSON: ${err.message}`]);
+    }
+}

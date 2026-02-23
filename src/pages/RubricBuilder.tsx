@@ -69,13 +69,22 @@ export default function RubricBuilder() {
         updatedAt: new Date().toISOString(),
     }), [existing, name, subject, description, criteria, gradeScaleId, format, scoringMode, totalMaxPoints]);
 
-    const handleExport = async (type: 'pdf' | 'docx') => {
+    const handleExport = async (type: 'pdf' | 'docx' | 'json') => {
         setShowExportMenu(false);
         const rubric = getRubricData();
         if (type === 'pdf') {
             await exportRubricGridPdf(rubric);
-        } else {
+        } else if (type === 'docx') {
             await exportRubricToDocx(rubric);
+        } else {
+            const json = JSON.stringify(rubric, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${rubric.name.replace(/[^a-z0-9]/gi, '_')}.json`;
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(url), 100);
         }
     };
 
@@ -217,6 +226,9 @@ export default function RubricBuilder() {
                                         </button>
                                         <button className="btn btn-ghost btn-sm" style={{ justifyContent: 'flex-start' }} onClick={() => handleExport('docx')}>
                                             <FileText size={14} /> Export Word
+                                        </button>
+                                        <button className="btn btn-ghost btn-sm" style={{ justifyContent: 'flex-start' }} onClick={() => handleExport('json')}>
+                                            <FileText size={14} /> Export JSON
                                         </button>
                                     </div>
                                 </>

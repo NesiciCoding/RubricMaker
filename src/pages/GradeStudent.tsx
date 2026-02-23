@@ -197,45 +197,44 @@ export default function GradeStudent() {
                                                             </div>
                                                         )}
 
-                                                        {/* Expanded options for selected level */}
-                                                        {isSelected && (
-                                                            <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border)', textAlign: 'left' }} onClick={e => e.stopPropagation()}>
-                                                                {/* Sub-items */}
-                                                                {level.subItems.length > 0 && (
-                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
-                                                                        {level.subItems.map(si => {
-                                                                            const checked = (entry.checkedSubItems ?? []).includes(si.id);
-                                                                            return (
-                                                                                <div key={si.id} onClick={() => toggleSubItem(entry, si.id)} style={{ display: 'flex', gap: 6, alignItems: 'start', fontSize: '0.75em', cursor: 'pointer', lineHeight: 1.3 }}>
-                                                                                    <div style={{ flexShrink: 0, marginTop: 1 }}>
-                                                                                        {checked ? <CheckSquare size={14} color={fmt.accentColor} /> : <Square size={14} color="var(--text-muted)" />}
-                                                                                    </div>
-                                                                                    <span>{si.label} <span style={{ opacity: 0.6 }}>(+{si.points})</span></span>
+                                                        {/* Sub-items (always show under the level description so they can be clicked independently) */}
+                                                        {level.subItems.length > 0 && (
+                                                            <div style={{ marginTop: 8, paddingTop: 8, borderTop: isSelected ? `1px solid ${fmt.accentColor}40` : '1px solid var(--border)', textAlign: 'left' }} onClick={e => e.stopPropagation()}>
+                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                                                    {level.subItems.map(si => {
+                                                                        const checked = (entry.checkedSubItems ?? []).includes(si.id);
+                                                                        return (
+                                                                            <div key={si.id} onClick={() => toggleSubItem(entry, si.id)} style={{ display: 'flex', gap: 6, alignItems: 'start', fontSize: '0.75em', cursor: 'pointer', lineHeight: 1.3 }}>
+                                                                                <div style={{ flexShrink: 0, marginTop: 1 }}>
+                                                                                    {checked ? <CheckSquare size={14} color={fmt.accentColor} /> : <Square size={14} color="var(--text-muted)" />}
                                                                                 </div>
-                                                                            );
-                                                                        })}
-                                                                    </div>
-                                                                )}
-
-                                                                {/* Range Slider (always show if range exists OR if no sub-items, to allow point adjustment) */}
-                                                                {(level.minPoints !== level.maxPoints || level.subItems.length === 0) && (
-                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                                                        <label style={{ fontSize: '0.7em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                                                                            {level.subItems.length > 0 ? 'Base Points' : 'Points'}
-                                                                        </label>
-                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                                            <input type="range"
-                                                                                min={level.minPoints} max={level.maxPoints} step={0.5}
-                                                                                value={entry.selectedPoints ?? level.minPoints}
-                                                                                onChange={e => updateEntry(c.id, { selectedPoints: Number(e.target.value) })}
-                                                                                style={{ flex: 1, accentColor: fmt.accentColor }}
-                                                                            />
-                                                                            <div style={{ fontSize: '0.75em', fontWeight: 600, minWidth: 24, textAlign: 'right' }}>
-                                                                                {entry.selectedPoints ?? level.minPoints}
+                                                                                <span>{si.label} <span style={{ opacity: 0.6 }}>(+{si.points})</span></span>
                                                                             </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Range Slider (only show for selected level) */}
+                                                        {isSelected && (level.minPoints !== level.maxPoints || level.subItems.length === 0) && (
+                                                            <div style={{ marginTop: 8, paddingTop: 8, borderTop: (level.subItems.length > 0) ? `1px solid ${fmt.accentColor}20` : `1px solid ${fmt.accentColor}40`, textAlign: 'left' }} onClick={e => e.stopPropagation()}>
+                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                                                    <label style={{ fontSize: '0.7em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                                                                        {c.levels.some(l => l.subItems.length > 0) ? 'Base Points' : 'Points'}
+                                                                    </label>
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                                        <input type="range"
+                                                                            min={level.minPoints} max={level.maxPoints} step={0.5}
+                                                                            value={entry.selectedPoints ?? level.minPoints}
+                                                                            onChange={e => updateEntry(c.id, { selectedPoints: Number(e.target.value) })}
+                                                                            style={{ flex: 1, accentColor: fmt.accentColor }}
+                                                                        />
+                                                                        <div style={{ fontSize: '0.75em', fontWeight: 600, minWidth: 24, textAlign: 'right' }}>
+                                                                            {entry.selectedPoints ?? level.minPoints}
                                                                         </div>
                                                                     </div>
-                                                                )}
+                                                                </div>
                                                             </div>
                                                         )}
                                                     </td>

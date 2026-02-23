@@ -200,7 +200,8 @@ interface AppContextValue extends StoreData {
     deleteStudent: (id: string) => void;
     addClass: (c: Omit<Class, 'id'>) => Class;
     updateClass: (c: Class) => void;
-    deleteClass: (id: string) => void;
+    deleteClass: (id: string, deleteStudents?: boolean) => void;
+    mergeClasses: (sourceClassId: string, targetClassId: string) => void;
     saveStudentRubric: (sr: StudentRubric) => void;
     createStudentRubric: (rubricId: string, studentId: string) => StudentRubric;
     deleteStudentRubric: (id: string) => void;
@@ -260,7 +261,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return cls;
     }, []);
     const updateClass = useCallback((c: Class) => dispatch({ type: 'UPDATE_CLASS', payload: c }), []);
-    const deleteClass = useCallback((id: string) => dispatch({ type: 'DELETE_CLASS', id }), []);
+    const deleteClass = useCallback((id: string, deleteStudents: boolean = false) => {
+        if (deleteStudents) {
+            state.students.filter(s => s.classId === id).forEach(s => deleteStudent(s.id));
+        }
+        dispatch({ type: 'DELETE_CLASS', id });
+    }, [state.students, deleteStudent]);
+
+    const mergeClasses = useCallback((sourceClassId: string, targetClassId: string) => {
+        // Move all students to the new class
+        const studentsToMove = state.students.filter(s => s.classId === sourceClassId);
+        studentsToMove.forEach(s => updateStudent({ ...s, classId: targetClassId }));
+        // Delete the old class
+        deleteClass(sourceClassId, false);
+    }, [state.students, updateStudent, deleteClass]);
 
     const saveStudentRubricFn = useCallback((sr: StudentRubric) => {
         dispatch({ type: 'SAVE_STUDENT_RUBRIC', payload: sr });
@@ -344,7 +358,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         dispatch,
         addRubric, updateRubric, deleteRubric,
         addStudent, updateStudent, deleteStudent,
-        addClass, updateClass, deleteClass,
+        addClass, updateClass, deleteClass, mergeClasses,
         saveStudentRubric: saveStudentRubricFn,
         createStudentRubric, deleteStudentRubric,
         addAttachment, deleteAttachment,
