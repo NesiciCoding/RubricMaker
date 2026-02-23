@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Save, Plus, Trash2, Download, Upload, Key, ExternalLink, AlertCircle, MessageSquare, Globe } from 'lucide-react';
+import { Save, Plus, Trash2, Download, Upload, Key, ExternalLink, AlertCircle, MessageSquare, Globe, Layout, Star } from 'lucide-react';
 import CommentBankModal from '../components/Comments/CommentBankModal';
+import TemplateUploadModal from '../components/TemplateUploadModal';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import type { GradeScale, GradeRange } from '../types';
@@ -10,10 +11,12 @@ import { exportFullBackup, importFullBackup } from '../store/storage';
 export default function SettingsPage() {
     const { t, i18n } = useTranslation();
     const {
-        settings, updateSettings, gradeScales, addGradeScale, updateGradeScale, deleteGradeScale, commentBank
+        settings, updateSettings, gradeScales, addGradeScale, updateGradeScale, deleteGradeScale, commentBank,
+        exportTemplates, addExportTemplate, deleteExportTemplate,
     } = useApp();
     const [editingScaleId, setEditingScaleId] = useState<string | null>(null);
     const [showCommentBank, setShowCommentBank] = useState(false);
+    const [showTemplateUpload, setShowTemplateUpload] = useState(false);
 
     useEffect(() => {
         if (settings.language && i18n.language !== settings.language) {
@@ -225,6 +228,59 @@ export default function SettingsPage() {
                     ))}
                 </div>
 
+                {/* Export Templates */}
+                <div className="card" style={{ marginBottom: 24, borderLeft: '4px solid var(--accent)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                            <Layout size={20} style={{ color: 'var(--accent)' }} />
+                            <div>
+                                <h3 style={{ margin: 0 }}>Export Templates</h3>
+                                <p className="text-muted text-xs" style={{ marginTop: 2 }}>Upload blank .docx rubrics — their column headers and colours will be used when exporting to Word.</p>
+                            </div>
+                        </div>
+                        <button className="btn btn-primary btn-sm" onClick={() => setShowTemplateUpload(true)}>
+                            <Upload size={14} /> Upload Template
+                        </button>
+                    </div>
+
+                    {exportTemplates.length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                            No templates uploaded yet. Click <strong>Upload Template</strong> to add one.
+                        </div>
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            {exportTemplates.map(t => (
+                                <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--bg-elevated)', borderRadius: 10, padding: '12px 16px', border: settings.exportTemplateId === t.id ? '1.5px solid var(--accent)' : '1px solid var(--border)' }}>
+                                    {/* Colour swatch */}
+                                    <div style={{ width: 32, height: 32, borderRadius: 8, background: t.headerColor ?? '#1e3a5f', flexShrink: 0 }} />
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{t.name}</div>
+                                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                                            {t.levelHeaders.length > 0
+                                                ? t.levelHeaders.join(' · ')
+                                                : 'No level headers detected'}
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: 6 }}>
+                                        <button
+                                            className={`btn btn-sm ${settings.exportTemplateId === t.id ? 'btn-primary' : 'btn-ghost'}`}
+                                            title={settings.exportTemplateId === t.id ? 'Default template' : 'Set as default'}
+                                            onClick={() => updateSettings({ exportTemplateId: settings.exportTemplateId === t.id ? undefined : t.id })}
+                                        >
+                                            <Star size={13} />
+                                            {settings.exportTemplateId === t.id ? 'Default' : 'Set default'}
+                                        </button>
+                                        <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--red)' }}
+                                            onClick={() => { deleteExportTemplate(t.id); if (settings.exportTemplateId === t.id) updateSettings({ exportTemplateId: undefined }); }}>
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
                 {/* Backup */}
                 <div className="card">
                     <h3 style={{ marginBottom: 16 }}>Data Backup & Restore</h3>
@@ -244,6 +300,12 @@ export default function SettingsPage() {
             </div>
 
             {showCommentBank && <CommentBankModal onClose={() => setShowCommentBank(false)} />}
+            {showTemplateUpload && (
+                <TemplateUploadModal
+                    onClose={() => setShowTemplateUpload(false)}
+                    onSave={tmpl => { addExportTemplate(tmpl); setShowTemplateUpload(false); }}
+                />
+            )}
         </>
     );
 }

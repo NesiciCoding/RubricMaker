@@ -1,15 +1,21 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { Download, CheckSquare, Square, FileText, Users, Loader } from 'lucide-react';
+import React, { useState } from 'react';
+import { Download, CheckSquare, Square, FileText, Users, Loader, Layout, X } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import { calcGradeSummary } from '../utils/gradeCalc';
 import { exportSinglePdf, exportBatchPdf } from '../utils/pdfExport';
+import { exportRubricWithTemplate } from '../utils/docxTemplateExport';
+import { exportRubricToDocx } from '../utils/docxExport';
 
 export default function ExportPage() {
-    const { rubrics, students, studentRubrics, gradeScales, settings } = useApp();
+    const { rubrics, students, studentRubrics, gradeScales, settings, exportTemplates, updateSettings } = useApp();
     const [selectedRubricId, setSelectedRubricId] = useState(rubrics[0]?.id ?? '');
     const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());
     const [exporting, setExporting] = useState(false);
+
+    // Template (for Word/DOCX export)
+    const activeTemplateId = settings.exportTemplateId ?? '';
+    const activeTemplate = exportTemplates.find(t => t.id === activeTemplateId) ?? null;
 
     const rubric = rubrics.find(r => r.id === selectedRubricId);
     const scale = gradeScales.find(g => g.id === (rubric?.gradeScaleId ?? settings.defaultGradeScaleId)) ?? gradeScales[0];
@@ -58,16 +64,70 @@ export default function ExportPage() {
         }
     }
 
+    async function handleWordExport() {
+        if (!rubric) return;
+        setExporting(true);
+        try {
+            if (activeTemplate) {
+                await exportRubricWithTemplate(rubric, activeTemplate);
+            } else {
+                await exportRubricToDocx(rubric);
+            }
+        } finally {
+            setExporting(false);
+        }
+    }
+
     return (
         <>
             <Topbar title="Export to PDF" />
             <div className="page-content fade-in">
                 <div className="card" style={{ marginBottom: 20 }}>
-                    <div className="form-group">
+                    <div className="form-group" style={{ marginBottom: 16 }}>
                         <label>Select Rubric to Export</label>
                         <select value={selectedRubricId} onChange={e => { setSelectedRubricId(e.target.value); setSelectedStudentIds(new Set()); }}>
                             {rubrics.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
                         </select>
+                    </div>
+
+                    {/* Word export template selector */}
+                    <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600, fontSize: '0.88rem' }}>
+                                <Layout size={14} /> Word Export Template
+                            </div>
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                disabled={!rubric || exporting}
+                                onClick={handleWordExport}
+                            >
+                                {exporting ? <Loader size={13} className="spin" /> : <Download size={13} />}
+                                {activeTemplate ? `Export Word (${activeTemplate.name})` : 'Export Word (default)'}
+                            </button>
+                        </div>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                            <select
+                                style={{ flex: 1, minWidth: 180, maxWidth: 340 }}
+                                value={activeTemplateId}
+                                onChange={e => updateSettings({ exportTemplateId: e.target.value || undefined })}
+                            >
+                                <option value="">— Default (no template) —</option>
+                                {exportTemplates.map(t => (
+                                    <option key={t.id} value={t.id}>{t.name} ({t.levelHeaders.length} levels)</option>
+                                ))}
+                            </select>
+                            {activeTemplate && (
+                                <button className="btn btn-ghost btn-icon btn-sm" title="Clear template"
+                                    onClick={() => updateSettings({ exportTemplateId: undefined })}>
+                                    <X size={13} />
+                                </button>
+                            )}
+                        </div>
+                        {exportTemplates.length === 0 && (
+                            <p className="text-muted text-xs" style={{ marginTop: 6 }}>
+                                No templates saved. Upload one in <strong>Settings → Export Templates</strong>.
+                            </p>
+                        )}
                     </div>
                 </div>
 

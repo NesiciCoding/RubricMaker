@@ -69,6 +69,20 @@ export interface Attachment {
     addedAt: string;   // ISO date string
 }
 
+/** A blank DOCX rubric template whose column headers & styling are used for export */
+export interface ExportTemplate {
+    id: string;
+    name: string;
+    /** base64-encoded .docx file content */
+    dataUrl: string;
+    /** Column headers (level names) extracted from the template */
+    levelHeaders: string[];
+    /** Header background colour extracted from template (hex, e.g. '#1e3a5f') */
+    headerColor?: string;
+    size: number;
+    addedAt: string;
+}
+
 export interface RubricFormat {
     criterionColWidth: number;
     levelColWidth: number;
@@ -168,6 +182,8 @@ export interface AppSettings {
     activeClassId?: string;
     /** API key for commonstandardsproject.com */
     standardsApiKey?: string;
+    /** ID of the default export template */
+    exportTemplateId?: string;
 }
 
 export interface CommentBankItem {

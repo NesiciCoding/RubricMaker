@@ -3,12 +3,13 @@ import React, {
 } from 'react';
 import type {
     Rubric, Student, Class, StudentRubric, Attachment,
-    GradeScale, CommentSnippet, AppSettings, ScoreEntry, Modifier, LinkedStandard, CommentBankItem
+    GradeScale, CommentSnippet, AppSettings, ScoreEntry, Modifier, LinkedStandard, CommentBankItem, ExportTemplate
 } from '../types';
 import {
     loadStore, StoreData,
     saveRubrics, saveStudents, saveClasses, saveStudentRubrics,
-    saveAttachments, saveGradeScales, saveCommentSnippets, saveSettings, saveFavoriteStandards, saveCommentBank
+    saveAttachments, saveGradeScales, saveCommentSnippets, saveSettings, saveFavoriteStandards, saveCommentBank,
+    saveExportTemplates,
 } from '../store/storage';
 import { nanoid } from '../utils/nanoid';
 
@@ -41,7 +42,9 @@ type Action =
     | { type: 'REMOVE_FAVORITE_STANDARD'; guid: string }
     | { type: 'ADD_COMMENT_BANK_ITEM'; payload: CommentBankItem }
     | { type: 'UPDATE_COMMENT_BANK_ITEM'; payload: CommentBankItem }
-    | { type: 'DELETE_COMMENT_BANK_ITEM'; id: string };
+    | { type: 'DELETE_COMMENT_BANK_ITEM'; id: string }
+    | { type: 'ADD_EXPORT_TEMPLATE'; payload: ExportTemplate }
+    | { type: 'DELETE_EXPORT_TEMPLATE'; id: string };
 
 function reducer(state: StoreData, action: Action): StoreData {
     switch (action.type) {
@@ -170,6 +173,16 @@ function reducer(state: StoreData, action: Action): StoreData {
             saveCommentBank(next);
             return { ...state, commentBank: next };
         }
+        case 'ADD_EXPORT_TEMPLATE': {
+            const next = [...state.exportTemplates, action.payload];
+            saveExportTemplates(next);
+            return { ...state, exportTemplates: next };
+        }
+        case 'DELETE_EXPORT_TEMPLATE': {
+            const next = state.exportTemplates.filter(t => t.id !== action.id);
+            saveExportTemplates(next);
+            return { ...state, exportTemplates: next };
+        }
         default: return state;
     }
 }
@@ -206,6 +219,8 @@ interface AppContextValue extends StoreData {
     addCommentBankItem: (text: string, tags: string[]) => CommentBankItem;
     updateCommentBankItem: (item: CommentBankItem) => void;
     deleteCommentBankItem: (id: string) => void;
+    addExportTemplate: (t: Omit<ExportTemplate, 'id' | 'addedAt'>) => ExportTemplate;
+    deleteExportTemplate: (id: string) => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -317,6 +332,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const updateCommentBankItem = useCallback((item: CommentBankItem) => dispatch({ type: 'UPDATE_COMMENT_BANK_ITEM', payload: item }), []);
     const deleteCommentBankItem = useCallback((id: string) => dispatch({ type: 'DELETE_COMMENT_BANK_ITEM', id }), []);
 
+    const addExportTemplate = useCallback((t: Omit<ExportTemplate, 'id' | 'addedAt'>): ExportTemplate => {
+        const template: ExportTemplate = { ...t, id: nanoid(), addedAt: new Date().toISOString() };
+        dispatch({ type: 'ADD_EXPORT_TEMPLATE', payload: template });
+        return template;
+    }, []);
+    const deleteExportTemplate = useCallback((id: string) => dispatch({ type: 'DELETE_EXPORT_TEMPLATE', id }), []);
+
     const value: AppContextValue = {
         ...state,
         dispatch,
@@ -331,6 +353,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         updateSettings, getActiveGradeScale,
         addFavoriteStandard, removeFavoriteStandard, isFavoriteStandard,
         addCommentBankItem, updateCommentBankItem, deleteCommentBankItem,
+        addExportTemplate, deleteExportTemplate,
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

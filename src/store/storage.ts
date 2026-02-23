@@ -1,6 +1,6 @@
 import type {
     Rubric, Student, Class, StudentRubric, Attachment,
-    GradeScale, CommentSnippet, AppSettings, RubricFormat, LinkedStandard, CommentBankItem
+    GradeScale, CommentSnippet, AppSettings, RubricFormat, LinkedStandard, CommentBankItem, ExportTemplate
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 
@@ -64,6 +64,7 @@ const KEYS = {
     settings: 'rm_settings',
     favoriteStandards: 'rm_favorite_standards',
     commentBank: 'rm_comment_bank',
+    exportTemplates: 'rm_export_templates',
 };
 
 // ─── Generic helpers ───────────────────────────────────────────────────────────
@@ -95,6 +96,7 @@ export interface StoreData {
     settings: AppSettings;
     favoriteStandards: LinkedStandard[];
     commentBank: CommentBankItem[];
+    exportTemplates: ExportTemplate[];
 }
 
 export function loadStore(): StoreData {
@@ -109,6 +111,7 @@ export function loadStore(): StoreData {
         settings: load<AppSettings>(KEYS.settings, DEFAULT_SETTINGS),
         favoriteStandards: load<LinkedStandard[]>(KEYS.favoriteStandards, []),
         commentBank: load<CommentBankItem[]>(KEYS.commentBank, []),
+        exportTemplates: load<ExportTemplate[]>(KEYS.exportTemplates, []),
     };
 }
 
@@ -122,6 +125,7 @@ export function saveCommentSnippets(snips: CommentSnippet[]) { save(KEYS.comment
 export function saveSettings(settings: AppSettings) { save(KEYS.settings, settings); }
 export function saveFavoriteStandards(favs: LinkedStandard[]) { save(KEYS.favoriteStandards, favs); }
 export function saveCommentBank(items: CommentBankItem[]) { save(KEYS.commentBank, items); }
+export function saveExportTemplates(templates: ExportTemplate[]) { save(KEYS.exportTemplates, templates); }
 
 // ─── Full Backup / Restore ─────────────────────────────────────────────────────
 

@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Edit2, Trash2, Copy, BookOpen, Users } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Copy, BookOpen, Users, Upload } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import { DEFAULT_FORMAT } from '../types';
 import { nanoid } from '../utils/nanoid';
+import ImportRubricModal from '../components/ImportRubricModal';
+import type { ParsedRubric } from '../utils/rubricImport';
 
 export default function RubricList() {
     const navigate = useNavigate();
-    const { rubrics, students, studentRubrics, addRubric, deleteRubric } = useApp();
+    const { rubrics, students, studentRubrics, addRubric, deleteRubric, settings, gradeScales } = useApp();
     const [search, setSearch] = useState('');
     const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+    const [showImport, setShowImport] = useState(false);
 
     const filtered = rubrics.filter(r =>
         r.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -28,12 +31,33 @@ export default function RubricList() {
         });
     }
 
+    function handleImport(parsed: ParsedRubric & { name: string; subject: string }) {
+        const newR = addRubric({
+            name: parsed.name || 'Imported Rubric',
+            subject: parsed.subject || '',
+            description: parsed.description || '',
+            criteria: parsed.criteria,
+            gradeScaleId: settings.defaultGradeScaleId,
+            format: DEFAULT_FORMAT,
+            scoringMode: 'weighted-percentage',
+            totalMaxPoints: 100,
+            attachmentIds: [],
+        });
+        setShowImport(false);
+        navigate(`/rubrics/${newR.id}`);
+    }
+
     return (
         <>
             <Topbar title="Rubrics" actions={
-                <button className="btn btn-primary btn-sm" onClick={() => navigate('/rubrics/new')}>
-                    <Plus size={15} /> New Rubric
-                </button>
+                <>
+                    <button className="btn btn-secondary btn-sm" onClick={() => setShowImport(true)}>
+                        <Upload size={15} /> Import Rubric
+                    </button>
+                    <button className="btn btn-primary btn-sm" onClick={() => navigate('/rubrics/new')}>
+                        <Plus size={15} /> New Rubric
+                    </button>
+                </>
             } />
             <div className="page-content fade-in">
                 <div style={{ position: 'relative', maxWidth: 400, marginBottom: 20 }}>
@@ -113,7 +137,6 @@ export default function RubricList() {
                     </div>
                 )}
 
-                {/* Delete confirm modal */}
                 {confirmDelete && (
                     <div className="modal-overlay" onClick={() => setConfirmDelete(null)}>
                         <div className="modal" style={{ maxWidth: 420 }} onClick={e => e.stopPropagation()}>
@@ -129,6 +152,13 @@ export default function RubricList() {
                             </div>
                         </div>
                     </div>
+                )}
+
+                {showImport && (
+                    <ImportRubricModal
+                        onClose={() => setShowImport(false)}
+                        onImport={handleImport}
+                    />
                 )}
             </div>
         </>

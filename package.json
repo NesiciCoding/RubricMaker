@@ -11,6 +11,8 @@
   "dependencies": {
     "@types/file-saver": "^2.0.7",
     "docx": "^9.5.3",
+    "mammoth": "^1.8.0",
+    "pdfjs-dist": "^4.9.155",
     "file-saver": "^2.0.5",
     "html2canvas": "^1.4.1",
     "i18next": "^25.8.11",
