@@ -94,6 +94,9 @@ export interface RubricFormat {
     showWeights: boolean;
     showPoints: boolean;
     levelOrder: 'best-first' | 'worst-first';
+    headerTextAlign: 'left' | 'center' | 'right';
+    showBorders: boolean;
+    rowStriping: boolean;
 }
 
 export const DEFAULT_FORMAT: RubricFormat = {
@@ -107,6 +110,9 @@ export const DEFAULT_FORMAT: RubricFormat = {
     showWeights: true,
     showPoints: true,
     levelOrder: 'best-first',
+    headerTextAlign: 'center',
+    showBorders: true,
+    rowStriping: false,
 };
 
 export type ScoringMode = 'weighted-percentage' | 'total-points';

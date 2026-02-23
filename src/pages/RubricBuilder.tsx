@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import {
     Plus, Trash2, GripVertical, Save, ChevronUp, ChevronDown,
     Settings, Eye, ArrowLeft, Link2, BookOpen, X, ChevronRight, FileDown, FileText,
+    Wand2, AlignLeft, AlignCenter, AlignRight, LayoutGrid, Rows3, CheckSquare, Square,
+    MoveLeft, MoveRight
 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
@@ -54,6 +56,8 @@ export default function RubricBuilder() {
     const [totalMaxPoints, setTotalMaxPoints] = useState(existing?.totalMaxPoints ?? 100);
     const [showFormat, setShowFormat] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
+    const [showMarkdownHint, setShowMarkdownHint] = useState(false);
+    const [viewMode, setViewMode] = useState<'form' | 'designer'>('form');
     const [saved, setSaved] = useState(false);
     const [expandedSubItems, setExpandedSubItems] = useState<Set<string>>(new Set());
     const [pickingStandardFor, setPickingStandardFor] = useState<string | null>(null);
@@ -203,6 +207,10 @@ export default function RubricBuilder() {
                         <button className="btn btn-ghost btn-sm" onClick={() => navigate('/rubrics')}>
                             <ArrowLeft size={15} /> Back
                         </button>
+                        <div style={{ display: 'flex', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 8, padding: 2, marginRight: 8 }}>
+                            <button className={`btn btn-sm ${viewMode === 'form' ? 'btn-secondary' : 'btn-ghost'}`} onClick={() => setViewMode('form')} style={{ border: 'none' }}>Form</button>
+                            <button className={`btn btn-sm ${viewMode === 'designer' ? 'btn-secondary' : 'btn-ghost'}`} onClick={() => setViewMode('designer')} style={{ border: 'none' }}>Designer</button>
+                        </div>
                         <button className="btn btn-secondary btn-sm" onClick={() => setShowFormat(!showFormat)}>
                             <Settings size={15} /> Format
                         </button>
@@ -241,8 +249,8 @@ export default function RubricBuilder() {
                 }
             />
             <div className="page-content fade-in">
-                <div style={{ display: 'grid', gridTemplateColumns: showFormat ? '1fr 300px' : '1fr', gap: 24 }}>
-                    <div>
+                <div style={{ display: 'grid', gridTemplateColumns: showFormat ? '1fr 300px' : '1fr', gap: 24, alignItems: 'start' }}>
+                    <div style={{ display: viewMode === 'form' ? 'block' : 'none' }}>
                         {/* Rubric Meta */}
                         <div className="card" style={{ marginBottom: 20 }}>
                             <h3 style={{ marginBottom: 16 }}>Rubric Details</h3>
@@ -465,6 +473,26 @@ export default function RubricBuilder() {
                         )}
                     </div>
 
+                    {/* Designer View */}
+                    {viewMode === 'designer' && (
+                        <div style={{ overflowX: 'auto', paddingBottom: 24 }}>
+                            <RubricWysiwygEditor
+                                name={name}
+                                setName={setName}
+                                criteria={criteria}
+                                format={format}
+                                updateCriterion={updateCriterion}
+                                updateLevel={updateLevel}
+                                addCriterion={() => setCriteria(c => [...c, newCriterion()])}
+                                addCriterionLevel={(cid) => addLevel(cid)}
+                                criteriaSetter={setCriteria}
+                                totalMaxPoints={totalMaxPoints}
+                                scoringMode={scoringMode}
+                                onShowMarkdownHint={() => setShowMarkdownHint(true)}
+                            />
+                        </div>
+                    )}
+
                     {/* Format Panel */}
                     {showFormat && (
                         <div className="card" style={{ height: 'fit-content', position: 'sticky', top: 0 }}>
@@ -499,6 +527,16 @@ export default function RubricBuilder() {
                                     </div>
                                 ))}
                                 <div className="form-group">
+                                    <label>Font Family</label>
+                                    <select value={format.fontFamily} onChange={e => setFormat(f => ({ ...f, fontFamily: e.target.value }))}>
+                                        <option value="Inter, system-ui, sans-serif">Sans Serif (Inter)</option>
+                                        <option value="Arial, Helvetica, sans-serif">Arial</option>
+                                        <option value='"Times New Roman", Times, serif'>Times New Roman</option>
+                                        <option value="Georgia, serif">Georgia</option>
+                                        <option value='"Courier New", Courier, monospace'>Monospace (Courier)</option>
+                                    </select>
+                                </div>
+                                <div className="form-group">
                                     <label>Level Order</label>
                                     <select value={format.levelOrder}
                                         onChange={e => setFormat(f => ({ ...f, levelOrder: e.target.value as 'best-first' | 'worst-first' }))}>
@@ -506,14 +544,31 @@ export default function RubricBuilder() {
                                         <option value="worst-first">Worst → Best (left to right)</option>
                                     </select>
                                 </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 4 }}>
+                                    <div className="form-group">
+                                        <label>Header Alignment</label>
+                                        <div style={{ display: 'flex', gap: 4 }}>
+                                            {(['left', 'center', 'right'] as const).map(align => (
+                                                <button key={align}
+                                                    className={`btn btn-sm ${format.headerTextAlign === align ? 'btn-secondary' : 'btn-ghost'}`}
+                                                    onClick={() => setFormat(f => ({ ...f, headerTextAlign: align }))}
+                                                    style={{ flex: 1, textTransform: 'capitalize' }}>
+                                                    {align === 'left' ? <AlignLeft size={14} /> : align === 'center' ? <AlignCenter size={14} /> : <AlignRight size={14} />}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
                                     {[
-                                        { label: 'Show criterion weights', key: 'showWeights' },
-                                        { label: 'Show point values', key: 'showPoints' },
-                                    ].map(({ label, key }) => (
-                                        <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', textTransform: 'none', letterSpacing: 0 }}>
-                                            <input type="checkbox" checked={(format as any)[key]}
-                                                onChange={e => setFormat(f => ({ ...f, [key]: e.target.checked }))} />
+                                        { label: 'Show criterion weights', key: 'showWeights' as keyof RubricFormat },
+                                        { label: 'Show point values', key: 'showPoints' as keyof RubricFormat },
+                                        { label: 'Show borders / grid lines', key: 'showBorders' as keyof RubricFormat, icon: <LayoutGrid size={14} /> },
+                                        { label: 'Alternate row colors (striping)', key: 'rowStriping' as keyof RubricFormat, icon: <Rows3 size={14} /> },
+                                    ].map(({ label, key, icon }) => (
+                                        <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', textTransform: 'none', letterSpacing: 0, paddingLeft: 2 }}>
+                                            <div style={{ color: format[key] ? 'var(--accent)' : 'var(--text-muted)' }} onClick={() => setFormat(f => ({ ...f, [key]: !f[key] }))}>
+                                                {format[key] ? <CheckSquare size={16} /> : <Square size={16} />}
+                                            </div>
+                                            {icon && <span style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>{icon}</span>}
                                             {label}
                                         </label>
                                     ))}
@@ -572,6 +627,31 @@ export default function RubricBuilder() {
                         </div>
                     </div>
                 ) : null}
+
+                {/* Markdown Hint Modal */}
+                {showMarkdownHint && (
+                    <div className="modal-overlay" onClick={() => setShowMarkdownHint(false)}>
+                        <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 400 }}>
+                            <div className="modal-header">
+                                <h3>Markdown Formatting</h3>
+                                <button className="btn btn-ghost btn-icon" onClick={() => setShowMarkdownHint(false)}>✕</button>
+                            </div>
+                            <div className="modal-body">
+                                <p style={{ marginBottom: 16 }}>You can use simple Markdown tags to format text in descriptions:</p>
+                                <ul style={{ paddingLeft: 20, lineHeight: 2 }}>
+                                    <li><code>**bold**</code> for <strong>bold text</strong></li>
+                                    <li><code>*italic*</code> for <em>italic text</em></li>
+                                </ul>
+                                <p style={{ marginTop: 16, fontSize: '0.9em', color: 'var(--text-muted)' }}>
+                                    Just type the asterisks around your words. The formatting will apply as soon as you click outside the text box!
+                                </p>
+                            </div>
+                            <div className="modal-footer">
+                                <button className="btn btn-primary" onClick={() => setShowMarkdownHint(false)}>Got it</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </>
     );
@@ -585,20 +665,20 @@ function RubricPreviewTable({ name, criteria, format }: { name: string; criteria
             <table className="rubric-grid" style={{ tableLayout: 'fixed' }}>
                 <thead>
                     <tr style={{ background: format.headerColor, color: format.headerTextColor }}>
-                        <th style={{ width: format.criterionColWidth, textAlign: 'left' }}>Criterion</th>
+                        <th style={{ width: format.criterionColWidth, textAlign: 'left', border: format.showBorders ? '1px solid var(--border)' : 'none', padding: 8 }}>Criterion</th>
                         {headers.map(h => (
-                            <th key={h.id} style={{ width: format.levelColWidth }}>
+                            <th key={h.id} style={{ width: format.levelColWidth, textAlign: format.headerTextAlign, border: format.showBorders ? '1px solid var(--border)' : 'none', padding: 8 }}>
                                 {h.label}
                                 {format.showPoints ? ` (${h.minPoints}${h.minPoints !== h.maxPoints ? `–${h.maxPoints}` : ''}pts)` : ''}
                             </th>
                         ))}
-                        {format.showWeights && <th style={{ width: 80 }}>Weight</th>}
+                        {format.showWeights && <th style={{ width: 80, border: format.showBorders ? '1px solid var(--border)' : 'none', padding: 8 }}>Weight</th>}
                     </tr>
                 </thead>
                 <tbody>
-                    {criteria.map(c => (
-                        <tr key={c.id}>
-                            <td className="criterion-cell">
+                    {criteria.map((c, i) => (
+                        <tr key={c.id} style={{ background: format.rowStriping && i % 2 !== 0 ? 'var(--bg-elevated)' : 'transparent' }}>
+                            <td className="criterion-cell" style={{ border: format.showBorders ? '1px solid var(--border)' : 'none', padding: 8 }}>
                                 <div style={{ fontWeight: 600 }}>{c.title}</div>
                                 {c.description && <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', marginTop: 4 }}>{c.description}</div>}
                                 {c.linkedStandard && (
@@ -608,7 +688,7 @@ function RubricPreviewTable({ name, criteria, format }: { name: string; criteria
                                 )}
                             </td>
                             {c.levels.map(l => (
-                                <td key={l.id} className="level-cell">
+                                <td key={l.id} className="level-cell" style={{ border: format.showBorders ? '1px solid var(--border)' : 'none', padding: 8 }}>
                                     {l.description || <span style={{ color: 'var(--text-dim)' }}>—</span>}
                                     {l.subItems.length > 0 && (
                                         <ul style={{ margin: '6px 0 0', padding: '0 0 0 14px', fontSize: '0.85em', color: 'var(--text-muted)' }}>
@@ -617,11 +697,382 @@ function RubricPreviewTable({ name, criteria, format }: { name: string; criteria
                                     )}
                                 </td>
                             ))}
-                            {format.showWeights && <td style={{ textAlign: 'center' }}>{c.weight}%</td>}
+                            {format.showWeights && <td style={{ textAlign: 'center', border: format.showBorders ? '1px solid var(--border)' : 'none', padding: 8 }}>{c.weight}%</td>}
                         </tr>
                     ))}
                 </tbody>
             </table>
+        </div>
+    );
+}
+
+// WYSIWYG Editor
+interface WYSIWYGProps {
+    name: string;
+    setName: (n: string) => void;
+    criteria: RubricCriterion[];
+    format: RubricFormat;
+    updateCriterion: (cid: string, patch: Partial<RubricCriterion>) => void;
+    updateLevel: (cid: string, lid: string, patch: Partial<RubricLevel>) => void;
+    addCriterion: () => void;
+    addCriterionLevel: (cid: string) => void;
+    criteriaSetter: React.Dispatch<React.SetStateAction<RubricCriterion[]>>;
+    totalMaxPoints: number;
+    scoringMode: 'weighted-percentage' | 'total-points';
+    onShowMarkdownHint: () => void;
+}
+
+// Very basic Markdown parser
+function MarkdownRender({ text, style, className, onClick }: { text: string; style?: React.CSSProperties; className?: string; onClick?: () => void }) {
+    if (!text) return <div style={style} className={className} onClick={onClick}><span style={{ opacity: 0.5 }}>Click to edit...</span></div>;
+
+    // Very naive markdown parsing for bold and italics
+    const parts = text.split(/(\*\*.*?\*\*|\*.*?\*)/g);
+
+    return (
+        <div style={{ ...style, whiteSpace: 'pre-wrap', minHeight: 18 }} className={className} onClick={onClick}>
+            {parts.map((part, i) => {
+                if (part.startsWith('**') && part.endsWith('**')) {
+                    return <strong key={i}>{part.slice(2, -2)}</strong>;
+                }
+                if (part.startsWith('*') && part.endsWith('*')) {
+                    return <em key={i}>{part.slice(1, -1)}</em>;
+                }
+                return <span key={i}>{part}</span>;
+            })}
+        </div>
+    );
+}
+
+const RUBRIC_BANK = [
+    { title: 'Grammar & Spelling', desc: 'Correct usage of punctuation, spelling, and grammar.' },
+    { title: 'Formatting & Layout', desc: 'Document follows required formatting rules and spacing.' },
+    { title: 'Clarity of Expression', desc: 'Ideas are expressed clearly and logically.' },
+    { title: 'Evidence & Support', desc: 'Claims are backed by solid evidence or citations.' },
+    { title: 'Creativity & Originality', desc: 'Work shows unique thought and goes beyond basics.' },
+];
+
+function RubricWysiwygEditor({ name, setName, criteria, format, updateCriterion, updateLevel, addCriterion, addCriterionLevel, criteriaSetter, scoringMode, totalMaxPoints, onShowMarkdownHint }: WYSIWYGProps) {
+    const headers = criteria[0]?.levels ?? [];
+    const [editingCell, setEditingCell] = useState<string | null>(null);
+
+    // Auto-resize textarea
+    const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
+        const target = e.target as HTMLTextAreaElement;
+        target.style.height = 'auto';
+        target.style.height = `${target.scrollHeight}px`;
+    };
+
+    const textareaStyle: React.CSSProperties = {
+        width: '100%',
+        background: 'transparent',
+        border: '1px solid transparent',
+        resize: 'none',
+        overflow: 'hidden',
+        fontFamily: 'inherit',
+        fontSize: 'inherit',
+        color: 'inherit',
+        padding: 4,
+        margin: -4,
+        borderRadius: 4,
+        fontWeight: 'inherit',
+        textAlign: 'inherit'
+    };
+
+    const inputStyle: React.CSSProperties = {
+        ...textareaStyle,
+        display: 'inline-block',
+        width: 'auto',
+    };
+
+    function moveLevel(lIdx: number, dir: -1 | 1) {
+        criteriaSetter(prev => prev.map(c => {
+            const nextL = [...c.levels];
+            const swap = lIdx + dir;
+            if (swap < 0 || swap >= nextL.length) return c;
+            [nextL[lIdx], nextL[swap]] = [nextL[swap], nextL[lIdx]];
+            return { ...c, levels: nextL };
+        }));
+    }
+
+    function moveCriterion(cIdx: number, dir: -1 | 1) {
+        criteriaSetter(prev => {
+            const next = [...prev];
+            const swap = cIdx + dir;
+            if (swap < 0 || swap >= next.length) return prev;
+            [next[cIdx], next[swap]] = [next[swap], next[cIdx]];
+            return next;
+        });
+    }
+
+    function balanceWeights() {
+        if (!criteria.length) return;
+        // Don't modify if user has already perfectly balanced it or if there are none
+        const baseWeight = Math.floor(100 / criteria.length);
+        const remainder = 100 % criteria.length;
+
+        criteriaSetter(prev => prev.map((c, i) => ({
+            ...c,
+            weight: baseWeight + (i === 0 ? remainder : 0) // Give remainder to first item
+        })));
+    }
+
+    function smartAllocatePoints() {
+        if (!criteria.length || headers.length < 2) return;
+
+        criteriaSetter(prev => prev.map(c => {
+            const nextLevels = [...c.levels];
+            // Find max and min points from first and last level (assuming order)
+            const pts1 = nextLevels[0].maxPoints;
+            const pts2 = nextLevels[nextLevels.length - 1].maxPoints;
+
+            const maxPts = Math.max(pts1, pts2);
+            const minPts = Math.min(pts1, pts2);
+
+            // Distribute evenly
+            const step = (maxPts - minPts) / (nextLevels.length - 1);
+
+            // Re-apply to all levels linearly
+            return {
+                ...c,
+                levels: nextLevels.map((l, i) => {
+                    // if it's highest to lowest
+                    const rawScore = pts1 > pts2 ? pts1 - (step * i) : pts1 + (step * i);
+                    const roundedScore = Math.round(rawScore * 10) / 10;
+                    return { ...l, minPoints: roundedScore, maxPoints: roundedScore };
+                })
+            };
+        }));
+    }
+
+    function insertFromBank(item: { title: string, desc: string }) {
+        criteriaSetter(c => {
+            const nc = newCriterion();
+            nc.title = item.title;
+            nc.description = item.desc;
+            // Match the level headers of the active rubric if they exist
+            if (c.length > 0 && c[0].levels.length > 0) {
+                nc.levels = c[0].levels.map(l => ({
+                    id: nanoid(),
+                    label: l.label,
+                    minPoints: l.minPoints,
+                    maxPoints: l.maxPoints,
+                    description: '',
+                    subItems: []
+                }));
+            }
+            return [...c, nc];
+        });
+    }
+
+    return (
+        <div style={{ fontFamily: format.fontFamily, fontSize: format.fontSize, background: 'var(--bg-card)', padding: 24, borderRadius: 12, border: '1px solid var(--border)', minHeight: 400 }}>
+            {/* Toolbar */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 16 }}>
+                <button className="btn btn-ghost btn-sm" onClick={onShowMarkdownHint} title="How to format text" style={{ marginRight: 'auto', color: 'var(--text-muted)' }}>
+                    <BookOpen size={13} style={{ marginRight: 4 }} /> Formatting Help
+                </button>
+                <button className="btn btn-secondary btn-sm" onClick={smartAllocatePoints} title="Linearly distribute points across levels">
+                    <Wand2 size={13} /> Smart Allocate Points
+                    {scoringMode === 'total-points' && <span style={{ opacity: 0.5, fontSize: '0.9em' }}>({totalMaxPoints} max)</span>}
+                </button>
+                {format.showWeights && (
+                    <button className="btn btn-secondary btn-sm" onClick={balanceWeights} title="Evenly distribute 100% across rows">
+                        <Wand2 size={13} /> Balance Weights
+                    </button>
+                )}
+            </div>
+
+            <textarea
+                value={name}
+                onChange={e => setName(e.target.value)}
+                onInput={handleInput}
+                placeholder="Rubric Title..."
+                style={{ ...textareaStyle, fontSize: '1.8em', fontWeight: 700, marginBottom: 16, width: '100%' }}
+                className="hover-border"
+            />
+            <table className="rubric-grid" style={{ tableLayout: 'fixed', width: '100%' }}>
+                <thead>
+                    <tr style={{ background: format.headerColor, color: format.headerTextColor }}>
+                        <th style={{ width: format.criterionColWidth, textAlign: 'left', border: format.showBorders ? '1px solid var(--border)' : 'none' }}>
+                            <div style={{ padding: '12px 14px' }}>Criterion</div>
+                        </th>
+                        {headers.map((h, i) => (
+                            <th key={h.id} style={{ width: format.levelColWidth, border: format.showBorders ? '1px solid var(--border)' : 'none', position: 'relative' }} className="designer-th">
+                                <div style={{ display: 'flex', gap: 4, position: 'absolute', top: 4, right: 4, opacity: 0 }} className="th-actions">
+                                    <button className="btn btn-ghost btn-icon btn-sm" onClick={() => moveLevel(i, -1)} disabled={i === 0} style={{ padding: 2, height: 20, width: 20, color: 'inherit' }}><MoveLeft size={12} /></button>
+                                    <button className="btn btn-ghost btn-icon btn-sm" onClick={() => moveLevel(i, 1)} disabled={i === headers.length - 1} style={{ padding: 2, height: 20, width: 20, color: 'inherit' }}><MoveRight size={12} /></button>
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: format.headerTextAlign === 'left' ? 'flex-start' : format.headerTextAlign === 'right' ? 'flex-end' : 'center', padding: '12px 14px' }}>
+                                    <textarea
+                                        value={h.label}
+                                        onChange={e => {
+                                            // Update this level's label across all criteria to keep them synced
+                                            criteria.forEach(c => updateLevel(c.id, c.levels[i].id, { label: e.target.value }));
+                                        }}
+                                        onInput={handleInput}
+                                        placeholder="Level..."
+                                        style={{ ...textareaStyle, textAlign: 'center', fontWeight: 'bold' }}
+                                        className="hover-border"
+                                    />
+                                    {format.showPoints && (
+                                        <div style={{ fontSize: '0.85em', opacity: 0.8, marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+                                            (<input type="number"
+                                                value={h.minPoints}
+                                                onChange={e => {
+                                                    criteria.forEach(c => updateLevel(c.id, c.levels[i].id, { minPoints: Number(e.target.value) }));
+                                                }}
+                                                style={{ ...inputStyle, width: 30, textAlign: 'center', padding: 0, margin: 0 }}
+                                                className="hover-border"
+                                            />
+                                            {h.minPoints !== h.maxPoints && (
+                                                <>
+                                                    -
+                                                    <input type="number"
+                                                        value={h.maxPoints}
+                                                        onChange={e => {
+                                                            criteria.forEach(c => updateLevel(c.id, c.levels[i].id, { maxPoints: Number(e.target.value) }));
+                                                        }}
+                                                        style={{ ...inputStyle, width: 30, textAlign: 'center', padding: 0, margin: 0 }}
+                                                        className="hover-border"
+                                                    />
+                                                </>
+                                            )}pts)
+                                        </div>
+                                    )}
+                                </div>
+                            </th>
+                        ))}
+                        {format.showWeights && <th style={{ width: 80, textAlign: 'center', border: format.showBorders ? '1px solid var(--border)' : 'none', padding: '12px 14px' }}>Weight</th>}
+                    </tr>
+                </thead>
+                <tbody>
+                    {criteria.map((c, cIdx) => (
+                        <tr key={c.id} style={{ background: format.rowStriping && cIdx % 2 !== 0 ? 'var(--bg-elevated)' : 'transparent' }}>
+                            <td className="criterion-cell designer-td" style={{ position: 'relative', border: format.showBorders ? '1px solid var(--border)' : 'none' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 2, position: 'absolute', top: 4, right: 4, opacity: 0 }} className="td-actions">
+                                    <button className="btn btn-ghost btn-icon btn-sm" onClick={() => moveCriterion(cIdx, -1)} disabled={cIdx === 0} style={{ padding: 2, height: 20, width: 20 }}><ChevronUp size={14} /></button>
+                                    <button className="btn btn-ghost btn-icon btn-sm" onClick={() => moveCriterion(cIdx, 1)} disabled={cIdx === criteria.length - 1} style={{ padding: 2, height: 20, width: 20 }}><ChevronDown size={14} /></button>
+                                </div>
+                                <div style={{ padding: '10px 12px', paddingRight: 30 }}>
+                                    <textarea
+                                        value={c.title}
+                                        onChange={e => updateCriterion(c.id, { title: e.target.value })}
+                                        onInput={handleInput}
+                                        placeholder="Criterion Name"
+                                        style={{ ...textareaStyle, fontWeight: 600 }}
+                                        className="hover-border"
+                                    />
+                                    {editingCell === `${c.id}_desc` ? (
+                                        <textarea
+                                            autoFocus
+                                            value={c.description}
+                                            onChange={e => updateCriterion(c.id, { description: e.target.value })}
+                                            onBlur={() => setEditingCell(null)}
+                                            onInput={handleInput}
+                                            placeholder="Description (optional)"
+                                            style={{ ...textareaStyle, fontSize: '0.8em', color: 'var(--text-muted)', marginTop: 4, minHeight: 40 }}
+                                            className="hover-border"
+                                        />
+                                    ) : (
+                                        <MarkdownRender
+                                            text={c.description}
+                                            onClick={() => setEditingCell(`${c.id}_desc`)}
+                                            style={{ fontSize: '0.8em', color: 'var(--text-muted)', marginTop: 4, cursor: 'text' }}
+                                            className="hover-border"
+                                        />
+                                    )}
+                                    {c.linkedStandard && (
+                                        <div style={{ marginTop: 6, fontSize: '0.75em', color: 'var(--accent)' }}>
+                                            📌 {c.linkedStandard.statementNotation ?? c.linkedStandard.guid}
+                                        </div>
+                                    )}
+                                </div>
+                            </td>
+                            {c.levels.map(l => (
+                                <td key={l.id} className="level-cell" style={{ verticalAlign: 'top', border: format.showBorders ? '1px solid var(--border)' : 'none' }}>
+                                    <div style={{ padding: '10px 12px' }}>
+                                        {editingCell === `${c.id}_${l.id}` ? (
+                                            <textarea
+                                                autoFocus
+                                                value={l.description}
+                                                onChange={e => updateLevel(c.id, l.id, { description: e.target.value })}
+                                                onBlur={() => setEditingCell(null)}
+                                                onInput={handleInput}
+                                                placeholder="Level description..."
+                                                style={{ ...textareaStyle, minHeight: 60 }}
+                                                className="hover-border"
+                                            />
+                                        ) : (
+                                            <MarkdownRender
+                                                text={l.description}
+                                                onClick={() => setEditingCell(`${c.id}_${l.id}`)}
+                                                style={{ cursor: 'text' }}
+                                                className="hover-border"
+                                            />
+                                        )}
+                                        {l.subItems.length > 0 && (
+                                            <ul style={{ margin: '6px 0 0', padding: '0 0 0 14px', fontSize: '0.85em', color: 'var(--text-muted)' }}>
+                                                {l.subItems.map(si => <li key={si.id}>{si.label} ({si.points}pts)</li>)}
+                                            </ul>
+                                        )}
+                                    </div>
+                                </td>
+                            ))}
+                            {format.showWeights && (
+                                <td style={{ textAlign: 'center', verticalAlign: 'middle', border: format.showBorders ? '1px solid var(--border)' : 'none', padding: '10px 12px' }}>
+                                    <input type="number"
+                                        value={c.weight}
+                                        onChange={e => updateCriterion(c.id, { weight: Number(e.target.value) })}
+                                        style={{ ...inputStyle, width: 44, textAlign: 'center' }}
+                                        className="hover-border"
+                                    />%
+                                </td>
+                            )}
+                        </tr>
+                    ))}
+                    <tr>
+                        <td colSpan={(format.showWeights ? 2 : 1) + headers.length} style={{ padding: 12, textAlign: 'center', border: '1px dashed var(--border)', background: 'transparent' }}>
+                            <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+                                <button className="btn btn-ghost btn-sm" onClick={addCriterion}>
+                                    <Plus size={14} /> Add Row
+                                </button>
+                                <select
+                                    className="btn btn-ghost btn-sm"
+                                    style={{ padding: '0 8px', maxWidth: 160 }}
+                                    onChange={e => {
+                                        if (!e.target.value) return;
+                                        const item = RUBRIC_BANK.find(i => i.title === e.target.value);
+                                        if (item) insertFromBank(item);
+                                        e.target.value = ''; // reset
+                                    }}
+                                >
+                                    <option value="" disabled selected>Insert from bank...</option>
+                                    {RUBRIC_BANK.map(item => (
+                                        <option key={item.title} value={item.title}>{item.title}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 12 }}>
+                <button className="btn btn-ghost btn-sm" onClick={() => addCriterionLevel(criteria[0]?.id)} disabled={!criteria.length}>
+                    <Plus size={14} /> Add Column (Level)
+                </button>
+            </div>
+
+            <style>{`
+                .designer-th:hover .th-actions, .designer-td:hover .td-actions { opacity: 1 !important; }
+                .hover-border { padding: 4px; margin: -4px; border-radius: 4px; transition: border-color 0.2s, background 0.2s; }
+                .hover-border:hover { border-color: var(--border); background: var(--bg-elevated); }
+                .hover-border:focus { border-color: var(--accent); background: var(--bg-elevated); outline: none; }
+                .designer-td, .designer-th { transition: opacity 0.2s; }
+                .md-hint { position: absolute; right: 8px; bottom: 8px; font-size: 0.7em; color: var(--text-dim); opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+                td:focus-within .md-hint { opacity: 1; }
+            `}</style>
         </div>
     );
 }

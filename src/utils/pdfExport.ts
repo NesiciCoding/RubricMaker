@@ -24,26 +24,39 @@ function buildRubricHTML(
   const summary = calcGradeSummary(sr, rubric.criteria, scale);
   const fmt = rubric.format;
 
+  // Simple markdown-to-html converter for export
+  const parseMd = (text: string) => {
+    if (!text) return text;
+    // Replace **bold** with <strong>bold</strong>
+    let html = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    // Replace *italic* with <em>italic</em>
+    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    // Render newlines as <br/>
+    html = html.replace(/\n/g, '<br/>');
+    return html;
+  };
+
   const levelHeaders = rubric.criteria[0]?.levels ?? [];
   const orderedLevels = (criterion: typeof rubric.criteria[0]) =>
     fmt.levelOrder === 'worst-first' ? [...criterion.levels].reverse() : criterion.levels;
 
-  const rows = rubric.criteria.map(c => {
+  const rows = rubric.criteria.map((c, i) => {
     const entry = sr.entries.find(e => e.criterionId === c.id);
     const levels = orderedLevels(c);
     const cells = levels.map(l => {
       const isSelected = entry?.levelId === l.id || entry?.overridePoints !== undefined;
       const selected = entry?.levelId === l.id;
-      return `<td style="padding:10px 12px;border:1px solid #d1d5db;vertical-align:top;font-size:12px;${selected ? `background:${fmt.accentColor}22;border-color:${fmt.accentColor};font-weight:600;` : ''}">
-        ${l.description || '–'}
+      return `<td style="padding:10px 12px;border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};vertical-align:top;font-size:12px;${selected ? `background:${fmt.accentColor}22;border-color:${fmt.accentColor};border-style:solid;border-width:2px;font-weight:600;` : ''}">
+        ${parseMd(l.description) || '–'}
         ${fmt.showPoints ? `<br/><small style="color:${selected ? fmt.accentColor : '#6b7280'}">${l.minPoints === l.maxPoints ? l.maxPoints : `${l.minPoints}-${l.maxPoints}`}pts</small>` : ''}
       </td>`;
     }).join('');
-    const comment = entry?.comment ? `<div style="font-size:10px;color:#6b7280;margin-top:4px;font-style:italic">${entry.comment}</div>` : '';
-    return `<tr>
-      <td style="padding:10px 12px;border:1px solid #d1d5db;font-weight:600;font-size:12px;background:#f8fafc;min-width:${fmt.criterionColWidth}px">
-        ${c.title}
-        ${c.description ? `<div style="font-size:10px;color:#6b7280;font-weight:400">${c.description}</div>` : ''}
+    const comment = entry?.comment ? `<div style="font-size:10px;color:#6b7280;margin-top:4px;font-style:italic">${parseMd(entry.comment)}</div>` : '';
+    const stripeBg = fmt.rowStriping && i % 2 !== 0 ? '#f1f5f9' : '#ffffff';
+    return `<tr style="background:${stripeBg}">
+      <td style="padding:10px 12px;border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};font-weight:600;font-size:12px;background:${stripeBg};min-width:${fmt.criterionColWidth}px">
+        ${parseMd(c.title)}
+        ${c.description ? `<div style="font-size:10px;color:#6b7280;font-weight:400">${parseMd(c.description)}</div>` : ''}
         ${comment}
         ${fmt.showWeights ? `<div style="font-size:10px;color:#6b7280;margin-top:4px">Weight: ${c.weight}%</div>` : ''}
       </td>
@@ -52,8 +65,8 @@ function buildRubricHTML(
   }).join('');
 
   const headerCells = (rubric.criteria[0] ? orderedLevels(rubric.criteria[0]) : []).map(l =>
-    `<th style="padding:12px 14px;text-align:center;min-width:${fmt.levelColWidth}px;font-size:12px">
-      ${l.label}${fmt.showPoints ? ` (${l.minPoints === l.maxPoints ? l.maxPoints : `${l.minPoints}-${l.maxPoints}`}pts)` : ''}
+    `<th style="padding:12px 14px;text-align:${fmt.headerTextAlign};border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};min-width:${fmt.levelColWidth}px;font-size:12px">
+      ${parseMd(l.label)}${fmt.showPoints ? ` (${l.minPoints === l.maxPoints ? l.maxPoints : `${l.minPoints}-${l.maxPoints}`}pts)` : ''}
     </th>`
   ).join('');
 
@@ -90,7 +103,7 @@ function buildRubricHTML(
   <table>
     <thead>
       <tr style="background:${fmt.headerColor};color:${fmt.headerTextColor}">
-        <th style="padding:12px 14px;text-align:left;font-size:12px;min-width:${fmt.criterionColWidth}px">Criterion</th>
+        <th style="padding:12px 14px;text-align:left;font-size:12px;border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};min-width:${fmt.criterionColWidth}px">Criterion</th>
         ${headerCells}
       </tr>
     </thead>

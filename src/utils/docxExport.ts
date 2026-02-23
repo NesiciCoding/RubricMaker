@@ -11,6 +11,48 @@ export async function exportRubricToDocx(rubric: Rubric) {
 
     const headerLevels = rubric.criteria[0] ? getLevels(rubric.criteria[0]) : [];
 
+    // Helper to parse basic markdown to TextRuns
+    const parseMd = (text: string, baseStyle?: any): TextRun[] => {
+        if (!text) return [new TextRun({ text: "", ...baseStyle })];
+
+        // Handle newlines
+        const lines = text.split('\n');
+        const runs: TextRun[] = [];
+
+        lines.forEach((line, lineIdx) => {
+            // Very naive regex for bold (**bold**) and italics (*italic*)
+            const parts = line.split(/(\*\*.*?\*\*|\*.*?\*)/g);
+            parts.forEach(part => {
+                if (!part) return;
+                let bold = false;
+                let italics = false;
+                let content = part;
+
+                if (part.startsWith('**') && part.endsWith('**')) {
+                    bold = true;
+                    content = part.slice(2, -2);
+                } else if (part.startsWith('*') && part.endsWith('*')) {
+                    italics = true;
+                    content = part.slice(1, -1);
+                }
+
+                runs.push(new TextRun({
+                    text: content,
+                    bold: bold || baseStyle?.bold,
+                    italics: italics || baseStyle?.italics,
+                    ...baseStyle
+                }));
+            });
+
+            // Add a line break text run at the end of each line, except the last
+            if (lineIdx < lines.length - 1) {
+                runs.push(new TextRun({ break: 1 }));
+            }
+        });
+
+        return runs;
+    };
+
     // Create Table Header
     const headerRow = new TableRow({
         tableHeader: true,
@@ -58,7 +100,7 @@ export async function exportRubricToDocx(rubric: Rubric) {
                             children: [new TextRun({ text: c.title, bold: true })]
                         }),
                         ...(c.description ? [new Paragraph({
-                            children: [new TextRun({ text: c.description, size: 20, color: "666666" })]
+                            children: parseMd(c.description, { size: 20, color: "666666" })
                         })] : []),
                         ...(fmt.showWeights ? [new Paragraph({
                             children: [new TextRun({ text: `Weight: ${c.weight}%`, size: 18, color: "666666" })],
@@ -72,7 +114,7 @@ export async function exportRubricToDocx(rubric: Rubric) {
                 ...levels.map(l => new TableCell({
                     children: [
                         new Paragraph({
-                            children: [new TextRun({ text: l.description || "—" })]
+                            children: l.description ? parseMd(l.description) : [new TextRun({ text: "—" })]
                         }),
                         ...(fmt.showPoints ? [new Paragraph({
                             children: [new TextRun({ text: `${l.minPoints === l.maxPoints ? l.maxPoints : `${l.minPoints}-${l.maxPoints}`} pts`, bold: true })],

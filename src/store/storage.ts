@@ -51,6 +51,34 @@ const DEFAULT_SETTINGS: AppSettings = {
     defaultFormat: DEFAULT_FORMAT,
 };
 
+// ─── Default Comment Bank ──────────────────────────────────────────────────────
+
+const date = new Date().toISOString();
+
+export const DEFAULT_COMMENT_BANK: CommentBankItem[] = [
+    { id: 'cb-efl-1', text: "Great effort in using new vocabulary in your writing today!", tags: ['EFL', 'Vocabulary', 'Positive'], createdAt: date },
+    { id: 'cb-efl-2', text: "Your pronunciation of tricky sounds is improving steadily.", tags: ['EFL', 'Pronunciation', 'Positive'], createdAt: date },
+    { id: 'cb-efl-3', text: "You communicated your ideas clearly and fluently.", tags: ['EFL', 'Fluency', 'Positive'], createdAt: date },
+    { id: 'cb-efl-4', text: "Excellent use of transition words to connect your thoughts.", tags: ['EFL', 'Structure', 'Positive'], createdAt: date },
+    { id: 'cb-efl-5', text: "Very natural pacing and intonation during your speaking task.", tags: ['EFL', 'Fluency', 'Pronunciation'], createdAt: date },
+    { id: 'cb-efl-6', text: "Good job asking questions in English to clarify your understanding.", tags: ['EFL', 'Communication', 'Positive'], createdAt: date },
+    { id: 'cb-efl-7', text: "Remember to double-check subject-verb agreement in your sentences.", tags: ['EFL', 'Grammar', 'Improvement'], createdAt: date },
+    { id: 'cb-efl-8', text: "Try to incorporate more complex sentence structures into your writing.", tags: ['EFL', 'Grammar', 'Structure'], createdAt: date },
+    { id: 'cb-efl-9', text: "Pay close attention to verb tenses when describing past events.", tags: ['EFL', 'Grammar', 'Improvement'], createdAt: date },
+    { id: 'cb-efl-10', text: "Try to use more of the target vocabulary words we learned this week.", tags: ['EFL', 'Vocabulary', 'Improvement'], createdAt: date },
+
+    { id: 'cb-ef-1', text: "Excellent job keeping your materials organized and ready for class.", tags: ['Exec Functions', 'Organization', 'Positive'], createdAt: date },
+    { id: 'cb-ef-2', text: "You managed your time well and completed the task within the time limit.", tags: ['Exec Functions', 'Time Management', 'Positive'], createdAt: date },
+    { id: 'cb-ef-3', text: "Great focus and attention during today's independent work time.", tags: ['Exec Functions', 'Focus', 'Positive'], createdAt: date },
+    { id: 'cb-ef-4', text: "You showed great resilience and stayed calm when facing a difficult problem.", tags: ['Exec Functions', 'Self-Regulation', 'Positive'], createdAt: date },
+    { id: 'cb-ef-5', text: "Good job taking initiative and starting your work right away without needing reminders.", tags: ['Exec Functions', 'Initiative', 'Positive'], createdAt: date },
+    { id: 'cb-ef-6', text: "You transitioned very smoothly between different activities today.", tags: ['Exec Functions', 'Flexibility', 'Positive'], createdAt: date },
+    { id: 'cb-ef-7', text: "Try to break down larger projects into smaller, manageable steps so it feels less overwhelming.", tags: ['Exec Functions', 'Planning', 'Improvement'], createdAt: date },
+    { id: 'cb-ef-8', text: "Remember to use your planner to keep track of upcoming deadlines and homework.", tags: ['Exec Functions', 'Organization', 'Time Management'], createdAt: date },
+    { id: 'cb-ef-9', text: "Try to pause and double-check your work for small mistakes before turning it in.", tags: ['Exec Functions', 'Self-Monitoring', 'Improvement'], createdAt: date },
+    { id: 'cb-ef-10', text: "If you feel yourself getting distracted, try using the strategies we discussed to refocus.", tags: ['Exec Functions', 'Focus', 'Self-Regulation'], createdAt: date },
+];
+
 // ─── Storage Keys ──────────────────────────────────────────────────────────────
 
 const KEYS = {
@@ -110,7 +138,7 @@ export function loadStore(): StoreData {
         commentSnippets: load<CommentSnippet[]>(KEYS.commentSnippets, []),
         settings: load<AppSettings>(KEYS.settings, DEFAULT_SETTINGS),
         favoriteStandards: load<LinkedStandard[]>(KEYS.favoriteStandards, []),
-        commentBank: load<CommentBankItem[]>(KEYS.commentBank, []),
+        commentBank: load<CommentBankItem[]>(KEYS.commentBank, DEFAULT_COMMENT_BANK),
         exportTemplates: load<ExportTemplate[]>(KEYS.exportTemplates, []),
     };
 }

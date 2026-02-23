@@ -12,7 +12,7 @@ export default function GradeStudent() {
     const navigate = useNavigate();
     const {
         rubrics, students, studentRubrics, attachments,
-        gradeScales, settings, saveStudentRubric
+        gradeScales, settings, saveStudentRubric, updateSettings
     } = useApp();
 
     const rubric = rubrics.find(r => r.id === rubricId);
@@ -38,6 +38,14 @@ export default function GradeStudent() {
     const [showCommentBankFor, setShowCommentBankFor] = useState<string | null>(null);
     const [showAttachPanel, setShowAttachPanel] = useState(false);
     const [saved, setSaved] = useState(false);
+
+    // Ensure that if we loaded this student, the global active class defaults to their class
+    // This perfectly handles the user going back and expecting to see this student's class
+    React.useEffect(() => {
+        if (student && student.classId && student.classId !== settings.activeClassId) {
+            updateSettings({ activeClassId: student.classId });
+        }
+    }, [student?.classId, settings.activeClassId, updateSettings]);
 
     const updateEntry = useCallback((criterionId: string, patch: Partial<ScoreEntry>) => {
         if (!sr) return;

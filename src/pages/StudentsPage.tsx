@@ -8,8 +8,18 @@ import CsvImportModal from '../components/CsvImportModal';
 
 export default function StudentsPage() {
     const navigate = useNavigate();
-    const { students, classes, rubrics, studentRubrics, addStudent, updateStudent, deleteStudent, addClass, updateClass, deleteClass, mergeClasses } = useApp();
-    const [activeClass, setActiveClass] = useState(classes[0]?.id ?? '');
+    const { students, classes, rubrics, studentRubrics, addStudent, updateStudent, deleteStudent, addClass, updateClass, deleteClass, mergeClasses, settings, updateSettings } = useApp();
+
+    // Initialize active class from settings, falling back to the first available class
+    const initialClassId = classes.find(c => c.id === settings.activeClassId)?.id ?? classes[0]?.id ?? '';
+    const [activeClass, setActiveClass] = useState(initialClassId);
+
+    // Persist active class selection so back navigation maintains context
+    React.useEffect(() => {
+        if (activeClass && activeClass !== settings.activeClassId) {
+            updateSettings({ activeClassId: activeClass });
+        }
+    }, [activeClass, settings.activeClassId, updateSettings]);
     const [showAddModal, setShowAddModal] = useState(false);
     const [editStudent, setEditStudent] = useState<null | { id: string; name: string; email: string }>(null);
     const [name, setName] = useState('');
