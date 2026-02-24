@@ -14,8 +14,10 @@ export default function ExportPage() {
     const [exporting, setExporting] = useState(false);
 
     // PDF Export Options
+    // PDF Export Options
     const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
     const [combineAll, setCombineAll] = useState(false);
+    const [padForDoubleSided, setPadForDoubleSided] = useState(false);
 
     // Template (for Word/DOCX export)
     const activeTemplateId = settings.exportTemplateId ?? '';
@@ -61,7 +63,7 @@ export default function ExportPage() {
                 const toExport = gradedStudents
                     .filter(x => selectedStudentIds.has(x.student!.id))
                     .map(x => ({ sr: x.sr, student: x.student! }));
-                await exportBatchPdf(toExport, rubric, scale, { orientation, combineAll });
+                await exportBatchPdf(toExport, rubric, scale, { orientation, combineAll, padForDoubleSided });
             }
         } finally {
             setExporting(false);
@@ -160,6 +162,12 @@ export default function ExportPage() {
                                         <input type="checkbox" checked={combineAll} onChange={e => setCombineAll(e.target.checked)} />
                                         Combine into 1 PDF
                                     </label>
+                                    {combineAll && (
+                                        <label style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 6, fontSize: '0.85rem', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                                            <input type="checkbox" checked={padForDoubleSided} onChange={e => setPadForDoubleSided(e.target.checked)} />
+                                            Pad for Double-Sided
+                                        </label>
+                                    )}
                                 </div>
                                 <button
                                     className="btn btn-primary"

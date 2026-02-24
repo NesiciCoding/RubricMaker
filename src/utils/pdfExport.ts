@@ -15,6 +15,103 @@ async function getLibs() {
   };
 }
 
+// Manually measures rows in a master iframe and builds perfectly fitting "pages" mapping to the A4 canvas
+async function paginateHTML(html: string, widthPx: number, heightPx: number): Promise<HTMLIFrameElement[]> {
+  const iframes: HTMLIFrameElement[] = [];
+
+  const master = document.createElement('iframe');
+  master.style.cssText = `position:fixed;left:-9999px;top:-9999px;width:${widthPx}px;height:20000px;border:none;`;
+  document.body.appendChild(master);
+
+  const mdoc = master.contentDocument!;
+  mdoc.open();
+  mdoc.write(html);
+  mdoc.close();
+
+  // Wait for layout/fonts
+  await new Promise(r => setTimeout(r, 150));
+
+  const header = mdoc.getElementById('pdf-header');
+  const table = mdoc.getElementById('pdf-table');
+  const thead = table ? table.querySelector('thead') : null;
+  const tbody = table ? table.querySelector('tbody') : null;
+  const rows = tbody ? Array.from(tbody.querySelectorAll('tr')) : [];
+  const footer = mdoc.getElementById('pdf-footer');
+
+  let currentPageDoc: Document | null = null;
+  let currentTbody: HTMLElement | null = null;
+  let currentContentHeight = 0;
+  const maxContentHeight = heightPx - 48; // 24px top/bottom padding
+
+  function startNewPage() {
+    const f = document.createElement('iframe');
+    f.style.cssText = `position:fixed;left:-9999px;top:-9999px;width:${widthPx}px;height:${heightPx}px;border:none;background:#fff;`;
+    document.body.appendChild(f);
+    iframes.push(f);
+
+    const doc = f.contentDocument!;
+    doc.open();
+    // Copy the same head and body styles over
+    doc.write(`<!DOCTYPE html><html><head>${mdoc.head.innerHTML}</head><body style="padding:24px;margin:0;box-sizing:border-box;"></body></html>`);
+    doc.close();
+
+    currentPageDoc = doc;
+    currentContentHeight = 0;
+    return doc;
+  }
+
+  let doc = startNewPage();
+
+  if (header) {
+    doc.body.appendChild(header.cloneNode(true));
+    currentContentHeight += header.offsetHeight;
+  }
+
+  if (table && tbody) {
+    let theadHeight = 0;
+
+    const createTable = (targetDoc: Document) => {
+      const newTable = targetDoc.createElement('table');
+      Array.from(table.attributes).forEach(attr => newTable.setAttribute(attr.name, attr.value));
+      if (thead) {
+        newTable.appendChild(thead.cloneNode(true));
+        if (theadHeight === 0) theadHeight = thead.offsetHeight;
+      }
+      const newTbody = targetDoc.createElement('tbody');
+      newTable.appendChild(newTbody);
+      targetDoc.body.appendChild(newTable);
+      currentContentHeight += theadHeight;
+      return newTbody;
+    };
+
+    currentTbody = createTable(doc);
+
+    for (const row of rows) {
+      const rowHeight = row.offsetHeight;
+      if (currentContentHeight + rowHeight > maxContentHeight && currentTbody.children.length > 0) {
+        doc = startNewPage();
+        currentTbody = createTable(doc);
+      }
+      currentTbody.appendChild(row.cloneNode(true));
+      currentContentHeight += rowHeight;
+    }
+  }
+
+  if (footer) {
+    const footerHeight = footer.offsetHeight;
+    if (currentContentHeight + footerHeight > maxContentHeight && currentContentHeight > 0) {
+      doc = startNewPage();
+    }
+    doc.body.appendChild(footer.cloneNode(true));
+  }
+
+  document.body.removeChild(master);
+
+  // Wait for incremental renders
+  await new Promise(r => setTimeout(r, 50));
+  return iframes;
+}
+
 function buildRubricHTML(
   sr: StudentRubric,
   rubric: Rubric,
@@ -75,13 +172,13 @@ function buildRubricHTML(
 <head>
   <meta charset="utf-8"/>
   <style>
-    body { font-family: ${fmt.fontFamily}; margin: 0; padding: 24px; color: #1e293b; }
+    body { font-family: ${fmt.fontFamily}; margin: 0; padding: 24px; color: #1e293b; box-sizing: border-box; background: #fff; }
     table { width: 100%; border-collapse: collapse; margin-top: 16px; }
     @media print { body { padding: 12px; } }
   </style>
 </head>
 <body>
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px">
+  <div id="pdf-header" style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px">
     <div>
       <h1 style="margin:0;font-size:20px">${rubric.name}</h1>
       ${rubric.subject ? `<div style="color:#6b7280;margin-top:4px;font-size:13px">${rubric.subject}</div>` : ''}
@@ -100,7 +197,7 @@ function buildRubricHTML(
     </div>
   </div>
 
-  <table>
+  <table id="pdf-table">
     <thead>
       <tr style="background:${fmt.headerColor};color:${fmt.headerTextColor}">
         <th style="padding:12px 14px;text-align:left;font-size:12px;border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};min-width:${fmt.criterionColWidth}px">Criterion</th>
@@ -110,15 +207,17 @@ function buildRubricHTML(
     <tbody>${rows}</tbody>
   </table>
 
-  ${sr.overallComment ? `
-    <div style="margin-top:18px;padding:14px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0">
-      <strong style="font-size:12px;color:#374151">Overall Comment:</strong>
-      <p style="margin:6px 0 0;font-size:13px;color:#475569">${sr.overallComment}</p>
-    </div>` : ''}
+  <div id="pdf-footer">
+    ${sr.overallComment ? `
+      <div style="margin-top:18px;padding:14px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0">
+        <strong style="font-size:12px;color:#374151">Overall Comment:</strong>
+        <p style="margin:6px 0 0;font-size:13px;color:#475569">${parseMd(sr.overallComment)}</p>
+      </div>` : ''}
 
-  <div style="margin-top:16px;font-size:11px;color:#94a3b8;text-align:right">
-    Generated by Rubric Maker · ${new Date().toLocaleDateString()}
-    ${sr.isPeerReview ? ' · Peer Review' : ''}
+    <div style="margin-top:16px;font-size:11px;color:#94a3b8;text-align:right">
+      Generated by Rubric Maker · ${new Date().toLocaleDateString()}
+      ${sr.isPeerReview ? ' · Peer Review' : ''}
+    </div>
   </div>
 </body>
 </html>`;
@@ -133,31 +232,27 @@ export async function exportSinglePdf(
 ): Promise<void> {
   const { jsPDF, html2canvas } = await getLibs();
   const orientation = options.orientation || 'portrait';
-  const widthStr = orientation === 'landscape' ? '1250px' : '900px';
+  const widthPx = orientation === 'landscape' ? 1250 : 900;
+  const aspectRatio = orientation === 'landscape' ? (210 / 297) : (297 / 210);
+  const heightPx = widthPx * aspectRatio;
 
-  const container = document.createElement('div');
-  container.style.cssText = `position:fixed;left:-9999px;top:-9999px;width:${widthStr};background:#fff;`;
-  container.innerHTML = buildRubricHTML(sr, rubric, student, scale);
-  document.body.appendChild(container);
+  const htmlStr = buildRubricHTML(sr, rubric, student, scale);
+  const iframes = await paginateHTML(htmlStr, widthPx, heightPx);
 
   try {
-    const canvas = await html2canvas(container, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' });
-    const imgData = canvas.toDataURL('image/jpeg', 0.95);
     const pdf = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
-    const pageW = pdf.internal.pageSize.getWidth();
-    const pageH = pdf.internal.pageSize.getHeight();
-    const imgW = pageW;
-    const imgH = (canvas.height * imgW) / canvas.width;
+    const imgW = pdf.internal.pageSize.getWidth();
+    const imgH = pdf.internal.pageSize.getHeight();
 
-    let yOffset = 0;
-    while (yOffset < imgH) {
-      if (yOffset > 0) pdf.addPage();
-      pdf.addImage(imgData, 'JPEG', 0, -yOffset, imgW, imgH);
-      yOffset += pageH;
+    for (let i = 0; i < iframes.length; i++) {
+      if (i > 0) pdf.addPage();
+      const canvas = await html2canvas(iframes[i].contentDocument!.body, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' });
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      pdf.addImage(imgData, 'JPEG', 0, 0, imgW, imgH);
     }
     pdf.save(`${student.name.replace(/[^a-z0-9]/gi, '_')}_${rubric.name.replace(/[^a-z0-9]/gi, '_')}.pdf`);
   } finally {
-    document.body.removeChild(container);
+    iframes.forEach(f => document.body.removeChild(f));
   }
 }
 
@@ -165,11 +260,13 @@ export async function exportBatchPdf(
   entries: { sr: StudentRubric; student: Student }[],
   rubric: Rubric,
   scale: GradeScale,
-  options: { orientation?: 'portrait' | 'landscape', combineAll?: boolean } = {}
+  options: { orientation?: 'portrait' | 'landscape', combineAll?: boolean, padForDoubleSided?: boolean } = {}
 ): Promise<void> {
   const { jsPDF, html2canvas, JSZip } = await getLibs();
   const orientation = options.orientation || 'portrait';
-  const widthStr = orientation === 'landscape' ? '1250px' : '900px';
+  const widthPx = orientation === 'landscape' ? 1250 : 900;
+  const aspectRatio = orientation === 'landscape' ? (210 / 297) : (297 / 210);
+  const heightPx = widthPx * aspectRatio;
 
   let combinedPdf: any = null;
   if (options.combineAll) {
@@ -179,33 +276,38 @@ export async function exportBatchPdf(
   let firstCombinedPage = true;
 
   for (const { sr, student } of entries) {
-    const container = document.createElement('div');
-    container.style.cssText = `position:fixed;left:-9999px;top:-9999px;width:${widthStr};background:#fff;`;
-    container.innerHTML = buildRubricHTML(sr, rubric, student, scale);
-    document.body.appendChild(container);
+    const htmlStr = buildRubricHTML(sr, rubric, student, scale);
+    const iframes = await paginateHTML(htmlStr, widthPx, heightPx);
 
     try {
-      const canvas = await html2canvas(container, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' });
-      const imgData = canvas.toDataURL('image/jpeg', 0.95);
       const pdf = options.combineAll ? combinedPdf : new jsPDF({ orientation, unit: 'mm', format: 'a4' });
+      const imgW = pdf.internal.pageSize.getWidth();
+      const imgH = pdf.internal.pageSize.getHeight();
 
-      const pageW = pdf.internal.pageSize.getWidth();
-      const pageH = pdf.internal.pageSize.getHeight();
-      const imgW = pageW;
-      const imgH = (canvas.height * imgW) / canvas.width;
-
-      let yOffset = 0;
-      let studentFirstPage = true;
-      while (yOffset < imgH) {
+      for (let i = 0; i < iframes.length; i++) {
         if (options.combineAll) {
-          if (!firstCombinedPage) pdf.addPage();
+          if (!firstCombinedPage) {
+            pdf.addPage();
+          }
           firstCombinedPage = false;
         } else {
-          if (!studentFirstPage) pdf.addPage();
-          studentFirstPage = false;
+          if (i > 0) pdf.addPage();
         }
-        pdf.addImage(imgData, 'JPEG', 0, -yOffset, imgW, imgH);
-        yOffset += pageH;
+
+        const canvas = await html2canvas(iframes[i].contentDocument!.body, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' });
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        pdf.addImage(imgData, 'JPEG', 0, 0, imgW, imgH);
+      }
+
+      // Pad for double-sided if needed (and we are combining all, and there's another student coming)
+      if (options.combineAll && options.padForDoubleSided) {
+        // pdf.getNumberOfPages() is the total pages in the combined document so far.
+        // If it's odd, it means the next student would print on the back of the last page.
+        // So we add a blank page.
+        const totalPages = pdf.getNumberOfPages();
+        if (totalPages % 2 !== 0) {
+          pdf.addPage();
+        }
       }
 
       if (!options.combineAll) {
@@ -213,7 +315,7 @@ export async function exportBatchPdf(
         zip.file(`${student.name.replace(/[^a-z0-9]/gi, '_')}_${rubric.name.replace(/[^a-z0-9]/gi, '_')}.pdf`, pdfBlob);
       }
     } finally {
-      document.body.removeChild(container);
+      iframes.forEach(f => document.body.removeChild(f));
     }
   }
 
@@ -265,19 +367,19 @@ function buildEmptyRubricHTML(rubric: Rubric): string {
 <head>
   <meta charset="utf-8"/>
   <style>
-    body { font-family: ${fmt.fontFamily}; margin: 0; padding: 24px; color: #1e293b; }
+    body { font-family: ${fmt.fontFamily}; margin: 0; padding: 24px; color: #1e293b; box-sizing: border-box; background: #fff; }
     table { width: 100%; border-collapse: collapse; margin-top: 16px; }
     @media print { body { padding: 12px; } }
   </style>
 </head>
 <body>
-  <div style="margin-bottom:18px">
+  <div id="pdf-header" style="margin-bottom:18px">
     <h1 style="margin:0;font-size:20px">${rubric.name}</h1>
     ${rubric.subject ? `<div style="color:#6b7280;margin-top:4px;font-size:13px">${rubric.subject}</div>` : ''}
     ${rubric.description ? `<div style="color:#6b7280;margin-top:4px;font-size:12px">${rubric.description}</div>` : ''}
   </div>
 
-  <table>
+  <table id="pdf-table">
     <thead>
       <tr style="background:${fmt.headerColor};color:${fmt.headerTextColor}">
         <th style="padding:12px 14px;text-align:left;font-size:12px;min-width:${fmt.criterionColWidth}px">Criterion</th>
@@ -296,30 +398,26 @@ function buildEmptyRubricHTML(rubric: Rubric): string {
 
 export async function exportRubricGridPdf(rubric: Rubric, orientation: 'portrait' | 'landscape' = 'portrait'): Promise<void> {
   const { jsPDF, html2canvas } = await getLibs();
-  const widthStr = orientation === 'landscape' ? '1250px' : '900px';
+  const widthPx = orientation === 'landscape' ? 1250 : 900;
+  const aspectRatio = orientation === 'landscape' ? (210 / 297) : (297 / 210);
+  const heightPx = widthPx * aspectRatio;
 
-  const container = document.createElement('div');
-  container.style.cssText = `position:fixed;left:-9999px;top:-9999px;width:${widthStr};background:#fff;`;
-  container.innerHTML = buildEmptyRubricHTML(rubric);
-  document.body.appendChild(container);
+  const htmlStr = buildEmptyRubricHTML(rubric);
+  const iframes = await paginateHTML(htmlStr, widthPx, heightPx);
 
   try {
-    const canvas = await html2canvas(container, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' });
-    const imgData = canvas.toDataURL('image/jpeg', 0.95);
     const pdf = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
-    const pageW = pdf.internal.pageSize.getWidth();
-    const pageH = pdf.internal.pageSize.getHeight();
-    const imgW = pageW;
-    const imgH = (canvas.height * imgW) / canvas.width;
+    const imgW = pdf.internal.pageSize.getWidth();
+    const imgH = pdf.internal.pageSize.getHeight();
 
-    let yOffset = 0;
-    while (yOffset < imgH) {
-      if (yOffset > 0) pdf.addPage();
-      pdf.addImage(imgData, 'JPEG', 0, -yOffset, imgW, imgH);
-      yOffset += pageH;
+    for (let i = 0; i < iframes.length; i++) {
+      if (i > 0) pdf.addPage();
+      const canvas = await html2canvas(iframes[i].contentDocument!.body, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' });
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      pdf.addImage(imgData, 'JPEG', 0, 0, imgW, imgH);
     }
     pdf.save(`${rubric.name.replace(/[^a-z0-9]/gi, '_')}.pdf`);
   } finally {
-    document.body.removeChild(container);
+    iframes.forEach(f => document.body.removeChild(f));
   }
 }
