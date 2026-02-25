@@ -8,7 +8,8 @@ import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import { calcGradeSummary } from '../utils/gradeCalc';
 import { exportSinglePdf } from '../utils/pdfExport';
-
+import { getStudentGoalScores } from '../utils/learningGoalsAggregator';
+import LearningGoalChart from '../components/Statistics/LearningGoalChart';
 export default function StudentProfilePage() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -39,6 +40,11 @@ export default function StudentProfilePage() {
             };
         }).filter(Boolean) as { sr: any, rubric: any, scale: any, summary: any, dateStr: string, score: number }[];
     }, [student, studentRubrics, rubrics, gradeScales, settings]);
+
+    const goals = useMemo(() => {
+        if (!student) return [];
+        return getStudentGoalScores(student.id, studentRubrics, rubrics);
+    }, [student, studentRubrics, rubrics]);
 
     if (!student) {
         return (
@@ -143,6 +149,10 @@ export default function StudentProfilePage() {
                                     </LineChart>
                                 </ResponsiveContainer>
                             </div>
+                        )}
+
+                        {goals.length > 0 && (
+                            <LearningGoalChart goals={goals} />
                         )}
 
                         <div className="card">

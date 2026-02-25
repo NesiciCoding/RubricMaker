@@ -4,6 +4,8 @@ import { TrendingUp, Users, BookOpen } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import { calcGradeSummary, calcClassStats, calcEntryPoints } from '../utils/gradeCalc';
+import { getClassGoalScores } from '../utils/learningGoalsAggregator';
+import LearningGoalChart from '../components/Statistics/LearningGoalChart';
 
 export default function StatisticsPage() {
     const { rubrics, students, classes, studentRubrics, gradeScales, settings } = useApp();
@@ -48,6 +50,11 @@ export default function StatisticsPage() {
         });
     }, [rubric, studentRubrics, selectedClassId, students]);
 
+    const classGoals = useMemo(() => {
+        if (selectedClassId === 'all') return [];
+        return getClassGoalScores(selectedClassId, students, studentRubrics, rubrics);
+    }, [selectedClassId, students, studentRubrics, rubrics]);
+
     return (
         <>
             <Topbar title="Statistics" />
@@ -67,6 +74,10 @@ export default function StatisticsPage() {
                         </select>
                     </div>
                 </div>
+
+                {selectedClassId !== 'all' && classGoals.length > 0 && (
+                    <LearningGoalChart goals={classGoals} />
+                )}
 
                 {summaries.length === 0 ? (
                     <div className="empty-state">
