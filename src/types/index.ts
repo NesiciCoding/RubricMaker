@@ -5,6 +5,7 @@ export interface SubItem {
     id: string;
     label: string;   // e.g. "Uses correct terminology"
     points: number;  // points earned when this sub-item is checked
+    linkedStandards?: LinkedStandard[];
 }
 
 export interface RubricLevel {
@@ -32,7 +33,9 @@ export interface RubricCriterion {
     description: string;    // optional sub-description shown under title
     weight: number;         // 0–100, relative weight for weighted scoring
     levels: RubricLevel[];  // ordered left (best) to right (worst), or vice-versa
+    /** @deprecated Use linkedStandards instead */
     linkedStandard?: LinkedStandard;
+    linkedStandards?: LinkedStandard[];
 }
 
 export type GradeScaleType = 'letter' | 'percentage' | 'points' | 'pass-fail' | 'custom';
@@ -93,6 +96,7 @@ export interface RubricFormat {
     fontFamily: string;
     showWeights: boolean;
     showPoints: boolean;
+    showCalculatedGrade: boolean;
     levelOrder: 'best-first' | 'worst-first';
     headerTextAlign: 'left' | 'center' | 'right';
     showBorders: boolean;
@@ -109,6 +113,7 @@ export const DEFAULT_FORMAT: RubricFormat = {
     fontFamily: 'Inter, system-ui, sans-serif',
     showWeights: true,
     showPoints: true,
+    showCalculatedGrade: true,
     levelOrder: 'best-first',
     headerTextAlign: 'center',
     showBorders: true,

@@ -2,10 +2,12 @@ import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Users, FileText, Plus, ArrowRight, TrendingUp } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
 import { calcGradeSummary } from '../utils/gradeCalc';
 
 export default function Dashboard() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const { rubrics, students, studentRubrics, gradeScales, settings } = useApp();
 
@@ -29,9 +31,9 @@ export default function Dashboard() {
 
     return (
         <>
-            <Topbar title="Dashboard" actions={
+            <Topbar title={t('dashboard.title')} actions={
                 <button className="btn btn-primary btn-sm" onClick={() => navigate('/rubrics/new')}>
-                    <Plus size={15} /> New Rubric
+                    <Plus size={15} /> {t('dashboard.new_rubric')}
                 </button>
             } />
             <div className="page-content fade-in">
@@ -44,7 +46,7 @@ export default function Dashboard() {
                             </div>
                             <div>
                                 <div style={{ fontSize: '1.8rem', fontWeight: 700 }}>{rubrics.length}</div>
-                                <div className="text-muted text-sm">Rubrics</div>
+                                <div className="text-muted text-sm">{t('dashboard.rubrics')}</div>
                             </div>
                         </div>
                     </div>
@@ -55,7 +57,7 @@ export default function Dashboard() {
                             </div>
                             <div>
                                 <div style={{ fontSize: '1.8rem', fontWeight: 700 }}>{students.length}</div>
-                                <div className="text-muted text-sm">Students</div>
+                                <div className="text-muted text-sm">{t('dashboard.students')}</div>
                             </div>
                         </div>
                     </div>
@@ -66,7 +68,7 @@ export default function Dashboard() {
                             </div>
                             <div>
                                 <div style={{ fontSize: '1.8rem', fontWeight: 700 }}>{completedCount}</div>
-                                <div className="text-muted text-sm">Grades Submitted</div>
+                                <div className="text-muted text-sm">{t('dashboard.grades_submitted')}</div>
                             </div>
                         </div>
                     </div>
@@ -76,17 +78,17 @@ export default function Dashboard() {
                     {/* Recent Rubrics */}
                     <div className="card">
                         <div className="card-header">
-                            <h3>Recent Rubrics</h3>
+                            <h3>{t('dashboard.recent_rubrics')}</h3>
                             <button className="btn btn-ghost btn-sm" onClick={() => navigate('/rubrics')}>
-                                View all <ArrowRight size={14} />
+                                {t('dashboard.view_all')} <ArrowRight size={14} />
                             </button>
                         </div>
                         {recentRubrics.length === 0 ? (
                             <div className="empty-state">
                                 <BookOpen size={32} />
-                                <p>No rubrics yet.</p>
+                                <p>{t('dashboard.no_rubrics')}</p>
                                 <button className="btn btn-primary btn-sm" onClick={() => navigate('/rubrics/new')}>
-                                    <Plus size={14} /> Create first rubric
+                                    <Plus size={14} /> {t('dashboard.create_first')}
                                 </button>
                             </div>
                         ) : (
@@ -101,10 +103,10 @@ export default function Dashboard() {
                                         >
                                             <div>
                                                 <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>{r.name}</div>
-                                                <div className="text-muted text-xs">{r.subject || 'No subject'} · {r.criteria.length} criteria</div>
+                                                <div className="text-muted text-xs">{r.subject || t('dashboard.no_subject')} · {r.criteria.length} {t('dashboard.criteria')}</div>
                                             </div>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                <span className="badge badge-blue">{graded} graded</span>
+                                                <span className="badge badge-blue">{graded} {t('dashboard.graded')}</span>
                                                 <ArrowRight size={15} style={{ color: 'var(--text-dim)' }} />
                                             </div>
                                         </div>
@@ -116,13 +118,13 @@ export default function Dashboard() {
 
                     {/* Quick actions */}
                     <div className="card">
-                        <h3 style={{ marginBottom: 16 }}>Quick Actions</h3>
+                        <h3 style={{ marginBottom: 16 }}>{t('dashboard.quick_actions')}</h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                             {[
-                                { label: 'Create New Rubric', icon: BookOpen, color: 'var(--accent)', path: '/rubrics/new' },
-                                { label: 'Add Student', icon: Users, color: 'var(--green)', path: '/students' },
-                                { label: 'Upload Attachment', icon: FileText, color: 'var(--purple)', path: '/attachments' },
-                                { label: 'Export to PDF', icon: FileText, color: 'var(--yellow)', path: '/export' },
+                                { label: t('dashboard.action_create_rubric'), icon: BookOpen, color: 'var(--accent)', path: '/rubrics/new' },
+                                { label: t('dashboard.action_add_student'), icon: Users, color: 'var(--green)', path: '/students' },
+                                { label: t('dashboard.action_upload_attachment'), icon: FileText, color: 'var(--purple)', path: '/attachments' },
+                                { label: t('dashboard.action_export_pdf'), icon: FileText, color: 'var(--yellow)', path: '/export' },
                             ].map(({ label, icon: Icon, color, path }) => (
                                 <button
                                     key={path}

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
+import { useTranslation, Trans } from 'react-i18next';
 import type {
     Rubric, RubricCriterion, RubricLevel, RubricFormat, SubItem,
     LinkedStandard, ScoringMode,
@@ -42,6 +43,7 @@ function newCriterion(): RubricCriterion {
 export default function RubricBuilder() {
     const navigate = useNavigate();
     const { id } = useParams();
+    const { t } = useTranslation();
     const { rubrics, addRubric, updateRubric, gradeScales, settings } = useApp();
 
     const existing = id ? rubrics.find(r => r.id === id) : undefined;
@@ -60,12 +62,14 @@ export default function RubricBuilder() {
     const [viewMode, setViewMode] = useState<'form' | 'designer'>('form');
     const [saved, setSaved] = useState(false);
     const [expandedSubItems, setExpandedSubItems] = useState<Set<string>>(new Set());
-    const [pickingStandardFor, setPickingStandardFor] = useState<string | null>(null);
+
+    type StandardTarget = { type: 'criterion'; cid: string } | { type: 'subitem'; cid: string; lid: string; sid: string };
+    const [pickingStandardFor, setPickingStandardFor] = useState<StandardTarget | null>(null);
     const [showExportMenu, setShowExportMenu] = useState(false);
 
     const getRubricData = useCallback((): Rubric => ({
         id: existing?.id ?? 'temp',
-        name: name || 'Untitled Rubric',
+        name: name || t('rubricBuilder.placeholder_name').replace('...', ''),
         subject, description, criteria, gradeScaleId, format,
         scoringMode, totalMaxPoints,
         attachmentIds: existing?.attachmentIds ?? [],
@@ -94,7 +98,7 @@ export default function RubricBuilder() {
 
     const handleSave = useCallback(() => {
         const rubricData = {
-            name: name || 'Untitled Rubric',
+            name: name || t('rubricBuilder.placeholder_name').replace('...', ''),
             subject, description, criteria, gradeScaleId, format,
             scoringMode, totalMaxPoints,
             attachmentIds: existing?.attachmentIds ?? [],
@@ -187,10 +191,59 @@ export default function RubricBuilder() {
     }
 
     // ── Standards linking ───────────────────────────────────────────────────────
-    function linkStandard(cid: string, std: LinkedStandard) {
-        updateCriterion(cid, { linkedStandard: std });
+    function linkStandard(target: StandardTarget, std: LinkedStandard) {
+        if (target.type === 'criterion') {
+            setCriteria(c => c.map(x => x.id === target.cid
+                ? { ...x, linkedStandards: [...(x.linkedStandards || []), std] }
+                : x
+            ));
+        } else if (target.type === 'subitem') {
+            setCriteria(c => c.map(x => x.id === target.cid
+                ? {
+                    ...x, levels: x.levels.map(l => l.id === target.lid
+                        ? {
+                            ...l, subItems: l.subItems.map(s => s.id === target.sid
+                                ? { ...s, linkedStandards: [...(s.linkedStandards || []), std] }
+                                : s
+                            )
+                        }
+                        : l
+                    )
+                }
+                : x
+            ));
+        }
     }
-    function unlinkStandard(cid: string) {
+    function unlinkStandard(target: StandardTarget, stdIndex: number) {
+        if (target.type === 'criterion') {
+            setCriteria(c => c.map(x => {
+                if (x.id !== target.cid) return x;
+                const newStandards = [...(x.linkedStandards || [])];
+                newStandards.splice(stdIndex, 1);
+                return { ...x, linkedStandards: newStandards };
+            }));
+        } else if (target.type === 'subitem') {
+            setCriteria(c => c.map(x => x.id === target.cid
+                ? {
+                    ...x, levels: x.levels.map(l => l.id === target.lid
+                        ? {
+                            ...l, subItems: l.subItems.map(s => {
+                                if (s.id !== target.sid) return s;
+                                const newStandards = [...(s.linkedStandards || [])];
+                                newStandards.splice(stdIndex, 1);
+                                return { ...s, linkedStandards: newStandards };
+                            })
+                        }
+                        : l
+                    )
+                }
+                : x
+            ));
+        }
+    }
+
+    // Legacy support for removing the single linkedStandard if it exists
+    function unlinkLegacyStandard(cid: string) {
         setCriteria(c => c.map(x => {
             if (x.id !== cid) return x;
             const { linkedStandard, ...rest } = x;
@@ -201,25 +254,25 @@ export default function RubricBuilder() {
     return (
         <>
             <Topbar
-                title={id ? 'Edit Rubric' : 'New Rubric'}
+                title={id ? 'Edit Rubric' : 'New Rubric'} /* TODO: Add title to translations */
                 actions={
                     <>
                         <button className="btn btn-ghost btn-sm" onClick={() => navigate('/rubrics')}>
-                            <ArrowLeft size={15} /> Back
+                            <ArrowLeft size={15} /> {t('rubricBuilder.action_back')}
                         </button>
                         <div style={{ display: 'flex', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 8, padding: 2, marginRight: 8 }}>
-                            <button className={`btn btn-sm ${viewMode === 'form' ? 'btn-secondary' : 'btn-ghost'}`} onClick={() => setViewMode('form')} style={{ border: 'none' }}>Form</button>
-                            <button className={`btn btn-sm ${viewMode === 'designer' ? 'btn-secondary' : 'btn-ghost'}`} onClick={() => setViewMode('designer')} style={{ border: 'none' }}>Designer</button>
+                            <button className={`btn btn-sm ${viewMode === 'form' ? 'btn-secondary' : 'btn-ghost'}`} onClick={() => setViewMode('form')} style={{ border: 'none' }}>{t('rubricBuilder.action_form_view')}</button>
+                            <button className={`btn btn-sm ${viewMode === 'designer' ? 'btn-secondary' : 'btn-ghost'}`} onClick={() => setViewMode('designer')} style={{ border: 'none' }}>{t('rubricBuilder.action_designer_view')}</button>
                         </div>
                         <button className="btn btn-secondary btn-sm" onClick={() => setShowFormat(!showFormat)}>
-                            <Settings size={15} /> Format
+                            <Settings size={15} /> FORMAT
                         </button>
                         <button className="btn btn-secondary btn-sm" onClick={() => setShowPreview(!showPreview)}>
-                            <Eye size={15} /> Preview
+                            <Eye size={15} /> {t('rubricBuilder.action_preview')}
                         </button>
                         <div style={{ position: 'relative' }}>
                             <button className="btn btn-secondary btn-sm" onClick={() => setShowExportMenu(!showExportMenu)}>
-                                <FileDown size={15} /> Export
+                                <FileDown size={15} /> {t('rubricBuilder.action_export')}
                             </button>
                             {showExportMenu && (
                                 <>
@@ -230,20 +283,20 @@ export default function RubricBuilder() {
                                         display: 'flex', flexDirection: 'column', gap: 2
                                     }}>
                                         <button className="btn btn-ghost btn-sm" style={{ justifyContent: 'flex-start' }} onClick={() => handleExport('pdf')}>
-                                            <FileText size={14} /> Export PDF
+                                            <FileText size={14} /> {t('rubricBuilder.action_export_pdf')}
                                         </button>
                                         <button className="btn btn-ghost btn-sm" style={{ justifyContent: 'flex-start' }} onClick={() => handleExport('docx')}>
-                                            <FileText size={14} /> Export Word
+                                            <FileText size={14} /> {t('rubricBuilder.action_export_docx')}
                                         </button>
                                         <button className="btn btn-ghost btn-sm" style={{ justifyContent: 'flex-start' }} onClick={() => handleExport('json')}>
-                                            <FileText size={14} /> Export JSON
+                                            <FileText size={14} /> {t('rubricBuilder.action_download_json')}
                                         </button>
                                     </div>
                                 </>
                             )}
                         </div>
                         <button className="btn btn-primary btn-sm" onClick={handleSave}>
-                            <Save size={15} /> {saved ? 'Saved!' : 'Save'}
+                            <Save size={15} /> {saved ? t('rubricBuilder.action_saved') : t('rubricBuilder.action_save')}
                         </button>
                     </>
                 }
@@ -257,16 +310,16 @@ export default function RubricBuilder() {
                             <div className="grid-2" style={{ gap: 12 }}>
                                 <div className="form-group">
                                     <label>Rubric Name *</label>
-                                    <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Essay Rubric" />
+                                    <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder={t('rubricBuilder.placeholder_name')} />
                                 </div>
                                 <div className="form-group">
                                     <label>Subject</label>
-                                    <input type="text" value={subject} onChange={e => setSubject(e.target.value)} placeholder="e.g. English Literature" />
+                                    <input type="text" value={subject} onChange={e => setSubject(e.target.value)} placeholder={t('rubricBuilder.placeholder_subject')} />
                                 </div>
                             </div>
                             <div className="form-group" style={{ marginTop: 12 }}>
                                 <label>Description</label>
-                                <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Brief description…" rows={2} />
+                                <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder={t('rubricBuilder.placeholder_description')} rows={2} />
                             </div>
                             <div className="grid-2" style={{ gap: 12, marginTop: 12 }}>
                                 <div className="form-group">
@@ -279,18 +332,18 @@ export default function RubricBuilder() {
 
                             {/* ── Scoring mode ── */}
                             <div style={{ background: 'var(--bg-elevated)', borderRadius: 10, padding: 16, marginTop: 16, border: '1px solid var(--border)' }}>
-                                <h4 style={{ margin: '0 0 12px', fontSize: '0.9rem', color: 'var(--text)' }}>Scoring Mode</h4>
+                                <h4 style={{ margin: '0 0 12px', fontSize: '0.9rem', color: 'var(--text)' }}>{t('rubricBuilder.label_scoring_mode')}</h4>
                                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                                     {(['weighted-percentage', 'total-points'] as ScoringMode[]).map(mode => (
                                         <label key={mode} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', textTransform: 'none', letterSpacing: 0, fontWeight: scoringMode === mode ? 600 : 400 }}>
                                             <input type="radio" name="scoringMode" value={mode} checked={scoringMode === mode} onChange={() => setScoringMode(mode)} />
-                                            {mode === 'weighted-percentage' ? 'Weighted Percentage (auto)' : 'Fixed Total Points'}
+                                            {mode === 'weighted-percentage' ? t('rubricBuilder.mode_weighted') : t('rubricBuilder.mode_total_points')}
                                         </label>
                                     ))}
                                 </div>
                                 {scoringMode === 'total-points' && (
                                     <div className="form-group" style={{ marginTop: 12, maxWidth: 200 }}>
-                                        <label>Total Max Points</label>
+                                        <label>{t('rubricBuilder.label_total_max_points')}</label>
                                         <input type="number" min={1} value={totalMaxPoints}
                                             onChange={e => setTotalMaxPoints(Number(e.target.value))}
                                             placeholder="e.g. 100" />
@@ -304,9 +357,9 @@ export default function RubricBuilder() {
 
                         {/* Criteria */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-                            <h2>Criteria</h2>
+                            <h2>{t('rubricBuilder.label_criterion')}</h2>
                             <button className="btn btn-primary btn-sm" onClick={() => setCriteria(c => [...c, newCriterion()])}>
-                                <Plus size={15} /> Add Criterion
+                                <Plus size={15} /> {t('rubricBuilder.action_add_first_criterion').replace('First ', '')}
                             </button>
                         </div>
 
@@ -322,19 +375,19 @@ export default function RubricBuilder() {
                                     <div style={{ flex: 1 }}>
                                         <div className="grid-2" style={{ gap: 10, gridTemplateColumns: '1fr 1fr auto' }}>
                                             <div className="form-group">
-                                                <label>Criterion Title</label>
+                                                <label>{t('rubricBuilder.label_criterion')}</label>
                                                 <input type="text" value={criterion.title}
                                                     onChange={e => updateCriterion(criterion.id, { title: e.target.value })}
-                                                    placeholder="e.g. Content Quality" />
+                                                    placeholder={t('rubricBuilder.placeholder_criterion_name')} />
                                             </div>
                                             <div className="form-group">
-                                                <label>Description (optional)</label>
+                                                <label>{t('rubricBuilder.placeholder_criterion_description')}</label>
                                                 <input type="text" value={criterion.description}
                                                     onChange={e => updateCriterion(criterion.id, { description: e.target.value })}
-                                                    placeholder="Additional details…" />
+                                                    placeholder={t('rubricBuilder.placeholder_description')} />
                                             </div>
                                             <div className="form-group">
-                                                <label>Weight %</label>
+                                                <label>{t('rubricBuilder.label_weight')}</label>
                                                 <input type="number" value={criterion.weight} min={0} max={100}
                                                     onChange={e => updateCriterion(criterion.id, { weight: Number(e.target.value) })}
                                                     style={{ width: 70 }} />
@@ -343,8 +396,23 @@ export default function RubricBuilder() {
 
                                         {/* Standard link */}
                                         <div style={{ marginTop: 8 }}>
-                                            {criterion.linkedStandard ? (
-                                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'var(--accent-soft)', border: '1px solid var(--accent)', borderRadius: 8, padding: '6px 12px', fontSize: '0.8rem' }}>
+                                            {(criterion.linkedStandards || []).map((std, idx) => (
+                                                <div key={std.guid + idx} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'var(--accent-soft)', border: '1px solid var(--accent)', borderRadius: 8, padding: '6px 12px', fontSize: '0.8rem', marginRight: 8, marginBottom: 8 }}>
+                                                    <BookOpen size={13} style={{ color: 'var(--accent)' }} />
+                                                    <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
+                                                        {std.statementNotation ?? std.guid}
+                                                    </span>
+                                                    <span style={{ color: 'var(--text)', maxWidth: 320, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                        {std.description}
+                                                    </span>
+                                                    <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--text-muted)', padding: 2 }}
+                                                        onClick={() => unlinkStandard({ type: 'criterion', cid: criterion.id }, idx)}>
+                                                        <X size={12} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                            {criterion.linkedStandard && (
+                                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'var(--accent-soft)', border: '1px solid var(--accent)', borderRadius: 8, padding: '6px 12px', fontSize: '0.8rem', marginRight: 8, marginBottom: 8 }}>
                                                     <BookOpen size={13} style={{ color: 'var(--accent)' }} />
                                                     <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
                                                         {criterion.linkedStandard.statementNotation ?? criterion.linkedStandard.guid}
@@ -353,16 +421,15 @@ export default function RubricBuilder() {
                                                         {criterion.linkedStandard.description}
                                                     </span>
                                                     <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--text-muted)', padding: 2 }}
-                                                        onClick={() => unlinkStandard(criterion.id)}>
+                                                        onClick={() => unlinkLegacyStandard(criterion.id)}>
                                                         <X size={12} />
                                                     </button>
                                                 </div>
-                                            ) : (
-                                                <button className="btn btn-ghost btn-sm" style={{ color: 'var(--accent)' }}
-                                                    onClick={() => setPickingStandardFor(criterion.id)}>
-                                                    <Link2 size={13} /> Link Standard
-                                                </button>
                                             )}
+                                            <button className="btn btn-ghost btn-sm" style={{ color: 'var(--accent)', marginTop: 4 }}
+                                                onClick={() => setPickingStandardFor({ type: 'criterion', cid: criterion.id })}>
+                                                <Link2 size={13} /> {t('rubricBuilder.action_link_standard')}
+                                            </button>
                                         </div>
                                     </div>
                                     <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--red)', marginTop: 20 }}
@@ -386,7 +453,7 @@ export default function RubricBuilder() {
                                                     <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
                                                         <input type="text" value={level.label}
                                                             onChange={e => updateLevel(criterion.id, level.id, { label: e.target.value })}
-                                                            style={{ flex: 1, fontWeight: 600 }} placeholder="Level name" />
+                                                            style={{ flex: 1, fontWeight: 600 }} placeholder={t('rubricBuilder.placeholder_level_name')} />
                                                         {criterion.levels.length > 1 && (
                                                             <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--red)' }}
                                                                 onClick={() => deleteLevel(criterion.id, level.id)}>
@@ -398,13 +465,13 @@ export default function RubricBuilder() {
                                                     {/* Min/Max points */}
                                                     <div style={{ display: 'flex', gap: 6, marginBottom: 8, alignItems: 'center' }}>
                                                         <div style={{ flex: 1 }}>
-                                                            <div className="text-xs text-muted" style={{ marginBottom: 2 }}>Min pts</div>
+                                                            <div className="text-xs text-muted" style={{ marginBottom: 2 }}>{t('rubricBuilder.label_min_pts')}</div>
                                                             <input type="number" value={level.minPoints} min={0}
                                                                 onChange={e => updateLevel(criterion.id, level.id, { minPoints: Number(e.target.value) })} />
                                                         </div>
                                                         <span style={{ color: 'var(--text-muted)', paddingTop: 16 }}>–</span>
                                                         <div style={{ flex: 1 }}>
-                                                            <div className="text-xs text-muted" style={{ marginBottom: 2 }}>Max pts</div>
+                                                            <div className="text-xs text-muted" style={{ marginBottom: 2 }}>{t('rubricBuilder.label_max_pts')}</div>
                                                             <input type="number" value={level.maxPoints} min={0}
                                                                 onChange={e => updateLevel(criterion.id, level.id, { maxPoints: Number(e.target.value) })} />
                                                         </div>
@@ -413,7 +480,7 @@ export default function RubricBuilder() {
                                                     {/* Description */}
                                                     <textarea value={level.description}
                                                         onChange={e => updateLevel(criterion.id, level.id, { description: e.target.value })}
-                                                        placeholder="Describe this level…"
+                                                        placeholder={t('rubricBuilder.placeholder_level_description')}
                                                         rows={3}
                                                         style={{ fontSize: '0.8rem', width: '100%', marginBottom: 8 }} />
 
@@ -421,7 +488,7 @@ export default function RubricBuilder() {
                                                     <button className="btn btn-ghost btn-sm" style={{ width: '100%', justifyContent: 'space-between' }}
                                                         onClick={() => toggleSubItems(levelKey)}>
                                                         <span style={{ fontSize: '0.78rem' }}>
-                                                            Sub-items ({level.subItems.length})
+                                                            {t('rubricBuilder.label_sub_items')} ({level.subItems.length})
                                                         </span>
                                                         <ChevronRight size={13} style={{ transform: subExpanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }} />
                                                     </button>
@@ -429,24 +496,44 @@ export default function RubricBuilder() {
                                                     {subExpanded && (
                                                         <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
                                                             {level.subItems.map(si => (
-                                                                <div key={si.id} style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                                                                    <input type="text" value={si.label}
-                                                                        onChange={e => updateSubItem(criterion.id, level.id, si.id, { label: e.target.value })}
-                                                                        placeholder="Sub-item label…"
-                                                                        style={{ flex: 1, fontSize: '0.78rem' }} />
-                                                                    <input type="number" value={si.points} min={0}
-                                                                        onChange={e => updateSubItem(criterion.id, level.id, si.id, { points: Number(e.target.value) })}
-                                                                        style={{ width: 46, fontSize: '0.78rem' }}
-                                                                        title="Points for this sub-item" />
-                                                                    <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--red)' }}
-                                                                        onClick={() => deleteSubItem(criterion.id, level.id, si.id)}>
-                                                                        <Trash2 size={11} />
-                                                                    </button>
+                                                                <div key={si.id} style={{ display: 'flex', flexDirection: 'column', gap: 4, paddingBottom: 6, borderBottom: '1px solid var(--border)' }}>
+                                                                    <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                                                                        <input type="text" value={si.label}
+                                                                            onChange={e => updateSubItem(criterion.id, level.id, si.id, { label: e.target.value })}
+                                                                            placeholder={t('rubricBuilder.placeholder_sub_item_label')}
+                                                                            style={{ flex: 1, fontSize: '0.78rem' }} />
+                                                                        <input type="number" value={si.points} min={0}
+                                                                            onChange={e => updateSubItem(criterion.id, level.id, si.id, { points: Number(e.target.value) })}
+                                                                            style={{ width: 46, fontSize: '0.78rem' }}
+                                                                            title="Points for this sub-item" />
+                                                                        <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--accent)' }}
+                                                                            onClick={() => setPickingStandardFor({ type: 'subitem', cid: criterion.id, lid: level.id, sid: si.id })}
+                                                                            title="Link standard to this sub-item">
+                                                                            <Link2 size={11} />
+                                                                        </button>
+                                                                        <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--red)' }}
+                                                                            onClick={() => deleteSubItem(criterion.id, level.id, si.id)}>
+                                                                            <Trash2 size={11} />
+                                                                        </button>
+                                                                    </div>
+                                                                    {si.linkedStandards && si.linkedStandards.length > 0 && (
+                                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                                                            {si.linkedStandards.map((std, idx) => (
+                                                                                <div key={std.guid + idx} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'var(--accent-soft)', borderRadius: 4, padding: '2px 6px', fontSize: '0.65rem' }}>
+                                                                                    <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{std.statementNotation ?? std.guid}</span>
+                                                                                    <button className="btn btn-ghost btn-icon" style={{ padding: 0, height: 'auto', minHeight: 0, color: 'var(--text-muted)' }}
+                                                                                        onClick={() => unlinkStandard({ type: 'subitem', cid: criterion.id, lid: level.id, sid: si.id }, idx)}>
+                                                                                        <X size={10} />
+                                                                                    </button>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             ))}
                                                             <button className="btn btn-ghost btn-sm" style={{ fontSize: '0.78rem' }}
                                                                 onClick={() => addSubItem(criterion.id, level.id)}>
-                                                                <Plus size={12} /> Add Sub-item
+                                                                <Plus size={12} /> {t('rubricBuilder.action_add_sub_item')}
                                                             </button>
                                                         </div>
                                                     )}
@@ -455,7 +542,7 @@ export default function RubricBuilder() {
                                         })}
                                         <div style={{ width: 210, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                             <button className="btn btn-ghost btn-sm" onClick={() => addLevel(criterion.id)}>
-                                                <Plus size={14} /> Add Level
+                                                <Plus size={14} /> {t('rubricBuilder.action_add_level')}
                                             </button>
                                         </div>
                                     </div>
@@ -465,9 +552,9 @@ export default function RubricBuilder() {
 
                         {criteria.length === 0 && (
                             <div className="empty-state">
-                                <p>No criteria added yet.</p>
+                                <p>{t('rubricBuilder.empty_state_criteria')}</p>
                                 <button className="btn btn-primary" onClick={() => setCriteria([newCriterion()])}>
-                                    <Plus size={16} /> Add First Criterion
+                                    <Plus size={16} /> {t('rubricBuilder.action_add_first_criterion')}
                                 </button>
                             </div>
                         )}
@@ -496,12 +583,12 @@ export default function RubricBuilder() {
                     {/* Format Panel */}
                     {showFormat && (
                         <div className="card" style={{ height: 'fit-content', position: 'sticky', top: 0 }}>
-                            <h3 style={{ marginBottom: 16 }}>Formatting</h3>
+                            <h3 style={{ marginBottom: 16 }}>{t('rubricBuilder.format_title')}</h3>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                                 {[
-                                    { label: 'Criterion Col Width (px)', key: 'criterionColWidth', min: 120, max: 400 },
-                                    { label: 'Level Col Width (px)', key: 'levelColWidth', min: 100, max: 400 },
-                                    { label: 'Font Size (px)', key: 'fontSize', min: 10, max: 20 },
+                                    { label: t('rubricBuilder.format_criterion_width'), key: 'criterionColWidth', min: 120, max: 400 },
+                                    { label: t('rubricBuilder.format_level_width'), key: 'levelColWidth', min: 100, max: 400 },
+                                    { label: t('rubricBuilder.format_font_size'), key: 'fontSize', min: 10, max: 20 },
                                 ].map(({ label, key, min, max }) => (
                                     <div className="form-group" key={key}>
                                         <label>{label}</label>
@@ -510,9 +597,9 @@ export default function RubricBuilder() {
                                     </div>
                                 ))}
                                 {[
-                                    { label: 'Header Background', key: 'headerColor' },
-                                    { label: 'Header Text Color', key: 'headerTextColor' },
-                                    { label: 'Accent / Selected Color', key: 'accentColor' },
+                                    { label: t('rubricBuilder.format_header_bg'), key: 'headerColor' },
+                                    { label: t('rubricBuilder.format_header_text'), key: 'headerTextColor' },
+                                    { label: t('rubricBuilder.format_accent_color'), key: 'accentColor' },
                                 ].map(({ label, key }) => (
                                     <div className="form-group" key={key}>
                                         <label>{label}</label>
@@ -527,7 +614,7 @@ export default function RubricBuilder() {
                                     </div>
                                 ))}
                                 <div className="form-group">
-                                    <label>Font Family</label>
+                                    <label>{t('rubricBuilder.format_font_family')}</label>
                                     <select value={format.fontFamily} onChange={e => setFormat(f => ({ ...f, fontFamily: e.target.value }))}>
                                         <option value="Inter, system-ui, sans-serif">Sans Serif (Inter)</option>
                                         <option value="Arial, Helvetica, sans-serif">Arial</option>
@@ -537,16 +624,16 @@ export default function RubricBuilder() {
                                     </select>
                                 </div>
                                 <div className="form-group">
-                                    <label>Level Order</label>
+                                    <label>{t('rubricBuilder.format_level_order')}</label>
                                     <select value={format.levelOrder}
                                         onChange={e => setFormat(f => ({ ...f, levelOrder: e.target.value as 'best-first' | 'worst-first' }))}>
-                                        <option value="best-first">Best → Worst (left to right)</option>
-                                        <option value="worst-first">Worst → Best (left to right)</option>
+                                        <option value="best-first">{t('rubricBuilder.format_order_best_first')}</option>
+                                        <option value="worst-first">{t('rubricBuilder.format_order_worst_first')}</option>
                                     </select>
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 4 }}>
                                     <div className="form-group">
-                                        <label>Header Alignment</label>
+                                        <label>{t('rubricBuilder.format_header_align')}</label>
                                         <div style={{ display: 'flex', gap: 4 }}>
                                             {(['left', 'center', 'right'] as const).map(align => (
                                                 <button key={align}
@@ -559,10 +646,11 @@ export default function RubricBuilder() {
                                         </div>
                                     </div>
                                     {[
-                                        { label: 'Show criterion weights', key: 'showWeights' as keyof RubricFormat },
-                                        { label: 'Show point values', key: 'showPoints' as keyof RubricFormat },
-                                        { label: 'Show borders / grid lines', key: 'showBorders' as keyof RubricFormat, icon: <LayoutGrid size={14} /> },
-                                        { label: 'Alternate row colors (striping)', key: 'rowStriping' as keyof RubricFormat, icon: <Rows3 size={14} /> },
+                                        { label: t('rubricBuilder.format_show_weights'), key: 'showWeights' as keyof RubricFormat },
+                                        { label: t('rubricBuilder.format_show_points'), key: 'showPoints' as keyof RubricFormat },
+                                        { label: t('rubricBuilder.format_calculate_grade'), key: 'showCalculatedGrade' as keyof RubricFormat },
+                                        { label: t('rubricBuilder.format_show_borders'), key: 'showBorders' as keyof RubricFormat, icon: <LayoutGrid size={14} /> },
+                                        { label: t('rubricBuilder.format_alternate_rows'), key: 'rowStriping' as keyof RubricFormat, icon: <Rows3 size={14} /> },
                                     ].map(({ label, key, icon }) => (
                                         <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', textTransform: 'none', letterSpacing: 0, paddingLeft: 2 }}>
                                             <div style={{ color: format[key] ? 'var(--accent)' : 'var(--text-muted)' }} onClick={() => setFormat(f => ({ ...f, [key]: !f[key] }))}>
@@ -574,7 +662,7 @@ export default function RubricBuilder() {
                                     ))}
                                 </div>
                                 <button className="btn btn-secondary btn-sm" onClick={() => setFormat(DEFAULT_FORMAT)}>
-                                    Reset to Defaults
+                                    {t('rubricBuilder.format_reset_defaults')}
                                 </button>
                             </div>
                         </div>
@@ -587,10 +675,10 @@ export default function RubricBuilder() {
                         <div style={{ background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', padding: 24, maxWidth: '90vw', maxHeight: '90vh', overflow: 'auto' }}
                             onClick={e => e.stopPropagation()}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                                <h3>Rubric Preview</h3>
-                                <button className="btn btn-ghost btn-sm" onClick={() => setShowPreview(false)}>✕ Close</button>
+                                <h3>{t('rubricBuilder.preview_title')}</h3>
+                                <button className="btn btn-ghost btn-sm" onClick={() => setShowPreview(false)}>✕ {t('rubricBuilder.action_close')}</button>
                             </div>
-                            <RubricPreviewTable name={name || 'Untitled'} criteria={criteria} format={format} />
+                            <RubricPreviewTable name={name || t('rubricBuilder.placeholder_name').replace('...', '')} criteria={criteria} format={format} />
                         </div>
                     </div>
                 )}
@@ -606,11 +694,11 @@ export default function RubricBuilder() {
                     <div className="modal-overlay" onClick={() => setPickingStandardFor(null)}>
                         <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 460 }}>
                             <div className="modal-header">
-                                <h3><BookOpen size={16} /> Standards Integration</h3>
+                                <h3><BookOpen size={16} /> {t('rubricBuilder.standards_modal_title')}</h3>
                                 <button className="btn btn-ghost btn-icon" onClick={() => setPickingStandardFor(null)}>✕</button>
                             </div>
                             <div className="modal-body">
-                                <p style={{ marginBottom: 12 }}>To link academic standards you need a <strong>Common Standards Project API key</strong>.</p>
+                                <p style={{ marginBottom: 12 }}><Trans i18nKey="rubricBuilder.standards_modal_desc">To link academic standards you need a <strong>Common Standards Project API key</strong>.</Trans></p>
                                 <ol style={{ paddingLeft: 20, lineHeight: 2, fontSize: '0.9rem' }}>
                                     <li>Register at <a href="https://commonstandardsproject.com" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>commonstandardsproject.com</a></li>
                                     <li>Copy your API key from the developer dashboard</li>
@@ -619,9 +707,9 @@ export default function RubricBuilder() {
                                 </ol>
                             </div>
                             <div className="modal-footer">
-                                <button className="btn btn-secondary" onClick={() => setPickingStandardFor(null)}>Close</button>
+                                <button className="btn btn-secondary" onClick={() => setPickingStandardFor(null)}>{t('rubricBuilder.action_close')}</button>
                                 <button className="btn btn-primary" onClick={() => { setPickingStandardFor(null); navigate('/settings'); }}>
-                                    Open Settings
+                                    {t('rubricBuilder.action_open_settings')}
                                 </button>
                             </div>
                         </div>
@@ -633,11 +721,11 @@ export default function RubricBuilder() {
                     <div className="modal-overlay" onClick={() => setShowMarkdownHint(false)}>
                         <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 400 }}>
                             <div className="modal-header">
-                                <h3>Markdown Formatting</h3>
+                                <h3>{t('rubricBuilder.md_modal_title')}</h3>
                                 <button className="btn btn-ghost btn-icon" onClick={() => setShowMarkdownHint(false)}>✕</button>
                             </div>
                             <div className="modal-body">
-                                <p style={{ marginBottom: 16 }}>You can use simple Markdown tags to format text in descriptions:</p>
+                                <p style={{ marginBottom: 16 }}>{t('rubricBuilder.md_modal_desc')}</p>
                                 <ul style={{ paddingLeft: 20, lineHeight: 2 }}>
                                     <li><code>**bold**</code> for <strong>bold text</strong></li>
                                     <li><code>*italic*</code> for <em>italic text</em></li>
@@ -647,7 +735,7 @@ export default function RubricBuilder() {
                                 </p>
                             </div>
                             <div className="modal-footer">
-                                <button className="btn btn-primary" onClick={() => setShowMarkdownHint(false)}>Got it</button>
+                                <button className="btn btn-primary" onClick={() => setShowMarkdownHint(false)}>{t('rubricBuilder.action_got_it')}</button>
                             </div>
                         </div>
                     </div>
@@ -658,6 +746,7 @@ export default function RubricBuilder() {
 }
 
 function RubricPreviewTable({ name, criteria, format }: { name: string; criteria: RubricCriterion[]; format: RubricFormat }) {
+    const { t } = useTranslation();
     const headers = criteria[0]?.levels ?? [];
     return (
         <div style={{ fontFamily: format.fontFamily, fontSize: format.fontSize }}>
@@ -665,14 +754,14 @@ function RubricPreviewTable({ name, criteria, format }: { name: string; criteria
             <table className="rubric-grid" style={{ tableLayout: 'fixed' }}>
                 <thead>
                     <tr style={{ background: format.headerColor, color: format.headerTextColor }}>
-                        <th style={{ width: format.criterionColWidth, textAlign: 'left', border: format.showBorders ? '1px solid var(--border)' : 'none', padding: 8 }}>Criterion</th>
+                        <th style={{ width: format.criterionColWidth, textAlign: 'left', border: format.showBorders ? '1px solid var(--border)' : 'none', padding: 8 }}>{t('rubricBuilder.label_criterion')}</th>
                         {headers.map(h => (
                             <th key={h.id} style={{ width: format.levelColWidth, textAlign: format.headerTextAlign, border: format.showBorders ? '1px solid var(--border)' : 'none', padding: 8 }}>
                                 {h.label}
                                 {format.showPoints ? ` (${h.minPoints}${h.minPoints !== h.maxPoints ? `–${h.maxPoints}` : ''}pts)` : ''}
                             </th>
                         ))}
-                        {format.showWeights && <th style={{ width: 80, border: format.showBorders ? '1px solid var(--border)' : 'none', padding: 8 }}>Weight</th>}
+                        {format.showWeights && <th style={{ width: 80, border: format.showBorders ? '1px solid var(--border)' : 'none', padding: 8 }}>{t('rubricBuilder.label_weight_th')}</th>}
                     </tr>
                 </thead>
                 <tbody>
@@ -686,13 +775,27 @@ function RubricPreviewTable({ name, criteria, format }: { name: string; criteria
                                         📌 {c.linkedStandard.statementNotation ?? c.linkedStandard.guid}
                                     </div>
                                 )}
+                                {(c.linkedStandards || []).map((std, idx) => (
+                                    <div key={idx} style={{ marginTop: 6, fontSize: '0.75em', color: 'var(--accent)' }}>
+                                        📌 {std.statementNotation ?? std.guid}
+                                    </div>
+                                ))}
                             </td>
                             {c.levels.map(l => (
                                 <td key={l.id} className="level-cell" style={{ border: format.showBorders ? '1px solid var(--border)' : 'none', padding: 8 }}>
                                     {l.description || <span style={{ color: 'var(--text-dim)' }}>—</span>}
                                     {l.subItems.length > 0 && (
                                         <ul style={{ margin: '6px 0 0', padding: '0 0 0 14px', fontSize: '0.85em', color: 'var(--text-muted)' }}>
-                                            {l.subItems.map(si => <li key={si.id}>{si.label} ({si.points}pts)</li>)}
+                                            {l.subItems.map(si => (
+                                                <li key={si.id}>
+                                                    {si.label} ({si.points}pts)
+                                                    {si.linkedStandards && si.linkedStandards.length > 0 && (
+                                                        <div style={{ fontSize: '0.85em', color: 'var(--accent)', marginTop: 2 }}>
+                                                            {si.linkedStandards.map(std => `[${std.statementNotation ?? std.guid}]`).join(' ')}
+                                                        </div>
+                                                    )}
+                                                </li>
+                                            ))}
                                         </ul>
                                     )}
                                 </td>
@@ -724,7 +827,8 @@ interface WYSIWYGProps {
 
 // Very basic Markdown parser
 function MarkdownRender({ text, style, className, onClick }: { text: string; style?: React.CSSProperties; className?: string; onClick?: () => void }) {
-    if (!text) return <div style={style} className={className} onClick={onClick}><span style={{ opacity: 0.5 }}>Click to edit...</span></div>;
+    const { t } = useTranslation();
+    if (!text) return <div style={style} className={className} onClick={onClick}><span style={{ opacity: 0.5 }}>{t('rubricBuilder.placeholder_click_to_edit')}</span></div>;
 
     // Very naive markdown parsing for bold and italics
     const parts = text.split(/(\*\*.*?\*\*|\*.*?\*)/g);
@@ -753,6 +857,7 @@ const RUBRIC_BANK = [
 ];
 
 function RubricWysiwygEditor({ name, setName, criteria, format, updateCriterion, updateLevel, addCriterion, addCriterionLevel, criteriaSetter, scoringMode, totalMaxPoints, onShowMarkdownHint }: WYSIWYGProps) {
+    const { t } = useTranslation();
     const headers = criteria[0]?.levels ?? [];
     const [editingCell, setEditingCell] = useState<string | null>(null);
 
@@ -869,16 +974,16 @@ function RubricWysiwygEditor({ name, setName, criteria, format, updateCriterion,
         <div style={{ fontFamily: format.fontFamily, fontSize: format.fontSize, background: 'var(--bg-card)', padding: 24, borderRadius: 12, border: '1px solid var(--border)', minHeight: 400 }}>
             {/* Toolbar */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 16 }}>
-                <button className="btn btn-ghost btn-sm" onClick={onShowMarkdownHint} title="How to format text" style={{ marginRight: 'auto', color: 'var(--text-muted)' }}>
-                    <BookOpen size={13} style={{ marginRight: 4 }} /> Formatting Help
+                <button className="btn btn-ghost btn-sm" onClick={onShowMarkdownHint} title={t('rubricBuilder.action_formatting_help')} style={{ marginRight: 'auto', color: 'var(--text-muted)' }}>
+                    <BookOpen size={13} style={{ marginRight: 4 }} /> {t('rubricBuilder.action_formatting_help')}
                 </button>
-                <button className="btn btn-secondary btn-sm" onClick={smartAllocatePoints} title="Linearly distribute points across levels">
-                    <Wand2 size={13} /> Smart Allocate Points
-                    {scoringMode === 'total-points' && <span style={{ opacity: 0.5, fontSize: '0.9em' }}>({totalMaxPoints} max)</span>}
+                <button className="btn btn-secondary btn-sm" onClick={smartAllocatePoints} title={t('rubricBuilder.action_smart_allocate')}>
+                    <Wand2 size={13} /> {t('rubricBuilder.action_smart_allocate')}
+                    {scoringMode === 'total-points' && <span style={{ opacity: 0.5, fontSize: '0.9em' }}>({totalMaxPoints} {t('rubricBuilder.label_max')})</span>}
                 </button>
                 {format.showWeights && (
-                    <button className="btn btn-secondary btn-sm" onClick={balanceWeights} title="Evenly distribute 100% across rows">
-                        <Wand2 size={13} /> Balance Weights
+                    <button className="btn btn-secondary btn-sm" onClick={balanceWeights} title={t('rubricBuilder.action_balance_weights')}>
+                        <Wand2 size={13} /> {t('rubricBuilder.action_balance_weights')}
                     </button>
                 )}
             </div>
@@ -887,7 +992,7 @@ function RubricWysiwygEditor({ name, setName, criteria, format, updateCriterion,
                 value={name}
                 onChange={e => setName(e.target.value)}
                 onInput={handleInput}
-                placeholder="Rubric Title..."
+                placeholder={t('rubricBuilder.placeholder_name')}
                 style={{ ...textareaStyle, fontSize: '1.8em', fontWeight: 700, marginBottom: 16, width: '100%' }}
                 className="hover-border"
             />
@@ -895,7 +1000,7 @@ function RubricWysiwygEditor({ name, setName, criteria, format, updateCriterion,
                 <thead>
                     <tr style={{ background: format.headerColor, color: format.headerTextColor }}>
                         <th style={{ width: format.criterionColWidth, textAlign: 'left', border: format.showBorders ? '1px solid var(--border)' : 'none' }}>
-                            <div style={{ padding: '12px 14px' }}>Criterion</div>
+                            <div style={{ padding: '12px 14px' }}>{t('rubricBuilder.label_criterion')}</div>
                         </th>
                         {headers.map((h, i) => (
                             <th key={h.id} style={{ width: format.levelColWidth, border: format.showBorders ? '1px solid var(--border)' : 'none', position: 'relative' }} className="designer-th">
@@ -911,7 +1016,7 @@ function RubricWysiwygEditor({ name, setName, criteria, format, updateCriterion,
                                             criteria.forEach(c => updateLevel(c.id, c.levels[i].id, { label: e.target.value }));
                                         }}
                                         onInput={handleInput}
-                                        placeholder="Level..."
+                                        placeholder={t('rubricBuilder.placeholder_level_name')}
                                         style={{ ...textareaStyle, textAlign: 'center', fontWeight: 'bold' }}
                                         className="hover-border"
                                     />
@@ -943,7 +1048,7 @@ function RubricWysiwygEditor({ name, setName, criteria, format, updateCriterion,
                                 </div>
                             </th>
                         ))}
-                        {format.showWeights && <th style={{ width: 80, textAlign: 'center', border: format.showBorders ? '1px solid var(--border)' : 'none', padding: '12px 14px' }}>Weight</th>}
+                        {format.showWeights && <th style={{ width: 80, textAlign: 'center', border: format.showBorders ? '1px solid var(--border)' : 'none', padding: '12px 14px' }}>{t('rubricBuilder.label_weight_th')}</th>}
                     </tr>
                 </thead>
                 <tbody>
@@ -959,7 +1064,7 @@ function RubricWysiwygEditor({ name, setName, criteria, format, updateCriterion,
                                         value={c.title}
                                         onChange={e => updateCriterion(c.id, { title: e.target.value })}
                                         onInput={handleInput}
-                                        placeholder="Criterion Name"
+                                        placeholder={t('rubricBuilder.placeholder_criterion_name')}
                                         style={{ ...textareaStyle, fontWeight: 600 }}
                                         className="hover-border"
                                     />
@@ -970,7 +1075,7 @@ function RubricWysiwygEditor({ name, setName, criteria, format, updateCriterion,
                                             onChange={e => updateCriterion(c.id, { description: e.target.value })}
                                             onBlur={() => setEditingCell(null)}
                                             onInput={handleInput}
-                                            placeholder="Description (optional)"
+                                            placeholder={t('rubricBuilder.placeholder_criterion_description')}
                                             style={{ ...textareaStyle, fontSize: '0.8em', color: 'var(--text-muted)', marginTop: 4, minHeight: 40 }}
                                             className="hover-border"
                                         />
@@ -987,6 +1092,11 @@ function RubricWysiwygEditor({ name, setName, criteria, format, updateCriterion,
                                             📌 {c.linkedStandard.statementNotation ?? c.linkedStandard.guid}
                                         </div>
                                     )}
+                                    {(c.linkedStandards || []).map((std, idx) => (
+                                        <div key={idx} style={{ marginTop: 6, fontSize: '0.75em', color: 'var(--accent)' }}>
+                                            📌 {std.statementNotation ?? std.guid}
+                                        </div>
+                                    ))}
                                 </div>
                             </td>
                             {c.levels.map(l => (
@@ -999,7 +1109,7 @@ function RubricWysiwygEditor({ name, setName, criteria, format, updateCriterion,
                                                 onChange={e => updateLevel(c.id, l.id, { description: e.target.value })}
                                                 onBlur={() => setEditingCell(null)}
                                                 onInput={handleInput}
-                                                placeholder="Level description..."
+                                                placeholder={t('rubricBuilder.placeholder_level_description')}
                                                 style={{ ...textareaStyle, minHeight: 60 }}
                                                 className="hover-border"
                                             />
@@ -1013,7 +1123,16 @@ function RubricWysiwygEditor({ name, setName, criteria, format, updateCriterion,
                                         )}
                                         {l.subItems.length > 0 && (
                                             <ul style={{ margin: '6px 0 0', padding: '0 0 0 14px', fontSize: '0.85em', color: 'var(--text-muted)' }}>
-                                                {l.subItems.map(si => <li key={si.id}>{si.label} ({si.points}pts)</li>)}
+                                                {l.subItems.map(si => (
+                                                    <li key={si.id}>
+                                                        {si.label} ({si.points}pts)
+                                                        {si.linkedStandards && si.linkedStandards.length > 0 && (
+                                                            <div style={{ fontSize: '0.85em', color: 'var(--accent)', marginTop: 2 }}>
+                                                                {si.linkedStandards.map(std => `[${std.statementNotation ?? std.guid}]`).join(' ')}
+                                                            </div>
+                                                        )}
+                                                    </li>
+                                                ))}
                                             </ul>
                                         )}
                                     </div>
@@ -1035,7 +1154,7 @@ function RubricWysiwygEditor({ name, setName, criteria, format, updateCriterion,
                         <td colSpan={(format.showWeights ? 2 : 1) + headers.length} style={{ padding: 12, textAlign: 'center', border: '1px dashed var(--border)', background: 'transparent' }}>
                             <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
                                 <button className="btn btn-ghost btn-sm" onClick={addCriterion}>
-                                    <Plus size={14} /> Add Row
+                                    <Plus size={14} /> {t('rubricBuilder.action_add_row')}
                                 </button>
                                 <select
                                     className="btn btn-ghost btn-sm"
@@ -1047,7 +1166,7 @@ function RubricWysiwygEditor({ name, setName, criteria, format, updateCriterion,
                                         e.target.value = ''; // reset
                                     }}
                                 >
-                                    <option value="" disabled selected>Insert from bank...</option>
+                                    <option value="" disabled selected>{t('rubricBuilder.action_insert_from_bank')}</option>
                                     {RUBRIC_BANK.map(item => (
                                         <option key={item.title} value={item.title}>{item.title}</option>
                                     ))}
@@ -1060,7 +1179,7 @@ function RubricWysiwygEditor({ name, setName, criteria, format, updateCriterion,
 
             <div style={{ display: 'flex', justifyContent: 'center', marginTop: 12 }}>
                 <button className="btn btn-ghost btn-sm" onClick={() => addCriterionLevel(criteria[0]?.id)} disabled={!criteria.length}>
-                    <Plus size={14} /> Add Column (Level)
+                    <Plus size={14} /> {t('rubricBuilder.action_add_column_level')}
                 </button>
             </div>
 

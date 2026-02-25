@@ -32,6 +32,7 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
 
     const [standards, setStandards] = useState<CspStandard[]>([]);
     const [search, setSearch] = useState('');
+    const [sortOrder, setSortOrder] = useState<'default' | 'alpha-asc' | 'alpha-desc'>('default');
 
     // Load jurisdictions on mount
     useEffect(() => {
@@ -44,6 +45,7 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
     }, [apiKey, view, step, jurisdictions.length]);
 
     async function selectJurisdiction(j: CspJurisdiction) {
+        setSearch('');
         setSelectedJurisdiction(j);
         setStep('set');
         setLoading(true);
@@ -58,6 +60,7 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
     }
 
     async function selectSet(s: CspStandardSet) {
+        setSearch('');
         setSelectedSet(s);
         setStep('standard');
         setLoading(true);
@@ -105,31 +108,69 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
         }
     }
 
-    const filteredBrowse = useMemo(() =>
-        search.trim()
-            ? standards.filter(s =>
+    const displayJurisdictions = useMemo(() => {
+        let list = jurisdictions;
+        if (search.trim()) {
+            list = list.filter(j => j.title.toLowerCase().includes(search.toLowerCase()));
+        }
+        list = [...list];
+        if (sortOrder === 'alpha-asc') list.sort((a, b) => a.title.localeCompare(b.title));
+        if (sortOrder === 'alpha-desc') list.sort((a, b) => b.title.localeCompare(a.title));
+        return list;
+    }, [jurisdictions, search, sortOrder]);
+
+    const displayStandardSets = useMemo(() => {
+        let list = standardSets;
+        if (search.trim()) {
+            list = list.filter(s =>
+                s.title.toLowerCase().includes(search.toLowerCase()) ||
+                (s.subject || '').toLowerCase().includes(search.toLowerCase())
+            );
+        }
+        list = [...list];
+        if (sortOrder === 'alpha-asc') list.sort((a, b) => a.title.localeCompare(b.title));
+        if (sortOrder === 'alpha-desc') list.sort((a, b) => b.title.localeCompare(a.title));
+        return list;
+    }, [standardSets, search, sortOrder]);
+
+    const displayStandards = useMemo(() => {
+        let list = standards;
+        if (search.trim()) {
+            list = list.filter(s =>
                 s.description.toLowerCase().includes(search.toLowerCase()) ||
                 (s.statementNotation ?? '').toLowerCase().includes(search.toLowerCase())
-            )
-            : standards,
-        [standards, search]
-    );
+            );
+        }
+        list = [...list];
+        if (sortOrder === 'alpha-asc') {
+            list.sort((a, b) => (a.statementNotation || a.description).localeCompare(b.statementNotation || b.description));
+        } else if (sortOrder === 'alpha-desc') {
+            list.sort((a, b) => (b.statementNotation || b.description).localeCompare(a.statementNotation || a.description));
+        }
+        return list;
+    }, [standards, search, sortOrder]);
 
-    const filteredFavorites = useMemo(() =>
-        search.trim()
-            ? favoriteStandards.filter(s =>
+    const displayFavorites = useMemo(() => {
+        let list = favoriteStandards;
+        if (search.trim()) {
+            list = list.filter(s =>
                 s.description.toLowerCase().includes(search.toLowerCase()) ||
                 (s.statementNotation ?? '').toLowerCase().includes(search.toLowerCase())
-            )
-            : favoriteStandards,
-        [favoriteStandards, search]
-    );
+            );
+        }
+        if (sortOrder !== 'default') {
+            list = [...list].sort((a, b) => {
+                const valA = a.statementNotation || a.description;
+                const valB = b.statementNotation || b.description;
+                return sortOrder === 'alpha-asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            });
+            return list;
+        }
 
-    const sortedFavorites = useMemo(() => {
-        if (filteredFavorites.length === 0) return [];
-        // Adapt LinkedStandard to CspStandard structure for sorting
+        if (list.length === 0) return [];
+        // Default hierarchical sort
         const map: Record<string, CspStandard> = {};
-        filteredFavorites.forEach(f => {
+        list.forEach(f => {
             map[f.guid] = {
                 id: f.guid,
                 description: f.description,
@@ -139,9 +180,9 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
             };
         });
         const sortedCsp = flattenStandards(map);
-        const favMap = new Map(filteredFavorites.map(f => [f.guid, f]));
+        const favMap = new Map(list.map(f => [f.guid, f]));
         return sortedCsp.map(s => favMap.get(s.id)!).filter(Boolean);
-    }, [filteredFavorites]);
+    }, [favoriteStandards, search, sortOrder]);
 
     // Breadcrumb step title
     const steps: { key: Step; label: string }[] = [
@@ -163,13 +204,13 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
                         <div style={{ display: 'flex', background: 'var(--bg-elevated)', borderRadius: 6, padding: 2, marginLeft: 16 }}>
                             <button
                                 className={`btn btn-sm ${view === 'browse' ? 'btn-white shadow-sm' : 'btn-ghost'}`}
-                                onClick={() => setView('browse')}
+                                onClick={() => { setView('browse'); setSearch(''); }}
                                 style={{ fontSize: '0.8rem', padding: '4px 12px' }}>
                                 Browse
                             </button>
                             <button
                                 className={`btn btn-sm ${view === 'favorites' ? 'btn-white shadow-sm' : 'btn-ghost'}`}
-                                onClick={() => setView('favorites')}
+                                onClick={() => { setView('favorites'); setSearch(''); }}
                                 style={{ fontSize: '0.8rem', padding: '4px 12px', display: 'flex', gap: 4, alignItems: 'center' }}>
                                 <Star size={12} fill={view === 'favorites' ? 'var(--yellow)' : 'none'} color={view === 'favorites' ? 'var(--yellow)' : 'currentColor'} />
                                 Favorites ({favoriteStandards.length})
@@ -190,8 +231,8 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
                                     style={{ padding: '2px 6px', fontSize: '0.8rem', opacity: i < steps.findIndex(x => x.key === step) ? 1 : 0.5 }}
                                     disabled={i >= steps.findIndex(x => x.key === step)}
                                     onClick={() => {
-                                        if (i === 0) { setStep('jurisdiction'); setSelectedSet(null); setSelectedJurisdiction(null); }
-                                        if (i === 1 && selectedJurisdiction) setStep('set');
+                                        if (i === 0) { setStep('jurisdiction'); setSelectedSet(null); setSelectedJurisdiction(null); setSearch(''); }
+                                        if (i === 1 && selectedJurisdiction) { setStep('set'); setSearch(''); }
                                     }}
                                 >
                                     {s.label}
@@ -201,18 +242,31 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
                     </div>
                 )}
 
-                {/* Search Bar (shared for favorites or standard list) */}
-                {((view === 'browse' && step === 'standard') || view === 'favorites') && (
-                    <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--border)' }}>
-                        <div style={{ position: 'relative' }}>
-                            <Search size={15} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                            <input type="text" placeholder={view === 'favorites' ? "Search favorites..." : "Search in current set..."}
-                                value={search}
-                                onChange={e => setSearch(e.target.value)}
-                                style={{ paddingLeft: 32, width: '100%' }} />
-                        </div>
+                {/* Search & Toolbar */}
+                <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 12 }}>
+                    <div style={{ position: 'relative', flex: 1 }}>
+                        <Search size={15} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                        <input type="text" placeholder={
+                            view === 'favorites' ? "Search favorites..." :
+                                step === 'jurisdiction' ? "Search jurisdictions..." :
+                                    step === 'set' ? "Search standard sets..." :
+                                        "Search standards..."
+                        }
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            style={{ paddingLeft: 32, width: '100%' }} />
                     </div>
-                )}
+                    <select
+                        value={sortOrder}
+                        onChange={e => setSortOrder(e.target.value as any)}
+                        className="btn btn-ghost"
+                        style={{ padding: '6px 12px', border: '1px solid var(--border)', appearance: 'auto', background: 'var(--bg-elevated)', fontSize: '0.85rem' }}
+                    >
+                        <option value="default">{view === 'browse' && step !== 'standard' ? 'Default Order' : 'Hierarchical'}</option>
+                        <option value="alpha-asc">Alphabetical (A-Z)</option>
+                        <option value="alpha-desc">Alphabetical (Z-A)</option>
+                    </select>
+                </div>
 
                 <div className="modal-body" style={{ flex: 1, overflowY: 'auto', padding: 0 }}>
                     {error && (
@@ -245,12 +299,12 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
                                     <p className="text-sm" style={{ marginTop: 8 }}>Star standards in the Browse tab to save them here.</p>
                                 </div>
                             )}
-                            {filteredFavorites.length === 0 && favoriteStandards.length > 0 && (
+                            {displayFavorites.length === 0 && favoriteStandards.length > 0 && (
                                 <div className="text-muted text-sm" style={{ padding: 20, textAlign: 'center' }}>No favorites match your search.</div>
                             )}
-                            {sortedFavorites.map(std => (
+                            {displayFavorites.map(std => (
                                 <div key={std.guid} className="standard-row" style={{
-                                    padding: `12px 20px 12px ${20 + (std.depth ?? 0) * 20}px`,
+                                    padding: `12px 20px 12px ${20 + (sortOrder === 'default' ? (std.depth ?? 0) * 20 : 0)}px`,
                                     borderBottom: '1px solid var(--border)',
                                     display: 'flex', gap: 12, alignItems: 'flex-start',
                                     background: 'var(--bg-card)'
@@ -289,7 +343,7 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
                             {/* Step 1: Jurisdiction */}
                             {step === 'jurisdiction' && (
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12, padding: 20 }}>
-                                    {jurisdictions.map(j => (
+                                    {displayJurisdictions.map(j => (
                                         <button key={j.id} className="card-hover"
                                             style={{
                                                 textAlign: 'left', padding: 16, border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-elevated)',
@@ -306,7 +360,7 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
                             {/* Step 2: Standard Sets */}
                             {step === 'set' && (
                                 <div style={{ display: 'flex', flexDirection: 'column', padding: '10px 0' }}>
-                                    {standardSets.map(s => (
+                                    {displayStandardSets.map(s => (
                                         <button key={s.id} className="btn btn-ghost"
                                             style={{ justifyContent: 'flex-start', textAlign: 'left', padding: '14px 20px', height: 'auto', borderBottom: '1px solid var(--border-subtle)' }}
                                             onClick={() => selectSet(s)}>
@@ -325,11 +379,11 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
                             {/* Step 3: Standards list */}
                             {step === 'standard' && (
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    {filteredBrowse.map(std => {
+                                    {displayStandards.map(std => {
                                         const isFav = isFavoriteStandard(std.id);
                                         return (
                                             <div key={std.id} style={{
-                                                padding: `12px 20px 12px ${20 + std.depth * 20}px`,
+                                                padding: `12px 20px 12px ${20 + (sortOrder === 'default' ? std.depth * 20 : 0)}px`,
                                                 borderBottom: '1px solid var(--border-subtle)',
                                                 display: 'flex', gap: 12, alignItems: 'flex-start',
                                                 background: 'var(--bg-card)'
@@ -362,7 +416,7 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
                                             </div>
                                         );
                                     })}
-                                    {filteredBrowse.length === 0 && !loading && (
+                                    {displayStandards.length === 0 && !loading && (
                                         <div className="text-muted text-sm" style={{ padding: 20, textAlign: 'center' }}>No standards match your search.</div>
                                     )}
                                 </div>

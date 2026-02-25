@@ -274,6 +274,7 @@ export async function parseJsonToRubric(file: File): Promise<ParsedRubric> {
             description: c.description || '',
             weight: typeof c.weight === 'number' ? c.weight : 0,
             linkedStandard: c.linkedStandard ? { ...c.linkedStandard } : undefined,
+            linkedStandards: Array.isArray(c.linkedStandards) ? c.linkedStandards.map((s: any) => ({ ...s })) : undefined,
             levels: (c.levels || []).map((l: any) => ({
                 id: nanoid(),
                 label: l.label || 'Level',
@@ -283,7 +284,8 @@ export async function parseJsonToRubric(file: File): Promise<ParsedRubric> {
                 subItems: (l.subItems || []).map((si: any) => ({
                     id: nanoid(),
                     label: si.label || '',
-                    points: typeof si.points === 'number' ? si.points : 0
+                    points: typeof si.points === 'number' ? si.points : 0,
+                    linkedStandards: Array.isArray(si.linkedStandards) ? si.linkedStandards.map((s: any) => ({ ...s })) : undefined
                 }))
             }))
         }));

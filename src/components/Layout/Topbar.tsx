@@ -1,5 +1,6 @@
 import React, { ReactNode } from 'react';
 import { Moon, Sun } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
 
 interface TopbarProps {
@@ -9,6 +10,7 @@ interface TopbarProps {
 
 export default function Topbar({ title, actions }: TopbarProps) {
     const { settings, updateSettings } = useApp();
+    const { t } = useTranslation();
 
     return (
         <header className="topbar">
@@ -18,7 +20,7 @@ export default function Topbar({ title, actions }: TopbarProps) {
                 <button
                     className="btn btn-ghost btn-icon"
                     onClick={() => updateSettings({ theme: settings.theme === 'dark' ? 'light' : 'dark' })}
-                    title="Toggle theme"
+                    title={t('common.toggle_theme')}
                 >
                     {settings.theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
                 </button>

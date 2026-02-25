@@ -32,7 +32,7 @@ export default function Sidebar() {
             </div>
 
             <nav className="sidebar-nav">
-                <span className="nav-section-label">Main</span>
+                <span className="nav-section-label">{t('sidebar.main_section')}</span>
                 {navItems.map(({ to, icon: Icon, label, end }) => (
                     <NavLink
                         key={to}
@@ -45,14 +45,14 @@ export default function Sidebar() {
                     </NavLink>
                 ))}
 
-                <span className="nav-section-label" style={{ marginTop: 12 }}>Quick Stats</span>
+                <span className="nav-section-label" style={{ marginTop: 12 }}>{t('sidebar.quick_stats')}</span>
                 <div style={{ padding: '8px 12px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <span>Rubrics</span>
+                        <span>{t('sidebar.rubrics_count')}</span>
                         <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{rubrics.length}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span>Students</span>
+                        <span>{t('sidebar.students_count')}</span>
                         <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{students.length}</span>
                     </div>
                 </div>

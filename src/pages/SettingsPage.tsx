@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation, Trans } from 'react-i18next';
 import { Save, Plus, Trash2, Download, Upload, Key, ExternalLink, AlertCircle, MessageSquare, Globe, Layout, Star } from 'lucide-react';
 import CommentBankModal from '../components/Comments/CommentBankModal';
 import TemplateUploadModal from '../components/TemplateUploadModal';
@@ -36,7 +36,7 @@ export default function SettingsPage() {
         const reader = new FileReader();
         reader.onload = () => {
             try { importFullBackup(reader.result as string); window.location.reload(); }
-            catch { alert('Invalid backup file.'); }
+            catch { alert(t('settings.alert_invalid_backup')); }
         };
         reader.readAsText(file);
         e.target.value = '';
@@ -68,10 +68,10 @@ export default function SettingsPage() {
 
                 {/* General settings */}
                 <div className="card" style={{ marginBottom: 24 }}>
-                    <h3 style={{ marginBottom: 16 }}>General</h3>
+                    <h3 style={{ marginBottom: 16 }}>{t('settings.general')}</h3>
                     <div className="grid-2" style={{ gap: 16 }}>
                         <div className="form-group">
-                            <label>Default Grade Scale</label>
+                            <label>{t('settings.default_grade_scale')}</label>
                             <select value={settings.defaultGradeScaleId}
                                 onChange={e => updateSettings({ defaultGradeScaleId: e.target.value })}>
                                 {gradeScales.map(gs => <option key={gs.id} value={gs.id}>{gs.name}</option>)}
@@ -81,8 +81,8 @@ export default function SettingsPage() {
                             <label>{t('settings.theme')}</label>
                             <select value={settings.theme}
                                 onChange={e => updateSettings({ theme: e.target.value as 'light' | 'dark' })}>
-                                <option value="dark">Dark</option>
-                                <option value="light">Light</option>
+                                <option value="dark">{t('settings.theme_dark')}</option>
+                                <option value="light">{t('settings.theme_light')}</option>
                             </select>
                         </div>
                     </div>
@@ -92,18 +92,18 @@ export default function SettingsPage() {
                 <div className="card" style={{ marginBottom: 24, borderLeft: '4px solid var(--accent)' }}>
                     <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
                         <Globe size={20} style={{ color: 'var(--accent)' }} />
-                        <h3 style={{ margin: 0 }}>Localization</h3>
+                        <h3 style={{ margin: 0 }}>{t('navigation.localization') || 'Localization'}</h3>
                     </div>
                     <div className="form-group">
                         <label>{t('settings.language_selection')}</label>
                         <select value={settings.language}
                             onChange={e => updateSettings({ language: e.target.value })}>
-                            <option value="en">English</option>
-                            {/* Future languages can be added here */}
+                            <option value="en">{t('settings.language_en')}</option>
+                            <option value="nl">{t('settings.language_nl')}</option>
                         </select>
                     </div>
                     <p className="text-muted text-sm" style={{ marginTop: 12 }}>
-                        Choose your preferred language for the interface.
+                        {t('settings.language_help')}
                     </p>
                 </div>
 
@@ -111,30 +111,34 @@ export default function SettingsPage() {
                 <div className="card" style={{ marginBottom: 24, borderLeft: '4px solid var(--accent)' }}>
                     <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
                         <Key size={20} style={{ color: 'var(--accent)' }} />
-                        <h3 style={{ margin: 0 }}>Standards Integration</h3>
+                        <h3 style={{ margin: 0 }}>{t('settings.standards_integration')}</h3>
                     </div>
                     <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
-                        To link standards (CCSS, NGSS, etc.) from the <strong>Common Standards Project</strong>, you need a free API key.
+                        <Trans i18nKey="settings.standards_help_1">
+                            To link standards (CCSS, NGSS, etc.) from the <strong>Common Standards Project</strong>, you need a free API key.
+                        </Trans>
                     </p>
 
                     <div className="form-group">
-                        <label>CSP API Key</label>
+                        <label>{t('settings.standards_api_key')}</label>
                         <input type="password"
                             value={settings.standardsApiKey ?? ''}
                             onChange={e => updateSettings({ standardsApiKey: e.target.value })}
-                            placeholder="Paste your API key here..."
+                            placeholder={t('settings.standards_api_placeholder')}
                             autoComplete="off"
                         />
                     </div>
 
                     <div style={{ marginTop: 16, background: 'var(--bg-elevated)', padding: 12, borderRadius: 8, fontSize: '0.85rem' }}>
                         <div style={{ fontWeight: 600, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <AlertCircle size={14} /> Setup Instructions
+                            <AlertCircle size={14} /> {t('settings.standards_setup_instructions')}
                         </div>
                         <ol style={{ paddingLeft: 20, margin: 0, lineHeight: 1.6 }}>
-                            <li>Register at <a href="https://commonstandardsproject.com/developers" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>commonstandardsproject.com/developers <ExternalLink size={10} /></a></li>
-                            <li>Copy your API Key and paste it above.</li>
-                            <li><strong>Important:</strong> Add this app's URL (<code>{window.location.origin}</code>) to the <strong>Allowed Origins</strong> list on their dashboard, or requests will be blocked by CORS.</li>
+                            <li>{t('settings.standards_setup_1')} <a href="https://commonstandardsproject.com/developers" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>commonstandardsproject.com/developers <ExternalLink size={10} /></a></li>
+                            <li>{t('settings.standards_setup_2')}</li>
+                            <li><Trans i18nKey="settings.standards_setup_3" values={{ origin: window.location.origin }}>
+                                <strong>Important:</strong> Add this app's URL (<code>{window.location.origin}</code>) to the <strong>Allowed Origins</strong> list on their dashboard, or requests will be blocked by CORS.
+                            </Trans></li>
                         </ol>
                     </div>
                 </div>
@@ -142,29 +146,29 @@ export default function SettingsPage() {
                 {/* Comment Bank */}
                 <div className="card" style={{ marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div>
-                        <h3 style={{ margin: 0 }}>Comment Bank</h3>
+                        <h3 style={{ margin: 0 }}>{t('settings.comment_bank')}</h3>
                         <p className="text-muted text-sm" style={{ marginTop: 4 }}>
-                            {commentBank.length} saved comments. Manage your reusable feedback snippets.
+                            {t('settings.comment_bank_help').replace('{{count}}', String(commentBank.length))}
                         </p>
                     </div>
                     <button className="btn btn-secondary" onClick={() => setShowCommentBank(true)}>
-                        <MessageSquare size={16} /> Manage Comments
+                        <MessageSquare size={16} /> {t('settings.action_manage_comments')}
                     </button>
                 </div>
 
                 {/* Grade Scales */}
                 <div className="card" style={{ marginBottom: 24 }}>
                     <div className="card-header">
-                        <h3>Grade Scales</h3>
+                        <h3>{t('settings.grade_scales')}</h3>
                         <button className="btn btn-primary btn-sm"
                             onClick={() => {
                                 const gs = addGradeScale({
-                                    name: 'New Scale', type: 'custom',
+                                    name: t('settings.scale_new_name'), type: 'custom',
                                     ranges: [{ min: 0, max: 100, label: 'Pass', color: '#22c55e' }]
                                 });
                                 setEditingScaleId(gs.id);
                             }}>
-                            <Plus size={15} /> New Scale
+                            <Plus size={15} /> {t('settings.action_new_scale')}
                         </button>
                     </div>
 
@@ -182,10 +186,10 @@ export default function SettingsPage() {
                                 </div>
                                 <button className="btn btn-ghost btn-sm"
                                     onClick={() => setEditingScaleId(editingScaleId === gs.id ? null : gs.id)}>
-                                    {editingScaleId === gs.id ? 'Collapse' : 'Edit'}
+                                    {editingScaleId === gs.id ? t('settings.action_collapse') : t('settings.action_edit')}
                                 </button>
                                 <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--red)' }}
-                                    onClick={() => { if (gs.id !== settings.defaultGradeScaleId) deleteGradeScale(gs.id); else alert("Can't delete the default scale."); }}>
+                                    onClick={() => { if (gs.id !== settings.defaultGradeScaleId) deleteGradeScale(gs.id); else alert(t('settings.alert_cannot_delete_default')); }}>
                                     <Trash2 size={14} />
                                 </button>
                             </div>
@@ -194,7 +198,7 @@ export default function SettingsPage() {
                                 <div style={{ padding: '0 16px 16px' }}>
                                     <table className="data-table" style={{ marginBottom: 10 }}>
                                         <thead>
-                                            <tr><th>Label</th><th>Min %</th><th>Max %</th><th>Color</th><th></th></tr>
+                                            <tr><th>{t('settings.label_label')}</th><th>{t('settings.label_min_pct')}</th><th>{t('settings.label_max_pct')}</th><th>{t('settings.label_color')}</th><th></th></tr>
                                         </thead>
                                         <tbody>
                                             {gs.ranges.map((r, idx) => (
@@ -220,7 +224,7 @@ export default function SettingsPage() {
                                         </tbody>
                                     </table>
                                     <button className="btn btn-secondary btn-sm" onClick={() => addRange(gs.id)}>
-                                        <Plus size={14} /> Add Range
+                                        <Plus size={14} /> {t('settings.action_add_range')}
                                     </button>
                                 </div>
                             )}
@@ -234,44 +238,44 @@ export default function SettingsPage() {
                         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                             <Layout size={20} style={{ color: 'var(--accent)' }} />
                             <div>
-                                <h3 style={{ margin: 0 }}>Export Templates</h3>
-                                <p className="text-muted text-xs" style={{ marginTop: 2 }}>Upload blank .docx rubrics — their column headers and colours will be used when exporting to Word.</p>
+                                <h3 style={{ margin: 0 }}>{t('settings.export_templates')}</h3>
+                                <p className="text-muted text-xs" style={{ marginTop: 2 }}>{t('settings.export_templates_help')}</p>
                             </div>
                         </div>
                         <button className="btn btn-primary btn-sm" onClick={() => setShowTemplateUpload(true)}>
-                            <Upload size={14} /> Upload Template
+                            <Upload size={14} /> {t('settings.action_upload_template')}
                         </button>
                     </div>
 
                     {exportTemplates.length === 0 ? (
                         <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                            No templates uploaded yet. Click <strong>Upload Template</strong> to add one.
+                            <Trans i18nKey="settings.empty_state_templates">No templates uploaded yet. Click <strong>Upload Template</strong> to add one.</Trans>
                         </div>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            {exportTemplates.map(t => (
-                                <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--bg-elevated)', borderRadius: 10, padding: '12px 16px', border: settings.exportTemplateId === t.id ? '1.5px solid var(--accent)' : '1px solid var(--border)' }}>
+                            {exportTemplates.map(tmpl => (
+                                <div key={tmpl.id} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--bg-elevated)', borderRadius: 10, padding: '12px 16px', border: settings.exportTemplateId === tmpl.id ? '1.5px solid var(--accent)' : '1px solid var(--border)' }}>
                                     {/* Colour swatch */}
-                                    <div style={{ width: 32, height: 32, borderRadius: 8, background: t.headerColor ?? '#1e3a5f', flexShrink: 0 }} />
+                                    <div style={{ width: 32, height: 32, borderRadius: 8, background: tmpl.headerColor ?? '#1e3a5f', flexShrink: 0 }} />
                                     <div style={{ flex: 1 }}>
-                                        <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{t.name}</div>
+                                        <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{tmpl.name}</div>
                                         <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>
-                                            {t.levelHeaders.length > 0
-                                                ? t.levelHeaders.join(' · ')
-                                                : 'No level headers detected'}
+                                            {tmpl.levelHeaders.length > 0
+                                                ? tmpl.levelHeaders.join(' · ')
+                                                : t('settings.no_level_headers')}
                                         </div>
                                     </div>
                                     <div style={{ display: 'flex', gap: 6 }}>
                                         <button
-                                            className={`btn btn-sm ${settings.exportTemplateId === t.id ? 'btn-primary' : 'btn-ghost'}`}
-                                            title={settings.exportTemplateId === t.id ? 'Default template' : 'Set as default'}
-                                            onClick={() => updateSettings({ exportTemplateId: settings.exportTemplateId === t.id ? undefined : t.id })}
+                                            className={`btn btn-sm ${settings.exportTemplateId === tmpl.id ? 'btn-primary' : 'btn-ghost'}`}
+                                            title={settings.exportTemplateId === tmpl.id ? t('settings.label_default') : t('settings.action_set_default')}
+                                            onClick={() => updateSettings({ exportTemplateId: settings.exportTemplateId === tmpl.id ? undefined : tmpl.id })}
                                         >
                                             <Star size={13} />
-                                            {settings.exportTemplateId === t.id ? 'Default' : 'Set default'}
+                                            {settings.exportTemplateId === tmpl.id ? t('settings.label_default') : t('settings.action_set_default')}
                                         </button>
                                         <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--red)' }}
-                                            onClick={() => { deleteExportTemplate(t.id); if (settings.exportTemplateId === t.id) updateSettings({ exportTemplateId: undefined }); }}>
+                                            onClick={() => { deleteExportTemplate(tmpl.id); if (settings.exportTemplateId === tmpl.id) updateSettings({ exportTemplateId: undefined }); }}>
                                             <Trash2 size={14} />
                                         </button>
                                     </div>
@@ -283,18 +287,18 @@ export default function SettingsPage() {
 
                 {/* Backup */}
                 <div className="card">
-                    <h3 style={{ marginBottom: 16 }}>Data Backup & Restore</h3>
+                    <h3 style={{ marginBottom: 16 }}>{t('settings.backup_restore')}</h3>
                     <div style={{ display: 'flex', gap: 12 }}>
                         <button className="btn btn-secondary" onClick={handleBackupExport}>
-                            <Download size={16} /> Export Backup (JSON)
+                            <Download size={16} /> {t('settings.action_export_backup')}
                         </button>
                         <label className="btn btn-secondary" style={{ cursor: 'pointer' }}>
-                            <Upload size={16} /> Import Backup
+                            <Upload size={16} /> {t('settings.action_import_backup')}
                             <input type="file" accept=".json" onChange={handleBackupImport} style={{ display: 'none' }} />
                         </label>
                     </div>
                     <p className="text-muted text-sm" style={{ marginTop: 12 }}>
-                        Export saves all rubrics, students, grades, and settings to a JSON file. Import restores everything.
+                        {t('settings.backup_help')}
                     </p>
                 </div>
             </div>

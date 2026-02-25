@@ -4,10 +4,12 @@ import { ArrowLeft, Save, MessageSquare, Paperclip, CheckSquare, Square, Info, B
 import Topbar from '../components/Layout/Topbar';
 import CommentBankModal from '../components/Comments/CommentBankModal';
 import { useApp } from '../context/AppContext';
+import { useTranslation } from 'react-i18next';
 import type { ScoreEntry, Modifier } from '../types';
 import { calcGradeSummary } from '../utils/gradeCalc';
 
 export default function GradeStudent() {
+    const { t } = useTranslation();
     const { rubricId, studentId } = useParams();
     const navigate = useNavigate();
     const {
@@ -68,7 +70,7 @@ export default function GradeStudent() {
         setTimeout(() => setSaved(false), 2000);
     }, [sr, saveStudentRubric]);
 
-    if (!rubric || !student || !sr) return <div className="page-content">Rubric/Student not found. <button onClick={() => navigate(-1)}>Back</button></div>;
+    if (!rubric || !student || !sr) return <div className="page-content">{t('gradeStudent.error_not_found')} <button onClick={() => navigate(-1)}>{t('gradeStudent.action_back')}</button></div>;
 
     const fmt = rubric.format;
     const orderedLevels = fmt.levelOrder === 'worst-first'
@@ -88,15 +90,15 @@ export default function GradeStudent() {
     return (
         <>
             <Topbar
-                title={`Grading: ${student.name}`}
+                title={`${t('gradeStudent.title_prefix')} ${student.name}`}
                 actions={
                     <>
-                        <button className="btn btn-ghost btn-sm" onClick={() => navigate(-1)}><ArrowLeft size={15} /> Back</button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => navigate(-1)}><ArrowLeft size={15} /> {t('gradeStudent.action_back')}</button>
                         <button className="btn btn-secondary btn-sm" onClick={() => setShowAttachPanel(p => !p)}>
-                            <Paperclip size={15} /> Attachments
+                            <Paperclip size={15} /> {t('gradeStudent.action_attachments')}
                         </button>
                         <button className="btn btn-primary btn-sm" onClick={handleSave}>
-                            <Save size={15} /> {saved ? 'Saved!' : 'Save'}
+                            <Save size={15} /> {saved ? t('gradeStudent.action_saved') : t('gradeStudent.action_save')}
                         </button>
                     </>
                 }
@@ -105,39 +107,43 @@ export default function GradeStudent() {
                 {/* Score summary bar */}
                 {summary && (
                     <div className="card" style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
-                        <div style={{
-                            background: summary.gradeColor + '22',
-                            border: `2px solid ${summary.gradeColor}`,
-                            borderRadius: 10, padding: '6px 18px', textAlign: 'center'
-                        }}>
-                            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: summary.gradeColor }}>{summary.letterGrade}</div>
-                            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>GRADE</div>
-                        </div>
-                        <div>
-                            <div style={{ fontSize: '1.4rem', fontWeight: 700 }}>
-                                {summary.modifiedPercentage.toFixed(1)}%
-                            </div>
-                            <div className="text-muted text-xs">
-                                {rubric.scoringMode === 'total-points' ? 'Percentage' : 'Weighted Score'}
-                            </div>
-                        </div>
+                        {rubric.format.showCalculatedGrade !== false && (
+                            <>
+                                <div style={{
+                                    background: summary.gradeColor + '22',
+                                    border: `2px solid ${summary.gradeColor}`,
+                                    borderRadius: 10, padding: '6px 18px', textAlign: 'center'
+                                }}>
+                                    <div style={{ fontSize: '1.8rem', fontWeight: 800, color: summary.gradeColor }}>{summary.letterGrade}</div>
+                                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>{t('gradeStudent.label_grade')}</div>
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '1.4rem', fontWeight: 700 }}>
+                                        {summary.modifiedPercentage.toFixed(1)}%
+                                    </div>
+                                    <div className="text-muted text-xs">
+                                        {rubric.scoringMode === 'total-points' ? t('gradeStudent.label_percentage') : t('gradeStudent.label_weighted_score')}
+                                    </div>
+                                </div>
+                            </>
+                        )}
                         <div>
                             <div style={{ fontSize: '1.4rem', fontWeight: 700 }}>
                                 {summary.rawScore} / {summary.configuredMaxPoints}
                             </div>
-                            <div className="text-muted text-xs">Total Points</div>
+                            <div className="text-muted text-xs">{t('gradeStudent.label_total_points')}</div>
                         </div>
                         {/* Modifier controls */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 180, marginLeft: 'auto' }}>
                             <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>
-                                Better/Worse Modifier
+                                {t('gradeStudent.label_modifier')}
                             </span>
                             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                                 <select value={sr.globalModifier?.type ?? 'percentage'}
                                     onChange={e => setSr(p => p ? { ...p, globalModifier: { type: e.target.value as Modifier['type'], value: p.globalModifier?.value ?? 0, reason: p.globalModifier?.reason ?? '' } } : p)}
                                     style={{ flex: 1 }}>
-                                    <option value="percentage">% offset</option>
-                                    <option value="points">Points offset</option>
+                                    <option value="percentage">{t('gradeStudent.offset_percentage')}</option>
+                                    <option value="points">{t('gradeStudent.offset_points')}</option>
                                 </select>
                                 <input type="number" value={sr.globalModifier?.value ?? 0}
                                     onChange={e => setSr(p => p ? { ...p, globalModifier: { type: p.globalModifier?.type ?? 'percentage', value: Number(e.target.value), reason: p.globalModifier?.reason ?? '' } } : p)}
@@ -152,18 +158,18 @@ export default function GradeStudent() {
                     <table className="rubric-grid" style={{ fontFamily: fmt.fontFamily, fontSize: fmt.fontSize }}>
                         <thead>
                             <tr style={{ background: fmt.headerColor, color: fmt.headerTextColor }}>
-                                <th style={{ width: fmt.criterionColWidth, textAlign: 'left', padding: '14px 16px' }}>Criterion</th>
+                                <th style={{ width: fmt.criterionColWidth, textAlign: 'left', padding: '14px 16px' }}>{t('gradeStudent.table_criterion')}</th>
                                 {rubric.criteria[0]?.levels.map((_, li) => {
                                     const lvl = orderedLevels(rubric.criteria[0])[li];
                                     return (
                                         <th key={li} style={{ width: fmt.levelColWidth }}>
                                             {lvl?.label}
-                                            {fmt.showPoints && lvl ? ` (${lvl.minPoints}${lvl.minPoints !== lvl.maxPoints ? `–${lvl.maxPoints}` : ''}pts)` : ''}
+                                            {fmt.showPoints && lvl ? ` (${lvl.minPoints}${lvl.minPoints !== lvl.maxPoints ? `–${lvl.maxPoints}` : ''}${t('gradeStudent.table_points')})` : ''}
                                         </th>
                                     );
                                 })}
                                 <th style={{ width: 60 }}></th>
-                                {fmt.showWeights && <th style={{ width: 72 }}>Wt%</th>}
+                                {fmt.showWeights && <th style={{ width: 72 }}>{t('gradeStudent.table_weight')}</th>}
                             </tr>
                         </thead>
                         <tbody>
@@ -180,12 +186,17 @@ export default function GradeStudent() {
                                                 {c.description && <div style={{ fontSize: '0.78em', color: 'var(--text-muted)', marginTop: 3 }}>{c.description}</div>}
                                                 {c.linkedStandard && (
                                                     <div style={{ marginTop: 6, fontSize: '0.7em', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 4 }} title={c.linkedStandard.description}>
-                                                        <Info size={10} /> {c.linkedStandard.statementNotation ?? 'Standard'}
+                                                        <Info size={10} /> {c.linkedStandard.statementNotation ?? t('gradeStudent.label_standard')}
                                                     </div>
                                                 )}
+                                                {(c.linkedStandards || []).map((std, idx) => (
+                                                    <div key={idx} style={{ marginTop: 6, fontSize: '0.7em', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 4 }} title={std.description}>
+                                                        <Info size={10} /> {std.statementNotation ?? t('gradeStudent.label_standard')}
+                                                    </div>
+                                                ))}
                                                 {entry.overridePoints !== undefined && (
                                                     <div style={{ fontSize: '0.75em', color: 'var(--yellow)', marginTop: 4 }}>
-                                                        Override: {entry.overridePoints}pts
+                                                        {t('gradeStudent.label_override')} {entry.overridePoints}{t('gradeStudent.table_points')}
                                                     </div>
                                                 )}
                                             </td>
@@ -197,11 +208,11 @@ export default function GradeStudent() {
                                                         style={isSelected ? { borderColor: fmt.accentColor, boxShadow: `inset 0 0 0 2px ${fmt.accentColor}` } : {}}
                                                         onClick={() => updateEntry(c.id, { levelId: isSelected ? null : level.id, overridePoints: undefined })}
                                                     >
-                                                        {level.description || <span style={{ color: 'var(--text-dim)', fontSize: '0.8em' }}>Select</span>}
+                                                        {level.description || <span style={{ color: 'var(--text-dim)', fontSize: '0.8em' }}>{t('gradeStudent.level_select')}</span>}
                                                         {/* Points indicator */}
                                                         {fmt.showPoints && (
                                                             <div style={{ fontSize: '0.75em', color: isSelected ? fmt.accentColor : 'var(--text-muted)', marginTop: 6, fontWeight: 600 }}>
-                                                                {level.minPoints === level.maxPoints ? `${level.minPoints}pts` : `${level.minPoints}–${level.maxPoints}pts`}
+                                                                {level.minPoints === level.maxPoints ? `${level.minPoints}${t('gradeStudent.table_points')}` : `${level.minPoints}–${level.maxPoints}${t('gradeStudent.table_points')}`}
                                                             </div>
                                                         )}
 
@@ -216,7 +227,16 @@ export default function GradeStudent() {
                                                                                 <div style={{ flexShrink: 0, marginTop: 1 }}>
                                                                                     {checked ? <CheckSquare size={14} color={fmt.accentColor} /> : <Square size={14} color="var(--text-muted)" />}
                                                                                 </div>
-                                                                                <span>{si.label} <span style={{ opacity: 0.6 }}>(+{si.points})</span></span>
+                                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                                                                    <span>{si.label} <span style={{ opacity: 0.6 }}>(+{si.points})</span></span>
+                                                                                    {si.linkedStandards && si.linkedStandards.length > 0 && (
+                                                                                        <div style={{ color: 'var(--accent)', opacity: 0.8, fontSize: '0.9em', display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                                                                            {si.linkedStandards.map((std, idx) => (
+                                                                                                <span key={idx} title={std.description}>[{std.statementNotation ?? std.guid}]</span>
+                                                                                            ))}
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
                                                                             </div>
                                                                         );
                                                                     })}
@@ -229,7 +249,7 @@ export default function GradeStudent() {
                                                             <div style={{ marginTop: 8, paddingTop: 8, borderTop: (level.subItems.length > 0) ? `1px solid ${fmt.accentColor}20` : `1px solid ${fmt.accentColor}40`, textAlign: 'left' }} onClick={e => e.stopPropagation()}>
                                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                                                     <label style={{ fontSize: '0.7em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                                                                        {c.levels.some(l => l.subItems.length > 0) ? 'Base Points' : 'Points'}
+                                                                        {c.levels.some(l => l.subItems.length > 0) ? t('gradeStudent.label_base_points') : t('gradeStudent.label_points')}
                                                                     </label>
                                                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                                                         <input type="range"
@@ -263,10 +283,10 @@ export default function GradeStudent() {
                                             <tr>
                                                 <td colSpan={levels.length + 2 + (fmt.showWeights ? 1 : 0)} style={{ background: 'var(--bg-elevated)', padding: 12 }}>
                                                     <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                                                        <textarea placeholder="Add a comment…" value={entry.comment}
+                                                        <textarea placeholder={t('gradeStudent.comment_placeholder')} value={entry.comment}
                                                             onChange={e => updateEntry(c.id, { comment: e.target.value })}
                                                             rows={2} style={{ flex: 1 }} />
-                                                        <button className="btn btn-secondary btn-sm" onClick={() => setShowCommentBankFor(c.id)} title="Open Comment Bank">
+                                                        <button className="btn btn-secondary btn-sm" onClick={() => setShowCommentBankFor(c.id)} title={t('gradeStudent.comment_open_bank')}>
                                                             <BookOpen size={16} />
                                                         </button>
                                                     </div>
@@ -283,8 +303,8 @@ export default function GradeStudent() {
                 {/* Overall comment */}
                 <div className="card">
                     <div className="form-group">
-                        <label>Overall Comment</label>
-                        <textarea placeholder="General feedback…" value={sr.overallComment}
+                        <label>{t('gradeStudent.overall_comment_label')}</label>
+                        <textarea placeholder={t('gradeStudent.overall_comment_placeholder')} value={sr.overallComment}
                             onChange={e => setSr(p => p ? { ...p, overallComment: e.target.value } : p)} rows={3} />
                     </div>
                 </div>
@@ -292,7 +312,7 @@ export default function GradeStudent() {
                 {/* Attachments panel */}
                 {showAttachPanel && (
                     <div className="card" style={{ marginTop: 16 }}>
-                        <h3>Attachments</h3>
+                        <h3>{t('gradeStudent.attachments_title')}</h3>
                         {rubricAttachments.map(att => (
                             <div key={att.id} style={{ marginTop: 6 }} className="text-sm">
                                 <Paperclip size={12} /> {att.name}

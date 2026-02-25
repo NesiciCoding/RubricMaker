@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Edit2, Trash2, Copy, BookOpen, Users, Upload } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
 import { DEFAULT_FORMAT } from '../types';
 import { nanoid } from '../utils/nanoid';
@@ -9,6 +10,7 @@ import ImportRubricModal from '../components/ImportRubricModal';
 import type { ParsedRubric } from '../utils/rubricImport';
 
 export default function RubricList() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const { rubrics, students, studentRubrics, addRubric, deleteRubric, settings, gradeScales } = useApp();
     const [search, setSearch] = useState('');
@@ -49,13 +51,13 @@ export default function RubricList() {
 
     return (
         <>
-            <Topbar title="Rubrics" actions={
+            <Topbar title={t('rubricList.title')} actions={
                 <>
                     <button className="btn btn-secondary btn-sm" onClick={() => setShowImport(true)}>
-                        <Upload size={15} /> Import Rubric
+                        <Upload size={15} /> {t('rubricList.import_rubric')}
                     </button>
                     <button className="btn btn-primary btn-sm" onClick={() => navigate('/rubrics/new')}>
-                        <Plus size={15} /> New Rubric
+                        <Plus size={15} /> {t('rubricList.new_rubric')}
                     </button>
                 </>
             } />
@@ -64,7 +66,7 @@ export default function RubricList() {
                     <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
                     <input
                         type="text"
-                        placeholder="Search rubrics…"
+                        placeholder={t('rubricList.search_rubrics')}
                         value={search}
                         onChange={e => setSearch(e.target.value)}
                         style={{ paddingLeft: 36 }}
@@ -74,10 +76,10 @@ export default function RubricList() {
                 {filtered.length === 0 ? (
                     <div className="empty-state">
                         <BookOpen size={40} />
-                        <h3>No rubrics yet</h3>
-                        <p className="text-muted text-sm">Create your first rubric to get started.</p>
+                        <h3>{t('rubricList.no_rubrics')}</h3>
+                        <p className="text-muted text-sm">{t('rubricList.create_first_instruction')}</p>
                         <button className="btn btn-primary" onClick={() => navigate('/rubrics/new')}>
-                            <Plus size={16} /> Create Rubric
+                            <Plus size={16} /> {t('rubricList.create_rubric')}
                         </button>
                     </div>
                 ) : (
@@ -95,15 +97,15 @@ export default function RubricList() {
                                             {r.subject && <div className="text-muted text-xs" style={{ marginTop: 2 }}>{r.subject}</div>}
                                         </div>
                                         <div style={{ display: 'flex', gap: 4 }}>
-                                            <button className="btn btn-ghost btn-icon btn-sm" title="Duplicate"
+                                            <button className="btn btn-ghost btn-icon btn-sm" title={t('rubricList.action_duplicate')}
                                                 onClick={e => { e.stopPropagation(); handleDuplicate(r.id); }}>
                                                 <Copy size={14} />
                                             </button>
-                                            <button className="btn btn-ghost btn-icon btn-sm" title="Edit"
+                                            <button className="btn btn-ghost btn-icon btn-sm" title={t('rubricList.action_edit')}
                                                 onClick={e => { e.stopPropagation(); navigate(`/rubrics/${r.id}`); }}>
                                                 <Edit2 size={14} />
                                             </button>
-                                            <button className="btn btn-ghost btn-icon btn-sm" title="Delete"
+                                            <button className="btn btn-ghost btn-icon btn-sm" title={t('rubricList.action_delete')}
                                                 style={{ color: 'var(--red)' }}
                                                 onClick={e => { e.stopPropagation(); setConfirmDelete(r.id); }}>
                                                 <Trash2 size={14} />
@@ -112,9 +114,9 @@ export default function RubricList() {
                                     </div>
 
                                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
-                                        <span className="badge badge-blue">{r.criteria.length} criteria</span>
-                                        <span className="badge badge-purple">{r.criteria[0]?.levels.length ?? 0} levels</span>
-                                        <span className="badge badge-green">{gradedStudents.length} students graded</span>
+                                        <span className="badge badge-blue">{r.criteria.length} {t('rubricList.criteria_count')}</span>
+                                        <span className="badge badge-purple">{r.criteria[0]?.levels.length ?? 0} {t('rubricList.levels_count')}</span>
+                                        <span className="badge badge-green">{gradedStudents.length} {t('rubricList.students_graded_count')}</span>
                                     </div>
 
                                     {r.description && (
@@ -124,11 +126,11 @@ export default function RubricList() {
                                     <div style={{ display: 'flex', gap: 8 }}>
                                         <button className="btn btn-primary btn-sm" style={{ flex: 1 }}
                                             onClick={() => navigate(`/rubrics/${r.id}`)}>
-                                            <Edit2 size={14} /> Edit Rubric
+                                            <Edit2 size={14} /> {t('rubricList.edit_rubric')}
                                         </button>
                                         <button className="btn btn-secondary btn-sm" style={{ flex: 1 }}
                                             onClick={() => navigate('/students')}>
-                                            <Users size={14} /> Grade Students
+                                            <Users size={14} /> {t('rubricList.grade_students')}
                                         </button>
                                     </div>
                                 </div>
@@ -140,14 +142,14 @@ export default function RubricList() {
                 {confirmDelete && (
                     <div className="modal-overlay" onClick={() => setConfirmDelete(null)}>
                         <div className="modal" style={{ maxWidth: 420 }} onClick={e => e.stopPropagation()}>
-                            <div className="modal-header"><h3>Delete Rubric</h3></div>
+                            <div className="modal-header"><h3>{t('rubricList.delete_rubric_title')}</h3></div>
                             <div className="modal-body">
-                                <p>This will permanently delete the rubric and all associated student scores. This cannot be undone.</p>
+                                <p>{t('rubricList.delete_rubric_warning')}</p>
                             </div>
                             <div className="modal-footer">
-                                <button className="btn btn-secondary" onClick={() => setConfirmDelete(null)}>Cancel</button>
+                                <button className="btn btn-secondary" onClick={() => setConfirmDelete(null)}>{t('common.cancel')}</button>
                                 <button className="btn btn-danger" onClick={() => { deleteRubric(confirmDelete); setConfirmDelete(null); }}>
-                                    <Trash2 size={14} /> Delete
+                                    <Trash2 size={14} /> {t('common.delete')}
                                 </button>
                             </div>
                         </div>

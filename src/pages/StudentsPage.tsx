@@ -5,8 +5,10 @@ import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import Papa from 'papaparse';
 import CsvImportModal from '../components/CsvImportModal';
+import { useTranslation, Trans } from 'react-i18next';
 
 export default function StudentsPage() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const { students, classes, rubrics, studentRubrics, addStudent, updateStudent, deleteStudent, addClass, updateClass, deleteClass, mergeClasses, settings, updateSettings } = useApp();
 
@@ -78,17 +80,17 @@ export default function StudentsPage() {
 
     return (
         <>
-            <Topbar title="Students & Classes" actions={
+            <Topbar title={t('studentsPage.title')} actions={
                 <>
                     <button className="btn btn-secondary btn-sm" onClick={() => fileRef.current?.click()}>
-                        <Upload size={15} /> Import CSV
+                        <Upload size={15} /> {t('studentsPage.import_csv')}
                     </button>
                     <input ref={fileRef} type="file" accept=".csv" onChange={handleCSVImport} style={{ display: 'none' }} />
                     <button className="btn btn-secondary btn-sm" onClick={exportCSV}>
-                        <Download size={15} /> Export CSV
+                        <Download size={15} /> {t('studentsPage.export_csv')}
                     </button>
                     <button className="btn btn-primary btn-sm" onClick={() => setShowAddModal(true)}>
-                        <Plus size={15} /> Add Student
+                        <Plus size={15} /> {t('studentsPage.add_student')}
                     </button>
                 </>
             } />
@@ -97,7 +99,7 @@ export default function StudentsPage() {
                     {/* Class list */}
                     <div className="card" style={{ height: 'fit-content' }}>
                         <div className="card-header">
-                            <h3>Classes</h3>
+                            <h3>{t('studentsPage.classes')}</h3>
                         </div>
                         {classes.map(c => (
                             <div key={c.id} style={{ position: 'relative' }}>
@@ -121,22 +123,22 @@ export default function StudentsPage() {
                                     <div className="card" style={{ position: 'absolute', right: 0, top: '100%', zIndex: 10, padding: 4, minWidth: 140, boxShadow: 'var(--shadow-lg)' }} onClick={e => e.stopPropagation()}>
                                         <button className="btn btn-ghost btn-sm" style={{ width: '100%', justifyContent: 'flex-start' }}
                                             onClick={() => { setRenameClassId(c.id); setRenameClassVal(c.name); setClassMenuOpen(null); }}>
-                                            Rename
+                                            {t('studentsPage.action_rename')}
                                         </button>
                                         <button className="btn btn-ghost btn-sm" style={{ width: '100%', justifyContent: 'flex-start' }}
                                             onClick={() => { setMergeClassId(c.id); setMergeTargetId(''); setClassMenuOpen(null); }}>
-                                            Merge into...
+                                            {t('studentsPage.action_merge')}
                                         </button>
                                         <button className="btn btn-ghost btn-sm text-red" style={{ width: '100%', justifyContent: 'flex-start' }}
                                             onClick={() => { setDeleteClassId(c.id); setClassMenuOpen(null); }}>
-                                            Delete
+                                            {t('studentsPage.action_delete')}
                                         </button>
                                     </div>
                                 )}
                             </div>
                         ))}
                         <div style={{ marginTop: 12, display: 'flex', gap: 6 }}>
-                            <input type="text" placeholder="New class…" value={newClassName}
+                            <input type="text" placeholder={t('studentsPage.new_class_placeholder')} value={newClassName}
                                 onChange={e => setNewClassName(e.target.value)}
                                 onKeyDown={e => {
                                     if (e.key === 'Enter' && newClassName.trim()) {
@@ -156,20 +158,20 @@ export default function StudentsPage() {
                     {/* Student list */}
                     <div className="card">
                         <div className="card-header">
-                            <h3>{classes.find(c => c.id === activeClass)?.name ?? 'Class'} — {filteredStudents.length} students</h3>
+                            <h3>{classes.find(c => c.id === activeClass)?.name ?? t('studentsPage.default_class_name')} — {filteredStudents.length} {t('studentsPage.students_count')}</h3>
                         </div>
                         {filteredStudents.length === 0 ? (
                             <div className="empty-state">
                                 <UsersIcon size={32} />
-                                <p>No students in this class yet.</p>
+                                <p>{t('studentsPage.no_students')}</p>
                                 <button className="btn btn-primary btn-sm" onClick={() => setShowAddModal(true)}>
-                                    <Plus size={14} /> Add Student
+                                    <Plus size={14} /> {t('studentsPage.add_student')}
                                 </button>
                             </div>
                         ) : (
                             <table className="data-table">
                                 <thead>
-                                    <tr><th>Name</th><th>Email</th><th>Grades</th><th>Actions</th></tr>
+                                    <tr><th>{t('studentsPage.table_name')}</th><th>{t('studentsPage.table_email')}</th><th>{t('studentsPage.table_grades')}</th><th>{t('studentsPage.table_actions')}</th></tr>
                                 </thead>
                                 <tbody>
                                     {filteredStudents.map(s => {
@@ -180,19 +182,19 @@ export default function StudentsPage() {
                                                 <td className="text-muted text-sm">{s.email || '—'}</td>
                                                 <td>
                                                     {graded > 0
-                                                        ? <span className="badge badge-green">{graded} rubric{graded !== 1 ? 's' : ''}</span>
-                                                        : <span className="badge badge-yellow">Not graded</span>}
+                                                        ? <span className="badge badge-green">{graded} {graded !== 1 ? t('studentsPage.rubric_plural') : t('studentsPage.rubric_single')}</span>
+                                                        : <span className="badge badge-yellow">{t('studentsPage.not_graded')}</span>}
                                                 </td>
                                                 <td>
                                                     <div style={{ display: 'flex', gap: 6 }}>
                                                         {rubrics.map(r => (
                                                             <button key={r.id} className="btn btn-primary btn-sm"
                                                                 onClick={() => navigate(`/rubrics/${r.id}/grade/${s.id}`)}>
-                                                                Grade: {r.name.slice(0, 12)}{r.name.length > 12 ? '…' : ''}
+                                                                {t('studentsPage.grade_prefix')} {r.name.slice(0, 12)}{r.name.length > 12 ? '…' : ''}
                                                             </button>
                                                         ))}
                                                         <button className="btn btn-secondary btn-icon btn-sm"
-                                                            onClick={() => navigate(`/students/${s.id}`)} title="View Profile">
+                                                            onClick={() => navigate(`/students/${s.id}`)} title={t('studentsPage.view_profile')}>
                                                             <TrendingUp size={14} />
                                                         </button>
                                                         <button className="btn btn-ghost btn-icon btn-sm"
@@ -218,21 +220,21 @@ export default function StudentsPage() {
                     <div className="modal-overlay" onClick={() => { setShowAddModal(false); setEditStudent(null); }}>
                         <div className="modal" onClick={e => e.stopPropagation()}>
                             <div className="modal-header">
-                                <h3>{editStudent ? 'Edit Student' : 'Add Student'}</h3>
+                                <h3>{editStudent ? t('studentsPage.edit_student_title') : t('studentsPage.add_student_title')}</h3>
                                 <button className="btn btn-ghost btn-icon" onClick={() => { setShowAddModal(false); setEditStudent(null); }}>✕</button>
                             </div>
                             <div className="modal-body">
                                 <div className="form-group" style={{ marginBottom: 12 }}>
-                                    <label>Full Name *</label>
-                                    <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Student name" autoFocus />
+                                    <label>{t('studentsPage.form_full_name')}</label>
+                                    <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder={t('studentsPage.form_name_placeholder')} autoFocus />
                                 </div>
                                 <div className="form-group" style={{ marginBottom: 12 }}>
-                                    <label>Email (optional)</label>
-                                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="student@school.edu" />
+                                    <label>{t('studentsPage.form_email')}</label>
+                                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={t('studentsPage.form_email_placeholder')} />
                                 </div>
                                 {editStudent && (
                                     <div className="form-group">
-                                        <label>Class</label>
+                                        <label>{t('studentsPage.form_class')}</label>
                                         <select value={editStudentClassId} onChange={e => setEditStudentClassId(e.target.value)}>
                                             {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                         </select>
@@ -240,9 +242,9 @@ export default function StudentsPage() {
                                 )}
                             </div>
                             <div className="modal-footer">
-                                <button className="btn btn-secondary" onClick={() => { setShowAddModal(false); setEditStudent(null); }}>Cancel</button>
+                                <button className="btn btn-secondary" onClick={() => { setShowAddModal(false); setEditStudent(null); }}>{t('common.cancel')}</button>
                                 <button className="btn btn-primary" onClick={handleAddStudent} disabled={!name.trim()}>
-                                    {editStudent ? 'Save Changes' : 'Add Student'}
+                                    {editStudent ? t('studentsPage.action_save_changes') : t('studentsPage.add_student')}
                                 </button>
                             </div>
                         </div>
@@ -262,12 +264,12 @@ export default function StudentsPage() {
                     <div className="modal-overlay" onClick={() => setRenameClassId(null)}>
                         <div className="modal" onClick={e => e.stopPropagation()}>
                             <div className="modal-header">
-                                <h3>Rename Class</h3>
+                                <h3>{t('studentsPage.rename_class_title')}</h3>
                                 <button className="btn btn-ghost btn-icon" onClick={() => setRenameClassId(null)}>✕</button>
                             </div>
                             <div className="modal-body">
                                 <div className="form-group">
-                                    <label>New Name</label>
+                                    <label>{t('studentsPage.form_new_name')}</label>
                                     <input type="text" value={renameClassVal} onChange={e => setRenameClassVal(e.target.value)} autoFocus
                                         onKeyDown={e => {
                                             if (e.key === 'Enter' && renameClassVal.trim()) {
@@ -280,12 +282,12 @@ export default function StudentsPage() {
                                 </div>
                             </div>
                             <div className="modal-footer">
-                                <button className="btn btn-secondary" onClick={() => setRenameClassId(null)}>Cancel</button>
+                                <button className="btn btn-secondary" onClick={() => setRenameClassId(null)}>{t('common.cancel')}</button>
                                 <button className="btn btn-primary" disabled={!renameClassVal.trim()} onClick={() => {
                                     const c = classes.find(cl => cl.id === renameClassId);
                                     if (c) updateClass({ ...c, name: renameClassVal.trim() });
                                     setRenameClassId(null);
-                                }}>Save</button>
+                                }}>{t('studentsPage.form_new_name') !== t('studentsPage.form_new_name') /* use generic instead */ ? t('common.save') : t('common.save')}</button>
                             </div>
                         </div>
                     </div>
@@ -295,15 +297,19 @@ export default function StudentsPage() {
                     <div className="modal-overlay" onClick={() => setMergeClassId(null)}>
                         <div className="modal" onClick={e => e.stopPropagation()}>
                             <div className="modal-header">
-                                <h3>Merge Class</h3>
+                                <h3>{t('studentsPage.merge_class_title')}</h3>
                                 <button className="btn btn-ghost btn-icon" onClick={() => setMergeClassId(null)}>✕</button>
                             </div>
                             <div className="modal-body">
-                                <p style={{ marginBottom: 16 }}>Select the target class to move all students into. The current class (<strong>{classes.find(c => c.id === mergeClassId)?.name}</strong>) will be deleted.</p>
+                                <p style={{ marginBottom: 16 }}>
+                                    <Trans i18nKey="studentsPage.merge_class_description" values={{ className: classes.find(c => c.id === mergeClassId)?.name }} >
+                                        Select the target class to move all students into. The current class (<strong>{'{{className}}'}</strong>) will be deleted.
+                                    </Trans>
+                                </p>
                                 <div className="form-group">
-                                    <label>Target Class</label>
+                                    <label>{t('studentsPage.form_target_class')}</label>
                                     <select value={mergeTargetId} onChange={e => setMergeTargetId(e.target.value)}>
-                                        <option value="" disabled>Select a class...</option>
+                                        <option value="" disabled>{t('studentsPage.select_class_placeholder')}</option>
                                         {classes.filter(c => c.id !== mergeClassId).map(c => (
                                             <option key={c.id} value={c.id}>{c.name}</option>
                                         ))}
@@ -311,14 +317,14 @@ export default function StudentsPage() {
                                 </div>
                             </div>
                             <div className="modal-footer">
-                                <button className="btn btn-secondary" onClick={() => setMergeClassId(null)}>Cancel</button>
+                                <button className="btn btn-secondary" onClick={() => setMergeClassId(null)}>{t('common.cancel')}</button>
                                 <button className="btn btn-primary" disabled={!mergeTargetId} onClick={() => {
                                     if (mergeTargetId) {
                                         mergeClasses(mergeClassId!, mergeTargetId);
                                         if (activeClass === mergeClassId) setActiveClass(mergeTargetId);
                                         setMergeClassId(null);
                                     }
-                                }}>Merge classes</button>
+                                }}>{t('studentsPage.action_merge_classes')}</button>
                             </div>
                         </div>
                     </div>
@@ -328,23 +334,27 @@ export default function StudentsPage() {
                     <div className="modal-overlay" onClick={() => setDeleteClassId(null)}>
                         <div className="modal" onClick={e => e.stopPropagation()}>
                             <div className="modal-header">
-                                <h3>Delete Class?</h3>
+                                <h3>{t('studentsPage.delete_class_title')}</h3>
                                 <button className="btn btn-ghost btn-icon" onClick={() => setDeleteClassId(null)}>✕</button>
                             </div>
                             <div className="modal-body">
-                                <p>Are you sure you want to delete <strong>{classes.find(c => c.id === deleteClassId)?.name}</strong>?</p>
+                                <p>
+                                    <Trans i18nKey="studentsPage.delete_class_confirmation" values={{ className: classes.find(c => c.id === deleteClassId)?.name }}>
+                                        Are you sure you want to delete <strong>{'{{className}}'}</strong>?
+                                    </Trans>
+                                </p>
 
                                 <div style={{ background: 'var(--red-soft)', color: 'var(--red)', padding: '12px 16px', borderRadius: 8, marginTop: 16, fontSize: '0.9rem' }}>
-                                    <strong>Warning:</strong> The {students.filter(s => s.classId === deleteClassId).length} student(s) currently in this class will also be permanently deleted. If you want to keep them, merge this class into another one instead.
+                                    <strong>{t('studentsPage.warning_label')}</strong> {t('studentsPage.delete_class_warning', { count: students.filter(s => s.classId === deleteClassId).length })}
                                 </div>
                             </div>
                             <div className="modal-footer">
-                                <button className="btn btn-secondary" onClick={() => setDeleteClassId(null)}>Cancel</button>
+                                <button className="btn btn-secondary" onClick={() => setDeleteClassId(null)}>{t('common.cancel')}</button>
                                 <button className="btn btn-primary" style={{ background: 'var(--red)', borderColor: 'var(--red)' }} onClick={() => {
                                     deleteClass(deleteClassId!, true);
                                     if (activeClass === deleteClassId) setActiveClass(classes.find(c => c.id !== deleteClassId)?.id ?? '');
                                     setDeleteClassId(null);
-                                }}>Delete</button>
+                                }}>{t('common.delete')}</button>
                             </div>
                         </div>
                     </div>
