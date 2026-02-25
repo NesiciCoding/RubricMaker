@@ -14,8 +14,10 @@ export default function ExportPage() {
     const [exporting, setExporting] = useState(false);
 
     // PDF Export Options
+    const rubric = rubrics.find(r => r.id === selectedRubricId);
+
     // PDF Export Options
-    const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
+    const [orientation, setOrientation] = useState<'portrait' | 'landscape'>(rubric?.format?.orientation || 'portrait');
     const [combineAll, setCombineAll] = useState(false);
     const [padForDoubleSided, setPadForDoubleSided] = useState(false);
 
@@ -23,8 +25,14 @@ export default function ExportPage() {
     const activeTemplateId = settings.exportTemplateId ?? '';
     const activeTemplate = exportTemplates.find(t => t.id === activeTemplateId) ?? null;
 
-    const rubric = rubrics.find(r => r.id === selectedRubricId);
     const scale = gradeScales.find(g => g.id === (rubric?.gradeScaleId ?? settings.defaultGradeScaleId)) ?? gradeScales[0];
+
+    // Keep orientation in sync when rubric changes
+    React.useEffect(() => {
+        if (rubric?.format?.orientation) {
+            setOrientation(rubric.format.orientation);
+        }
+    }, [rubric]);
 
     const gradedStudents = studentRubrics
         .filter(sr => sr.rubricId === selectedRubricId)

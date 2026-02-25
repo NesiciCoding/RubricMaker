@@ -427,8 +427,9 @@ function buildEmptyRubricHTML(rubric: Rubric): string {
 </html>`;
 }
 
-export async function exportRubricGridPdf(rubric: Rubric, orientation: 'portrait' | 'landscape' = 'portrait'): Promise<void> {
+export async function exportRubricGridPdf(rubric: Rubric): Promise<void> {
   const { jsPDF, html2canvas } = await getLibs();
+  const orientation = rubric.format.orientation || 'portrait';
   const widthPx = orientation === 'landscape' ? 1250 : 900;
   const aspectRatio = orientation === 'landscape' ? (210 / 297) : (297 / 210);
   const heightPx = widthPx * aspectRatio;

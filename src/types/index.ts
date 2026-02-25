@@ -103,6 +103,7 @@ export interface RubricFormat {
     headerTextAlign: 'left' | 'center' | 'right';
     showBorders: boolean;
     rowStriping: boolean;
+    orientation: 'portrait' | 'landscape';
 }
 
 export const DEFAULT_FORMAT: RubricFormat = {
@@ -120,6 +121,7 @@ export const DEFAULT_FORMAT: RubricFormat = {
     headerTextAlign: 'center',
     showBorders: true,
     rowStriping: false,
+    orientation: 'portrait',
 };
 
 export type ScoringMode = 'weighted-percentage' | 'total-points';

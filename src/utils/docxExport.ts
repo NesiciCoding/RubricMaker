@@ -1,4 +1,4 @@
-import { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, TextRun, AlignmentType, HeadingLevel, BorderStyle } from 'docx';
+import { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, TextRun, AlignmentType, HeadingLevel, PageOrientation } from 'docx';
 import { saveAs } from 'file-saver';
 import type { Rubric, RubricCriterion } from '../types';
 
@@ -151,6 +151,13 @@ export async function exportRubricToDocx(rubric: Rubric) {
 
     const doc = new Document({
         sections: [{
+            properties: {
+                page: {
+                    size: {
+                        orientation: fmt.orientation === 'landscape' ? PageOrientation.LANDSCAPE : PageOrientation.PORTRAIT,
+                    },
+                },
+            },
             children: [
                 new Paragraph({
                     text: rubric.name,

@@ -646,6 +646,14 @@ export default function RubricBuilder() {
                                         <option value="worst-first">{t('rubricBuilder.format_order_worst_first')}</option>
                                     </select>
                                 </div>
+                                <div className="form-group">
+                                    <label>{t('rubricBuilder.format_orientation')}</label>
+                                    <select value={format.orientation || 'portrait'}
+                                        onChange={e => setFormat(f => ({ ...f, orientation: e.target.value as 'portrait' | 'landscape' }))}>
+                                        <option value="portrait">{t('rubricBuilder.format_portrait')}</option>
+                                        <option value="landscape">{t('rubricBuilder.format_landscape')}</option>
+                                    </select>
+                                </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 4 }}>
                                     <div className="form-group">
                                         <label>{t('rubricBuilder.format_header_align')}</label>

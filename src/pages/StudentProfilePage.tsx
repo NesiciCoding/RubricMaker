@@ -68,7 +68,7 @@ export default function StudentProfilePage() {
     const handleExport = async (h: any) => {
         setExportingId(h.sr.id);
         try {
-            await exportSinglePdf(h.sr, h.rubric, student, h.scale);
+            await exportSinglePdf(h.sr, h.rubric, student, h.scale, { orientation: h.rubric.format?.orientation || 'portrait' });
         } finally {
             setExportingId(null);
         }

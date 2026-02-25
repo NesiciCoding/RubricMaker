@@ -1,12 +1,13 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, MessageSquare, Paperclip, CheckSquare, Square, Info, BookOpen } from 'lucide-react';
+import { ArrowLeft, Save, MessageSquare, Paperclip, CheckSquare, Square, Info, BookOpen, FileDown } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import CommentBankModal from '../components/Comments/CommentBankModal';
 import { useApp } from '../context/AppContext';
 import { useTranslation } from 'react-i18next';
 import type { ScoreEntry, Modifier } from '../types';
 import { calcGradeSummary } from '../utils/gradeCalc';
+import { exportSinglePdf } from '../utils/pdfExport';
 
 export default function GradeStudent() {
     const { t } = useTranslation();
@@ -72,6 +73,11 @@ export default function GradeStudent() {
 
     if (!rubric || !student || !sr) return <div className="page-content">{t('gradeStudent.error_not_found')} <button onClick={() => navigate(-1)}>{t('gradeStudent.action_back')}</button></div>;
 
+    const handleExportPdf = async () => {
+        if (!sr || !rubric || !student) return;
+        await exportSinglePdf(sr, rubric, student, scale, { orientation: rubric.format.orientation });
+    };
+
     const fmt = rubric.format;
     const orderedLevels = fmt.levelOrder === 'worst-first'
         ? (c: typeof rubric.criteria[0]) => [...c.levels].reverse()
@@ -132,6 +138,11 @@ export default function GradeStudent() {
                         </div>
                         {/* Modifier controls */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 180, marginLeft: 'auto' }}>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', width: '100%', paddingBottom: 6 }}>
+                                <button className="btn btn-secondary btn-sm" onClick={handleExportPdf}>
+                                    <FileDown size={14} /> Export PDF
+                                </button>
+                            </div>
                             <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>
                                 {t('gradeStudent.label_modifier')}
                             </span>
