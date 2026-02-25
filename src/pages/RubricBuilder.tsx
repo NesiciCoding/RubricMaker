@@ -152,7 +152,7 @@ export default function RubricBuilder() {
         setCriteria(c => c.map(x => x.id === cid
             ? {
                 ...x, levels: x.levels.map(l => l.id === lid
-                    ? { ...l, subItems: [...l.subItems, { id: nanoid(), label: '', points: 1 }] }
+                    ? { ...l, subItems: [...l.subItems, { id: nanoid(), label: '', points: 1, minPoints: 0, maxPoints: 1 }] }
                     : l
                 )
             }
@@ -498,14 +498,25 @@ export default function RubricBuilder() {
                                                             {level.subItems.map(si => (
                                                                 <div key={si.id} style={{ display: 'flex', flexDirection: 'column', gap: 4, paddingBottom: 6, borderBottom: '1px solid var(--border)' }}>
                                                                     <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                                                                        <input type="text" value={si.label}
+                                                                        <textarea value={si.label}
                                                                             onChange={e => updateSubItem(criterion.id, level.id, si.id, { label: e.target.value })}
                                                                             placeholder={t('rubricBuilder.placeholder_sub_item_label')}
-                                                                            style={{ flex: 1, fontSize: '0.78rem' }} />
-                                                                        <input type="number" value={si.points} min={0}
-                                                                            onChange={e => updateSubItem(criterion.id, level.id, si.id, { points: Number(e.target.value) })}
-                                                                            style={{ width: 46, fontSize: '0.78rem' }}
-                                                                            title="Points for this sub-item" />
+                                                                            rows={2}
+                                                                            style={{ flex: 1, fontSize: '0.78rem', resize: 'vertical', minHeight: 40, fontFamily: 'inherit', padding: '6px 8px', borderRadius: 4, border: '1px solid var(--border)' }} />
+                                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                                                            <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>{t('rubricBuilder.label_sub_item_min')}</span>
+                                                                            <input type="number" value={si.minPoints ?? 0} min={0}
+                                                                                onChange={e => updateSubItem(criterion.id, level.id, si.id, { minPoints: Number(e.target.value) })}
+                                                                                style={{ width: 45, fontSize: '0.78rem', height: 26, padding: '2px 4px' }}
+                                                                                title="Min points for this sub-item" />
+                                                                        </div>
+                                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                                                            <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>{t('rubricBuilder.label_sub_item_max')}</span>
+                                                                            <input type="number" value={si.maxPoints ?? si.points ?? 1} min={si.minPoints ?? 0}
+                                                                                onChange={e => updateSubItem(criterion.id, level.id, si.id, { maxPoints: Number(e.target.value) })}
+                                                                                style={{ width: 45, fontSize: '0.78rem', height: 26, padding: '2px 4px' }}
+                                                                                title="Max points for this sub-item" />
+                                                                        </div>
                                                                         <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--accent)' }}
                                                                             onClick={() => setPickingStandardFor({ type: 'subitem', cid: criterion.id, lid: level.id, sid: si.id })}
                                                                             title="Link standard to this sub-item">

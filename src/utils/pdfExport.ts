@@ -143,9 +143,28 @@ function buildRubricHTML(
     const cells = levels.map(l => {
       const isSelected = entry?.levelId === l.id || entry?.overridePoints !== undefined;
       const selected = entry?.levelId === l.id;
+
+      const subItemsHtml = l.subItems.length > 0 ? `
+        <div style="margin-top:8px;padding-top:6px;border-top:1px solid #e5e7eb;font-size:10px;">
+          ${l.subItems.map(si => {
+        const legacyChecked = (entry?.checkedSubItems ?? []).includes(si.id);
+        const max = si.maxPoints ?? si.points ?? 1;
+        let scoreLabel = "";
+        if (entry) {
+          const currentScore = entry.subItemScores?.[si.id] ?? (legacyChecked ? max : (si.minPoints ?? 0));
+          scoreLabel = `[${currentScore}/${max} pts]`;
+        } else {
+          scoreLabel = `(${si.minPoints ?? 0}-${max} pts)`;
+        }
+        return `<div style="margin-bottom:3px;">• ${parseMd(si.label)} <span style="color:#6b7280;font-size:9px">${scoreLabel}</span></div>`;
+      }).join('')}
+        </div>
+      ` : '';
+
       return `<td style="padding:10px 12px;border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};vertical-align:top;font-size:12px;${selected ? `background:${fmt.accentColor}22;border-color:${fmt.accentColor};border-style:solid;border-width:2px;font-weight:600;` : ''}">
         ${parseMd(l.description) || '–'}
         ${fmt.showPoints ? `<br/><small style="color:${selected ? fmt.accentColor : '#6b7280'}">${l.minPoints === l.maxPoints ? l.maxPoints : `${l.minPoints}-${l.maxPoints}`}pts</small>` : ''}
+        ${subItemsHtml}
       </td>`;
     }).join('');
     const comment = entry?.comment ? `<div style="font-size:10px;color:#6b7280;margin-top:4px;font-style:italic">${parseMd(entry.comment)}</div>` : '';
@@ -343,9 +362,19 @@ function buildEmptyRubricHTML(rubric: Rubric): string {
   const rows = rubric.criteria.map(c => {
     const levels = orderedLevels(c);
     const cells = levels.map(l => {
+      const subItemsHtml = l.subItems.length > 0 ? `
+        <div style="margin-top:8px;padding-top:6px;border-top:1px solid #e5e7eb;font-size:10px;">
+          ${l.subItems.map(si => {
+        const max = si.maxPoints ?? si.points ?? 1;
+        return `<div style="margin-bottom:3px">[ ] ${si.label} <span style="color:#6b7280;font-size:9px">(${si.minPoints ?? 0}-${max} pts)</span></div>`;
+      }).join('')}
+        </div>
+      ` : '';
+
       return `<td style="padding:10px 12px;border:1px solid #d1d5db;vertical-align:top;font-size:12px;">
         ${l.description || '–'}
         ${fmt.showPoints ? `<br/><small style="color:#6b7280">${l.minPoints === l.maxPoints ? l.maxPoints : `${l.minPoints}-${l.maxPoints}`}pts</small>` : ''}
+        ${subItemsHtml}
       </td>`;
     }).join('');
     return `<tr>

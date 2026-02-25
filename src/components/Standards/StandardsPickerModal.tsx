@@ -244,7 +244,7 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
 
                 {/* Search & Toolbar */}
                 <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 12 }}>
-                    <div style={{ position: 'relative', flex: 1 }}>
+                    <div style={{ position: 'relative', flex: '0 0 50%' }}>
                         <Search size={15} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                         <input type="text" placeholder={
                             view === 'favorites' ? "Search favorites..." :
@@ -260,7 +260,7 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
                         value={sortOrder}
                         onChange={e => setSortOrder(e.target.value as any)}
                         className="btn btn-ghost"
-                        style={{ padding: '6px 12px', border: '1px solid var(--border)', appearance: 'auto', background: 'var(--bg-elevated)', fontSize: '0.85rem' }}
+                        style={{ padding: '6px 12px', border: '1px solid var(--border)', appearance: 'auto', background: 'var(--bg-elevated)', fontSize: '0.85rem', flex: 1 }}
                     >
                         <option value="default">{view === 'browse' && step !== 'standard' ? 'Default Order' : 'Hierarchical'}</option>
                         <option value="alpha-asc">Alphabetical (A-Z)</option>

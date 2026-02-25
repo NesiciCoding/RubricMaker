@@ -113,21 +113,42 @@ export async function exportRubricWithTemplate(rubric: Rubric, template: ExportT
                     ],
                 }),
                 // Level cells
-                ...levels.map(l => new TableCell({
-                    width: { size: (78 / levels.length), type: WidthType.PERCENTAGE },
-                    children: [
-                        new Paragraph({ children: [new TextRun({ text: l.description || '—', size: fmt.fontSize * 2 })] }),
-                        ...(fmt.showPoints ? [new Paragraph({
-                            alignment: AlignmentType.RIGHT,
-                            spacing: { before: 80 },
-                            children: [new TextRun({
-                                text: `${l.minPoints === l.maxPoints ? l.maxPoints : `${l.minPoints}–${l.maxPoints}`} pts`,
-                                bold: true,
-                                size: (fmt.fontSize - 2) * 2,
-                            })],
-                        })] : []),
-                    ],
-                })),
+                ...levels.map(l => {
+                    const subItemParagraphs = l.subItems.map(si => {
+                        const max = si.maxPoints ?? si.points ?? 1;
+                        return new Paragraph({
+                            children: [
+                                new TextRun({ text: "[ ] ", size: (fmt.fontSize - 2) * 2, color: "666666" }),
+                                new TextRun({ text: si.label, size: (fmt.fontSize - 2) * 2, color: "666666" }),
+                                new TextRun({ text: ` (${si.minPoints ?? 0}-${max} pts)`, size: (fmt.fontSize - 3) * 2, color: "888888" })
+                            ],
+                            spacing: { before: 60 }
+                        });
+                    });
+
+                    return new TableCell({
+                        width: { size: (78 / levels.length), type: WidthType.PERCENTAGE },
+                        children: [
+                            new Paragraph({ children: [new TextRun({ text: l.description || '—', size: fmt.fontSize * 2 })] }),
+                            ...(fmt.showPoints ? [new Paragraph({
+                                alignment: AlignmentType.RIGHT,
+                                spacing: { before: 80 },
+                                children: [new TextRun({
+                                    text: `${l.minPoints === l.maxPoints ? l.maxPoints : `${l.minPoints}–${l.maxPoints}`} pts`,
+                                    bold: true,
+                                    size: (fmt.fontSize - 2) * 2,
+                                })],
+                            })] : []),
+                            ...(l.subItems.length > 0 ? [
+                                new Paragraph({
+                                    children: [], // spacing paragraph
+                                    spacing: { before: 80 }
+                                }),
+                                ...subItemParagraphs
+                            ] : [])
+                        ],
+                    });
+                }),
             ],
         });
     });

@@ -15,10 +15,17 @@ export function calcEntryPoints(entry: ScoreEntry, criterion: RubricCriterion): 
     const level = criterion.levels.find(l => l.id === entry.levelId);
     if (!level) return 0;
 
-    // Sub-items: sum of checked sub-item points across ALL levels in this criterion
+    // Sub-items: sum of granular scores or fallback to checked legacy points
     const subItemTotal = criterion.levels.reduce((sum, lvl) => {
         return sum + lvl.subItems.reduce((lvlSum, si) => {
-            return entry.checkedSubItems.includes(si.id) ? lvlSum + si.points : lvlSum;
+            if (entry.subItemScores && entry.subItemScores[si.id] !== undefined) {
+                return lvlSum + entry.subItemScores[si.id];
+            }
+            // Fallback for older rubrics/entries using strict checkboxes
+            if (entry.checkedSubItems.includes(si.id)) {
+                return lvlSum + (si.maxPoints ?? si.points ?? 0);
+            }
+            return lvlSum;
         }, 0);
     }, 0);
 

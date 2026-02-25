@@ -111,19 +111,40 @@ export async function exportRubricToDocx(rubric: Rubric) {
                     shading: { fill: "F8F9FA" }
                 }),
                 // Level Cells
-                ...levels.map(l => new TableCell({
-                    children: [
-                        new Paragraph({
-                            children: l.description ? parseMd(l.description) : [new TextRun({ text: "—" })]
-                        }),
-                        ...(fmt.showPoints ? [new Paragraph({
-                            children: [new TextRun({ text: `${l.minPoints === l.maxPoints ? l.maxPoints : `${l.minPoints}-${l.maxPoints}`} pts`, bold: true })],
-                            alignment: AlignmentType.RIGHT,
-                            spacing: { before: 100 }
-                        })] : [])
-                    ],
-                    width: { size: 75 / levels.length, type: WidthType.PERCENTAGE }
-                }))
+                ...levels.map(l => {
+                    const subItemParagraphs = l.subItems.map(si => {
+                        const max = si.maxPoints ?? si.points ?? 1;
+                        return new Paragraph({
+                            children: [
+                                new TextRun({ text: "[ ] ", size: 18, color: "666666" }),
+                                new TextRun({ text: si.label, size: 18, color: "666666" }),
+                                new TextRun({ text: ` (${si.minPoints ?? 0}-${max} pts)`, size: 16, color: "888888" })
+                            ],
+                            spacing: { before: 60 }
+                        });
+                    });
+
+                    return new TableCell({
+                        children: [
+                            new Paragraph({
+                                children: l.description ? parseMd(l.description) : [new TextRun({ text: "—" })]
+                            }),
+                            ...(fmt.showPoints ? [new Paragraph({
+                                children: [new TextRun({ text: `${l.minPoints === l.maxPoints ? l.maxPoints : `${l.minPoints}-${l.maxPoints}`} pts`, bold: true })],
+                                alignment: AlignmentType.RIGHT,
+                                spacing: { before: 100 }
+                            })] : []),
+                            ...(l.subItems.length > 0 ? [
+                                new Paragraph({
+                                    children: [], // spacing paragraph
+                                    spacing: { before: 100 }
+                                }),
+                                ...subItemParagraphs
+                            ] : [])
+                        ],
+                        width: { size: 75 / levels.length, type: WidthType.PERCENTAGE }
+                    });
+                })
             ]
         });
     });

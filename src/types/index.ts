@@ -1,10 +1,12 @@
 // ─── Core Domain Types for Rubric Maker ───────────────────────────────────────
 
-/** A single checkbox item inside a level — awarded when checked */
+/** A single item inside a level — awarded via checkbox or scored via points */
 export interface SubItem {
     id: string;
-    label: string;   // e.g. "Uses correct terminology"
-    points: number;  // points earned when this sub-item is checked
+    label: string;
+    points?: number; // legacy/default points
+    minPoints?: number;
+    maxPoints?: number;
     linkedStandards?: LinkedStandard[];
 }
 
@@ -161,6 +163,8 @@ export interface ScoreEntry {
     selectedPoints?: number;
     /** Which SubItem ids are checked for this criterion */
     checkedSubItems: string[];
+    /** Granular scores chosen for specific sub-items */
+    subItemScores?: Record<string, number>;
     comment: string;
     attachmentId?: string;         // evidence file linked to this criterion
 }

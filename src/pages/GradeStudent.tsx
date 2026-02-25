@@ -78,13 +78,10 @@ export default function GradeStudent() {
         : (c: typeof rubric.criteria[0]) => c.levels;
     const rubricAttachments = attachments.filter(a => a.rubricId === rubricId);
 
-    // Helper to toggle a sub-item check
-    function toggleSubItem(entry: ScoreEntry, subItemId: string) {
-        const current = entry.checkedSubItems ?? [];
-        const next = current.includes(subItemId)
-            ? current.filter(id => id !== subItemId)
-            : [...current, subItemId];
-        updateEntry(entry.criterionId, { checkedSubItems: next });
+    // Helper to set a sub-item score
+    function setSubItemScore(entry: ScoreEntry, subItemId: string, score: number) {
+        const currentScores = entry.subItemScores ?? {};
+        updateEntry(entry.criterionId, { subItemScores: { ...currentScores, [subItemId]: score } });
     }
 
     return (
@@ -221,22 +218,36 @@ export default function GradeStudent() {
                                                             <div style={{ marginTop: 8, paddingTop: 8, borderTop: isSelected ? `1px solid ${fmt.accentColor}40` : '1px solid var(--border)', textAlign: 'left' }} onClick={e => e.stopPropagation()}>
                                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                                                                     {level.subItems.map(si => {
-                                                                        const checked = (entry.checkedSubItems ?? []).includes(si.id);
+                                                                        const legacyChecked = (entry.checkedSubItems ?? []).includes(si.id);
+                                                                        const defaultScore = legacyChecked ? (si.maxPoints ?? si.points ?? 0) : (si.minPoints ?? 0);
+                                                                        const currentScore = entry.subItemScores?.[si.id] ?? defaultScore;
+                                                                        const min = si.minPoints ?? 0;
+                                                                        const max = si.maxPoints ?? si.points ?? 1;
+
                                                                         return (
-                                                                            <div key={si.id} onClick={() => toggleSubItem(entry, si.id)} style={{ display: 'flex', gap: 6, alignItems: 'start', fontSize: '0.75em', cursor: 'pointer', lineHeight: 1.3 }}>
-                                                                                <div style={{ flexShrink: 0, marginTop: 1 }}>
-                                                                                    {checked ? <CheckSquare size={14} color={fmt.accentColor} /> : <Square size={14} color="var(--text-muted)" />}
+                                                                            <div key={si.id} onClick={(e) => e.stopPropagation()} style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: '0.75em', lineHeight: 1.3 }}>
+                                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', paddingBottom: 2 }}>
+                                                                                    <div style={{ paddingRight: 8 }}>{si.label}</div>
+                                                                                    <div style={{ fontWeight: 600, color: 'var(--accent)', flexShrink: 0, fontSize: '0.9em' }}>{currentScore} / {max} {t('gradeStudent.table_points')}</div>
                                                                                 </div>
-                                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                                                                    <span>{si.label} <span style={{ opacity: 0.6 }}>(+{si.points})</span></span>
-                                                                                    {si.linkedStandards && si.linkedStandards.length > 0 && (
-                                                                                        <div style={{ color: 'var(--accent)', opacity: 0.8, fontSize: '0.9em', display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                                                                                            {si.linkedStandards.map((std, idx) => (
-                                                                                                <span key={idx} title={std.description}>[{std.statementNotation ?? std.guid}]</span>
-                                                                                            ))}
-                                                                                        </div>
-                                                                                    )}
-                                                                                </div>
+
+                                                                                <input
+                                                                                    type="range"
+                                                                                    min={min}
+                                                                                    max={max}
+                                                                                    step={0.5}
+                                                                                    value={currentScore}
+                                                                                    onChange={e => setSubItemScore(entry, si.id, Number(e.target.value))}
+                                                                                    style={{ width: '100%', cursor: 'pointer', height: 4, accentColor: fmt.accentColor }}
+                                                                                />
+
+                                                                                {si.linkedStandards && si.linkedStandards.length > 0 && (
+                                                                                    <div style={{ color: 'var(--accent)', opacity: 0.8, fontSize: '0.9em', display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                                                                        {si.linkedStandards.map((std, idx) => (
+                                                                                            <span key={idx} title={std.description}>[{std.statementNotation ?? std.guid}]</span>
+                                                                                        ))}
+                                                                                    </div>
+                                                                                )}
                                                                             </div>
                                                                         );
                                                                     })}
