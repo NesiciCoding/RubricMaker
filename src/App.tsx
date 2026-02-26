@@ -4,6 +4,7 @@ import Sidebar from './components/Layout/Sidebar';
 import Joyride, { CallBackProps, STATUS } from 'react-joyride';
 import { useApp } from './context/AppContext';
 import { tutorialSteps } from './components/TutorialSteps';
+import { Loader } from 'lucide-react';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const RubricList = lazy(() => import('./pages/RubricList'));
@@ -19,7 +20,6 @@ const StudentProfilePage = lazy(() => import('./pages/StudentProfilePage'));
 const ComparativeGrading = lazy(() => import('./pages/ComparativeGrading'));
 
 const Spinner = () => {
-    const { Loader } = require('lucide-react');
     return (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
             <Loader className="spin" size={24} style={{ color: 'var(--text-muted)' }} />
