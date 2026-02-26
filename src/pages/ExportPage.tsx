@@ -193,10 +193,19 @@ export default function ExportPage() {
                                 </button>
                             )}
                         </div>
-                        {exportTemplates.length === 0 && (
-                            <p className="text-muted text-xs" style={{ marginTop: 6 }}>
+                        {exportTemplates.length === 0 ? (
+                            <div className="text-muted text-xs" style={{ marginTop: 6, display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
                                 No templates saved. Upload one in <strong>Settings → Export Templates</strong>.
-                            </p>
+                                <a href="sample-template.docx" download="sample-template.docx" className="btn btn-ghost btn-icon btn-sm" style={{ padding: '0 6px', height: 20, display: 'inline-flex', alignSelf: 'center', alignItems: 'center', gap: 4, textDecoration: 'none', color: 'var(--accent)' }}>
+                                    <Download size={10} /> Download Sample Template
+                                </a>
+                            </div>
+                        ) : (
+                            <div className="text-muted text-xs" style={{ marginTop: 6, display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
+                                <a href="sample-template.docx" download="sample-template.docx" className="btn btn-ghost btn-icon btn-sm" style={{ padding: '0 6px', height: 20, display: 'inline-flex', alignSelf: 'center', alignItems: 'center', gap: 4, textDecoration: 'none', color: 'var(--accent)' }}>
+                                    <Download size={10} /> Download Sample Template
+                                </a>
+                            </div>
                         )}
                     </div>
 

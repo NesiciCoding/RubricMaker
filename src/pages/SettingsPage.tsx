@@ -261,9 +261,14 @@ export default function SettingsPage() {
                                 <p className="text-muted text-xs" style={{ marginTop: 2 }}>{t('settings.export_templates_help')}</p>
                             </div>
                         </div>
-                        <button className="btn btn-primary btn-sm" onClick={() => setShowTemplateUpload(true)}>
-                            <Upload size={14} /> {t('settings.action_upload_template')}
-                        </button>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                            <a href="sample-template.docx" download="sample-template.docx" className="btn btn-secondary btn-sm" style={{ textDecoration: 'none' }}>
+                                <Download size={14} /> Sample Template
+                            </a>
+                            <button className="btn btn-primary btn-sm" onClick={() => setShowTemplateUpload(true)}>
+                                <Upload size={14} /> {t('settings.action_upload_template')}
+                            </button>
+                        </div>
                     </div>
 
                     {exportTemplates.length === 0 ? (
