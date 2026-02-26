@@ -68,7 +68,8 @@
         "statistics": "Statistieken",
         "comment_bank": "Opmerkingenbank",
         "export": "Exporteren",
-        "attachments": "Bijlagen"
+        "attachments": "Bijlagen",
+        "localization": "Localisatie"
     },
     "dashboard": {
         "title": "Dashboard",
@@ -110,6 +111,7 @@
     },
     "studentsPage": {
         "title": "Studenten & Klassen",
+        "search_students": "Zoek leerlingen...",
         "import_csv": "CSV Importeren",
         "export_csv": "CSV Exporteren",
         "add_student": "Student Toevoegen",

@@ -39,6 +39,7 @@ export default function Sidebar() {
                         to={to}
                         end={end}
                         className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                        data-tour={to}
                     >
                         <Icon size={16} />
                         {label}
@@ -62,6 +63,7 @@ export default function Sidebar() {
                 <NavLink
                     to="/settings"
                     className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                    data-tour="/settings"
                 >
                     <Settings size={16} />
                     {t('common.settings')}

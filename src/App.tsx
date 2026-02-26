@@ -1,6 +1,9 @@
 import React, { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './components/Layout/Sidebar';
+import Joyride, { CallBackProps, STATUS } from 'react-joyride';
+import { useApp } from './context/AppContext';
+import { tutorialSteps } from './components/TutorialSteps';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const RubricList = lazy(() => import('./pages/RubricList'));
@@ -15,15 +18,49 @@ const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const StudentProfilePage = lazy(() => import('./pages/StudentProfilePage'));
 const ComparativeGrading = lazy(() => import('./pages/ComparativeGrading'));
 
-const Spinner = () => (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
-        <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Loading…</div>
-    </div>
-);
+const Spinner = () => {
+    const { Loader } = require('lucide-react');
+    return (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
+            <Loader className="spin" size={24} style={{ color: 'var(--text-muted)' }} />
+        </div>
+    );
+};
 
 export default function App() {
+    const { settings, updateSettings } = useApp();
+
+    const handleJoyrideCallback = (data: CallBackProps) => {
+        const { status } = data;
+        const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
+        if (finishedStatuses.includes(status)) {
+            updateSettings({ hasSeenTutorial: true });
+        }
+    };
+
     return (
         <div className="app-layout">
+            <Joyride
+                steps={tutorialSteps}
+                run={!settings.hasSeenTutorial}
+                continuous
+                showSkipButton
+                showProgress
+                hideCloseButton
+                callback={handleJoyrideCallback}
+                styles={{
+                    options: {
+                        primaryColor: 'var(--accent)',
+                        backgroundColor: 'var(--bg-elevated)',
+                        textColor: 'var(--text)',
+                        arrowColor: 'var(--bg-elevated)',
+                        overlayColor: 'rgba(0, 0, 0, 0.6)'
+                    },
+                    tooltipContainer: {
+                        textAlign: 'left'
+                    }
+                }}
+            />
             <Sidebar />
             <div className="main-area">
                 <Suspense fallback={<Spinner />}>

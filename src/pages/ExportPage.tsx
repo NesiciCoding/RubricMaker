@@ -3,10 +3,6 @@ import { Download, CheckSquare, Square, FileText, Users, Loader, Layout, X } fro
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import { calcGradeSummary } from '../utils/gradeCalc';
-import { exportSinglePdf, exportBatchPdf } from '../utils/pdfExport';
-import { exportRubricWithTemplate } from '../utils/docxTemplateExport';
-import { exportRubricToDocx } from '../utils/docxExport';
-import Papa from 'papaparse';
 
 export default function ExportPage() {
     const { rubrics, students, studentRubrics, gradeScales, settings, exportTemplates, updateSettings } = useApp();
@@ -63,11 +59,15 @@ export default function ExportPage() {
             if (single) {
                 const sr = studentRubrics.find(s => s.rubricId === rubric.id && s.studentId === single);
                 const student = students.find(s => s.id === single);
-                if (sr && student) await exportSinglePdf(sr, rubric, student, scale);
+                if (sr && student) {
+                    const { exportSinglePdf } = await import('../utils/pdfExport');
+                    await exportSinglePdf(sr, rubric, student, scale);
+                }
             } else {
                 const toExport = gradedStudents
                     .filter(x => selectedStudentIds.has(x.student!.id))
                     .map(x => ({ sr: x.sr, student: x.student! }));
+                const { exportBatchPdf } = await import('../utils/pdfExport');
                 await exportBatchPdf(toExport, rubric, scale, { padForDoubleSided });
             }
         } finally {
@@ -80,8 +80,10 @@ export default function ExportPage() {
         setExporting(true);
         try {
             if (activeTemplate) {
+                const { exportRubricWithTemplate } = await import('../utils/docxTemplateExport');
                 await exportRubricWithTemplate(rubric, activeTemplate);
             } else {
+                const { exportRubricToDocx } = await import('../utils/docxExport');
                 await exportRubricToDocx(rubric);
             }
         } finally {
@@ -89,7 +91,7 @@ export default function ExportPage() {
         }
     }
 
-    function handleCsvExport() {
+    async function handleCsvExport() {
         if (!rubric) return;
 
         const toExport = gradedStudents
@@ -135,6 +137,7 @@ export default function ExportPage() {
             return row;
         });
 
+        const Papa = await import('papaparse');
         const csv = Papa.unparse(data);
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);

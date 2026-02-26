@@ -142,19 +142,21 @@ export default function RubricList() {
                                         <p className="text-muted text-sm truncate" style={{ marginBottom: 14 }}>{r.description}</p>
                                     )}
 
-                                    <div style={{ display: 'flex', gap: 8 }}>
-                                        <button className="btn btn-primary btn-sm" style={{ flex: 1 }}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                        <button className="btn btn-primary btn-sm"
                                             onClick={() => navigate(`/rubrics/${r.id}`)}>
                                             <Edit2 size={14} /> {t('rubricList.edit_rubric')}
                                         </button>
-                                        <button className="btn btn-secondary btn-sm" style={{ flex: 1 }}
-                                            onClick={() => navigate('/students')}>
-                                            <Users size={14} /> {t('rubricList.grade_students')}
-                                        </button>
-                                        <button className="btn btn-secondary btn-sm" style={{ flex: 1 }} title="Start Comparative Grading"
-                                            onClick={() => navigate(`/grade-comparative/${settings.activeClassId || 'all'}/${r.id}`)}>
-                                            <GitCompare size={14} /> Compare
-                                        </button>
+                                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                            <button className="btn btn-secondary btn-sm" style={{ flex: '1 1 auto' }}
+                                                onClick={() => navigate('/students')}>
+                                                <Users size={14} /> {t('rubricList.grade_students')}
+                                            </button>
+                                            <button className="btn btn-secondary btn-sm compare-btn-tutorial" style={{ flex: '1 1 auto' }} title="Start Comparative Grading"
+                                                onClick={() => navigate(`/grade-comparative/${settings.activeClassId || 'all'}/${r.id}`)}>
+                                                <GitCompare size={14} /> Compare
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             );

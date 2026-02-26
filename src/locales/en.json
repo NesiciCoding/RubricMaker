@@ -68,7 +68,8 @@
         "statistics": "Statistics",
         "comment_bank": "Comment Bank",
         "export": "Export",
-        "attachments": "Attachments"
+        "attachments": "Attachments",
+        "localization": "Localization"
     },
     "dashboard": {
         "title": "Dashboard",
@@ -110,6 +111,7 @@
     },
     "studentsPage": {
         "title": "Students & Classes",
+        "search_students": "Search students...",
         "import_csv": "Import CSV",
         "export_csv": "Export CSV",
         "add_student": "Add Student",

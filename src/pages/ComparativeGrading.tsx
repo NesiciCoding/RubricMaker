@@ -26,6 +26,7 @@ export default function ComparativeGrading() {
     const [srA, setSrA] = useState<typeof studentRubrics[0] | null>(null);
     const [srB, setSrB] = useState<typeof studentRubrics[0] | null>(null);
     const [matchups, setMatchups] = useState<Set<string>>(new Set());
+    const [anchorMatchupCount, setAnchorMatchupCount] = useState<number>(0);
     const [error, setError] = useState('');
 
     // Setup initial matchup
@@ -83,6 +84,11 @@ export default function ComparativeGrading() {
         setSrA(getEmptySR(a.id));
         setSrB(getEmptySR(b.id));
         setMatchups(prev => new Set([...prev, getMatchKey(a!.id, b.id)]));
+        if (a.id === anchorId) {
+            setAnchorMatchupCount(prev => prev + 1);
+        } else {
+            setAnchorMatchupCount(1);
+        }
     }
 
     function handleSaveAndNext() {
@@ -93,8 +99,12 @@ export default function ComparativeGrading() {
         saveStudentRubric({ ...srA, gradedAt: new Date().toISOString(), rubricSnapshot: snap });
         saveStudentRubric({ ...srB, gradedAt: new Date().toISOString(), rubricSnapshot: snap });
 
-        // Keep A as anchor, pick new B
-        pickNextMatchup(studentA.id);
+        // Keep A as anchor unless limit reached
+        if (settings.comparativeMatchupLimit && settings.comparativeMatchupLimit > 0 && anchorMatchupCount >= settings.comparativeMatchupLimit) {
+            pickNextMatchup(null);
+        } else {
+            pickNextMatchup(studentA.id);
+        }
     }
 
     // Adaptive Scoring mechanism

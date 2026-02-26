@@ -85,6 +85,25 @@ export default function SettingsPage() {
                                 <option value="light">{t('settings.theme_light')}</option>
                             </select>
                         </div>
+                        <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                Comparative Matchup Limit
+                                <span className="badge badge-blue">
+                                    {settings.comparativeMatchupLimit && settings.comparativeMatchupLimit > 0 ? settings.comparativeMatchupLimit : 'Infinite'}
+                                </span>
+                            </label>
+                            <input
+                                type="number"
+                                min="0"
+                                placeholder="0 = infinite (default)"
+                                value={settings.comparativeMatchupLimit || ''}
+                                onChange={e => updateSettings({ comparativeMatchupLimit: parseInt(e.target.value) || 0 })}
+                                style={{ maxWidth: 200 }}
+                            />
+                            <div className="text-muted text-xs" style={{ marginTop: 4 }}>
+                                How many students an anchor should be compared against before choosing a new anchor. 0 means infinite.
+                            </div>
+                        </div>
                     </div>
                 </div>
 

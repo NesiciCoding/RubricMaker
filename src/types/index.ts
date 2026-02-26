@@ -204,6 +204,10 @@ export interface AppSettings {
     standardsApiKey?: string;
     /** ID of the default export template */
     exportTemplateId?: string;
+    /** How many comparative matchups to show an anchor student before picking a new anchor */
+    comparativeMatchupLimit?: number;
+    /** Whether the user has seen the guided UI tutorial */
+    hasSeenTutorial?: boolean;
 }
 
 export interface CommentBankItem {
