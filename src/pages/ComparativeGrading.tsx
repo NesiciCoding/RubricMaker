@@ -6,6 +6,7 @@ import { ArrowLeft, Check, Equal, Download, FileText, ImageIcon, ChevronRight, C
 import { nanoid } from '../utils/nanoid';
 import { useTranslation } from 'react-i18next';
 import { calcGradeSummary } from '../utils/gradeCalc';
+import AttachmentViewer from '../components/AttachmentViewer';
 
 export default function ComparativeGrading() {
     const { t } = useTranslation();
@@ -228,17 +229,7 @@ export default function ComparativeGrading() {
                         <div className="card" style={{ background: 'var(--bg-elevated)' }}>
                             <h3 style={{ marginBottom: 12 }}>Attachments</h3>
                             {attA.length === 0 ? <p className="text-muted text-sm">No attachments uploaded.</p> :
-                                attA.map(a => (
-                                    <div key={a.id} style={{ marginBottom: 8, padding: 8, background: 'var(--bg-body)', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
-                                        {a.mimeType.startsWith('image/') ? <ImageIcon size={14} className="text-blue" /> : <FileText size={14} className="text-purple" />}
-                                        <div style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.8rem' }}>{a.name}</div>
-                                        {a.mimeType.startsWith('image/') && a.dataUrl && (
-                                            <div style={{ marginTop: 8, width: '100%' }}>
-                                                <img src={a.dataUrl} style={{ width: '100%', borderRadius: 4, border: '1px solid var(--border)' }} alt={a.name} />
-                                            </div>
-                                        )}
-                                    </div>
-                                ))
+                                attA.map(a => <AttachmentViewer key={a.id} attachment={a} />)
                             }
                         </div>
                     </div>
@@ -311,21 +302,10 @@ export default function ComparativeGrading() {
                         <div className="card" style={{ background: 'var(--bg-elevated)' }}>
                             <h3 style={{ marginBottom: 12 }}>Attachments</h3>
                             {attB.length === 0 ? <p className="text-muted text-sm">No attachments uploaded.</p> :
-                                attB.map(a => (
-                                    <div key={a.id} style={{ marginBottom: 8, padding: 8, background: 'var(--bg-body)', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
-                                        {a.mimeType.startsWith('image/') ? <ImageIcon size={14} className="text-blue" /> : <FileText size={14} className="text-purple" />}
-                                        <div style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.8rem' }}>{a.name}</div>
-                                        {a.mimeType.startsWith('image/') && a.dataUrl && (
-                                            <div style={{ marginTop: 8, width: '100%' }}>
-                                                <img src={a.dataUrl} style={{ width: '100%', borderRadius: 4, border: '1px solid var(--border)' }} alt={a.name} />
-                                            </div>
-                                        )}
-                                    </div>
-                                ))
+                                attB.map(a => <AttachmentViewer key={a.id} attachment={a} />)
                             }
                         </div>
                     </div>
-
                 </div>
             </div>
         </>

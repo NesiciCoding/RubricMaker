@@ -20,8 +20,11 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 ### 3. Analytics & Reporting
 *   **Statistics Dashboard**: View class performance including Average, Median, Highest, and Lowest scores.
 *   **Visualization**: Charts for grade distribution and per-criterion performance.
+*   **Comparative Grading**: Simultaneously grade two students side-by-side to ensure rubric consistency.
+*   **Universal Attachment Viewer**: Rich inline rendering of `.docx` Word Documents, PDFs, and images within the grading flow.
 *   **Export**:
     *   **PDF**: Generate individual student reports or bulk export for the whole class.
+    *   **Word (.docx)**: Export raw data or use custom Word templates with mail-merge fields.
     *   **CSV**: Export raw data for use in Excel or other gradebooks.
 
 ### 4. Standards Integration

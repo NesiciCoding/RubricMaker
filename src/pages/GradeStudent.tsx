@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, MessageSquare, Paperclip, CheckSquare, Square, Info, BookOpen, FileDown } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import CommentBankModal from '../components/Comments/CommentBankModal';
+import AttachmentViewer from '../components/AttachmentViewer';
 import { useApp } from '../context/AppContext';
 import { useTranslation } from 'react-i18next';
 import type { ScoreEntry, Modifier } from '../types';
@@ -381,11 +382,11 @@ export default function GradeStudent() {
                 {showAttachPanel && (
                     <div className="card" style={{ marginTop: 16 }}>
                         <h3>{t('gradeStudent.attachments_title')}</h3>
-                        {rubricAttachments.map(att => (
-                            <div key={att.id} style={{ marginTop: 6 }} className="text-sm">
-                                <Paperclip size={12} /> {att.name}
-                            </div>
-                        ))}
+                        <div style={{ marginTop: 16 }}>
+                            {rubricAttachments.map(att => (
+                                <AttachmentViewer key={att.id} attachment={att} />
+                            ))}
+                        </div>
                     </div>
                 )}
             </div>
