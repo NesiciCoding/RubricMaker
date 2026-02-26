@@ -6,6 +6,7 @@ import { calcGradeSummary } from '../utils/gradeCalc';
 import { exportSinglePdf, exportBatchPdf } from '../utils/pdfExport';
 import { exportRubricWithTemplate } from '../utils/docxTemplateExport';
 import { exportRubricToDocx } from '../utils/docxExport';
+import Papa from 'papaparse';
 
 export default function ExportPage() {
     const { rubrics, students, studentRubrics, gradeScales, settings, exportTemplates, updateSettings } = useApp();
@@ -17,8 +18,6 @@ export default function ExportPage() {
     const rubric = rubrics.find(r => r.id === selectedRubricId);
 
     // PDF Export Options
-    const [orientation, setOrientation] = useState<'portrait' | 'landscape'>(rubric?.format?.orientation || 'portrait');
-    const [combineAll, setCombineAll] = useState(false);
     const [padForDoubleSided, setPadForDoubleSided] = useState(false);
 
     // Template (for Word/DOCX export)
@@ -27,21 +26,19 @@ export default function ExportPage() {
 
     const scale = gradeScales.find(g => g.id === (rubric?.gradeScaleId ?? settings.defaultGradeScaleId)) ?? gradeScales[0];
 
-    // Keep orientation in sync when rubric changes
-    React.useEffect(() => {
-        if (rubric?.format?.orientation) {
-            setOrientation(rubric.format.orientation);
-        }
-    }, [rubric]);
+    // Template (for Word/DOCX export)
 
     const gradedStudents = studentRubrics
         .filter(sr => sr.rubricId === selectedRubricId)
-        .map(sr => ({
-            sr,
-            student: students.find(s => s.id === sr.studentId),
-            summary: rubric ? calcGradeSummary(sr, rubric.criteria, scale) : null,
-        }))
-        .filter(x => x.student);
+        .map(sr => {
+            const r = sr.rubricSnapshot || rubric;
+            return {
+                sr,
+                student: students.find(s => s.id === sr.studentId),
+                summary: r ? calcGradeSummary(sr, r.criteria, scale, r) : null,
+            };
+        })
+        .filter(x => x.student && x.summary);
 
     function toggleStudent(id: string) {
         setSelectedStudentIds(prev => {
@@ -66,12 +63,12 @@ export default function ExportPage() {
             if (single) {
                 const sr = studentRubrics.find(s => s.rubricId === rubric.id && s.studentId === single);
                 const student = students.find(s => s.id === single);
-                if (sr && student) await exportSinglePdf(sr, rubric, student, scale, { orientation });
+                if (sr && student) await exportSinglePdf(sr, rubric, student, scale);
             } else {
                 const toExport = gradedStudents
                     .filter(x => selectedStudentIds.has(x.student!.id))
                     .map(x => ({ sr: x.sr, student: x.student! }));
-                await exportBatchPdf(toExport, rubric, scale, { orientation, combineAll, padForDoubleSided });
+                await exportBatchPdf(toExport, rubric, scale, { padForDoubleSided });
             }
         } finally {
             setExporting(false);
@@ -92,9 +89,65 @@ export default function ExportPage() {
         }
     }
 
+    function handleCsvExport() {
+        if (!rubric) return;
+
+        const toExport = gradedStudents
+            .filter(x => selectedStudentIds.has(x.student!.id));
+
+        if (toExport.length === 0) return;
+
+        const data = toExport.map(({ sr, student, summary }) => {
+            const row: Record<string, string | number> = {
+                'Student Name': student!.name,
+                'Email': student!.email || '',
+                'Rubric Name': rubric.name,
+                'Date Graded': sr.gradedAt ? new Date(sr.gradedAt).toLocaleDateString() : '',
+                'Score %': summary!.modifiedPercentage.toFixed(1),
+                'Letter Grade': summary!.letterGrade,
+                'Raw Points': summary!.rawScore,
+                'Max Points': summary!.maxRawScore,
+                'Global Modifier': sr.globalModifier && sr.globalModifier.value !== 0 ? `${sr.globalModifier.value} (${sr.globalModifier.reason})`.trim() : '',
+                'Overall Comment': sr.overallComment || ''
+            };
+
+            rubric.criteria.forEach((c) => {
+                const entry = sr.entries.find(e => e.criterionId === c.id);
+                const snapshotC = (sr.rubricSnapshot || rubric).criteria.find(sc => sc.id === c.id) || c;
+                let score = '';
+                if (entry) {
+                    if (entry.overridePoints !== undefined) {
+                        score = entry.overridePoints.toString();
+                    } else if (entry.selectedPoints !== undefined) {
+                        score = entry.selectedPoints.toString();
+                    } else if (entry.levelId) {
+                        const level = snapshotC.levels.find(l => l.id === entry.levelId);
+                        if (level) {
+                            score = level.minPoints === level.maxPoints ? level.maxPoints.toString() : `${level.minPoints}-${level.maxPoints}`;
+                        }
+                    }
+                }
+
+                row[`Criterion: ${c.title} (Score)`] = score;
+                row[`Criterion: ${c.title} (Comment)`] = entry?.comment || '';
+            });
+
+            return row;
+        });
+
+        const csv = Papa.unparse(data);
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${rubric.name.replace(/[^a-z0-9]/gi, '_')}_grades.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
     return (
         <>
-            <Topbar title="Export to PDF" />
+            <Topbar title="Export" />
             <div className="page-content fade-in">
                 <div className="card" style={{ marginBottom: 20 }}>
                     <div className="form-group" style={{ marginBottom: 16 }}>
@@ -143,6 +196,23 @@ export default function ExportPage() {
                             </p>
                         )}
                     </div>
+
+                    {/* CSV export */}
+                    <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14, marginTop: 14 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600, fontSize: '0.88rem' }}>
+                                <FileText size={14} /> Spreadsheet Export (CSV)
+                            </div>
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                disabled={!rubric || exporting || selectedStudentIds.size === 0}
+                                onClick={handleCsvExport}
+                            >
+                                <Download size={13} />
+                                {selectedStudentIds.size === 0 ? 'Select students to export CSV' : `Export ${selectedStudentIds.size} as CSV`}
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 {!rubric ? (
@@ -161,21 +231,10 @@ export default function ExportPage() {
                             </div>
                             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginRight: 10 }}>
-                                    <span style={{ fontSize: '0.85rem', fontWeight: 500 }}>Layout:</span>
-                                    <select value={orientation} onChange={e => setOrientation(e.target.value as 'portrait' | 'landscape')} style={{ padding: '4px 8px', fontSize: '0.85rem' }}>
-                                        <option value="portrait">Portrait</option>
-                                        <option value="landscape">Landscape</option>
-                                    </select>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 6, fontSize: '0.85rem', cursor: 'pointer' }}>
-                                        <input type="checkbox" checked={combineAll} onChange={e => setCombineAll(e.target.checked)} />
-                                        Combine into 1 PDF
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 6, fontSize: '0.85rem', cursor: 'pointer', color: 'var(--text-muted)' }} title="Adds to blank page so each student starts on a new physical sheet">
+                                        <input type="checkbox" checked={padForDoubleSided} onChange={e => setPadForDoubleSided(e.target.checked)} />
+                                        Pad for Double-Sided Print
                                     </label>
-                                    {combineAll && (
-                                        <label style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 6, fontSize: '0.85rem', cursor: 'pointer', color: 'var(--text-muted)' }}>
-                                            <input type="checkbox" checked={padForDoubleSided} onChange={e => setPadForDoubleSided(e.target.checked)} />
-                                            Pad for Double-Sided
-                                        </label>
-                                    )}
                                 </div>
                                 <button
                                     className="btn btn-primary"
@@ -183,7 +242,7 @@ export default function ExportPage() {
                                     onClick={() => handleExport()}
                                 >
                                     {exporting ? <Loader size={15} className="spin" /> : <Download size={15} />}
-                                    {exporting ? 'Exporting…' : (combineAll ? `Export ${selectedStudentIds.size} as Single PDF` : `Export ${selectedStudentIds.size} as ZIP`)}
+                                    {exporting ? 'Preparing Print…' : `Print ${selectedStudentIds.size} to PDF`}
                                 </button>
                             </div>
                         </div>

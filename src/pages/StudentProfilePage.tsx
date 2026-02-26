@@ -26,7 +26,8 @@ export default function StudentProfilePage() {
         const sorted = [...srs].sort((a, b) => new Date(a.gradedAt!).getTime() - new Date(b.gradedAt!).getTime());
 
         return sorted.map(sr => {
-            const rubric = rubrics.find(r => r.id === sr.rubricId);
+            const liveR = rubrics.find(r => r.id === sr.rubricId);
+            const rubric = sr.rubricSnapshot || liveR;
             if (!rubric) return null;
             const scale = gradeScales.find(g => g.id === (rubric.gradeScaleId ?? settings.defaultGradeScaleId)) ?? gradeScales[0];
             const summary = calcGradeSummary(sr, rubric.criteria, scale);

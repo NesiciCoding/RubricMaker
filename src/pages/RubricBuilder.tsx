@@ -4,7 +4,7 @@ import {
     Plus, Trash2, GripVertical, Save, ChevronUp, ChevronDown,
     Settings, Eye, ArrowLeft, Link2, BookOpen, X, ChevronRight, FileDown, FileText,
     Wand2, AlignLeft, AlignCenter, AlignRight, LayoutGrid, Rows3, CheckSquare, Square,
-    MoveLeft, MoveRight
+    MoveLeft, MoveRight, Copy
 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
@@ -121,6 +121,24 @@ export default function RubricBuilder() {
         if (swap < 0 || swap >= next.length) return;
         [next[idx], next[swap]] = [next[swap], next[idx]];
         setCriteria(next);
+    }
+    function duplicateCriterion(idx: number) {
+        setCriteria(prev => {
+            const source = prev[idx];
+            const clone: RubricCriterion = {
+                ...source,
+                id: nanoid(),
+                title: `${source.title} (Copy)`,
+                levels: source.levels.map(l => ({
+                    ...l,
+                    id: nanoid(),
+                    subItems: l.subItems.map(si => ({ ...si, id: nanoid() }))
+                }))
+            };
+            const next = [...prev];
+            next.splice(idx + 1, 0, clone);
+            return next;
+        });
     }
     function deleteCriterion(cid: string) { setCriteria(c => c.filter(x => x.id !== cid)); }
     function updateCriterion(cid: string, patch: Partial<RubricCriterion>) {
@@ -432,10 +450,16 @@ export default function RubricBuilder() {
                                             </button>
                                         </div>
                                     </div>
-                                    <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--red)', marginTop: 20 }}
-                                        onClick={() => deleteCriterion(criterion.id)}>
-                                        <Trash2 size={15} />
-                                    </button>
+                                    <div style={{ display: 'flex', gap: 4, marginTop: 20 }}>
+                                        <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--text-muted)' }}
+                                            onClick={() => duplicateCriterion(cIdx)} title="Duplicate Criterion">
+                                            <Copy size={15} />
+                                        </button>
+                                        <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--red)' }}
+                                            onClick={() => deleteCriterion(criterion.id)} title="Delete Criterion">
+                                            <Trash2 size={15} />
+                                        </button>
+                                    </div>
                                 </div>
 
                                 {/* Levels */}
@@ -933,6 +957,29 @@ function RubricWysiwygEditor({ name, setName, criteria, format, updateCriterion,
         });
     }
 
+    function deleteCriterionWysiwyg(cIdx: number) {
+        criteriaSetter(prev => prev.filter((_, i) => i !== cIdx));
+    }
+
+    function duplicateCriterionWysiwyg(cIdx: number) {
+        criteriaSetter(prev => {
+            const source = prev[cIdx];
+            const clone: RubricCriterion = {
+                ...source,
+                id: nanoid(),
+                title: `${source.title} (Copy)`,
+                levels: source.levels.map(l => ({
+                    ...l,
+                    id: nanoid(),
+                    subItems: l.subItems.map(si => ({ ...si, id: nanoid() }))
+                }))
+            };
+            const next = [...prev];
+            next.splice(cIdx + 1, 0, clone);
+            return next;
+        });
+    }
+
     function balanceWeights() {
         if (!criteria.length) return;
         // Don't modify if user has already perfectly balanced it or if there are none
@@ -1080,6 +1127,8 @@ function RubricWysiwygEditor({ name, setName, criteria, format, updateCriterion,
                             <td className="criterion-cell designer-td" style={{ position: 'relative', border: format.showBorders ? '1px solid var(--border)' : 'none' }}>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 2, position: 'absolute', top: 4, right: 4, opacity: 0 }} className="td-actions">
                                     <button className="btn btn-ghost btn-icon btn-sm" onClick={() => moveCriterion(cIdx, -1)} disabled={cIdx === 0} style={{ padding: 2, height: 20, width: 20 }}><ChevronUp size={14} /></button>
+                                    <button className="btn btn-ghost btn-icon btn-sm" onClick={() => duplicateCriterionWysiwyg(cIdx)} style={{ padding: 2, height: 20, width: 20, color: 'var(--text-muted)' }}><Copy size={13} /></button>
+                                    <button className="btn btn-ghost btn-icon btn-sm" onClick={() => deleteCriterionWysiwyg(cIdx)} style={{ padding: 2, height: 20, width: 20, color: 'var(--red)' }}><Trash2 size={13} /></button>
                                     <button className="btn btn-ghost btn-icon btn-sm" onClick={() => moveCriterion(cIdx, 1)} disabled={cIdx === criteria.length - 1} style={{ padding: 2, height: 20, width: 20 }}><ChevronDown size={14} /></button>
                                 </div>
                                 <div style={{ padding: '10px 12px', paddingRight: 30 }}>

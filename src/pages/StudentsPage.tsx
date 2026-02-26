@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Trash2, Edit2, Users as UsersIcon, Upload, Download, TrendingUp, MoreVertical } from 'lucide-react';
+import { Plus, Trash2, Edit2, Users as UsersIcon, Upload, Download, TrendingUp, MoreVertical, Search } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import Papa from 'papaparse';
@@ -42,8 +42,12 @@ export default function StudentsPage() {
 
     const [deleteClassId, setDeleteClassId] = useState<string | null>(null);
     const fileRef = useRef<HTMLInputElement>(null);
+    const [studentSearch, setStudentSearch] = useState('');
+    const [confirmDeleteStudent, setConfirmDeleteStudent] = useState<string | null>(null);
 
-    const filteredStudents = students.filter(s => s.classId === activeClass);
+    const filteredStudents = students
+        .filter(s => s.classId === activeClass)
+        .filter(s => !studentSearch.trim() || s.name.toLowerCase().includes(studentSearch.toLowerCase()) || (s.email ?? '').toLowerCase().includes(studentSearch.toLowerCase()));
 
     function handleAddStudent() {
         if (!name.trim()) return;
@@ -160,13 +164,24 @@ export default function StudentsPage() {
                         <div className="card-header">
                             <h3>{classes.find(c => c.id === activeClass)?.name ?? t('studentsPage.default_class_name')} — {filteredStudents.length} {t('studentsPage.students_count')}</h3>
                         </div>
+                        {/* Student search */}
+                        <div style={{ position: 'relative', marginBottom: 14 }}>
+                            <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)', pointerEvents: 'none' }} />
+                            <input
+                                type="text"
+                                placeholder={t('studentsPage.search_students')}
+                                value={studentSearch}
+                                onChange={e => setStudentSearch(e.target.value)}
+                                style={{ paddingLeft: 32, width: '100%' }}
+                            />
+                        </div>
                         {filteredStudents.length === 0 ? (
                             <div className="empty-state">
                                 <UsersIcon size={32} />
-                                <p>{t('studentsPage.no_students')}</p>
-                                <button className="btn btn-primary btn-sm" onClick={() => setShowAddModal(true)}>
+                                <p>{studentSearch ? t('studentsPage.no_students_match') : t('studentsPage.no_students')}</p>
+                                {!studentSearch && <button className="btn btn-primary btn-sm" onClick={() => setShowAddModal(true)}>
                                     <Plus size={14} /> {t('studentsPage.add_student')}
-                                </button>
+                                </button>}
                             </div>
                         ) : (
                             <table className="data-table">
@@ -202,7 +217,7 @@ export default function StudentsPage() {
                                                             <Edit2 size={14} />
                                                         </button>
                                                         <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--red)' }}
-                                                            onClick={() => deleteStudent(s.id)}>
+                                                            onClick={(e) => { e.stopPropagation(); setConfirmDeleteStudent(s.id); }}>
                                                             <Trash2 size={14} />
                                                         </button>
                                                     </div>
@@ -354,6 +369,34 @@ export default function StudentsPage() {
                                     deleteClass(deleteClassId!, true);
                                     if (activeClass === deleteClassId) setActiveClass(classes.find(c => c.id !== deleteClassId)?.id ?? '');
                                     setDeleteClassId(null);
+                                }}>{t('common.delete')}</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {confirmDeleteStudent && (
+                    <div className="modal-overlay" onClick={() => setConfirmDeleteStudent(null)}>
+                        <div className="modal" onClick={e => e.stopPropagation()}>
+                            <div className="modal-header">
+                                <h3>{t('studentsPage.delete_student_title') || 'Delete Student'}</h3>
+                                <button className="btn btn-ghost btn-icon" onClick={() => setConfirmDeleteStudent(null)}>✕</button>
+                            </div>
+                            <div className="modal-body">
+                                <p>
+                                    <Trans i18nKey="studentsPage.delete_student_confirmation" values={{ studentName: students.find(s => s.id === confirmDeleteStudent)?.name }}>
+                                        Are you sure you want to delete <strong>{'{{studentName}}'}</strong>?
+                                    </Trans>
+                                </p>
+                                <div style={{ background: 'var(--red-soft)', color: 'var(--red)', padding: '12px 16px', borderRadius: 8, marginTop: 16, fontSize: '0.9rem' }}>
+                                    <strong>{t('studentsPage.warning_label') || 'Warning:'}</strong> {t('studentsPage.delete_student_warning') || 'This will permanently delete all grades and rubrics associated with this student.'}
+                                </div>
+                            </div>
+                            <div className="modal-footer">
+                                <button className="btn btn-secondary" onClick={() => setConfirmDeleteStudent(null)}>{t('common.cancel')}</button>
+                                <button className="btn btn-primary" style={{ background: 'var(--red)', borderColor: 'var(--red)' }} onClick={() => {
+                                    deleteStudent(confirmDeleteStudent);
+                                    setConfirmDeleteStudent(null);
                                 }}>{t('common.delete')}</button>
                             </div>
                         </div>

@@ -70,6 +70,7 @@ export interface Attachment {
     mimeType: string;
     dataUrl: string;   // base64 encoded file content
     rubricId?: string; // if attached to a rubric globally
+    studentId?: string; // if attached to a specific student
     size: number;      // bytes
     addedAt: string;   // ISO date string
 }
@@ -182,6 +183,8 @@ export interface StudentRubric {
     gradedAt?: string;
     gradedBy?: string;
     isPeerReview: boolean;
+    /** Snapshot of the rubric at the time of grading to ensure historical grades do not break */
+    rubricSnapshot?: Rubric;
 }
 
 export interface CommentSnippet {

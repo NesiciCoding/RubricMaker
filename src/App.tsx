@@ -13,6 +13,7 @@ const StatisticsPage = lazy(() => import('./pages/StatisticsPage'));
 const CommentBankPage = lazy(() => import('./pages/CommentBankPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const StudentProfilePage = lazy(() => import('./pages/StudentProfilePage'));
+const ComparativeGrading = lazy(() => import('./pages/ComparativeGrading'));
 
 const Spinner = () => (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
@@ -32,6 +33,7 @@ export default function App() {
                         <Route path="/rubrics/new" element={<RubricBuilder />} />
                         <Route path="/rubrics/:id" element={<RubricBuilder />} />
                         <Route path="/rubrics/:rubricId/grade/:studentId" element={<GradeStudent />} />
+                        <Route path="/grade-comparative/:classId/:rubricId" element={<ComparativeGrading />} />
                         <Route path="/students" element={<StudentsPage />} />
                         <Route path="/students/:id" element={<StudentProfilePage />} />
                         <Route path="/attachments" element={<AttachmentsPage />} />

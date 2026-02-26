@@ -39,7 +39,7 @@ export default function Dashboard() {
             <div className="page-content fade-in">
                 {/* Stat cards */}
                 <div className="grid-3 mb-4">
-                    <div className="card" style={{ borderTop: '3px solid var(--accent)' }}>
+                    <div className="card hoverable" onClick={() => navigate('/rubrics')} style={{ borderTop: '3px solid var(--accent)', cursor: 'pointer' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                             <div style={{ background: 'var(--accent-soft)', padding: 10, borderRadius: 10 }}>
                                 <BookOpen size={20} style={{ color: 'var(--accent)' }} />
@@ -50,7 +50,7 @@ export default function Dashboard() {
                             </div>
                         </div>
                     </div>
-                    <div className="card" style={{ borderTop: '3px solid var(--green)' }}>
+                    <div className="card hoverable" onClick={() => navigate('/students')} style={{ borderTop: '3px solid var(--green)', cursor: 'pointer' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                             <div style={{ background: 'rgba(34,197,94,0.12)', padding: 10, borderRadius: 10 }}>
                                 <Users size={20} style={{ color: 'var(--green)' }} />
@@ -61,7 +61,7 @@ export default function Dashboard() {
                             </div>
                         </div>
                     </div>
-                    <div className="card" style={{ borderTop: '3px solid var(--purple)' }}>
+                    <div className="card hoverable" onClick={() => navigate('/export')} style={{ borderTop: '3px solid var(--purple)', cursor: 'pointer' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                             <div style={{ background: 'rgba(139,92,246,0.12)', padding: 10, borderRadius: 10 }}>
                                 <TrendingUp size={20} style={{ color: 'var(--purple)' }} />

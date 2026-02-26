@@ -18,11 +18,11 @@ export default function GradeStudent() {
         gradeScales, settings, saveStudentRubric, updateSettings
     } = useApp();
 
-    const rubric = rubrics.find(r => r.id === rubricId);
+    const existingSR = studentRubrics.find(sr => sr.rubricId === rubricId && sr.studentId === studentId);
+    const liveRubric = rubrics.find(r => r.id === rubricId);
+    const rubric = existingSR?.rubricSnapshot || liveRubric;
     const student = students.find(s => s.id === studentId);
     const scale = gradeScales.find(g => g.id === (rubric?.gradeScaleId ?? settings.defaultGradeScaleId)) ?? gradeScales[0];
-
-    const existingSR = studentRubrics.find(sr => sr.rubricId === rubricId && sr.studentId === studentId);
 
     const [sr, setSr] = useState(() => {
         if (existingSR) return existingSR;
@@ -41,6 +41,7 @@ export default function GradeStudent() {
     const [showCommentBankFor, setShowCommentBankFor] = useState<string | null>(null);
     const [showAttachPanel, setShowAttachPanel] = useState(false);
     const [saved, setSaved] = useState(false);
+    const [isDirty, setIsDirty] = useState(false);
 
     // Ensure that if we loaded this student, the global active class defaults to their class
     // This perfectly handles the user going back and expecting to see this student's class
@@ -57,6 +58,7 @@ export default function GradeStudent() {
             const entries = prev.entries.map(e => e.criterionId === criterionId ? { ...e, ...patch } : e);
             return { ...prev, entries };
         });
+        setIsDirty(true);
     }, [sr]);
 
     const summary = useMemo(() => {
@@ -65,11 +67,40 @@ export default function GradeStudent() {
     }, [sr, rubric, scale]);
 
     const handleSave = useCallback(() => {
-        if (!sr) return;
-        saveStudentRubric({ ...sr, gradedAt: new Date().toISOString() });
+        if (!sr || !rubric) return;
+        saveStudentRubric({
+            ...sr,
+            rubricSnapshot: JSON.parse(JSON.stringify(rubric)),
+            gradedAt: new Date().toISOString()
+        });
         setSaved(true);
+        setIsDirty(false);
         setTimeout(() => setSaved(false), 2000);
-    }, [sr, saveStudentRubric]);
+    }, [sr, rubric, saveStudentRubric]);
+
+    // Keyboard shortcut to save
+    React.useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                handleSave();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [handleSave]);
+
+    // Warn on unsaved changes
+    React.useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (isDirty) {
+                e.preventDefault();
+                e.returnValue = ''; // Required for Chrome
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [isDirty]);
 
     if (!rubric || !student || !sr) return <div className="page-content">{t('gradeStudent.error_not_found')} <button onClick={() => navigate(-1)}>{t('gradeStudent.action_back')}</button></div>;
 
@@ -148,14 +179,26 @@ export default function GradeStudent() {
                             </span>
                             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                                 <select value={sr.globalModifier?.type ?? 'percentage'}
-                                    onChange={e => setSr(p => p ? { ...p, globalModifier: { type: e.target.value as Modifier['type'], value: p.globalModifier?.value ?? 0, reason: p.globalModifier?.reason ?? '' } } : p)}
-                                    style={{ flex: 1 }}>
+                                    onChange={e => {
+                                        setSr(p => p ? { ...p, globalModifier: { type: e.target.value as Modifier['type'], value: p.globalModifier?.value ?? 0, reason: p.globalModifier?.reason ?? '' } } : p);
+                                        setIsDirty(true);
+                                    }}
+                                    style={{ width: 100 }}>
                                     <option value="percentage">{t('gradeStudent.offset_percentage')}</option>
                                     <option value="points">{t('gradeStudent.offset_points')}</option>
                                 </select>
                                 <input type="number" value={sr.globalModifier?.value ?? 0}
-                                    onChange={e => setSr(p => p ? { ...p, globalModifier: { type: p.globalModifier?.type ?? 'percentage', value: Number(e.target.value), reason: p.globalModifier?.reason ?? '' } } : p)}
+                                    onChange={e => {
+                                        setSr(p => p ? { ...p, globalModifier: { type: p.globalModifier?.type ?? 'percentage', value: Number(e.target.value), reason: p.globalModifier?.reason ?? '' } } : p);
+                                        setIsDirty(true);
+                                    }}
                                     style={{ width: 60 }} />
+                                <input type="text" placeholder={t('gradeStudent.modifier_reason_placeholder') || 'Reason'} value={sr.globalModifier?.reason ?? ''}
+                                    onChange={e => {
+                                        setSr(p => p ? { ...p, globalModifier: { type: p.globalModifier?.type ?? 'percentage', value: p.globalModifier?.value ?? 0, reason: e.target.value } } : p);
+                                        setIsDirty(true);
+                                    }}
+                                    style={{ flex: 1, minWidth: 100 }} />
                             </div>
                         </div>
                     </div>
@@ -327,7 +370,10 @@ export default function GradeStudent() {
                     <div className="form-group">
                         <label>{t('gradeStudent.overall_comment_label')}</label>
                         <textarea placeholder={t('gradeStudent.overall_comment_placeholder')} value={sr.overallComment}
-                            onChange={e => setSr(p => p ? { ...p, overallComment: e.target.value } : p)} rows={3} />
+                            onChange={e => {
+                                setSr(p => p ? { ...p, overallComment: e.target.value } : p);
+                                setIsDirty(true);
+                            }} rows={3} />
                     </div>
                 </div>
 

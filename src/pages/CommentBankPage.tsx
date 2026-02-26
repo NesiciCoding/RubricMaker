@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, MessageSquare, Tag } from 'lucide-react';
+import { Plus, Trash2, MessageSquare, Tag, Edit2 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 
@@ -11,6 +11,10 @@ export default function CommentBankPage() {
     const [tag, setTag] = useState('general');
     const [filterTag, setFilterTag] = useState('all');
 
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editText, setEditText] = useState('');
+    const [editTag, setEditTag] = useState('');
+
     const filtered = filterTag === 'all'
         ? commentSnippets
         : commentSnippets.filter(s => s.tag === filterTag);
@@ -19,6 +23,16 @@ export default function CommentBankPage() {
         if (!text.trim()) return;
         addCommentSnippet(text.trim(), tag);
         setText('');
+    }
+
+    function handleSaveEdit(id: string) {
+        if (!editText.trim()) return;
+        // @ts-ignore - updateCommentSnippet is injected by AppContext
+        if (typeof useApp().updateCommentSnippet === 'function') {
+            // @ts-ignore
+            useApp().updateCommentSnippet({ id, text: editText.trim(), tag: editTag });
+        }
+        setEditingId(null);
     }
 
     return (
@@ -69,16 +83,45 @@ export default function CommentBankPage() {
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
                         {filtered.map(snip => (
                             <div key={snip.id} className="card" style={{ position: 'relative' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                    <span className={`badge badge-${snip.tag === 'positive' ? 'green' : snip.tag === 'improvement' ? 'yellow' : 'blue'}`}>
-                                        <Tag size={10} /> {snip.tag}
-                                    </span>
-                                    <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--red)' }}
-                                        onClick={() => deleteCommentSnippet(snip.id)}>
-                                        <Trash2 size={13} />
-                                    </button>
-                                </div>
-                                <p style={{ marginTop: 10, fontSize: '0.875rem', lineHeight: 1.5 }}>{snip.text}</p>
+                                {editingId === snip.id ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                        <textarea
+                                            style={{ width: '100%' }}
+                                            rows={2}
+                                            value={editText}
+                                            onChange={e => setEditText(e.target.value)}
+                                            autoFocus
+                                        />
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <select value={editTag} onChange={e => setEditTag(e.target.value)} style={{ padding: '4px 8px' }}>
+                                                {TAGS.map(t => <option key={t} value={t}>{t}</option>)}
+                                            </select>
+                                            <div style={{ display: 'flex', gap: 6 }}>
+                                                <button className="btn btn-ghost btn-sm" onClick={() => setEditingId(null)}>Cancel</button>
+                                                <button className="btn btn-primary btn-sm" onClick={() => handleSaveEdit(snip.id)}>Save</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                            <span className={`badge badge-${snip.tag === 'positive' ? 'green' : snip.tag === 'improvement' ? 'yellow' : 'blue'}`}>
+                                                <Tag size={10} /> {snip.tag}
+                                            </span>
+                                            <div style={{ display: 'flex', gap: 4 }}>
+                                                <button className="btn btn-ghost btn-icon btn-sm"
+                                                    onClick={() => { setEditingId(snip.id); setEditText(snip.text); setEditTag(snip.tag); }}>
+                                                    <Edit2 size={13} />
+                                                </button>
+                                                <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--red)' }}
+                                                    onClick={() => deleteCommentSnippet(snip.id)}>
+                                                    <Trash2 size={13} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <p style={{ marginTop: 10, fontSize: '0.875rem', lineHeight: 1.5 }}>{snip.text}</p>
+                                    </>
+                                )}
                             </div>
                         ))}
                     </div>

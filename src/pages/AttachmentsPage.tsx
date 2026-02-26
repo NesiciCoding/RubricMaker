@@ -1,12 +1,14 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Upload, Paperclip, Trash2, Download, Link2 } from 'lucide-react';
+import { Upload, Paperclip, Trash2, Download, Link2, Users } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 
 export default function AttachmentsPage() {
-    const { attachments, rubrics, addAttachment, deleteAttachment } = useApp();
+    const { attachments, rubrics, students, classes, addAttachment, deleteAttachment } = useApp();
     const [dragOver, setDragOver] = useState(false);
     const [selectedRubricId, setSelectedRubricId] = useState('');
+    const [selectedClassId, setSelectedClassId] = useState('');
+    const [selectedStudentId, setSelectedStudentId] = useState('');
     const fileRef = useRef<HTMLInputElement>(null);
 
     const handleFiles = useCallback((files: FileList | null) => {
@@ -19,12 +21,13 @@ export default function AttachmentsPage() {
                     mimeType: file.type,
                     dataUrl: reader.result as string,
                     rubricId: selectedRubricId || undefined,
+                    studentId: selectedStudentId || undefined,
                     size: file.size,
                 });
             };
             reader.readAsDataURL(file);
         });
-    }, [addAttachment, selectedRubricId]);
+    }, [addAttachment, selectedRubricId, selectedStudentId]);
 
     function downloadAttachment(att: typeof attachments[0]) {
         const a = document.createElement('a');
@@ -57,13 +60,30 @@ export default function AttachmentsPage() {
                     <p className="text-xs text-muted" style={{ marginTop: 6 }}>PDFs, images, Word docs, and more</p>
                     <div style={{ marginTop: 14, display: 'flex', gap: 10, justifyContent: 'center', alignItems: 'center' }}>
                         <label className="text-xs text-muted">Link to rubric:</label>
-                        <select value={selectedRubricId} onChange={e => setSelectedRubricId(e.target.value)}
+                        <select value={selectedRubricId} onChange={e => { setSelectedRubricId(e.target.value); setSelectedStudentId(''); }}
                             style={{ width: 200 }}
                             onClick={e => e.stopPropagation()}>
                             <option value="">— No rubric —</option>
                             {rubrics.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
                         </select>
                     </div>
+                    {selectedRubricId && (
+                        <div style={{ marginTop: 10, display: 'flex', gap: 10, justifyContent: 'center', alignItems: 'center' }}>
+                            <label className="text-xs text-muted">Link to student:</label>
+                            <select value={selectedClassId} onChange={e => { setSelectedClassId(e.target.value); setSelectedStudentId(''); }}
+                                style={{ width: 140 }}
+                                onClick={e => e.stopPropagation()}>
+                                <option value="">— Any Class —</option>
+                                {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            </select>
+                            <select value={selectedStudentId} onChange={e => setSelectedStudentId(e.target.value)}
+                                style={{ width: 140 }}
+                                onClick={e => e.stopPropagation()}>
+                                <option value="">— No student —</option>
+                                {students.filter(s => !selectedClassId || s.classId === selectedClassId).map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                            </select>
+                        </div>
+                    )}
                 </div>
                 <input ref={fileRef} type="file" multiple onChange={e => handleFiles(e.target.files)} style={{ display: 'none' }} />
 
@@ -76,11 +96,12 @@ export default function AttachmentsPage() {
                 ) : (
                     <table className="data-table">
                         <thead>
-                            <tr><th>Name</th><th>Type</th><th>Size</th><th>Linked Rubric</th><th>Added</th><th>Actions</th></tr>
+                            <tr><th>Name</th><th>Type</th><th>Size</th><th>Linked Rubric</th><th>Linked Student</th><th>Added</th><th>Actions</th></tr>
                         </thead>
                         <tbody>
                             {attachments.map(att => {
                                 const linkedRubric = rubrics.find(r => r.id === att.rubricId);
+                                const linkedStudent = students.find(s => s.id === att.studentId);
                                 return (
                                     <tr key={att.id}>
                                         <td style={{ fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -92,6 +113,11 @@ export default function AttachmentsPage() {
                                         <td>
                                             {linkedRubric
                                                 ? <span className="badge badge-purple"><Link2 size={11} /> {linkedRubric.name}</span>
+                                                : <span className="text-muted text-xs">—</span>}
+                                        </td>
+                                        <td>
+                                            {linkedStudent
+                                                ? <span className="badge badge-blue"><Users size={11} /> {linkedStudent.name}</span>
                                                 : <span className="text-muted text-xs">—</span>}
                                         </td>
                                         <td className="text-muted text-sm">{new Date(att.addedAt).toLocaleDateString()}</td>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Edit2, Trash2, Copy, BookOpen, Users, Upload } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Copy, BookOpen, Users, Upload, GitCompare } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
@@ -14,13 +14,18 @@ export default function RubricList() {
     const navigate = useNavigate();
     const { rubrics, students, studentRubrics, addRubric, deleteRubric, settings, gradeScales } = useApp();
     const [search, setSearch] = useState('');
+    const [subjectFilter, setSubjectFilter] = useState<string>('all');
     const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
     const [showImport, setShowImport] = useState(false);
 
-    const filtered = rubrics.filter(r =>
-        r.name.toLowerCase().includes(search.toLowerCase()) ||
-        r.subject.toLowerCase().includes(search.toLowerCase())
-    );
+    const uniqueSubjects = Array.from(new Set(rubrics.map(r => r.subject).filter(Boolean))).sort();
+
+    const filtered = rubrics.filter(r => {
+        const matchesSearch = r.name.toLowerCase().includes(search.toLowerCase()) ||
+            r.subject.toLowerCase().includes(search.toLowerCase());
+        const matchesSubject = subjectFilter === 'all' || r.subject === subjectFilter;
+        return matchesSearch && matchesSubject;
+    });
 
     function handleDuplicate(rubricId: string) {
         const r = rubrics.find(x => x.id === rubricId);
@@ -62,15 +67,29 @@ export default function RubricList() {
                 </>
             } />
             <div className="page-content fade-in">
-                <div style={{ position: 'relative', maxWidth: 400, marginBottom: 20 }}>
-                    <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
-                    <input
-                        type="text"
-                        placeholder={t('rubricList.search_rubrics')}
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                        style={{ paddingLeft: 36 }}
-                    />
+                <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+                    <div style={{ position: 'relative', flex: 1, minWidth: 200, maxWidth: 400 }}>
+                        <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
+                        <input
+                            type="text"
+                            placeholder={t('rubricList.search_rubrics')}
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            style={{ paddingLeft: 36, width: '100%' }}
+                        />
+                    </div>
+                    {uniqueSubjects.length > 0 && (
+                        <select
+                            value={subjectFilter}
+                            onChange={e => setSubjectFilter(e.target.value)}
+                            style={{ minWidth: 150 }}
+                        >
+                            <option value="all">{t('rubricList.all_subjects') || 'All Subjects'}</option>
+                            {uniqueSubjects.map(subj => (
+                                <option key={subj} value={subj}>{subj}</option>
+                            ))}
+                        </select>
+                    )}
                 </div>
 
                 {filtered.length === 0 ? (
@@ -131,6 +150,10 @@ export default function RubricList() {
                                         <button className="btn btn-secondary btn-sm" style={{ flex: 1 }}
                                             onClick={() => navigate('/students')}>
                                             <Users size={14} /> {t('rubricList.grade_students')}
+                                        </button>
+                                        <button className="btn btn-secondary btn-sm" style={{ flex: 1 }} title="Start Comparative Grading"
+                                            onClick={() => navigate(`/grade-comparative/${settings.activeClassId || 'all'}/${r.id}`)}>
+                                            <GitCompare size={14} /> Compare
                                         </button>
                                     </div>
                                 </div>

@@ -34,8 +34,7 @@ type Action =
     | { type: 'UPDATE_GRADE_SCALE'; payload: GradeScale }
     | { type: 'DELETE_GRADE_SCALE'; id: string }
     | { type: 'ADD_COMMENT_SNIPPET'; payload: CommentSnippet }
-    | { type: 'DELETE_COMMENT_SNIPPET'; id: string }
-    | { type: 'ADD_COMMENT_SNIPPET'; payload: CommentSnippet }
+    | { type: 'UPDATE_COMMENT_SNIPPET'; payload: CommentSnippet }
     | { type: 'DELETE_COMMENT_SNIPPET'; id: string }
     | { type: 'UPDATE_SETTINGS'; payload: Partial<AppSettings> }
     | { type: 'ADD_FAVORITE_STANDARD'; payload: LinkedStandard }
@@ -137,6 +136,11 @@ function reducer(state: StoreData, action: Action): StoreData {
             saveCommentSnippets(next);
             return { ...state, commentSnippets: next };
         }
+        case 'UPDATE_COMMENT_SNIPPET': {
+            const next = state.commentSnippets.map(cs => cs.id === action.payload.id ? action.payload : cs);
+            saveCommentSnippets(next);
+            return { ...state, commentSnippets: next };
+        }
         case 'DELETE_COMMENT_SNIPPET': {
             const next = state.commentSnippets.filter(cs => cs.id !== action.id);
             saveCommentSnippets(next);
@@ -211,6 +215,7 @@ interface AppContextValue extends StoreData {
     updateGradeScale: (gs: GradeScale) => void;
     deleteGradeScale: (id: string) => void;
     addCommentSnippet: (text: string, tag: string) => CommentSnippet;
+    updateCommentSnippet: (cs: CommentSnippet) => void;
     deleteCommentSnippet: (id: string) => void;
     updateSettings: (s: Partial<AppSettings>) => void;
     getActiveGradeScale: () => GradeScale;
@@ -325,6 +330,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return snip;
     }, []);
 
+    const updateCommentSnippet = useCallback((cs: CommentSnippet) => dispatch({ type: 'UPDATE_COMMENT_SNIPPET', payload: cs }), []);
     const deleteCommentSnippet = useCallback((id: string) => dispatch({ type: 'DELETE_COMMENT_SNIPPET', id }), []);
     const updateSettings = useCallback((s: Partial<AppSettings>) => dispatch({ type: 'UPDATE_SETTINGS', payload: s }), []);
 
@@ -363,7 +369,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         createStudentRubric, deleteStudentRubric,
         addAttachment, deleteAttachment,
         addGradeScale, updateGradeScale, deleteGradeScale,
-        addCommentSnippet, deleteCommentSnippet,
+        addCommentSnippet, updateCommentSnippet, deleteCommentSnippet,
         updateSettings, getActiveGradeScale,
         addFavoriteStandard, removeFavoriteStandard, isFavoriteStandard,
         addCommentBankItem, updateCommentBankItem, deleteCommentBankItem,
