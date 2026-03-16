@@ -9,6 +9,7 @@ export default defineConfig({
   resolve: {
     alias: [
       { find: /^@tiptap\/pm\/([\w-]+)$/, replacement: path.resolve(__dirname, 'node_modules/prosemirror-$1/dist/index.js') },
+      { find: /^@tiptap\/core\/jsx-runtime$/, replacement: path.resolve(__dirname, 'node_modules/@tiptap/core/src/jsx-runtime.ts') },
       { find: /^@tiptap\/([\w-]+)$/, replacement: path.resolve(__dirname, 'node_modules/@tiptap/$1/src/index.ts') },
     ],
   },
