@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Download, CheckSquare, Square, FileText, Users, Loader, Layout, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import { calcGradeSummary } from '../utils/gradeCalc';
 
 export default function ExportPage() {
+    const { t } = useTranslation();
     const { rubrics, students, studentRubrics, gradeScales, settings, exportTemplates, updateSettings } = useApp();
     const [selectedRubricId, setSelectedRubricId] = useState(rubrics[0]?.id ?? '');
     const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());
@@ -15,6 +17,7 @@ export default function ExportPage() {
 
     // PDF Export Options
     const [padForDoubleSided, setPadForDoubleSided] = useState(false);
+    const [orientation, setOrientation] = useState<'portrait' | 'landscape' | undefined>(undefined);
 
     // Template (for Word/DOCX export)
     const activeTemplateId = settings.exportTemplateId ?? '';
@@ -61,14 +64,19 @@ export default function ExportPage() {
                 const student = students.find(s => s.id === single);
                 if (sr && student) {
                     const { exportSinglePdf } = await import('../utils/pdfExport');
-                    await exportSinglePdf(sr, rubric, student, scale);
+                    await exportSinglePdf(sr, rubric, student, scale, {
+                        orientation: orientation || rubric.format.orientation || 'portrait'
+                    });
                 }
             } else {
                 const toExport = gradedStudents
                     .filter(x => selectedStudentIds.has(x.student!.id))
                     .map(x => ({ sr: x.sr, student: x.student! }));
                 const { exportBatchPdf } = await import('../utils/pdfExport');
-                await exportBatchPdf(toExport, rubric, scale, { padForDoubleSided });
+                await exportBatchPdf(toExport, rubric, scale, { 
+                    padForDoubleSided,
+                    orientation: orientation || rubric.format.orientation || 'portrait'
+                });
             }
         } finally {
             setExporting(false);
@@ -155,7 +163,11 @@ export default function ExportPage() {
                 <div className="card" style={{ marginBottom: 20 }}>
                     <div className="form-group" style={{ marginBottom: 16 }}>
                         <label>Select Rubric to Export</label>
-                        <select value={selectedRubricId} onChange={e => { setSelectedRubricId(e.target.value); setSelectedStudentIds(new Set()); }}>
+                        <select value={selectedRubricId} onChange={e => { 
+                            setSelectedRubricId(e.target.value); 
+                            setSelectedStudentIds(new Set());
+                            setOrientation(undefined); // Reset to rubric default
+                        }}>
                             {rubrics.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
                         </select>
                     </div>
@@ -247,6 +259,17 @@ export default function ExportPage() {
                                         <input type="checkbox" checked={padForDoubleSided} onChange={e => setPadForDoubleSided(e.target.checked)} />
                                         Pad for Double-Sided Print
                                     </label>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 12, borderLeft: '1px solid var(--border)', paddingLeft: 12 }}>
+                                        <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{t('rubricBuilder.format_orientation')}:</label>
+                                        <select 
+                                            value={orientation || rubric.format.orientation || 'portrait'} 
+                                            onChange={e => setOrientation(e.target.value as 'portrait' | 'landscape')}
+                                            style={{ height: 30, fontSize: '0.85rem', padding: '0 8px' }}
+                                        >
+                                            <option value="portrait">{t('rubricBuilder.format_portrait')}</option>
+                                            <option value="landscape">{t('rubricBuilder.format_landscape')}</option>
+                                        </select>
+                                    </div>
                                 </div>
                                 <button
                                     className="btn btn-primary"
