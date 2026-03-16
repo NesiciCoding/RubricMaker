@@ -8,9 +8,16 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@azure/msal-browser": "^5.5.0",
+    "@azure/msal-react": "^5.0.7",
+    "@hello-pangea/dnd": "^18.0.1",
+    "@tiptap/pm": "^3.20.3",
+    "@tiptap/react": "^3.20.3",
+    "@tiptap/starter-kit": "^3.20.3",
     "@types/file-saver": "^2.0.7",
     "docx": "^9.5.3",
     "docx-preview": "^0.3.7",
@@ -26,18 +33,23 @@
     "react-i18next": "^16.5.4",
     "react-joyride": "^2.9.3",
     "react-router-dom": "^6.22.3",
-    "recharts": "^2.12.7"
+    "react-speech-recognition": "^4.0.1",
+    "recharts": "^2.12.7",
+    "regenerator-runtime": "^0.14.1"
   },
   "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/papaparse": "^5.3.14",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
+    "@vitest/coverage-istanbul": "^4.1.0",
+    "@vitest/coverage-v8": "^4.1.0",
     "jsdom": "^28.1.0",
     "typescript": "^5.5.3",
     "vite": "^7.3.1",
-    "vitest": "^4.0.18"
+    "vitest": "^4.1.0"
   }
 }

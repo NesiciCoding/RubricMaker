@@ -5,13 +5,17 @@ import App from './App';
 import { AppProvider } from './context/AppContext';
 import './index.css';
 import './i18n';
+import { MsalProvider } from '@azure/msal-react';
+import { msalInstance } from './services/msalConfig';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
-        <HashRouter>
-            <AppProvider>
-                <App />
-            </AppProvider>
-        </HashRouter>
+        <MsalProvider instance={msalInstance}>
+            <HashRouter>
+                <AppProvider>
+                    <App />
+                </AppProvider>
+            </HashRouter>
+        </MsalProvider>
     </React.StrictMode>
 );

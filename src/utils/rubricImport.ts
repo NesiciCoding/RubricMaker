@@ -53,7 +53,7 @@ export async function parseDocxToRubric(file: File): Promise<ParsedRubric> {
     return buildParsedRubric(rawTable, file.name.replace(/\.[^.]+$/, ''));
 }
 
-function extractTableFromHtml(table: Element): RawTable {
+export function extractTableFromHtml(table: Element): RawTable {
     const rows: string[][] = [];
     table.querySelectorAll('tr').forEach(tr => {
         const cells: string[] = [];
@@ -118,7 +118,7 @@ export async function parsePdfToRubric(file: File): Promise<ParsedRubric> {
  * multiple level descriptions. We look for a "wide row" pattern where the first
  * column is a short label and subsequent columns are longer descriptions.
  */
-function detectTableFromLines(lines: string[]): RawTable {
+export function detectTableFromLines(lines: string[]): RawTable {
     // First pass: look for a header line (short label cols like "Excellent Good Adequate Poor")
     const LEVEL_KEYWORDS = /\b(excellent|good|adequate|poor|satisfactory|needs improvement|beginning|developing|proficient|advanced|unsatisfactory|outstanding|distinguished|basic|emerging|mastering|insufficient|sufficient|fair|very good|meets|exceeds|below|approaching|not yet|limited|partial|full|complete|1|2|3|4|5|6|7|8|9|10)\b/i;
 
@@ -161,14 +161,14 @@ function detectTableFromLines(lines: string[]): RawTable {
     return { headers, rows };
 }
 
-function splitCells(line: string): string[] {
+export function splitCells(line: string): string[] {
     // Split on 2+ spaces, tabs, or pipe characters
     return line.split(/\t|\|{1,2}|  +/).map(s => s.trim()).filter(s => s.length > 0);
 }
 
 // ─── Build ParsedRubric from RawTable ─────────────────────────────────────────
 
-function buildParsedRubric(raw: RawTable, defaultName: string): ParsedRubric {
+export function buildParsedRubric(raw: RawTable, defaultName: string): ParsedRubric {
     const warnings: string[] = [];
 
     if (raw.headers.length === 0 || raw.rows.length === 0) {

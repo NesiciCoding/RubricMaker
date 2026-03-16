@@ -1,11 +1,13 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, MessageSquare, Paperclip, CheckSquare, Square, Info, BookOpen, FileDown } from 'lucide-react';
+import { ArrowLeft, Save, MessageSquare, Paperclip, CheckSquare, Square, Info, BookOpen, FileDown, Mic, MicOff } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import CommentBankModal from '../components/Comments/CommentBankModal';
 import AttachmentViewer from '../components/AttachmentViewer';
 import { useApp } from '../context/AppContext';
 import { useTranslation } from 'react-i18next';
+import { useVoiceGrading } from '../hooks/useVoiceGrading';
+import TiptapEditor from '../components/Editor/TiptapEditor';
 import type { ScoreEntry, Modifier } from '../types';
 import { calcGradeSummary } from '../utils/gradeCalc';
 import { exportSinglePdf } from '../utils/pdfExport';
@@ -110,6 +112,21 @@ export default function GradeStudent() {
         await exportSinglePdf(sr, rubric, student, scale, { orientation: rubric.format.orientation });
     };
 
+    const voice = useVoiceGrading(
+        (critIdx, lvlIdx) => {
+            const crit = rubric.criteria[critIdx];
+            if (!crit) return;
+            const level = crit.levels[lvlIdx];
+            if (!level) return;
+            updateEntry(crit.id, { levelId: level.id, overridePoints: undefined });
+        },
+        (text) => {
+            setSr(p => p ? { ...p, overallComment: (p.overallComment ? p.overallComment + ' ' : '') + text } : p);
+            setIsDirty(true);
+        },
+        settings.language === 'nl' ? 'nl-NL' : 'en-US'
+    );
+
     const fmt = rubric.format;
     const orderedLevels = fmt.levelOrder === 'worst-first'
         ? (c: typeof rubric.criteria[0]) => [...c.levels].reverse()
@@ -129,6 +146,14 @@ export default function GradeStudent() {
                 actions={
                     <>
                         <button className="btn btn-ghost btn-sm" onClick={() => navigate(-1)}><ArrowLeft size={15} /> {t('gradeStudent.action_back')}</button>
+                        <button 
+                            className={`btn btn-sm ${voice.isListening ? 'btn-danger pulse' : 'btn-secondary'}`} 
+                            onClick={voice.toggleListening}
+                            title={voice.isListening ? t('gradeStudent.action_voice_stop') : t('gradeStudent.action_voice_start')}
+                        >
+                            {voice.isListening ? <MicOff size={15} /> : <Mic size={15} />}
+                            {voice.isListening ? t('gradeStudent.voice_listening') : t('gradeStudent.action_voice_start')}
+                        </button>
                         <button className="btn btn-secondary btn-sm" onClick={() => setShowAttachPanel(p => !p)}>
                             <Paperclip size={15} /> {t('gradeStudent.action_attachments')}
                         </button>
@@ -349,9 +374,13 @@ export default function GradeStudent() {
                                             <tr>
                                                 <td colSpan={levels.length + 2 + (fmt.showWeights ? 1 : 0)} style={{ background: 'var(--bg-elevated)', padding: 12 }}>
                                                     <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                                                        <textarea placeholder={t('gradeStudent.comment_placeholder')} value={entry.comment}
-                                                            onChange={e => updateEntry(c.id, { comment: e.target.value })}
-                                                            rows={2} style={{ flex: 1 }} />
+                                                    <div style={{ flex: 1 }}>
+                                                        <TiptapEditor 
+                                                            content={entry.comment || ''}
+                                                            onChange={html => updateEntry(c.id, { comment: html })}
+                                                            placeholder={t('gradeStudent.comment_placeholder')}
+                                                        />
+                                                    </div>
                                                         <button className="btn btn-secondary btn-sm" onClick={() => setShowCommentBankFor(c.id)} title={t('gradeStudent.comment_open_bank')}>
                                                             <BookOpen size={16} />
                                                         </button>
@@ -370,11 +399,14 @@ export default function GradeStudent() {
                 <div className="card">
                     <div className="form-group">
                         <label>{t('gradeStudent.overall_comment_label')}</label>
-                        <textarea placeholder={t('gradeStudent.overall_comment_placeholder')} value={sr.overallComment}
-                            onChange={e => {
-                                setSr(p => p ? { ...p, overallComment: e.target.value } : p);
+                        <TiptapEditor 
+                            content={sr.overallComment}
+                            onChange={html => {
+                                setSr(p => p ? { ...p, overallComment: html } : p);
                                 setIsDirty(true);
-                            }} rows={3} />
+                            }}
+                            placeholder={t('gradeStudent.overall_comment_placeholder')}
+                        />
                     </div>
                 </div>
 

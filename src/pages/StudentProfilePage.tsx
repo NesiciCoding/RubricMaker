@@ -188,6 +188,9 @@ export default function StudentProfilePage() {
                                                     <button className="btn btn-secondary btn-sm" onClick={() => handleExport(h)} disabled={exportingId === h.sr.id}>
                                                         {exportingId === h.sr.id ? <Loader size={14} className="spin" /> : <Download size={14} />} PDF
                                                     </button>
+                                                    <button className="btn btn-ghost btn-icon btn-sm" onClick={() => navigate(`/rubrics/${h.rubric.id}/peer-review/${student.id}`)} title="Self/Peer Review">
+                                                        <User size={14} />
+                                                    </button>
                                                     <button className="btn btn-ghost btn-icon btn-sm" onClick={() => navigate(`/rubrics/${h.rubric.id}/grade/${student.id}`)} title="Edit Grade">
                                                         <FileText size={14} />
                                                     </button>

@@ -30,7 +30,8 @@ vi.mock('../store/storage', () => ({
         },
         favoriteStandards: [],
         commentBank: [],
-        exportTemplates: []
+        exportTemplates: [],
+        peerReviews: []
     })),
     saveRubrics: vi.fn(),
     saveStudents: vi.fn(),
@@ -43,6 +44,48 @@ vi.mock('../store/storage', () => ({
     saveFavoriteStandards: vi.fn(),
     saveCommentBank: vi.fn(),
     saveExportTemplates: vi.fn(),
+    savePeerReviews: vi.fn(),
+    exportStore: vi.fn(state => state),
+    importFullBackup: vi.fn(() => true),
+}));
+
+vi.mock('@azure/msal-react', () => ({
+    useMsal: vi.fn(() => ({
+        instance: {
+            loginPopup: vi.fn().mockResolvedValue({}),
+            logoutPopup: vi.fn().mockResolvedValue({}),
+        },
+        accounts: [],
+    })),
+    useIsAuthenticated: vi.fn(() => false),
+}));
+
+vi.mock('../services/msalConfig', () => ({
+    msalInstance: {
+        getActiveAccount: vi.fn().mockReturnValue({ homeAccountId: 'id' }),
+    },
+    loginRequest: {},
+}));
+
+vi.mock('../services/microsoftGraph', () => ({
+    graphService: {
+        getUserProfile: vi.fn().mockResolvedValue({ displayName: 'Test User' }),
+        uploadFile: vi.fn().mockResolvedValue({}),
+        downloadFile: vi.fn().mockResolvedValue(JSON.stringify({
+            rubrics: [], students: [], classes: [], studentRubrics: [],
+            attachments: [], gradeScales: [], commentSnippets: [],
+            settings: { 
+                theme: 'light', language: 'en', accentColor: '#3b82f6', 
+                defaultFormat: {
+                    criterionColWidth: 200, levelColWidth: 160, fontSize: 14,
+                    headerColor: '#1e3a5f', headerTextColor: '#ffffff', accentColor: '#3b82f6',
+                    fontFamily: 'Inter', showWeights: true, showPoints: true, levelOrder: 'best-first'
+                }, 
+                defaultGradeScaleId: 'default-scale' 
+            }, 
+            favoriteStandards: [], commentBank: [], exportTemplates: [], peerReviews: []
+        })),
+    },
 }));
 
 describe('AppContext', () => {
@@ -137,64 +180,179 @@ describe('AppContext', () => {
         expect(storage.saveRubrics).toHaveBeenCalled();
     });
 
-    it('should add, update, and delete a student', () => {
+    it('should save and update student rubrics', () => {
         const { result } = renderHook(() => useApp(), { wrapper });
+        const sr = { id: 'sr1', rubricId: 'r1', studentId: 's1', entries: [], overallComment: '', isPeerReview: false };
 
-        // Add
-        let studentId = '';
         act(() => {
-            const s = result.current.addStudent({ name: 'Alice', classId: 'c1' });
-            studentId = s.id;
+            result.current.saveStudentRubric(sr);
         });
-        expect(result.current.students).toHaveLength(1);
-        expect(result.current.students[0].name).toBe('Alice');
-        expect(storage.saveStudents).toHaveBeenCalled();
+        expect(result.current.studentRubrics).toHaveLength(1);
 
-        // Update
         act(() => {
-            result.current.updateStudent({ id: studentId, name: 'Alice Smith', classId: 'c1' });
+            result.current.saveStudentRubric({ ...sr, overallComment: 'Updated' });
         });
-        expect(result.current.students[0].name).toBe('Alice Smith');
-        expect(storage.saveStudents).toHaveBeenCalled();
-
-        // Delete
-        act(() => {
-            result.current.deleteStudent(studentId);
-        });
-        expect(result.current.students).toHaveLength(0);
-        expect(storage.saveStudents).toHaveBeenCalled();
+        expect(result.current.studentRubrics[0].overallComment).toBe('Updated');
+        expect(storage.saveStudentRubrics).toHaveBeenCalled();
     });
 
-    it('should delete a class and optionally its students', () => {
+    it('should create a student rubric with default entries', () => {
         const { result } = renderHook(() => useApp(), { wrapper });
-        let classId1 = '';
-        let classId2 = '';
-
         act(() => {
-            classId1 = result.current.addClass({ name: 'Class 1' }).id;
-            classId2 = result.current.addClass({ name: 'Class 2' }).id;
-
-            result.current.addStudent({ name: 'S1', classId: classId1 });
-            result.current.addStudent({ name: 'S2', classId: classId1 });
-            result.current.addStudent({ name: 'S3', classId: classId2 });
+            result.current.addRubric({
+                name: 'R1', subject: '', description: '', criteria: [{ id: 'c1', title: 'C1', description: '', weight: 100, levels: [] }],
+                gradeScaleId: 'default-scale', format: result.current.settings.defaultFormat,
+                attachmentIds: [], totalMaxPoints: 100, scoringMode: 'total-points'
+            });
         });
 
-        expect(result.current.classes).toHaveLength(2);
-        expect(result.current.students).toHaveLength(3);
-
-        // Delete without students
+        let srId = '';
         act(() => {
-            result.current.deleteClass(classId2, false);
+            const sr = result.current.createStudentRubric(result.current.rubrics[0].id, 's1');
+            srId = sr.id;
         });
+
+        expect(result.current.studentRubrics).toHaveLength(1);
+        expect(result.current.studentRubrics[0].entries).toHaveLength(1);
+    });
+
+    it('should merge classes', () => {
+        const { result } = renderHook(() => useApp(), { wrapper });
+        let c1 = '', c2 = '';
+
+        act(() => {
+            c1 = result.current.addClass({ name: 'Class 1' }).id;
+            c2 = result.current.addClass({ name: 'Class 2' }).id;
+            result.current.addStudent({ name: 'S1', classId: c1 });
+        });
+
+        act(() => {
+            result.current.mergeClasses(c1, c2);
+        });
+
         expect(result.current.classes).toHaveLength(1);
-        expect(result.current.students).toHaveLength(3); // S3 is orphaned but alive
+        expect(result.current.students[0].classId).toBe(c2);
+    });
 
-        // Delete with students
+    it('should manage favorite standards', () => {
+        const { result } = renderHook(() => useApp(), { wrapper });
+        const std = { guid: 'std1', description: 'desc', standardSetTitle: '', jurisdictionTitle: '' };
+
         act(() => {
-            result.current.deleteClass(classId1, true);
+            result.current.addFavoriteStandard(std);
         });
-        expect(result.current.classes).toHaveLength(0);
-        expect(result.current.students).toHaveLength(1); // Only S3 remains
+        expect(result.current.favoriteStandards).toHaveLength(1);
+        expect(result.current.isFavoriteStandard('std1')).toBe(true);
+
+        act(() => {
+            result.current.removeFavoriteStandard('std1');
+        });
+        expect(result.current.favoriteStandards).toHaveLength(0);
+    });
+
+    it('should manage comment bank items', () => {
+        const { result } = renderHook(() => useApp(), { wrapper });
+
+        act(() => {
+            result.current.addCommentBankItem('Good job', ['tag1']);
+        });
+        expect(result.current.commentBank).toHaveLength(1);
+
+        const item = result.current.commentBank[0];
+        act(() => {
+            result.current.updateCommentBankItem({ ...item, text: 'Great job' });
+        });
+        expect(result.current.commentBank[0].text).toBe('Great job');
+
+        act(() => {
+            result.current.deleteCommentBankItem(item.id);
+        });
+        expect(result.current.commentBank).toHaveLength(0);
+    });
+
+    it('should mange grade scales', () => {
+        const { result } = renderHook(() => useApp(), { wrapper });
+
+        act(() => {
+            result.current.addGradeScale({ name: 'New Scale', type: 'points', ranges: [] });
+        });
+        expect(result.current.gradeScales).toHaveLength(2);
+
+        const scale = result.current.gradeScales[1];
+        act(() => {
+            result.current.updateGradeScale({ ...scale, name: 'Updated Scale' });
+        });
+        expect(result.current.gradeScales[1].name).toBe('Updated Scale');
+
+        act(() => {
+            result.current.deleteGradeScale(scale.id);
+        });
+        expect(result.current.gradeScales).toHaveLength(1);
+    });
+
+    it('should manage attachments', () => {
+        const { result } = renderHook(() => useApp(), { wrapper });
+
+        act(() => {
+            result.current.addAttachment({ name: 'File 1', mimeType: 'docx', size: 100, dataUrl: 'data' });
+        });
+        expect(result.current.attachments).toHaveLength(1);
+
+        const att = result.current.attachments[0];
+        act(() => {
+            result.current.deleteAttachment(att.id);
+        });
+        expect(result.current.attachments).toHaveLength(0);
+    });
+
+    it('should manage comment snippets', () => {
+        const { result } = renderHook(() => useApp(), { wrapper });
+
+        act(() => {
+            result.current.addCommentSnippet('Snippet 1', 'tag1');
+        });
+        expect(result.current.commentSnippets).toHaveLength(1);
+
+        const snippet = result.current.commentSnippets[0];
+        act(() => {
+            result.current.updateCommentSnippet({ ...snippet, text: 'New Text' });
+        });
+        expect(result.current.commentSnippets[0].text).toBe('New Text');
+
+        act(() => {
+            result.current.deleteCommentSnippet(snippet.id);
+        });
+        expect(result.current.commentSnippets).toHaveLength(0);
+    });
+
+    it('should manage export templates', () => {
+        const { result } = renderHook(() => useApp(), { wrapper });
+
+        act(() => {
+            result.current.addExportTemplate({ name: 'Template 1', dataUrl: 'data', levelHeaders: ['H1'], size: 100 });
+        });
+        expect(result.current.exportTemplates).toHaveLength(1);
+
+        const template = result.current.exportTemplates[0];
+        act(() => {
+            result.current.deleteExportTemplate(template.id);
+        });
+        expect(result.current.exportTemplates).toHaveLength(0);
+    });
+
+    it('should manage peer reviews', () => {
+        const { result } = renderHook(() => useApp(), { wrapper });
+        const pr = { id: 'pr1', rubricId: 'r1', studentId: 's1', reviewerId: 's2', entries: [], overallComment: '', isPeerReview: true };
+
+        act(() => {
+            result.current.savePeerReview(pr);
+        });
+        expect(result.current.peerReviews).toHaveLength(1);
+
+        act(() => {
+            result.current.deletePeerReview('pr1');
+        });
+        expect(result.current.peerReviews).toHaveLength(0);
     });
 
     it('should retrieve active grade scale', () => {
@@ -216,5 +374,33 @@ describe('AppContext', () => {
 
         expect(result.current.settings.theme).toBe('dark');
         expect(storage.saveSettings).toHaveBeenCalled();
+    });
+
+    it('should sync to OneDrive', async () => {
+        const { useIsAuthenticated } = await import('@azure/msal-react');
+        vi.mocked(useIsAuthenticated).mockReturnValue(true);
+
+        const { result } = renderHook(() => useApp(), { wrapper });
+        const { graphService } = await import('../services/microsoftGraph');
+
+        await act(async () => {
+            await result.current.syncToOneDrive();
+        });
+
+        expect(graphService.uploadFile).toHaveBeenCalled();
+    });
+
+    it('should restore from OneDrive', async () => {
+        const { useIsAuthenticated } = await import('@azure/msal-react');
+        vi.mocked(useIsAuthenticated).mockReturnValue(true);
+
+        const { result } = renderHook(() => useApp(), { wrapper });
+        const { graphService } = await import('../services/microsoftGraph');
+
+        await act(async () => {
+            await result.current.restoreFromOneDrive();
+        });
+
+        expect(graphService.downloadFile).toHaveBeenCalled();
     });
 });

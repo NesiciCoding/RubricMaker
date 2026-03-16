@@ -208,6 +208,10 @@ export interface AppSettings {
     comparativeMatchupLimit?: number;
     /** Whether the user has seen the guided UI tutorial */
     hasSeenTutorial?: boolean;
+    /** Microsoft 365 / OneDrive sync settings */
+    microsoftClientId?: string;
+    microsoftTenantId?: string;
+    microsoftLastSyncAt?: string;
 }
 
 export interface CommentBankItem {

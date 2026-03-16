@@ -100,4 +100,130 @@ describe('learningGoalsAggregator', () => {
         expect(std2.totalEarned).toBe(0); // Not checked
         expect(std2.totalMax).toBe(7);
     });
+
+    it('handles point overrides', () => {
+        const rubrics: any[] = [
+            {
+                id: 'r1', name: 'Rubric', subject: 'Math', description: '', gradeScaleId: '1',
+                criteria: [
+                    {
+                        id: 'c1', title: 'Crit 1', description: '', weight: 100,
+                        linkedStandards: [{ guid: 'std1', description: 'desc' }],
+                        levels: [
+                            { id: 'l1', label: 'L1', minPoints: 0, maxPoints: 10, description: '', subItems: [] }
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        const studentRubrics: any[] = [
+            {
+                id: 'sr1', rubricId: 'r1', studentId: 's1', overallComment: '', gradedAt: '2023-01-01', isPeerReview: false,
+                entries: [
+                    { criterionId: 'c1', levelId: 'l1', overridePoints: 7, checkedSubItems: [], comment: '' }
+                ]
+            }
+        ];
+
+        const results = getStudentGoalScores('s1', studentRubrics, rubrics);
+        expect(results[0].history[0].earnedPoints).toBe(7);
+        expect(results[0].history[0].maxPoints).toBe(10);
+    });
+
+    it('handles granular sub-item scores', () => {
+        const rubrics: any[] = [
+            {
+                id: 'r1', name: 'Rubric', subject: 'Math', description: '', gradeScaleId: '1',
+                criteria: [
+                    {
+                        id: 'c1', title: 'Crit 1', description: '', weight: 100,
+                        levels: [
+                            {
+                                id: 'l1', label: 'L1', minPoints: 0, maxPoints: 10, description: '',
+                                subItems: [{ id: 'si1', label: 'Sub 1', points: 5, linkedStandards: [{ guid: 'std1', description: 'x' }] }]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        const studentRubrics: any[] = [
+            {
+                id: 'sr1', rubricId: 'r1', studentId: 's1', overallComment: '', gradedAt: '2023-01-01', isPeerReview: false,
+                entries: [
+                    { criterionId: 'c1', levelId: 'l1', checkedSubItems: [], subItemScores: { 'si1': 4 }, comment: '' }
+                ]
+            }
+        ];
+
+        const results = getStudentGoalScores('s1', studentRubrics, rubrics);
+        expect(results[0].totalEarned).toBe(4);
+        expect(results[0].totalMax).toBe(5);
+    });
+
+    it('handles sub-item inheriting criterion standards', () => {
+        const rubrics: any[] = [
+            {
+                id: 'r1', name: 'Rubric', subject: 'Math', description: '', gradeScaleId: '1',
+                criteria: [
+                    {
+                        id: 'c1', title: 'Crit 1', description: '', weight: 100,
+                        linkedStandard: { guid: 'std1', description: 'desc' },
+                        levels: [
+                            {
+                                id: 'l1', label: 'L1', minPoints: 0, maxPoints: 10, description: '',
+                                subItems: [{ id: 'si1', label: 'Sub 1', points: 5 }] // Inherit from c1
+                            }
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        const studentRubrics: any[] = [
+            {
+                id: 'sr1', rubricId: 'r1', studentId: 's1', overallComment: '', gradedAt: '2023-01-01', isPeerReview: false,
+                entries: [
+                    { criterionId: 'c1', levelId: 'l1', checkedSubItems: ['si1'], comment: '' }
+                ]
+            }
+        ];
+
+        const results = getStudentGoalScores('s1', studentRubrics, rubrics);
+        expect(results[0].guid).toBe('std1');
+        expect(results[0].totalEarned).toBe(5);
+    });
+
+    it('aggregates scores for an entire class', () => {
+        const rubrics: any[] = [
+            {
+                id: 'r1', name: 'Rubric', subject: 'Math', description: '', gradeScaleId: '1',
+                criteria: [
+                    {
+                        id: 'c1', title: 'Crit 1', description: '', weight: 100,
+                        linkedStandard: { guid: 'std1', description: 'desc' },
+                        levels: [{ id: 'l1', label: 'L1', minPoints: 10, maxPoints: 10, description: '' }]
+                    }
+                ]
+            }
+        ];
+
+        const students = [
+            { id: 's1', classId: 'cls1' },
+            { id: 's2', classId: 'cls1' }
+        ];
+
+        const studentRubrics: any[] = [
+            { id: 'sr1', rubricId: 'r1', studentId: 's1', overallComment: '', gradedAt: '2023-01-01', isPeerReview: false, entries: [{ criterionId: 'c1', levelId: 'l1', checkedSubItems: [], comment: '' }] },
+            { id: 'sr2', rubricId: 'r1', studentId: 's2', overallComment: '', gradedAt: '2023-01-02', isPeerReview: false, entries: [{ criterionId: 'c1', levelId: 'l1', checkedSubItems: [], comment: '' }] }
+        ];
+
+        const results = getClassGoalScores('cls1', students, studentRubrics, rubrics);
+        expect(results).toHaveLength(1);
+        expect(results[0].totalEarned).toBe(20);
+        expect(results[0].totalMax).toBe(20);
+        expect(results[0].history).toHaveLength(2);
+    });
 });

@@ -93,6 +93,7 @@ const KEYS = {
     favoriteStandards: 'rm_favorite_standards',
     commentBank: 'rm_comment_bank',
     exportTemplates: 'rm_export_templates',
+    peerReviews: 'rm_peer_reviews',
 };
 
 // ─── Generic helpers ───────────────────────────────────────────────────────────
@@ -125,6 +126,7 @@ export interface StoreData {
     favoriteStandards: LinkedStandard[];
     commentBank: CommentBankItem[];
     exportTemplates: ExportTemplate[];
+    peerReviews: StudentRubric[];
 }
 
 export function loadStore(): StoreData {
@@ -140,6 +142,7 @@ export function loadStore(): StoreData {
         favoriteStandards: load<LinkedStandard[]>(KEYS.favoriteStandards, []),
         commentBank: load<CommentBankItem[]>(KEYS.commentBank, DEFAULT_COMMENT_BANK),
         exportTemplates: load<ExportTemplate[]>(KEYS.exportTemplates, []),
+        peerReviews: load<StudentRubric[]>(KEYS.peerReviews, []),
     };
 }
 
@@ -154,8 +157,13 @@ export function saveSettings(settings: AppSettings) { save(KEYS.settings, settin
 export function saveFavoriteStandards(favs: LinkedStandard[]) { save(KEYS.favoriteStandards, favs); }
 export function saveCommentBank(items: CommentBankItem[]) { save(KEYS.commentBank, items); }
 export function saveExportTemplates(templates: ExportTemplate[]) { save(KEYS.exportTemplates, templates); }
+export function savePeerReviews(reviews: StudentRubric[]) { save(KEYS.peerReviews, reviews); }
 
 // ─── Full Backup / Restore ─────────────────────────────────────────────────────
+
+export function exportStore(state: StoreData): StoreData {
+    return state;
+}
 
 export function exportFullBackup(): string {
     return JSON.stringify(loadStore(), null, 2);
@@ -174,6 +182,7 @@ export function importFullBackup(json: string): boolean {
         if (data.settings) saveSettings(data.settings);
         if (data.favoriteStandards) saveFavoriteStandards(data.favoriteStandards);
         if (data.commentBank) saveCommentBank(data.commentBank);
+        if (data.peerReviews) savePeerReviews(data.peerReviews);
         return true;
     } catch (e) {
         console.error('Import failed', e);

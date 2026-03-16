@@ -59,7 +59,17 @@
         "action_import_backup": "Import Backup",
         "backup_help": "Export saves all rubrics, students, grades, and settings to a JSON file. Import restores everything.",
         "alert_invalid_backup": "Invalid backup file.",
-        "alert_cannot_delete_default": "Can't delete the default scale."
+        "alert_cannot_delete_default": "Can't delete the default scale.",
+        "cloud_sync": "Cloud Sync (Microsoft 365)",
+        "cloud_sync_help": "Connect your Microsoft account to sync rubrics across devices via OneDrive or SharePoint.",
+        "action_login_microsoft": "Login with Microsoft",
+        "action_logout_microsoft": "Logout",
+        "microsoft_connected_as": "Connected as {{name}}",
+        "action_sync_now": "Sync Now",
+        "action_restore_now": "Restore from Cloud",
+        "last_sync_label": "Last synced: {{date}}",
+        "ms_client_id": "Application (Client) ID",
+        "ms_client_id_help": "Optional: Use your own Azure AD Client ID for custom integration."
     },
     "navigation": {
         "dashboard": "Dashboard",
@@ -92,6 +102,7 @@
     },
     "rubricList": {
         "title": "Rubrics",
+        "all_subjects": "All Subjects",
         "import_rubric": "Import Rubric",
         "new_rubric": "New Rubric",
         "search_rubrics": "Search rubrics…",
@@ -178,7 +189,11 @@
         "comment_open_bank": "Open Comment Bank",
         "overall_comment_label": "Overall Comment",
         "overall_comment_placeholder": "General feedback…",
-        "attachments_title": "Attachments"
+        "attachments_title": "Attachments",
+        "action_voice_start": "Start Voice Assistant",
+        "action_voice_stop": "Stop Voice Assistant",
+        "voice_listening": "Listening...",
+        "voice_ready": "Voice assistant ready"
     },
     "rubricBuilder": {
         "action_back": "Back",

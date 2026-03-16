@@ -59,7 +59,17 @@
         "action_import_backup": "Importeer Back-up",
         "backup_help": "Exporteren slaat alle rubrieken, studenten, cijfers en instellingen op in een JSON bestand. Importeren herstelt alles.",
         "alert_invalid_backup": "Ongeldig back-up bestand.",
-        "alert_cannot_delete_default": "Kan de standaard schaal niet verwijderen."
+        "alert_cannot_delete_default": "Kan de standaard schaal niet verwijderen.",
+        "cloud_sync": "Cloud Synchronisatie (Microsoft 365)",
+        "cloud_sync_help": "Verbind je Microsoft-account om rubrics over apparaten te synchroniseren via OneDrive of SharePoint.",
+        "action_login_microsoft": "Inloggen met Microsoft",
+        "action_logout_microsoft": "Uitloggen",
+        "microsoft_connected_as": "Verbonden als {{name}}",
+        "action_sync_now": "Nu synchroniseren",
+        "action_restore_now": "Herstellen vanuit Cloud",
+        "last_sync_label": "Laatst gesynchroniseerd: {{date}}",
+        "ms_client_id": "Applicatie (Client) ID",
+        "ms_client_id_help": "Optioneel: Gebruik je eigen Azure AD Client ID voor aangepaste integratie."
     },
     "navigation": {
         "dashboard": "Dashboard",
@@ -178,7 +188,11 @@
         "comment_open_bank": "Opmerkingenbank Openen",
         "overall_comment_label": "Algemene Opmerking",
         "overall_comment_placeholder": "Algemene feedback…",
-        "attachments_title": "Bijlagen"
+        "attachments_title": "Bijlagen",
+        "action_voice_start": "Start Spraakassistent",
+        "action_voice_stop": "Stop Spraakassistent",
+        "voice_listening": "Aan het luisteren...",
+        "voice_ready": "Spraakassistent klaar"
     },
     "rubricBuilder": {
         "action_back": "Terug",

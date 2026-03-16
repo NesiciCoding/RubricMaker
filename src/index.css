@@ -5,59 +5,60 @@
 :root {
   --font: 'Inter', system-ui, sans-serif;
 
-  /* surfaces */
-  --bg: #0f1117;
-  --bg-raised: #1a1d27;
-  --bg-elevated: #21253a;
-  --bg-card: #252b3d;
-  --border: #2e3452;
-  --border-light: #3a4166;
+  /* surfaces - Modern Dark (Sleek professional palette) */
+  --bg: #0f1219;
+  --bg-raised: #181c26;
+  --bg-elevated: #1f2533;
+  --bg-card: #252d3d;
+  --border: #2e384d;
+  --border-light: #3e4b66;
 
   /* text */
-  --text: #e2e8f0;
+  --text: #f1f5f9;
   --text-muted: #cbd5e1;
   --text-dim: #94a3b8;
 
-  /* accent */
+  /* accent - CSS variables for dynamic themes */
   --accent: #3b82f6;
   --accent-hover: #2563eb;
   --accent-soft: rgba(59, 130, 246, 0.15);
+  --accent-glow: rgba(59, 130, 246, 0.4);
 
   /* semantic */
-  --green: #22c55e;
+  --green: #10b981;
   --yellow: #f59e0b;
   --red: #ef4444;
   --purple: #8b5cf6;
   --teal: #14b8a6;
 
   /* sizing */
-  --radius: 8px;
-  --radius-lg: 14px;
-  --sidebar-w: 240px;
-  --topbar-h: 60px;
+  --radius: 10px;
+  --radius-lg: 16px;
+  --sidebar-w: 260px;
+  --topbar-h: 64px;
 
-  /* shadows */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
-  --shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+  /* shadows - Refined for professional look */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.5);
 
   /* transitions */
-  --transition: 0.18s ease;
+  --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 [data-theme="light"] {
-  --bg: #f1f5f9;
+  --bg: #f8fafc;
   --bg-raised: #ffffff;
-  --bg-elevated: #f8fafc;
+  --bg-elevated: #f1f5f9;
   --bg-card: #ffffff;
   --border: #e2e8f0;
   --border-light: #cbd5e1;
-  --text: #1e293b;
-  --text-muted: #64748b;
+  --text: #0f172a;
+  --text-muted: #475569;
   --text-dim: #94a3b8;
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
-  --shadow: 0 4px 16px rgba(0, 0, 0, 0.10);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.1);
 }
 
 /* ─── Reset & Base ──────────────────────────────────────────────────────────── */
@@ -837,4 +838,91 @@ select option {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.pulse {
+  animation: pulse 1.5s infinite ease-in-out;
+}
+/* Tiptap Editor Styles */
+.tiptap-editor {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-card);
+    overflow: hidden;
+    transition: border-color 0.2s;
+    margin-top: 8px;
+}
+
+.tiptap-editor:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+.tiptap-toolbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 4px;
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border);
+}
+
+.toolbar-btn {
+    background: transparent;
+    border: none;
+    padding: 6px;
+    border-radius: 4px;
+    color: var(--text-dim);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.toolbar-btn:hover {
+    background: var(--bg-soft);
+    color: var(--text);
+}
+
+.toolbar-btn.active {
+    background: var(--accent-soft);
+    color: var(--accent);
+}
+
+.toolbar-divider {
+    width: 1px;
+    height: 16px;
+    background: var(--border);
+    margin: 0 2px;
+}
+
+.tiptap-editor-content {
+    padding: 10px 12px;
+    min-height: 80px;
+    outline: none;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.tiptap-editor-content p {
+    margin: 0 0 8px 0;
+}
+
+.tiptap-editor-content p:last-child {
+    margin-bottom: 0;
+}
+
+.tiptap-editor-content ul, .tiptap-editor-content ol {
+    padding-left: 1.25rem;
+    margin-bottom: 8px;
 }

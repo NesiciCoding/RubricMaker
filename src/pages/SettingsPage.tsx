@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation, Trans } from 'react-i18next';
-import { Save, Plus, Trash2, Download, Upload, Key, ExternalLink, AlertCircle, MessageSquare, Globe, Layout, Star } from 'lucide-react';
+import { Save, Plus, Trash2, Download, Upload, Key, ExternalLink, AlertCircle, MessageSquare, Globe, Layout, Star, Cloud, LogIn, LogOut, RefreshCw } from 'lucide-react';
 import CommentBankModal from '../components/Comments/CommentBankModal';
 import TemplateUploadModal from '../components/TemplateUploadModal';
 import Topbar from '../components/Layout/Topbar';
@@ -13,6 +13,7 @@ export default function SettingsPage() {
     const {
         settings, updateSettings, gradeScales, addGradeScale, updateGradeScale, deleteGradeScale, commentBank,
         exportTemplates, addExportTemplate, deleteExportTemplate,
+        loginMicrosoft, logoutMicrosoft, syncToOneDrive, restoreFromOneDrive, microsoftUser
     } = useApp();
     const [editingScaleId, setEditingScaleId] = useState<string | null>(null);
     const [showCommentBank, setShowCommentBank] = useState(false);
@@ -160,6 +161,67 @@ export default function SettingsPage() {
                             </Trans></li>
                         </ol>
                     </div>
+                </div>
+
+                {/* Cloud Sync */}
+                <div className="card" style={{ marginBottom: 24, borderLeft: '4px solid var(--purple)' }}>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
+                        <Cloud size={20} style={{ color: 'var(--purple)' }} />
+                        <h3 style={{ margin: 0 }}>{t('settings.cloud_sync')}</h3>
+                    </div>
+                    <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
+                        {t('settings.cloud_sync_help')}
+                    </p>
+
+                    <div className="form-group" style={{ marginBottom: 20 }}>
+                        <label>{t('settings.ms_client_id')}</label>
+                        <input type="text"
+                            value={settings.microsoftClientId ?? ''}
+                            onChange={e => updateSettings({ microsoftClientId: e.target.value })}
+                            placeholder="e.g. 00000000-0000-0000-0000-000000000000"
+                        />
+                        <div className="text-muted text-xs" style={{ marginTop: 4 }}>
+                            {t('settings.ms_client_id_help')}
+                        </div>
+                    </div>
+
+                    {!microsoftUser ? (
+                        <button className="btn btn-primary" onClick={loginMicrosoft}>
+                            <LogIn size={16} /> {t('settings.action_login_microsoft')}
+                        </button>
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-elevated)', padding: '12px 16px', borderRadius: 8 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--purple)', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 600 }}>
+                                        {microsoftUser.displayName?.[0] || 'U'}
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{microsoftUser.displayName}</div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{microsoftUser.userPrincipalName}</div>
+                                    </div>
+                                </div>
+                                <button className="btn btn-ghost btn-sm" onClick={logoutMicrosoft}>
+                                    <LogOut size={14} /> {t('settings.action_logout_microsoft')}
+                                </button>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: 12 }}>
+                                <button className="btn btn-secondary" onClick={syncToOneDrive}>
+                                    <RefreshCw size={16} /> {t('settings.action_sync_now')}
+                                </button>
+                                <button className="btn btn-secondary" onClick={restoreFromOneDrive}>
+                                    <Download size={16} /> {t('settings.action_restore_now')}
+                                </button>
+                            </div>
+
+                            {settings.microsoftLastSyncAt && (
+                                <div className="text-muted text-xs">
+                                    {t('settings.last_sync_label').replace('{{date}}', new Date(settings.microsoftLastSyncAt).toLocaleString())}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 {/* Comment Bank */}

@@ -9,9 +9,12 @@ import {
     loadStore, StoreData,
     saveRubrics, saveStudents, saveClasses, saveStudentRubrics,
     saveAttachments, saveGradeScales, saveCommentSnippets, saveSettings, saveFavoriteStandards, saveCommentBank,
-    saveExportTemplates,
+    saveExportTemplates, exportStore, savePeerReviews
 } from '../store/storage';
 import { nanoid } from '../utils/nanoid';
+import { msalInstance, loginRequest } from '../services/msalConfig';
+import { graphService } from '../services/microsoftGraph';
+import { useMsal, useIsAuthenticated } from '@azure/msal-react';
 
 // ─── Actions ───────────────────────────────────────────────────────────────────
 
@@ -43,7 +46,9 @@ type Action =
     | { type: 'UPDATE_COMMENT_BANK_ITEM'; payload: CommentBankItem }
     | { type: 'DELETE_COMMENT_BANK_ITEM'; id: string }
     | { type: 'ADD_EXPORT_TEMPLATE'; payload: ExportTemplate }
-    | { type: 'DELETE_EXPORT_TEMPLATE'; id: string };
+    | { type: 'DELETE_EXPORT_TEMPLATE'; id: string }
+    | { type: 'SAVE_PEER_REVIEW', payload: StudentRubric }
+    | { type: 'DELETE_PEER_REVIEW', id: string };
 
 function reducer(state: StoreData, action: Action): StoreData {
     switch (action.type) {
@@ -187,6 +192,19 @@ function reducer(state: StoreData, action: Action): StoreData {
             saveExportTemplates(next);
             return { ...state, exportTemplates: next };
         }
+        case 'SAVE_PEER_REVIEW': {
+            const exists = state.peerReviews.findIndex(sr => sr.id === action.payload.id);
+            const next = exists >= 0
+                ? state.peerReviews.map(sr => sr.id === action.payload.id ? action.payload : sr)
+                : [...state.peerReviews, action.payload];
+            savePeerReviews(next);
+            return { ...state, peerReviews: next };
+        }
+        case 'DELETE_PEER_REVIEW': {
+            const next = state.peerReviews.filter(sr => sr.id !== action.id);
+            savePeerReviews(next);
+            return { ...state, peerReviews: next };
+        }
         default: return state;
     }
 }
@@ -227,6 +245,15 @@ interface AppContextValue extends StoreData {
     deleteCommentBankItem: (id: string) => void;
     addExportTemplate: (t: Omit<ExportTemplate, 'id' | 'addedAt'>) => ExportTemplate;
     deleteExportTemplate: (id: string) => void;
+    // Peer Review
+    savePeerReview: (sr: StudentRubric) => void;
+    deletePeerReview: (id: string) => void;
+    // Microsoft Sync
+    loginMicrosoft: () => Promise<void>;
+    logoutMicrosoft: () => Promise<void>;
+    syncToOneDrive: () => Promise<void>;
+    restoreFromOneDrive: () => Promise<void>;
+    microsoftUser: any | null;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -237,6 +264,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', state.settings.theme);
     }, [state.settings.theme]);
+
+    useEffect(() => {
+        const accent = state.settings.accentColor || '#3b82f6';
+        const root = document.documentElement;
+        root.style.setProperty('--accent', accent);
+        // Generate a hover color (simpler way: just the same for now, or use a helper)
+        root.style.setProperty('--accent-hover', accent); 
+        root.style.setProperty('--accent-soft', `${accent}26`); // 15% opacity hex
+        root.style.setProperty('--accent-glow', `${accent}66`); // 40% opacity hex
+    }, [state.settings.accentColor]);
 
     const addRubric = useCallback((r: Omit<Rubric, 'id' | 'createdAt' | 'updatedAt'>): Rubric => {
         const now = new Date().toISOString();
@@ -359,6 +396,67 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }, []);
     const deleteExportTemplate = useCallback((id: string) => dispatch({ type: 'DELETE_EXPORT_TEMPLATE', id }), []);
 
+    const savePeerReview = useCallback((sr: StudentRubric) => {
+        dispatch({ type: 'SAVE_PEER_REVIEW', payload: sr });
+    }, []);
+
+    const deletePeerReview = useCallback((id: string) => dispatch({ type: 'DELETE_PEER_REVIEW', id }), []);
+    
+    // ─── Microsoft Sync ───
+    const { instance: msalInstanceContext } = useMsal();
+    const isAuthenticated = useIsAuthenticated();
+    const [microsoftUser, setMicrosoftUser] = React.useState<any | null>(null);
+
+    React.useEffect(() => {
+        if (isAuthenticated) {
+            graphService.getUserProfile().then(setMicrosoftUser).catch(console.error);
+        } else {
+            setMicrosoftUser(null);
+        }
+    }, [isAuthenticated]);
+
+    const loginMicrosoft = useCallback(async () => {
+        try {
+            await msalInstanceContext.loginPopup(loginRequest);
+        } catch (error) {
+            console.error("Login failed:", error);
+        }
+    }, [msalInstanceContext]);
+
+    const logoutMicrosoft = useCallback(async () => {
+        try {
+            await msalInstanceContext.logoutPopup();
+        } catch (error) {
+            console.error("Logout failed:", error);
+        }
+    }, [msalInstanceContext]);
+
+    const syncToOneDrive = useCallback(async () => {
+        if (!isAuthenticated) return;
+        try {
+            const data = exportStore(state);
+            await graphService.uploadFile('rubric_backup.json', JSON.stringify(data));
+            updateSettings({ microsoftLastSyncAt: new Date().toISOString() });
+        } catch (error) {
+            console.error("Sync failed:", error);
+            throw error;
+        }
+    }, [isAuthenticated, state, updateSettings]);
+
+    const restoreFromOneDrive = useCallback(async () => {
+        if (!isAuthenticated) return;
+        try {
+            const content = await graphService.downloadFile('rubric_backup.json');
+            if (content) {
+                const data = JSON.parse(content);
+                dispatch({ type: 'SET_ALL', payload: data });
+            }
+        } catch (error) {
+            console.error("Restore failed:", error);
+            throw error;
+        }
+    }, [isAuthenticated]);
+
     const value: AppContextValue = {
         ...state,
         dispatch,
@@ -374,6 +472,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         addFavoriteStandard, removeFavoriteStandard, isFavoriteStandard,
         addCommentBankItem, updateCommentBankItem, deleteCommentBankItem,
         addExportTemplate, deleteExportTemplate,
+        savePeerReview, deletePeerReview,
+        loginMicrosoft, logoutMicrosoft, syncToOneDrive, restoreFromOneDrive,
+        microsoftUser
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

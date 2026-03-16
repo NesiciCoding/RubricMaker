@@ -5,6 +5,8 @@ import Topbar from '../components/Layout/Topbar';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
 import { calcGradeSummary } from '../utils/gradeCalc';
+import { QUICK_START_TEMPLATES } from '../data/templates';
+import { Rubric } from '../types';
 
 export default function Dashboard() {
     const { t } = useTranslation();
@@ -117,25 +119,46 @@ export default function Dashboard() {
                     </div>
 
                     {/* Quick actions */}
-                    <div className="card">
-                        <h3 style={{ marginBottom: 16 }}>{t('dashboard.quick_actions')}</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            {[
-                                { label: t('dashboard.action_create_rubric'), icon: BookOpen, color: 'var(--accent)', path: '/rubrics/new' },
-                                { label: t('dashboard.action_add_student'), icon: Users, color: 'var(--green)', path: '/students' },
-                                { label: t('dashboard.action_upload_attachment'), icon: FileText, color: 'var(--purple)', path: '/attachments' },
-                                { label: t('dashboard.action_export_pdf'), icon: FileText, color: 'var(--yellow)', path: '/export' },
-                            ].map(({ label, icon: Icon, color, path }) => (
-                                <button
-                                    key={path}
-                                    className="btn btn-secondary"
-                                    onClick={() => navigate(path)}
-                                    style={{ justifyContent: 'flex-start', gap: 12 }}
-                                >
-                                    <Icon size={16} style={{ color }} />
-                                    {label}
-                                </button>
-                            ))}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                        <div className="card">
+                            <h3 style={{ marginBottom: 16 }}>{t('dashboard.quick_actions')}</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                {[
+                                    { label: t('dashboard.action_create_rubric'), icon: BookOpen, color: 'var(--accent)', path: '/rubrics/new' },
+                                    { label: t('dashboard.action_add_student'), icon: Users, color: 'var(--green)', path: '/students' },
+                                    { label: t('dashboard.action_upload_attachment'), icon: FileText, color: 'var(--purple)', path: '/attachments' },
+                                ].map(({ label, icon: Icon, color, path }) => (
+                                    <button
+                                        key={path}
+                                        className="btn btn-secondary"
+                                        onClick={() => navigate(path)}
+                                        style={{ justifyContent: 'flex-start', gap: 12 }}
+                                    >
+                                        <Icon size={16} style={{ color }} />
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="card">
+                            <h3 style={{ marginBottom: 16 }}>Quick Start Templates</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                {QUICK_START_TEMPLATES.map((tpl, i) => (
+                                    <div
+                                        key={i}
+                                        style={{ padding: '12px 14px', background: 'var(--bg-elevated)', borderRadius: 10, border: '1px solid var(--border)', cursor: 'pointer', transition: 'all 0.2s' }}
+                                        onClick={() => {
+                                            const newRubric = { ...tpl, id: undefined, createdAt: undefined, updatedAt: undefined } as any;
+                                            navigate('/rubrics/new', { state: { template: newRubric } });
+                                        }}
+                                        className="hoverable"
+                                    >
+                                        <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: 2 }}>{tpl.name}</div>
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{tpl.subject}</div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>

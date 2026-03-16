@@ -1,11 +1,12 @@
 import React, { useState, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
     Plus, Trash2, GripVertical, Save, ChevronUp, ChevronDown,
     Settings, Eye, ArrowLeft, Link2, BookOpen, X, ChevronRight, FileDown, FileText,
     Wand2, AlignLeft, AlignCenter, AlignRight, LayoutGrid, Rows3, CheckSquare, Square,
-    MoveLeft, MoveRight, Copy
+    MoveLeft, MoveRight, Copy, GripHorizontal
 } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import { useTranslation, Trans } from 'react-i18next';
@@ -43,19 +44,21 @@ function newCriterion(): RubricCriterion {
 export default function RubricBuilder() {
     const navigate = useNavigate();
     const { id } = useParams();
+    const location = useLocation();
     const { t } = useTranslation();
     const { rubrics, addRubric, updateRubric, gradeScales, settings } = useApp();
 
     const existing = id ? rubrics.find(r => r.id === id) : undefined;
+    const template = location.state?.template as Partial<Rubric> | undefined;
 
-    const [name, setName] = useState(existing?.name ?? '');
-    const [subject, setSubject] = useState(existing?.subject ?? '');
-    const [description, setDescription] = useState(existing?.description ?? '');
-    const [criteria, setCriteria] = useState<RubricCriterion[]>(existing?.criteria ?? [newCriterion()]);
-    const [gradeScaleId, setGradeScaleId] = useState(existing?.gradeScaleId ?? settings.defaultGradeScaleId);
-    const [format, setFormat] = useState<RubricFormat>(existing?.format ?? DEFAULT_FORMAT);
-    const [scoringMode, setScoringMode] = useState<ScoringMode>(existing?.scoringMode ?? 'weighted-percentage');
-    const [totalMaxPoints, setTotalMaxPoints] = useState(existing?.totalMaxPoints ?? 100);
+    const [name, setName] = useState(existing?.name ?? template?.name ?? '');
+    const [subject, setSubject] = useState(existing?.subject ?? template?.subject ?? '');
+    const [description, setDescription] = useState(existing?.description ?? template?.description ?? '');
+    const [criteria, setCriteria] = useState<RubricCriterion[]>(existing?.criteria ?? template?.criteria ?? [newCriterion()]);
+    const [gradeScaleId, setGradeScaleId] = useState(existing?.gradeScaleId ?? template?.gradeScaleId ?? settings.defaultGradeScaleId);
+    const [format, setFormat] = useState<RubricFormat>(existing?.format ?? template?.format ?? DEFAULT_FORMAT);
+    const [scoringMode, setScoringMode] = useState<ScoringMode>(existing?.scoringMode ?? template?.scoringMode ?? 'weighted-percentage');
+    const [totalMaxPoints, setTotalMaxPoints] = useState(existing?.totalMaxPoints ?? template?.totalMaxPoints ?? 100);
     const [showFormat, setShowFormat] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
     const [showMarkdownHint, setShowMarkdownHint] = useState(false);
@@ -75,7 +78,15 @@ export default function RubricBuilder() {
         attachmentIds: existing?.attachmentIds ?? [],
         createdAt: existing?.createdAt ?? new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-    }), [existing, name, subject, description, criteria, gradeScaleId, format, scoringMode, totalMaxPoints]);
+    }), [existing, name, subject, description, criteria, gradeScaleId, format, scoringMode, totalMaxPoints, t]);
+
+    const onDragEnd = (result: DropResult) => {
+        if (!result.destination) return;
+        const items = Array.from(criteria);
+        const [reorderedItem] = items.splice(result.source.index, 1);
+        items.splice(result.destination.index, 0, reorderedItem);
+        setCriteria(items);
+    };
 
     const handleExport = async (type: 'pdf' | 'docx' | 'json') => {
         setShowExportMenu(false);
@@ -141,6 +152,34 @@ export default function RubricBuilder() {
         });
     }
     function deleteCriterion(cid: string) { setCriteria(c => c.filter(x => x.id !== cid)); }
+
+    function copyToClipboard(criterion: RubricCriterion) {
+        try {
+            localStorage.setItem('rubric_criterion_clipboard', JSON.stringify(criterion));
+        } catch (e) {
+            console.error('Failed to copy criterion', e);
+        }
+    }
+
+    function pasteFromClipboard() {
+        try {
+            const raw = localStorage.getItem('rubric_criterion_clipboard');
+            if (!raw) return;
+            const source = JSON.parse(raw) as RubricCriterion;
+            const clone: RubricCriterion = {
+                ...source,
+                id: nanoid(),
+                levels: source.levels.map(l => ({
+                    ...l,
+                    id: nanoid(),
+                    subItems: l.subItems.map(si => ({ ...si, id: nanoid() }))
+                }))
+            };
+            setCriteria(c => [...c, clone]);
+        } catch (e) {
+            console.error('Failed to paste criterion', e);
+        }
+    }
     function updateCriterion(cid: string, patch: Partial<RubricCriterion>) {
         setCriteria(c => c.map(x => x.id === cid ? { ...x, ...patch } : x));
     }
@@ -376,20 +415,42 @@ export default function RubricBuilder() {
                         {/* Criteria */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
                             <h2>{t('rubricBuilder.label_criterion')}</h2>
-                            <button className="btn btn-primary btn-sm" onClick={() => setCriteria(c => [...c, newCriterion()])}>
-                                <Plus size={15} /> {t('rubricBuilder.action_add_first_criterion').replace('First ', '')}
-                            </button>
+                            <div style={{ display: 'flex', gap: 8 }}>
+                                <button className="btn btn-secondary btn-sm" onClick={pasteFromClipboard} title="Paste criterion from clipboard">
+                                    <Plus size={15} /> Paste
+                                </button>
+                                <button className="btn btn-primary btn-sm" onClick={() => setCriteria(c => [...c, newCriterion()])}>
+                                    <Plus size={15} /> {t('rubricBuilder.action_add_first_criterion').replace('First ', '')}
+                                </button>
+                            </div>
                         </div>
 
-                        {criteria.map((criterion, cIdx) => (
-                            <div key={criterion.id} className="card" style={{ marginBottom: 16 }}>
-                                {/* Criterion header */}
-                                <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 14 }}>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2, paddingTop: 4 }}>
-                                        <button className="btn btn-ghost btn-icon btn-sm" onClick={() => moveCriterion(cIdx, -1)} disabled={cIdx === 0}><ChevronUp size={14} /></button>
-                                        <GripVertical size={16} style={{ color: 'var(--text-dim)', alignSelf: 'center' }} />
-                                        <button className="btn btn-ghost btn-icon btn-sm" onClick={() => moveCriterion(cIdx, 1)} disabled={cIdx === criteria.length - 1}><ChevronDown size={14} /></button>
-                                    </div>
+                        <DragDropContext onDragEnd={onDragEnd}>
+                            <Droppable droppableId="criteria">
+                                {(provided) => (
+                                    <div {...provided.droppableProps} ref={provided.innerRef}>
+                                        {criteria.map((criterion, cIdx) => (
+                                            <Draggable key={criterion.id} draggableId={criterion.id} index={cIdx}>
+                                                {(provided) => (
+                                                    <div
+                                                        ref={provided.innerRef}
+                                                        {...provided.draggableProps}
+                                                        className="card"
+                                                        style={{
+                                                            marginBottom: 16,
+                                                            ...provided.draggableProps.style,
+                                                        }}
+                                                    >
+                                                        {/* Criterion header */}
+                                                        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 14 }}>
+                                                            <div
+                                                                {...provided.dragHandleProps}
+                                                                style={{ display: 'flex', flexDirection: 'column', gap: 2, paddingTop: 4, cursor: 'grab' }}
+                                                            >
+                                                                <button className="btn btn-ghost btn-icon btn-sm" onClick={() => moveCriterion(cIdx, -1)} disabled={cIdx === 0}><ChevronUp size={14} /></button>
+                                                                <GripVertical size={16} style={{ color: 'var(--text-dim)', alignSelf: 'center' }} />
+                                                                <button className="btn btn-ghost btn-icon btn-sm" onClick={() => moveCriterion(cIdx, 1)} disabled={cIdx === criteria.length - 1}><ChevronDown size={14} /></button>
+                                                            </div>
                                     <div style={{ flex: 1 }}>
                                         <div className="grid-2" style={{ gap: 10, gridTemplateColumns: '1fr 1fr auto' }}>
                                             <div className="form-group">
@@ -451,6 +512,10 @@ export default function RubricBuilder() {
                                         </div>
                                     </div>
                                     <div style={{ display: 'flex', gap: 4, marginTop: 20 }}>
+                                        <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--accent)' }}
+                                            onClick={() => copyToClipboard(criterion)} title="Copy to clipboard">
+                                            <Copy size={15} />
+                                        </button>
                                         <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--text-muted)' }}
                                             onClick={() => duplicateCriterion(cIdx)} title="Duplicate Criterion">
                                             <Copy size={15} />
@@ -587,7 +652,14 @@ export default function RubricBuilder() {
                                     </div>
                                 </div>
                             </div>
-                        ))}
+                        )}
+                    </Draggable>
+                ))}
+                {provided.placeholder}
+            </div>
+        )}
+    </Droppable>
+</DragDropContext>
 
                         {criteria.length === 0 && (
                             <div className="empty-state">
