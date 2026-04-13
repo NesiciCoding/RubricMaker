@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Trash2, Edit2, Users as UsersIcon, Upload, Download, TrendingUp, MoreVertical, Search } from 'lucide-react';
+import { Plus, Trash2, Edit2, Users as UsersIcon, Upload, Download, TrendingUp, MoreVertical, Search, BookOpen, Link } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import Papa from 'papaparse';
@@ -44,6 +44,23 @@ export default function StudentsPage() {
     const fileRef = useRef<HTMLInputElement>(null);
     const [studentSearch, setStudentSearch] = useState('');
     const [confirmDeleteStudent, setConfirmDeleteStudent] = useState<string | null>(null);
+    const [showLinkRubrics, setShowLinkRubrics] = useState(false);
+
+    const activeClassData = classes.find(c => c.id === activeClass);
+
+    function toggleClassRubric(rubricId: string) {
+        if (!activeClassData) return;
+        const current = activeClassData.rubricIds ?? [];
+        const next = current.includes(rubricId)
+            ? current.filter(id => id !== rubricId)
+            : [...current, rubricId];
+        updateClass({ ...activeClassData, rubricIds: next });
+    }
+
+    const linkedRubricIds = activeClassData?.rubricIds;
+    const classRubrics = linkedRubricIds && linkedRubricIds.length > 0
+        ? rubrics.filter(r => linkedRubricIds.includes(r.id))
+        : rubrics;
 
     const filteredStudents = students
         .filter(s => s.classId === activeClass)
@@ -111,7 +128,13 @@ export default function StudentsPage() {
                                     onClick={() => setActiveClass(c.id)}>
                                     <UsersIcon size={15} />
                                     <span className="truncate">{c.name}</span>
-                                    <span style={{ marginLeft: 'auto', fontSize: '0.75rem', opacity: 0.7, paddingRight: 24 }}>
+                                    <span style={{ marginLeft: 'auto', fontSize: '0.75rem', opacity: 0.7, paddingRight: 24, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                        {c.rubricIds && c.rubricIds.length > 0 && (
+                                            <span title={`${c.rubricIds.length} rubric${c.rubricIds.length !== 1 ? 's' : ''} linked`} style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+                                                <BookOpen size={11} />
+                                                {c.rubricIds.length}
+                                            </span>
+                                        )}
                                         {students.filter(s => s.classId === c.id).length}
                                     </span>
                                 </button>
@@ -124,10 +147,14 @@ export default function StudentsPage() {
                                 </button>
 
                                 {classMenuOpen === c.id && (
-                                    <div className="card" style={{ position: 'absolute', right: 0, top: '100%', zIndex: 10, padding: 4, minWidth: 140, boxShadow: 'var(--shadow-lg)' }} onClick={e => e.stopPropagation()}>
+                                    <div className="card" style={{ position: 'absolute', right: 0, top: '100%', zIndex: 10, padding: 4, minWidth: 160, boxShadow: 'var(--shadow-lg)' }} onClick={e => e.stopPropagation()}>
                                         <button className="btn btn-ghost btn-sm" style={{ width: '100%', justifyContent: 'flex-start' }}
                                             onClick={() => { setRenameClassId(c.id); setRenameClassVal(c.name); setClassMenuOpen(null); }}>
                                             {t('studentsPage.action_rename')}
+                                        </button>
+                                        <button className="btn btn-ghost btn-sm" style={{ width: '100%', justifyContent: 'flex-start' }}
+                                            onClick={() => { setActiveClass(c.id); setShowLinkRubrics(true); setClassMenuOpen(null); }}>
+                                            <Link size={13} style={{ marginRight: 4 }} /> Link rubrics
                                         </button>
                                         <button className="btn btn-ghost btn-sm" style={{ width: '100%', justifyContent: 'flex-start' }}
                                             onClick={() => { setMergeClassId(c.id); setMergeTargetId(''); setClassMenuOpen(null); }}>
@@ -201,8 +228,8 @@ export default function StudentsPage() {
                                                         : <span className="badge badge-yellow">{t('studentsPage.not_graded')}</span>}
                                                 </td>
                                                 <td>
-                                                    <div style={{ display: 'flex', gap: 6 }}>
-                                                        {rubrics.map(r => (
+                                                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                                        {classRubrics.map(r => (
                                                             <button key={r.id} className="btn btn-primary btn-sm"
                                                                 onClick={() => navigate(`/rubrics/${r.id}/grade/${s.id}`)}>
                                                                 {t('studentsPage.grade_prefix')} {r.name.slice(0, 12)}{r.name.length > 12 ? '…' : ''}
@@ -398,6 +425,54 @@ export default function StudentsPage() {
                                     deleteStudent(confirmDeleteStudent);
                                     setConfirmDeleteStudent(null);
                                 }}>{t('common.delete')}</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {showLinkRubrics && activeClassData && (
+                    <div className="modal-overlay" onClick={() => setShowLinkRubrics(false)}>
+                        <div className="modal" onClick={e => e.stopPropagation()}>
+                            <div className="modal-header">
+                                <h3>Link rubrics to {activeClassData.name}</h3>
+                                <button className="btn btn-ghost btn-icon" onClick={() => setShowLinkRubrics(false)}>✕</button>
+                            </div>
+                            <div className="modal-body">
+                                <p style={{ marginBottom: 16, color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                                    Select which rubrics are available for students in this class. If none are selected, all rubrics will be shown.
+                                </p>
+                                {rubrics.length === 0 ? (
+                                    <div className="empty-state">
+                                        <BookOpen size={28} />
+                                        <p>No rubrics yet. Create a rubric first.</p>
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                        {rubrics.map(r => {
+                                            const linked = (activeClassData.rubricIds ?? []).includes(r.id);
+                                            return (
+                                                <label key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 8, cursor: 'pointer', background: linked ? 'var(--accent-soft)' : 'var(--bg-2)', border: `1px solid ${linked ? 'var(--accent)' : 'var(--border)'}` }}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={linked}
+                                                        onChange={() => toggleClassRubric(r.id)}
+                                                        style={{ width: 16, height: 16, accentColor: 'var(--accent)', flexShrink: 0 }}
+                                                    />
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                                        <div style={{ fontWeight: 500, fontSize: '0.92rem' }}>{r.name}</div>
+                                                        {r.subject && <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{r.subject}</div>}
+                                                    </div>
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="modal-footer">
+                                <button className="btn btn-secondary" onClick={() => {
+                                    updateClass({ ...activeClassData, rubricIds: [] });
+                                }}>Clear all</button>
+                                <button className="btn btn-primary" onClick={() => setShowLinkRubrics(false)}>Done</button>
                             </div>
                         </div>
                     </div>

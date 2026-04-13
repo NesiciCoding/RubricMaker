@@ -4,7 +4,7 @@
  * using heuristic table detection.
  */
 
-import type { RubricCriterion, RubricLevel } from '../types';
+import type { Rubric, RubricCriterion, RubricLevel } from '../types';
 import { nanoid } from './nanoid';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -301,4 +301,41 @@ export async function parseJsonToRubric(file: File): Promise<ParsedRubric> {
     } catch (err: any) {
         return emptyResult([`Failed to parse JSON: ${err.message}`]);
     }
+}
+
+// ─── Share Codes ───────────────────────────────────────────────────────────────
+
+/** Encodes a rubric into a compact shareable text code (base64 JSON). */
+export function encodeRubricShareCode(rubric: Rubric): string {
+    const shareable = {
+        name: rubric.name,
+        subject: rubric.subject,
+        description: rubric.description,
+        criteria: rubric.criteria,
+        gradeScaleId: rubric.gradeScaleId,
+        scoringMode: rubric.scoringMode,
+        totalMaxPoints: rubric.totalMaxPoints,
+        format: rubric.format,
+    };
+    // Use encodeURIComponent to safely handle Unicode before btoa
+    return btoa(encodeURIComponent(JSON.stringify(shareable)));
+}
+
+/** Decodes a share code back into a ParsedRubric (ready for import). */
+export function decodeRubricShareCode(code: string): ParsedRubric & { gradeScaleId?: string; scoringMode?: string; totalMaxPoints?: number; format?: unknown } {
+    const json = decodeURIComponent(atob(code.trim()));
+    const data = JSON.parse(json);
+    if (!Array.isArray(data.criteria)) throw new Error('Invalid share code: missing criteria');
+    return {
+        name: data.name || '',
+        subject: data.subject || '',
+        description: data.description || '',
+        criteria: data.criteria,
+        confidence: 'high',
+        warnings: [],
+        gradeScaleId: data.gradeScaleId,
+        scoringMode: data.scoringMode,
+        totalMaxPoints: data.totalMaxPoints,
+        format: data.format,
+    };
 }
