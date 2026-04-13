@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, MessageSquare, Paperclip, CheckSquare, Square, Info, BookOpen, FileDown, Mic, MicOff } from 'lucide-react';
+import { ArrowLeft, Save, MessageSquare, Paperclip, CheckSquare, Square, Info, BookOpen, FileDown, Mic, MicOff, ChevronRight } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import CommentBankModal from '../components/Comments/CommentBankModal';
 import AttachmentViewer from '../components/AttachmentViewer';
@@ -81,6 +81,29 @@ export default function GradeStudent() {
         setTimeout(() => setSaved(false), 2000);
     }, [sr, rubric, saveStudentRubric]);
 
+    // Find next student in the same class, preferring ungraded ones
+    const nextStudent = useMemo(() => {
+        if (!student) return null;
+        const classStudents = [...students.filter(s => s.classId === student.classId)]
+            .sort((a, b) => a.name.localeCompare(b.name));
+        const currentIndex = classStudents.findIndex(s => s.id === studentId);
+        const after = classStudents.slice(currentIndex + 1).concat(classStudents.slice(0, currentIndex));
+        return after.find(s => !studentRubrics.find(sr => sr.rubricId === rubricId && sr.studentId === s.id))
+            ?? after[0]
+            ?? null;
+    }, [student, students, studentId, studentRubrics, rubricId]);
+
+    const handleSaveAndNext = useCallback(() => {
+        if (!sr || !rubric || !nextStudent) return;
+        saveStudentRubric({
+            ...sr,
+            rubricSnapshot: JSON.parse(JSON.stringify(rubric)),
+            gradedAt: new Date().toISOString()
+        });
+        setIsDirty(false);
+        navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}`);
+    }, [sr, rubric, saveStudentRubric, nextStudent, navigate, rubricId]);
+
     // Keyboard shortcut to save
     React.useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -160,6 +183,13 @@ export default function GradeStudent() {
                         <button className="btn btn-primary btn-sm" onClick={handleSave}>
                             <Save size={15} /> {saved ? t('gradeStudent.action_saved') : t('gradeStudent.action_save')}
                         </button>
+                        {nextStudent && (
+                            <button className="btn btn-primary btn-sm" onClick={handleSaveAndNext} title={`Next: ${nextStudent.name}`}>
+                                <Save size={15} />
+                                <ChevronRight size={14} />
+                                {nextStudent.name.split(' ')[0]}
+                            </button>
+                        )}
                     </>
                 }
             />

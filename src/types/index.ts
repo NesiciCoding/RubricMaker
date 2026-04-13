@@ -156,6 +156,8 @@ export interface Class {
     name: string;
     subject?: string;
     year?: string;
+    /** IDs of rubrics linked to this class. If undefined/empty, all rubrics are shown. */
+    rubricIds?: string[];
 }
 
 export interface ScoreEntry {

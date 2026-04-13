@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Edit2, Trash2, Copy, BookOpen, Users, Upload, GitCompare } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Copy, BookOpen, Users, Upload, GitCompare, Share2, ClipboardPaste, Check } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
@@ -8,6 +8,7 @@ import { DEFAULT_FORMAT } from '../types';
 import { nanoid } from '../utils/nanoid';
 import ImportRubricModal from '../components/ImportRubricModal';
 import type { ParsedRubric } from '../utils/rubricImport';
+import { encodeRubricShareCode, decodeRubricShareCode } from '../utils/rubricImport';
 
 export default function RubricList() {
     const { t } = useTranslation();
@@ -17,6 +18,41 @@ export default function RubricList() {
     const [subjectFilter, setSubjectFilter] = useState<string>('all');
     const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
     const [showImport, setShowImport] = useState(false);
+    const [copiedId, setCopiedId] = useState<string | null>(null);
+    const [showCodeImport, setShowCodeImport] = useState(false);
+    const [pastedCode, setPastedCode] = useState('');
+    const [codeImportError, setCodeImportError] = useState<string | null>(null);
+
+    function handleCopyShareCode(rubricId: string) {
+        const rubric = rubrics.find(r => r.id === rubricId);
+        if (!rubric) return;
+        navigator.clipboard.writeText(encodeRubricShareCode(rubric));
+        setCopiedId(rubricId);
+        setTimeout(() => setCopiedId(null), 2000);
+    }
+
+    function handleImportFromCode() {
+        try {
+            const parsed = decodeRubricShareCode(pastedCode);
+            const newR = addRubric({
+                name: parsed.name || 'Imported Rubric',
+                subject: parsed.subject || '',
+                description: parsed.description || '',
+                criteria: parsed.criteria,
+                gradeScaleId: (parsed as any).gradeScaleId || settings.defaultGradeScaleId,
+                format: (parsed as any).format || DEFAULT_FORMAT,
+                scoringMode: (parsed as any).scoringMode || 'weighted-percentage',
+                totalMaxPoints: (parsed as any).totalMaxPoints ?? 100,
+                attachmentIds: [],
+            });
+            setShowCodeImport(false);
+            setPastedCode('');
+            setCodeImportError(null);
+            navigate(`/rubrics/${newR.id}`);
+        } catch {
+            setCodeImportError('Invalid share code. Make sure you pasted the full code.');
+        }
+    }
 
     const uniqueSubjects = Array.from(new Set(rubrics.map(r => r.subject).filter(Boolean))).sort();
 
@@ -58,6 +94,9 @@ export default function RubricList() {
         <>
             <Topbar title={t('rubricList.title')} actions={
                 <>
+                    <button className="btn btn-secondary btn-sm" onClick={() => { setShowCodeImport(true); setPastedCode(''); setCodeImportError(null); }}>
+                        <ClipboardPaste size={15} /> Import from code
+                    </button>
                     <button className="btn btn-secondary btn-sm" onClick={() => setShowImport(true)}>
                         <Upload size={15} /> {t('rubricList.import_rubric')}
                     </button>
@@ -116,6 +155,11 @@ export default function RubricList() {
                                             {r.subject && <div className="text-muted text-xs" style={{ marginTop: 2 }}>{r.subject}</div>}
                                         </div>
                                         <div style={{ display: 'flex', gap: 4 }}>
+                                            <button className="btn btn-ghost btn-icon btn-sm" title="Copy share code"
+                                                style={{ color: copiedId === r.id ? 'var(--green, #22c55e)' : undefined }}
+                                                onClick={e => { e.stopPropagation(); handleCopyShareCode(r.id); }}>
+                                                {copiedId === r.id ? <Check size={14} /> : <Share2 size={14} />}
+                                            </button>
                                             <button className="btn btn-ghost btn-icon btn-sm" title={t('rubricList.action_duplicate')}
                                                 onClick={e => { e.stopPropagation(); handleDuplicate(r.id); }}>
                                                 <Copy size={14} />
@@ -186,6 +230,42 @@ export default function RubricList() {
                         onClose={() => setShowImport(false)}
                         onImport={handleImport}
                     />
+                )}
+
+                {showCodeImport && (
+                    <div className="modal-overlay" onClick={() => setShowCodeImport(false)}>
+                        <div className="modal" style={{ maxWidth: 560 }} onClick={e => e.stopPropagation()}>
+                            <div className="modal-header">
+                                <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <ClipboardPaste size={18} /> Import from share code
+                                </h3>
+                                <button className="btn btn-ghost btn-icon" onClick={() => setShowCodeImport(false)}>✕</button>
+                            </div>
+                            <div className="modal-body">
+                                <p style={{ marginBottom: 14, color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                                    Paste a share code that was copied from another RubricMaker instance.
+                                </p>
+                                <textarea
+                                    autoFocus
+                                    value={pastedCode}
+                                    onChange={e => { setPastedCode(e.target.value); setCodeImportError(null); }}
+                                    placeholder="Paste share code here…"
+                                    style={{ width: '100%', minHeight: 120, fontFamily: 'monospace', fontSize: '0.8rem', resize: 'vertical' }}
+                                />
+                                {codeImportError && (
+                                    <div style={{ marginTop: 10, color: 'var(--red)', fontSize: '0.875rem', background: 'var(--red-soft)', padding: '8px 12px', borderRadius: 6 }}>
+                                        {codeImportError}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="modal-footer">
+                                <button className="btn btn-secondary" onClick={() => setShowCodeImport(false)}>Cancel</button>
+                                <button className="btn btn-primary" disabled={!pastedCode.trim()} onClick={handleImportFromCode}>
+                                    <Check size={15} /> Import rubric
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 )}
             </div>
         </>
