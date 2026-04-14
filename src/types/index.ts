@@ -1,5 +1,51 @@
 // ─── Core Domain Types for Rubric Maker ───────────────────────────────────────
 
+// ─── CEFR / ERK Types ─────────────────────────────────────────────────────────
+
+export type CefrLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
+
+export type CefrSkill = 'reading' | 'writing' | 'speaking_production' | 'speaking_interaction' | 'listening';
+
+export interface CefrDescriptor {
+    id: string;
+    level: CefrLevel;
+    skill: CefrSkill;
+    /** The Can-Do statement in English */
+    descriptionEn: string;
+    /** The Can-Do statement in Dutch */
+    descriptionNl: string;
+}
+
+/** A single descriptor rating in a student self-assessment */
+export interface SelfAssessmentRating {
+    descriptorId: string;
+    level: CefrLevel;
+    skill: CefrSkill;
+    /** true = student feels confident with this Can-Do statement */
+    confident: boolean;
+}
+
+/** A student's self-assessment of CEFR Can-Do descriptors for a rubric */
+export interface SelfAssessment {
+    id: string;
+    rubricId: string;
+    studentId: string;
+    ratings: SelfAssessmentRating[];
+    /** Free-text student reflection */
+    reflection?: string;
+    submittedAt: string;
+}
+
+/** A CEFR Can-Do statement linked to a rubric criterion */
+export interface LinkedCefrDescriptor {
+    descriptorId: string;
+    level: CefrLevel;
+    skill: CefrSkill;
+    descriptionEn: string;
+    descriptionNl: string;
+}
+
+
 /** A single item inside a level — awarded via checkbox or scored via points */
 export interface SubItem {
     id: string;
@@ -38,6 +84,8 @@ export interface RubricCriterion {
     /** @deprecated Use linkedStandards instead */
     linkedStandard?: LinkedStandard;
     linkedStandards?: LinkedStandard[];
+    /** CEFR Can-Do statements linked to this criterion */
+    cefrDescriptors?: LinkedCefrDescriptor[];
 }
 
 export type GradeScaleType = 'letter' | 'percentage' | 'points' | 'pass-fail' | 'custom';
@@ -142,6 +190,10 @@ export interface Rubric {
     totalMaxPoints: number;
     /** 'weighted-percentage' (default) or 'total-points' */
     scoringMode: ScoringMode;
+    /** Target CEFR level for this rubric (e.g. 'B1' for a HAVO writing task) */
+    cefrTargetLevel?: CefrLevel;
+    /** Which language skill this rubric primarily assesses */
+    cefrSkill?: CefrSkill;
 }
 
 export interface Student {
@@ -151,6 +203,8 @@ export interface Student {
     classId: string;
 }
 
+export type VoTrack = 'vmbo-bb' | 'vmbo-kb' | 'vmbo-tl' | 'havo' | 'vwo';
+
 export interface Class {
     id: string;
     name: string;
@@ -158,6 +212,8 @@ export interface Class {
     year?: string;
     /** IDs of rubrics linked to this class. If undefined/empty, all rubrics are shown. */
     rubricIds?: string[];
+    /** Dutch VO track (VMBO-BB/KB/TL, HAVO, VWO) */
+    voTrack?: VoTrack;
 }
 
 export interface ScoreEntry {

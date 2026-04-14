@@ -1,11 +1,13 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Trash2, Edit2, Users as UsersIcon, Upload, Download, TrendingUp, MoreVertical, Search, BookOpen, Link } from 'lucide-react';
+import { Plus, Trash2, Edit2, Users as UsersIcon, Upload, Download, TrendingUp, MoreVertical, Search, BookOpen, Link, GraduationCap } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import Papa from 'papaparse';
 import CsvImportModal from '../components/CsvImportModal';
 import { useTranslation, Trans } from 'react-i18next';
+import { VO_TRACKS, VO_TRACK_LABELS, VO_TRACK_COLORS } from '../data/voTracks';
+import type { VoTrack } from '../types';
 
 export default function StudentsPage() {
     const { t } = useTranslation();
@@ -36,6 +38,7 @@ export default function StudentsPage() {
     // Class Management Modal States
     const [renameClassId, setRenameClassId] = useState<string | null>(null);
     const [renameClassVal, setRenameClassVal] = useState('');
+    const [renameClassTrack, setRenameClassTrack] = useState<VoTrack | ''>('');
 
     const [mergeClassId, setMergeClassId] = useState<string | null>(null);
     const [mergeTargetId, setMergeTargetId] = useState('');
@@ -129,6 +132,14 @@ export default function StudentsPage() {
                                     <UsersIcon size={15} />
                                     <span className="truncate">{c.name}</span>
                                     <span style={{ marginLeft: 'auto', fontSize: '0.75rem', opacity: 0.7, paddingRight: 24, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                        {c.voTrack && (
+                                            <span style={{
+                                                fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 3,
+                                                background: VO_TRACK_COLORS[c.voTrack], color: '#fff', opacity: 1,
+                                            }}>
+                                                {VO_TRACK_LABELS[c.voTrack]}
+                                            </span>
+                                        )}
                                         {c.rubricIds && c.rubricIds.length > 0 && (
                                             <span title={`${c.rubricIds.length} rubric${c.rubricIds.length !== 1 ? 's' : ''} linked`} style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
                                                 <BookOpen size={11} />
@@ -149,7 +160,7 @@ export default function StudentsPage() {
                                 {classMenuOpen === c.id && (
                                     <div className="card" style={{ position: 'absolute', right: 0, top: '100%', zIndex: 10, padding: 4, minWidth: 160, boxShadow: 'var(--shadow-lg)' }} onClick={e => e.stopPropagation()}>
                                         <button className="btn btn-ghost btn-sm" style={{ width: '100%', justifyContent: 'flex-start' }}
-                                            onClick={() => { setRenameClassId(c.id); setRenameClassVal(c.name); setClassMenuOpen(null); }}>
+                                            onClick={() => { setRenameClassId(c.id); setRenameClassVal(c.name); setRenameClassTrack(c.voTrack ?? ''); setClassMenuOpen(null); }}>
                                             {t('studentsPage.action_rename')}
                                         </button>
                                         <button className="btn btn-ghost btn-sm" style={{ width: '100%', justifyContent: 'flex-start' }}
@@ -306,30 +317,52 @@ export default function StudentsPage() {
                     <div className="modal-overlay" onClick={() => setRenameClassId(null)}>
                         <div className="modal" onClick={e => e.stopPropagation()}>
                             <div className="modal-header">
-                                <h3>{t('studentsPage.rename_class_title')}</h3>
+                                <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <GraduationCap size={18} style={{ color: 'var(--accent)' }} />
+                                    {t('voTrack.class_settings_title')}
+                                </h3>
                                 <button className="btn btn-ghost btn-icon" onClick={() => setRenameClassId(null)}>✕</button>
                             </div>
                             <div className="modal-body">
-                                <div className="form-group">
+                                <div className="form-group" style={{ marginBottom: 14 }}>
                                     <label>{t('studentsPage.form_new_name')}</label>
                                     <input type="text" value={renameClassVal} onChange={e => setRenameClassVal(e.target.value)} autoFocus
                                         onKeyDown={e => {
                                             if (e.key === 'Enter' && renameClassVal.trim()) {
                                                 const c = classes.find(cl => cl.id === renameClassId);
-                                                if (c) updateClass({ ...c, name: renameClassVal.trim() });
+                                                if (c) updateClass({ ...c, name: renameClassVal.trim(), voTrack: renameClassTrack || undefined });
                                                 setRenameClassId(null);
                                             }
                                         }}
                                     />
+                                </div>
+                                <div className="form-group">
+                                    <label>{t('voTrack.section_label')}</label>
+                                    <select value={renameClassTrack} onChange={e => setRenameClassTrack(e.target.value as VoTrack | '')}>
+                                        <option value="">{t('voTrack.no_track')}</option>
+                                        {VO_TRACKS.map(track => (
+                                            <option key={track} value={track}>{VO_TRACK_LABELS[track]}</option>
+                                        ))}
+                                    </select>
+                                    {renameClassTrack && (
+                                        <div style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                                            <span style={{
+                                                fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 5,
+                                                background: VO_TRACK_COLORS[renameClassTrack], color: '#fff',
+                                            }}>
+                                                {VO_TRACK_LABELS[renameClassTrack]}
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             <div className="modal-footer">
                                 <button className="btn btn-secondary" onClick={() => setRenameClassId(null)}>{t('common.cancel')}</button>
                                 <button className="btn btn-primary" disabled={!renameClassVal.trim()} onClick={() => {
                                     const c = classes.find(cl => cl.id === renameClassId);
-                                    if (c) updateClass({ ...c, name: renameClassVal.trim() });
+                                    if (c) updateClass({ ...c, name: renameClassVal.trim(), voTrack: renameClassTrack || undefined });
                                     setRenameClassId(null);
-                                }}>{t('studentsPage.form_new_name') !== t('studentsPage.form_new_name') /* use generic instead */ ? t('common.save') : t('common.save')}</button>
+                                }}>{t('common.save')}</button>
                             </div>
                         </div>
                     </div>

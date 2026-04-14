@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Edit2, Trash2, Copy, BookOpen, Users, Upload, GitCompare, Share2, ClipboardPaste, Check } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Copy, BookOpen, Users, Upload, GitCompare, Share2, ClipboardPaste, Check, Layers } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
 import { DEFAULT_FORMAT } from '../types';
+import type { VoTrack, CefrLevel } from '../types';
+import { VO_TRACKS, VO_TRACK_LABELS, VO_TRACK_COLORS, VO_TRACK_DEFAULT_CEFR } from '../data/voTracks';
+import { CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
+import CefrBadge from '../components/CEFR/CefrBadge';
 import { nanoid } from '../utils/nanoid';
 import ImportRubricModal from '../components/ImportRubricModal';
 import type { ParsedRubric } from '../utils/rubricImport';
@@ -22,6 +26,9 @@ export default function RubricList() {
     const [showCodeImport, setShowCodeImport] = useState(false);
     const [pastedCode, setPastedCode] = useState('');
     const [codeImportError, setCodeImportError] = useState<string | null>(null);
+    const [differentiateId, setDifferentiateId] = useState<string | null>(null);
+    const [diffTrack, setDiffTrack] = useState<VoTrack>('havo');
+    const [diffCefr, setDiffCefr] = useState<CefrLevel>('B1');
 
     function handleCopyShareCode(rubricId: string) {
         const rubric = rubrics.find(r => r.id === rubricId);
@@ -62,6 +69,27 @@ export default function RubricList() {
         const matchesSubject = subjectFilter === 'all' || r.subject === subjectFilter;
         return matchesSearch && matchesSubject;
     });
+
+    function openDifferentiate(rubricId: string) {
+        const defaultTrack: VoTrack = 'havo';
+        setDifferentiateId(rubricId);
+        setDiffTrack(defaultTrack);
+        setDiffCefr(VO_TRACK_DEFAULT_CEFR[defaultTrack]);
+    }
+
+    function handleDifferentiate() {
+        const r = rubrics.find(x => x.id === differentiateId);
+        if (!r) return;
+        const newR = addRubric({
+            ...r,
+            name: `${r.name} (${VO_TRACK_LABELS[diffTrack]})`,
+            criteria: r.criteria.map(c => ({ ...c, id: nanoid(), levels: c.levels.map(l => ({ ...l, id: nanoid() })) })),
+            attachmentIds: [],
+            cefrTargetLevel: diffCefr,
+        });
+        setDifferentiateId(null);
+        navigate(`/rubrics/${newR.id}`);
+    }
 
     function handleDuplicate(rubricId: string) {
         const r = rubrics.find(x => x.id === rubricId);
@@ -160,6 +188,10 @@ export default function RubricList() {
                                                 onClick={e => { e.stopPropagation(); handleCopyShareCode(r.id); }}>
                                                 {copiedId === r.id ? <Check size={14} /> : <Share2 size={14} />}
                                             </button>
+                                            <button className="btn btn-ghost btn-icon btn-sm" title={t('voTrack.differentiate_title')}
+                                                onClick={e => { e.stopPropagation(); openDifferentiate(r.id); }}>
+                                                <Layers size={14} />
+                                            </button>
                                             <button className="btn btn-ghost btn-icon btn-sm" title={t('rubricList.action_duplicate')}
                                                 onClick={e => { e.stopPropagation(); handleDuplicate(r.id); }}>
                                                 <Copy size={14} />
@@ -180,6 +212,9 @@ export default function RubricList() {
                                         <span className="badge badge-blue">{r.criteria.length} {t('rubricList.criteria_count')}</span>
                                         <span className="badge badge-purple">{r.criteria[0]?.levels.length ?? 0} {t('rubricList.levels_count')}</span>
                                         <span className="badge badge-green">{gradedStudents.length} {t('rubricList.students_graded_count')}</span>
+                                        {r.cefrTargetLevel && (
+                                            <CefrBadge level={r.cefrTargetLevel} size="sm" />
+                                        )}
                                     </div>
 
                                     {r.description && (
@@ -230,6 +265,72 @@ export default function RubricList() {
                         onClose={() => setShowImport(false)}
                         onImport={handleImport}
                     />
+                )}
+
+                {differentiateId && (
+                    <div className="modal-overlay" onClick={() => setDifferentiateId(null)}>
+                        <div className="modal" style={{ maxWidth: 480 }} onClick={e => e.stopPropagation()}>
+                            <div className="modal-header">
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                    <Layers size={18} style={{ color: 'var(--accent)' }} />
+                                    <div>
+                                        <div style={{ fontWeight: 600, fontSize: 15 }}>{t('voTrack.differentiate_title')}</div>
+                                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('voTrack.differentiate_subtitle')}</div>
+                                    </div>
+                                </div>
+                                <button className="btn btn-ghost btn-icon" onClick={() => setDifferentiateId(null)}>✕</button>
+                            </div>
+                            <div className="modal-body">
+                                <div style={{ background: 'var(--bg-elevated)', borderRadius: 8, padding: '10px 14px', marginBottom: 18, fontSize: 13, color: 'var(--text-muted)' }}>
+                                    <strong style={{ color: 'var(--text)' }}>{rubrics.find(r => r.id === differentiateId)?.name}</strong>
+                                </div>
+
+                                <div className="form-group" style={{ marginBottom: 18 }}>
+                                    <label>{t('voTrack.target_track')}</label>
+                                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 6 }}>
+                                        {VO_TRACKS.map(track => (
+                                            <button
+                                                key={track}
+                                                className={`btn btn-sm ${diffTrack === track ? 'btn-primary' : 'btn-ghost'}`}
+                                                style={diffTrack !== track ? { borderColor: VO_TRACK_COLORS[track], color: VO_TRACK_COLORS[track] } : {}}
+                                                onClick={() => {
+                                                    setDiffTrack(track);
+                                                    setDiffCefr(VO_TRACK_DEFAULT_CEFR[track]);
+                                                }}
+                                            >
+                                                {VO_TRACK_LABELS[track]}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="form-group">
+                                    <label>{t('voTrack.suggested_cefr')}</label>
+                                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
+                                        {(['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as CefrLevel[]).map(level => (
+                                            <button
+                                                key={level}
+                                                className={`btn btn-sm ${diffCefr === level ? 'btn-primary' : 'btn-ghost'}`}
+                                                style={diffCefr !== level ? { borderColor: CEFR_LEVEL_COLORS[level], color: CEFR_LEVEL_COLORS[level] } : {}}
+                                                onClick={() => setDiffCefr(level)}
+                                            >
+                                                {level}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div style={{ marginTop: 10, fontSize: 12, color: 'var(--text-muted)' }}>
+                                        Variant will be named: <strong style={{ color: 'var(--text)' }}>{rubrics.find(r => r.id === differentiateId)?.name} ({VO_TRACK_LABELS[diffTrack]})</strong>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="modal-footer">
+                                <button className="btn btn-secondary" onClick={() => setDifferentiateId(null)}>{t('common.cancel')}</button>
+                                <button className="btn btn-primary" onClick={handleDifferentiate}>
+                                    <Layers size={14} /> {t('voTrack.action_create')}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 )}
 
                 {showCodeImport && (

@@ -1,6 +1,6 @@
 import type {
     Rubric, Student, Class, StudentRubric, Attachment,
-    GradeScale, CommentSnippet, AppSettings, RubricFormat, LinkedStandard, CommentBankItem, ExportTemplate
+    GradeScale, CommentSnippet, AppSettings, RubricFormat, LinkedStandard, CommentBankItem, ExportTemplate, SelfAssessment
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 
@@ -94,6 +94,7 @@ const KEYS = {
     commentBank: 'rm_comment_bank',
     exportTemplates: 'rm_export_templates',
     peerReviews: 'rm_peer_reviews',
+    selfAssessments: 'rm_self_assessments',
 };
 
 // ─── Generic helpers ───────────────────────────────────────────────────────────
@@ -127,6 +128,7 @@ export interface StoreData {
     commentBank: CommentBankItem[];
     exportTemplates: ExportTemplate[];
     peerReviews: StudentRubric[];
+    selfAssessments: SelfAssessment[];
 }
 
 export function loadStore(): StoreData {
@@ -143,6 +145,7 @@ export function loadStore(): StoreData {
         commentBank: load<CommentBankItem[]>(KEYS.commentBank, DEFAULT_COMMENT_BANK),
         exportTemplates: load<ExportTemplate[]>(KEYS.exportTemplates, []),
         peerReviews: load<StudentRubric[]>(KEYS.peerReviews, []),
+        selfAssessments: load<SelfAssessment[]>(KEYS.selfAssessments, []),
     };
 }
 
@@ -158,6 +161,7 @@ export function saveFavoriteStandards(favs: LinkedStandard[]) { save(KEYS.favori
 export function saveCommentBank(items: CommentBankItem[]) { save(KEYS.commentBank, items); }
 export function saveExportTemplates(templates: ExportTemplate[]) { save(KEYS.exportTemplates, templates); }
 export function savePeerReviews(reviews: StudentRubric[]) { save(KEYS.peerReviews, reviews); }
+export function saveSelfAssessments(sas: SelfAssessment[]) { save(KEYS.selfAssessments, sas); }
 
 // ─── Full Backup / Restore ─────────────────────────────────────────────────────
 

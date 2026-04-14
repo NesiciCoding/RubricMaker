@@ -12,11 +12,13 @@ import { useApp } from '../context/AppContext';
 import { useTranslation, Trans } from 'react-i18next';
 import type {
     Rubric, RubricCriterion, RubricLevel, RubricFormat, SubItem,
-    LinkedStandard, ScoringMode,
+    LinkedStandard, ScoringMode, CefrLevel, CefrSkill, LinkedCefrDescriptor,
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 import { nanoid } from '../utils/nanoid';
 import StandardsPickerModal from '../components/Standards/StandardsPickerModal';
+import CefrPickerModal from '../components/CEFR/CefrPickerModal';
+import { CEFR_LEVELS, CEFR_SKILLS, CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
 import { exportRubricGridPdf } from '../utils/pdfExport';
 import { exportRubricToDocx } from '../utils/docxExport';
 
@@ -45,7 +47,6 @@ export default function RubricBuilder() {
     const navigate = useNavigate();
     const { id } = useParams();
     const location = useLocation();
-    const { t } = useTranslation();
     const { rubrics, addRubric, updateRubric, gradeScales, settings } = useApp();
 
     const existing = id ? rubrics.find(r => r.id === id) : undefined;
@@ -69,6 +70,12 @@ export default function RubricBuilder() {
     type StandardTarget = { type: 'criterion'; cid: string } | { type: 'subitem'; cid: string; lid: string; sid: string };
     const [pickingStandardFor, setPickingStandardFor] = useState<StandardTarget | null>(null);
     const [showExportMenu, setShowExportMenu] = useState(false);
+    const { t, i18n } = useTranslation();
+
+    // ── CEFR state ──────────────────────────────────────────────────────────────
+    const [cefrTargetLevel, setCefrTargetLevel] = useState<CefrLevel | ''>(existing?.cefrTargetLevel ?? '');
+    const [cefrSkill, setCefrSkill] = useState<CefrSkill | ''>(existing?.cefrSkill ?? '');
+    const [pickingCefrFor, setPickingCefrFor] = useState<string | null>(null); // criterion id
 
     const getRubricData = useCallback((): Rubric => ({
         id: existing?.id ?? 'temp',
@@ -78,6 +85,8 @@ export default function RubricBuilder() {
         attachmentIds: existing?.attachmentIds ?? [],
         createdAt: existing?.createdAt ?? new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        cefrTargetLevel: cefrTargetLevel || undefined,
+        cefrSkill: cefrSkill || undefined,
     }), [existing, name, subject, description, criteria, gradeScaleId, format, scoringMode, totalMaxPoints, t]);
 
     const onDragEnd = (result: DropResult) => {
@@ -113,6 +122,8 @@ export default function RubricBuilder() {
             subject, description, criteria, gradeScaleId, format,
             scoringMode, totalMaxPoints,
             attachmentIds: existing?.attachmentIds ?? [],
+            cefrTargetLevel: cefrTargetLevel || undefined,
+            cefrSkill: cefrSkill || undefined,
         };
         if (existing) {
             updateRubric({ ...existing, ...rubricData });
@@ -308,6 +319,20 @@ export default function RubricBuilder() {
         }));
     }
 
+    // ── CEFR descriptor operations ──────────────────────────────────────────────
+    function addCefrDescriptor(cid: string, descriptor: LinkedCefrDescriptor) {
+        setCriteria(c => c.map(x => x.id === cid
+            ? { ...x, cefrDescriptors: [...(x.cefrDescriptors || []), descriptor] }
+            : x
+        ));
+    }
+    function removeCefrDescriptor(cid: string, descriptorId: string) {
+        setCriteria(c => c.map(x => x.id === cid
+            ? { ...x, cefrDescriptors: (x.cefrDescriptors || []).filter(d => d.descriptorId !== descriptorId) }
+            : x
+        ));
+    }
+
     return (
         <>
             <Topbar
@@ -410,6 +435,49 @@ export default function RubricBuilder() {
                                     </div>
                                 )}
                             </div>
+
+                            {/* ── CEFR / ERK ── */}
+                            <div style={{ background: 'var(--bg-elevated)', borderRadius: 10, padding: 16, marginTop: 16, border: '1px solid var(--border)' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                                    <BookOpen size={15} style={{ color: 'var(--accent)' }} />
+                                    <h4 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text)' }}>{t('cefr.rubric_section_title')}</h4>
+                                    <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 4 }}>{t('cefr.rubric_section_subtitle')}</span>
+                                </div>
+                                <div className="grid-2" style={{ gap: 12 }}>
+                                    <div className="form-group">
+                                        <label>{t('cefr.target_level_label')}</label>
+                                        <select value={cefrTargetLevel} onChange={e => setCefrTargetLevel(e.target.value as CefrLevel | '')}>
+                                            <option value="">{t('cefr.no_level')}</option>
+                                            {CEFR_LEVELS.map(lvl => (
+                                                <option key={lvl} value={lvl}>{lvl} – {t(`cefr.level_${lvl}`)}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="form-group">
+                                        <label>{t('cefr.skill_label')}</label>
+                                        <select value={cefrSkill} onChange={e => setCefrSkill(e.target.value as CefrSkill | '')}>
+                                            <option value="">{t('cefr.no_skill')}</option>
+                                            {CEFR_SKILLS.map(skill => (
+                                                <option key={skill} value={skill}>{CEFR_SKILL_LABELS[skill][i18n.language.startsWith('nl') ? 'nl' : 'en']}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                                {cefrTargetLevel && (
+                                    <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('cefr.target_label')}:</span>
+                                        <span style={{
+                                            background: CEFR_LEVEL_COLORS[cefrTargetLevel as CefrLevel],
+                                            color: '#fff',
+                                            borderRadius: 5,
+                                            padding: '2px 10px',
+                                            fontSize: 13,
+                                            fontWeight: 700,
+                                        }}>{cefrTargetLevel}</span>
+                                        {cefrSkill && <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>· {CEFR_SKILL_LABELS[cefrSkill as CefrSkill][i18n.language.startsWith('nl') ? 'nl' : 'en']}</span>}
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         {/* Criteria */}
@@ -509,7 +577,43 @@ export default function RubricBuilder() {
                                                 onClick={() => setPickingStandardFor({ type: 'criterion', cid: criterion.id })}>
                                                 <Link2 size={13} /> {t('rubricBuilder.action_link_standard')}
                                             </button>
+                                            <button className="btn btn-ghost btn-sm" style={{ color: 'var(--accent)', marginTop: 4 }}
+                                                onClick={() => setPickingCefrFor(criterion.id)}>
+                                                <BookOpen size={13} /> {t('cefr.action_link_descriptor')}
+                                                {(criterion.cefrDescriptors || []).length > 0 && (
+                                                    <span style={{ background: 'var(--accent)', color: '#fff', borderRadius: 8, padding: '0px 6px', fontSize: 10, fontWeight: 700, marginLeft: 4 }}>
+                                                        {criterion.cefrDescriptors!.length}
+                                                    </span>
+                                                )}
+                                            </button>
                                         </div>
+
+                                        {/* CEFR descriptors display */}
+                                        {(criterion.cefrDescriptors || []).length > 0 && (
+                                            <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                                {criterion.cefrDescriptors!.map(d => (
+                                                    <div key={d.descriptorId} style={{
+                                                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                                                        background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
+                                                        border: '1px solid color-mix(in srgb, var(--accent) 25%, transparent)',
+                                                        borderRadius: 8, padding: '4px 10px', fontSize: '0.78rem',
+                                                    }}>
+                                                        <span style={{
+                                                            background: CEFR_LEVEL_COLORS[d.level],
+                                                            color: '#fff', borderRadius: 4,
+                                                            padding: '1px 5px', fontSize: 10, fontWeight: 700,
+                                                        }}>{d.level}</span>
+                                                        <span style={{ color: 'var(--text)', maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                            {i18n.language.startsWith('nl') ? d.descriptionNl : d.descriptionEn}
+                                                        </span>
+                                                        <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--text-muted)', padding: 2 }}
+                                                            onClick={() => removeCefrDescriptor(criterion.id, d.descriptorId)}>
+                                                            <X size={11} />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                     <div style={{ display: 'flex', gap: 4, marginTop: 20 }}>
                                         <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--accent)' }}
@@ -834,6 +938,20 @@ export default function RubricBuilder() {
                         </div>
                     </div>
                 ) : null}
+
+                {/* CEFR Picker Modal */}
+                {pickingCefrFor && (() => {
+                    const criterion = criteria.find(c => c.id === pickingCefrFor);
+                    if (!criterion) return null;
+                    return (
+                        <CefrPickerModal
+                            linkedDescriptors={criterion.cefrDescriptors || []}
+                            onAdd={(d) => addCefrDescriptor(pickingCefrFor, d)}
+                            onRemove={(dId) => removeCefrDescriptor(pickingCefrFor, dId)}
+                            onClose={() => setPickingCefrFor(null)}
+                        />
+                    );
+                })()}
 
                 {/* Markdown Hint Modal */}
                 {showMarkdownHint && (

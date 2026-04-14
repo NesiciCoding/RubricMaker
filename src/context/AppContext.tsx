@@ -3,13 +3,13 @@ import React, {
 } from 'react';
 import type {
     Rubric, Student, Class, StudentRubric, Attachment,
-    GradeScale, CommentSnippet, AppSettings, ScoreEntry, Modifier, LinkedStandard, CommentBankItem, ExportTemplate
+    GradeScale, CommentSnippet, AppSettings, ScoreEntry, Modifier, LinkedStandard, CommentBankItem, ExportTemplate, SelfAssessment
 } from '../types';
 import {
     loadStore, StoreData,
     saveRubrics, saveStudents, saveClasses, saveStudentRubrics,
     saveAttachments, saveGradeScales, saveCommentSnippets, saveSettings, saveFavoriteStandards, saveCommentBank,
-    saveExportTemplates, exportStore, savePeerReviews
+    saveExportTemplates, exportStore, savePeerReviews, saveSelfAssessments
 } from '../store/storage';
 import { nanoid } from '../utils/nanoid';
 import { msalInstance, loginRequest } from '../services/msalConfig';
@@ -48,7 +48,9 @@ type Action =
     | { type: 'ADD_EXPORT_TEMPLATE'; payload: ExportTemplate }
     | { type: 'DELETE_EXPORT_TEMPLATE'; id: string }
     | { type: 'SAVE_PEER_REVIEW', payload: StudentRubric }
-    | { type: 'DELETE_PEER_REVIEW', id: string };
+    | { type: 'DELETE_PEER_REVIEW', id: string }
+    | { type: 'SAVE_SELF_ASSESSMENT', payload: SelfAssessment }
+    | { type: 'DELETE_SELF_ASSESSMENT', id: string };
 
 function reducer(state: StoreData, action: Action): StoreData {
     switch (action.type) {
@@ -205,6 +207,19 @@ function reducer(state: StoreData, action: Action): StoreData {
             savePeerReviews(next);
             return { ...state, peerReviews: next };
         }
+        case 'SAVE_SELF_ASSESSMENT': {
+            const exists = state.selfAssessments.findIndex(sa => sa.id === action.payload.id);
+            const next = exists >= 0
+                ? state.selfAssessments.map(sa => sa.id === action.payload.id ? action.payload : sa)
+                : [...state.selfAssessments, action.payload];
+            saveSelfAssessments(next);
+            return { ...state, selfAssessments: next };
+        }
+        case 'DELETE_SELF_ASSESSMENT': {
+            const next = state.selfAssessments.filter(sa => sa.id !== action.id);
+            saveSelfAssessments(next);
+            return { ...state, selfAssessments: next };
+        }
         default: return state;
     }
 }
@@ -248,6 +263,9 @@ interface AppContextValue extends StoreData {
     // Peer Review
     savePeerReview: (sr: StudentRubric) => void;
     deletePeerReview: (id: string) => void;
+    // Self Assessment
+    saveSelfAssessment: (sa: SelfAssessment) => void;
+    deleteSelfAssessment: (id: string) => void;
     // Microsoft Sync
     loginMicrosoft: () => Promise<void>;
     logoutMicrosoft: () => Promise<void>;
@@ -401,7 +419,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const deletePeerReview = useCallback((id: string) => dispatch({ type: 'DELETE_PEER_REVIEW', id }), []);
-    
+
+    const saveSelfAssessment = useCallback((sa: SelfAssessment) => {
+        dispatch({ type: 'SAVE_SELF_ASSESSMENT', payload: sa });
+    }, []);
+    const deleteSelfAssessment = useCallback((id: string) => dispatch({ type: 'DELETE_SELF_ASSESSMENT', id }), []);
+
     // ─── Microsoft Sync ───
     const { instance: msalInstanceContext } = useMsal();
     const isAuthenticated = useIsAuthenticated();
@@ -473,6 +496,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         addCommentBankItem, updateCommentBankItem, deleteCommentBankItem,
         addExportTemplate, deleteExportTemplate,
         savePeerReview, deletePeerReview,
+        saveSelfAssessment, deleteSelfAssessment,
         loginMicrosoft, logoutMicrosoft, syncToOneDrive, restoreFromOneDrive,
         microsoftUser
     };

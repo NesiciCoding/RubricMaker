@@ -19,6 +19,7 @@ const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const StudentProfilePage = lazy(() => import('./pages/StudentProfilePage'));
 const ComparativeGrading = lazy(() => import('./pages/ComparativeGrading'));
 const PeerReviewView = lazy(() => import('./pages/PeerReviewView'));
+const SelfAssessPage = lazy(() => import('./pages/SelfAssessPage'));
 
 const Spinner = () => {
     return (
@@ -72,6 +73,7 @@ export default function App() {
                         <Route path="/rubrics/:id" element={<RubricBuilder />} />
                         <Route path="/rubrics/:rubricId/grade/:studentId" element={<GradeStudent />} />
                         <Route path="/rubrics/:rubricId/peer-review/:studentId" element={<PeerReviewView />} />
+                        <Route path="/rubrics/:rubricId/self-assess/:studentId" element={<SelfAssessPage />} />
                         <Route path="/grade-comparative/:classId/:rubricId" element={<ComparativeGrading />} />
                         <Route path="/students" element={<StudentsPage />} />
                         <Route path="/students/:id" element={<StudentProfilePage />} />
