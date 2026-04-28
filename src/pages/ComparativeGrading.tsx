@@ -13,15 +13,24 @@ export default function ComparativeGrading() {
     const { t } = useTranslation();
     const { classId, rubricId } = useParams();
     const navigate = useNavigate();
-    const { rubrics, students, studentRubrics, attachments, saveStudentRubric, gradeScales, settings } = useApp();
+    const { rubrics, students, classes, studentRubrics, attachments, saveStudentRubric, gradeScales, settings } = useApp();
 
     const rubric = rubrics.find(r => r.id === rubricId);
 
-    // Filter students by class
+    // Filter students by class, respecting rubric-class linking
     const classStudents = useMemo(() => {
-        if (!classId || classId === 'all') return students;
-        return students.filter(s => s.classId === classId);
-    }, [students, classId]);
+        if (classId && classId !== 'all') {
+            return students.filter(s => s.classId === classId);
+        }
+        // When no specific class is selected, restrict to classes that have this rubric linked
+        const linkedClassIds = classes
+            .filter(c => c.rubricIds?.includes(rubricId ?? ''))
+            .map(c => c.id);
+        if (linkedClassIds.length > 0) {
+            return students.filter(s => linkedClassIds.includes(s.classId));
+        }
+        return students;
+    }, [students, classes, classId, rubricId]);
 
     const [studentA, setStudentA] = useState<typeof students[0] | null>(null);
     const [studentB, setStudentB] = useState<typeof students[0] | null>(null);

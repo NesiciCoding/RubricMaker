@@ -17,7 +17,7 @@ export default function GradeStudent() {
     const { rubricId, studentId } = useParams();
     const navigate = useNavigate();
     const {
-        rubrics, students, studentRubrics, attachments,
+        rubrics, students, classes, studentRubrics, attachments,
         gradeScales, settings, saveStudentRubric, updateSettings
     } = useApp();
 
@@ -81,17 +81,22 @@ export default function GradeStudent() {
         setTimeout(() => setSaved(false), 2000);
     }, [sr, rubric, saveStudentRubric]);
 
-    // Find next student in the same class, preferring ungraded ones
+    // Find next student, restricted to rubric-linked classes when applicable
     const nextStudent = useMemo(() => {
         if (!student) return null;
-        const classStudents = [...students.filter(s => s.classId === student.classId)]
-            .sort((a, b) => a.name.localeCompare(b.name));
-        const currentIndex = classStudents.findIndex(s => s.id === studentId);
-        const after = classStudents.slice(currentIndex + 1).concat(classStudents.slice(0, currentIndex));
+        const linkedClassIds = classes
+            .filter(c => c.rubricIds?.includes(rubricId ?? ''))
+            .map(c => c.id);
+        const eligible = linkedClassIds.length > 0
+            ? students.filter(s => linkedClassIds.includes(s.classId))
+            : students.filter(s => s.classId === student.classId);
+        const sorted = [...eligible].sort((a, b) => a.name.localeCompare(b.name));
+        const currentIndex = sorted.findIndex(s => s.id === studentId);
+        const after = sorted.slice(currentIndex + 1).concat(sorted.slice(0, currentIndex));
         return after.find(s => !studentRubrics.find(sr => sr.rubricId === rubricId && sr.studentId === s.id))
             ?? after[0]
             ?? null;
-    }, [student, students, studentId, studentRubrics, rubricId]);
+    }, [student, students, classes, studentId, studentRubrics, rubricId]);
 
     const handleSaveAndNext = useCallback(() => {
         if (!sr || !rubric || !nextStudent) return;
