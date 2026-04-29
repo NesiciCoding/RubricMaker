@@ -405,6 +405,23 @@ function ComparativeGradingSession({
         });
     }
 
+    const n = classStudents.length;
+    const totalPossibleMatchups = (n * (n - 1)) / 2;
+    const matchupsDone = matchups.size;
+    const matchupsLeft = totalPossibleMatchups - matchupsDone;
+    const matchupProgress = totalPossibleMatchups > 0 ? (matchupsDone / totalPossibleMatchups) * 100 : 0;
+    const maxPerStudent = n - 1;
+
+    const perStudentDone = useMemo(() => {
+        const counts: Record<string, number> = {};
+        for (const key of matchups) {
+            const [id1, id2] = key.split('|');
+            counts[id1] = (counts[id1] ?? 0) + 1;
+            counts[id2] = (counts[id2] ?? 0) + 1;
+        }
+        return counts;
+    }, [matchups]);
+
     if (!rubric) return <div className="page-content">Rubric not found</div>;
     if (error) return (
         <div className="page-content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, minHeight: 200 }}>
@@ -445,29 +462,41 @@ function ComparativeGradingSession({
                 }}
             >
                 {/* Header Strip */}
-                <div
-                    className="card"
-                    style={{
-                        marginBottom: 16,
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: '12px 20px',
-                    }}
-                >
-                    <div style={{ flex: 1 }}>
-                        <h2 style={{ fontSize: '1.2rem' }}>{studentA.name}</h2>
-                        <div className="text-muted text-sm" style={{ fontWeight: 'bold', color: sumA?.gradeColor }}>
-                            {sumA?.rawScore} pts ({sumA?.modifiedPercentage.toFixed(1)}%)
+                <div className="card" style={{ marginBottom: 16, padding: '12px 20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        {/* Student A */}
+                        <div style={{ flex: 1 }}>
+                            <h2 style={{ fontSize: '1.2rem' }}>{studentA.name}</h2>
+                            <div className="text-muted text-sm" style={{ fontWeight: 'bold', color: sumA?.gradeColor }}>
+                                {sumA?.rawScore} pts ({sumA?.modifiedPercentage.toFixed(1)}%)
+                            </div>
+                            <div className="text-xs text-muted" style={{ marginTop: 2 }}>
+                                {perStudentDone[studentA.id] ?? 0} / {maxPerStudent} matchups done
+                            </div>
                         </div>
-                    </div>
-                    <div style={{ flex: 1, textAlign: 'center', fontWeight: 'bold', fontSize: '1.2rem', color: 'var(--text-muted)' }}>
-                        VS
-                    </div>
-                    <div style={{ flex: 1, textAlign: 'right' }}>
-                        <h2 style={{ fontSize: '1.2rem' }}>{studentB.name}</h2>
-                        <div className="text-muted text-sm" style={{ fontWeight: 'bold', color: sumB?.gradeColor }}>
-                            {sumB?.rawScore} pts ({sumB?.modifiedPercentage.toFixed(1)}%)
+
+                        {/* Centre: VS + overall progress */}
+                        <div style={{ flex: 1, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontWeight: 'bold', fontSize: '1.2rem', color: 'var(--text-muted)' }}>VS</span>
+                            <div style={{ width: '100%', maxWidth: 200 }}>
+                                <div style={{ background: 'var(--bg-body)', borderRadius: 4, height: 6, overflow: 'hidden', border: '1px solid var(--border)' }}>
+                                    <div style={{ width: `${matchupProgress}%`, height: '100%', background: 'var(--accent)', borderRadius: 4, transition: 'width 0.3s ease' }} />
+                                </div>
+                                <div className="text-xs text-muted" style={{ marginTop: 4 }}>
+                                    {matchupsDone} / {totalPossibleMatchups} matchups done · <strong>{matchupsLeft}</strong> left
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Student B */}
+                        <div style={{ flex: 1, textAlign: 'right' }}>
+                            <h2 style={{ fontSize: '1.2rem' }}>{studentB.name}</h2>
+                            <div className="text-muted text-sm" style={{ fontWeight: 'bold', color: sumB?.gradeColor }}>
+                                {sumB?.rawScore} pts ({sumB?.modifiedPercentage.toFixed(1)}%)
+                            </div>
+                            <div className="text-xs text-muted" style={{ marginTop: 2 }}>
+                                {perStudentDone[studentB.id] ?? 0} / {maxPerStudent} matchups done
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -482,8 +511,36 @@ function ComparativeGradingSession({
                         overflow: 'hidden',
                     }}
                 >
-                    {/* Left Column (Student A attachments) */}
+                    {/* Left Column (progress + Student A attachments) */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto', paddingRight: 4 }}>
+                        {/* Per-student progress */}
+                        <div className="card" style={{ background: 'var(--bg-elevated)', padding: '14px 16px' }}>
+                            <h3 style={{ marginBottom: 10, fontSize: '0.9rem' }}>Student Progress</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                {[...classStudents]
+                                    .sort((a, b) => (perStudentDone[a.id] ?? 0) - (perStudentDone[b.id] ?? 0))
+                                    .map(s => {
+                                        const done = perStudentDone[s.id] ?? 0;
+                                        const pct = maxPerStudent > 0 ? (done / maxPerStudent) * 100 : 0;
+                                        const isCurrent = s.id === studentA?.id || s.id === studentB?.id;
+                                        return (
+                                            <div key={s.id}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: 2 }}>
+                                                    <span style={{ fontWeight: isCurrent ? 600 : 400, color: isCurrent ? 'var(--accent)' : 'var(--text)' }}>
+                                                        {s.name}
+                                                    </span>
+                                                    <span className="text-muted">{done} / {maxPerStudent}</span>
+                                                </div>
+                                                <div style={{ background: 'var(--bg-body)', borderRadius: 3, height: 4, overflow: 'hidden' }}>
+                                                    <div style={{ width: `${pct}%`, height: '100%', background: isCurrent ? 'var(--accent)' : 'var(--text-muted)', borderRadius: 3, transition: 'width 0.3s ease' }} />
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                            </div>
+                        </div>
+
+                        {/* Student A attachments */}
                         <div className="card" style={{ background: 'var(--bg-elevated)' }}>
                             <h3 style={{ marginBottom: 12 }}>Attachments</h3>
                             {attA.length === 0 ? (

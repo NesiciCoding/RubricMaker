@@ -15,18 +15,19 @@ export function calcEntryPoints(entry: ScoreEntry, criterion: RubricCriterion): 
     const level = criterion.levels.find(l => l.id === entry.levelId);
     if (!level) return 0;
 
-    // Sub-items: sum of granular scores or fallback to checked legacy points
-    const subItemTotal = criterion.levels.reduce((sum, lvl) => {
-        return sum + lvl.subItems.reduce((lvlSum, si) => {
-            if (entry.subItemScores && entry.subItemScores[si.id] !== undefined) {
-                return lvlSum + entry.subItemScores[si.id];
-            }
-            // Fallback for older rubrics/entries using strict checkboxes
-            if (entry.checkedSubItems.includes(si.id)) {
-                return lvlSum + (si.maxPoints ?? si.points ?? 0);
-            }
-            return lvlSum;
-        }, 0);
+    // Sub-items: only count scores for the SELECTED level's sub-items.
+    // Iterating all levels would inflate the score with stale subItemScores
+    // left over from previously selected levels (e.g. after comparative grading
+    // changes a student's level, old scores must not carry over).
+    const subItemTotal = level.subItems.reduce((sum, si) => {
+        if (entry.subItemScores && entry.subItemScores[si.id] !== undefined) {
+            return sum + entry.subItemScores[si.id];
+        }
+        // Fallback for older rubrics/entries that used strict checkboxes
+        if (entry.checkedSubItems.includes(si.id)) {
+            return sum + (si.maxPoints ?? si.points ?? 0);
+        }
+        return sum;
     }, 0);
 
     // selectedPoints: teacher chosen value within [min, max] range

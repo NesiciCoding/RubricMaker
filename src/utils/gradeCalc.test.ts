@@ -77,6 +77,42 @@ describe('gradeCalc utilities', () => {
             // 9 + 2 = 11, should cap at 10
             expect(calcEntryPoints(entry, mockCriteria[1])).toBe(10);
         });
+
+        it('does NOT count sub-item scores from levels other than the selected one', () => {
+            // Student has stale subItemScores for s1/s2 (which belong to l2a),
+            // but their current level is l2b (no sub-items).
+            // The stale scores must be ignored entirely.
+            const entry: ScoreEntry = {
+                criterionId: 'c2',
+                levelId: 'l2b',
+                checkedSubItems: [],
+                comment: '',
+                selectedPoints: 5,
+                subItemScores: { s1: 1, s2: 1 }, // stale scores from old level l2a
+            };
+            // l2b has no sub-items → subItemTotal = 0; hasAnySubItems = true (l2a has them)
+            // result = Math.min(0 + 5, l2b.maxPoints=7) = 5
+            expect(calcEntryPoints(entry, mockCriteria[1])).toBe(5);
+        });
+
+        it('does NOT inflate score when level changes and stale sub-items push total to cap', () => {
+            // Simulates the comparative grading bug: student was at l2b (base score),
+            // comparative grading bumped them to l2a (higher level). Any sub-item
+            // scores from l2b (different level) must not count towards l2a.
+            // Here: student at l2a, selectedPoints=8, subItemScores has keys
+            // that do NOT belong to l2a's sub-items → should not add anything.
+            const entry: ScoreEntry = {
+                criterionId: 'c2',
+                levelId: 'l2a',
+                checkedSubItems: [],
+                comment: '',
+                selectedPoints: 8,
+                subItemScores: { 'stale-id-from-another-level': 99 }, // must be ignored
+            };
+            // l2a.subItems = [s1, s2]; neither has an entry.subItemScores key → subItemTotal = 0
+            // result = Math.min(0 + 8, l2a.maxPoints=10) = 8
+            expect(calcEntryPoints(entry, mockCriteria[1])).toBe(8);
+        });
     });
 
     describe('calcRawScore', () => {
