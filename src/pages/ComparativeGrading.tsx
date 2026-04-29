@@ -307,7 +307,7 @@ function ComparativeGradingSession({
                 ),
             };
         });
-    }
+    }, [setSrA, setSrB]);
 
     function setSubItemScore(isA: boolean, criterionId: string, subItemId: string, score: number) {
         const sr = isA ? srA : srB;
