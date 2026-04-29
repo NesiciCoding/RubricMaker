@@ -82,16 +82,10 @@ function ComparativeGradingSession({
     const { rubrics, students, studentRubrics, attachments, saveStudentRubric, gradeScales, settings } =
         useApp();
 
-    const rubric = rubrics.find(r => r.id === rubricId);
-    const linkedClasses = classes.filter(c => c.rubricIds?.includes(rubricId));
-    const offerClasses = linkedClasses.length > 0 ? linkedClasses : classes;
+    const [searchParams] = useSearchParams();
+    const startStudentId = searchParams.get('start');
 
-    function goToSession(classId: string, startStudentId?: string) {
-        const url = startStudentId
-            ? `/grade-comparative/${classId}/${rubricId}?start=${startStudentId}`
-            : `/grade-comparative/${classId}/${rubricId}`;
-        navigate(url, { replace: true });
-    }
+    const rubric = rubrics.find(r => r.id === rubricId);
 
     // Students are strictly scoped to the chosen class — no leakage possible.
     const classStudents = useMemo(
@@ -238,7 +232,7 @@ function ComparativeGradingSession({
         let idxB = sortedLevels.findIndex(l => l.id === entryB.levelId);
 
         if (idxA === -1 && idxB === -1) {
-            const mid = Math.floor(sorted.length / 2);
+            const mid = Math.floor(sortedLevels.length / 2);
             idxA = mid; idxB = mid;
         } else if (idxA === -1) { idxA = idxB; }
         else if (idxB === -1) { idxB = idxA; }
@@ -250,7 +244,7 @@ function ComparativeGradingSession({
             }
         } else if (comparison === 'B_BETTER') {
             if (idxB <= idxA) {
-                if (idxB < sorted.length - 1) idxB = idxA + 1;
+                if (idxB < sortedLevels.length - 1) idxB = idxA + 1;
                 else if (idxA > 0) idxA = idxB - 1;
             }
         } else if (comparison === 'EQUAL') {
@@ -442,7 +436,6 @@ function ComparativeGradingSession({
                             const eB = srB.entries.find(e => e.criterionId === c.id);
                             const lvlA = c.levels.find(l => l.id === eA?.levelId);
                             const lvlB = c.levels.find(l => l.id === eB?.levelId);
-                            const displayLevels = displayOrderedLevels(c);
                             const commentOpen = openComments.has(c.id);
 
                             return (
@@ -759,79 +752,6 @@ function ComparativeGradingSession({
             </div>
         </>
     );
-
-    // ── Score panel helper (avoids repetition for A and B) ──────────────────
-    function renderScorePanel(
-        isA: boolean,
-        c: typeof rubric.criteria[0],
-        entry: ScoreEntry | undefined,
-        activeLevel: typeof c.levels[0] | undefined,
-        displayLevels: typeof c.levels
-    ) {
-        const student = isA ? studentA! : studentB!;
-        return (
-            <div style={{ flex: 1, padding: 10, background: 'var(--bg-body)', borderRadius: 8, border: `2px solid ${entry?.levelId ? 'var(--accent)' : 'var(--border)'}` }}>
-                <div className="text-xs text-muted" style={{ marginBottom: 4 }}>
-                    {t('comparativeGrading.label_score', { name: student.name })}
-                </div>
-                <select
-                    value={entry?.levelId || ''}
-                    onChange={e => manuallyUpdateLevel(isA, c.id, e.target.value)}
-                    style={{ width: '100%', fontSize: '0.85rem', marginBottom: 8 }}
-                >
-                    <option value="" disabled>{t('comparativeGrading.select_level')}</option>
-                    {displayLevels.map(l => (
-                        <option key={l.id} value={l.id}>{l.label} ({l.minPoints} {t('gradeStudent.table_points')})</option>
-                    ))}
-                </select>
-
-                {activeLevel && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        {activeLevel.subItems.map(si => {
-                            // Guard against malformed sub-items where min > max
-                            const siMin = Math.min(si.minPoints ?? 0, si.maxPoints ?? si.points ?? 1);
-                            const siMax = Math.max(si.minPoints ?? 0, si.maxPoints ?? si.points ?? 1);
-                            const currentScore = entry?.subItemScores?.[si.id] ?? siMin;
-                            return (
-                                <div key={si.id} className="text-xs">
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                                        <span>{si.label}</span>
-                                        <span style={{ fontWeight: 600 }}>{currentScore}/{siMax}</span>
-                                    </div>
-                                    <input type="range" min={siMin} max={siMax} step={0.5}
-                                        value={currentScore}
-                                        onChange={e => setSubItemScore(isA, c.id, si.id, Number(e.target.value))}
-                                        style={{ width: '100%', accentColor: 'var(--accent)' }}
-                                    />
-                                </div>
-                            );
-                        })}
-                        {(activeLevel.minPoints !== activeLevel.maxPoints || activeLevel.subItems.length === 0) && (
-                            <div className="text-xs" style={{ borderTop: '1px solid var(--border)', paddingTop: 4 }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                                    <span>{t('comparativeGrading.label_points')}</span>
-                                    <span style={{ fontWeight: 600 }}>{entry?.selectedPoints ?? activeLevel.minPoints}</span>
-                                </div>
-                                <input type="range" min={activeLevel.minPoints} max={activeLevel.maxPoints} step={0.5}
-                                    value={entry?.selectedPoints ?? activeLevel.minPoints}
-                                    onChange={e => updateEntry(isA, c.id, { selectedPoints: Number(e.target.value) })}
-                                    style={{ width: '100%', accentColor: 'var(--accent)' }}
-                                />
-                            </div>
-                        )}
-                    </div>
-                )}
-            </div>
-        );
-    }
-}
-
-// ─── Router ───────────────────────────────────────────────────────────────────
-export default function ComparativeGrading() {
-    const { classId, rubricId } = useParams();
-    if (!rubricId) return <div className="page-content">Rubric not found</div>;
-    if (!classId || classId === 'all') return <ClassPicker rubricId={rubricId} />;
-    return <ComparativeGradingSession classId={classId} rubricId={rubricId} />;
 }
 
 // ─── Router ───────────────────────────────────────────────────────────────────
@@ -841,7 +761,6 @@ export default function ComparativeGrading() {
 
     if (!rubricId) return <div className="page-content">Rubric not found</div>;
 
-    // Gate: a real class must be selected before grading starts.
     if (!classId || classId === 'all') {
         return <ClassPicker rubricId={rubricId} />;
     }
