@@ -17,7 +17,7 @@ import { encodeRubricShareCode, decodeRubricShareCode } from '../utils/rubricImp
 export default function RubricList() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { rubrics, students, studentRubrics, addRubric, deleteRubric, settings, gradeScales } = useApp();
+    const { rubrics, students, classes, studentRubrics, addRubric, deleteRubric, settings, gradeScales } = useApp();
     const [search, setSearch] = useState('');
     const [subjectFilter, setSubjectFilter] = useState<string>('all');
     const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
@@ -231,8 +231,16 @@ export default function RubricList() {
                                                 onClick={() => navigate('/students')}>
                                                 <Users size={14} /> {t('rubricList.grade_students')}
                                             </button>
-                                            <button className="btn btn-secondary btn-sm compare-btn-tutorial" style={{ flex: '1 1 auto' }} title="Start Comparative Grading"
-                                                onClick={() => navigate(`/grade-comparative/${settings.activeClassId || 'all'}/${r.id}`)}>
+                                            <button
+                                                className="btn btn-secondary btn-sm compare-btn-tutorial"
+                                                style={{ flex: '1 1 auto' }}
+                                                title={settings.activeClassId ? "Start Comparative Grading" : "You'll choose a class on the next screen"}
+                                                onClick={() => {
+                                                    // Prefer the active class; if none, the ComparativeGrading page shows a class picker
+                                                    const activeClass = classes.find(c => c.id === settings.activeClassId);
+                                                    navigate(`/grade-comparative/${activeClass ? activeClass.id : 'all'}/${r.id}`);
+                                                }}
+                                            >
                                                 <GitCompare size={14} /> Compare
                                             </button>
                                         </div>
