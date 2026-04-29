@@ -248,16 +248,34 @@ function ComparativeGradingSession({
     function pickNextMatchup(anchorId: string | null, keepSrA?: typeof studentRubrics[0] | null) {
         if (classStudents.length < 2) return;
 
-        let a = anchorId ? classStudents.find(s => s.id === anchorId) ?? null : null;
-        if (!a) {
-            a = classStudents[Math.floor(Math.random() * classStudents.length)];
+        // Per-student eligibility: count how many matchups each student has
+        // appeared in so far (based on the matchups Set that exists right now,
+        // before we add the next one).
+        const counts: Record<string, number> = {};
+        for (const key of matchups) {
+            const [id1, id2] = key.split('|');
+            counts[id1] = (counts[id1] ?? 0) + 1;
+            counts[id2] = (counts[id2] ?? 0) + 1;
+        }
+        const eligible = matchupLimit > 0
+            ? classStudents.filter(s => (counts[s.id] ?? 0) < matchupLimit)
+            : classStudents;
+
+        if (eligible.length < 2) {
+            setSessionDone(true);
+            return;
         }
 
-        let candidatesForB = classStudents.filter(
+        // Prefer the requested anchor if they're still eligible; otherwise pick randomly.
+        let a = anchorId ? eligible.find(s => s.id === anchorId) ?? null : null;
+        if (!a) a = eligible[Math.floor(Math.random() * eligible.length)];
+
+        // Prefer an opponent we haven't compared this anchor with; fall back to any eligible.
+        let candidatesForB = eligible.filter(
             s => s.id !== a!.id && !matchups.has(getMatchKey(a!.id, s.id))
         );
         if (candidatesForB.length === 0) {
-            candidatesForB = classStudents.filter(s => s.id !== a!.id);
+            candidatesForB = eligible.filter(s => s.id !== a!.id);
         }
 
         const b = candidatesForB[Math.floor(Math.random() * candidatesForB.length)];
@@ -282,14 +300,7 @@ function ComparativeGradingSession({
         saveStudentRubric(savedSrB);
         setIsDirty(false);
 
-        // matchups.size already includes the current matchup (added in pickNextMatchup).
-        // If the session total limit is reached, show the done screen instead of continuing.
-        if (matchupLimit > 0 && matchups.size >= matchupLimit) {
-            setSessionDone(true);
-            return;
-        }
-
-        // Pass the saved SR so scores aren't lost while context re-renders.
+        // pickNextMatchup handles per-student eligibility and sets sessionDone when done.
         pickNextMatchup(studentA.id, savedSrA);
     }
 
@@ -433,10 +444,11 @@ function ComparativeGradingSession({
     const n = classStudents.length;
     const totalPossibleMatchups = (n * (n - 1)) / 2;
     const matchupsDone = matchups.size;
-    // When a session limit is active, use it as the denominator so the
-    // progress bar and "left" counter reflect what the teacher actually
-    // planned to do, not the combinatorial maximum.
-    const sessionMax = matchupLimit > 0 ? matchupLimit : totalPossibleMatchups;
+    // Per-student limit: each student can appear in at most matchupLimit matchups.
+    // Maximum matchups given that limit = floor(n * matchupLimit / 2), capped at totalPossible.
+    const sessionMax = matchupLimit > 0
+        ? Math.min(Math.floor(n * matchupLimit / 2), totalPossibleMatchups)
+        : totalPossibleMatchups;
     const matchupsLeft = Math.max(0, sessionMax - matchupsDone);
     const matchupProgress = sessionMax > 0 ? Math.min(100, (matchupsDone / sessionMax) * 100) : 0;
     const maxPerStudent = n - 1;
@@ -472,7 +484,7 @@ function ComparativeGradingSession({
                     <Check size={40} style={{ color: 'var(--accent)', marginBottom: 16 }} />
                     <h2 style={{ marginBottom: 8 }}>Session Complete</h2>
                     <p className="text-muted text-sm" style={{ marginBottom: 24 }}>
-                        You've reached your limit of {matchupLimit} comparison{matchupLimit !== 1 ? 's' : ''}. All scores have been saved.
+                        All students have reached the per-student limit of {matchupLimit} comparison{matchupLimit !== 1 ? 's' : ''}. All scores have been saved.
                     </p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                         <button className="btn btn-primary" onClick={() => { setSessionDone(false); pickNextMatchup(studentA.id, srA); }}>
@@ -537,11 +549,11 @@ function ComparativeGradingSession({
                                     <div style={{ width: `${matchupProgress}%`, height: '100%', background: 'var(--accent)', borderRadius: 4, transition: 'width 0.3s ease' }} />
                                 </div>
                                 <div className="text-xs text-muted" style={{ marginTop: 4 }}>
-                                    {matchupsDone} / {matchupLimit > 0 ? matchupLimit : totalPossibleMatchups} done · <strong>{matchupsLeft}</strong> left
+                                    {matchupsDone} / {sessionMax} done · <strong>{matchupsLeft}</strong> left
                                 </div>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                                <label className="text-xs text-muted" style={{ whiteSpace: 'nowrap' }}>Session limit:</label>
+                                <label className="text-xs text-muted" style={{ whiteSpace: 'nowrap' }}>Per-student limit:</label>
                                 <input
                                     type="number"
                                     min={0}
@@ -549,7 +561,7 @@ function ComparativeGradingSession({
                                     placeholder="∞"
                                     onChange={e => setMatchupLimit(Math.max(0, parseInt(e.target.value) || 0))}
                                     style={{ width: 48, fontSize: '0.8rem', textAlign: 'center', padding: '2px 4px' }}
-                                    title="Total comparisons for this session (0 = unlimited)"
+                                    title="Max comparisons per student (0 = unlimited)"
                                 />
                             </div>
                         </div>

@@ -88,7 +88,7 @@ export default function SettingsPage() {
                         </div>
                         <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                             <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                Comparative Matchup Limit
+                                Per-Student Matchup Limit
                                 <span className="badge badge-blue">
                                     {settings.comparativeMatchupLimit && settings.comparativeMatchupLimit > 0 ? settings.comparativeMatchupLimit : 'Infinite'}
                                 </span>
@@ -102,7 +102,7 @@ export default function SettingsPage() {
                                 style={{ maxWidth: 200 }}
                             />
                             <div className="text-muted text-xs" style={{ marginTop: 4 }}>
-                                Maximum total comparisons per session. The session stops and shows a completion screen when this number is reached. 0 means no limit.
+                                Maximum comparisons each student can appear in. The session stops when all students have reached this limit. 0 means no limit.
                             </div>
                         </div>
                     </div>
