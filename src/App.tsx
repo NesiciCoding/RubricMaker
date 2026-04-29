@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import Sidebar from './components/Layout/Sidebar';
 import Joyride, { CallBackProps, STATUS } from 'react-joyride';
 import { useApp } from './context/AppContext';
@@ -20,6 +20,12 @@ const StudentProfilePage = lazy(() => import('./pages/StudentProfilePage'));
 const ComparativeGrading = lazy(() => import('./pages/ComparativeGrading'));
 const PeerReviewView = lazy(() => import('./pages/PeerReviewView'));
 const SelfAssessPage = lazy(() => import('./pages/SelfAssessPage'));
+
+// Forces GradeStudent to remount when studentId changes so useState re-initialises.
+function GradeStudentRoute() {
+    const { studentId } = useParams();
+    return <GradeStudent key={studentId} />;
+}
 
 const Spinner = () => {
     return (
@@ -71,7 +77,7 @@ export default function App() {
                         <Route path="/rubrics" element={<RubricList />} />
                         <Route path="/rubrics/new" element={<RubricBuilder />} />
                         <Route path="/rubrics/:id" element={<RubricBuilder />} />
-                        <Route path="/rubrics/:rubricId/grade/:studentId" element={<GradeStudent />} />
+                        <Route path="/rubrics/:rubricId/grade/:studentId" element={<GradeStudentRoute />} />
                         <Route path="/rubrics/:rubricId/peer-review/:studentId" element={<PeerReviewView />} />
                         <Route path="/rubrics/:rubricId/self-assess/:studentId" element={<SelfAssessPage />} />
                         <Route path="/grade-comparative/:classId/:rubricId" element={<ComparativeGrading />} />

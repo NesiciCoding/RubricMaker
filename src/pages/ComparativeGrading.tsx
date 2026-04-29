@@ -2,26 +2,85 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import Topbar from '../components/Layout/Topbar';
-import { ArrowLeft, Check, Equal, ChevronRight, ChevronLeft } from 'lucide-react';
+import { ArrowLeft, Check, Equal, ChevronRight, ChevronLeft, MessageSquare, Shuffle } from 'lucide-react';
 import { nanoid } from '../utils/nanoid';
 import { useTranslation } from 'react-i18next';
 import { calcGradeSummary } from '../utils/gradeCalc';
 import AttachmentViewer from '../components/AttachmentViewer';
 import { ScoreEntry } from '../types';
 
-// ─── Class picker ────────────────────────────────────────────────────────────
-// Shown whenever classId is missing or 'all'. Forces the teacher to pick a
-// class before any students are loaded, so cross-class contamination is
-// structurally impossible.
+// ─── Class + Student picker ───────────────────────────────────────────────────
+// Step 1: pick a class. Step 2: pick a starting student (or random).
 function ClassPicker({ rubricId }: { rubricId: string }) {
     const navigate = useNavigate();
-    const { classes, rubrics } = useApp();
+    const { classes, rubrics, students } = useApp();
+    const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
 
     const rubric = rubrics.find(r => r.id === rubricId);
 
-    // Prefer classes that have this rubric explicitly linked; fall back to all.
     const linkedClasses = classes.filter(c => c.rubricIds?.includes(rubricId));
     const offerClasses = linkedClasses.length > 0 ? linkedClasses : classes;
+
+    const classStudents = useMemo(
+        () => (selectedClassId ? students.filter(s => s.classId === selectedClassId) : []),
+        [students, selectedClassId]
+    );
+
+    const goToSession = (classId: string, startId?: string) => {
+        const url = `/grade-comparative/${classId}/${rubricId}`;
+        navigate(startId ? `${url}?start=${startId}` : url, { replace: true });
+    };
+
+    if (selectedClassId) {
+        const cls = classes.find(c => c.id === selectedClassId);
+        return (
+            <>
+                <Topbar
+                    title={rubric ? `Compare: ${rubric.name}` : 'Comparative Grading'}
+                    actions={
+                        <button className="btn btn-ghost btn-sm" onClick={() => setSelectedClassId(null)}>
+                            <ArrowLeft size={15} /> Back
+                        </button>
+                    }
+                />
+                <div
+                    className="page-content fade-in"
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300 }}
+                >
+                    <div className="card" style={{ maxWidth: 420, width: '100%', textAlign: 'center', padding: '32px 28px' }}>
+                        <h2 style={{ marginBottom: 4 }}>Choose Starting Student</h2>
+                        <p className="text-muted text-sm" style={{ marginBottom: 8 }}>
+                            {cls?.name}{cls?.year ? ` — ${cls.year}` : ''}
+                        </p>
+                        <p className="text-muted text-sm" style={{ marginBottom: 24 }}>
+                            Pick who to start with, or let the system choose randomly.
+                        </p>
+                        <button
+                            className="btn btn-primary"
+                            style={{ marginBottom: 16, width: '100%' }}
+                            onClick={() => goToSession(selectedClassId)}
+                        >
+                            <Shuffle size={15} /> Random Start
+                        </button>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            {classStudents.length === 0 && (
+                                <p className="text-muted text-sm">No students in this class.</p>
+                            )}
+                            {[...classStudents].sort((a, b) => a.name.localeCompare(b.name)).map(s => (
+                                <button
+                                    key={s.id}
+                                    className="btn btn-secondary"
+                                    onClick={() => goToSession(selectedClassId, s.id)}
+                                >
+                                    {s.name}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </>
+        );
+    }
 
     return (
         <>
@@ -37,10 +96,7 @@ function ClassPicker({ rubricId }: { rubricId: string }) {
                 className="page-content fade-in"
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300 }}
             >
-                <div
-                    className="card"
-                    style={{ maxWidth: 420, width: '100%', textAlign: 'center', padding: '32px 28px' }}
-                >
+                <div className="card" style={{ maxWidth: 420, width: '100%', textAlign: 'center', padding: '32px 28px' }}>
                     <h2 style={{ marginBottom: 8 }}>Select a Class</h2>
                     <p className="text-muted text-sm" style={{ marginBottom: 24 }}>
                         Choose which class to grade. Only students from the selected class will appear in the comparison.
@@ -53,9 +109,7 @@ function ClassPicker({ rubricId }: { rubricId: string }) {
                             <button
                                 key={c.id}
                                 className="btn btn-secondary"
-                                onClick={() =>
-                                    navigate(`/grade-comparative/${c.id}/${rubricId}`, { replace: true })
-                                }
+                                onClick={() => setSelectedClassId(c.id)}
                             >
                                 {c.name}
                                 {c.year ? ` — ${c.year}` : ''}
@@ -155,11 +209,10 @@ function ComparativeGradingSession({
     }
 
     function getMatchKey(id1: string, id2: string) {
-        // Use a delimiter that can't appear in nanoid output
         return [id1, id2].sort().join('|');
     }
 
-    function pickNextMatchup(anchorId: string | null) {
+    function pickNextMatchup(anchorId: string | null, keepSrA?: typeof studentRubrics[0] | null) {
         if (classStudents.length < 2) return;
 
         let a = anchorId ? classStudents.find(s => s.id === anchorId) ?? null : null;
@@ -178,7 +231,9 @@ function ComparativeGradingSession({
 
         setStudentA(a);
         setStudentB(b);
-        setSrA(getEmptySR(a.id));
+        // Use the already-saved SR when keeping the same anchor so scores aren't wiped
+        // (studentRubrics context may not have updated yet when called right after save).
+        setSrA(keepSrA !== undefined ? keepSrA : getEmptySR(a.id));
         setSrB(getEmptySR(b.id));
         setMatchups(prev => new Set([...prev, getMatchKey(a!.id, b.id)]));
         setSeenStudentIds(prev => new Set([...prev, a!.id, b.id]));
@@ -194,8 +249,10 @@ function ComparativeGradingSession({
     function handleSaveAndNext() {
         if (!srA || !srB || !studentA || !rubric) return;
         const snap = JSON.parse(JSON.stringify(rubric));
-        saveStudentRubric({ ...srA, gradedAt: new Date().toISOString(), rubricSnapshot: snap });
-        saveStudentRubric({ ...srB, gradedAt: new Date().toISOString(), rubricSnapshot: snap });
+        const savedSrA = { ...srA, gradedAt: new Date().toISOString(), rubricSnapshot: snap };
+        const savedSrB = { ...srB, gradedAt: new Date().toISOString(), rubricSnapshot: snap };
+        saveStudentRubric(savedSrA);
+        saveStudentRubric(savedSrB);
         setIsDirty(false);
 
         const limitReached =
@@ -203,14 +260,11 @@ function ComparativeGradingSession({
             settings.comparativeMatchupLimit > 0 &&
             anchorMatchupCount >= settings.comparativeMatchupLimit;
 
-        if (
-            settings.comparativeMatchupLimit &&
-            settings.comparativeMatchupLimit > 0 &&
-            anchorMatchupCount >= settings.comparativeMatchupLimit
-        ) {
-            pickNextMatchup(null);
+        if (limitReached) {
+            pickNextMatchup(null, null);
         } else {
-            pickNextMatchup(studentA.id);
+            // Pass the saved SR so scores aren't lost while context re-renders.
+            pickNextMatchup(studentA.id, savedSrA);
         }
     }
 
@@ -311,6 +365,38 @@ function ComparativeGradingSession({
         updateEntry(isA, criterionId, { subItemScores: { ...(entry.subItemScores ?? {}), [subItemId]: score } });
     }
 
+    function compareSubItem(
+        criterionId: string,
+        subItemId: string,
+        min: number,
+        max: number,
+        comparison: 'A_BETTER' | 'EQUAL' | 'B_BETTER'
+    ) {
+        if (!srA || !srB) return;
+        const eA = srA.entries.find(e => e.criterionId === criterionId);
+        const eB = srB.entries.find(e => e.criterionId === criterionId);
+        let scoreA = eA?.subItemScores?.[subItemId] ?? min;
+        let scoreB = eB?.subItemScores?.[subItemId] ?? min;
+
+        if (comparison === 'EQUAL') {
+            const avg = Math.round(((scoreA + scoreB) / 2) * 2) / 2;
+            scoreA = scoreB = avg;
+        } else if (comparison === 'A_BETTER') {
+            if (scoreA <= scoreB) {
+                if (scoreA < max) scoreA = Math.min(max, scoreB + 0.5);
+                else if (scoreB > min) scoreB = Math.max(min, scoreA - 0.5);
+            }
+        } else if (comparison === 'B_BETTER') {
+            if (scoreB <= scoreA) {
+                if (scoreB < max) scoreB = Math.min(max, scoreA + 0.5);
+                else if (scoreA > min) scoreA = Math.max(min, scoreB - 0.5);
+            }
+        }
+
+        updateEntry(true, criterionId, { subItemScores: { ...(eA?.subItemScores ?? {}), [subItemId]: scoreA } });
+        updateEntry(false, criterionId, { subItemScores: { ...(eB?.subItemScores ?? {}), [subItemId]: scoreB } });
+    }
+
     function toggleComment(criterionId: string) {
         setOpenComments(prev => {
             const next = new Set(prev);
@@ -337,9 +423,6 @@ function ComparativeGradingSession({
         gradeScales[0];
     const sumA = calcGradeSummary(srA, rubric.criteria, scale, rubric);
     const sumB = calcGradeSummary(srB, rubric.criteria, scale, rubric);
-
-    const coveredCount = seenStudentIds.size;
-    const totalCount = classStudents.length;
 
     return (
         <>
@@ -374,30 +457,16 @@ function ComparativeGradingSession({
                 >
                     <div style={{ flex: 1 }}>
                         <h2 style={{ fontSize: '1.2rem' }}>{studentA.name}</h2>
-                        <div
-                            className="text-muted text-sm"
-                            style={{ fontWeight: 'bold', color: sumA?.gradeColor }}
-                        >
+                        <div className="text-muted text-sm" style={{ fontWeight: 'bold', color: sumA?.gradeColor }}>
                             {sumA?.rawScore} pts ({sumA?.modifiedPercentage.toFixed(1)}%)
                         </div>
                     </div>
-                    <div
-                        style={{
-                            flex: 1,
-                            textAlign: 'center',
-                            fontWeight: 'bold',
-                            fontSize: '1.2rem',
-                            color: 'var(--text-muted)',
-                        }}
-                    >
+                    <div style={{ flex: 1, textAlign: 'center', fontWeight: 'bold', fontSize: '1.2rem', color: 'var(--text-muted)' }}>
                         VS
                     </div>
                     <div style={{ flex: 1, textAlign: 'right' }}>
                         <h2 style={{ fontSize: '1.2rem' }}>{studentB.name}</h2>
-                        <div
-                            className="text-muted text-sm"
-                            style={{ fontWeight: 'bold', color: sumB?.gradeColor }}
-                        >
+                        <div className="text-muted text-sm" style={{ fontWeight: 'bold', color: sumB?.gradeColor }}>
                             {sumB?.rawScore} pts ({sumB?.modifiedPercentage.toFixed(1)}%)
                         </div>
                     </div>
@@ -414,9 +483,7 @@ function ComparativeGradingSession({
                     }}
                 >
                     {/* Left Column (Student A attachments) */}
-                    <div
-                        style={{ display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto', paddingRight: 4 }}
-                    >
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto', paddingRight: 4 }}>
                         <div className="card" style={{ background: 'var(--bg-elevated)' }}>
                             <h3 style={{ marginBottom: 12 }}>Attachments</h3>
                             {attA.length === 0 ? (
@@ -428,33 +495,33 @@ function ComparativeGradingSession({
                     </div>
 
                     {/* Middle Column (Rubric & Controls) */}
-                    <div
-                        style={{ display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto', padding: '0 4px' }}
-                    >
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto', padding: '0 4px' }}>
                         {rubric.criteria.map(c => {
                             const eA = srA.entries.find(e => e.criterionId === c.id);
                             const eB = srB.entries.find(e => e.criterionId === c.id);
                             const lvlA = c.levels.find(l => l.id === eA?.levelId);
                             const lvlB = c.levels.find(l => l.id === eB?.levelId);
                             const commentOpen = openComments.has(c.id);
+                            const hasComment = !!(eA?.comment || eB?.comment);
 
                             return (
                                 <div key={c.id} className="card" style={{ padding: '16px 20px' }}>
-                                    <div
-                                        style={{
-                                            fontWeight: 600,
-                                            fontSize: '1.1rem',
-                                            marginBottom: 4,
-                                            textAlign: 'center',
-                                        }}
-                                    >
-                                        {c.title}
-                                    </div>
-                                    <div
-                                        className="text-muted text-sm"
-                                        style={{ textAlign: 'center', marginBottom: 16 }}
-                                    >
-                                        {c.description}
+                                    {/* Criterion header with comment toggle */}
+                                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4 }}>
+                                        <div style={{ flex: 1, textAlign: 'center' }}>
+                                            <div style={{ fontWeight: 600, fontSize: '1.1rem' }}>{c.title}</div>
+                                            {c.description && (
+                                                <div className="text-muted text-sm" style={{ marginTop: 2 }}>{c.description}</div>
+                                            )}
+                                        </div>
+                                        <button
+                                            className="btn btn-ghost btn-icon btn-sm"
+                                            onClick={() => toggleComment(c.id)}
+                                            title="Toggle comments"
+                                            style={{ color: hasComment ? 'var(--accent)' : 'var(--text-dim)', flexShrink: 0, marginLeft: 8 }}
+                                        >
+                                            <MessageSquare size={15} />
+                                        </button>
                                     </div>
 
                                     <div
@@ -463,7 +530,8 @@ function ComparativeGradingSession({
                                             justifyContent: 'space-between',
                                             alignItems: 'flex-start',
                                             gap: 12,
-                                            marginBottom: 16,
+                                            marginBottom: commentOpen ? 0 : 0,
+                                            marginTop: 16,
                                         }}
                                     >
                                         {/* Student A score */}
@@ -494,17 +562,10 @@ function ComparativeGradingSession({
                                             {lvlA && (
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                                     {lvlA.subItems.map(si => {
-                                                        const currentScore =
-                                                            eA?.subItemScores?.[si.id] ?? (si.minPoints ?? 0);
+                                                        const currentScore = eA?.subItemScores?.[si.id] ?? (si.minPoints ?? 0);
                                                         return (
                                                             <div key={si.id} className="text-xs">
-                                                                <div
-                                                                    style={{
-                                                                        display: 'flex',
-                                                                        justifyContent: 'space-between',
-                                                                        marginBottom: 2,
-                                                                    }}
-                                                                >
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
                                                                     <span>{si.label}</span>
                                                                     <span style={{ fontWeight: 600 }}>
                                                                         {currentScore}/{si.maxPoints ?? si.points ?? 1}
@@ -516,31 +577,17 @@ function ComparativeGradingSession({
                                                                     max={si.maxPoints ?? si.points ?? 1}
                                                                     step={0.5}
                                                                     value={currentScore}
-                                                                    onChange={e =>
-                                                                        setSubItemScore(true, c.id, si.id, Number(e.target.value))
-                                                                    }
+                                                                    onChange={e => setSubItemScore(true, c.id, si.id, Number(e.target.value))}
                                                                     style={{ width: '100%', accentColor: 'var(--accent)' }}
                                                                 />
                                                             </div>
                                                         );
                                                     })}
-                                                    {(lvlA.minPoints !== lvlA.maxPoints ||
-                                                        lvlA.subItems.length === 0) && (
-                                                        <div
-                                                            className="text-xs"
-                                                            style={{ borderTop: '1px solid var(--border)', paddingTop: 4 }}
-                                                        >
-                                                            <div
-                                                                style={{
-                                                                    display: 'flex',
-                                                                    justifyContent: 'space-between',
-                                                                    marginBottom: 2,
-                                                                }}
-                                                            >
+                                                    {(lvlA.minPoints !== lvlA.maxPoints || lvlA.subItems.length === 0) && (
+                                                        <div className="text-xs" style={{ borderTop: '1px solid var(--border)', paddingTop: 4 }}>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
                                                                 <span>Points</span>
-                                                                <span style={{ fontWeight: 600 }}>
-                                                                    {eA?.selectedPoints ?? lvlA.minPoints}
-                                                                </span>
+                                                                <span style={{ fontWeight: 600 }}>{eA?.selectedPoints ?? lvlA.minPoints}</span>
                                                             </div>
                                                             <input
                                                                 type="range"
@@ -548,11 +595,7 @@ function ComparativeGradingSession({
                                                                 max={lvlA.maxPoints}
                                                                 step={0.5}
                                                                 value={eA?.selectedPoints ?? lvlA.minPoints}
-                                                                onChange={e =>
-                                                                    updateEntry(true, c.id, {
-                                                                        selectedPoints: Number(e.target.value),
-                                                                    })
-                                                                }
+                                                                onChange={e => updateEntry(true, c.id, { selectedPoints: Number(e.target.value) })}
                                                                 style={{ width: '100%', accentColor: 'var(--accent)' }}
                                                             />
                                                         </div>
@@ -562,15 +605,7 @@ function ComparativeGradingSession({
                                         </div>
 
                                         {/* Comparative buttons */}
-                                        <div
-                                            style={{
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                gap: 6,
-                                                width: 140,
-                                                paddingTop: 20,
-                                            }}
-                                        >
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, width: 140, paddingTop: 20 }}>
                                             <button
                                                 className="btn btn-secondary btn-sm"
                                                 onClick={() => compareCriterion(c.id, 'A_BETTER')}
@@ -591,6 +626,31 @@ function ComparativeGradingSession({
                                             >
                                                 B Better <ChevronRight size={16} />
                                             </button>
+
+                                            {/* Sub-item comparison buttons (only when sharing the same level) */}
+                                            {eA?.levelId && eA.levelId === eB?.levelId && (() => {
+                                                const sharedLevel = c.levels.find(l => l.id === eA.levelId);
+                                                if (!sharedLevel || sharedLevel.subItems.length === 0) return null;
+                                                return (
+                                                    <div style={{ marginTop: 8, borderTop: '1px solid var(--border)', paddingTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                                        <div className="text-xs text-muted" style={{ textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sub-criteria</div>
+                                                        {sharedLevel.subItems.map(si => {
+                                                            const min = si.minPoints ?? 0;
+                                                            const max = si.maxPoints ?? si.points ?? 1;
+                                                            return (
+                                                                <div key={si.id} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                                                    <div className="text-xs text-muted" style={{ textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={si.label}>{si.label}</div>
+                                                                    <div style={{ display: 'flex', gap: 3 }}>
+                                                                        <button className="btn btn-secondary btn-sm" style={{ flex: 1, padding: '2px 4px', fontSize: '0.7rem' }} onClick={() => compareSubItem(c.id, si.id, min, max, 'A_BETTER')} title="A better on this sub-criterion"><ChevronLeft size={12} /></button>
+                                                                        <button className="btn btn-secondary btn-sm" style={{ flex: 1, padding: '2px 4px', fontSize: '0.7rem' }} onClick={() => compareSubItem(c.id, si.id, min, max, 'EQUAL')} title="Equal on this sub-criterion"><Equal size={12} /></button>
+                                                                        <button className="btn btn-secondary btn-sm" style={{ flex: 1, padding: '2px 4px', fontSize: '0.7rem' }} onClick={() => compareSubItem(c.id, si.id, min, max, 'B_BETTER')} title="B better on this sub-criterion"><ChevronRight size={12} /></button>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
 
                                         {/* Student B score */}
@@ -621,17 +681,10 @@ function ComparativeGradingSession({
                                             {lvlB && (
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                                     {lvlB.subItems.map(si => {
-                                                        const currentScore =
-                                                            eB?.subItemScores?.[si.id] ?? (si.minPoints ?? 0);
+                                                        const currentScore = eB?.subItemScores?.[si.id] ?? (si.minPoints ?? 0);
                                                         return (
                                                             <div key={si.id} className="text-xs">
-                                                                <div
-                                                                    style={{
-                                                                        display: 'flex',
-                                                                        justifyContent: 'space-between',
-                                                                        marginBottom: 2,
-                                                                    }}
-                                                                >
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
                                                                     <span>{si.label}</span>
                                                                     <span style={{ fontWeight: 600 }}>
                                                                         {currentScore}/{si.maxPoints ?? si.points ?? 1}
@@ -643,31 +696,17 @@ function ComparativeGradingSession({
                                                                     max={si.maxPoints ?? si.points ?? 1}
                                                                     step={0.5}
                                                                     value={currentScore}
-                                                                    onChange={e =>
-                                                                        setSubItemScore(false, c.id, si.id, Number(e.target.value))
-                                                                    }
+                                                                    onChange={e => setSubItemScore(false, c.id, si.id, Number(e.target.value))}
                                                                     style={{ width: '100%', accentColor: 'var(--accent)' }}
                                                                 />
                                                             </div>
                                                         );
                                                     })}
-                                                    {(lvlB.minPoints !== lvlB.maxPoints ||
-                                                        lvlB.subItems.length === 0) && (
-                                                        <div
-                                                            className="text-xs"
-                                                            style={{ borderTop: '1px solid var(--border)', paddingTop: 4 }}
-                                                        >
-                                                            <div
-                                                                style={{
-                                                                    display: 'flex',
-                                                                    justifyContent: 'space-between',
-                                                                    marginBottom: 2,
-                                                                }}
-                                                            >
+                                                    {(lvlB.minPoints !== lvlB.maxPoints || lvlB.subItems.length === 0) && (
+                                                        <div className="text-xs" style={{ borderTop: '1px solid var(--border)', paddingTop: 4 }}>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
                                                                 <span>Points</span>
-                                                                <span style={{ fontWeight: 600 }}>
-                                                                    {eB?.selectedPoints ?? lvlB.minPoints}
-                                                                </span>
+                                                                <span style={{ fontWeight: 600 }}>{eB?.selectedPoints ?? lvlB.minPoints}</span>
                                                             </div>
                                                             <input
                                                                 type="range"
@@ -675,11 +714,7 @@ function ComparativeGradingSession({
                                                                 max={lvlB.maxPoints}
                                                                 step={0.5}
                                                                 value={eB?.selectedPoints ?? lvlB.minPoints}
-                                                                onChange={e =>
-                                                                    updateEntry(false, c.id, {
-                                                                        selectedPoints: Number(e.target.value),
-                                                                    })
-                                                                }
+                                                                onChange={e => updateEntry(false, c.id, { selectedPoints: Number(e.target.value) })}
                                                                 style={{ width: '100%', accentColor: 'var(--accent)' }}
                                                             />
                                                         </div>
@@ -689,9 +724,9 @@ function ComparativeGradingSession({
                                         </div>
                                     </div>
 
-                                    {/* Per-criterion comments (toggled) */}
+                                    {/* Per-criterion comments (toggled via MessageSquare button) */}
                                     {commentOpen && (
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 4, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
                                             <div>
                                                 <label className="text-xs text-muted" style={{ display: 'block', marginBottom: 4 }}>
                                                     {studentA.name}
@@ -722,9 +757,40 @@ function ComparativeGradingSession({
                             );
                         })}
 
-                        <div
-                            style={{ marginTop: 20, marginBottom: 40, display: 'flex', justifyContent: 'center' }}
-                        >
+                        {/* Overall comments */}
+                        <div className="card" style={{ padding: '16px 20px' }}>
+                            <div style={{ fontWeight: 600, fontSize: '1rem', marginBottom: 12, textAlign: 'center' }}>
+                                Overall Comments
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                <div>
+                                    <label className="text-xs text-muted" style={{ display: 'block', marginBottom: 4 }}>
+                                        {studentA.name}
+                                    </label>
+                                    <textarea
+                                        rows={3}
+                                        placeholder="Overall feedback…"
+                                        value={srA.overallComment || ''}
+                                        onChange={e => setSrA(prev => prev ? { ...prev, overallComment: e.target.value } : prev)}
+                                        style={{ width: '100%', fontSize: '0.85rem', resize: 'vertical' }}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs text-muted" style={{ display: 'block', marginBottom: 4 }}>
+                                        {studentB.name}
+                                    </label>
+                                    <textarea
+                                        rows={3}
+                                        placeholder="Overall feedback…"
+                                        value={srB.overallComment || ''}
+                                        onChange={e => setSrB(prev => prev ? { ...prev, overallComment: e.target.value } : prev)}
+                                        style={{ width: '100%', fontSize: '0.85rem', resize: 'vertical' }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={{ marginTop: 20, marginBottom: 40, display: 'flex', justifyContent: 'center' }}>
                             <button
                                 className="btn btn-primary"
                                 onClick={handleSaveAndNext}
@@ -736,9 +802,7 @@ function ComparativeGradingSession({
                     </div>
 
                     {/* Right Column (Student B attachments) */}
-                    <div
-                        style={{ display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto', paddingLeft: 4 }}
-                    >
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto', paddingLeft: 4 }}>
                         <div className="card" style={{ background: 'var(--bg-elevated)' }}>
                             <h3 style={{ marginBottom: 12 }}>Attachments</h3>
                             {attB.length === 0 ? (
