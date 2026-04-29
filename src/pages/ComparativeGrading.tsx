@@ -9,8 +9,10 @@ import { calcGradeSummary } from '../utils/gradeCalc';
 import AttachmentViewer from '../components/AttachmentViewer';
 import { ScoreEntry } from '../types';
 
+const COMBINED_ID = '__combined__';
+
 // ─── Class + Student picker ───────────────────────────────────────────────────
-// Step 1: pick a class. Step 2: pick a starting student (or random).
+// Step 1: pick a class (or "all linked classes"). Step 2: pick a starting student (or random).
 function ClassPicker({ rubricId }: { rubricId: string }) {
     const navigate = useNavigate();
     const { classes, rubrics, students } = useApp();
@@ -21,10 +23,15 @@ function ClassPicker({ rubricId }: { rubricId: string }) {
     const linkedClasses = classes.filter(c => c.rubricIds?.includes(rubricId));
     const offerClasses = linkedClasses.length > 0 ? linkedClasses : classes;
 
-    const classStudents = useMemo(
-        () => (selectedClassId ? students.filter(s => s.classId === selectedClassId) : []),
-        [students, selectedClassId]
-    );
+    // Students for the chosen scope: all linked classes or a single class.
+    const pickerStudents = useMemo(() => {
+        if (!selectedClassId) return [];
+        if (selectedClassId === COMBINED_ID) {
+            const ids = new Set(offerClasses.map(c => c.id));
+            return students.filter(s => ids.has(s.classId));
+        }
+        return students.filter(s => s.classId === selectedClassId);
+    }, [students, selectedClassId, offerClasses]);
 
     const goToSession = (classId: string, startId?: string) => {
         const url = `/grade-comparative/${classId}/${rubricId}`;
@@ -32,7 +39,12 @@ function ClassPicker({ rubricId }: { rubricId: string }) {
     };
 
     if (selectedClassId) {
-        const cls = classes.find(c => c.id === selectedClassId);
+        const isCombined = selectedClassId === COMBINED_ID;
+        const cls = isCombined ? null : classes.find(c => c.id === selectedClassId);
+        const scopeLabel = isCombined
+            ? `All linked classes (${offerClasses.map(c => c.name).join(', ')})`
+            : `${cls?.name}${cls?.year ? ` — ${cls.year}` : ''}`;
+
         return (
             <>
                 <Topbar
@@ -49,9 +61,7 @@ function ClassPicker({ rubricId }: { rubricId: string }) {
                 >
                     <div className="card" style={{ maxWidth: 420, width: '100%', textAlign: 'center', padding: '32px 28px' }}>
                         <h2 style={{ marginBottom: 4 }}>Choose Starting Student</h2>
-                        <p className="text-muted text-sm" style={{ marginBottom: 8 }}>
-                            {cls?.name}{cls?.year ? ` — ${cls.year}` : ''}
-                        </p>
+                        <p className="text-muted text-sm" style={{ marginBottom: 8 }}>{scopeLabel}</p>
                         <p className="text-muted text-sm" style={{ marginBottom: 24 }}>
                             Pick who to start with, or let the system choose randomly.
                         </p>
@@ -63,18 +73,26 @@ function ClassPicker({ rubricId }: { rubricId: string }) {
                             <Shuffle size={15} /> Random Start
                         </button>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                            {classStudents.length === 0 && (
-                                <p className="text-muted text-sm">No students in this class.</p>
+                            {pickerStudents.length === 0 && (
+                                <p className="text-muted text-sm">No students found.</p>
                             )}
-                            {[...classStudents].sort((a, b) => a.name.localeCompare(b.name)).map(s => (
-                                <button
-                                    key={s.id}
-                                    className="btn btn-secondary"
-                                    onClick={() => goToSession(selectedClassId, s.id)}
-                                >
-                                    {s.name}
-                                </button>
-                            ))}
+                            {[...pickerStudents].sort((a, b) => a.name.localeCompare(b.name)).map(s => {
+                                const studentClass = isCombined ? classes.find(c => c.id === s.classId) : null;
+                                return (
+                                    <button
+                                        key={s.id}
+                                        className="btn btn-secondary"
+                                        onClick={() => goToSession(selectedClassId, s.id)}
+                                    >
+                                        {s.name}
+                                        {studentClass && (
+                                            <span className="text-muted" style={{ fontSize: '0.8em', marginLeft: 6 }}>
+                                                ({studentClass.name})
+                                            </span>
+                                        )}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
@@ -99,11 +117,19 @@ function ClassPicker({ rubricId }: { rubricId: string }) {
                 <div className="card" style={{ maxWidth: 420, width: '100%', textAlign: 'center', padding: '32px 28px' }}>
                     <h2 style={{ marginBottom: 8 }}>Select a Class</h2>
                     <p className="text-muted text-sm" style={{ marginBottom: 24 }}>
-                        Choose which class to grade. Only students from the selected class will appear in the comparison.
+                        Choose which class to grade, or compare across all linked classes at once.
                     </p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                         {offerClasses.length === 0 && (
                             <p className="text-muted text-sm">No classes found. Add a class first.</p>
+                        )}
+                        {offerClasses.length > 1 && (
+                            <button
+                                className="btn btn-primary"
+                                onClick={() => setSelectedClassId(COMBINED_ID)}
+                            >
+                                All linked classes
+                            </button>
                         )}
                         {offerClasses.map(c => (
                             <button
@@ -123,7 +149,7 @@ function ClassPicker({ rubricId }: { rubricId: string }) {
 }
 
 // ─── Grading session ─────────────────────────────────────────────────────────
-// Always receives a concrete classId — never 'all'. All hooks are unconditional.
+// classId is either a real class ID or COMBINED_ID for all linked classes.
 function ComparativeGradingSession({
     classId,
     rubricId,
@@ -133,7 +159,7 @@ function ComparativeGradingSession({
 }) {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { rubrics, students, studentRubrics, attachments, saveStudentRubric, gradeScales, settings } =
+    const { rubrics, students, classes, studentRubrics, attachments, saveStudentRubric, gradeScales, settings } =
         useApp();
 
     const [searchParams] = useSearchParams();
@@ -141,11 +167,16 @@ function ComparativeGradingSession({
 
     const rubric = rubrics.find(r => r.id === rubricId);
 
-    // Students are strictly scoped to the chosen class — no leakage possible.
-    const classStudents = useMemo(
-        () => students.filter(s => s.classId === classId),
-        [students, classId]
-    );
+    // When COMBINED_ID, pull from every class that has this rubric linked.
+    const classStudents = useMemo(() => {
+        if (classId === COMBINED_ID) {
+            const linkedIds = new Set(
+                classes.filter(c => c.rubricIds?.includes(rubricId)).map(c => c.id)
+            );
+            return students.filter(s => linkedIds.has(s.classId));
+        }
+        return students.filter(s => s.classId === classId);
+    }, [students, classes, classId, rubricId]);
 
     const [studentA, setStudentA] = useState<typeof students[0] | null>(null);
     const [studentB, setStudentB] = useState<typeof students[0] | null>(null);
@@ -157,6 +188,8 @@ function ComparativeGradingSession({
     const [error, setError] = useState('');
     const [isDirty, setIsDirty] = useState(false);
     const [anchorNotice, setAnchorNotice] = useState(false);
+    // Local limit so the teacher can adjust on the fly without touching global settings.
+    const [matchupLimit, setMatchupLimit] = useState(settings.comparativeMatchupLimit ?? 0);
 
     // Which criterion comment panels are open
     const [openComments, setOpenComments] = useState<Set<string>>(new Set());
@@ -255,10 +288,7 @@ function ComparativeGradingSession({
         saveStudentRubric(savedSrB);
         setIsDirty(false);
 
-        const limitReached =
-            settings.comparativeMatchupLimit &&
-            settings.comparativeMatchupLimit > 0 &&
-            anchorMatchupCount >= settings.comparativeMatchupLimit;
+        const limitReached = matchupLimit > 0 && anchorMatchupCount >= matchupLimit;
 
         if (limitReached) {
             pickNextMatchup(null, null);
@@ -475,7 +505,7 @@ function ComparativeGradingSession({
                             </div>
                         </div>
 
-                        {/* Centre: VS + overall progress */}
+                        {/* Centre: VS + overall progress + limit control */}
                         <div style={{ flex: 1, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
                             <span style={{ fontWeight: 'bold', fontSize: '1.2rem', color: 'var(--text-muted)' }}>VS</span>
                             <div style={{ width: '100%', maxWidth: 200 }}>
@@ -485,6 +515,23 @@ function ComparativeGradingSession({
                                 <div className="text-xs text-muted" style={{ marginTop: 4 }}>
                                     {matchupsDone} / {totalPossibleMatchups} matchups done · <strong>{matchupsLeft}</strong> left
                                 </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                                <label className="text-xs text-muted" style={{ whiteSpace: 'nowrap' }}>Max per student:</label>
+                                <input
+                                    type="number"
+                                    min={0}
+                                    value={matchupLimit === 0 ? '' : matchupLimit}
+                                    placeholder="∞"
+                                    onChange={e => setMatchupLimit(Math.max(0, parseInt(e.target.value) || 0))}
+                                    style={{ width: 48, fontSize: '0.8rem', textAlign: 'center', padding: '2px 4px' }}
+                                    title="Max comparisons per anchor student (0 = unlimited)"
+                                />
+                                {matchupLimit > 0 && (
+                                    <span className="text-xs text-muted">
+                                        ({anchorMatchupCount} / {matchupLimit} this anchor)
+                                    </span>
+                                )}
                             </div>
                         </div>
 
@@ -885,6 +932,7 @@ export default function ComparativeGrading() {
     if (!classId || classId === 'all') {
         return <ClassPicker rubricId={rubricId} />;
     }
+    // COMBINED_ID and real class IDs both go straight to the session.
 
     return <ComparativeGradingSession classId={classId} rubricId={rubricId} />;
 }
