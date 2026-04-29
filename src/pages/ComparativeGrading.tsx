@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import Topbar from '../components/Layout/Topbar';
 import { ArrowLeft, Check, Equal, ChevronRight, ChevronLeft } from 'lucide-react';
@@ -83,6 +83,15 @@ function ComparativeGradingSession({
         useApp();
 
     const rubric = rubrics.find(r => r.id === rubricId);
+    const linkedClasses = classes.filter(c => c.rubricIds?.includes(rubricId));
+    const offerClasses = linkedClasses.length > 0 ? linkedClasses : classes;
+
+    function goToSession(classId: string, startStudentId?: string) {
+        const url = startStudentId
+            ? `/grade-comparative/${classId}/${rubricId}?start=${startStudentId}`
+            : `/grade-comparative/${classId}/${rubricId}`;
+        navigate(url, { replace: true });
+    }
 
     // Students are strictly scoped to the chosen class — no leakage possible.
     const classStudents = useMemo(
@@ -95,19 +104,39 @@ function ComparativeGradingSession({
     const [srA, setSrA] = useState<typeof studentRubrics[0] | null>(null);
     const [srB, setSrB] = useState<typeof studentRubrics[0] | null>(null);
     const [matchups, setMatchups] = useState<Set<string>>(new Set());
+    const [seenStudentIds, setSeenStudentIds] = useState<Set<string>>(new Set());
     const [anchorMatchupCount, setAnchorMatchupCount] = useState<number>(0);
     const [error, setError] = useState('');
+    const [isDirty, setIsDirty] = useState(false);
+    const [anchorNotice, setAnchorNotice] = useState(false);
+
+    // Which criterion comment panels are open
+    const [openComments, setOpenComments] = useState<Set<string>>(new Set());
 
     useEffect(() => {
         if (!rubric) return;
         if (classStudents.length < 2) {
-            setError('Not enough students in this class for a comparison.');
+            setError(t('comparativeGrading.not_enough_students'));
             return;
         }
         if (!studentA && !studentB) {
-            pickNextMatchup(null);
+            pickNextMatchup(startStudentId);
         }
     }, [classStudents, rubric]);
+
+    // Warn on unsaved changes when navigating away
+    useEffect(() => {
+        const handler = (e: BeforeUnloadEvent) => {
+            if (!isDirty) return;
+            e.preventDefault();
+            e.returnValue = '';
+        };
+        window.addEventListener('beforeunload', handler);
+        return () => window.removeEventListener('beforeunload', handler);
+    }, [isDirty]);
+
+    // Mark dirty whenever scores change
+    useEffect(() => { if (srA || srB) setIsDirty(true); }, [srA, srB]);
 
     function getEmptySR(studentId: string) {
         if (!rubric) throw new Error('No rubric');
@@ -132,13 +161,14 @@ function ComparativeGradingSession({
     }
 
     function getMatchKey(id1: string, id2: string) {
-        return [id1, id2].sort().join('-');
+        // Use a delimiter that can't appear in nanoid output
+        return [id1, id2].sort().join('|');
     }
 
     function pickNextMatchup(anchorId: string | null) {
         if (classStudents.length < 2) return;
 
-        let a = anchorId ? classStudents.find(s => s.id === anchorId)! : null;
+        let a = anchorId ? classStudents.find(s => s.id === anchorId) ?? null : null;
         if (!a) {
             a = classStudents[Math.floor(Math.random() * classStudents.length)];
         }
@@ -157,6 +187,9 @@ function ComparativeGradingSession({
         setSrA(getEmptySR(a.id));
         setSrB(getEmptySR(b.id));
         setMatchups(prev => new Set([...prev, getMatchKey(a!.id, b.id)]));
+        setSeenStudentIds(prev => new Set([...prev, a!.id, b.id]));
+        setIsDirty(false);
+
         if (a.id === anchorId) {
             setAnchorMatchupCount(prev => prev + 1);
         } else {
@@ -169,6 +202,12 @@ function ComparativeGradingSession({
         const snap = JSON.parse(JSON.stringify(rubric));
         saveStudentRubric({ ...srA, gradedAt: new Date().toISOString(), rubricSnapshot: snap });
         saveStudentRubric({ ...srB, gradedAt: new Date().toISOString(), rubricSnapshot: snap });
+        setIsDirty(false);
+
+        const limitReached =
+            settings.comparativeMatchupLimit &&
+            settings.comparativeMatchupLimit > 0 &&
+            anchorMatchupCount >= settings.comparativeMatchupLimit;
 
         if (
             settings.comparativeMatchupLimit &&
@@ -199,14 +238,10 @@ function ComparativeGradingSession({
         let idxB = sortedLevels.findIndex(l => l.id === entryB.levelId);
 
         if (idxA === -1 && idxB === -1) {
-            const mid = Math.floor(sortedLevels.length / 2);
-            idxA = mid;
-            idxB = mid;
-        } else if (idxA === -1) {
-            idxA = idxB;
-        } else if (idxB === -1) {
-            idxB = idxA;
-        }
+            const mid = Math.floor(sorted.length / 2);
+            idxA = mid; idxB = mid;
+        } else if (idxA === -1) { idxA = idxB; }
+        else if (idxB === -1) { idxB = idxA; }
 
         if (comparison === 'A_BETTER') {
             if (idxA <= idxB) {
@@ -215,7 +250,7 @@ function ComparativeGradingSession({
             }
         } else if (comparison === 'B_BETTER') {
             if (idxB <= idxA) {
-                if (idxB < sortedLevels.length - 1) idxB = idxA + 1;
+                if (idxB < sorted.length - 1) idxB = idxA + 1;
                 else if (idxA > 0) idxA = idxB - 1;
             }
         } else if (comparison === 'EQUAL') {
@@ -261,7 +296,7 @@ function ComparativeGradingSession({
         }
     }
 
-    function updateEntry(isA: boolean, criterionId: string, patch: Partial<ScoreEntry>) {
+    const updateEntry = useCallback((isA: boolean, criterionId: string, patch: Partial<ScoreEntry>) => {
         const setter = isA ? setSrA : setSrB;
         setter(prev => {
             if (!prev) return prev;
@@ -279,13 +314,27 @@ function ComparativeGradingSession({
         if (!sr) return;
         const entry = sr.entries.find(e => e.criterionId === criterionId);
         if (!entry) return;
-        const currentScores = entry.subItemScores ?? {};
-        updateEntry(isA, criterionId, { subItemScores: { ...currentScores, [subItemId]: score } });
+        updateEntry(isA, criterionId, { subItemScores: { ...(entry.subItemScores ?? {}), [subItemId]: score } });
+    }
+
+    function toggleComment(criterionId: string) {
+        setOpenComments(prev => {
+            const next = new Set(prev);
+            next.has(criterionId) ? next.delete(criterionId) : next.add(criterionId);
+            return next;
+        });
     }
 
     if (!rubric) return <div className="page-content">Rubric not found</div>;
-    if (error) return <div className="page-content">{error}</div>;
-    if (!studentA || !studentB || !srA || !srB) return <div className="page-content">Loading...</div>;
+    if (error) return (
+        <div className="page-content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, minHeight: 200 }}>
+            <p className="text-muted">{error}</p>
+            <button className="btn btn-secondary" onClick={() => navigate(-1)}>
+                <ArrowLeft size={15} /> {t('comparativeGrading.action_back')}
+            </button>
+        </div>
+    );
+    if (!studentA || !studentB || !srA || !srB) return <div className="page-content">{t('comparativeGrading.loading')}</div>;
 
     const attA = attachments.filter(a => a.studentId === studentA.id);
     const attB = attachments.filter(a => a.studentId === studentB.id);
@@ -294,6 +343,9 @@ function ComparativeGradingSession({
         gradeScales[0];
     const sumA = calcGradeSummary(srA, rubric.criteria, scale, rubric);
     const sumB = calcGradeSummary(srB, rubric.criteria, scale, rubric);
+
+    const coveredCount = seenStudentIds.size;
+    const totalCount = classStudents.length;
 
     return (
         <>
@@ -390,6 +442,8 @@ function ComparativeGradingSession({
                             const eB = srB.entries.find(e => e.criterionId === c.id);
                             const lvlA = c.levels.find(l => l.id === eA?.levelId);
                             const lvlB = c.levels.find(l => l.id === eB?.levelId);
+                            const displayLevels = displayOrderedLevels(c);
+                            const commentOpen = openComments.has(c.id);
 
                             return (
                                 <div key={c.id} className="card" style={{ padding: '16px 20px' }}>
@@ -641,6 +695,36 @@ function ComparativeGradingSession({
                                             )}
                                         </div>
                                     </div>
+
+                                    {/* Per-criterion comments (toggled) */}
+                                    {commentOpen && (
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 4, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
+                                            <div>
+                                                <label className="text-xs text-muted" style={{ display: 'block', marginBottom: 4 }}>
+                                                    {studentA.name}
+                                                </label>
+                                                <textarea
+                                                    rows={2}
+                                                    placeholder={t('comparativeGrading.comment_placeholder')}
+                                                    value={eA?.comment || ''}
+                                                    onChange={e => updateEntry(true, c.id, { comment: e.target.value })}
+                                                    style={{ width: '100%', fontSize: '0.8rem', resize: 'vertical' }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-xs text-muted" style={{ display: 'block', marginBottom: 4 }}>
+                                                    {studentB.name}
+                                                </label>
+                                                <textarea
+                                                    rows={2}
+                                                    placeholder={t('comparativeGrading.comment_placeholder')}
+                                                    value={eB?.comment || ''}
+                                                    onChange={e => updateEntry(false, c.id, { comment: e.target.value })}
+                                                    style={{ width: '100%', fontSize: '0.8rem', resize: 'vertical' }}
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             );
                         })}
@@ -675,6 +759,79 @@ function ComparativeGradingSession({
             </div>
         </>
     );
+
+    // ── Score panel helper (avoids repetition for A and B) ──────────────────
+    function renderScorePanel(
+        isA: boolean,
+        c: typeof rubric.criteria[0],
+        entry: ScoreEntry | undefined,
+        activeLevel: typeof c.levels[0] | undefined,
+        displayLevels: typeof c.levels
+    ) {
+        const student = isA ? studentA! : studentB!;
+        return (
+            <div style={{ flex: 1, padding: 10, background: 'var(--bg-body)', borderRadius: 8, border: `2px solid ${entry?.levelId ? 'var(--accent)' : 'var(--border)'}` }}>
+                <div className="text-xs text-muted" style={{ marginBottom: 4 }}>
+                    {t('comparativeGrading.label_score', { name: student.name })}
+                </div>
+                <select
+                    value={entry?.levelId || ''}
+                    onChange={e => manuallyUpdateLevel(isA, c.id, e.target.value)}
+                    style={{ width: '100%', fontSize: '0.85rem', marginBottom: 8 }}
+                >
+                    <option value="" disabled>{t('comparativeGrading.select_level')}</option>
+                    {displayLevels.map(l => (
+                        <option key={l.id} value={l.id}>{l.label} ({l.minPoints} {t('gradeStudent.table_points')})</option>
+                    ))}
+                </select>
+
+                {activeLevel && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {activeLevel.subItems.map(si => {
+                            // Guard against malformed sub-items where min > max
+                            const siMin = Math.min(si.minPoints ?? 0, si.maxPoints ?? si.points ?? 1);
+                            const siMax = Math.max(si.minPoints ?? 0, si.maxPoints ?? si.points ?? 1);
+                            const currentScore = entry?.subItemScores?.[si.id] ?? siMin;
+                            return (
+                                <div key={si.id} className="text-xs">
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                                        <span>{si.label}</span>
+                                        <span style={{ fontWeight: 600 }}>{currentScore}/{siMax}</span>
+                                    </div>
+                                    <input type="range" min={siMin} max={siMax} step={0.5}
+                                        value={currentScore}
+                                        onChange={e => setSubItemScore(isA, c.id, si.id, Number(e.target.value))}
+                                        style={{ width: '100%', accentColor: 'var(--accent)' }}
+                                    />
+                                </div>
+                            );
+                        })}
+                        {(activeLevel.minPoints !== activeLevel.maxPoints || activeLevel.subItems.length === 0) && (
+                            <div className="text-xs" style={{ borderTop: '1px solid var(--border)', paddingTop: 4 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                                    <span>{t('comparativeGrading.label_points')}</span>
+                                    <span style={{ fontWeight: 600 }}>{entry?.selectedPoints ?? activeLevel.minPoints}</span>
+                                </div>
+                                <input type="range" min={activeLevel.minPoints} max={activeLevel.maxPoints} step={0.5}
+                                    value={entry?.selectedPoints ?? activeLevel.minPoints}
+                                    onChange={e => updateEntry(isA, c.id, { selectedPoints: Number(e.target.value) })}
+                                    style={{ width: '100%', accentColor: 'var(--accent)' }}
+                                />
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+        );
+    }
+}
+
+// ─── Router ───────────────────────────────────────────────────────────────────
+export default function ComparativeGrading() {
+    const { classId, rubricId } = useParams();
+    if (!rubricId) return <div className="page-content">Rubric not found</div>;
+    if (!classId || classId === 'all') return <ClassPicker rubricId={rubricId} />;
+    return <ComparativeGradingSession classId={classId} rubricId={rubricId} />;
 }
 
 // ─── Router ───────────────────────────────────────────────────────────────────
