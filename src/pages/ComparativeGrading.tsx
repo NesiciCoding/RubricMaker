@@ -184,11 +184,11 @@ function ComparativeGradingSession({
     const [srB, setSrB] = useState<typeof studentRubrics[0] | null>(null);
     const [matchups, setMatchups] = useState<Set<string>>(new Set());
     const [seenStudentIds, setSeenStudentIds] = useState<Set<string>>(new Set());
-    const [anchorMatchupCount, setAnchorMatchupCount] = useState<number>(0);
     const [error, setError] = useState('');
     const [isDirty, setIsDirty] = useState(false);
-    const [anchorNotice, setAnchorNotice] = useState(false);
-    // Local limit so the teacher can adjust on the fly without touching global settings.
+    const [sessionDone, setSessionDone] = useState(false);
+    // Local limit = total matchups for this session. 0 = unlimited.
+    // Seeded from global settings but adjustable on the fly.
     const [matchupLimit, setMatchupLimit] = useState(settings.comparativeMatchupLimit ?? 0);
 
     // Which criterion comment panels are open
@@ -271,12 +271,6 @@ function ComparativeGradingSession({
         setMatchups(prev => new Set([...prev, getMatchKey(a!.id, b.id)]));
         setSeenStudentIds(prev => new Set([...prev, a!.id, b.id]));
         setIsDirty(false);
-
-        if (a.id === anchorId) {
-            setAnchorMatchupCount(prev => prev + 1);
-        } else {
-            setAnchorMatchupCount(1);
-        }
     }
 
     function handleSaveAndNext() {
@@ -288,14 +282,15 @@ function ComparativeGradingSession({
         saveStudentRubric(savedSrB);
         setIsDirty(false);
 
-        const limitReached = matchupLimit > 0 && anchorMatchupCount >= matchupLimit;
-
-        if (limitReached) {
-            pickNextMatchup(null, null);
-        } else {
-            // Pass the saved SR so scores aren't lost while context re-renders.
-            pickNextMatchup(studentA.id, savedSrA);
+        // matchups.size already includes the current matchup (added in pickNextMatchup).
+        // If the session total limit is reached, show the done screen instead of continuing.
+        if (matchupLimit > 0 && matchups.size >= matchupLimit) {
+            setSessionDone(true);
+            return;
         }
+
+        // Pass the saved SR so scores aren't lost while context re-renders.
+        pickNextMatchup(studentA.id, savedSrA);
     }
 
     function compareCriterion(
@@ -438,8 +433,12 @@ function ComparativeGradingSession({
     const n = classStudents.length;
     const totalPossibleMatchups = (n * (n - 1)) / 2;
     const matchupsDone = matchups.size;
-    const matchupsLeft = totalPossibleMatchups - matchupsDone;
-    const matchupProgress = totalPossibleMatchups > 0 ? (matchupsDone / totalPossibleMatchups) * 100 : 0;
+    // When a session limit is active, use it as the denominator so the
+    // progress bar and "left" counter reflect what the teacher actually
+    // planned to do, not the combinatorial maximum.
+    const sessionMax = matchupLimit > 0 ? matchupLimit : totalPossibleMatchups;
+    const matchupsLeft = Math.max(0, sessionMax - matchupsDone);
+    const matchupProgress = sessionMax > 0 ? Math.min(100, (matchupsDone / sessionMax) * 100) : 0;
     const maxPerStudent = n - 1;
 
     const perStudentDone = useMemo(() => {
@@ -462,6 +461,31 @@ function ComparativeGradingSession({
         </div>
     );
     if (!studentA || !studentB || !srA || !srB) return <div className="page-content">{t('comparativeGrading.loading')}</div>;
+
+    if (sessionDone) return (
+        <>
+            <Topbar title={`Comparative: ${rubric?.name}`} actions={
+                <button className="btn btn-ghost btn-sm" onClick={() => navigate(-1)}><ArrowLeft size={15} /> Back</button>
+            } />
+            <div className="page-content fade-in" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300 }}>
+                <div className="card" style={{ maxWidth: 420, width: '100%', textAlign: 'center', padding: '32px 28px' }}>
+                    <Check size={40} style={{ color: 'var(--accent)', marginBottom: 16 }} />
+                    <h2 style={{ marginBottom: 8 }}>Session Complete</h2>
+                    <p className="text-muted text-sm" style={{ marginBottom: 24 }}>
+                        You've reached your limit of {matchupLimit} comparison{matchupLimit !== 1 ? 's' : ''}. All scores have been saved.
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        <button className="btn btn-primary" onClick={() => { setSessionDone(false); pickNextMatchup(studentA.id, srA); }}>
+                            Continue Comparing
+                        </button>
+                        <button className="btn btn-secondary" onClick={() => navigate(-1)}>
+                            <ArrowLeft size={15} /> Back to Rubric
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </>
+    );
 
     const attA = attachments.filter(a => a.studentId === studentA.id);
     const attB = attachments.filter(a => a.studentId === studentB.id);
@@ -513,11 +537,11 @@ function ComparativeGradingSession({
                                     <div style={{ width: `${matchupProgress}%`, height: '100%', background: 'var(--accent)', borderRadius: 4, transition: 'width 0.3s ease' }} />
                                 </div>
                                 <div className="text-xs text-muted" style={{ marginTop: 4 }}>
-                                    {matchupsDone} / {totalPossibleMatchups} matchups done · <strong>{matchupsLeft}</strong> left
+                                    {matchupsDone} / {matchupLimit > 0 ? matchupLimit : totalPossibleMatchups} done · <strong>{matchupsLeft}</strong> left
                                 </div>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                                <label className="text-xs text-muted" style={{ whiteSpace: 'nowrap' }}>Max per student:</label>
+                                <label className="text-xs text-muted" style={{ whiteSpace: 'nowrap' }}>Session limit:</label>
                                 <input
                                     type="number"
                                     min={0}
@@ -525,13 +549,8 @@ function ComparativeGradingSession({
                                     placeholder="∞"
                                     onChange={e => setMatchupLimit(Math.max(0, parseInt(e.target.value) || 0))}
                                     style={{ width: 48, fontSize: '0.8rem', textAlign: 'center', padding: '2px 4px' }}
-                                    title="Max comparisons per anchor student (0 = unlimited)"
+                                    title="Total comparisons for this session (0 = unlimited)"
                                 />
-                                {matchupLimit > 0 && (
-                                    <span className="text-xs text-muted">
-                                        ({anchorMatchupCount} / {matchupLimit} this anchor)
-                                    </span>
-                                )}
                             </div>
                         </div>
 

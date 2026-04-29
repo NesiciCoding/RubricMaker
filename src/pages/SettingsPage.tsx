@@ -102,7 +102,7 @@ export default function SettingsPage() {
                                 style={{ maxWidth: 200 }}
                             />
                             <div className="text-muted text-xs" style={{ marginTop: 4 }}>
-                                How many students an anchor should be compared against before choosing a new anchor. 0 means infinite.
+                                Maximum total comparisons per session. The session stops and shows a completion screen when this number is reached. 0 means no limit.
                             </div>
                         </div>
                     </div>
