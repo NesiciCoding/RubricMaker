@@ -18,6 +18,15 @@ export default function PeerReviewView() {
     const [student, setStudent] = useState(students.find(s => s.id === studentId));
     const [entry, setEntry] = useState<StudentRubric | null>(null);
     const [isSaved, setIsSaved] = useState(false);
+    const [isDirty, setIsDirty] = useState(false);
+
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (isDirty) { e.preventDefault(); e.returnValue = ''; }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [isDirty]);
 
     useEffect(() => {
         if (!rubric || !student) return;
@@ -61,10 +70,12 @@ export default function PeerReviewView() {
     const handleSave = () => {
         savePeerReview(entry);
         setIsSaved(true);
+        setIsDirty(false);
         setTimeout(() => setIsSaved(false), 2000);
     };
 
     const updateScore = (criterionId: string, levelId: string) => {
+        setIsDirty(true);
         setEntry(prev => {
             if (!prev) return null;
             return {
@@ -75,6 +86,7 @@ export default function PeerReviewView() {
     };
 
     const updateComment = (criterionId: string, comment: string) => {
+        setIsDirty(true);
         setEntry(prev => {
             if (!prev) return null;
             return {

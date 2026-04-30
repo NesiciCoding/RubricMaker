@@ -198,236 +198,181 @@ export default function GradeStudent() {
                     </>
                 }
             />
-            <div className="page-content fade-in">
-                {/* Score summary bar */}
-                {summary && (
-                    <div className="card" style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
-                        {rubric.format.showCalculatedGrade !== false && (
-                            <>
-                                <div style={{
-                                    background: summary.gradeColor + '22',
-                                    border: `2px solid ${summary.gradeColor}`,
-                                    borderRadius: 10, padding: '6px 18px', textAlign: 'center'
-                                }}>
-                                    <div style={{ fontSize: '1.8rem', fontWeight: 800, color: summary.gradeColor }}>{summary.letterGrade}</div>
-                                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>{t('gradeStudent.label_grade')}</div>
-                                </div>
-                                <div>
-                                    <div style={{ fontSize: '1.4rem', fontWeight: 700 }}>
-                                        {summary.modifiedPercentage.toFixed(1)}%
-                                    </div>
-                                    <div className="text-muted text-xs">
-                                        {rubric.scoringMode === 'total-points' ? t('gradeStudent.label_percentage') : t('gradeStudent.label_weighted_score')}
-                                    </div>
-                                </div>
-                            </>
-                        )}
-                        <div>
-                            <div style={{ fontSize: '1.4rem', fontWeight: 700 }}>
-                                {summary.rawScore} / {summary.configuredMaxPoints}
-                            </div>
-                            <div className="text-muted text-xs">{t('gradeStudent.label_total_points')}</div>
-                        </div>
-                        {/* Modifier controls */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 180, marginLeft: 'auto' }}>
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', width: '100%', paddingBottom: 6 }}>
-                                <button className="btn btn-secondary btn-sm" onClick={handleExportPdf}>
-                                    <FileDown size={14} /> Export PDF
-                                </button>
-                            </div>
-                            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>
-                                {t('gradeStudent.label_modifier')}
-                            </span>
-                            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                                <select value={sr.globalModifier?.type ?? 'percentage'}
-                                    onChange={e => {
-                                        setSr(p => p ? { ...p, globalModifier: { type: e.target.value as Modifier['type'], value: p.globalModifier?.value ?? 0, reason: p.globalModifier?.reason ?? '' } } : p);
-                                        setIsDirty(true);
-                                    }}
-                                    style={{ width: 100 }}>
-                                    <option value="percentage">{t('gradeStudent.offset_percentage')}</option>
-                                    <option value="points">{t('gradeStudent.offset_points')}</option>
-                                </select>
-                                <input type="number" value={sr.globalModifier?.value ?? 0}
-                                    onChange={e => {
-                                        setSr(p => p ? { ...p, globalModifier: { type: p.globalModifier?.type ?? 'percentage', value: Number(e.target.value), reason: p.globalModifier?.reason ?? '' } } : p);
-                                        setIsDirty(true);
-                                    }}
-                                    style={{ width: 60 }} />
-                                <input type="text" placeholder={t('gradeStudent.modifier_reason_placeholder') || 'Reason'} value={sr.globalModifier?.reason ?? ''}
-                                    onChange={e => {
-                                        setSr(p => p ? { ...p, globalModifier: { type: p.globalModifier?.type ?? 'percentage', value: p.globalModifier?.value ?? 0, reason: e.target.value } } : p);
-                                        setIsDirty(true);
-                                    }}
-                                    style={{ flex: 1, minWidth: 100 }} />
-                            </div>
-                        </div>
+            <div className="page-content fade-in" style={summary ? { paddingBottom: 80 } : undefined}>
+                {/* Modifier + export panel */}
+                <div className="card" style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', flexShrink: 0 }}>
+                        {t('gradeStudent.label_modifier')}
+                    </span>
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center', flex: 1, minWidth: 280 }}>
+                        <select value={sr.globalModifier?.type ?? 'percentage'}
+                            onChange={e => {
+                                setSr(p => p ? { ...p, globalModifier: { type: e.target.value as Modifier['type'], value: p.globalModifier?.value ?? 0, reason: p.globalModifier?.reason ?? '' } } : p);
+                                setIsDirty(true);
+                            }}
+                            style={{ width: 110 }}>
+                            <option value="percentage">{t('gradeStudent.offset_percentage')}</option>
+                            <option value="points">{t('gradeStudent.offset_points')}</option>
+                        </select>
+                        <input type="number" value={sr.globalModifier?.value ?? 0}
+                            onChange={e => {
+                                setSr(p => p ? { ...p, globalModifier: { type: p.globalModifier?.type ?? 'percentage', value: Number(e.target.value), reason: p.globalModifier?.reason ?? '' } } : p);
+                                setIsDirty(true);
+                            }}
+                            style={{ width: 60 }} />
+                        <input type="text" placeholder={t('gradeStudent.modifier_reason_placeholder') || 'Reason'} value={sr.globalModifier?.reason ?? ''}
+                            onChange={e => {
+                                setSr(p => p ? { ...p, globalModifier: { type: p.globalModifier?.type ?? 'percentage', value: p.globalModifier?.value ?? 0, reason: e.target.value } } : p);
+                                setIsDirty(true);
+                            }}
+                            style={{ flex: 1, minWidth: 80 }} />
                     </div>
-                )}
+                    <button className="btn btn-secondary btn-sm" onClick={handleExportPdf} style={{ flexShrink: 0 }}>
+                        <FileDown size={14} /> Export PDF
+                    </button>
+                </div>
 
-                {/* Rubric grid */}
-                <div style={{ overflowX: 'auto', marginBottom: 20 }}>
-                    <table className="rubric-grid" style={{ fontFamily: fmt.fontFamily, fontSize: fmt.fontSize }}>
-                        <thead>
-                            <tr style={{ background: fmt.headerColor, color: fmt.headerTextColor }}>
-                                <th style={{ width: fmt.criterionColWidth, textAlign: 'left', padding: '14px 16px' }}>{t('gradeStudent.table_criterion')}</th>
-                                {rubric.criteria[0]?.levels.map((_, li) => {
-                                    const lvl = orderedLevels(rubric.criteria[0])[li];
-                                    return (
-                                        <th key={li} style={{ width: fmt.levelColWidth }}>
-                                            {lvl?.label}
-                                            {fmt.showPoints && lvl ? ` (${lvl.minPoints}${lvl.minPoints !== lvl.maxPoints ? `–${lvl.maxPoints}` : ''}${t('gradeStudent.table_points')})` : ''}
-                                        </th>
-                                    );
-                                })}
-                                <th style={{ width: 60 }}></th>
-                                {fmt.showWeights && <th style={{ width: 72 }}>{t('gradeStudent.table_weight')}</th>}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {rubric.criteria.map(c => {
-                                const entry = sr.entries.find(e => e.criterionId === c.id)!;
-                                const levels = orderedLevels(c);
-                                const activeLevel = c.levels.find(l => l.id === entry.levelId);
+                {/* Rubric — card per criterion */}
+                <div style={{ marginBottom: 20, display: 'flex', flexDirection: 'column', gap: 12, fontFamily: fmt.fontFamily, fontSize: fmt.fontSize }}>
+                    {rubric.criteria.map(c => {
+                        const entry = sr.entries.find(e => e.criterionId === c.id)!;
+                        const levels = orderedLevels(c);
 
-                                return (
-                                    <React.Fragment key={c.id}>
-                                        <tr>
-                                            <td className="criterion-cell">
-                                                <div style={{ fontWeight: 600 }}>{c.title}</div>
-                                                {c.description && <div style={{ fontSize: '0.78em', color: 'var(--text-muted)', marginTop: 3 }}>{c.description}</div>}
-                                                {c.linkedStandard && (
-                                                    <div style={{ marginTop: 6, fontSize: '0.7em', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 4 }} title={c.linkedStandard.description}>
-                                                        <Info size={10} /> {c.linkedStandard.statementNotation ?? t('gradeStudent.label_standard')}
-                                                    </div>
-                                                )}
-                                                {(c.linkedStandards || []).map((std, idx) => (
-                                                    <div key={idx} style={{ marginTop: 6, fontSize: '0.7em', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 4 }} title={std.description}>
-                                                        <Info size={10} /> {std.statementNotation ?? t('gradeStudent.label_standard')}
-                                                    </div>
-                                                ))}
-                                                {entry.overridePoints !== undefined && (
-                                                    <div style={{ fontSize: '0.75em', color: 'var(--yellow)', marginTop: 4 }}>
-                                                        {t('gradeStudent.label_override')} {entry.overridePoints}{t('gradeStudent.table_points')}
-                                                    </div>
-                                                )}
-                                            </td>
-                                            {levels.map(level => {
-                                                const isSelected = entry.levelId === level.id;
-                                                return (
-                                                    <td key={level.id}
-                                                        className={`level-cell ${isSelected ? 'selected' : ''}`}
-                                                        style={isSelected ? { borderColor: fmt.accentColor, boxShadow: `inset 0 0 0 2px ${fmt.accentColor}` } : {}}
-                                                        onClick={() => updateEntry(c.id, { levelId: isSelected ? null : level.id, overridePoints: undefined })}
-                                                    >
-                                                        {level.description || <span style={{ color: 'var(--text-dim)', fontSize: '0.8em' }}>{t('gradeStudent.level_select')}</span>}
-                                                        {/* Points indicator */}
-                                                        {fmt.showPoints && (
-                                                            <div style={{ fontSize: '0.75em', color: isSelected ? fmt.accentColor : 'var(--text-muted)', marginTop: 6, fontWeight: 600 }}>
-                                                                {level.minPoints === level.maxPoints ? `${level.minPoints}${t('gradeStudent.table_points')}` : `${level.minPoints}–${level.maxPoints}${t('gradeStudent.table_points')}`}
-                                                            </div>
-                                                        )}
-
-                                                        {/* Sub-items (always show under the level description so they can be clicked independently) */}
-                                                        {level.subItems.length > 0 && (
-                                                            <div style={{ marginTop: 8, paddingTop: 8, borderTop: isSelected ? `1px solid ${fmt.accentColor}40` : '1px solid var(--border)', textAlign: 'left' }} onClick={e => e.stopPropagation()}>
-                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                                                                    {level.subItems.map(si => {
-                                                                        const legacyChecked = (entry.checkedSubItems ?? []).includes(si.id);
-                                                                        const defaultScore = legacyChecked ? (si.maxPoints ?? si.points ?? 0) : (si.minPoints ?? 0);
-                                                                        const currentScore = entry.subItemScores?.[si.id] ?? defaultScore;
-                                                                        const min = si.minPoints ?? 0;
-                                                                        const max = si.maxPoints ?? si.points ?? 1;
-
-                                                                        return (
-                                                                            <div key={si.id} onClick={(e) => e.stopPropagation()} style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: '0.75em', lineHeight: 1.3 }}>
-                                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', paddingBottom: 2 }}>
-                                                                                    <div style={{ paddingRight: 8 }}>{si.label}</div>
-                                                                                    <div style={{ fontWeight: 600, color: 'var(--accent)', flexShrink: 0, fontSize: '0.9em' }}>{currentScore} / {max} {t('gradeStudent.table_points')}</div>
-                                                                                </div>
-
-                                                                                <input
-                                                                                    type="range"
-                                                                                    min={min}
-                                                                                    max={max}
-                                                                                    step={0.5}
-                                                                                    value={currentScore}
-                                                                                    onChange={e => setSubItemScore(entry, si.id, Number(e.target.value))}
-                                                                                    style={{ width: '100%', cursor: 'pointer', height: 4, accentColor: fmt.accentColor }}
-                                                                                />
-
-                                                                                {si.linkedStandards && si.linkedStandards.length > 0 && (
-                                                                                    <div style={{ color: 'var(--accent)', opacity: 0.8, fontSize: '0.9em', display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                                                                                        {si.linkedStandards.map((std, idx) => (
-                                                                                            <span key={idx} title={std.description}>[{std.statementNotation ?? std.guid}]</span>
-                                                                                        ))}
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-                                                                        );
-                                                                    })}
-                                                                </div>
-                                                            </div>
-                                                        )}
-
-                                                        {/* Range Slider (only show for selected level) */}
-                                                        {isSelected && (level.minPoints !== level.maxPoints || level.subItems.length === 0) && (
-                                                            <div style={{ marginTop: 8, paddingTop: 8, borderTop: (level.subItems.length > 0) ? `1px solid ${fmt.accentColor}20` : `1px solid ${fmt.accentColor}40`, textAlign: 'left' }} onClick={e => e.stopPropagation()}>
-                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                                                    <label style={{ fontSize: '0.7em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                                                                        {c.levels.some(l => l.subItems.length > 0) ? t('gradeStudent.label_base_points') : t('gradeStudent.label_points')}
-                                                                    </label>
-                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                                        <input type="range"
-                                                                            min={level.minPoints} max={level.maxPoints} step={0.5}
-                                                                            value={entry.selectedPoints ?? level.minPoints}
-                                                                            onChange={e => updateEntry(c.id, { selectedPoints: Number(e.target.value) })}
-                                                                            style={{ flex: 1, accentColor: fmt.accentColor }}
-                                                                        />
-                                                                        <div style={{ fontSize: '0.75em', fontWeight: 600, minWidth: 24, textAlign: 'right' }}>
-                                                                            {entry.selectedPoints ?? level.minPoints}
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                    </td>
-                                                );
-                                            })}
-                                            <td>
-                                                <button className="btn btn-ghost btn-icon btn-sm"
-                                                    onClick={() => setActiveCommentCrit(activeCommentCrit === c.id ? null : c.id)}
-                                                    style={{ color: entry.comment ? 'var(--accent)' : 'var(--text-dim)' }}>
-                                                    <MessageSquare size={15} />
-                                                </button>
-                                            </td>
-                                            {fmt.showWeights && (
-                                                <td style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8em' }}>{c.weight}%</td>
-                                            )}
-                                        </tr>
-                                        {activeCommentCrit === c.id && (
-                                            <tr>
-                                                <td colSpan={levels.length + 2 + (fmt.showWeights ? 1 : 0)} style={{ background: 'var(--bg-elevated)', padding: 12 }}>
-                                                    <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                                                    <div style={{ flex: 1 }}>
-                                                        <TiptapEditor 
-                                                            content={entry.comment || ''}
-                                                            onChange={html => updateEntry(c.id, { comment: html })}
-                                                            placeholder={t('gradeStudent.comment_placeholder')}
-                                                        />
-                                                    </div>
-                                                        <button className="btn btn-secondary btn-sm" onClick={() => setShowCommentBankFor(c.id)} title={t('gradeStudent.comment_open_bank')}>
-                                                            <BookOpen size={16} />
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
+                        return (
+                            <div key={c.id} className="card" style={{ padding: 16 }}>
+                                {/* Criterion header */}
+                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12 }}>
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{c.title}</div>
+                                        {c.description && <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', marginTop: 2 }}>{c.description}</div>}
+                                        {c.linkedStandard && (
+                                            <div style={{ marginTop: 4, fontSize: '0.72em', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 3 }} title={c.linkedStandard.description}>
+                                                <Info size={10} /> {c.linkedStandard.statementNotation ?? t('gradeStudent.label_standard')}
+                                            </div>
                                         )}
-                                    </React.Fragment>
-                                );
-                            })}
-                        </tbody>
-                    </table>
+                                        {(c.linkedStandards || []).map((std, idx) => (
+                                            <div key={idx} style={{ marginTop: 4, fontSize: '0.72em', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 3 }} title={std.description}>
+                                                <Info size={10} /> {std.statementNotation ?? t('gradeStudent.label_standard')}
+                                            </div>
+                                        ))}
+                                        {entry.overridePoints !== undefined && (
+                                            <div style={{ fontSize: '0.75em', color: 'var(--yellow)', marginTop: 3 }}>
+                                                {t('gradeStudent.label_override')} {entry.overridePoints}{t('gradeStudent.table_points')}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+                                        {fmt.showWeights && <span className="badge badge-blue">{c.weight}%</span>}
+                                        <button className="btn btn-ghost btn-icon btn-sm"
+                                            onClick={() => setActiveCommentCrit(activeCommentCrit === c.id ? null : c.id)}
+                                            style={{ color: entry.comment ? 'var(--accent)' : 'var(--text-dim)' }}
+                                            title={t('gradeStudent.comment_open_bank')}>
+                                            <MessageSquare size={15} />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Level cards */}
+                                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                                    {levels.map(level => {
+                                        const isSelected = entry.levelId === level.id;
+                                        return (
+                                            <button key={level.id}
+                                                className={`level-btn${isSelected ? ' selected' : ''}`}
+                                                style={isSelected ? { borderColor: fmt.accentColor, background: `${fmt.accentColor}1a` } : {}}
+                                                onClick={() => updateEntry(c.id, { levelId: isSelected ? null : level.id, overridePoints: undefined })}
+                                            >
+                                                {/* Label + points badge */}
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 5, gap: 6 }}>
+                                                    <span style={{ fontWeight: 700, fontSize: '0.88em', color: isSelected ? fmt.accentColor : 'var(--text)' }}>{level.label}</span>
+                                                    {fmt.showPoints && (
+                                                        <span style={{ fontSize: '0.72em', color: isSelected ? fmt.accentColor : 'var(--text-muted)', fontWeight: 600, flexShrink: 0 }}>
+                                                            {level.minPoints === level.maxPoints ? `${level.minPoints}${t('gradeStudent.table_points')}` : `${level.minPoints}–${level.maxPoints}${t('gradeStudent.table_points')}`}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {/* Description */}
+                                                {level.description
+                                                    ? <p style={{ margin: 0, fontSize: '0.8em', color: isSelected ? 'var(--text)' : 'var(--text-muted)', lineHeight: 1.45 }}>{level.description}</p>
+                                                    : <p style={{ margin: 0, fontSize: '0.8em', color: 'var(--text-dim)', fontStyle: 'italic' }}>{t('gradeStudent.level_select')}</p>
+                                                }
+                                                {/* Sub-items */}
+                                                {level.subItems.length > 0 && (
+                                                    <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${isSelected ? fmt.accentColor + '40' : 'var(--border)'}` }} onClick={e => e.stopPropagation()}>
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                                            {level.subItems.map(si => {
+                                                                const legacyChecked = (entry.checkedSubItems ?? []).includes(si.id);
+                                                                const defaultScore = legacyChecked ? (si.maxPoints ?? si.points ?? 0) : (si.minPoints ?? 0);
+                                                                const currentScore = entry.subItemScores?.[si.id] ?? defaultScore;
+                                                                const min = si.minPoints ?? 0;
+                                                                const max = si.maxPoints ?? si.points ?? 1;
+                                                                return (
+                                                                    <div key={si.id} onClick={e => e.stopPropagation()} style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.75em', lineHeight: 1.3 }}>
+                                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                                                                            <div style={{ paddingRight: 8 }}>{si.label}</div>
+                                                                            <div style={{ fontWeight: 600, color: 'var(--accent)', flexShrink: 0 }}>{currentScore} / {max} {t('gradeStudent.table_points')}</div>
+                                                                        </div>
+                                                                        <input type="range" min={min} max={max} step={0.5} value={currentScore}
+                                                                            onChange={e => setSubItemScore(entry, si.id, Number(e.target.value))}
+                                                                            style={{ width: '100%', cursor: 'pointer', height: 4, accentColor: fmt.accentColor }} />
+                                                                        {si.linkedStandards && si.linkedStandards.length > 0 && (
+                                                                            <div style={{ color: 'var(--accent)', opacity: 0.8, display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+                                                                                {si.linkedStandards.map((std, idx) => (
+                                                                                    <span key={idx} title={std.description}>[{std.statementNotation ?? std.guid}]</span>
+                                                                                ))}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                {/* Base-points range slider (selected only, when range exists) */}
+                                                {isSelected && (level.minPoints !== level.maxPoints || level.subItems.length === 0) && (
+                                                    <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${fmt.accentColor}30` }} onClick={e => e.stopPropagation()}>
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                                            <label style={{ fontSize: '0.7em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                                                                {c.levels.some(l => l.subItems.length > 0) ? t('gradeStudent.label_base_points') : t('gradeStudent.label_points')}
+                                                            </label>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                                <input type="range"
+                                                                    min={level.minPoints} max={level.maxPoints} step={0.5}
+                                                                    value={entry.selectedPoints ?? level.minPoints}
+                                                                    onChange={e => updateEntry(c.id, { selectedPoints: Number(e.target.value) })}
+                                                                    style={{ flex: 1, accentColor: fmt.accentColor }} />
+                                                                <div style={{ fontSize: '0.75em', fontWeight: 600, minWidth: 24, textAlign: 'right' }}>
+                                                                    {entry.selectedPoints ?? level.minPoints}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Inline comment editor */}
+                                {activeCommentCrit === c.id && (
+                                    <div style={{ marginTop: 12, padding: 12, background: 'var(--bg-elevated)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                                        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                                            <div style={{ flex: 1 }}>
+                                                <TiptapEditor
+                                                    content={entry.comment || ''}
+                                                    onChange={html => updateEntry(c.id, { comment: html })}
+                                                    placeholder={t('gradeStudent.comment_placeholder')}
+                                                />
+                                            </div>
+                                            <button className="btn btn-secondary btn-sm" onClick={() => setShowCommentBankFor(c.id)} title={t('gradeStudent.comment_open_bank')}>
+                                                <BookOpen size={16} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
 
                 {/* Overall comment */}
@@ -471,6 +416,32 @@ export default function GradeStudent() {
                         setShowCommentBankFor(null);
                     }}
                 />
+            )}
+
+            {/* Sticky grade footer */}
+            {summary && rubric.format.showCalculatedGrade !== false && (
+                <div className="grade-footer">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1 }}>
+                        <span className="grade-chip" style={{ background: `${summary.gradeColor}22`, border: `2px solid ${summary.gradeColor}`, color: summary.gradeColor }}>
+                            {summary.letterGrade}
+                        </span>
+                        <span style={{ fontSize: '1.05rem', fontWeight: 700 }}>{summary.modifiedPercentage.toFixed(1)}%</span>
+                        <span className="text-muted text-sm">{summary.rawScore} / {summary.configuredMaxPoints} {t('gradeStudent.table_points')}</span>
+                        <span className="text-muted text-sm" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            {summary.gradedCount}/{summary.totalCriteria} {t('gradeStudent.table_criterion').toLowerCase()}
+                        </span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                        {nextStudent && (
+                            <button className="btn btn-secondary btn-sm" onClick={handleSaveAndNext}>
+                                <Save size={14} /> <ChevronRight size={14} /> {nextStudent.name.split(' ')[0]}
+                            </button>
+                        )}
+                        <button className={`btn btn-sm ${saved ? 'btn-success' : 'btn-primary'}`} onClick={handleSave}>
+                            <Save size={14} /> {saved ? t('gradeStudent.action_saved') : t('gradeStudent.action_save')}
+                        </button>
+                    </div>
+                </div>
             )}
         </>
     );

@@ -60,6 +60,10 @@
         "backup_help": "Exporteren slaat alle rubrieken, studenten, cijfers en instellingen op in een JSON bestand. Importeren herstelt alles.",
         "alert_invalid_backup": "Ongeldig back-up bestand.",
         "alert_cannot_delete_default": "Kan de standaard schaal niet verwijderen.",
+        "delete_scale_title": "Beoordelingsschaal verwijderen?",
+        "delete_scale_confirm": "Weet je zeker dat je deze beoordelingsschaal wilt verwijderen? Dit kan niet ongedaan worden gemaakt.",
+        "accent_color_label": "Accentkleur",
+        "accent_color_invalid": "Voer een geldige 6-cijferige hex-kleur in (bijv. #3b82f6).",
         "cloud_sync": "Cloud Synchronisatie (Microsoft 365)",
         "cloud_sync_help": "Verbind je Microsoft-account om rubrics over apparaten te synchroniseren via OneDrive of SharePoint.",
         "action_login_microsoft": "Inloggen met Microsoft",
@@ -102,6 +106,7 @@
     },
     "rubricList": {
         "title": "Rubrieken",
+        "all_subjects": "Alle onderwerpen",
         "import_rubric": "Rubriek Importeren",
         "new_rubric": "Nieuwe Rubriek",
         "search_rubrics": "Zoek rubrieken…",
@@ -160,7 +165,10 @@
         "delete_class_title": "Klas Verwijderen?",
         "delete_class_confirmation": "Weet je zeker dat je de klas <strong>{{className}}</strong> wilt verwijderen?",
         "warning_label": "Waarschuwing:",
-        "delete_class_warning": "De {{count}} student(en) momenteel in deze klas zullen ook permanent worden verwijderd. Als je ze wilt behouden, voeg deze klas dan samen met een andere."
+        "delete_class_warning": "De {{count}} student(en) momenteel in deze klas zullen ook permanent worden verwijderd. Als je ze wilt behouden, voeg deze klas dan samen met een andere.",
+        "merge_confirm_title": "Samenvoegen bevestigen",
+        "merge_confirm_description": "Alle studenten uit <strong>{{source}}</strong> worden verplaatst naar <strong>{{target}}</strong>. De bronklas wordt verwijderd. Dit kan niet ongedaan worden gemaakt.",
+        "merge_confirm_action": "Samenvoegen"
     },
     "gradeStudent": {
         "title_prefix": "Beoordeling:",
@@ -267,7 +275,28 @@
         "action_balance_weights": "Gewichten Balanceren",
         "label_max": "max",
         "label_weight_th": "Gewicht",
-        "placeholder_click_to_edit": "Klik om te bewerken..."
+        "placeholder_click_to_edit": "Klik om te bewerken...",
+        "edit_rubric": "Rubriek Bewerken",
+        "new_rubric": "Nieuwe Rubriek",
+        "unsaved_warning": "Je hebt niet-opgeslagen wijzigingen. Toch verlaten?",
+        "insert_speaking_dims": "Spreekdimensies Invoegen",
+        "sync_dialog_title": "Beoordelingen bijwerken?",
+        "sync_dialog_body": "{{count}} beoordeling(en) zijn gemaakt met deze rubriek. De niveaukeuzes blijven bewaard, maar cijfers worden herberekend op basis van de nieuwe puntwaarden.",
+        "sync_dialog_skip": "Overslaan",
+        "sync_dialog_confirm": "Cijfers bijwerken",
+        "insert_speaking_confirm": "Dit vervangt alle bestaande criteria door 6 standaard spreekdimensies. Doorgaan?",
+        "insert_speaking_append": "6 spreekdimensies toevoegen aan bestaande criteria?"
+    },
+    "toast": {
+        "export_error": "Exporteren mislukt. Probeer het opnieuw.",
+        "sync_success": "Gesynchroniseerd met OneDrive.",
+        "sync_error": "Synchronisatie mislukt. Controleer je verbinding.",
+        "restore_success": "Back-up hersteld vanuit de cloud.",
+        "restore_error": "Cloudhersterl mislukt.",
+        "import_success": "Data succesvol geïmporteerd.",
+        "import_error": "Importeren mislukt — ongeldig back-upbestand.",
+        "share_code_error": "Ongeldige deelcode. Controleer de code en probeer het opnieuw.",
+        "csv_import_error": "CSV-import mislukt. Controleer de bestandsindeling."
     },
     "cefr": {
         "rubric_section_title": "CEFR / ERK Niveau",
@@ -295,7 +324,9 @@
         "student_progress_subtitle": "Behaald = gem. ≥ {{threshold}}% op rubrieken met een ERK-doelniveau",
         "achieved": "Behaald",
         "developing": "In ontwikkeling",
-        "n_assessments": "{{count}} toets(en)"
+        "n_assessments": "{{count}} toets(en)",
+        "achieve_threshold_label": "Drempel voor 'Behaald' (%)",
+        "achieve_threshold_help": "Een score op of boven dit percentage telt als 'Behaald' op het leerlingprofiel."
     },
     "voTrack": {
         "section_label": "VO-Niveau",
@@ -362,5 +393,47 @@
         "mismatch_overestimate": "Leerling overschat mogelijk zichzelf — een reflectiegesprek is hier nuttig.",
         "mismatch_underestimate": "Leerling onderschat mogelijk zijn/haar voortgang — geef een compliment!",
         "view_full": "Volledige zelfbeoordeling bekijken"
+    },
+    "statistics": {
+        "download_csv": "Download CSV",
+        "csv_filename": "statistieken"
+    },
+    "speaking": {
+        "page_title": "Spreekopdracht",
+        "timer_label": "Timer",
+        "start": "Starten",
+        "pause": "Pauzeren",
+        "stop": "Stoppen",
+        "duration_minutes": "Duur (minuten)",
+        "pronunciation_panel": "Uitspraakaantekeningen",
+        "error_types": {
+            "word_stress": "Woordklemtoon",
+            "sentence_stress": "Zinsbenadrukking",
+            "th_sound": "TH-klank (/θ/ /ð/)",
+            "connected_speech": "Verbonden spraak",
+            "vowel_sound": "Klinkerklank",
+            "final_consonant": "Eindmedeklinker"
+        },
+        "pronunciationFeedback": {
+            "word_stress": "Let op woordklemtoon — probeer de juiste lettergreep te benadrukken.",
+            "sentence_stress": "Oefen met zinsbenadrukking.",
+            "th_sound": "Werk aan de /θ/ en /ð/ klanken (bijv. 'think', 'the').",
+            "connected_speech": "Oefen met het verbinden van woorden in vloeiende spraak.",
+            "vowel_sound": "Let op de klinkerklank (bijv. /ɪ/ vs /iː/).",
+            "final_consonant": "Laat eindmedeklinkers van woorden niet wegvallen."
+        },
+        "save_session": "Sessie Opslaan",
+        "session_saved": "Sessie Opgeslagen!",
+        "session_locked": "Sessie beëindigd — rubriek vergrendeld.",
+        "sessions_history": "Spreekopdrachten",
+        "no_sessions": "Nog geen spreekopdrachten.",
+        "elapsed_time": "{{elapsed}}s / {{duration}}s",
+        "insert_dimensions": "Spreekdimensies Invoegen",
+        "unsaved_warning": "Je hebt niet-opgeslagen scores. Toch verlaten?",
+        "marks_label": "Aantekeningen ({{count}})",
+        "no_marks": "Nog geen aantekeningen — tik hierboven een fouttype aan.",
+        "auto_lock": "Automatisch vergrendelen als timer afloopt",
+        "time_up": "Tijd is om!",
+        "clear_marks": "Aantekeningen wissen"
     }
 }

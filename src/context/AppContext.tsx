@@ -3,13 +3,13 @@ import React, {
 } from 'react';
 import type {
     Rubric, Student, Class, StudentRubric, Attachment,
-    GradeScale, CommentSnippet, AppSettings, ScoreEntry, Modifier, LinkedStandard, CommentBankItem, ExportTemplate, SelfAssessment
+    GradeScale, CommentSnippet, AppSettings, ScoreEntry, Modifier, LinkedStandard, CommentBankItem, ExportTemplate, SelfAssessment, SpeakingSession
 } from '../types';
 import {
     loadStore, StoreData,
     saveRubrics, saveStudents, saveClasses, saveStudentRubrics,
     saveAttachments, saveGradeScales, saveCommentSnippets, saveSettings, saveFavoriteStandards, saveCommentBank,
-    saveExportTemplates, exportStore, savePeerReviews, saveSelfAssessments
+    saveExportTemplates, exportStore, savePeerReviews, saveSelfAssessments, saveSpeakingSessions
 } from '../store/storage';
 import { nanoid } from '../utils/nanoid';
 import { msalInstance, loginRequest } from '../services/msalConfig';
@@ -50,7 +50,10 @@ type Action =
     | { type: 'SAVE_PEER_REVIEW', payload: StudentRubric }
     | { type: 'DELETE_PEER_REVIEW', id: string }
     | { type: 'SAVE_SELF_ASSESSMENT', payload: SelfAssessment }
-    | { type: 'DELETE_SELF_ASSESSMENT', id: string };
+    | { type: 'DELETE_SELF_ASSESSMENT', id: string }
+    | { type: 'SAVE_SPEAKING_SESSION', payload: SpeakingSession }
+    | { type: 'DELETE_SPEAKING_SESSION', id: string }
+    | { type: 'SYNC_RUBRIC_SNAPSHOT'; rubricId: string; updatedRubric: Rubric };
 
 function reducer(state: StoreData, action: Action): StoreData {
     switch (action.type) {
@@ -220,6 +223,37 @@ function reducer(state: StoreData, action: Action): StoreData {
             saveSelfAssessments(next);
             return { ...state, selfAssessments: next };
         }
+        case 'SAVE_SPEAKING_SESSION': {
+            const existing = state.speakingSessions.find(s => s.id === action.payload.id);
+            const next = existing
+                ? state.speakingSessions.map(s => s.id === action.payload.id ? action.payload : s)
+                : [...state.speakingSessions, action.payload];
+            saveSpeakingSessions(next);
+            return { ...state, speakingSessions: next };
+        }
+        case 'DELETE_SPEAKING_SESSION': {
+            const next = state.speakingSessions.filter(s => s.id !== action.id);
+            saveSpeakingSessions(next);
+            return { ...state, speakingSessions: next };
+        }
+        case 'SYNC_RUBRIC_SNAPSHOT': {
+            const { rubricId, updatedRubric } = action;
+            const makeEntry = (c: Rubric['criteria'][0]) => ({
+                criterionId: c.id, levelId: null as null, comment: '', checkedSubItems: [] as string[],
+            });
+            const syncSr = (sr: StudentRubric): StudentRubric => {
+                if (sr.rubricId !== rubricId) return sr;
+                const newEntries = updatedRubric.criteria
+                    .filter(c => !sr.entries.find(e => e.criterionId === c.id))
+                    .map(makeEntry);
+                return { ...sr, rubricSnapshot: updatedRubric, entries: [...sr.entries, ...newEntries] };
+            };
+            const nextSRs = state.studentRubrics.map(syncSr);
+            saveStudentRubrics(nextSRs);
+            const nextPRs = state.peerReviews.map(syncSr);
+            savePeerReviews(nextPRs);
+            return { ...state, studentRubrics: nextSRs, peerReviews: nextPRs };
+        }
         default: return state;
     }
 }
@@ -266,6 +300,11 @@ interface AppContextValue extends StoreData {
     // Self Assessment
     saveSelfAssessment: (sa: SelfAssessment) => void;
     deleteSelfAssessment: (id: string) => void;
+    // Speaking Sessions
+    saveSpeakingSession: (session: SpeakingSession) => void;
+    deleteSpeakingSession: (id: string) => void;
+    // Rubric snapshot sync
+    syncRubricSnapshot: (rubricId: string, updatedRubric: Rubric) => void;
     // Microsoft Sync
     loginMicrosoft: () => Promise<void>;
     logoutMicrosoft: () => Promise<void>;
@@ -329,12 +368,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }, [state.students, deleteStudent]);
 
     const mergeClasses = useCallback((sourceClassId: string, targetClassId: string) => {
-        // Move all students to the new class
+        // Move all students to the target class
         const studentsToMove = state.students.filter(s => s.classId === sourceClassId);
         studentsToMove.forEach(s => updateStudent({ ...s, classId: targetClassId }));
+        // Merge rubricIds: union source and target rubric associations
+        const sourceClass = state.classes.find(c => c.id === sourceClassId);
+        const targetClass = state.classes.find(c => c.id === targetClassId);
+        if (sourceClass && targetClass) {
+            const sourceRubricIds = sourceClass.rubricIds ?? [];
+            const targetRubricIds = targetClass.rubricIds ?? [];
+            if (sourceRubricIds.length > 0) {
+                const merged = Array.from(new Set([...targetRubricIds, ...sourceRubricIds]));
+                dispatch({ type: 'UPDATE_CLASS', payload: { ...targetClass, rubricIds: merged } });
+            }
+        }
         // Delete the old class
         deleteClass(sourceClassId, false);
-    }, [state.students, updateStudent, deleteClass]);
+    }, [state.students, state.classes, updateStudent, deleteClass, dispatch]);
 
     const saveStudentRubricFn = useCallback((sr: StudentRubric) => {
         dispatch({ type: 'SAVE_STUDENT_RUBRIC', payload: sr });
@@ -425,6 +475,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }, []);
     const deleteSelfAssessment = useCallback((id: string) => dispatch({ type: 'DELETE_SELF_ASSESSMENT', id }), []);
 
+    const saveSpeakingSession = useCallback((session: SpeakingSession) => {
+        dispatch({ type: 'SAVE_SPEAKING_SESSION', payload: session });
+    }, []);
+    const deleteSpeakingSession = useCallback((id: string) => dispatch({ type: 'DELETE_SPEAKING_SESSION', id }), []);
+
+    const syncRubricSnapshot = useCallback((rubricId: string, updatedRubric: Rubric) => {
+        dispatch({ type: 'SYNC_RUBRIC_SNAPSHOT', rubricId, updatedRubric });
+    }, []);
+
     // ─── Microsoft Sync ───
     const { instance: msalInstanceContext } = useMsal();
     const isAuthenticated = useIsAuthenticated();
@@ -497,6 +556,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         addExportTemplate, deleteExportTemplate,
         savePeerReview, deletePeerReview,
         saveSelfAssessment, deleteSelfAssessment,
+        saveSpeakingSession, deleteSpeakingSession,
+        syncRubricSnapshot,
         loginMicrosoft, logoutMicrosoft, syncToOneDrive, restoreFromOneDrive,
         microsoftUser
     };

@@ -3,11 +3,13 @@ import { Download, CheckSquare, Square, FileText, Users, Loader, Layout, X } fro
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
+import { useToast } from '../hooks/useToast';
 import { calcGradeSummary } from '../utils/gradeCalc';
 
 export default function ExportPage() {
     const { t } = useTranslation();
     const { rubrics, students, studentRubrics, gradeScales, settings, exportTemplates, updateSettings } = useApp();
+    const { showToast } = useToast();
     const [selectedRubricId, setSelectedRubricId] = useState(rubrics[0]?.id ?? '');
     const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());
     const [exporting, setExporting] = useState(false);
@@ -73,11 +75,13 @@ export default function ExportPage() {
                     .filter(x => selectedStudentIds.has(x.student!.id))
                     .map(x => ({ sr: x.sr, student: x.student! }));
                 const { exportBatchPdf } = await import('../utils/pdfExport');
-                await exportBatchPdf(toExport, rubric, scale, { 
+                await exportBatchPdf(toExport, rubric, scale, {
                     padForDoubleSided,
                     orientation: orientation || rubric.format.orientation || 'portrait'
                 });
             }
+        } catch {
+            showToast(t('toast.export_error'), 'error');
         } finally {
             setExporting(false);
         }
@@ -94,6 +98,8 @@ export default function ExportPage() {
                 const { exportRubricToDocx } = await import('../utils/docxExport');
                 await exportRubricToDocx(rubric);
             }
+        } catch {
+            showToast(t('toast.export_error'), 'error');
         } finally {
             setExporting(false);
         }

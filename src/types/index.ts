@@ -194,6 +194,8 @@ export interface Rubric {
     cefrTargetLevel?: CefrLevel;
     /** Which language skill this rubric primarily assesses */
     cefrSkill?: CefrSkill;
+    /** Minimum score percentage to count as 'Achieved' on student profile (default: 70) */
+    cefrAchieveThreshold?: number;
 }
 
 export interface Student {
@@ -277,4 +279,34 @@ export interface CommentBankItem {
     text: string;
     tags: string[];
     createdAt: string;
+}
+
+// ─── Speaking / Oral Assessment Types ────────────────────────────────────────
+
+export type PronunciationErrorType =
+    | 'word_stress'
+    | 'sentence_stress'
+    | 'th_sound'
+    | 'connected_speech'
+    | 'vowel_sound'
+    | 'final_consonant';
+
+export interface PronunciationMark {
+    errorType: PronunciationErrorType;
+    note?: string;
+}
+
+export interface SpeakingSession {
+    id: string;
+    rubricId: string;
+    studentId: string;
+    /** Teacher-configured speaking time limit in seconds */
+    durationSeconds: number;
+    /** Actual elapsed time when the session was stopped */
+    elapsedSeconds: number;
+    pronunciationMarks: PronunciationMark[];
+    entries: ScoreEntry[];
+    overallComment: string;
+    gradedAt: string;
+    rubricSnapshot?: Rubric;
 }

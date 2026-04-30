@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
     Plus, Trash2, GripVertical, Save, ChevronUp, ChevronDown,
@@ -21,6 +21,7 @@ import CefrPickerModal from '../components/CEFR/CefrPickerModal';
 import { CEFR_LEVELS, CEFR_SKILLS, CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
 import { exportRubricGridPdf } from '../utils/pdfExport';
 import { exportRubricToDocx } from '../utils/docxExport';
+import { getSpeakingDimensions } from '../data/speakingDimensions';
 
 function newLevel(min = 0, max = 0, label = ''): RubricLevel {
     return {
@@ -47,7 +48,7 @@ export default function RubricBuilder() {
     const navigate = useNavigate();
     const { id } = useParams();
     const location = useLocation();
-    const { rubrics, addRubric, updateRubric, gradeScales, settings } = useApp();
+    const { rubrics, studentRubrics, peerReviews, addRubric, updateRubric, syncRubricSnapshot, gradeScales, settings } = useApp();
 
     const existing = id ? rubrics.find(r => r.id === id) : undefined;
     const template = location.state?.template as Partial<Rubric> | undefined;
@@ -75,7 +76,36 @@ export default function RubricBuilder() {
     // ── CEFR state ──────────────────────────────────────────────────────────────
     const [cefrTargetLevel, setCefrTargetLevel] = useState<CefrLevel | ''>(existing?.cefrTargetLevel ?? '');
     const [cefrSkill, setCefrSkill] = useState<CefrSkill | ''>(existing?.cefrSkill ?? '');
+    const [cefrAchieveThreshold, setCefrAchieveThreshold] = useState<number>(existing?.cefrAchieveThreshold ?? 70);
     const [pickingCefrFor, setPickingCefrFor] = useState<string | null>(null); // criterion id
+
+    // ── Rubric sync dialog state ─────────────────────────────────────────────
+    const [syncDialogRubric, setSyncDialogRubric] = useState<Rubric | null>(null);
+
+    // ── Collapsible criteria ─────────────────────────────────────────────────
+    const [collapsedCriteria, setCollapsedCriteria] = useState<Set<string>>(new Set());
+    function toggleCollapseCriterion(id: string) {
+        setCollapsedCriteria(prev => {
+            const next = new Set(prev);
+            next.has(id) ? next.delete(id) : next.add(id);
+            return next;
+        });
+    }
+
+    // ── Unsaved changes tracking ─────────────────────────────────────────────
+    const [isDirty, setIsDirty] = useState(false);
+    const mountedRef = useRef(false);
+    useEffect(() => {
+        if (!mountedRef.current) { mountedRef.current = true; return; }
+        setIsDirty(true);
+    }, [name, subject, description, criteria, format, scoringMode, totalMaxPoints, cefrTargetLevel, cefrSkill, cefrAchieveThreshold]);
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (isDirty) { e.preventDefault(); e.returnValue = ''; }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [isDirty]);
 
     const getRubricData = useCallback((): Rubric => ({
         id: existing?.id ?? 'temp',
@@ -87,7 +117,8 @@ export default function RubricBuilder() {
         updatedAt: new Date().toISOString(),
         cefrTargetLevel: cefrTargetLevel || undefined,
         cefrSkill: cefrSkill || undefined,
-    }), [existing, name, subject, description, criteria, gradeScaleId, format, scoringMode, totalMaxPoints, t]);
+        cefrAchieveThreshold: cefrTargetLevel ? cefrAchieveThreshold : undefined,
+    }), [existing, name, subject, description, criteria, gradeScaleId, format, scoringMode, totalMaxPoints, t, cefrTargetLevel, cefrSkill, cefrAchieveThreshold]);
 
     const onDragEnd = (result: DropResult) => {
         if (!result.destination) return;
@@ -124,17 +155,28 @@ export default function RubricBuilder() {
             attachmentIds: existing?.attachmentIds ?? [],
             cefrTargetLevel: cefrTargetLevel || undefined,
             cefrSkill: cefrSkill || undefined,
+            cefrAchieveThreshold: cefrTargetLevel ? cefrAchieveThreshold : undefined,
         };
         if (existing) {
-            updateRubric({ ...existing, ...rubricData });
+            const savedRubric = { ...existing, ...rubricData };
+            updateRubric(savedRubric);
+            // Offer to sync rubricSnapshot for all existing graded submissions
+            const affectedCount =
+                studentRubrics.filter(sr => sr.rubricId === existing.id).length +
+                peerReviews.filter(pr => pr.rubricId === existing.id).length;
+            if (affectedCount > 0) {
+                setSyncDialogRubric(savedRubric);
+            }
         } else {
             const newR = addRubric(rubricData);
             navigate(`/rubrics/${newR.id}`, { replace: true });
         }
         setSaved(true);
+        setIsDirty(false);
         setTimeout(() => setSaved(false), 2000);
     }, [name, subject, description, criteria, gradeScaleId, format, scoringMode, totalMaxPoints,
-        existing, addRubric, updateRubric, navigate]);
+        existing, addRubric, updateRubric, navigate, cefrTargetLevel, cefrSkill, cefrAchieveThreshold, t,
+        studentRubrics, peerReviews]);
 
     // ── Criterion operations ────────────────────────────────────────────────────
     function moveCriterion(idx: number, dir: -1 | 1) {
@@ -336,7 +378,7 @@ export default function RubricBuilder() {
     return (
         <>
             <Topbar
-                title={id ? 'Edit Rubric' : 'New Rubric'} /* TODO: Add title to translations */
+                title={id ? t('rubricBuilder.edit_rubric') : t('rubricBuilder.new_rubric')}
                 actions={
                     <>
                         <button className="btn btn-ghost btn-sm" onClick={() => navigate('/rubrics')}>
@@ -464,18 +506,31 @@ export default function RubricBuilder() {
                                     </div>
                                 </div>
                                 {cefrTargetLevel && (
-                                    <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
-                                        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('cefr.target_label')}:</span>
-                                        <span style={{
-                                            background: CEFR_LEVEL_COLORS[cefrTargetLevel as CefrLevel],
-                                            color: '#fff',
-                                            borderRadius: 5,
-                                            padding: '2px 10px',
-                                            fontSize: 13,
-                                            fontWeight: 700,
-                                        }}>{cefrTargetLevel}</span>
-                                        {cefrSkill && <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>· {CEFR_SKILL_LABELS[cefrSkill as CefrSkill][i18n.language.startsWith('nl') ? 'nl' : 'en']}</span>}
-                                    </div>
+                                    <>
+                                        <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('cefr.target_label')}:</span>
+                                            <span style={{
+                                                background: CEFR_LEVEL_COLORS[cefrTargetLevel as CefrLevel],
+                                                color: '#fff',
+                                                borderRadius: 5,
+                                                padding: '2px 10px',
+                                                fontSize: 13,
+                                                fontWeight: 700,
+                                            }}>{cefrTargetLevel}</span>
+                                            {cefrSkill && <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>· {CEFR_SKILL_LABELS[cefrSkill as CefrSkill][i18n.language.startsWith('nl') ? 'nl' : 'en']}</span>}
+                                        </div>
+                                        <div className="form-group" style={{ marginTop: 12 }}>
+                                            <label style={{ fontSize: '0.85rem' }}>{t('cefr.achieve_threshold_label')}</label>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                <input type="number" min={1} max={100}
+                                                    value={cefrAchieveThreshold}
+                                                    onChange={e => setCefrAchieveThreshold(Math.min(100, Math.max(1, Number(e.target.value))))}
+                                                    style={{ maxWidth: 80 }} />
+                                                <span className="text-muted text-xs">%</span>
+                                            </div>
+                                            <div className="text-muted text-xs" style={{ marginTop: 4 }}>{t('cefr.achieve_threshold_help')}</div>
+                                        </div>
+                                    </>
                                 )}
                             </div>
                         </div>
@@ -484,6 +539,24 @@ export default function RubricBuilder() {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
                             <h2>{t('rubricBuilder.label_criterion')}</h2>
                             <div style={{ display: 'flex', gap: 8 }}>
+                                {criteria.length > 1 && (
+                                    collapsedCriteria.size === criteria.length
+                                        ? <button className="btn btn-ghost btn-sm" onClick={() => setCollapsedCriteria(new Set())}>Expand all</button>
+                                        : <button className="btn btn-ghost btn-sm" onClick={() => setCollapsedCriteria(new Set(criteria.map(c => c.id)))}>Collapse all</button>
+                                )}
+                                {(cefrSkill === 'speaking_production' || cefrSkill === 'speaking_interaction') && (
+                                    <button className="btn btn-secondary btn-sm" onClick={() => {
+                                        const msg = criteria.length > 0
+                                            ? t('rubricBuilder.insert_speaking_confirm')
+                                            : null;
+                                        if (!msg || window.confirm(msg)) {
+                                            const dims = getSpeakingDimensions('');
+                                            setCriteria(criteria.length > 0 ? dims : dims);
+                                        }
+                                    }}>
+                                        <BookOpen size={14} /> {t('rubricBuilder.insert_speaking_dims')}
+                                    </button>
+                                )}
                                 <button className="btn btn-secondary btn-sm" onClick={pasteFromClipboard} title="Paste criterion from clipboard">
                                     <Plus size={15} /> Paste
                                 </button>
@@ -616,6 +689,11 @@ export default function RubricBuilder() {
                                         )}
                                     </div>
                                     <div style={{ display: 'flex', gap: 4, marginTop: 20 }}>
+                                        <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--text-dim)' }}
+                                            onClick={() => toggleCollapseCriterion(criterion.id)}
+                                            title={collapsedCriteria.has(criterion.id) ? 'Expand' : 'Collapse'}>
+                                            {collapsedCriteria.has(criterion.id) ? <ChevronDown size={15} /> : <ChevronUp size={15} />}
+                                        </button>
                                         <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--accent)' }}
                                             onClick={() => copyToClipboard(criterion)} title="Copy to clipboard">
                                             <Copy size={15} />
@@ -631,8 +709,17 @@ export default function RubricBuilder() {
                                     </div>
                                 </div>
 
-                                {/* Levels */}
-                                <div style={{ overflowX: 'auto' }}>
+                                {/* Collapsed: level pills summary */}
+                                {collapsedCriteria.has(criterion.id) && (
+                                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', paddingLeft: 4 }}>
+                                        {criterion.levels.map(l => (
+                                            <span key={l.id} className="badge" style={{ fontSize: '0.75rem' }}>{l.label}</span>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Levels (hidden when collapsed) */}
+                                {!collapsedCriteria.has(criterion.id) && <div style={{ overflowX: 'auto' }}>
                                     <div style={{ display: 'flex', gap: 10, minWidth: 'max-content', paddingBottom: 4 }}>
                                         {criterion.levels.map((level) => {
                                             const levelKey = `${criterion.id}_${level.id}`;
@@ -754,7 +841,7 @@ export default function RubricBuilder() {
                                             </button>
                                         </div>
                                     </div>
-                                </div>
+                                </div>}
                             </div>
                         )}
                     </Draggable>
@@ -978,6 +1065,37 @@ export default function RubricBuilder() {
                     </div>
                 )}
             </div>
+
+            {/* Rubric snapshot sync dialog */}
+            {syncDialogRubric && (
+                <div className="modal-overlay" onClick={() => setSyncDialogRubric(null)}>
+                    <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 420 }}>
+                        <div className="modal-header">
+                            <h3>{t('rubricBuilder.sync_dialog_title')}</h3>
+                            <button className="btn btn-ghost btn-icon" onClick={() => setSyncDialogRubric(null)}>✕</button>
+                        </div>
+                        <div className="modal-body">
+                            <p>
+                                {t('rubricBuilder.sync_dialog_body', {
+                                    count: studentRubrics.filter(sr => sr.rubricId === syncDialogRubric.id).length +
+                                           peerReviews.filter(pr => pr.rubricId === syncDialogRubric.id).length
+                                })}
+                            </p>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn btn-secondary" onClick={() => setSyncDialogRubric(null)}>
+                                {t('rubricBuilder.sync_dialog_skip')}
+                            </button>
+                            <button className="btn btn-primary" onClick={() => {
+                                syncRubricSnapshot(syncDialogRubric.id, syncDialogRubric);
+                                setSyncDialogRubric(null);
+                            }}>
+                                {t('rubricBuilder.sync_dialog_confirm')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 }

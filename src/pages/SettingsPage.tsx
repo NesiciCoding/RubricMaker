@@ -5,6 +5,7 @@ import CommentBankModal from '../components/Comments/CommentBankModal';
 import TemplateUploadModal from '../components/TemplateUploadModal';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
+import { useToast } from '../hooks/useToast';
 import type { GradeScale, GradeRange } from '../types';
 import { exportFullBackup, importFullBackup } from '../store/storage';
 
@@ -15,9 +16,13 @@ export default function SettingsPage() {
         exportTemplates, addExportTemplate, deleteExportTemplate,
         loginMicrosoft, logoutMicrosoft, syncToOneDrive, restoreFromOneDrive, microsoftUser
     } = useApp();
+    const { showToast } = useToast();
     const [editingScaleId, setEditingScaleId] = useState<string | null>(null);
+    const [deleteScaleId, setDeleteScaleId] = useState<string | null>(null);
     const [showCommentBank, setShowCommentBank] = useState(false);
     const [showTemplateUpload, setShowTemplateUpload] = useState(false);
+    const [accentInput, setAccentInput] = useState(settings.accentColor || '#3b82f6');
+    const [accentError, setAccentError] = useState(false);
 
     useEffect(() => {
         if (settings.language && i18n.language !== settings.language) {
@@ -37,10 +42,42 @@ export default function SettingsPage() {
         const reader = new FileReader();
         reader.onload = () => {
             try { importFullBackup(reader.result as string); window.location.reload(); }
-            catch { alert(t('settings.alert_invalid_backup')); }
+            catch { showToast(t('toast.import_error'), 'error'); }
         };
         reader.readAsText(file);
         e.target.value = '';
+    }
+
+    async function handleSyncToOneDrive() {
+        try {
+            await syncToOneDrive();
+            showToast(t('toast.sync_success'), 'success');
+        } catch {
+            showToast(t('toast.sync_error'), 'error');
+        }
+    }
+
+    async function handleRestoreFromOneDrive() {
+        try {
+            await restoreFromOneDrive();
+            showToast(t('toast.restore_success'), 'success');
+        } catch {
+            showToast(t('toast.restore_error'), 'error');
+        }
+    }
+
+    function handleAccentChange(val: string) {
+        setAccentInput(val);
+        const valid = /^#[0-9A-Fa-f]{6}$/.test(val);
+        setAccentError(!valid);
+        if (valid) updateSettings({ accentColor: val });
+    }
+
+    function confirmDeleteScale() {
+        if (!deleteScaleId) return;
+        deleteGradeScale(deleteScaleId);
+        setDeleteScaleId(null);
+        if (editingScaleId === deleteScaleId) setEditingScaleId(null);
     }
 
     function updateRange(scaleId: string, idx: number, patch: Partial<GradeRange>) {
@@ -85,6 +122,18 @@ export default function SettingsPage() {
                                 <option value="dark">{t('settings.theme_dark')}</option>
                                 <option value="light">{t('settings.theme_light')}</option>
                             </select>
+                        </div>
+                        <div className="form-group">
+                            <label>{t('settings.accent_color_label')}</label>
+                            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                <input type="color" value={/^#[0-9A-Fa-f]{6}$/.test(accentInput) ? accentInput : '#3b82f6'}
+                                    onChange={e => handleAccentChange(e.target.value)}
+                                    style={{ width: 36, height: 32, padding: 2, border: '1px solid var(--border)', borderRadius: 5 }} />
+                                <input type="text" value={accentInput}
+                                    onChange={e => handleAccentChange(e.target.value)}
+                                    style={{ width: 100, borderColor: accentError ? 'var(--red)' : undefined }} />
+                            </div>
+                            {accentError && <div className="text-xs" style={{ color: 'var(--red)', marginTop: 4 }}>{t('settings.accent_color_invalid')}</div>}
                         </div>
                         <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                             <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -207,10 +256,10 @@ export default function SettingsPage() {
                             </div>
 
                             <div style={{ display: 'flex', gap: 12 }}>
-                                <button className="btn btn-secondary" onClick={syncToOneDrive}>
+                                <button className="btn btn-secondary" onClick={handleSyncToOneDrive}>
                                     <RefreshCw size={16} /> {t('settings.action_sync_now')}
                                 </button>
-                                <button className="btn btn-secondary" onClick={restoreFromOneDrive}>
+                                <button className="btn btn-secondary" onClick={handleRestoreFromOneDrive}>
                                     <Download size={16} /> {t('settings.action_restore_now')}
                                 </button>
                             </div>
@@ -270,7 +319,7 @@ export default function SettingsPage() {
                                     {editingScaleId === gs.id ? t('settings.action_collapse') : t('settings.action_edit')}
                                 </button>
                                 <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--red)' }}
-                                    onClick={() => { if (gs.id !== settings.defaultGradeScaleId) deleteGradeScale(gs.id); else alert(t('settings.alert_cannot_delete_default')); }}>
+                                    onClick={() => { if (gs.id !== settings.defaultGradeScaleId) setDeleteScaleId(gs.id); else showToast(t('settings.alert_cannot_delete_default'), 'info'); }}>
                                     <Trash2 size={14} />
                                 </button>
                             </div>
@@ -395,6 +444,18 @@ export default function SettingsPage() {
                     onClose={() => setShowTemplateUpload(false)}
                     onSave={tmpl => { addExportTemplate(tmpl); setShowTemplateUpload(false); }}
                 />
+            )}
+            {deleteScaleId && (
+                <div className="modal-overlay" onClick={() => setDeleteScaleId(null)}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 420 }}>
+                        <h3 style={{ marginBottom: 12 }}>{t('settings.delete_scale_title')}</h3>
+                        <p className="text-muted" style={{ marginBottom: 20 }}>{t('settings.delete_scale_confirm')}</p>
+                        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                            <button className="btn btn-ghost" onClick={() => setDeleteScaleId(null)}>{t('common.cancel')}</button>
+                            <button className="btn btn-danger" onClick={confirmDeleteScale}>{t('common.delete')}</button>
+                        </div>
+                    </div>
+                </div>
             )}
         </>
     );

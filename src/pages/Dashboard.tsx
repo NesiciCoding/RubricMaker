@@ -1,12 +1,18 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Users, FileText, Plus, ArrowRight, TrendingUp } from 'lucide-react';
+import { BookOpen, Users, FileText, Plus, ArrowRight, TrendingUp, CheckCircle } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
-import { calcGradeSummary } from '../utils/gradeCalc';
 import { QUICK_START_TEMPLATES } from '../data/templates';
-import { Rubric } from '../types';
+
+function timeAgo(iso: string): string {
+    const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+    if (diff < 60) return 'Just now';
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    return `${Math.floor(diff / 86400)}d ago`;
+}
 
 export default function Dashboard() {
     const { t } = useTranslation();
@@ -18,10 +24,43 @@ export default function Dashboard() {
         [gradeScales, settings.defaultGradeScaleId]
     );
 
-    const recentRubrics = useMemo(() =>
-        [...rubrics].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 5),
-        [rubrics]
-    );
+    const recentActivity = useMemo(() => {
+        type GradeItem = { type: 'grading'; timestamp: string; studentName: string; rubricName: string; rubricId: string; studentId: string };
+        type EditItem  = { type: 'rubric_edit'; timestamp: string; rubricName: string; rubricId: string };
+        type Item = GradeItem | EditItem;
+
+        const gradings: GradeItem[] = studentRubrics
+            .filter(sr => sr.gradedAt)
+            .map(sr => ({
+                type: 'grading' as const,
+                timestamp: sr.gradedAt!,
+                studentName: students.find(s => s.id === sr.studentId)?.name ?? '?',
+                rubricName: rubrics.find(r => r.id === sr.rubricId)?.name ?? sr.rubricId,
+                rubricId: sr.rubricId,
+                studentId: sr.studentId,
+            }));
+
+        const edits: EditItem[] = rubrics.map(r => ({
+            type: 'rubric_edit' as const,
+            timestamp: r.updatedAt,
+            rubricName: r.name,
+            rubricId: r.id,
+        }));
+
+        const all: Item[] = [...gradings, ...edits]
+            .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+        // Deduplicate: for each rubric_edit, if there's a grading for the same rubric within the same second skip the edit
+        const seen = new Set<string>();
+        return all.filter(item => {
+            const key = item.type === 'grading'
+                ? `grading_${item.rubricId}_${item.studentId}`
+                : `edit_${item.rubricId}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        }).slice(0, 8);
+    }, [studentRubrics, rubrics, students]);
 
     const completedCount = useMemo(() => {
         return studentRubrics.filter(sr => {
@@ -77,15 +116,12 @@ export default function Dashboard() {
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                    {/* Recent Rubrics */}
+                    {/* Recent Activity feed */}
                     <div className="card">
-                        <div className="card-header">
-                            <h3>{t('dashboard.recent_rubrics')}</h3>
-                            <button className="btn btn-ghost btn-sm" onClick={() => navigate('/rubrics')}>
-                                {t('dashboard.view_all')} <ArrowRight size={14} />
-                            </button>
+                        <div className="card-header" style={{ marginBottom: 14 }}>
+                            <h3>Recent Activity</h3>
                         </div>
-                        {recentRubrics.length === 0 ? (
+                        {recentActivity.length === 0 ? (
                             <div className="empty-state">
                                 <BookOpen size={32} />
                                 <p>{t('dashboard.no_rubrics')}</p>
@@ -94,26 +130,46 @@ export default function Dashboard() {
                                 </button>
                             </div>
                         ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                {recentRubrics.map(r => {
-                                    const graded = studentRubrics.filter(sr => sr.rubricId === r.id).length;
-                                    return (
-                                        <div
-                                            key={r.id}
-                                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: 'var(--bg-elevated)', borderRadius: 8, cursor: 'pointer' }}
-                                            onClick={() => navigate(`/rubrics/${r.id}`)}
-                                        >
-                                            <div>
-                                                <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>{r.name}</div>
-                                                <div className="text-muted text-xs">{r.subject || t('dashboard.no_subject')} · {r.criteria.length} {t('dashboard.criteria')}</div>
-                                            </div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                <span className="badge badge-blue">{graded} {t('dashboard.graded')}</span>
-                                                <ArrowRight size={15} style={{ color: 'var(--text-dim)' }} />
-                                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                {recentActivity.map((item, idx) => (
+                                    <div key={idx} style={{
+                                        display: 'flex', alignItems: 'center', gap: 12,
+                                        padding: '9px 12px', background: 'var(--bg-elevated)',
+                                        borderRadius: 8, border: '1px solid var(--border)',
+                                    }}>
+                                        <div style={{ flexShrink: 0 }}>
+                                            {item.type === 'grading'
+                                                ? <CheckCircle size={16} style={{ color: 'var(--green)' }} />
+                                                : <BookOpen size={16} style={{ color: 'var(--accent)' }} />
+                                            }
                                         </div>
-                                    );
-                                })}
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            {item.type === 'grading' ? (
+                                                <div style={{ fontSize: '0.85rem' }}>
+                                                    Graded <strong>{item.studentName}</strong>
+                                                    <span className="text-muted"> — {item.rubricName}</span>
+                                                </div>
+                                            ) : (
+                                                <div style={{ fontSize: '0.85rem' }}>
+                                                    Updated <strong>{item.rubricName}</strong>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <span className="text-muted text-xs" style={{ flexShrink: 0 }}>
+                                            {timeAgo(item.timestamp)}
+                                        </span>
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            style={{ flexShrink: 0, fontSize: '0.75rem', padding: '3px 8px' }}
+                                            onClick={() => item.type === 'grading'
+                                                ? navigate(`/rubrics/${item.rubricId}/grade/${item.studentId}`)
+                                                : navigate(`/rubrics/${item.rubricId}`)
+                                            }
+                                        >
+                                            {item.type === 'grading' ? 'Resume' : 'Open'} <ArrowRight size={12} />
+                                        </button>
+                                    </div>
+                                ))}
                             </div>
                         )}
                     </div>

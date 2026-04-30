@@ -1,6 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { TrendingUp, Users, BookOpen } from 'lucide-react';
+import { TrendingUp, Users, BookOpen, Download } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import Papa from 'papaparse';
+import { saveAs } from 'file-saver';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import { calcGradeSummary, calcClassStats, calcEntryPoints } from '../utils/gradeCalc';
@@ -9,6 +12,7 @@ import LearningGoalChart from '../components/Statistics/LearningGoalChart';
 
 export default function StatisticsPage() {
     const { rubrics, students, classes, studentRubrics, gradeScales, settings } = useApp();
+    const { t } = useTranslation();
     const [selectedRubricId, setSelectedRubricId] = useState(rubrics[0]?.id ?? '');
     const [selectedClassId, setSelectedClassId] = useState<string>('all');
 
@@ -120,6 +124,30 @@ export default function StatisticsPage() {
         }).filter((d): d is { sr: any, rubric: any, summary: any } => !!d);
     }, [viewMode, selectedStudentId, studentRubrics, rubrics, gradeScales, settings.defaultGradeScaleId]);
 
+    function handleDownloadCsv() {
+        if (!rubric || rubricViewTableData.length === 0) return;
+        const rows = rubricViewTableData.map(({ student, summary, sr }) => {
+            const base: Record<string, string | number> = {
+                Name: student.name,
+                'Score (%)': Math.round(summary.modifiedPercentage),
+                Grade: summary.letterGrade,
+                'Raw Points': summary.rawScore,
+                'Max Points': summary.maxRawScore,
+            };
+            const snap = sr.rubricSnapshot || rubric;
+            snap.criteria.forEach(c => {
+                const entry = sr.entries.find((e: any) => e.criterionId === c.id);
+                const pts = entry ? calcEntryPoints(entry, c) : 0;
+                base[`Criterion: ${c.title}`] = pts;
+                base[`Criterion: ${c.title} (Comment)`] = entry?.comment ?? '';
+            });
+            return base;
+        });
+        const csv = Papa.unparse(rows);
+        const filename = `${t('statistics.csv_filename')}_${rubric.name.replace(/[^a-z0-9]/gi, '_')}.csv`;
+        saveAs(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), filename);
+    }
+
     return (
         <>
             <Topbar title="Statistics" />
@@ -147,6 +175,11 @@ export default function StatisticsPage() {
                                     {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                 </select>
                             </div>
+                            {rubricViewTableData.length > 0 && (
+                                <button className="btn btn-secondary btn-sm" style={{ alignSelf: 'flex-end', marginBottom: 0 }} onClick={handleDownloadCsv}>
+                                    <Download size={14} /> {t('statistics.download_csv')}
+                                </button>
+                            )}
                         </>
                     ) : (
                         <>

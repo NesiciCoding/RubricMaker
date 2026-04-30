@@ -18,7 +18,7 @@ import type { CefrLevel, CefrSkill } from '../types';
 export default function StudentProfilePage() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { students, classes, rubrics, studentRubrics, gradeScales, settings, selfAssessments } = useApp();
+    const { students, classes, rubrics, studentRubrics, gradeScales, settings, selfAssessments, speakingSessions } = useApp();
     const [exportingId, setExportingId] = useState<string | null>(null);
     const [copiedSALink, setCopiedSALink] = useState<string | null>(null);
     const { t, i18n } = useTranslation();
@@ -56,10 +56,9 @@ export default function StudentProfilePage() {
     }, [student, studentRubrics, rubrics]);
 
     // ── CEFR progress ──────────────────────────────────────────────────────────
-    // A student "achieves" a CEFR level when they score ≥ 70% on a rubric with that target level.
-    const CEFR_ACHIEVE_THRESHOLD = 70;
+    // A student "achieves" a CEFR level when their average score meets the per-rubric threshold (default 70%).
 
-    interface CefrEntry { level: CefrLevel; skill: CefrSkill; avgScore: number; count: number; achieved: boolean; lastDate: string }
+    interface CefrEntry { level: CefrLevel; skill: CefrSkill; avgScore: number; count: number; achieved: boolean; lastDate: string; threshold: number }
 
     const cefrProgress = useMemo((): CefrEntry[] => {
         if (!student) return [];
@@ -68,27 +67,34 @@ export default function StudentProfilePage() {
 
         // Group by skill + level
         type GroupKey = string;
-        const groups = new Map<GroupKey, { scores: number[]; skill: CefrSkill; level: CefrLevel; lastDate: string }>();
+        const groups = new Map<GroupKey, { scores: number[]; thresholds: number[]; skill: CefrSkill; level: CefrLevel; lastDate: string }>();
 
         for (const h of cefrHistory) {
             const level = h.rubric.cefrTargetLevel as CefrLevel;
             const skill = (h.rubric.cefrSkill || 'writing') as CefrSkill;
             const key = `${skill}__${level}`;
             if (!groups.has(key)) {
-                groups.set(key, { scores: [], skill, level, lastDate: h.dateStr });
+                groups.set(key, { scores: [], thresholds: [], skill, level, lastDate: h.dateStr });
             }
             groups.get(key)!.scores.push(h.score);
+            groups.get(key)!.thresholds.push(h.rubric.cefrAchieveThreshold ?? 70);
             groups.get(key)!.lastDate = h.dateStr;
         }
 
-        return Array.from(groups.values()).map(g => ({
-            level: g.level,
-            skill: g.skill,
-            avgScore: g.scores.reduce((a, b) => a + b, 0) / g.scores.length,
-            count: g.scores.length,
-            achieved: g.scores.reduce((a, b) => a + b, 0) / g.scores.length >= CEFR_ACHIEVE_THRESHOLD,
-            lastDate: g.lastDate,
-        })).sort((a, b) => CEFR_LEVELS.indexOf(a.level) - CEFR_LEVELS.indexOf(b.level));
+        return Array.from(groups.values()).map(g => {
+            const avgScore = g.scores.reduce((a, b) => a + b, 0) / g.scores.length;
+            // Use the average threshold across all rubrics in this group
+            const threshold = g.thresholds.reduce((a, b) => a + b, 0) / g.thresholds.length;
+            return {
+                level: g.level,
+                skill: g.skill,
+                avgScore,
+                count: g.scores.length,
+                achieved: avgScore >= threshold,
+                lastDate: g.lastDate,
+                threshold,
+            };
+        }).sort((a, b) => CEFR_LEVELS.indexOf(a.level) - CEFR_LEVELS.indexOf(b.level));
     }, [student, history]);
 
     if (!student) {
@@ -224,7 +230,7 @@ export default function StudentProfilePage() {
                                     <BookOpen size={18} style={{ color: 'var(--accent)' }} />
                                     {t('cefr.student_progress_title')}
                                     <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--text-muted)', marginLeft: 4 }}>
-                                        {t('cefr.student_progress_subtitle', { threshold: CEFR_ACHIEVE_THRESHOLD })}
+                                        {t('cefr.student_progress_subtitle', { threshold: 70 })}
                                     </span>
                                 </h3>
 
@@ -291,8 +297,9 @@ export default function StudentProfilePage() {
                                             const total = sa.ratings.length;
                                             const confidentCount = sa.ratings.filter(r => r.confident).length;
                                             const confidentPct = total > 0 ? (confidentCount / total) * 100 : 0;
-                                            const teacherAchieved = matchingHistory ? matchingHistory.score >= CEFR_ACHIEVE_THRESHOLD : null;
-                                            const studentConfident = confidentPct >= CEFR_ACHIEVE_THRESHOLD;
+                                            const rubricThreshold = matchingHistory?.rubric?.cefrAchieveThreshold ?? 70;
+                                            const teacherAchieved = matchingHistory ? matchingHistory.score >= rubricThreshold : null;
+                                            const studentConfident = confidentPct >= rubricThreshold;
 
                                             // Mismatch detection
                                             const mismatch = teacherAchieved !== null && teacherAchieved !== studentConfident;
@@ -435,6 +442,68 @@ export default function StudentProfilePage() {
                         </div>
                     </>
                 )}
+
+                {/* ── Speaking Sessions ── */}
+                {(() => {
+                    const studentSessions = speakingSessions.filter(s => s.studentId === student.id);
+                    if (studentSessions.length === 0) return null;
+                    return (
+                        <div className="card" style={{ marginTop: 24 }}>
+                            <h3 style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span style={{ fontSize: 18 }}>🎙</span> {t('speaking.sessions_history')}
+                            </h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                {studentSessions.slice().reverse().map(session => {
+                                    const rubric = rubrics.find(r => r.id === session.rubricId) ?? session.rubricSnapshot;
+                                    const scale = gradeScales.find(g => g.id === (rubric?.gradeScaleId ?? settings.defaultGradeScaleId)) ?? gradeScales[0];
+                                    const summary = rubric ? calcGradeSummary(
+                                        { id: session.id, rubricId: session.rubricId, studentId: session.studentId, entries: session.entries, overallComment: session.overallComment, isPeerReview: false },
+                                        rubric.criteria, scale, rubric
+                                    ) : null;
+                                    return (
+                                        <div key={session.id} style={{ background: 'var(--bg-elevated)', borderRadius: 10, padding: 16, border: '1px solid var(--border)' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+                                                <div style={{ fontWeight: 600 }}>{rubric?.name ?? session.rubricId}</div>
+                                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                                    {new Date(session.gradedAt).toLocaleDateString()}
+                                                </div>
+                                            </div>
+                                            <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', marginBottom: 8 }}>
+                                                {summary && (
+                                                    <>
+                                                        <span style={{ fontWeight: 700, color: summary.gradeColor }}>{summary.letterGrade}</span>
+                                                        <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{summary.modifiedPercentage.toFixed(1)}%</span>
+                                                    </>
+                                                )}
+                                                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                                                    {t('speaking.elapsed_time', { elapsed: session.elapsedSeconds, duration: session.durationSeconds })}
+                                                </span>
+                                            </div>
+                                            {session.pronunciationMarks.length > 0 && (
+                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                                    {session.pronunciationMarks.map((mark, idx) => (
+                                                        <span key={idx} style={{
+                                                            fontSize: '0.75rem', padding: '2px 8px',
+                                                            background: 'var(--bg)', borderRadius: 4,
+                                                            border: '1px solid var(--border)', color: 'var(--text-muted)',
+                                                        }}>
+                                                            {t(`speaking.error_types.${mark.errorType}`)}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                            <div style={{ marginTop: 8 }}>
+                                                <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/speaking/${session.rubricId}/${session.studentId}`)}>
+                                                    {t('selfAssess.view_full')}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    );
+                })()}
             </div>
         </>
     );

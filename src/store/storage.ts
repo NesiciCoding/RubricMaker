@@ -1,6 +1,6 @@
 import type {
     Rubric, Student, Class, StudentRubric, Attachment,
-    GradeScale, CommentSnippet, AppSettings, RubricFormat, LinkedStandard, CommentBankItem, ExportTemplate, SelfAssessment
+    GradeScale, CommentSnippet, AppSettings, RubricFormat, LinkedStandard, CommentBankItem, ExportTemplate, SelfAssessment, SpeakingSession
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 
@@ -95,6 +95,7 @@ const KEYS = {
     exportTemplates: 'rm_export_templates',
     peerReviews: 'rm_peer_reviews',
     selfAssessments: 'rm_self_assessments',
+    speakingSessions: 'rm_speaking_sessions',
 };
 
 // ─── Generic helpers ───────────────────────────────────────────────────────────
@@ -129,6 +130,7 @@ export interface StoreData {
     exportTemplates: ExportTemplate[];
     peerReviews: StudentRubric[];
     selfAssessments: SelfAssessment[];
+    speakingSessions: SpeakingSession[];
 }
 
 export function loadStore(): StoreData {
@@ -146,6 +148,7 @@ export function loadStore(): StoreData {
         exportTemplates: load<ExportTemplate[]>(KEYS.exportTemplates, []),
         peerReviews: load<StudentRubric[]>(KEYS.peerReviews, []),
         selfAssessments: load<SelfAssessment[]>(KEYS.selfAssessments, []),
+        speakingSessions: load<SpeakingSession[]>(KEYS.speakingSessions, []),
     };
 }
 
@@ -162,6 +165,7 @@ export function saveCommentBank(items: CommentBankItem[]) { save(KEYS.commentBan
 export function saveExportTemplates(templates: ExportTemplate[]) { save(KEYS.exportTemplates, templates); }
 export function savePeerReviews(reviews: StudentRubric[]) { save(KEYS.peerReviews, reviews); }
 export function saveSelfAssessments(sas: SelfAssessment[]) { save(KEYS.selfAssessments, sas); }
+export function saveSpeakingSessions(sessions: SpeakingSession[]) { save(KEYS.speakingSessions, sessions); }
 
 // ─── Full Backup / Restore ─────────────────────────────────────────────────────
 
@@ -186,7 +190,10 @@ export function importFullBackup(json: string): boolean {
         if (data.settings) saveSettings(data.settings);
         if (data.favoriteStandards) saveFavoriteStandards(data.favoriteStandards);
         if (data.commentBank) saveCommentBank(data.commentBank);
+        if (data.exportTemplates) saveExportTemplates(data.exportTemplates);
         if (data.peerReviews) savePeerReviews(data.peerReviews);
+        if (data.selfAssessments) saveSelfAssessments(data.selfAssessments);
+        if (data.speakingSessions) saveSpeakingSessions(data.speakingSessions);
         return true;
     } catch (e) {
         console.error('Import failed', e);

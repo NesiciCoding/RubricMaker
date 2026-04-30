@@ -42,6 +42,7 @@ export default function StudentsPage() {
 
     const [mergeClassId, setMergeClassId] = useState<string | null>(null);
     const [mergeTargetId, setMergeTargetId] = useState('');
+    const [mergeConfirming, setMergeConfirming] = useState(false);
 
     const [deleteClassId, setDeleteClassId] = useState<string | null>(null);
     const fileRef = useRef<HTMLInputElement>(null);
@@ -369,7 +370,7 @@ export default function StudentsPage() {
                 )}
 
                 {mergeClassId && (
-                    <div className="modal-overlay" onClick={() => setMergeClassId(null)}>
+                    <div className="modal-overlay" onClick={() => { setMergeClassId(null); setMergeConfirming(false); }}>
                         <div className="modal" onClick={e => e.stopPropagation()}>
                             <div className="modal-header">
                                 <h3>{t('studentsPage.merge_class_title')}</h3>
@@ -383,7 +384,7 @@ export default function StudentsPage() {
                                 </p>
                                 <div className="form-group">
                                     <label>{t('studentsPage.form_target_class')}</label>
-                                    <select value={mergeTargetId} onChange={e => setMergeTargetId(e.target.value)}>
+                                    <select value={mergeTargetId} onChange={e => { setMergeTargetId(e.target.value); setMergeConfirming(false); }}>
                                         <option value="" disabled>{t('studentsPage.select_class_placeholder')}</option>
                                         {classes.filter(c => c.id !== mergeClassId).map(c => (
                                             <option key={c.id} value={c.id}>{c.name}</option>
@@ -391,15 +392,31 @@ export default function StudentsPage() {
                                     </select>
                                 </div>
                             </div>
+                            {mergeConfirming && (
+                                <div style={{ margin: '0 0 12px', padding: 12, background: 'var(--bg-elevated)', borderRadius: 8, border: '1px solid var(--red)', fontSize: '0.875rem' }}>
+                                    <Trans i18nKey="studentsPage.merge_confirm_description"
+                                        values={{
+                                            source: classes.find(c => c.id === mergeClassId)?.name,
+                                            target: classes.find(c => c.id === mergeTargetId)?.name
+                                        }}>
+                                        All students from <strong>{'{{source}}'}</strong> will be moved into <strong>{'{{target}}'}</strong>. The source class will be deleted. This cannot be undone.
+                                    </Trans>
+                                </div>
+                            )}
                             <div className="modal-footer">
-                                <button className="btn btn-secondary" onClick={() => setMergeClassId(null)}>{t('common.cancel')}</button>
-                                <button className="btn btn-primary" disabled={!mergeTargetId} onClick={() => {
-                                    if (mergeTargetId) {
+                                <button className="btn btn-secondary" onClick={() => { setMergeClassId(null); setMergeConfirming(false); }}>{t('common.cancel')}</button>
+                                {!mergeConfirming ? (
+                                    <button className="btn btn-primary" disabled={!mergeTargetId} onClick={() => setMergeConfirming(true)}>
+                                        {t('studentsPage.action_merge_classes')}
+                                    </button>
+                                ) : (
+                                    <button className="btn btn-danger" onClick={() => {
                                         mergeClasses(mergeClassId!, mergeTargetId);
                                         if (activeClass === mergeClassId) setActiveClass(mergeTargetId);
                                         setMergeClassId(null);
-                                    }
-                                }}>{t('studentsPage.action_merge_classes')}</button>
+                                        setMergeConfirming(false);
+                                    }}>{t('studentsPage.merge_confirm_action')}</button>
+                                )}
                             </div>
                         </div>
                     </div>

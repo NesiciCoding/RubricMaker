@@ -60,6 +60,10 @@
         "backup_help": "Export saves all rubrics, students, grades, and settings to a JSON file. Import restores everything.",
         "alert_invalid_backup": "Invalid backup file.",
         "alert_cannot_delete_default": "Can't delete the default scale.",
+        "delete_scale_title": "Delete Grade Scale?",
+        "delete_scale_confirm": "Are you sure you want to delete this grade scale? This cannot be undone.",
+        "accent_color_label": "Accent Color",
+        "accent_color_invalid": "Enter a valid 6-digit hex color (e.g. #3b82f6).",
         "cloud_sync": "Cloud Sync (Microsoft 365)",
         "cloud_sync_help": "Connect your Microsoft account to sync rubrics across devices via OneDrive or SharePoint.",
         "action_login_microsoft": "Login with Microsoft",
@@ -161,7 +165,10 @@
         "delete_class_title": "Delete Class?",
         "delete_class_confirmation": "Are you sure you want to delete <strong>{{className}}</strong>?",
         "warning_label": "Warning:",
-        "delete_class_warning": "The {{count}} student(s) currently in this class will also be permanently deleted. If you want to keep them, merge this class into another one instead."
+        "delete_class_warning": "The {{count}} student(s) currently in this class will also be permanently deleted. If you want to keep them, merge this class into another one instead.",
+        "merge_confirm_title": "Confirm Merge",
+        "merge_confirm_description": "All students from <strong>{{source}}</strong> will be moved into <strong>{{target}}</strong>. The source class will be deleted. This cannot be undone.",
+        "merge_confirm_action": "Merge"
     },
     "gradeStudent": {
         "title_prefix": "Grading:",
@@ -268,7 +275,28 @@
         "action_balance_weights": "Balance Weights",
         "label_max": "max",
         "label_weight_th": "Weight",
-        "placeholder_click_to_edit": "Click to edit..."
+        "placeholder_click_to_edit": "Click to edit...",
+        "edit_rubric": "Edit Rubric",
+        "new_rubric": "New Rubric",
+        "unsaved_warning": "You have unsaved changes. Leave anyway?",
+        "insert_speaking_dims": "Insert Speaking Dimensions",
+        "sync_dialog_title": "Update graded submissions?",
+        "sync_dialog_body": "{{count}} submission(s) were graded with this rubric. Their level choices are preserved, but grades will recalculate based on the new point values.",
+        "sync_dialog_skip": "Skip",
+        "sync_dialog_confirm": "Update grades",
+        "insert_speaking_confirm": "This will replace all existing criteria with 6 standard speaking dimensions. Continue?",
+        "insert_speaking_append": "Add 6 speaking dimensions to existing criteria?"
+    },
+    "toast": {
+        "export_error": "Export failed. Please try again.",
+        "sync_success": "Synced to OneDrive.",
+        "sync_error": "Sync failed. Check your connection.",
+        "restore_success": "Backup restored from cloud.",
+        "restore_error": "Cloud restore failed.",
+        "import_success": "Data imported successfully.",
+        "import_error": "Import failed — invalid backup file.",
+        "share_code_error": "Invalid share code. Please check and try again.",
+        "csv_import_error": "CSV import failed. Please check the file format."
     },
     "cefr": {
         "rubric_section_title": "CEFR / ERK Level",
@@ -296,7 +324,9 @@
         "student_progress_subtitle": "Achieved = avg ≥ {{threshold}}% across graded rubrics with a CEFR target level",
         "achieved": "Achieved",
         "developing": "Developing",
-        "n_assessments": "{{count}} assessment(s)"
+        "n_assessments": "{{count}} assessment(s)",
+        "achieve_threshold_label": "Achievement Threshold (%)",
+        "achieve_threshold_help": "Score at or above this percentage counts as 'Achieved' on the student profile."
     },
     "voTrack": {
         "section_label": "VO Track",
@@ -363,5 +393,47 @@
         "mismatch_overestimate": "Student may be overestimating — worth a reflection conversation.",
         "mismatch_underestimate": "Student may be underestimating their progress — encourage them!",
         "view_full": "View full self-assessment"
+    },
+    "statistics": {
+        "download_csv": "Download CSV",
+        "csv_filename": "statistics"
+    },
+    "speaking": {
+        "page_title": "Speaking Session",
+        "timer_label": "Timer",
+        "start": "Start",
+        "pause": "Pause",
+        "stop": "Stop",
+        "duration_minutes": "Duration (minutes)",
+        "pronunciation_panel": "Pronunciation Quick-Marks",
+        "error_types": {
+            "word_stress": "Word Stress",
+            "sentence_stress": "Sentence Stress",
+            "th_sound": "Th-Sound (/θ/ /ð/)",
+            "connected_speech": "Connected Speech",
+            "vowel_sound": "Vowel Sound",
+            "final_consonant": "Final Consonant"
+        },
+        "pronunciationFeedback": {
+            "word_stress": "Watch word stress — try stressing the correct syllable.",
+            "sentence_stress": "Focus on stress patterns within sentences.",
+            "th_sound": "Work on the /θ/ and /ð/ sounds (e.g., 'think', 'the').",
+            "connected_speech": "Practice linking words in connected speech.",
+            "vowel_sound": "Pay attention to vowel quality (e.g., /ɪ/ vs /iː/).",
+            "final_consonant": "Don't drop final consonants in words."
+        },
+        "save_session": "Save Session",
+        "session_saved": "Session Saved!",
+        "session_locked": "Session ended — rubric locked.",
+        "sessions_history": "Speaking Sessions",
+        "no_sessions": "No speaking sessions yet.",
+        "elapsed_time": "{{elapsed}}s / {{duration}}s",
+        "insert_dimensions": "Insert Speaking Dimensions",
+        "unsaved_warning": "You have unsaved scoring. Leave anyway?",
+        "marks_label": "Marks ({{count}})",
+        "no_marks": "No marks yet — tap an error type above.",
+        "auto_lock": "Auto-lock when timer ends",
+        "time_up": "Time's up!",
+        "clear_marks": "Clear marks"
     }
 }
