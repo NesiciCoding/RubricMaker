@@ -6,7 +6,8 @@ import Papa from 'papaparse';
 import { saveAs } from 'file-saver';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
-import { calcGradeSummary, calcClassStats, calcEntryPoints } from '../utils/gradeCalc';
+import { calcGradeSummary, calcClassStats, calcEntryPoints, type GradeSummary } from '../utils/gradeCalc';
+import type { StudentRubric, Student, Rubric, RubricCriterion } from '../types';
 import { getClassGoalScores } from '../utils/learningGoalsAggregator';
 import LearningGoalChart from '../components/Statistics/LearningGoalChart';
 
@@ -84,7 +85,7 @@ export default function StatisticsPage() {
                 const summary = calcGradeSummary(sr, r.criteria, scale, r);
                 return { sr, student, summary };
             })
-            .filter((d): d is { sr: any, student: any, summary: any } => !!d.student && !!d.summary);
+            .filter((d): d is { sr: StudentRubric; student: Student; summary: GradeSummary } => !!d.student && !!d.summary);
 
         return data.sort((a, b) => {
             let valA: any, valB: any;
@@ -125,8 +126,8 @@ export default function StatisticsPage() {
     }, [viewMode, selectedStudentId, studentRubrics, rubrics, gradeScales, settings.defaultGradeScaleId]);
 
     function handleDownloadCsv() {
-        if (!rubric || rubricViewTableData.length === 0) return;
-        const rows = rubricViewTableData.map(({ student, summary, sr }) => {
+        if (!rubric || tableData.length === 0) return;
+        const rows = tableData.map(({ student, summary, sr }) => {
             const base: Record<string, string | number> = {
                 Name: student.name,
                 'Score (%)': Math.round(summary.modifiedPercentage),
@@ -135,8 +136,8 @@ export default function StatisticsPage() {
                 'Max Points': summary.maxRawScore,
             };
             const snap = sr.rubricSnapshot || rubric;
-            snap.criteria.forEach(c => {
-                const entry = sr.entries.find((e: any) => e.criterionId === c.id);
+            snap.criteria.forEach((c: RubricCriterion) => {
+                const entry = sr.entries.find(e => e.criterionId === c.id);
                 const pts = entry ? calcEntryPoints(entry, c) : 0;
                 base[`Criterion: ${c.title}`] = pts;
                 base[`Criterion: ${c.title} (Comment)`] = entry?.comment ?? '';
@@ -175,7 +176,7 @@ export default function StatisticsPage() {
                                     {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                 </select>
                             </div>
-                            {rubricViewTableData.length > 0 && (
+                            {tableData.length > 0 && (
                                 <button className="btn btn-secondary btn-sm" style={{ alignSelf: 'flex-end', marginBottom: 0 }} onClick={handleDownloadCsv}>
                                     <Download size={14} /> {t('statistics.download_csv')}
                                 </button>
