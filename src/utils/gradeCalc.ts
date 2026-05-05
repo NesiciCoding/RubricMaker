@@ -137,7 +137,7 @@ export interface GradeSummary {
 export function calcGradeSummary(
     sr: StudentRubric,
     criteria: RubricCriterion[],
-    scale: GradeScale,
+    scale: GradeScale | null,
     rubric?: Pick<Rubric, 'scoringMode' | 'totalMaxPoints'>,
 ): GradeSummary {
     const raw = calcRawScore(sr.entries, criteria);
@@ -165,8 +165,8 @@ export function calcGradeSummary(
         configuredMaxPoints: configuredMax,
         percentage: pct,
         modifiedPercentage: modified,
-        letterGrade: calcLetterGrade(modified, scale),
-        gradeColor: calcGradeColor(modified, scale),
+        letterGrade: scale ? calcLetterGrade(modified, scale) : '—',
+        gradeColor: scale ? calcGradeColor(modified, scale) : '#6b7280',
         gradedCount,
         totalCriteria: criteria.length,
     };
@@ -182,7 +182,7 @@ export interface ClassStats {
     distribution: { label: string; count: number; color: string }[];
 }
 
-export function calcClassStats(summaries: GradeSummary[], scale: GradeScale): ClassStats {
+export function calcClassStats(summaries: GradeSummary[], scale: GradeScale | null): ClassStats {
     if (summaries.length === 0) {
         return { average: 0, median: 0, highest: 0, lowest: 0, distribution: [] };
     }
@@ -193,11 +193,11 @@ export function calcClassStats(summaries: GradeSummary[], scale: GradeScale): Cl
         ? (scores[mid - 1] + scores[mid]) / 2
         : scores[mid];
 
-    const distribution = scale.ranges.map(r => ({
+    const distribution = scale ? scale.ranges.map(r => ({
         label: r.label,
         color: r.color,
         count: summaries.filter(s => s.modifiedPercentage >= r.min && s.modifiedPercentage <= r.max).length,
-    }));
+    })) : [];
 
     return { average, median, highest: scores[scores.length - 1], lowest: scores[0], distribution };
 }

@@ -1,18 +1,77 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Trash2, Edit2, Users as UsersIcon, Upload, Download, TrendingUp, MoreVertical, Search, BookOpen, Link, GraduationCap } from 'lucide-react';
+import { Plus, Trash2, Edit2, Users as UsersIcon, Upload, Download, TrendingUp, MoreVertical, Search, BookOpen, Link, GraduationCap, ClipboardCopy, FileText } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import Papa from 'papaparse';
 import CsvImportModal from '../components/CsvImportModal';
 import { useTranslation, Trans } from 'react-i18next';
 import { VO_TRACKS, VO_TRACK_LABELS, VO_TRACK_COLORS } from '../data/voTracks';
-import type { VoTrack } from '../types';
+import type { VoTrack, StudentRubric, Rubric, GradeScale } from '../types';
+import { calcGradeSummary, calcEntryPoints } from '../utils/gradeCalc';
+
+/** Strip HTML tags from TiptapEditor output for plain-text summary export. */
+function stripHtml(html: string): string {
+    return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+/** Build a plain-text rubric summary for one student, suitable for pasting into a tracking system. */
+function buildStudentSummary(
+    studentName: string,
+    srs: StudentRubric[],
+    rubrics: Rubric[],
+    gradeScales: GradeScale[],
+    defaultGradeScaleId: string,
+): string {
+    const blocks = srs
+        .map(sr => {
+            const liveR = rubrics.find(r => r.id === sr.rubricId);
+            const r = sr.rubricSnapshot || liveR;
+            if (!r) return null;
+            const scaleId = r.gradeScaleId ?? defaultGradeScaleId;
+            const scale = scaleId === 'none' ? null : (gradeScales.find(g => g.id === scaleId) ?? gradeScales[0]);
+            const summary = calcGradeSummary(sr, r.criteria, scale, r);
+
+            const lines: string[] = [];
+            lines.push(`Rubric: ${r.name}`);
+            if (scale) {
+                lines.push(`Score: ${summary.modifiedPercentage.toFixed(1)}% (${summary.letterGrade}) — ${summary.rawScore}/${summary.configuredMaxPoints} pts`);
+            } else {
+                lines.push(`Score: ${summary.rawScore}/${summary.configuredMaxPoints} pts`);
+            }
+            lines.push('');
+
+            r.criteria.forEach(c => {
+                const entry = sr.entries.find(e => e.criterionId === c.id);
+                if (!entry) { lines.push(`  ${c.title}: —`); return; }
+                const level = entry.levelId ? c.levels.find(l => l.id === entry.levelId) : null;
+                const pts = calcEntryPoints(entry, c);
+                const max = Math.max(...c.levels.map(l => l.maxPoints), 1);
+                const levelLabel = level ? `${level.label} (${pts}/${max} pts)` : `${pts}/${max} pts`;
+                lines.push(`  ${c.title}: ${levelLabel}`);
+                if (entry.comment) {
+                    const plain = stripHtml(entry.comment);
+                    if (plain) lines.push(`    → ${plain}`);
+                }
+            });
+
+            if (sr.overallComment) {
+                const plain = stripHtml(sr.overallComment);
+                if (plain) { lines.push(''); lines.push(`Feedback: ${plain}`); }
+            }
+
+            return lines.join('\n');
+        })
+        .filter((b): b is string => b !== null);
+
+    if (blocks.length === 0) return `${studentName}\n\n(No graded rubrics yet)`;
+    return `${studentName}\n${'─'.repeat(studentName.length)}\n\n${blocks.join('\n\n---\n\n')}`;
+}
 
 export default function StudentsPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { students, classes, rubrics, studentRubrics, addStudent, updateStudent, deleteStudent, addClass, updateClass, deleteClass, mergeClasses, settings, updateSettings } = useApp();
+    const { students, classes, rubrics, studentRubrics, gradeScales, addStudent, updateStudent, deleteStudent, addClass, updateClass, deleteClass, mergeClasses, settings, updateSettings } = useApp();
 
     // Initialize active class from settings, falling back to the first available class
     const initialClassId = classes.find(c => c.id === settings.activeClassId)?.id ?? classes[0]?.id ?? '';
@@ -50,6 +109,19 @@ export default function StudentsPage() {
     const [confirmDeleteStudent, setConfirmDeleteStudent] = useState<string | null>(null);
     const [showLinkRubrics, setShowLinkRubrics] = useState(false);
 
+    // Sorting
+    const [sortKey, setSortKey] = useState<'name' | 'email' | 'grades'>('name');
+    const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+    function handleSort(key: typeof sortKey) {
+        if (sortKey === key) { setSortDir(d => d === 'asc' ? 'desc' : 'asc'); }
+        else { setSortKey(key); setSortDir('asc'); }
+    }
+    const sortArrow = (key: typeof sortKey) => sortKey === key ? (sortDir === 'asc' ? ' ↑' : ' ↓') : '';
+
+    // Summary export modal
+    const [summaryStudentId, setSummaryStudentId] = useState<string | null>(null);
+    const [copied, setCopied] = useState(false);
+
     const activeClassData = classes.find(c => c.id === activeClass);
 
     function toggleClassRubric(rubricId: string) {
@@ -68,7 +140,16 @@ export default function StudentsPage() {
 
     const filteredStudents = students
         .filter(s => s.classId === activeClass)
-        .filter(s => !studentSearch.trim() || s.name.toLowerCase().includes(studentSearch.toLowerCase()) || (s.email ?? '').toLowerCase().includes(studentSearch.toLowerCase()));
+        .filter(s => !studentSearch.trim() || s.name.toLowerCase().includes(studentSearch.toLowerCase()) || (s.email ?? '').toLowerCase().includes(studentSearch.toLowerCase()))
+        .sort((a, b) => {
+            let valA: string | number, valB: string | number;
+            if (sortKey === 'name') { valA = a.name.toLowerCase(); valB = b.name.toLowerCase(); }
+            else if (sortKey === 'email') { valA = (a.email ?? '').toLowerCase(); valB = (b.email ?? '').toLowerCase(); }
+            else { valA = studentRubrics.filter(sr => sr.studentId === a.id).length; valB = studentRubrics.filter(sr => sr.studentId === b.id).length; }
+            if (valA < valB) return sortDir === 'asc' ? -1 : 1;
+            if (valA > valB) return sortDir === 'asc' ? 1 : -1;
+            return 0;
+        });
 
     function handleAddStudent() {
         if (!name.trim()) return;
@@ -96,6 +177,25 @@ export default function StudentsPage() {
         a.href = url; a.download = 'students.csv'; a.click();
     }
 
+    function exportAllSummaries() {
+        const className = activeClassData?.name ?? 'class';
+        const text = filteredStudents.map(s => {
+            const srs = studentRubrics.filter(sr => sr.studentId === s.id);
+            return buildStudentSummary(s.name, srs, rubrics, gradeScales, settings.defaultGradeScaleId);
+        }).join('\n\n' + '═'.repeat(40) + '\n\n');
+        const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `summaries_${className.replace(/[^a-z0-9]/gi, '_')}.txt`; a.click();
+    }
+
+    const summaryText = summaryStudentId
+        ? buildStudentSummary(
+            students.find(s => s.id === summaryStudentId)?.name ?? '',
+            studentRubrics.filter(sr => sr.studentId === summaryStudentId),
+            rubrics, gradeScales, settings.defaultGradeScaleId
+        ) : '';
+
     // Helper to close all context menus on outside click
     React.useEffect(() => {
         const handleClick = () => setClassMenuOpen(null);
@@ -114,6 +214,11 @@ export default function StudentsPage() {
                     <button className="btn btn-secondary btn-sm" onClick={exportCSV}>
                         <Download size={15} /> {t('studentsPage.export_csv')}
                     </button>
+                    {filteredStudents.length > 0 && (
+                        <button className="btn btn-secondary btn-sm" onClick={exportAllSummaries} title="Export all student summaries as a text file">
+                            <FileText size={15} /> Export Summaries
+                        </button>
+                    )}
                     <button className="btn btn-primary btn-sm" onClick={() => setShowAddModal(true)}>
                         <Plus size={15} /> {t('studentsPage.add_student')}
                     </button>
@@ -225,7 +330,18 @@ export default function StudentsPage() {
                         ) : (
                             <table className="data-table">
                                 <thead>
-                                    <tr><th>{t('studentsPage.table_name')}</th><th>{t('studentsPage.table_email')}</th><th>{t('studentsPage.table_grades')}</th><th>{t('studentsPage.table_actions')}</th></tr>
+                                    <tr>
+                                        <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('name')}>
+                                            {t('studentsPage.table_name')}{sortArrow('name')}
+                                        </th>
+                                        <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('email')}>
+                                            {t('studentsPage.table_email')}{sortArrow('email')}
+                                        </th>
+                                        <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('grades')}>
+                                            {t('studentsPage.table_grades')}{sortArrow('grades')}
+                                        </th>
+                                        <th>{t('studentsPage.table_actions')}</th>
+                                    </tr>
                                 </thead>
                                 <tbody>
                                     {filteredStudents.map(s => {
@@ -250,6 +366,11 @@ export default function StudentsPage() {
                                                         <button className="btn btn-secondary btn-icon btn-sm"
                                                             onClick={() => navigate(`/students/${s.id}`)} title={t('studentsPage.view_profile')}>
                                                             <TrendingUp size={14} />
+                                                        </button>
+                                                        <button className="btn btn-ghost btn-icon btn-sm"
+                                                            onClick={() => { setSummaryStudentId(s.id); setCopied(false); }}
+                                                            title="Copy rubric summary for tracking system">
+                                                            <ClipboardCopy size={14} />
                                                         </button>
                                                         <button className="btn btn-ghost btn-icon btn-sm"
                                                             onClick={() => { setEditStudent({ id: s.id, name: s.name, email: s.email ?? '' }); setName(s.name); setEmail(s.email ?? ''); setEditStudentClassId(s.classId); setShowAddModal(true); }}>
@@ -475,6 +596,39 @@ export default function StudentsPage() {
                                     deleteStudent(confirmDeleteStudent);
                                     setConfirmDeleteStudent(null);
                                 }}>{t('common.delete')}</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {summaryStudentId && (
+                    <div className="modal-overlay" onClick={() => setSummaryStudentId(null)}>
+                        <div className="modal" style={{ maxWidth: 560, width: '100%' }} onClick={e => e.stopPropagation()}>
+                            <div className="modal-header">
+                                <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <ClipboardCopy size={17} style={{ color: 'var(--accent)' }} />
+                                    {students.find(s => s.id === summaryStudentId)?.name} — Rubric Summary
+                                </h3>
+                                <button className="btn btn-ghost btn-icon" onClick={() => setSummaryStudentId(null)}>✕</button>
+                            </div>
+                            <div className="modal-body">
+                                <textarea
+                                    readOnly
+                                    value={summaryText}
+                                    rows={16}
+                                    style={{ width: '100%', fontFamily: 'monospace', fontSize: '0.82rem', resize: 'vertical', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 8, padding: 12, color: 'var(--text)' }}
+                                    onClick={e => (e.target as HTMLTextAreaElement).select()}
+                                />
+                            </div>
+                            <div className="modal-footer">
+                                <button className="btn btn-secondary" onClick={() => setSummaryStudentId(null)}>Close</button>
+                                <button
+                                    className={`btn ${copied ? 'btn-secondary' : 'btn-primary'}`}
+                                    onClick={() => navigator.clipboard.writeText(summaryText).then(() => setCopied(true))}
+                                >
+                                    <ClipboardCopy size={14} />
+                                    {copied ? 'Copied!' : 'Copy to clipboard'}
+                                </button>
                             </div>
                         </div>
                     </div>

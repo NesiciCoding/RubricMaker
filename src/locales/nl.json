@@ -200,7 +200,11 @@
         "action_voice_start": "Start Spraakassistent",
         "action_voice_stop": "Stop Spraakassistent",
         "voice_listening": "Aan het luisteren...",
-        "voice_ready": "Spraakassistent klaar"
+        "voice_ready": "Spraakassistent klaar",
+        "action_not_handed_in": "Niet ingeleverd",
+        "not_handed_in_comment": "Niet ingeleverd",
+        "nav_scope_current_class": "Huidige klas",
+        "nav_scope_rubric_classes": "Alle gekoppelde klassen"
     },
     "rubricBuilder": {
         "action_back": "Terug",
