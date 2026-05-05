@@ -12,9 +12,10 @@ import {
     saveExportTemplates, exportStore, savePeerReviews, saveSelfAssessments, saveSpeakingSessions
 } from '../store/storage';
 import { nanoid } from '../utils/nanoid';
-import { msalInstance, loginRequest } from '../services/msalConfig';
-import { graphService } from '../services/microsoftGraph';
-import { useMsal, useIsAuthenticated } from '@azure/msal-react';
+// Azure / MSAL integration disabled — not in use
+// import { msalInstance, loginRequest } from '../services/msalConfig';
+// import { graphService } from '../services/microsoftGraph';
+// import { useMsal, useIsAuthenticated } from '@azure/msal-react';
 
 // ─── Actions ───────────────────────────────────────────────────────────────────
 
@@ -484,60 +485,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'SYNC_RUBRIC_SNAPSHOT', rubricId, updatedRubric });
     }, []);
 
-    // ─── Microsoft Sync ───
-    const { instance: msalInstanceContext } = useMsal();
-    const isAuthenticated = useIsAuthenticated();
-    const [microsoftUser, setMicrosoftUser] = React.useState<any | null>(null);
-
-    React.useEffect(() => {
-        if (isAuthenticated) {
-            graphService.getUserProfile().then(setMicrosoftUser).catch(console.error);
-        } else {
-            setMicrosoftUser(null);
-        }
-    }, [isAuthenticated]);
-
-    const loginMicrosoft = useCallback(async () => {
-        try {
-            await msalInstanceContext.loginPopup(loginRequest);
-        } catch (error) {
-            console.error("Login failed:", error);
-        }
-    }, [msalInstanceContext]);
-
-    const logoutMicrosoft = useCallback(async () => {
-        try {
-            await msalInstanceContext.logoutPopup();
-        } catch (error) {
-            console.error("Logout failed:", error);
-        }
-    }, [msalInstanceContext]);
-
-    const syncToOneDrive = useCallback(async () => {
-        if (!isAuthenticated) return;
-        try {
-            const data = exportStore(state);
-            await graphService.uploadFile('rubric_backup.json', JSON.stringify(data));
-            updateSettings({ microsoftLastSyncAt: new Date().toISOString() });
-        } catch (error) {
-            console.error("Sync failed:", error);
-            throw error;
-        }
-    }, [isAuthenticated, state, updateSettings]);
-
-    const restoreFromOneDrive = useCallback(async () => {
-        if (!isAuthenticated) return;
-        try {
-            const content = await graphService.downloadFile('rubric_backup.json');
-            if (content) {
-                const data = JSON.parse(content);
-                dispatch({ type: 'SET_ALL', payload: data });
-            }
-        } catch (error) {
-            console.error("Restore failed:", error);
-            throw error;
-        }
-    }, [isAuthenticated]);
+    // ─── Microsoft Sync (disabled — Azure integration not in use) ───
+    const microsoftUser: any | null = null;
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    const loginMicrosoft = useCallback(async () => {}, []);
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    const logoutMicrosoft = useCallback(async () => {}, []);
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    const syncToOneDrive = useCallback(async () => {}, []);
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    const restoreFromOneDrive = useCallback(async () => {}, []);
 
     const value: AppContextValue = {
         ...state,

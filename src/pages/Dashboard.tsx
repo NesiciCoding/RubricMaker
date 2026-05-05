@@ -119,7 +119,7 @@ export default function Dashboard() {
                     {/* Recent Activity feed */}
                     <div className="card">
                         <div className="card-header" style={{ marginBottom: 14 }}>
-                            <h3>Recent Activity</h3>
+                            <h3>{t('dashboard.recent_activity')}</h3>
                         </div>
                         {recentActivity.length === 0 ? (
                             <div className="empty-state">
@@ -145,14 +145,13 @@ export default function Dashboard() {
                                         </div>
                                         <div style={{ flex: 1, minWidth: 0 }}>
                                             {item.type === 'grading' ? (
-                                                <div style={{ fontSize: '0.85rem' }}>
-                                                    Graded <strong>{item.studentName}</strong>
-                                                    <span className="text-muted"> — {item.rubricName}</span>
-                                                </div>
+                                                <div style={{ fontSize: '0.85rem' }}
+                                                    dangerouslySetInnerHTML={{ __html: t('dashboard.activity_graded', { student: item.studentName, rubric: item.rubricName }) }}
+                                                />
                                             ) : (
-                                                <div style={{ fontSize: '0.85rem' }}>
-                                                    Updated <strong>{item.rubricName}</strong>
-                                                </div>
+                                                <div style={{ fontSize: '0.85rem' }}
+                                                    dangerouslySetInnerHTML={{ __html: t('dashboard.activity_updated', { rubric: item.rubricName }) }}
+                                                />
                                             )}
                                         </div>
                                         <span className="text-muted text-xs" style={{ flexShrink: 0 }}>
@@ -166,7 +165,7 @@ export default function Dashboard() {
                                                 : navigate(`/rubrics/${item.rubricId}`)
                                             }
                                         >
-                                            {item.type === 'grading' ? 'Resume' : 'Open'} <ArrowRight size={12} />
+                                            {item.type === 'grading' ? t('dashboard.action_resume') : t('dashboard.action_open')} <ArrowRight size={12} />
                                         </button>
                                     </div>
                                 ))}
@@ -198,7 +197,7 @@ export default function Dashboard() {
                         </div>
 
                         <div className="card">
-                            <h3 style={{ marginBottom: 16 }}>Quick Start Templates</h3>
+                            <h3 style={{ marginBottom: 16 }}>{t('dashboard.quick_start_templates')}</h3>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                                 {QUICK_START_TEMPLATES.map((tpl, i) => (
                                     <div

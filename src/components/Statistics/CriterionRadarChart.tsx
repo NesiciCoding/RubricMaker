@@ -20,9 +20,11 @@ interface Props {
     data: CriterionRadarDataPoint[];
     accentColor: string;
     selectedStudents?: SelectedStudent[];
+    classAverageLabel?: string;
+    height?: number;
 }
 
-export default function CriterionRadarChart({ data, accentColor, selectedStudents }: Props) {
+export default function CriterionRadarChart({ data, accentColor, selectedStudents, classAverageLabel = 'Class Average', height = 420 }: Props) {
     if (data.length < 3) {
         return (
             <p className="text-muted text-sm" style={{ textAlign: 'center', padding: '40px 0' }}>
@@ -34,7 +36,7 @@ export default function CriterionRadarChart({ data, accentColor, selectedStudent
     const hasStudents = selectedStudents && selectedStudents.length > 0;
 
     return (
-        <ResponsiveContainer width="100%" height={280}>
+        <ResponsiveContainer width="100%" height={height}>
             <RadarChart data={data} margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
                 <PolarGrid strokeOpacity={0.3} />
                 <PolarAngleAxis
@@ -56,7 +58,7 @@ export default function CriterionRadarChart({ data, accentColor, selectedStudent
                     formatter={(value: number) => `${value}%`}
                 />
                 <Radar
-                    name="Class Average"
+                    name={classAverageLabel}
                     dataKey="avg"
                     stroke={accentColor}
                     fill={accentColor}
