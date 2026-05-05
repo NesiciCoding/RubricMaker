@@ -81,7 +81,7 @@ function buildRubricHTML(
   sr: StudentRubric,
   rubric: Rubric,
   student: Student,
-  scale: GradeScale,
+  scale: GradeScale | null,
 ): string {
   const summary = calcGradeSummary(sr, rubric.criteria, scale);
   const fmt = rubric.format;
@@ -193,7 +193,7 @@ export async function exportSinglePdf(
   sr: StudentRubric,
   rubric: Rubric,
   student: Student,
-  scale: GradeScale,
+  scale: GradeScale | null,
   options: { orientation?: 'portrait' | 'landscape' } = {}
 ): Promise<void> {
   const htmlStr = buildRubricHTML(sr, rubric, student, scale);
@@ -203,7 +203,7 @@ export async function exportSinglePdf(
 export async function exportBatchPdf(
   entries: { sr: StudentRubric; student: Student }[],
   rubric: Rubric,
-  scale: GradeScale,
+  scale: GradeScale | null,
   options: { orientation?: 'portrait' | 'landscape', padForDoubleSided?: boolean } = {}
 ): Promise<void> {
   const htmlParts = entries.map(({ sr, student }) => {
