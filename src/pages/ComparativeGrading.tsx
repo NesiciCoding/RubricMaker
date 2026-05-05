@@ -225,6 +225,11 @@ function ComparativeGradingSession({
             sr => sr.rubricId === rubric.id && sr.studentId === studentId
         );
         if (existing) return existing;
+        return getBlankSR(studentId);
+    }
+
+    function getBlankSR(studentId: string) {
+        if (!rubric) throw new Error('No rubric');
         return {
             id: nanoid(),
             rubricId: rubric.id,
@@ -282,10 +287,11 @@ function ComparativeGradingSession({
 
         setStudentA(a);
         setStudentB(b);
-        // Use the already-saved SR when keeping the same anchor so scores aren't wiped
-        // (studentRubrics context may not have updated yet when called right after save).
-        setSrA(keepSrA !== undefined ? keepSrA : getEmptySR(a.id));
-        setSrB(getEmptySR(b.id));
+        // Use the already-saved SR when keeping the same anchor so scores aren't wiped.
+        // For a new anchor, always start blank so the previous student's scores don't persist.
+        const anchorChanged = a.id !== anchorId;
+        setSrA(keepSrA !== undefined ? keepSrA : anchorChanged ? getBlankSR(a.id) : getEmptySR(a.id));
+        setSrB(getBlankSR(b.id));
         setMatchups(prev => new Set([...prev, getMatchKey(a!.id, b.id)]));
         setSeenStudentIds(prev => new Set([...prev, a!.id, b.id]));
         setIsDirty(false);
@@ -501,9 +507,8 @@ function ComparativeGradingSession({
 
     const attA = attachments.filter(a => a.studentId === studentA.id);
     const attB = attachments.filter(a => a.studentId === studentB.id);
-    const scale =
-        gradeScales.find(g => g.id === (rubric.gradeScaleId ?? settings.defaultGradeScaleId)) ??
-        gradeScales[0];
+    const scaleId = rubric.gradeScaleId ?? settings.defaultGradeScaleId;
+    const scale = scaleId === 'none' ? null : (gradeScales.find(g => g.id === scaleId) ?? gradeScales[0]);
     const sumA = calcGradeSummary(srA, rubric.criteria, scale, rubric);
     const sumB = calcGradeSummary(srB, rubric.criteria, scale, rubric);
 

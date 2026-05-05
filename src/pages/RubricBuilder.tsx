@@ -449,6 +449,7 @@ export default function RubricBuilder() {
                                 <div className="form-group">
                                     <label>Grade Scale</label>
                                     <select value={gradeScaleId} onChange={e => setGradeScaleId(e.target.value)}>
+                                        <option value="none">None (raw points only)</option>
                                         {gradeScales.map(gs => <option key={gs.id} value={gs.id}>{gs.name}</option>)}
                                     </select>
                                 </div>

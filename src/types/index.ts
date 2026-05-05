@@ -243,6 +243,8 @@ export interface StudentRubric {
     gradedAt?: string;
     gradedBy?: string;
     isPeerReview: boolean;
+    /** When true the student did not hand in the work */
+    notHandedIn?: boolean;
     /** Snapshot of the rubric at the time of grading to ensure historical grades do not break */
     rubricSnapshot?: Rubric;
 }
@@ -266,8 +268,14 @@ export interface AppSettings {
     exportTemplateId?: string;
     /** How many comparative matchups to show an anchor student before picking a new anchor */
     comparativeMatchupLimit?: number;
+    /** Whether "Save & Next" in the grading view stays within the current class or spans all rubric-linked classes */
+    gradeNavigationScope?: 'current-class' | 'rubric-classes';
     /** Whether the user has seen the guided UI tutorial */
     hasSeenTutorial?: boolean;
+    /** Chart type for the per-criterion statistics panel (on-screen toggle) */
+    statisticsCriterionChartType?: 'bar' | 'radar';
+    /** Whether "Not handed in" students are excluded from class statistics */
+    statisticsExcludeNotHandedIn?: boolean;
     /** Microsoft 365 / OneDrive sync settings */
     microsoftClientId?: string;
     microsoftTenantId?: string;

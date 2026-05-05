@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, MessageSquare, Paperclip, CheckSquare, Square, Info, BookOpen, FileDown, Mic, MicOff, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Save, MessageSquare, Paperclip, CheckSquare, Square, Info, BookOpen, FileDown, Mic, MicOff, ChevronRight, Users, XCircle } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import CommentBankModal from '../components/Comments/CommentBankModal';
 import AttachmentViewer from '../components/AttachmentViewer';
@@ -25,7 +25,8 @@ export default function GradeStudent() {
     const liveRubric = rubrics.find(r => r.id === rubricId);
     const rubric = existingSR?.rubricSnapshot || liveRubric;
     const student = students.find(s => s.id === studentId);
-    const scale = gradeScales.find(g => g.id === (rubric?.gradeScaleId ?? settings.defaultGradeScaleId)) ?? gradeScales[0];
+    const scaleId = rubric?.gradeScaleId ?? settings.defaultGradeScaleId;
+    const scale = scaleId === 'none' ? null : (gradeScales.find(g => g.id === scaleId) ?? gradeScales[0]);
 
     const [sr, setSr] = useState(() => {
         if (existingSR) return existingSR;
@@ -81,22 +82,28 @@ export default function GradeStudent() {
         setTimeout(() => setSaved(false), 2000);
     }, [sr, rubric, saveStudentRubric]);
 
-    // Find next student, restricted to rubric-linked classes when applicable
+    // Find next student; scope is configurable: stay in current class or span all rubric-linked classes
+    const navScope = settings.gradeNavigationScope ?? 'rubric-classes';
     const nextStudent = useMemo(() => {
         if (!student) return null;
-        const linkedClassIds = classes
-            .filter(c => c.rubricIds?.includes(rubricId ?? ''))
-            .map(c => c.id);
-        const eligible = linkedClassIds.length > 0
-            ? students.filter(s => linkedClassIds.includes(s.classId))
-            : students.filter(s => s.classId === student.classId);
+        let eligible: typeof students;
+        if (navScope === 'current-class') {
+            eligible = students.filter(s => s.classId === student.classId);
+        } else {
+            const linkedClassIds = classes
+                .filter(c => c.rubricIds?.includes(rubricId ?? ''))
+                .map(c => c.id);
+            eligible = linkedClassIds.length > 0
+                ? students.filter(s => linkedClassIds.includes(s.classId))
+                : students.filter(s => s.classId === student.classId);
+        }
         const sorted = [...eligible].sort((a, b) => a.name.localeCompare(b.name));
         const currentIndex = sorted.findIndex(s => s.id === studentId);
         const after = sorted.slice(currentIndex + 1).concat(sorted.slice(0, currentIndex));
         return after.find(s => !studentRubrics.find(sr => sr.rubricId === rubricId && sr.studentId === s.id))
             ?? after[0]
             ?? null;
-    }, [student, students, classes, studentId, studentRubrics, rubricId]);
+    }, [student, students, classes, studentId, studentRubrics, rubricId, navScope]);
 
     const handleSaveAndNext = useCallback(() => {
         if (!sr || !rubric || !nextStudent) return;
@@ -108,6 +115,24 @@ export default function GradeStudent() {
         setIsDirty(false);
         navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}`);
     }, [sr, rubric, saveStudentRubric, nextStudent, navigate, rubricId]);
+
+    const handleNotHandedIn = useCallback(() => {
+        if (!sr || !rubric) return;
+        const nhiSR = {
+            ...sr,
+            notHandedIn: true,
+            overallComment: t('gradeStudent.not_handed_in_comment'),
+            rubricSnapshot: JSON.parse(JSON.stringify(rubric)),
+            gradedAt: new Date().toISOString()
+        };
+        saveStudentRubric(nhiSR);
+        setIsDirty(false);
+        if (nextStudent) {
+            navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}`);
+        } else {
+            navigate(-1);
+        }
+    }, [sr, rubric, saveStudentRubric, nextStudent, navigate, rubricId, t]);
 
     // Keyboard shortcut to save
     React.useEffect(() => {
@@ -174,16 +199,27 @@ export default function GradeStudent() {
                 actions={
                     <>
                         <button className="btn btn-ghost btn-sm" onClick={() => navigate(-1)}><ArrowLeft size={15} /> {t('gradeStudent.action_back')}</button>
-                        <button 
-                            className={`btn btn-sm ${voice.isListening ? 'btn-danger pulse' : 'btn-secondary'}`} 
+                        <button
+                            className={`btn btn-sm ${voice.isListening ? 'btn-danger pulse' : 'btn-secondary'}`}
                             onClick={voice.toggleListening}
                             title={voice.isListening ? t('gradeStudent.action_voice_stop') : t('gradeStudent.action_voice_start')}
                         >
                             {voice.isListening ? <MicOff size={15} /> : <Mic size={15} />}
                             {voice.isListening ? t('gradeStudent.voice_listening') : t('gradeStudent.action_voice_start')}
                         </button>
+                        <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => updateSettings({ gradeNavigationScope: navScope === 'current-class' ? 'rubric-classes' : 'current-class' })}
+                            title={navScope === 'current-class' ? t('gradeStudent.nav_scope_current_class') : t('gradeStudent.nav_scope_rubric_classes')}
+                        >
+                            <Users size={15} />
+                            {navScope === 'current-class' ? t('gradeStudent.nav_scope_current_class') : t('gradeStudent.nav_scope_rubric_classes')}
+                        </button>
                         <button className="btn btn-secondary btn-sm" onClick={() => setShowAttachPanel(p => !p)}>
                             <Paperclip size={15} /> {t('gradeStudent.action_attachments')}
+                        </button>
+                        <button className="btn btn-secondary btn-sm" onClick={handleNotHandedIn} title={t('gradeStudent.action_not_handed_in')}>
+                            <XCircle size={15} /> {t('gradeStudent.action_not_handed_in')}
                         </button>
                         <button className="btn btn-primary btn-sm" onClick={handleSave}>
                             <Save size={15} /> {saved ? t('gradeStudent.action_saved') : t('gradeStudent.action_save')}
@@ -422,10 +458,12 @@ export default function GradeStudent() {
             {summary && rubric.format.showCalculatedGrade !== false && (
                 <div className="grade-footer">
                     <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1 }}>
-                        <span className="grade-chip" style={{ background: `${summary.gradeColor}22`, border: `2px solid ${summary.gradeColor}`, color: summary.gradeColor }}>
-                            {summary.letterGrade}
-                        </span>
-                        <span style={{ fontSize: '1.05rem', fontWeight: 700 }}>{summary.modifiedPercentage.toFixed(1)}%</span>
+                        {scale && (
+                            <span className="grade-chip" style={{ background: `${summary.gradeColor}22`, border: `2px solid ${summary.gradeColor}`, color: summary.gradeColor }}>
+                                {summary.letterGrade}
+                            </span>
+                        )}
+                        {scale && <span style={{ fontSize: '1.05rem', fontWeight: 700 }}>{summary.modifiedPercentage.toFixed(1)}%</span>}
                         <span className="text-muted text-sm">{summary.rawScore} / {summary.configuredMaxPoints} {t('gradeStudent.table_points')}</span>
                         <span className="text-muted text-sm" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                             {summary.gradedCount}/{summary.totalCriteria} {t('gradeStudent.table_criterion').toLowerCase()}

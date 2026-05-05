@@ -200,7 +200,11 @@
         "action_voice_start": "Start Voice Assistant",
         "action_voice_stop": "Stop Voice Assistant",
         "voice_listening": "Listening...",
-        "voice_ready": "Voice assistant ready"
+        "voice_ready": "Voice assistant ready",
+        "action_not_handed_in": "Not handed in",
+        "not_handed_in_comment": "Not handed in",
+        "nav_scope_current_class": "Current class",
+        "nav_scope_rubric_classes": "All linked classes"
     },
     "rubricBuilder": {
         "action_back": "Back",
