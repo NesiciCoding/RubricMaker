@@ -6,19 +6,18 @@ import { AppProvider } from './context/AppContext';
 import { ToastProvider } from './context/ToastContext';
 import './index.css';
 import './i18n';
-import { MsalProvider } from '@azure/msal-react';
-import { msalInstance } from './services/msalConfig';
+// import { MsalProvider } from '@azure/msal-react';
+// import { msalInstance } from './services/msalConfig';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
-        <MsalProvider instance={msalInstance}>
-            <HashRouter>
-                <AppProvider>
-                    <ToastProvider>
-                        <App />
-                    </ToastProvider>
-                </AppProvider>
-            </HashRouter>
-        </MsalProvider>
+        {/* MsalProvider disabled — Azure integration not in use */}
+        <HashRouter>
+            <AppProvider>
+                <ToastProvider>
+                    <App />
+                </ToastProvider>
+            </AppProvider>
+        </HashRouter>
     </React.StrictMode>
 );

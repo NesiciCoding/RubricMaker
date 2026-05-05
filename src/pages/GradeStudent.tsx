@@ -256,7 +256,7 @@ export default function GradeStudent() {
                                 setIsDirty(true);
                             }}
                             style={{ width: 60 }} />
-                        <input type="text" placeholder={t('gradeStudent.modifier_reason_placeholder') || 'Reason'} value={sr.globalModifier?.reason ?? ''}
+                        <input type="text" placeholder={t('gradeStudent.modifier_reason_placeholder')} value={sr.globalModifier?.reason ?? ''}
                             onChange={e => {
                                 setSr(p => p ? { ...p, globalModifier: { type: p.globalModifier?.type ?? 'percentage', value: p.globalModifier?.value ?? 0, reason: e.target.value } } : p);
                                 setIsDirty(true);

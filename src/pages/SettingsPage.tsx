@@ -99,6 +99,12 @@ export default function SettingsPage() {
         updateGradeScale({ ...scale, ranges: scale.ranges.filter((_, i) => i !== idx) });
     }
 
+    function getScaleName(gs: GradeScale): string {
+        const key = `settings.scale_name_${gs.id.replace(/-/g, '_')}`;
+        const translated = t(key);
+        return translated !== key ? translated : gs.name;
+    }
+
     return (
         <>
             <Topbar title={t('settings.title')} />
@@ -112,7 +118,7 @@ export default function SettingsPage() {
                             <label>{t('settings.default_grade_scale')}</label>
                             <select value={settings.defaultGradeScaleId}
                                 onChange={e => updateSettings({ defaultGradeScaleId: e.target.value })}>
-                                {gradeScales.map(gs => <option key={gs.id} value={gs.id}>{gs.name}</option>)}
+                                {gradeScales.map(gs => <option key={gs.id} value={gs.id}>{getScaleName(gs)}</option>)}
                             </select>
                         </div>
                         <div className="form-group">
@@ -137,21 +143,23 @@ export default function SettingsPage() {
                         </div>
                         <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                             <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                Per-Student Matchup Limit
+                                {t('settings.comparisons_limit_label')}
                                 <span className="badge badge-blue">
-                                    {settings.comparativeMatchupLimit && settings.comparativeMatchupLimit > 0 ? settings.comparativeMatchupLimit : 'Infinite'}
+                                    {settings.comparativeMatchupLimit && settings.comparativeMatchupLimit > 0
+                                        ? settings.comparativeMatchupLimit
+                                        : t('settings.comparisons_limit_infinite')}
                                 </span>
                             </label>
                             <input
                                 type="number"
                                 min="0"
-                                placeholder="0 = infinite (default)"
+                                placeholder={t('settings.comparisons_limit_placeholder')}
                                 value={settings.comparativeMatchupLimit || ''}
                                 onChange={e => updateSettings({ comparativeMatchupLimit: parseInt(e.target.value) || 0 })}
                                 style={{ maxWidth: 200 }}
                             />
                             <div className="text-muted text-xs" style={{ marginTop: 4 }}>
-                                Maximum comparisons each student can appear in. The session stops when all students have reached this limit. 0 means no limit.
+                                {t('settings.comparisons_limit_help')}
                             </div>
                         </div>
                     </div>
@@ -212,8 +220,8 @@ export default function SettingsPage() {
                     </div>
                 </div>
 
-                {/* Cloud Sync */}
-                <div className="card" style={{ marginBottom: 24, borderLeft: '4px solid var(--purple)' }}>
+                {/* Cloud Sync — disabled until Azure integration is re-enabled */}
+                {false && <div className="card" style={{ marginBottom: 24, borderLeft: '4px solid var(--purple)' }}>
                     <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
                         <Cloud size={20} style={{ color: 'var(--purple)' }} />
                         <h3 style={{ margin: 0 }}>{t('settings.cloud_sync')}</h3>
@@ -266,12 +274,12 @@ export default function SettingsPage() {
 
                             {settings.microsoftLastSyncAt && (
                                 <div className="text-muted text-xs">
-                                    {t('settings.last_sync_label').replace('{{date}}', new Date(settings.microsoftLastSyncAt).toLocaleString())}
+                                    {t('settings.last_sync_label').replace('{{date}}', new Date(settings.microsoftLastSyncAt!).toLocaleString())}
                                 </div>
                             )}
                         </div>
                     )}
-                </div>
+                </div>}
 
                 {/* Comment Bank */}
                 <div className="card" style={{ marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

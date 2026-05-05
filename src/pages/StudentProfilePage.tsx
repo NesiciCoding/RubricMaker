@@ -11,6 +11,7 @@ import { calcGradeSummary } from '../utils/gradeCalc';
 import { exportSinglePdf } from '../utils/pdfExport';
 import { getStudentGoalScores } from '../utils/learningGoalsAggregator';
 import LearningGoalChart from '../components/Statistics/LearningGoalChart';
+import CefrProgressChart from '../components/Statistics/CefrProgressChart';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import { CEFR_LEVELS, CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
 import { VO_TRACK_LABELS, VO_TRACK_COLORS } from '../data/voTracks';
@@ -234,7 +235,10 @@ export default function StudentProfilePage() {
                                     </span>
                                 </h3>
 
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                {cefrProgress.length >= 3 && (
+                                    <CefrProgressChart entries={cefrProgress} />
+                                )}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: cefrProgress.length >= 3 ? 16 : 0 }}>
                                     {cefrProgress.map(entry => {
                                         const skillLabel = CEFR_SKILL_LABELS[entry.skill]?.[lang] ?? entry.skill;
                                         return (

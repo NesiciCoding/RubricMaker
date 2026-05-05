@@ -1,7 +1,18 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 import CriterionRadarChart from '../CriterionRadarChart';
+
+// ResponsiveContainer uses ResizeObserver and reports 0-size in jsdom; mock it
+// to render children directly with a fixed size so Recharts renders the SVG.
+vi.mock('recharts', async (importOriginal) => {
+    const mod = await importOriginal<typeof import('recharts')>();
+    return {
+        ...mod,
+        ResponsiveContainer: ({ children }: { children: React.ReactElement }) =>
+            React.cloneElement(children, { width: 600, height: 400 }),
+    };
+});
 
 const threePoint = [
     { name: 'Writing', avg: 70 },

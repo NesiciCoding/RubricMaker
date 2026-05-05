@@ -1,9 +1,11 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Upload, Paperclip, Trash2, Download, Link2, Users } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 
 export default function AttachmentsPage() {
+    const { t } = useTranslation();
     const { attachments, rubrics, students, classes, addAttachment, deleteAttachment } = useApp();
     const [dragOver, setDragOver] = useState(false);
     const [selectedRubricId, setSelectedRubricId] = useState('');
@@ -44,7 +46,7 @@ export default function AttachmentsPage() {
 
     return (
         <>
-            <Topbar title="Attachments" />
+            <Topbar title={t('attachments.title')} />
             <div className="page-content fade-in">
                 {/* Drop zone */}
                 <div
@@ -56,30 +58,30 @@ export default function AttachmentsPage() {
                     onDrop={e => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files); }}
                 >
                     <Upload size={28} style={{ margin: '0 auto 10px', display: 'block' }} />
-                    <p style={{ fontWeight: 600 }}>Drag & drop files here, or click to browse</p>
-                    <p className="text-xs text-muted" style={{ marginTop: 6 }}>PDFs, images, Word docs, and more</p>
+                    <p style={{ fontWeight: 600 }}>{t('attachments.drop_zone_title')}</p>
+                    <p className="text-xs text-muted" style={{ marginTop: 6 }}>{t('attachments.drop_zone_subtitle')}</p>
                     <div style={{ marginTop: 14, display: 'flex', gap: 10, justifyContent: 'center', alignItems: 'center' }}>
-                        <label className="text-xs text-muted">Link to rubric:</label>
+                        <label className="text-xs text-muted">{t('attachments.link_to_rubric')}</label>
                         <select value={selectedRubricId} onChange={e => { setSelectedRubricId(e.target.value); setSelectedStudentId(''); }}
                             style={{ width: 200 }}
                             onClick={e => e.stopPropagation()}>
-                            <option value="">— No rubric —</option>
+                            <option value="">{t('attachments.no_rubric')}</option>
                             {rubrics.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
                         </select>
                     </div>
                     {selectedRubricId && (
                         <div style={{ marginTop: 10, display: 'flex', gap: 10, justifyContent: 'center', alignItems: 'center' }}>
-                            <label className="text-xs text-muted">Link to student:</label>
+                            <label className="text-xs text-muted">{t('attachments.link_to_student')}</label>
                             <select value={selectedClassId} onChange={e => { setSelectedClassId(e.target.value); setSelectedStudentId(''); }}
                                 style={{ width: 140 }}
                                 onClick={e => e.stopPropagation()}>
-                                <option value="">— Any Class —</option>
+                                <option value="">{t('attachments.any_class')}</option>
                                 {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
                             <select value={selectedStudentId} onChange={e => setSelectedStudentId(e.target.value)}
                                 style={{ width: 140 }}
                                 onClick={e => e.stopPropagation()}>
-                                <option value="">— No student —</option>
+                                <option value="">{t('attachments.no_student')}</option>
                                 {students.filter(s => !selectedClassId || s.classId === selectedClassId).map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                             </select>
                         </div>
@@ -91,12 +93,20 @@ export default function AttachmentsPage() {
                 {attachments.length === 0 ? (
                     <div className="empty-state">
                         <Paperclip size={32} />
-                        <p>No attachments yet. Upload files above.</p>
+                        <p>{t('attachments.empty_state')}</p>
                     </div>
                 ) : (
                     <table className="data-table">
                         <thead>
-                            <tr><th>Name</th><th>Type</th><th>Size</th><th>Linked Rubric</th><th>Linked Student</th><th>Added</th><th>Actions</th></tr>
+                            <tr>
+                                <th>{t('attachments.table_name')}</th>
+                                <th>{t('attachments.table_type')}</th>
+                                <th>{t('attachments.table_size')}</th>
+                                <th>{t('attachments.table_linked_rubric')}</th>
+                                <th>{t('attachments.table_linked_student')}</th>
+                                <th>{t('attachments.table_added')}</th>
+                                <th>{t('attachments.table_actions')}</th>
+                            </tr>
                         </thead>
                         <tbody>
                             {attachments.map(att => {

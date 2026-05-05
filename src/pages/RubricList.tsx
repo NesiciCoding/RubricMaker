@@ -241,7 +241,7 @@ export default function RubricList() {
                                                     navigate(`/grade-comparative/${activeClass ? activeClass.id : 'all'}/${r.id}`);
                                                 }}
                                             >
-                                                <GitCompare size={14} /> Compare
+                                                <GitCompare size={14} /> {t('rubricList.action_compare')}
                                             </button>
                                         </div>
                                     </div>

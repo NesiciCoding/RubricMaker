@@ -215,8 +215,8 @@ export default function StudentsPage() {
                         <Download size={15} /> {t('studentsPage.export_csv')}
                     </button>
                     {filteredStudents.length > 0 && (
-                        <button className="btn btn-secondary btn-sm" onClick={exportAllSummaries} title="Export all student summaries as a text file">
-                            <FileText size={15} /> Export Summaries
+                        <button className="btn btn-secondary btn-sm" onClick={exportAllSummaries} title={t('studentsPage.action_export_summaries')}>
+                            <FileText size={15} /> {t('studentsPage.action_export_summaries')}
                         </button>
                     )}
                     <button className="btn btn-primary btn-sm" onClick={() => setShowAddModal(true)}>

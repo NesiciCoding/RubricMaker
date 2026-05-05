@@ -14,20 +14,15 @@ export default function ExportPage() {
     const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());
     const [exporting, setExporting] = useState(false);
 
-    // PDF Export Options
     const rubric = rubrics.find(r => r.id === selectedRubricId);
 
-    // PDF Export Options
     const [padForDoubleSided, setPadForDoubleSided] = useState(false);
     const [orientation, setOrientation] = useState<'portrait' | 'landscape' | undefined>(undefined);
 
-    // Template (for Word/DOCX export)
     const activeTemplateId = settings.exportTemplateId ?? '';
     const activeTemplate = exportTemplates.find(t => t.id === activeTemplateId) ?? null;
 
     const scale = gradeScales.find(g => g.id === (rubric?.gradeScaleId ?? settings.defaultGradeScaleId)) ?? gradeScales[0];
-
-    // Template (for Word/DOCX export)
 
     const gradedStudents = studentRubrics
         .filter(sr => sr.rubricId === selectedRubricId)
@@ -164,15 +159,15 @@ export default function ExportPage() {
 
     return (
         <>
-            <Topbar title="Export" />
+            <Topbar title={t('navigation.export')} />
             <div className="page-content fade-in">
                 <div className="card" style={{ marginBottom: 20 }}>
                     <div className="form-group" style={{ marginBottom: 16 }}>
-                        <label>Select Rubric to Export</label>
-                        <select value={selectedRubricId} onChange={e => { 
-                            setSelectedRubricId(e.target.value); 
+                        <label>{t('exportPage.select_rubric')}</label>
+                        <select value={selectedRubricId} onChange={e => {
+                            setSelectedRubricId(e.target.value);
                             setSelectedStudentIds(new Set());
-                            setOrientation(undefined); // Reset to rubric default
+                            setOrientation(undefined);
                         }}>
                             {rubrics.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
                         </select>
@@ -182,7 +177,7 @@ export default function ExportPage() {
                     <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600, fontSize: '0.88rem' }}>
-                                <Layout size={14} /> Word Export Template
+                                <Layout size={14} /> {t('exportPage.word_template_label')}
                             </div>
                             <button
                                 className="btn btn-secondary btn-sm"
@@ -190,7 +185,9 @@ export default function ExportPage() {
                                 onClick={handleWordExport}
                             >
                                 {exporting ? <Loader size={13} className="spin" /> : <Download size={13} />}
-                                {activeTemplate ? `Export Word (${activeTemplate.name})` : 'Export Word (default)'}
+                                {activeTemplate
+                                    ? t('exportPage.export_word_template', { template: activeTemplate.name })
+                                    : t('exportPage.export_word_default')}
                             </button>
                         </div>
                         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -199,7 +196,7 @@ export default function ExportPage() {
                                 value={activeTemplateId}
                                 onChange={e => updateSettings({ exportTemplateId: e.target.value || undefined })}
                             >
-                                <option value="">— Default (no template) —</option>
+                                <option value="">{t('exportPage.template_default_option')}</option>
                                 {exportTemplates.map(t => (
                                     <option key={t.id} value={t.id}>{t.name} ({t.levelHeaders.length} levels)</option>
                                 ))}
@@ -213,15 +210,15 @@ export default function ExportPage() {
                         </div>
                         {exportTemplates.length === 0 ? (
                             <div className="text-muted text-xs" style={{ marginTop: 6, display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
-                                No templates saved. Upload one in <strong>Settings → Export Templates</strong>.
+                                <span dangerouslySetInnerHTML={{ __html: t('exportPage.no_templates_help') }} />
                                 <a href="sample-template.docx" download="sample-template.docx" className="btn btn-ghost btn-icon btn-sm" style={{ padding: '0 6px', height: 20, display: 'inline-flex', alignSelf: 'center', alignItems: 'center', gap: 4, textDecoration: 'none', color: 'var(--accent)' }}>
-                                    <Download size={10} /> Download Sample Template
+                                    <Download size={10} /> {t('exportPage.download_sample')}
                                 </a>
                             </div>
                         ) : (
                             <div className="text-muted text-xs" style={{ marginTop: 6, display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
                                 <a href="sample-template.docx" download="sample-template.docx" className="btn btn-ghost btn-icon btn-sm" style={{ padding: '0 6px', height: 20, display: 'inline-flex', alignSelf: 'center', alignItems: 'center', gap: 4, textDecoration: 'none', color: 'var(--accent)' }}>
-                                    <Download size={10} /> Download Sample Template
+                                    <Download size={10} /> {t('exportPage.download_sample')}
                                 </a>
                             </div>
                         )}
@@ -231,7 +228,7 @@ export default function ExportPage() {
                     <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14, marginTop: 14 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600, fontSize: '0.88rem' }}>
-                                <FileText size={14} /> Spreadsheet Export (CSV)
+                                <FileText size={14} /> {t('exportPage.csv_label')}
                             </div>
                             <button
                                 className="btn btn-secondary btn-sm"
@@ -239,36 +236,38 @@ export default function ExportPage() {
                                 onClick={handleCsvExport}
                             >
                                 <Download size={13} />
-                                {selectedStudentIds.size === 0 ? 'Select students to export CSV' : `Export ${selectedStudentIds.size} as CSV`}
+                                {selectedStudentIds.size === 0
+                                    ? t('exportPage.csv_select_prompt')
+                                    : t('exportPage.csv_export_count', { count: selectedStudentIds.size })}
                             </button>
                         </div>
                     </div>
                 </div>
 
                 {!rubric ? (
-                    <div className="empty-state"><FileText size={32} /><p>Select a rubric above.</p></div>
+                    <div className="empty-state"><FileText size={32} /><p>{t('exportPage.no_rubric')}</p></div>
                 ) : gradedStudents.length === 0 ? (
-                    <div className="empty-state"><Users size={32} /><p>No students have been graded with this rubric yet.</p></div>
+                    <div className="empty-state"><Users size={32} /><p>{t('exportPage.no_students')}</p></div>
                 ) : (
                     <>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
                             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                                 <button className="btn btn-ghost btn-sm" onClick={toggleAll}>
                                     {selectedStudentIds.size === gradedStudents.length ? <CheckSquare size={15} /> : <Square size={15} />}
-                                    {selectedStudentIds.size === gradedStudents.length ? 'Deselect All' : 'Select All'}
+                                    {selectedStudentIds.size === gradedStudents.length ? t('exportPage.deselect_all') : t('exportPage.select_all')}
                                 </button>
-                                <span className="text-muted text-sm">{selectedStudentIds.size} of {gradedStudents.length} selected</span>
+                                <span className="text-muted text-sm">{t('exportPage.selected_count', { count: selectedStudentIds.size, total: gradedStudents.length })}</span>
                             </div>
                             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginRight: 10 }}>
                                     <label style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 6, fontSize: '0.85rem', cursor: 'pointer', color: 'var(--text-muted)' }} title="Adds to blank page so each student starts on a new physical sheet">
                                         <input type="checkbox" checked={padForDoubleSided} onChange={e => setPadForDoubleSided(e.target.checked)} />
-                                        Pad for Double-Sided Print
+                                        {t('exportPage.pad_double_sided')}
                                     </label>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 12, borderLeft: '1px solid var(--border)', paddingLeft: 12 }}>
                                         <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{t('rubricBuilder.format_orientation')}:</label>
-                                        <select 
-                                            value={orientation || rubric.format.orientation || 'portrait'} 
+                                        <select
+                                            value={orientation || rubric.format.orientation || 'portrait'}
                                             onChange={e => setOrientation(e.target.value as 'portrait' | 'landscape')}
                                             style={{ height: 30, fontSize: '0.85rem', padding: '0 8px' }}
                                         >
@@ -283,7 +282,9 @@ export default function ExportPage() {
                                     onClick={() => handleExport()}
                                 >
                                     {exporting ? <Loader size={15} className="spin" /> : <Download size={15} />}
-                                    {exporting ? 'Preparing Print…' : `Print ${selectedStudentIds.size} to PDF`}
+                                    {exporting
+                                        ? t('exportPage.preparing_print')
+                                        : t('exportPage.print_to_pdf', { count: selectedStudentIds.size })}
                                 </button>
                             </div>
                         </div>
@@ -292,11 +293,11 @@ export default function ExportPage() {
                             <thead>
                                 <tr>
                                     <th style={{ width: 40 }}></th>
-                                    <th>Student</th>
-                                    <th>Grade</th>
-                                    <th>Score</th>
-                                    <th>Progress</th>
-                                    <th>Actions</th>
+                                    <th>{t('exportPage.table_student')}</th>
+                                    <th>{t('exportPage.table_grade')}</th>
+                                    <th>{t('exportPage.table_score')}</th>
+                                    <th>{t('exportPage.table_progress')}</th>
+                                    <th>{t('exportPage.table_actions')}</th>
                                 </tr>
                             </thead>
                             <tbody>
