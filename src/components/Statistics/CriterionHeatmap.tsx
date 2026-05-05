@@ -31,7 +31,7 @@ function textColor(pct: number): string {
     return pct < 30 || pct > 70 ? 'white' : '#1e293b';
 }
 
-function truncate(str: string, max = 12): string {
+function truncate(str: string, max = 13): string {
     return str.length > max ? str.slice(0, max) + '…' : str;
 }
 

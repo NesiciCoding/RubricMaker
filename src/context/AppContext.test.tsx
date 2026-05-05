@@ -376,10 +376,7 @@ describe('AppContext', () => {
         expect(storage.saveSettings).toHaveBeenCalled();
     });
 
-    it('should sync to OneDrive', async () => {
-        const { useIsAuthenticated } = await import('@azure/msal-react');
-        vi.mocked(useIsAuthenticated).mockReturnValue(true);
-
+    it('should sync to OneDrive (no-op — Azure disabled)', async () => {
         const { result } = renderHook(() => useApp(), { wrapper });
         const { graphService } = await import('../services/microsoftGraph');
 
@@ -387,13 +384,11 @@ describe('AppContext', () => {
             await result.current.syncToOneDrive();
         });
 
-        expect(graphService.uploadFile).toHaveBeenCalled();
+        // Azure integration is disabled; syncToOneDrive is a no-op
+        expect(graphService.uploadFile).not.toHaveBeenCalled();
     });
 
-    it('should restore from OneDrive', async () => {
-        const { useIsAuthenticated } = await import('@azure/msal-react');
-        vi.mocked(useIsAuthenticated).mockReturnValue(true);
-
+    it('should restore from OneDrive (no-op — Azure disabled)', async () => {
         const { result } = renderHook(() => useApp(), { wrapper });
         const { graphService } = await import('../services/microsoftGraph');
 
@@ -401,6 +396,7 @@ describe('AppContext', () => {
             await result.current.restoreFromOneDrive();
         });
 
-        expect(graphService.downloadFile).toHaveBeenCalled();
+        // Azure integration is disabled; restoreFromOneDrive is a no-op
+        expect(graphService.downloadFile).not.toHaveBeenCalled();
     });
 });

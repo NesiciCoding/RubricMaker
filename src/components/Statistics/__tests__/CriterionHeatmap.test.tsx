@@ -92,14 +92,15 @@ describe('CriterionHeatmap component', () => {
     it('uses greenish background for high-score cells', () => {
         render(<CriterionHeatmap students={[{ id: 's1', name: 'Alice' }]} criteria={[{ id: 'c1', title: 'A' }]} scores={{ s1: { c1: 100 } }} />);
         const cell = screen.getByTitle('Alice — A: 100%');
-        // green tone: rgb(34,197,94)
-        expect(cell.style.background).toBe('rgb(34,197,94)');
+        // green tone: rgb(34,197,94) — jsdom normalizes to spaced form
+        expect(cell.style.background).toBe('rgb(34, 197, 94)');
     });
 
     it('uses reddish background for low-score cells', () => {
         render(<CriterionHeatmap students={[{ id: 's1', name: 'Alice' }]} criteria={[{ id: 'c1', title: 'A' }]} scores={{ s1: { c1: 0 } }} />);
         const cell = screen.getByTitle('Alice — A: 0%');
-        expect(cell.style.background).toBe('rgb(239,68,68)');
+        // jsdom normalizes rgb() to spaced form
+        expect(cell.style.background).toBe('rgb(239, 68, 68)');
     });
 
     it('renders 0% when a score is missing from the scores map', () => {
