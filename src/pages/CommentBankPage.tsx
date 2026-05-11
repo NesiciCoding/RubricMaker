@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Plus, Trash2, MessageSquare, Tag, Edit2 } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Plus, Trash2, MessageSquare, Tag, Edit2, Search } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 
@@ -10,14 +10,20 @@ export default function CommentBankPage() {
     const [text, setText] = useState('');
     const [tag, setTag] = useState('general');
     const [filterTag, setFilterTag] = useState('all');
+    const [searchTerm, setSearchTerm] = useState('');
 
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editText, setEditText] = useState('');
     const [editTag, setEditTag] = useState('');
 
-    const filtered = filterTag === 'all'
-        ? commentSnippets
-        : commentSnippets.filter(s => s.tag === filterTag);
+    const filtered = useMemo(() => {
+        return commentSnippets.filter(s => {
+            const matchesTag = filterTag === 'all' || s.tag === filterTag;
+            const q = searchTerm.toLowerCase();
+            const matchesSearch = !q || s.text.toLowerCase().includes(q) || s.tag.toLowerCase().includes(q);
+            return matchesTag && matchesSearch;
+        });
+    }, [commentSnippets, filterTag, searchTerm]);
 
     function handleAdd() {
         if (!text.trim()) return;
@@ -59,6 +65,18 @@ export default function CommentBankPage() {
                             </button>
                         </div>
                     </div>
+                </div>
+
+                {/* Search */}
+                <div className="input-group" style={{ marginBottom: 12 }}>
+                    <Search size={15} style={{ color: 'var(--text-dim)' }} />
+                    <input
+                        type="text"
+                        placeholder="Search snippets..."
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                        style={{ border: 'none', background: 'transparent', width: '100%' }}
+                    />
                 </div>
 
                 {/* Filter */}

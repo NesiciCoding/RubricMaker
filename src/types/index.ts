@@ -173,7 +173,8 @@ export const DEFAULT_FORMAT: RubricFormat = {
     orientation: 'portrait',
 };
 
-export type ScoringMode = 'weighted-percentage' | 'total-points';
+export type ScoringMode = 'weighted-percentage' | 'total-points' | 'single-point';
+export type SinglePointOutcome = 'exceeds' | 'meets' | 'not-yet';
 
 export interface Rubric {
     id: string;
@@ -230,6 +231,8 @@ export interface ScoreEntry {
     subItemScores?: Record<string, number>;
     comment: string;
     attachmentId?: string;         // evidence file linked to this criterion
+    /** Single-point rubric outcome — set instead of levelId when scoringMode is 'single-point' */
+    singlePointOutcome?: SinglePointOutcome;
 }
 
 export interface StudentRubric {
@@ -245,6 +248,8 @@ export interface StudentRubric {
     isPeerReview: boolean;
     /** When true the student did not hand in the work */
     notHandedIn?: boolean;
+    /** When true only written feedback is visible to the student; the grade is hidden until explicitly published */
+    feedbackOnly?: boolean;
     /** Snapshot of the rubric at the time of grading to ensure historical grades do not break */
     rubricSnapshot?: Rubric;
 }

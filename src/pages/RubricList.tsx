@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Edit2, Trash2, Copy, BookOpen, Users, Upload, GitCompare, Share2, ClipboardPaste, Check, Layers } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Copy, BookOpen, Users, Upload, GitCompare, Share2, ClipboardPaste, Check, Layers, Eye } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
@@ -35,6 +35,15 @@ export default function RubricList() {
         if (!rubric) return;
         navigator.clipboard.writeText(encodeRubricShareCode(rubric));
         setCopiedId(rubricId);
+        setTimeout(() => setCopiedId(null), 2000);
+    }
+
+    function handleSharePreview(rubricId: string) {
+        const rubric = rubrics.find(r => r.id === rubricId);
+        if (!rubric) return;
+        const url = `${window.location.origin}${window.location.pathname}#/preview/${encodeRubricShareCode(rubric)}`;
+        navigator.clipboard.writeText(url);
+        setCopiedId('preview-' + rubricId);
         setTimeout(() => setCopiedId(null), 2000);
     }
 
@@ -183,10 +192,15 @@ export default function RubricList() {
                                             {r.subject && <div className="text-muted text-xs" style={{ marginTop: 2 }}>{r.subject}</div>}
                                         </div>
                                         <div style={{ display: 'flex', gap: 4 }}>
-                                            <button className="btn btn-ghost btn-icon btn-sm" title="Copy share code"
+                                            <button className="btn btn-ghost btn-icon btn-sm" title="Copy share code (for other teachers)"
                                                 style={{ color: copiedId === r.id ? 'var(--green, #22c55e)' : undefined }}
                                                 onClick={e => { e.stopPropagation(); handleCopyShareCode(r.id); }}>
                                                 {copiedId === r.id ? <Check size={14} /> : <Share2 size={14} />}
+                                            </button>
+                                            <button className="btn btn-ghost btn-icon btn-sm" title="Share preview with students (copy link)"
+                                                style={{ color: copiedId === 'preview-' + r.id ? 'var(--green, #22c55e)' : undefined }}
+                                                onClick={e => { e.stopPropagation(); handleSharePreview(r.id); }}>
+                                                {copiedId === 'preview-' + r.id ? <Check size={14} /> : <Eye size={14} />}
                                             </button>
                                             <button className="btn btn-ghost btn-icon btn-sm" title={t('voTrack.differentiate_title')}
                                                 onClick={e => { e.stopPropagation(); openDifferentiate(r.id); }}>

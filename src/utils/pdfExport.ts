@@ -82,13 +82,14 @@ function buildRubricHTML(
   rubric: Rubric,
   student: Student,
   scale: GradeScale | null,
+  breakBeforeRight = false,
 ): string {
   const summary = calcGradeSummary(sr, rubric.criteria, scale);
   const fmt = rubric.format;
   const gridHtml = buildRubricGridHtml(rubric, sr);
 
   return `
-  <div class="print-page" style="page-break-after: always; font-family: ${fmt.fontFamily}; color: #1e293b; background: #fff;">
+  <div class="print-page" style="${breakBeforeRight ? 'break-before: right; page-break-before: right; ' : ''}page-break-after: always; font-family: ${fmt.fontFamily}; color: #1e293b; background: #fff;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px">
         <div>
           <h1 style="margin:0;font-size:20px">${rubric.name}</h1>
@@ -98,8 +99,10 @@ function buildRubricHTML(
           <div style="font-size:12px;color:#6b7280;margin-top:4px">Graded: ${sr.gradedAt ? new Date(sr.gradedAt).toLocaleDateString() : 'N/A'}</div>
         </div>
         <div style="text-align:right">
-          ${fmt.showCalculatedGrade !== false ? `
+          ${fmt.showCalculatedGrade !== false && scale !== null ? `
           <div style="font-size:42px;font-weight:800;color:${summary.gradeColor};line-height:1">${summary.letterGrade}</div>
+          <div style="font-size:16px;font-weight:600;color:#374151">${summary.modifiedPercentage.toFixed(1)}%</div>
+          ` : fmt.showCalculatedGrade !== false ? `
           <div style="font-size:16px;font-weight:600;color:#374151">${summary.modifiedPercentage.toFixed(1)}%</div>
           ` : ''}
           <div style="font-size:12px;color:#6b7280">${summary.rawScore}/${summary.maxRawScore} pts</div>
@@ -206,12 +209,10 @@ export async function exportBatchPdf(
   scale: GradeScale | null,
   options: { orientation?: 'portrait' | 'landscape', padForDoubleSided?: boolean } = {}
 ): Promise<void> {
-  const htmlParts = entries.map(({ sr, student }) => {
-    let html = buildRubricHTML(sr, rubric, student, scale);
-    if (options.padForDoubleSided) {
-      html += `<div style="page-break-after: always;"></div>`; // Insert blank page
-    }
-    return html;
+  const htmlParts = entries.map(({ sr, student }, index) => {
+    // For double-sided mode: break-before: right lets the browser insert a blank
+    // page only when needed so each student always starts on the front of a sheet.
+    return buildRubricHTML(sr, rubric, student, scale, options.padForDoubleSided === true && index > 0);
   });
   await printHtml(htmlParts.join(''), options.orientation || rubric.format.orientation || 'portrait');
 }

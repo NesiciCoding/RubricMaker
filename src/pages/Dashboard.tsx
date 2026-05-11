@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Users, FileText, Plus, ArrowRight, TrendingUp, CheckCircle } from 'lucide-react';
+import { BookOpen, Users, FileText, Plus, ArrowRight, TrendingUp, CheckCircle, AlertTriangle, Clock } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
 import { QUICK_START_TEMPLATES } from '../data/templates';
+import { calcGradeSummary } from '../utils/gradeCalc';
 
 function timeAgo(iso: string): string {
     const diff = (Date.now() - new Date(iso).getTime()) / 1000;
@@ -70,6 +71,47 @@ export default function Dashboard() {
         }).length;
     }, [studentRubrics, rubrics]);
 
+    // At-risk: students with 2+ recent grades below 55%, plus feedback age per student
+    const { atRiskStudents, feedbackAge } = useMemo(() => {
+        const AT_RISK_THRESHOLD = 55;
+        const AT_RISK_MIN_GRADES = 2;
+
+        // Map studentId → sorted list of recent grades (newest first)
+        const gradesByStudent = new Map<string, { pct: number; gradedAt: string; rubricId: string }[]>();
+        for (const sr of studentRubrics) {
+            if (sr.notHandedIn || !sr.gradedAt) continue;
+            const rubric = rubrics.find(r => r.id === sr.rubricId) ?? sr.rubricSnapshot;
+            if (!rubric) continue;
+            const resolvedScaleId = rubric.gradeScaleId ?? scale?.id;
+            const sc = resolvedScaleId && resolvedScaleId !== 'none'
+                ? (gradeScales.find(g => g.id === resolvedScaleId) ?? null)
+                : null;
+            const summary = calcGradeSummary(sr, rubric.criteria, sc);
+            const list = gradesByStudent.get(sr.studentId) ?? [];
+            list.push({ pct: summary.modifiedPercentage, gradedAt: sr.gradedAt, rubricId: sr.rubricId });
+            gradesByStudent.set(sr.studentId, list);
+        }
+
+        const atRisk: { student: typeof students[0]; recentPct: number; gradedAt: string; rubricId: string }[] = [];
+        const feedbackAgeMap = new Map<string, number>(); // studentId → days
+
+        for (const [sid, grades] of gradesByStudent) {
+            grades.sort((a, b) => b.gradedAt.localeCompare(a.gradedAt));
+            const latest = grades[0];
+            const daysSince = Math.floor((Date.now() - new Date(latest.gradedAt).getTime()) / 86_400_000);
+            feedbackAgeMap.set(sid, daysSince);
+
+            const recent = grades.slice(0, 3);
+            const belowThreshold = recent.filter(g => g.pct < AT_RISK_THRESHOLD);
+            if (belowThreshold.length >= AT_RISK_MIN_GRADES) {
+                const student = students.find(s => s.id === sid);
+                if (student) atRisk.push({ student, recentPct: latest.pct, gradedAt: latest.gradedAt, rubricId: latest.rubricId });
+            }
+        }
+
+        return { atRiskStudents: atRisk.slice(0, 6), feedbackAge: feedbackAgeMap };
+    }, [studentRubrics, rubrics, students, gradeScales, scale]);
+
     return (
         <>
             <Topbar title={t('dashboard.title')} actions={
@@ -115,6 +157,35 @@ export default function Dashboard() {
                     </div>
                 </div>
 
+                {/* At-risk students panel */}
+                {atRiskStudents.length > 0 && (
+                    <div className="card" style={{ marginBottom: 20, borderLeft: '4px solid var(--red)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                            <AlertTriangle size={16} style={{ color: 'var(--red)' }} />
+                            <h3 style={{ margin: 0, color: 'var(--red)' }}>At-Risk Students</h3>
+                            <span className="text-muted text-xs" style={{ marginLeft: 4 }}>(scored below 55% on 2+ recent assessments)</span>
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                            {atRiskStudents.map(({ student, recentPct, rubricId }) => (
+                                <button
+                                    key={student.id}
+                                    className="btn btn-secondary btn-sm"
+                                    onClick={() => navigate(`/rubrics/${rubricId}/grade/${student.id}`)}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                                >
+                                    <span style={{ fontWeight: 600 }}>{student.name}</span>
+                                    <span style={{ color: 'var(--red)', fontSize: '0.78rem' }}>{recentPct.toFixed(0)}%</span>
+                                    {feedbackAge.has(student.id) && feedbackAge.get(student.id)! >= 7 && (
+                                        <span title={`Last feedback ${feedbackAge.get(student.id)} days ago`}>
+                                            <Clock size={11} style={{ color: feedbackAge.get(student.id)! >= 10 ? 'var(--red)' : 'var(--yellow, #f59e0b)' }} />
+                                        </span>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
                     {/* Recent Activity feed */}
                     <div className="card">
@@ -154,7 +225,14 @@ export default function Dashboard() {
                                                 />
                                             )}
                                         </div>
-                                        <span className="text-muted text-xs" style={{ flexShrink: 0 }}>
+                                        <span className="text-muted text-xs" style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                            {item.type === 'grading' && (() => {
+                                                const days = feedbackAge.get(item.studentId);
+                                                if (days === undefined) return null;
+                                                if (days >= 10) return <Clock size={11} style={{ color: 'var(--red)' }} title={`${days}d ago — feedback may be stale`} />;
+                                                if (days >= 7) return <Clock size={11} style={{ color: 'var(--yellow, #f59e0b)' }} title={`${days}d ago`} />;
+                                                return null;
+                                            })()}
                                             {timeAgo(item.timestamp)}
                                         </span>
                                         <button

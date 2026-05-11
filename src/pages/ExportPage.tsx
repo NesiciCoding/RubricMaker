@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { Download, CheckSquare, Square, FileText, Users, Loader, Layout, X } from 'lucide-react';
+import { Download, CheckSquare, Square, FileText, Users, Loader, Layout, X, Share2, XCircle, MessageSquare } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { calcGradeSummary } from '../utils/gradeCalc';
+import { encodeFeedbackCode } from '../utils/studentShareCode';
 
 export default function ExportPage() {
     const { t } = useTranslation();
-    const { rubrics, students, studentRubrics, gradeScales, settings, exportTemplates, updateSettings } = useApp();
+    const { rubrics, students, studentRubrics, gradeScales, settings, exportTemplates, updateSettings, saveStudentRubric } = useApp();
     const { showToast } = useToast();
     const [selectedRubricId, setSelectedRubricId] = useState(rubrics[0]?.id ?? '');
     const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());
@@ -18,11 +19,16 @@ export default function ExportPage() {
 
     const [padForDoubleSided, setPadForDoubleSided] = useState(false);
     const [orientation, setOrientation] = useState<'portrait' | 'landscape' | undefined>(undefined);
+    const [showBulkComment, setShowBulkComment] = useState(false);
+    const [bulkCommentText, setBulkCommentText] = useState('');
 
     const activeTemplateId = settings.exportTemplateId ?? '';
     const activeTemplate = exportTemplates.find(t => t.id === activeTemplateId) ?? null;
 
-    const scale = gradeScales.find(g => g.id === (rubric?.gradeScaleId ?? settings.defaultGradeScaleId)) ?? gradeScales[0];
+    const resolvedScaleId = rubric?.gradeScaleId ?? settings.defaultGradeScaleId;
+    const scale = (resolvedScaleId && resolvedScaleId !== 'none')
+        ? (gradeScales.find(g => g.id === resolvedScaleId) ?? null)
+        : null;
 
     const gradedStudents = studentRubrics
         .filter(sr => sr.rubricId === selectedRubricId)
@@ -75,6 +81,22 @@ export default function ExportPage() {
                     orientation: orientation || rubric.format.orientation || 'portrait'
                 });
             }
+        } catch {
+            showToast(t('toast.export_error'), 'error');
+        } finally {
+            setExporting(false);
+        }
+    }
+
+    async function handleBatchDocxExport() {
+        if (!rubric || selectedStudentIds.size === 0) return;
+        setExporting(true);
+        try {
+            const toExport = gradedStudents
+                .filter(x => selectedStudentIds.has(x.student!.id))
+                .map(x => ({ sr: x.sr, student: x.student! }));
+            const { exportBatchDocx } = await import('../utils/docxExport');
+            await exportBatchDocx(toExport, rubric, scale);
         } catch {
             showToast(t('toast.export_error'), 'error');
         } finally {
@@ -155,6 +177,30 @@ export default function ExportPage() {
         a.download = `${rubric.name.replace(/[^a-z0-9]/gi, '_')}_grades.csv`;
         a.click();
         URL.revokeObjectURL(url);
+    }
+
+    function handleBulkMarkNHI() {
+        const now = new Date().toISOString();
+        gradedStudents.forEach(({ sr }) => {
+            if (!selectedStudentIds.has(sr.studentId)) return;
+            saveStudentRubric({ ...sr, notHandedIn: true, gradedAt: now });
+        });
+        showToast(`Marked ${selectedStudentIds.size} student(s) as not handed in`, 'success');
+        setSelectedStudentIds(new Set());
+    }
+
+    function handleBulkComment() {
+        if (!bulkCommentText.trim()) return;
+        const now = new Date().toISOString();
+        gradedStudents.forEach(({ sr }) => {
+            if (!selectedStudentIds.has(sr.studentId)) return;
+            const current = sr.overallComment || '';
+            const spacer = current && !current.endsWith(' ') ? ' ' : '';
+            saveStudentRubric({ ...sr, overallComment: current + spacer + bulkCommentText, gradedAt: now });
+        });
+        showToast(`Added comment to ${selectedStudentIds.size} student(s)`, 'success');
+        setBulkCommentText('');
+        setShowBulkComment(false);
     }
 
     return (
@@ -277,6 +323,15 @@ export default function ExportPage() {
                                     </div>
                                 </div>
                                 <button
+                                    className="btn btn-secondary"
+                                    disabled={selectedStudentIds.size === 0 || exporting}
+                                    onClick={handleBatchDocxExport}
+                                    title="Export graded results as a Word document"
+                                >
+                                    {exporting ? <Loader size={15} className="spin" /> : <Download size={15} />}
+                                    {t('exportPage.batch_docx_export', { count: selectedStudentIds.size })}
+                                </button>
+                                <button
                                     className="btn btn-primary"
                                     disabled={selectedStudentIds.size === 0 || exporting}
                                     onClick={() => handleExport()}
@@ -288,6 +343,40 @@ export default function ExportPage() {
                                 </button>
                             </div>
                         </div>
+
+                        {/* Bulk action bar */}
+                        {selectedStudentIds.size > 0 && (
+                            <div style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 14px', marginBottom: 12, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                                <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                                    {selectedStudentIds.size} selected —
+                                </span>
+                                <button className="btn btn-secondary btn-sm" onClick={handleBulkMarkNHI}>
+                                    <XCircle size={13} /> {t('exportPage.bulk_nhi')}
+                                </button>
+                                <button className="btn btn-secondary btn-sm" onClick={() => setShowBulkComment(v => !v)}>
+                                    <MessageSquare size={13} /> {t('exportPage.bulk_add_comment')}
+                                </button>
+                                {showBulkComment && (
+                                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flex: 1, minWidth: 260 }}>
+                                        <input
+                                            type="text"
+                                            value={bulkCommentText}
+                                            onChange={e => setBulkCommentText(e.target.value)}
+                                            placeholder={t('exportPage.bulk_comment_placeholder')}
+                                            style={{ flex: 1 }}
+                                            onKeyDown={e => { if (e.key === 'Enter') handleBulkComment(); }}
+                                            autoFocus
+                                        />
+                                        <button className="btn btn-primary btn-sm" onClick={handleBulkComment} disabled={!bulkCommentText.trim()}>
+                                            {t('exportPage.bulk_comment_confirm')}
+                                        </button>
+                                        <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setShowBulkComment(false)}>
+                                            <X size={13} />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         <table className="data-table">
                             <thead>
@@ -309,7 +398,14 @@ export default function ExportPage() {
                                             <td onClick={e => e.stopPropagation()}>
                                                 <input type="checkbox" checked={isSelected} onChange={() => toggleStudent(student.id)} />
                                             </td>
-                                            <td style={{ fontWeight: 500 }}>{student.name}</td>
+                                            <td style={{ fontWeight: 500 }}>
+                                                {student.name}
+                                                {sr.feedbackOnly && (
+                                                    <span style={{ marginLeft: 8, fontSize: '0.7rem', background: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d', borderRadius: 4, padding: '1px 6px', fontWeight: 600, verticalAlign: 'middle' }}>
+                                                        {t('exportPage.feedback_only_badge')}
+                                                    </span>
+                                                )}
+                                            </td>
                                             <td>
                                                 <span className="grade-chip" style={{ background: summary.gradeColor + '22', color: summary.gradeColor, border: `1.5px solid ${summary.gradeColor}`, minWidth: 36, height: 36, fontSize: '1rem' }}>
                                                     {summary.letterGrade}
@@ -322,9 +418,22 @@ export default function ExportPage() {
                                                 </div>
                                                 <div className="text-xs text-muted">{summary.gradedCount}/{summary.totalCriteria}</div>
                                             </td>
-                                            <td onClick={e => e.stopPropagation()}>
+                                            <td onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                                                 <button className="btn btn-secondary btn-sm" onClick={() => handleExport(student.id)} disabled={exporting}>
                                                     <Download size={13} /> PDF
+                                                </button>
+                                                <button
+                                                    className="btn btn-ghost btn-sm"
+                                                    title="Copy student feedback link"
+                                                    onClick={() => {
+                                                        if (!rubric) return;
+                                                        const code = encodeFeedbackCode({ sr, rubric, student, scale });
+                                                        const url = `${window.location.origin}${window.location.pathname}#/feedback/${code}`;
+                                                        navigator.clipboard.writeText(url);
+                                                        showToast('Feedback link copied to clipboard', 'success');
+                                                    }}
+                                                >
+                                                    <Share2 size={13} />
                                                 </button>
                                             </td>
                                         </tr>

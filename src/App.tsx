@@ -49,6 +49,7 @@ export default function App() {
 
     return (
         <div className="app-layout">
+            <a href="#main-content" className="skip-nav">Skip to main content</a>
             <Joyride
                 steps={tutorialSteps}
                 run={!settings.hasSeenTutorial}
@@ -71,7 +72,7 @@ export default function App() {
                 }}
             />
             <Sidebar />
-            <div className="main-area">
+            <div className="main-area" id="main-content">
                 <Suspense fallback={<Spinner />}>
                     <Routes>
                         <Route path="/" element={<Dashboard />} />
