@@ -80,7 +80,7 @@ export default function ImportRubricModal({ onClose, onImport }: Props) {
 
     return (
         <div className="modal-overlay" onClick={onClose}>
-            <div className="modal" style={{ maxWidth: 680, width: '95vw' }} onClick={e => e.stopPropagation()}>
+            <div className="modal" role="dialog" aria-modal="true" aria-label="Import Rubric" style={{ maxWidth: 680, width: '95vw' }} onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
                     <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <Upload size={18} /> Import Rubric

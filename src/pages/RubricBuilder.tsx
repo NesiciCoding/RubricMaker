@@ -459,10 +459,10 @@ export default function RubricBuilder() {
                             <div style={{ background: 'var(--bg-elevated)', borderRadius: 10, padding: 16, marginTop: 16, border: '1px solid var(--border)' }}>
                                 <h4 style={{ margin: '0 0 12px', fontSize: '0.9rem', color: 'var(--text)' }}>{t('rubricBuilder.label_scoring_mode')}</h4>
                                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                                    {(['weighted-percentage', 'total-points'] as ScoringMode[]).map(mode => (
+                                    {(['weighted-percentage', 'total-points', 'single-point'] as ScoringMode[]).map(mode => (
                                         <label key={mode} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', textTransform: 'none', letterSpacing: 0, fontWeight: scoringMode === mode ? 600 : 400 }}>
                                             <input type="radio" name="scoringMode" value={mode} checked={scoringMode === mode} onChange={() => setScoringMode(mode)} />
-                                            {mode === 'weighted-percentage' ? t('rubricBuilder.mode_weighted') : t('rubricBuilder.mode_total_points')}
+                                            {mode === 'weighted-percentage' ? t('rubricBuilder.mode_weighted') : mode === 'total-points' ? t('rubricBuilder.mode_total_points') : 'Single-point (Exceeds / Meets / Not Yet)'}
                                         </label>
                                     ))}
                                 </div>
@@ -587,11 +587,12 @@ export default function RubricBuilder() {
                                                         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 14 }}>
                                                             <div
                                                                 {...provided.dragHandleProps}
+                                                                aria-label={`Drag to reorder criterion: ${criterion.title || 'Untitled'}`}
                                                                 style={{ display: 'flex', flexDirection: 'column', gap: 2, paddingTop: 4, cursor: 'grab' }}
                                                             >
-                                                                <button className="btn btn-ghost btn-icon btn-sm" onClick={() => moveCriterion(cIdx, -1)} disabled={cIdx === 0}><ChevronUp size={14} /></button>
-                                                                <GripVertical size={16} style={{ color: 'var(--text-dim)', alignSelf: 'center' }} />
-                                                                <button className="btn btn-ghost btn-icon btn-sm" onClick={() => moveCriterion(cIdx, 1)} disabled={cIdx === criteria.length - 1}><ChevronDown size={14} /></button>
+                                                                <button className="btn btn-ghost btn-icon btn-sm" aria-label="Move criterion up" onClick={() => moveCriterion(cIdx, -1)} disabled={cIdx === 0}><ChevronUp size={14} /></button>
+                                                                <GripVertical size={16} style={{ color: 'var(--text-dim)', alignSelf: 'center' }} aria-hidden="true" />
+                                                                <button className="btn btn-ghost btn-icon btn-sm" aria-label="Move criterion down" onClick={() => moveCriterion(cIdx, 1)} disabled={cIdx === criteria.length - 1}><ChevronDown size={14} /></button>
                                                             </div>
                                     <div style={{ flex: 1 }}>
                                         <div className="grid-2" style={{ gap: 10, gridTemplateColumns: '1fr 1fr auto' }}>
@@ -719,8 +720,36 @@ export default function RubricBuilder() {
                                     </div>
                                 )}
 
-                                {/* Levels (hidden when collapsed) */}
-                                {!collapsedCriteria.has(criterion.id) && <div style={{ overflowX: 'auto' }}>
+                                {/* Single-point: simplified proficiency descriptor */}
+                                {!collapsedCriteria.has(criterion.id) && scoringMode === 'single-point' && (
+                                    <div style={{ display: 'flex', gap: 16, marginTop: 4, alignItems: 'flex-start' }}>
+                                        <div style={{ flex: 1 }}>
+                                            <div className="text-xs text-muted" style={{ marginBottom: 4, textTransform: 'uppercase', fontWeight: 600 }}>Proficiency descriptor — what "meets standard" looks like</div>
+                                            <textarea
+                                                value={criterion.levels[0]?.description ?? ''}
+                                                onChange={e => {
+                                                    if (!criterion.levels[0]) {
+                                                        addLevel(criterion.id);
+                                                    }
+                                                    updateLevel(criterion.id, criterion.levels[0]?.id ?? '', { description: e.target.value });
+                                                }}
+                                                placeholder="Describe what a student does when they meet this standard…"
+                                                rows={4}
+                                                style={{ width: '100%', fontSize: '0.85rem' }}
+                                            />
+                                        </div>
+                                        <div style={{ width: 120, flexShrink: 0 }}>
+                                            <div className="text-xs text-muted" style={{ marginBottom: 4, textTransform: 'uppercase', fontWeight: 600 }}>Points (meets)</div>
+                                            <input type="number" min={0}
+                                                value={criterion.levels[0]?.maxPoints ?? 1}
+                                                onChange={e => updateLevel(criterion.id, criterion.levels[0]?.id ?? '', { maxPoints: Number(e.target.value), minPoints: 0 })}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Levels (hidden when collapsed or single-point) */}
+                                {!collapsedCriteria.has(criterion.id) && scoringMode !== 'single-point' && <div style={{ overflowX: 'auto' }}>
                                     <div style={{ display: 'flex', gap: 10, minWidth: 'max-content', paddingBottom: 4 }}>
                                         {criterion.levels.map((level) => {
                                             const levelKey = `${criterion.id}_${level.id}`;
@@ -763,7 +792,12 @@ export default function RubricBuilder() {
                                                         onChange={e => updateLevel(criterion.id, level.id, { description: e.target.value })}
                                                         placeholder={t('rubricBuilder.placeholder_level_description')}
                                                         rows={3}
-                                                        style={{ fontSize: '0.8rem', width: '100%', marginBottom: 8 }} />
+                                                        style={{ fontSize: '0.8rem', width: '100%', marginBottom: level.description && /\b(good|adequate|poor|excellent|satisfactory|bad|fair|very good|great|wonderful)\b/i.test(level.description) && !/\b(student|demonstrates|shows|uses|writes|includes|provides|explains|applies|describes|identifies|analyzes|creates)\b/i.test(level.description) ? 2 : 8 }} />
+                                                    {level.description && /\b(good|adequate|poor|excellent|satisfactory|bad|fair|very good|great|wonderful)\b/i.test(level.description) && !/\b(student|demonstrates|shows|uses|writes|includes|provides|explains|applies|describes|identifies|analyzes|creates)\b/i.test(level.description) && (
+                                                        <div style={{ fontSize: '0.7rem', color: 'var(--yellow, #b45309)', background: 'rgba(251,191,36,0.12)', borderRadius: 4, padding: '3px 7px', marginBottom: 6 }}>
+                                                            💡 Tip: describe what the student <em>does</em>, not just how good it is (e.g. "uses 3+ examples to support each claim")
+                                                        </div>
+                                                    )}
 
                                                     {/* Sub-items toggle */}
                                                     <button className="btn btn-ghost btn-sm" style={{ width: '100%', justifyContent: 'space-between' }}
@@ -1177,7 +1211,7 @@ interface WYSIWYGProps {
     addCriterionLevel: (cid: string) => void;
     criteriaSetter: React.Dispatch<React.SetStateAction<RubricCriterion[]>>;
     totalMaxPoints: number;
-    scoringMode: 'weighted-percentage' | 'total-points';
+    scoringMode: ScoringMode;
     onShowMarkdownHint: () => void;
 }
 

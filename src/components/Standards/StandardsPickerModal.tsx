@@ -193,7 +193,7 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
 
     return (
         <div className="modal-overlay" onClick={onClose}>
-            <div className="modal" style={{ width: 800, height: '85vh', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
+            <div className="modal" role="dialog" aria-modal="true" aria-label="Standards Picker" style={{ width: 800, height: '85vh', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

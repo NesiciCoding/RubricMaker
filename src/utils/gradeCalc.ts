@@ -10,6 +10,12 @@ import type {
  */
 export function calcEntryPoints(entry: ScoreEntry, criterion: RubricCriterion): number {
     if (entry.overridePoints !== undefined) return entry.overridePoints;
+    // Single-point rubric outcome: meets/exceeds = full points, not-yet = 0
+    if (entry.singlePointOutcome !== undefined) {
+        if (entry.singlePointOutcome === 'not-yet') return 0;
+        const maxPts = Math.max(...criterion.levels.map(l => l.maxPoints), 0);
+        return maxPts;
+    }
     if (!entry.levelId) return 0;
 
     const level = criterion.levels.find(l => l.id === entry.levelId);
@@ -156,7 +162,7 @@ export function calcGradeSummary(
 
     const modified = applyModifier(pct, sr.globalModifier);
     const gradedCount = sr.entries.filter(
-        e => e.levelId !== null || e.overridePoints !== undefined
+        e => e.levelId !== null || e.overridePoints !== undefined || e.singlePointOutcome !== undefined
     ).length;
 
     return {

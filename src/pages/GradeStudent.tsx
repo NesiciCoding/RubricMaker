@@ -41,6 +41,7 @@ export default function GradeStudent() {
         };
     });
 
+    const [feedbackOnly, setFeedbackOnly] = useState<boolean>(existingSR?.feedbackOnly ?? false);
     const [activeCommentCrit, setActiveCommentCrit] = useState<string | null>(null);
     const [showCommentBankFor, setShowCommentBankFor] = useState<string | null>(null);
     const [showAttachPanel, setShowAttachPanel] = useState(false);
@@ -74,6 +75,7 @@ export default function GradeStudent() {
         if (!sr || !rubric) return;
         saveStudentRubric({
             ...sr,
+            feedbackOnly,
             rubricSnapshot: JSON.parse(JSON.stringify(rubric)),
             gradedAt: new Date().toISOString()
         });
@@ -109,6 +111,7 @@ export default function GradeStudent() {
         if (!sr || !rubric || !nextStudent) return;
         saveStudentRubric({
             ...sr,
+            feedbackOnly,
             rubricSnapshot: JSON.parse(JSON.stringify(rubric)),
             gradedAt: new Date().toISOString()
         });
@@ -120,6 +123,7 @@ export default function GradeStudent() {
         if (!sr || !rubric) return;
         const nhiSR = {
             ...sr,
+            feedbackOnly,
             notHandedIn: true,
             overallComment: t('gradeStudent.not_handed_in_comment'),
             rubricSnapshot: JSON.parse(JSON.stringify(rubric)),
@@ -308,8 +312,45 @@ export default function GradeStudent() {
                                     </div>
                                 </div>
 
-                                {/* Level cards */}
-                                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                                {/* Single-point rubric: Exceeds / Meets / Not Yet buttons */}
+                                {rubric.scoringMode === 'single-point' && (() => {
+                                    const proficiency = c.levels[0];
+                                    const outcomes: Array<{ value: 'exceeds' | 'meets' | 'not-yet'; label: string; color: string }> = [
+                                        { value: 'exceeds', label: 'Exceeds', color: '#10b981' },
+                                        { value: 'meets', label: 'Meets', color: fmt.accentColor },
+                                        { value: 'not-yet', label: 'Not Yet', color: '#ef4444' },
+                                    ];
+                                    return (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                            {proficiency?.description && (
+                                                <div style={{ padding: '10px 14px', background: 'var(--bg-elevated)', borderRadius: 8, fontSize: '0.85em', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+                                                    <span style={{ fontSize: '0.7em', textTransform: 'uppercase', fontWeight: 600, color: 'var(--text-dim)', display: 'block', marginBottom: 4 }}>Proficiency standard</span>
+                                                    {proficiency.description}
+                                                </div>
+                                            )}
+                                            <div style={{ display: 'flex', gap: 10 }}>
+                                                {outcomes.map(o => {
+                                                    const isSelected = entry.singlePointOutcome === o.value;
+                                                    return (
+                                                        <button key={o.value}
+                                                            className="level-btn"
+                                                            style={isSelected ? { borderColor: o.color, background: `${o.color}1a`, flex: 1 } : { flex: 1 }}
+                                                            onClick={() => updateEntry(c.id, {
+                                                                singlePointOutcome: isSelected ? undefined : o.value,
+                                                                levelId: null,
+                                                            })}
+                                                        >
+                                                            <span style={{ fontWeight: 700, fontSize: '0.95em', color: isSelected ? o.color : 'var(--text)' }}>{o.label}</span>
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
+
+                                {/* Level cards (standard mode) */}
+                                {rubric.scoringMode !== 'single-point' && <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                                     {levels.map(level => {
                                         const isSelected = entry.levelId === level.id;
                                         return (
@@ -387,7 +428,7 @@ export default function GradeStudent() {
                                             </button>
                                         );
                                     })}
-                                </div>
+                                </div>}
 
                                 {/* Inline comment editor */}
                                 {activeCommentCrit === c.id && (
@@ -456,7 +497,7 @@ export default function GradeStudent() {
 
             {/* Sticky grade footer */}
             {summary && rubric.format.showCalculatedGrade !== false && (
-                <div className="grade-footer">
+                <div className="grade-footer" role="status" aria-live="polite" aria-label="Grade summary">
                     <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1 }}>
                         {scale && (
                             <span className="grade-chip" style={{ background: `${summary.gradeColor}22`, border: `2px solid ${summary.gradeColor}`, color: summary.gradeColor }}>
@@ -469,7 +510,16 @@ export default function GradeStudent() {
                             {summary.gradedCount}/{summary.totalCriteria} {t('gradeStudent.table_criterion').toLowerCase()}
                         </span>
                     </div>
-                    <div style={{ display: 'flex', gap: 8 }}>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>
+                            <input
+                                type="checkbox"
+                                checked={feedbackOnly}
+                                onChange={e => { setFeedbackOnly(e.target.checked); setIsDirty(true); }}
+                                style={{ accentColor: 'var(--accent)' }}
+                            />
+                            {t('gradeStudent.feedback_only_label', 'Feedback only (hide grade)')}
+                        </label>
                         {nextStudent && (
                             <button className="btn btn-secondary btn-sm" onClick={handleSaveAndNext}>
                                 <Save size={14} /> <ChevronRight size={14} /> {nextStudent.name.split(' ')[0]}
