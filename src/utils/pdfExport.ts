@@ -9,7 +9,61 @@ function parseMd(text: string) {
   return html;
 }
 
+function buildSinglePointGridHtml(rubric: Rubric, sr?: StudentRubric): string {
+  const fmt = rubric.format;
+  const notYetColor = '#ef4444';
+  const exceedsColor = '#10b981';
+
+  const rows = rubric.criteria.map((c, i) => {
+    const entry = sr?.entries.find(e => e.criterionId === c.id);
+    const outcome = entry?.singlePointOutcome;
+    const comment = entry?.comment
+      ? entry.comment.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+      : '';
+
+    const isNotYet = outcome === 'not-yet';
+    const isMeets = outcome === 'meets';
+    const isExceeds = outcome === 'exceeds';
+    const stripeBg = (sr && fmt.rowStriping && i % 2 !== 0) || !sr ? '#f8fafc' : '#ffffff';
+
+    const notYetCell = `<td style="padding:10px 12px;border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};vertical-align:top;font-size:12px;width:30%;${isNotYet ? `background:${notYetColor}18;border:2px solid ${notYetColor};` : `background:${stripeBg};`}">
+      ${sr ? `<div style="font-size:10px;font-weight:700;color:${notYetColor};margin-bottom:4px;">✗ Not Yet</div>` : '<div style="font-size:10px;font-weight:700;color:#6b7280;margin-bottom:4px;">Areas for Growth</div>'}
+      ${isNotYet && comment ? `<div style="font-size:11px;color:#374151;font-style:italic">${parseMd(comment)}</div>` : ''}
+    </td>`;
+
+    const proficiencyDesc = c.levels[0]?.description ?? c.description ?? '';
+    const centerCell = `<td style="padding:10px 12px;border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};vertical-align:top;font-size:12px;width:40%;${isMeets ? `background:${fmt.accentColor}18;border:2px solid ${fmt.accentColor};` : ''}">
+      <div style="font-weight:700;margin-bottom:4px;">${parseMd(c.title)}</div>
+      ${proficiencyDesc ? `<div style="font-size:11px;color:#6b7280">${parseMd(proficiencyDesc)}</div>` : ''}
+      ${fmt.showWeights ? `<div style="font-size:10px;color:#6b7280;margin-top:4px">Weight: ${c.weight}%</div>` : ''}
+      ${isMeets && comment ? `<div style="font-size:11px;color:#374151;font-style:italic;margin-top:6px;padding-top:6px;border-top:1px solid #e5e7eb">${parseMd(comment)}</div>` : ''}
+    </td>`;
+
+    const exceedsCell = `<td style="padding:10px 12px;border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};vertical-align:top;font-size:12px;width:30%;${isExceeds ? `background:${exceedsColor}18;border:2px solid ${exceedsColor};` : `background:${stripeBg};`}">
+      ${sr ? `<div style="font-size:10px;font-weight:700;color:${exceedsColor};margin-bottom:4px;">▲ Exceeds</div>` : '<div style="font-size:10px;font-weight:700;color:#6b7280;margin-bottom:4px;">Exceeds Standard</div>'}
+      ${isExceeds && comment ? `<div style="font-size:11px;color:#374151;font-style:italic">${parseMd(comment)}</div>` : ''}
+    </td>`;
+
+    return `<tr style="page-break-inside: avoid;">${notYetCell}${centerCell}${exceedsCell}</tr>`;
+  }).join('');
+
+  return `
+    <table style="width:100%;border-collapse:collapse;margin-top:16px;">
+      <thead>
+        <tr style="background:${fmt.headerColor};color:${fmt.headerTextColor}">
+          <th style="padding:10px 12px;text-align:center;font-size:12px;border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};width:30%">Not Yet</th>
+          <th style="padding:10px 12px;text-align:left;font-size:12px;border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};width:40%">Proficiency Standard</th>
+          <th style="padding:10px 12px;text-align:center;font-size:12px;border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};width:30%">Exceeds</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+
 function buildRubricGridHtml(rubric: Rubric, sr?: StudentRubric): string {
+  if (rubric.scoringMode === 'single-point') return buildSinglePointGridHtml(rubric, sr);
+
   const fmt = rubric.format;
   const orderedLevels = (criterion: typeof rubric.criteria[0]) =>
     fmt.levelOrder === 'worst-first' ? [...criterion.levels].reverse() : criterion.levels;

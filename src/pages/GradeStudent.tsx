@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, MessageSquare, Paperclip, CheckSquare, Square, Info, BookOpen, FileDown, Mic, MicOff, ChevronRight, Users, XCircle } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
@@ -42,6 +42,11 @@ export default function GradeStudent() {
     });
 
     const [feedbackOnly, setFeedbackOnly] = useState<boolean>(existingSR?.feedbackOnly ?? false);
+    const [isAnchor, setIsAnchor] = useState<boolean>(existingSR?.isAnchor ?? false);
+    const [showAnchorPanel, setShowAnchorPanel] = useState(false);
+    const [recordingCritId, setRecordingCritId] = useState<string | null>(null);
+    const mediaRecorderRef = useRef<Record<string, MediaRecorder>>({});
+    const audioChunksRef = useRef<Record<string, BlobPart[]>>({});
     const [activeCommentCrit, setActiveCommentCrit] = useState<string | null>(null);
     const [showCommentBankFor, setShowCommentBankFor] = useState<string | null>(null);
     const [showAttachPanel, setShowAttachPanel] = useState(false);
@@ -76,6 +81,7 @@ export default function GradeStudent() {
         saveStudentRubric({
             ...sr,
             feedbackOnly,
+            isAnchor,
             rubricSnapshot: JSON.parse(JSON.stringify(rubric)),
             gradedAt: new Date().toISOString()
         });
@@ -112,6 +118,7 @@ export default function GradeStudent() {
         saveStudentRubric({
             ...sr,
             feedbackOnly,
+            isAnchor,
             rubricSnapshot: JSON.parse(JSON.stringify(rubric)),
             gradedAt: new Date().toISOString()
         });
@@ -124,6 +131,7 @@ export default function GradeStudent() {
         const nhiSR = {
             ...sr,
             feedbackOnly,
+            isAnchor,
             notHandedIn: true,
             overallComment: t('gradeStudent.not_handed_in_comment'),
             rubricSnapshot: JSON.parse(JSON.stringify(rubric)),
@@ -161,6 +169,37 @@ export default function GradeStudent() {
         window.addEventListener('beforeunload', handleBeforeUnload);
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, [isDirty]);
+
+    const anchorSR = useMemo(() => {
+        if (!rubricId) return null;
+        return studentRubrics.find(s => s.rubricId === rubricId && s.isAnchor && s.id !== existingSR?.id) ?? null;
+    }, [studentRubrics, rubricId, existingSR?.id]);
+
+    const startAudioRecording = useCallback(async (criterionId: string) => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mr = new MediaRecorder(stream);
+            audioChunksRef.current[criterionId] = [];
+            mr.ondataavailable = (e) => { audioChunksRef.current[criterionId].push(e.data); };
+            mr.onstop = () => {
+                const blob = new Blob(audioChunksRef.current[criterionId], { type: 'audio/webm' });
+                const reader = new FileReader();
+                reader.onload = () => updateEntry(criterionId, { audioDataUrl: reader.result as string });
+                reader.readAsDataURL(blob);
+                stream.getTracks().forEach(t => t.stop());
+            };
+            mr.start();
+            mediaRecorderRef.current[criterionId] = mr;
+            setRecordingCritId(criterionId);
+        } catch {
+            // getUserMedia denied — silently ignore
+        }
+    }, [updateEntry]);
+
+    const stopAudioRecording = useCallback((criterionId: string) => {
+        mediaRecorderRef.current[criterionId]?.stop();
+        setRecordingCritId(null);
+    }, []);
 
     if (!rubric || !student || !sr) return <div className="page-content">{t('gradeStudent.error_not_found')} <button onClick={() => navigate(-1)}>{t('gradeStudent.action_back')}</button></div>;
 
@@ -445,6 +484,26 @@ export default function GradeStudent() {
                                                 <BookOpen size={16} />
                                             </button>
                                         </div>
+                                        {/* Audio feedback */}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                                            {recordingCritId === c.id ? (
+                                                <button className="btn btn-danger btn-sm pulse" onClick={() => stopAudioRecording(c.id)}>
+                                                    <MicOff size={13} /> {t('gradeStudent.audio_stop')}
+                                                </button>
+                                            ) : (
+                                                <button className="btn btn-secondary btn-sm" onClick={() => startAudioRecording(c.id)}>
+                                                    <Mic size={13} /> {t('gradeStudent.audio_record')}
+                                                </button>
+                                            )}
+                                            {entry.audioDataUrl && (
+                                                <>
+                                                    <audio controls src={entry.audioDataUrl} style={{ height: 28, flex: 1 }} />
+                                                    <button className="btn btn-ghost btn-sm" onClick={() => updateEntry(c.id, { audioDataUrl: undefined })} title={t('gradeStudent.audio_remove')}>
+                                                        ✕
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -466,6 +525,34 @@ export default function GradeStudent() {
                         />
                     </div>
                 </div>
+
+                {/* Anchor paper panel */}
+                {anchorSR && showAnchorPanel && (() => {
+                    const anchorStudent = students.find(s => s.id === anchorSR.studentId);
+                    const anchorRubric = anchorSR.rubricSnapshot ?? liveRubric;
+                    return (
+                        <div className="card" style={{ marginTop: 16, borderLeft: '4px solid var(--accent)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                                <BookOpen size={16} style={{ color: 'var(--accent)' }} />
+                                <h3 style={{ margin: 0 }}>{t('gradeStudent.anchor_panel_title')}: {anchorStudent?.name ?? '?'}</h3>
+                            </div>
+                            {anchorRubric?.criteria.map(c => {
+                                const entry = anchorSR.entries.find(e => e.criterionId === c.id);
+                                const comment = entry?.comment ? entry.comment.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
+                                const levelLabel = entry?.singlePointOutcome
+                                    ? (entry.singlePointOutcome === 'exceeds' ? '▲ Exceeds' : entry.singlePointOutcome === 'meets' ? '✓ Meets' : '✗ Not Yet')
+                                    : (entry?.levelId ? c.levels.find(l => l.id === entry.levelId)?.label ?? '—' : '—');
+                                return (
+                                    <div key={c.id} style={{ marginBottom: 10, padding: '8px 12px', background: 'var(--bg-elevated)', borderRadius: 6 }}>
+                                        <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{c.title}</div>
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--accent)', marginTop: 2 }}>{levelLabel}</div>
+                                        {comment && <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontStyle: 'italic', marginTop: 2 }}>{comment}</div>}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    );
+                })()}
 
                 {/* Attachments panel */}
                 {showAttachPanel && (
@@ -520,6 +607,20 @@ export default function GradeStudent() {
                             />
                             {t('gradeStudent.feedback_only_label')}
                         </label>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>
+                            <input
+                                type="checkbox"
+                                checked={isAnchor}
+                                onChange={e => { setIsAnchor(e.target.checked); setIsDirty(true); }}
+                                style={{ accentColor: 'var(--accent)' }}
+                            />
+                            {t('gradeStudent.mark_as_anchor')}
+                        </label>
+                        {anchorSR && (
+                            <button className="btn btn-ghost btn-sm" onClick={() => setShowAnchorPanel(p => !p)} style={{ fontSize: '0.75rem' }}>
+                                <BookOpen size={12} /> {showAnchorPanel ? t('gradeStudent.anchor_panel_hide') : t('gradeStudent.anchor_panel_title')}
+                            </button>
+                        )}
                         {nextStudent && (
                             <button className="btn btn-secondary btn-sm" onClick={handleSaveAndNext}>
                                 <Save size={14} /> <ChevronRight size={14} /> {nextStudent.name.split(' ')[0]}

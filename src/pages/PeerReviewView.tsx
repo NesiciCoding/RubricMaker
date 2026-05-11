@@ -14,11 +14,12 @@ export default function PeerReviewView() {
     const { t } = useTranslation();
     const { rubrics, students, peerReviews, savePeerReview } = useApp();
 
-    const [rubric, setRubric] = useState(rubrics.find(r => r.id === rubricId));
-    const [student, setStudent] = useState(students.find(s => s.id === studentId));
+    const [rubric] = useState(rubrics.find(r => r.id === rubricId));
+    const [student] = useState(students.find(s => s.id === studentId));
     const [entry, setEntry] = useState<StudentRubric | null>(null);
     const [isSaved, setIsSaved] = useState(false);
     const [isDirty, setIsDirty] = useState(false);
+    const [activeRound, setActiveRound] = useState(1);
 
     useEffect(() => {
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -28,11 +29,13 @@ export default function PeerReviewView() {
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, [isDirty]);
 
+    const existingRounds = peerReviews.filter(pr => pr.rubricId === rubricId && pr.studentId === studentId);
+    const maxRound = existingRounds.reduce((max, pr) => Math.max(max, pr.round ?? 1), 0);
+
     useEffect(() => {
         if (!rubric || !student) return;
 
-        // Find existing or create new
-        const existing = peerReviews.find(pr => pr.rubricId === rubricId && pr.studentId === studentId);
+        const existing = peerReviews.find(pr => pr.rubricId === rubricId && pr.studentId === studentId && (pr.round ?? 1) === activeRound);
         if (existing) {
             setEntry({ ...existing });
         } else {
@@ -49,9 +52,10 @@ export default function PeerReviewView() {
                 entries: initialEntries,
                 overallComment: '',
                 isPeerReview: true,
+                round: activeRound,
             });
         }
-    }, [rubricId, studentId, rubric, student, peerReviews]);
+    }, [rubricId, studentId, rubric, student, peerReviews, activeRound]);
 
     if (!rubric || !student || !entry) {
         return (
@@ -68,10 +72,15 @@ export default function PeerReviewView() {
     }
 
     const handleSave = () => {
-        savePeerReview(entry);
+        savePeerReview({ ...entry, round: activeRound });
         setIsSaved(true);
         setIsDirty(false);
         setTimeout(() => setIsSaved(false), 2000);
+    };
+
+    const addRound = () => {
+        const next = maxRound + 1;
+        setActiveRound(next);
     };
 
     const updateScore = (criterionId: string, levelId: string) => {
@@ -116,6 +125,20 @@ export default function PeerReviewView() {
                         <h2 style={{ margin: 0 }}>{rubric.name}</h2>
                     </div>
                     <p className="text-muted text-sm">{rubric.description}</p>
+                    {/* Round selector */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>{t('peerReview.round_label')}:</span>
+                        {Array.from({ length: Math.max(maxRound, activeRound) }, (_, i) => i + 1).map(round => (
+                            <button
+                                key={round}
+                                className={`btn btn-sm ${activeRound === round ? 'btn-primary' : 'btn-secondary'}`}
+                                onClick={() => { if (isDirty && !window.confirm('Unsaved changes will be lost. Continue?')) return; setActiveRound(round); }}
+                            >
+                                {t('peerReview.round_n', { n: round })}
+                            </button>
+                        ))}
+                        <button className="btn btn-ghost btn-sm" onClick={addRound}>+ {t('peerReview.add_round')}</button>
+                    </div>
                 </div>
 
                 {rubric.criteria.map(criterion => {

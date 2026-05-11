@@ -3,7 +3,7 @@ import React, {
 } from 'react';
 import type {
     Rubric, Student, Class, StudentRubric, Attachment,
-    GradeScale, CommentSnippet, AppSettings, ScoreEntry, Modifier, LinkedStandard, CommentBankItem, ExportTemplate, SelfAssessment, SpeakingSession
+    GradeScale, CommentSnippet, AppSettings, ScoreEntry, Modifier, LinkedStandard, CommentBankItem, ExportTemplate, SelfAssessment, SpeakingSession, RubricVersion
 } from '../types';
 import {
     loadStore, StoreData,
@@ -54,7 +54,9 @@ type Action =
     | { type: 'DELETE_SELF_ASSESSMENT', id: string }
     | { type: 'SAVE_SPEAKING_SESSION', payload: SpeakingSession }
     | { type: 'DELETE_SPEAKING_SESSION', id: string }
-    | { type: 'SYNC_RUBRIC_SNAPSHOT'; rubricId: string; updatedRubric: Rubric };
+    | { type: 'SYNC_RUBRIC_SNAPSHOT'; rubricId: string; updatedRubric: Rubric }
+    | { type: 'SAVE_RUBRIC_VERSION'; rubricId: string; label?: string }
+    | { type: 'RESTORE_RUBRIC_VERSION'; rubricId: string; versionIndex: number };
 
 function reducer(state: StoreData, action: Action): StoreData {
     switch (action.type) {
@@ -255,6 +257,30 @@ function reducer(state: StoreData, action: Action): StoreData {
             savePeerReviews(nextPRs);
             return { ...state, studentRubrics: nextSRs, peerReviews: nextPRs };
         }
+        case 'SAVE_RUBRIC_VERSION': {
+            const rubric = state.rubrics.find(r => r.id === action.rubricId);
+            if (!rubric) return state;
+            const { versions: _v, ...snapshotFields } = rubric;
+            const version: RubricVersion = {
+                savedAt: new Date().toISOString(),
+                label: action.label,
+                snapshot: snapshotFields,
+            };
+            const updated = { ...rubric, versions: [...(rubric.versions ?? []), version] };
+            const next = state.rubrics.map(r => r.id === action.rubricId ? updated : r);
+            saveRubrics(next);
+            return { ...state, rubrics: next };
+        }
+        case 'RESTORE_RUBRIC_VERSION': {
+            const rubric = state.rubrics.find(r => r.id === action.rubricId);
+            if (!rubric) return state;
+            const version = rubric.versions?.[action.versionIndex];
+            if (!version) return state;
+            const restored: Rubric = { ...version.snapshot, versions: rubric.versions, updatedAt: new Date().toISOString() };
+            const next = state.rubrics.map(r => r.id === action.rubricId ? restored : r);
+            saveRubrics(next);
+            return { ...state, rubrics: next };
+        }
         default: return state;
     }
 }
@@ -306,6 +332,9 @@ interface AppContextValue extends StoreData {
     deleteSpeakingSession: (id: string) => void;
     // Rubric snapshot sync
     syncRubricSnapshot: (rubricId: string, updatedRubric: Rubric) => void;
+    // Rubric version history
+    saveRubricVersion: (rubricId: string, label?: string) => void;
+    restoreRubricVersion: (rubricId: string, versionIndex: number) => void;
     // Microsoft Sync
     loginMicrosoft: () => Promise<void>;
     logoutMicrosoft: () => Promise<void>;
@@ -485,6 +514,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'SYNC_RUBRIC_SNAPSHOT', rubricId, updatedRubric });
     }, []);
 
+    const saveRubricVersion = useCallback((rubricId: string, label?: string) => {
+        dispatch({ type: 'SAVE_RUBRIC_VERSION', rubricId, label });
+    }, []);
+
+    const restoreRubricVersion = useCallback((rubricId: string, versionIndex: number) => {
+        dispatch({ type: 'RESTORE_RUBRIC_VERSION', rubricId, versionIndex });
+    }, []);
+
     // ─── Microsoft Sync (disabled — Azure integration not in use) ───
     const microsoftUser: any | null = null;
     // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -515,6 +552,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         saveSelfAssessment, deleteSelfAssessment,
         saveSpeakingSession, deleteSpeakingSession,
         syncRubricSnapshot,
+        saveRubricVersion, restoreRubricVersion,
         loginMicrosoft, logoutMicrosoft, syncToOneDrive, restoreFromOneDrive,
         microsoftUser
     };

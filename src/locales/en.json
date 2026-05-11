@@ -225,7 +225,13 @@
         "single_point_standard_label": "Standard",
         "single_point_exceeds": "Exceeds",
         "single_point_meets": "Meets",
-        "single_point_not_yet": "Not yet"
+        "single_point_not_yet": "Not yet",
+        "audio_record": "Record",
+        "audio_stop": "Stop",
+        "audio_remove": "Remove audio",
+        "mark_as_anchor": "Mark as anchor",
+        "anchor_panel_title": "Anchor Paper",
+        "anchor_panel_hide": "Hide anchor"
     },
     "rubricBuilder": {
         "action_back": "Back",
@@ -315,7 +321,20 @@
         "sync_dialog_skip": "Skip",
         "sync_dialog_confirm": "Update grades",
         "insert_speaking_confirm": "This will replace all existing criteria with 6 standard speaking dimensions. Continue?",
-        "insert_speaking_append": "Add 6 speaking dimensions to existing criteria?"
+        "insert_speaking_append": "Add 6 speaking dimensions to existing criteria?",
+        "version_history": "History",
+        "save_version": "Save snapshot",
+        "restore_version": "Restore",
+        "version_label_placeholder": "Label (optional, e.g. 'before rewrite')",
+        "no_versions_yet": "No saved versions yet.",
+        "confirm_restore": "Restore this version? Current unsaved changes will be lost.",
+        "version_n": "Version {{n}}",
+        "criteria_count": "criteria"
+    },
+    "peerReview": {
+        "round_label": "Round",
+        "round_n": "Round {{n}}",
+        "add_round": "Add round"
     },
     "toast": {
         "export_error": "Export failed. Please try again.",
@@ -520,6 +539,7 @@
         "table_progress": "Progress",
         "table_actions": "Actions",
         "feedback_only_badge": "Feedback only",
+        "anchor_badge": "Anchor",
         "bulk_nhi": "Mark as Not Handed In",
         "bulk_add_comment": "Add comment to selected",
         "bulk_comment_placeholder": "Overall comment to append…",
