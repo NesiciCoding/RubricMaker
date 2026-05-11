@@ -229,8 +229,8 @@ export default function Dashboard() {
                                             {item.type === 'grading' && (() => {
                                                 const days = feedbackAge.get(item.studentId);
                                                 if (days === undefined) return null;
-                                                if (days >= 10) return <Clock size={11} style={{ color: 'var(--red)' }} title={`${days}d ago — feedback may be stale`} />;
-                                                if (days >= 7) return <Clock size={11} style={{ color: 'var(--yellow, #f59e0b)' }} title={`${days}d ago`} />;
+                                                if (days >= 10) return <span title={`${days}d ago — feedback may be stale`}><Clock size={11} style={{ color: 'var(--red)' }} /></span>;
+                                                if (days >= 7) return <span title={`${days}d ago`}><Clock size={11} style={{ color: 'var(--yellow, #f59e0b)' }} /></span>;
                                                 return null;
                                             })()}
                                             {timeAgo(item.timestamp)}
