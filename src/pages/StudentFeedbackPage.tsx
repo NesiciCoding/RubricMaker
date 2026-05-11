@@ -120,6 +120,12 @@ export default function StudentFeedbackPage() {
                                     {entry.comment}
                                 </div>
                             )}
+                            {entry?.audioDataUrl && (
+                                <div style={{ marginTop: 8 }}>
+                                    <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: 4 }}>Audio feedback:</div>
+                                    <audio controls src={entry.audioDataUrl} style={{ width: '100%', height: 32 }} />
+                                </div>
+                            )}
                         </div>
                     );
                 })}

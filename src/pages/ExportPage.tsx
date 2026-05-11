@@ -405,6 +405,11 @@ export default function ExportPage() {
                                                         {t('exportPage.feedback_only_badge')}
                                                     </span>
                                                 )}
+                                                {sr.isAnchor && (
+                                                    <span style={{ marginLeft: 6, fontSize: '0.7rem', background: '#ede9fe', color: '#6d28d9', border: '1px solid #c4b5fd', borderRadius: 4, padding: '1px 6px', fontWeight: 600, verticalAlign: 'middle' }}>
+                                                        {t('exportPage.anchor_badge')}
+                                                    </span>
+                                                )}
                                             </td>
                                             <td>
                                                 <span className="grade-chip" style={{ background: summary.gradeColor + '22', color: summary.gradeColor, border: `1.5px solid ${summary.gradeColor}`, minWidth: 36, height: 36, fontSize: '1rem' }}>

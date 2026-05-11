@@ -4,7 +4,7 @@ import {
     Plus, Trash2, GripVertical, Save, ChevronUp, ChevronDown,
     Settings, Eye, ArrowLeft, Link2, BookOpen, X, ChevronRight, FileDown, FileText,
     Wand2, AlignLeft, AlignCenter, AlignRight, LayoutGrid, Rows3, CheckSquare, Square,
-    MoveLeft, MoveRight, Copy, GripHorizontal
+    MoveLeft, MoveRight, Copy, GripHorizontal, Clock, RotateCcw
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import Topbar from '../components/Layout/Topbar';
@@ -48,7 +48,7 @@ export default function RubricBuilder() {
     const navigate = useNavigate();
     const { id } = useParams();
     const location = useLocation();
-    const { rubrics, studentRubrics, peerReviews, addRubric, updateRubric, syncRubricSnapshot, gradeScales, settings } = useApp();
+    const { rubrics, studentRubrics, peerReviews, addRubric, updateRubric, syncRubricSnapshot, saveRubricVersion, restoreRubricVersion, gradeScales, settings } = useApp();
 
     const existing = id ? rubrics.find(r => r.id === id) : undefined;
     const template = location.state?.template as Partial<Rubric> | undefined;
@@ -81,6 +81,8 @@ export default function RubricBuilder() {
 
     // ── Rubric sync dialog state ─────────────────────────────────────────────
     const [syncDialogRubric, setSyncDialogRubric] = useState<Rubric | null>(null);
+    const [showVersionHistory, setShowVersionHistory] = useState(false);
+    const [versionLabel, setVersionLabel] = useState('');
 
     // ── Collapsible criteria ─────────────────────────────────────────────────
     const [collapsedCriteria, setCollapsedCriteria] = useState<Set<string>>(new Set());
@@ -419,6 +421,11 @@ export default function RubricBuilder() {
                                 </>
                             )}
                         </div>
+                        {id && (
+                            <button className="btn btn-secondary btn-sm" onClick={() => setShowVersionHistory(p => !p)} title={t('rubricBuilder.version_history')}>
+                                <Clock size={15} /> {t('rubricBuilder.version_history')}
+                            </button>
+                        )}
                         <button className="btn btn-primary btn-sm" onClick={handleSave}>
                             <Save size={15} /> {saved ? t('rubricBuilder.action_saved') : t('rubricBuilder.action_save')}
                         </button>
@@ -1102,6 +1109,67 @@ export default function RubricBuilder() {
             </div>
 
             {/* Rubric snapshot sync dialog */}
+            {/* Version History Panel */}
+            {showVersionHistory && id && (
+                <div className="modal-overlay" onClick={() => setShowVersionHistory(false)}>
+                    <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 500 }}>
+                        <div className="modal-header">
+                            <h3><Clock size={16} style={{ marginRight: 6, verticalAlign: 'middle' }} />{t('rubricBuilder.version_history')}</h3>
+                            <button className="btn btn-ghost btn-icon" onClick={() => setShowVersionHistory(false)}>✕</button>
+                        </div>
+                        <div className="modal-body">
+                            {/* Save new version */}
+                            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                                <input
+                                    type="text"
+                                    value={versionLabel}
+                                    onChange={e => setVersionLabel(e.target.value)}
+                                    placeholder={t('rubricBuilder.version_label_placeholder')}
+                                    style={{ flex: 1 }}
+                                />
+                                <button className="btn btn-primary btn-sm" onClick={() => {
+                                    saveRubricVersion(id, versionLabel || undefined);
+                                    setVersionLabel('');
+                                }}>
+                                    <Save size={13} /> {t('rubricBuilder.save_version')}
+                                </button>
+                            </div>
+                            {/* Version list */}
+                            {(existing?.versions ?? []).length === 0 ? (
+                                <p className="text-muted text-sm">{t('rubricBuilder.no_versions_yet')}</p>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                    {[...(existing?.versions ?? [])].reverse().map((v, ri) => {
+                                        const actualIndex = (existing?.versions?.length ?? 0) - 1 - ri;
+                                        return (
+                                            <div key={actualIndex} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: 'var(--bg-elevated)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                                                <div style={{ flex: 1 }}>
+                                                    <div style={{ fontWeight: 600, fontSize: '0.87rem' }}>{v.label || t('rubricBuilder.version_n', { n: actualIndex + 1 })}</div>
+                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                        {new Date(v.savedAt).toLocaleString()} · {v.snapshot.criteria.length} {t('rubricBuilder.criteria_count')}
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    className="btn btn-secondary btn-sm"
+                                                    onClick={() => {
+                                                        if (!window.confirm(t('rubricBuilder.confirm_restore'))) return;
+                                                        restoreRubricVersion(id, actualIndex);
+                                                        setShowVersionHistory(false);
+                                                        window.location.reload();
+                                                    }}
+                                                >
+                                                    <RotateCcw size={13} /> {t('rubricBuilder.restore_version')}
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {syncDialogRubric && (
                 <div className="modal-overlay" onClick={() => setSyncDialogRubric(null)}>
                     <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 420 }}>

@@ -225,7 +225,13 @@
         "single_point_standard_label": "Standaard",
         "single_point_exceeds": "Overtreft",
         "single_point_meets": "Behaalt",
-        "single_point_not_yet": "Nog niet"
+        "single_point_not_yet": "Nog niet",
+        "audio_record": "Opnemen",
+        "audio_stop": "Stoppen",
+        "audio_remove": "Audio verwijderen",
+        "mark_as_anchor": "Markeer als anker",
+        "anchor_panel_title": "Ankerwerk",
+        "anchor_panel_hide": "Anker verbergen"
     },
     "rubricBuilder": {
         "action_back": "Terug",
@@ -315,7 +321,20 @@
         "sync_dialog_skip": "Overslaan",
         "sync_dialog_confirm": "Cijfers bijwerken",
         "insert_speaking_confirm": "Dit vervangt alle bestaande criteria door 6 standaard spreekdimensies. Doorgaan?",
-        "insert_speaking_append": "6 spreekdimensies toevoegen aan bestaande criteria?"
+        "insert_speaking_append": "6 spreekdimensies toevoegen aan bestaande criteria?",
+        "version_history": "Geschiedenis",
+        "save_version": "Momentopname opslaan",
+        "restore_version": "Herstellen",
+        "version_label_placeholder": "Label (optioneel, bijv. 'voor herschrijving')",
+        "no_versions_yet": "Nog geen versies opgeslagen.",
+        "confirm_restore": "Deze versie herstellen? Niet-opgeslagen wijzigingen gaan verloren.",
+        "version_n": "Versie {{n}}",
+        "criteria_count": "criteria"
+    },
+    "peerReview": {
+        "round_label": "Ronde",
+        "round_n": "Ronde {{n}}",
+        "add_round": "Ronde toevoegen"
     },
     "toast": {
         "export_error": "Exporteren mislukt. Probeer het opnieuw.",
@@ -520,6 +539,7 @@
         "table_progress": "Voortgang",
         "table_actions": "Acties",
         "feedback_only_badge": "Alleen feedback",
+        "anchor_badge": "Anker",
         "bulk_nhi": "Markeren als niet ingeleverd",
         "bulk_add_comment": "Opmerking toevoegen aan selectie",
         "bulk_comment_placeholder": "Toe te voegen algemene opmerking…",

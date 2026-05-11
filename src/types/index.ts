@@ -176,6 +176,12 @@ export const DEFAULT_FORMAT: RubricFormat = {
 export type ScoringMode = 'weighted-percentage' | 'total-points' | 'single-point';
 export type SinglePointOutcome = 'exceeds' | 'meets' | 'not-yet';
 
+export interface RubricVersion {
+    savedAt: string;
+    label?: string;
+    snapshot: Omit<Rubric, 'versions'>;
+}
+
 export interface Rubric {
     id: string;
     name: string;
@@ -197,6 +203,8 @@ export interface Rubric {
     cefrSkill?: CefrSkill;
     /** Minimum score percentage to count as 'Achieved' on student profile (default: 70) */
     cefrAchieveThreshold?: number;
+    /** Saved version snapshots for history/restore */
+    versions?: RubricVersion[];
 }
 
 export interface Student {
@@ -233,6 +241,8 @@ export interface ScoreEntry {
     attachmentId?: string;         // evidence file linked to this criterion
     /** Single-point rubric outcome — set instead of levelId when scoringMode is 'single-point' */
     singlePointOutcome?: SinglePointOutcome;
+    /** Base64 audio recording for this criterion (data:audio/webm;base64,...) */
+    audioDataUrl?: string;
 }
 
 export interface StudentRubric {
@@ -250,6 +260,10 @@ export interface StudentRubric {
     notHandedIn?: boolean;
     /** When true only written feedback is visible to the student; the grade is hidden until explicitly published */
     feedbackOnly?: boolean;
+    /** When true this submission is used as an anchor/exemplar for calibration during grading */
+    isAnchor?: boolean;
+    /** Peer review round number (1-based); undefined means single/legacy round */
+    round?: number;
     /** Snapshot of the rubric at the time of grading to ensure historical grades do not break */
     rubricSnapshot?: Rubric;
 }
