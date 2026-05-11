@@ -316,15 +316,15 @@ export default function GradeStudent() {
                                 {rubric.scoringMode === 'single-point' && (() => {
                                     const proficiency = c.levels[0];
                                     const outcomes: Array<{ value: 'exceeds' | 'meets' | 'not-yet'; label: string; color: string }> = [
-                                        { value: 'exceeds', label: 'Exceeds', color: '#10b981' },
-                                        { value: 'meets', label: 'Meets', color: fmt.accentColor },
-                                        { value: 'not-yet', label: 'Not Yet', color: '#ef4444' },
+                                        { value: 'exceeds', label: t('gradeStudent.single_point_exceeds'), color: '#10b981' },
+                                        { value: 'meets', label: t('gradeStudent.single_point_meets'), color: fmt.accentColor },
+                                        { value: 'not-yet', label: t('gradeStudent.single_point_not_yet'), color: '#ef4444' },
                                     ];
                                     return (
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                                             {proficiency?.description && (
                                                 <div style={{ padding: '10px 14px', background: 'var(--bg-elevated)', borderRadius: 8, fontSize: '0.85em', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
-                                                    <span style={{ fontSize: '0.7em', textTransform: 'uppercase', fontWeight: 600, color: 'var(--text-dim)', display: 'block', marginBottom: 4 }}>Proficiency standard</span>
+                                                    <span style={{ fontSize: '0.7em', textTransform: 'uppercase', fontWeight: 600, color: 'var(--text-dim)', display: 'block', marginBottom: 4 }}>{t('gradeStudent.single_point_standard_label')}</span>
                                                     {proficiency.description}
                                                 </div>
                                             )}
@@ -518,7 +518,7 @@ export default function GradeStudent() {
                                 onChange={e => { setFeedbackOnly(e.target.checked); setIsDirty(true); }}
                                 style={{ accentColor: 'var(--accent)' }}
                             />
-                            {t('gradeStudent.feedback_only_label', 'Feedback only (hide grade)')}
+                            {t('gradeStudent.feedback_only_label')}
                         </label>
                         {nextStudent && (
                             <button className="btn btn-secondary btn-sm" onClick={handleSaveAndNext}>

@@ -220,7 +220,12 @@
         "not_handed_in_comment": "Niet ingeleverd",
         "nav_scope_current_class": "Huidige klas",
         "nav_scope_rubric_classes": "Alle gekoppelde klassen",
-        "modifier_reason_placeholder": "Reden voor cijferaanpassing"
+        "modifier_reason_placeholder": "Reden voor cijferaanpassing",
+        "feedback_only_label": "Alleen feedback (verberg cijfer voor leerling)",
+        "single_point_standard_label": "Standaard",
+        "single_point_exceeds": "Overtreft",
+        "single_point_meets": "Behaalt",
+        "single_point_not_yet": "Nog niet"
     },
     "rubricBuilder": {
         "action_back": "Terug",
@@ -241,6 +246,11 @@
         "label_scoring_mode": "Beoordelingsmodus",
         "mode_weighted": "Gewogen Percentage",
         "mode_total_points": "Totaal Punten",
+        "mode_single_point": "Enkelpuntsrubriek",
+        "single_point_notice": "Elk criterium heeft één descriptor (de standaard). Geef tijdens beoordeling aan of de leerling de standaard overtreft, behaalt of nog niet behaalt.",
+        "regrade_banner_text": "Deze rubriek heeft bestaande beoordelingen. Herbereken de scores op basis van de bijgewerkte puntwaarden?",
+        "regrade_banner_recalc": "Scores herberekenen",
+        "regrade_banner_keep": "Bestaande scores bewaren",
         "label_total_max_points": "Totaal Max Punten",
         "label_criterion": "Criterium",
         "label_weight": "Gewicht:",
@@ -508,7 +518,13 @@
         "table_grade": "Cijfer",
         "table_score": "Score",
         "table_progress": "Voortgang",
-        "table_actions": "Acties"
+        "table_actions": "Acties",
+        "feedback_only_badge": "Alleen feedback",
+        "bulk_nhi": "Markeren als niet ingeleverd",
+        "bulk_add_comment": "Opmerking toevoegen aan selectie",
+        "bulk_comment_placeholder": "Toe te voegen algemene opmerking…",
+        "bulk_comment_confirm": "Toepassen",
+        "batch_docx_export": "{{count}} exporteren als DOCX"
     },
     "speaking": {
         "page_title": "Spreekopdracht",

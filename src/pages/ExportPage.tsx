@@ -88,6 +88,22 @@ export default function ExportPage() {
         }
     }
 
+    async function handleBatchDocxExport() {
+        if (!rubric || selectedStudentIds.size === 0) return;
+        setExporting(true);
+        try {
+            const toExport = gradedStudents
+                .filter(x => selectedStudentIds.has(x.student!.id))
+                .map(x => ({ sr: x.sr, student: x.student! }));
+            const { exportBatchDocx } = await import('../utils/docxExport');
+            await exportBatchDocx(toExport, rubric, scale);
+        } catch {
+            showToast(t('toast.export_error'), 'error');
+        } finally {
+            setExporting(false);
+        }
+    }
+
     async function handleWordExport() {
         if (!rubric) return;
         setExporting(true);
@@ -307,6 +323,15 @@ export default function ExportPage() {
                                     </div>
                                 </div>
                                 <button
+                                    className="btn btn-secondary"
+                                    disabled={selectedStudentIds.size === 0 || exporting}
+                                    onClick={handleBatchDocxExport}
+                                    title="Export graded results as a Word document"
+                                >
+                                    {exporting ? <Loader size={15} className="spin" /> : <Download size={15} />}
+                                    {t('exportPage.batch_docx_export', { count: selectedStudentIds.size })}
+                                </button>
+                                <button
                                     className="btn btn-primary"
                                     disabled={selectedStudentIds.size === 0 || exporting}
                                     onClick={() => handleExport()}
@@ -326,10 +351,10 @@ export default function ExportPage() {
                                     {selectedStudentIds.size} selected —
                                 </span>
                                 <button className="btn btn-secondary btn-sm" onClick={handleBulkMarkNHI}>
-                                    <XCircle size={13} /> Mark not handed in
+                                    <XCircle size={13} /> {t('exportPage.bulk_nhi')}
                                 </button>
                                 <button className="btn btn-secondary btn-sm" onClick={() => setShowBulkComment(v => !v)}>
-                                    <MessageSquare size={13} /> Add comment
+                                    <MessageSquare size={13} /> {t('exportPage.bulk_add_comment')}
                                 </button>
                                 {showBulkComment && (
                                     <div style={{ display: 'flex', gap: 8, alignItems: 'center', flex: 1, minWidth: 260 }}>
@@ -337,13 +362,13 @@ export default function ExportPage() {
                                             type="text"
                                             value={bulkCommentText}
                                             onChange={e => setBulkCommentText(e.target.value)}
-                                            placeholder="Append to overall comment for all selected…"
+                                            placeholder={t('exportPage.bulk_comment_placeholder')}
                                             style={{ flex: 1 }}
                                             onKeyDown={e => { if (e.key === 'Enter') handleBulkComment(); }}
                                             autoFocus
                                         />
                                         <button className="btn btn-primary btn-sm" onClick={handleBulkComment} disabled={!bulkCommentText.trim()}>
-                                            Apply
+                                            {t('exportPage.bulk_comment_confirm')}
                                         </button>
                                         <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setShowBulkComment(false)}>
                                             <X size={13} />
@@ -377,7 +402,7 @@ export default function ExportPage() {
                                                 {student.name}
                                                 {sr.feedbackOnly && (
                                                     <span style={{ marginLeft: 8, fontSize: '0.7rem', background: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d', borderRadius: 4, padding: '1px 6px', fontWeight: 600, verticalAlign: 'middle' }}>
-                                                        Feedback only
+                                                        {t('exportPage.feedback_only_badge')}
                                                     </span>
                                                 )}
                                             </td>

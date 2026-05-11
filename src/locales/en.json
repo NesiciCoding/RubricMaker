@@ -220,7 +220,12 @@
         "not_handed_in_comment": "Not handed in",
         "nav_scope_current_class": "Current class",
         "nav_scope_rubric_classes": "All linked classes",
-        "modifier_reason_placeholder": "Reason for grade modifier"
+        "modifier_reason_placeholder": "Reason for grade modifier",
+        "feedback_only_label": "Feedback only (hide grade from student)",
+        "single_point_standard_label": "Standard",
+        "single_point_exceeds": "Exceeds",
+        "single_point_meets": "Meets",
+        "single_point_not_yet": "Not yet"
     },
     "rubricBuilder": {
         "action_back": "Back",
@@ -241,6 +246,11 @@
         "label_scoring_mode": "Scoring Mode",
         "mode_weighted": "Weighted Percentage",
         "mode_total_points": "Total Points",
+        "mode_single_point": "Single-point rubric",
+        "single_point_notice": "Each criterion has one descriptor (the standard). During grading, mark whether the student exceeds, meets, or does not yet meet the standard.",
+        "regrade_banner_text": "This rubric has existing grades. Recalculate scores with the updated point values?",
+        "regrade_banner_recalc": "Recalculate scores",
+        "regrade_banner_keep": "Keep existing scores",
         "label_total_max_points": "Total Max Points",
         "label_criterion": "Criterion",
         "label_weight": "Weight:",
@@ -508,7 +518,13 @@
         "table_grade": "Grade",
         "table_score": "Score",
         "table_progress": "Progress",
-        "table_actions": "Actions"
+        "table_actions": "Actions",
+        "feedback_only_badge": "Feedback only",
+        "bulk_nhi": "Mark as Not Handed In",
+        "bulk_add_comment": "Add comment to selected",
+        "bulk_comment_placeholder": "Overall comment to append…",
+        "bulk_comment_confirm": "Apply",
+        "batch_docx_export": "Export {{count}} as DOCX"
     },
     "speaking": {
         "page_title": "Speaking Session",

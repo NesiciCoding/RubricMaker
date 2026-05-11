@@ -1,6 +1,7 @@
-import { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, TextRun, AlignmentType, HeadingLevel, PageOrientation } from 'docx';
+import { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, TextRun, AlignmentType, HeadingLevel, PageOrientation, PageBreak } from 'docx';
 import { saveAs } from 'file-saver';
-import type { Rubric, RubricCriterion } from '../types';
+import type { Rubric, RubricCriterion, StudentRubric, Student, GradeScale } from '../types';
+import { calcGradeSummary } from './gradeCalc';
 
 export async function exportRubricToDocx(rubric: Rubric) {
     const fmt = rubric.format;
@@ -179,4 +180,121 @@ export async function exportRubricToDocx(rubric: Rubric) {
 
     const blob = await Packer.toBlob(doc);
     saveAs(blob, `${rubric.name.replace(/[^a-z0-9]/gi, '_')}_rubric.docx`);
+}
+
+/** Export graded results for multiple students into a single DOCX file, one page per student. */
+export async function exportBatchDocx(
+    entries: { sr: StudentRubric; student: Student }[],
+    rubric: Rubric,
+    scale: GradeScale | null,
+): Promise<void> {
+    const fmt = rubric.format;
+
+    const parseMdSimple = (text: string): TextRun[] => {
+        if (!text) return [new TextRun('')];
+        // Strip basic HTML tags from TipTap output
+        const stripped = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+        return [new TextRun(stripped)];
+    };
+
+    const children: (Paragraph | Table)[] = [];
+
+    entries.forEach(({ sr, student }, idx) => {
+        const effectiveRubric = sr.rubricSnapshot ?? rubric;
+        const summary = calcGradeSummary(sr, effectiveRubric.criteria, scale, effectiveRubric);
+
+        // Page break before every student except the first
+        if (idx > 0) {
+            children.push(new Paragraph({ children: [new PageBreak()] }));
+        }
+
+        // Student name heading
+        children.push(new Paragraph({
+            text: student.name,
+            heading: HeadingLevel.HEADING_1,
+            spacing: { after: 120 },
+            ...(idx > 0 ? { pageBreakBefore: false } : {}),
+        }));
+
+        // Score summary line
+        const gradeText = scale
+            ? `${summary.letterGrade} · ${summary.modifiedPercentage.toFixed(1)}% · ${summary.rawScore}/${summary.configuredMaxPoints} pts`
+            : `${summary.modifiedPercentage.toFixed(1)}% · ${summary.rawScore}/${summary.configuredMaxPoints} pts`;
+        children.push(new Paragraph({
+            children: [new TextRun({ text: gradeText, bold: true, size: 24 })],
+            spacing: { after: 240 },
+        }));
+
+        // Per-criterion results table
+        const tableRows = [
+            // Header
+            new TableRow({
+                tableHeader: true,
+                children: ['Criterion', 'Level / Outcome', 'Comment'].map((label, ci) =>
+                    new TableCell({
+                        children: [new Paragraph({ children: [new TextRun({ text: label, bold: true, color: 'FFFFFF' })] })],
+                        width: { size: ci === 0 ? 25 : ci === 1 ? 25 : 50, type: WidthType.PERCENTAGE },
+                        shading: { fill: fmt.headerColor.replace('#', '') },
+                    })
+                ),
+            }),
+            // Data rows
+            ...effectiveRubric.criteria.map(c => {
+                const entry = sr.entries.find(e => e.criterionId === c.id);
+                let levelLabel = '—';
+                if (entry?.singlePointOutcome) {
+                    levelLabel = entry.singlePointOutcome === 'exceeds' ? '▲ Exceeds'
+                        : entry.singlePointOutcome === 'meets' ? '✓ Meets'
+                        : '✗ Not yet';
+                } else if (entry?.levelId) {
+                    const level = c.levels.find(l => l.id === entry.levelId);
+                    levelLabel = level ? level.label : '—';
+                }
+                const comment = entry?.comment ? entry.comment.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
+                return new TableRow({
+                    children: [
+                        new TableCell({
+                            children: [new Paragraph({ children: [new TextRun({ text: c.title, bold: true })] })],
+                            width: { size: 25, type: WidthType.PERCENTAGE },
+                            shading: { fill: 'F8F9FA' },
+                        }),
+                        new TableCell({
+                            children: [new Paragraph({ children: [new TextRun(levelLabel)] })],
+                            width: { size: 25, type: WidthType.PERCENTAGE },
+                        }),
+                        new TableCell({
+                            children: [new Paragraph({ children: parseMdSimple(comment) })],
+                            width: { size: 50, type: WidthType.PERCENTAGE },
+                        }),
+                    ],
+                });
+            }),
+        ];
+
+        children.push(new Table({
+            rows: tableRows,
+            width: { size: 100, type: WidthType.PERCENTAGE },
+        }));
+
+        // Overall comment
+        if (sr.overallComment) {
+            const overall = sr.overallComment.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+            children.push(new Paragraph({
+                children: [new TextRun({ text: 'Overall comment: ', bold: true }), new TextRun(overall)],
+                spacing: { before: 200 },
+            }));
+        }
+    });
+
+    const doc = new Document({
+        sections: [{
+            properties: {
+                page: { size: { orientation: fmt.orientation === 'landscape' ? PageOrientation.LANDSCAPE : PageOrientation.PORTRAIT } },
+            },
+            children,
+        }],
+    });
+
+    const blob = await Packer.toBlob(doc);
+    saveAs(blob, `${rubric.name.replace(/[^a-z0-9]/gi, '_')}_grades.docx`);
 }

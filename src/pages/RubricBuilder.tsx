@@ -462,7 +462,7 @@ export default function RubricBuilder() {
                                     {(['weighted-percentage', 'total-points', 'single-point'] as ScoringMode[]).map(mode => (
                                         <label key={mode} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', textTransform: 'none', letterSpacing: 0, fontWeight: scoringMode === mode ? 600 : 400 }}>
                                             <input type="radio" name="scoringMode" value={mode} checked={scoringMode === mode} onChange={() => setScoringMode(mode)} />
-                                            {mode === 'weighted-percentage' ? t('rubricBuilder.mode_weighted') : mode === 'total-points' ? t('rubricBuilder.mode_total_points') : 'Single-point (Exceeds / Meets / Not Yet)'}
+                                            {mode === 'weighted-percentage' ? t('rubricBuilder.mode_weighted') : mode === 'total-points' ? t('rubricBuilder.mode_total_points') : t('rubricBuilder.mode_single_point')}
                                         </label>
                                     ))}
                                 </div>
