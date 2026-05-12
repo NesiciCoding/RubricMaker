@@ -15,6 +15,7 @@ export default function AttachmentViewer({ attachment }: Props) {
     const isImage = attachment.mimeType.startsWith('image/');
     const isPdf = attachment.mimeType === 'application/pdf';
     const isDocx = attachment.mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || attachment.name.endsWith('.docx');
+    const isHtml = attachment.mimeType === 'text/html' || attachment.name.endsWith('.html');
 
     useEffect(() => {
         if (!isDocx || !attachment.dataUrl || !docxRef.current) return;
@@ -98,7 +99,18 @@ export default function AttachmentViewer({ attachment }: Props) {
                 </div>
             )}
 
-            {!isImage && !isPdf && !isDocx && (
+            {isHtml && attachment.dataUrl && (
+                <div style={{ width: '100%', height: '400px', marginTop: 8 }}>
+                    <iframe
+                        src={attachment.dataUrl}
+                        sandbox="allow-same-origin"
+                        style={{ width: '100%', height: '100%', borderRadius: 4, border: '1px solid var(--border)', background: '#fff', colorScheme: 'light' }}
+                        title={attachment.name}
+                    />
+                </div>
+            )}
+
+            {!isImage && !isPdf && !isDocx && !isHtml && (
                 <div className="text-xs text-muted" style={{ padding: 8, background: 'var(--bg-elevated)', borderRadius: 4, textAlign: 'center', marginTop: 8 }}>
                     Preview not available. Please download to view.
                 </div>
