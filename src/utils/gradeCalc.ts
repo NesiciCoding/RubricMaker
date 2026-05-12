@@ -1,5 +1,5 @@
 import type {
-    RubricCriterion, ScoreEntry, GradeScale, StudentRubric, Modifier, Rubric
+    RubricCriterion, ScoreEntry, GradeScale, GradeRange, StudentRubric, Modifier, Rubric
 } from '../types';
 
 // ─── Score Calculation ─────────────────────────────────────────────────────────
