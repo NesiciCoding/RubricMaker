@@ -1,4 +1,28 @@
 {
+    "tutorial": {
+        "step_welcome_title": "Welkom bij Rubric Maker!",
+        "step_welcome_content": "Deze korte rondleiding behandelt de belangrijkste functies zodat je meteen aan de slag kunt. Je kunt de tour op elk moment overslaan en via Instellingen opnieuw starten.",
+        "step_rubrics_title": "Rubrieken maken",
+        "step_rubrics_content": "Maak rubrieken met eigen criteria, beoordelingsniveaus en puntenschalen. Koppel criteria aan ERK-taalstandaarden, voeg een woordenschatlijst toe voor automatische documentanalyse, of voeg kant-en-klare spreekvaardigheidsonderdelen in. Via de versiegeschiedenis herstel je eerdere rubriekversies.",
+        "step_students_title": "Leerlingen & Klassen",
+        "step_students_content": "Voeg leerlingen toe en organiseer ze in klassen. Elk profiel toont beoordelingen, voortgang en ERK-niveaubereiking. Je kunt ook een VO-leerniveau per klas instellen.",
+        "step_grading_title": "Leerlingen beoordelen",
+        "step_grading_content": "Open een rubriek en kies een leerling. Scoor elk criterium, voeg bewijsbestanden bij, neem mondelinge feedback op of gebruik de commentaarbibliotheek voor herbruikbare snippets. Met 'Opslaan & Volgende' ga je snel door je klas.",
+        "step_comparative_title": "Vergelijkend beoordelen",
+        "step_comparative_content": "Klik op 'Vergelijken' op de rubriekenpagina om twee leerlingen naast elkaar te beoordelen. De app stelt aanpassingen voor op basis van hun relatieve prestaties — ideaal voor kalibratie en ankergericht beoordelen.",
+        "step_attachments_title": "Bijlagen & Documentanalyse",
+        "step_attachments_content": "Upload PDF's, Word-documenten of afbeeldingen als referentiemateriaal of leerlinginzendingen. Klik tijdens het beoordelen op 'Analyseren' om tekst automatisch te extraheren via OCR en woordenschat en grammatica te detecteren — aangedreven door Tesseract en LanguageTool.",
+        "step_statistics_title": "Statistieken & Inzichten",
+        "step_statistics_content": "Bekijk cijferverdelingen, prestaties per criterium, ERK-niveaubereiking en leergroeivoortgang voor je klas. Gebruik deze inzichten om trends te herkennen en leerlingen te signaleren die extra ondersteuning nodig hebben.",
+        "step_comments_title": "Commentaarbibliotheek",
+        "step_comments_content": "Bouw een herbruikbare bibliotheek van feedbacksnippets, geordend op tag. Voeg ze met één klik in tijdens het beoordelen voor consistente en tijdbesparende feedback.",
+        "step_export_title": "Resultaten exporteren",
+        "step_export_content": "Exporteer beoordeelde rubrieken als opgemaakte Word-documenten (met aangepaste sjablonen), PDF's of CSV-bestanden. Exporteer een individuele leerling of je hele klas in één keer.",
+        "step_settings_title": "Instellingen & Aanpassing",
+        "step_settings_content": "Wijzig het thema en de accentkleur, beheer beoordelingsschalen, stel je taal in (Nederlands of Engels) en configureer de Standards API-sleutel. Je kunt de rondleiding op elk moment opnieuw starten via deze pagina.",
+        "restart_button": "Rondleiding opnieuw starten",
+        "restart_section_title": "Rondleiding"
+    },
     "common": {
         "save": "Opslaan",
         "cancel": "Annuleren",

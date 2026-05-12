@@ -18,6 +18,7 @@ import { DEFAULT_FORMAT } from '../types';
 import { nanoid } from '../utils/nanoid';
 import StandardsPickerModal from '../components/Standards/StandardsPickerModal';
 import CefrPickerModal from '../components/CEFR/CefrPickerModal';
+import VocabularyListEditor from '../components/VocabularyListEditor';
 import { CEFR_LEVELS, CEFR_SKILLS, CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
 import { exportRubricGridPdf } from '../utils/pdfExport';
 import { exportRubricToDocx } from '../utils/docxExport';
@@ -48,7 +49,7 @@ export default function RubricBuilder() {
     const navigate = useNavigate();
     const { id } = useParams();
     const location = useLocation();
-    const { rubrics, studentRubrics, peerReviews, addRubric, updateRubric, syncRubricSnapshot, saveRubricVersion, restoreRubricVersion, gradeScales, settings } = useApp();
+    const { rubrics, studentRubrics, peerReviews, addRubric, updateRubric, syncRubricSnapshot, saveRubricVersion, restoreRubricVersion, gradeScales, settings, addVocabularyItem, updateVocabularyItem, deleteVocabularyItem } = useApp();
 
     const existing = id ? rubrics.find(r => r.id === id) : undefined;
     const template = location.state?.template as Partial<Rubric> | undefined;
@@ -62,6 +63,7 @@ export default function RubricBuilder() {
     const [scoringMode, setScoringMode] = useState<ScoringMode>(existing?.scoringMode ?? template?.scoringMode ?? 'weighted-percentage');
     const [totalMaxPoints, setTotalMaxPoints] = useState(existing?.totalMaxPoints ?? template?.totalMaxPoints ?? 100);
     const [showFormat, setShowFormat] = useState(false);
+    const [showVocabulary, setShowVocabulary] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
     const [showMarkdownHint, setShowMarkdownHint] = useState(false);
     const [viewMode, setViewMode] = useState<'form' | 'designer'>('form');
@@ -543,8 +545,47 @@ export default function RubricBuilder() {
                             </div>
                         </div>
 
+                        {/* Vocabulary List */}
+                        <div style={{ background: 'var(--bg-elevated)', borderRadius: 10, padding: 16, marginTop: 16, border: '1px solid var(--border)' }}>
+                            <div
+                                style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
+                                onClick={() => setShowVocabulary(v => !v)}
+                            >
+                                <BookOpen size={15} style={{ color: 'var(--accent)' }} />
+                                <h4 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text)', flex: 1 }}>
+                                    {t('vocabulary.section_title', 'Vocabulary & Grammar List')}
+                                    {existing?.vocabularyItems?.length ? (
+                                        <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--text-muted)', fontWeight: 400 }}>
+                                            {existing.vocabularyItems.length} {t('vocabulary.items', 'items')}
+                                        </span>
+                                    ) : null}
+                                </h4>
+                                <ChevronDown size={15} style={{ transform: showVocabulary ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', color: 'var(--text-muted)' }} />
+                            </div>
+                            {showVocabulary && id && (
+                                <div style={{ marginTop: 16 }}>
+                                    <p className="text-xs text-muted" style={{ marginBottom: 14 }}>
+                                        {t('vocabulary.section_help', 'Add words, phrases, or grammar structures to detect when analysing student documents. Link items to rubric criteria to auto-check them during grading.')}
+                                    </p>
+                                    <VocabularyListEditor
+                                        rubricId={id}
+                                        items={existing?.vocabularyItems ?? []}
+                                        criteria={criteria}
+                                        onAdd={item => addVocabularyItem(id, item)}
+                                        onUpdate={item => updateVocabularyItem(id, item)}
+                                        onDelete={itemId => deleteVocabularyItem(id, itemId)}
+                                    />
+                                </div>
+                            )}
+                            {showVocabulary && !id && (
+                                <p className="text-xs text-muted" style={{ marginTop: 12 }}>
+                                    {t('vocabulary.save_first', 'Save the rubric first to manage vocabulary items.')}
+                                </p>
+                            )}
+                        </div>
+
                         {/* Criteria */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, marginTop: 20 }}>
                             <h2>{t('rubricBuilder.label_criterion')}</h2>
                             <div style={{ display: 'flex', gap: 8 }}>
                                 {criteria.length > 1 && (

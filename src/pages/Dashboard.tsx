@@ -119,7 +119,7 @@ export default function Dashboard() {
                     <Plus size={15} /> {t('dashboard.new_rubric')}
                 </button>
             } />
-            <div className="page-content fade-in">
+            <div className="page-content fade-in dashboard-container">
                 {/* Stat cards */}
                 <div className="grid-3 mb-4">
                     <div className="card hoverable" onClick={() => navigate('/rubrics')} style={{ borderTop: '3px solid var(--accent)', cursor: 'pointer' }}>
@@ -144,7 +144,7 @@ export default function Dashboard() {
                             </div>
                         </div>
                     </div>
-                    <div className="card hoverable" onClick={() => navigate('/export')} style={{ borderTop: '3px solid var(--purple)', cursor: 'pointer' }}>
+                    <div className="card hoverable" data-tour="dashboard-grades" onClick={() => navigate('/export')} style={{ borderTop: '3px solid var(--purple)', cursor: 'pointer' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                             <div style={{ background: 'rgba(139,92,246,0.12)', padding: 10, borderRadius: 10 }}>
                                 <TrendingUp size={20} style={{ color: 'var(--purple)' }} />
