@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { encodeFeedbackCode, decodeFeedbackCode } from './studentShareCode';
-import type { SharedFeedback, Rubric, Student, StudentRubric, GradeScale } from '../types';
+import type { SharedFeedback } from './studentShareCode';
+import type { Rubric, Student, StudentRubric, GradeScale } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 
 const makeRubric = (id = 'r1'): Rubric => ({

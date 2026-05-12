@@ -102,7 +102,7 @@ describe('DocumentAnalysisPanel', () => {
             extractedText: 'sample text',
             analyzedAt: '2024-01-01',
             detectedItems: [
-                { id: 'di1', phrase: 'good morning', category: 'vocabulary', count: 2, positions: [], linkedCriterionId: undefined, linkedSubItemId: undefined },
+                { vocabularyItemId: 'vi1', found: true, occurrences: 2, contexts: ['good morning'] },
             ],
             grammarErrors: [],
             grammarCheckerUsed: 'none',
@@ -139,9 +139,7 @@ describe('DocumentAnalysisPanel', () => {
             detectedItems: [],
             grammarErrors: [
                 {
-                    id: 'ge1',
                     message: 'Wrong verb form',
-                    context: 'I is happy',
                     offset: 2,
                     length: 2,
                     suggestions: ['am'],
@@ -164,13 +162,10 @@ describe('DocumentAnalysisPanel', () => {
             analyzedAt: '2024-01-01',
             detectedItems: [
                 {
-                    id: 'di1',
-                    phrase: 'good morning',
-                    category: 'vocabulary',
-                    count: 2,
-                    positions: [],
-                    linkedCriterionId: 'c1',
-                    linkedSubItemId: 'si1',
+                    vocabularyItemId: 'vi1',
+                    found: true,
+                    occurrences: 2,
+                    contexts: ['good morning'],
                 },
             ],
             grammarErrors: [],

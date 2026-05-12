@@ -331,7 +331,7 @@ describe('gradeCalc utilities', () => {
                 id: 'c1', title: '', description: '', weight: 100,
                 levels: [{ id: 'l1', label: 'A', minPoints: 0, maxPoints: 10, description: '', subItems: [] }],
             };
-            const entry: ScoreEntry = { criterionId: 'c1', checkedSubItems: [], comment: '', singlePointOutcome: 'not-yet' };
+            const entry: ScoreEntry = { criterionId: 'c1', levelId: null, checkedSubItems: [], comment: '', singlePointOutcome: 'not-yet' };
             expect(calcEntryPoints(entry, criterion)).toBe(0);
         });
 
@@ -340,7 +340,7 @@ describe('gradeCalc utilities', () => {
                 id: 'c1', title: '', description: '', weight: 100,
                 levels: [{ id: 'l1', label: 'A', minPoints: 0, maxPoints: 10, description: '', subItems: [] }],
             };
-            const entry: ScoreEntry = { criterionId: 'c1', checkedSubItems: [], comment: '', singlePointOutcome: 'meets' };
+            const entry: ScoreEntry = { criterionId: 'c1', levelId: null, checkedSubItems: [], comment: '', singlePointOutcome: 'meets' };
             expect(calcEntryPoints(entry, criterion)).toBe(10);
         });
     });

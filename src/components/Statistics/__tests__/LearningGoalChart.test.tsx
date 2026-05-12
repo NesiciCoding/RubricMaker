@@ -8,14 +8,12 @@ const makeGoal = (guid: string, title = 'Goal A'): LearningGoalAggregate => ({
     guid,
     title,
     description: 'A test goal',
-    standardSetTitle: 'CCSS',
-    jurisdictionTitle: 'US',
     totalEarned: 80,
     totalMax: 100,
     averagePercentage: 80,
     history: [
-        { gradedAt: '2024-01-01T00:00:00Z', rubricName: 'Rubric 1', percentage: 80, earnedPoints: 80, maxPoints: 100 },
-        { gradedAt: '2024-02-01T00:00:00Z', rubricName: 'Rubric 2', percentage: 85, earnedPoints: 85, maxPoints: 100 },
+        { studentId: 's1', rubricId: 'r1', guid: 'g1', title: 'Goal A', description: 'desc', gradedAt: '2024-01-01T00:00:00Z', rubricName: 'Rubric 1', percentage: 80, earnedPoints: 80, maxPoints: 100 },
+        { studentId: 's1', rubricId: 'r1', guid: 'g1', title: 'Goal A', description: 'desc', gradedAt: '2024-02-01T00:00:00Z', rubricName: 'Rubric 2', percentage: 85, earnedPoints: 85, maxPoints: 100 },
     ],
 });
 

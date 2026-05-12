@@ -245,7 +245,7 @@ describe('encodeRubricShareCode / decodeRubricShareCode', () => {
 describe('buildParsedRubric edge cases', () => {
     it('returns empty result when no level columns found', async () => {
         const { buildParsedRubric } = await import('./rubricImport');
-        const result = buildParsedRubric({ headers: [], rows: [['C1']] });
+        const result = buildParsedRubric({ headers: [], rows: [['C1']] }, 'test');
         expect(result.criteria.length).toBe(0);
         expect(result.warnings.length).toBeGreaterThan(0);
     });
@@ -255,7 +255,7 @@ describe('buildParsedRubric edge cases', () => {
         const result = buildParsedRubric({
             headers: ['criterion', 'Level A', 'Level B'],
             rows: [['C1', 'desc A', 'desc B'], ['', 'x', 'y']],
-        });
+        }, 'test');
         expect(result.criteria.length).toBe(1);
     });
 });

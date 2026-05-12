@@ -107,7 +107,7 @@ describe('ToastProvider', () => {
 
 describe('ToastContext default value', () => {
     it('showToast is a no-op by default', () => {
-        const ctx = React.createContext({ showToast: () => {} });
-        expect(() => ctx._currentValue.showToast('test')).not.toThrow();
+        const defaultValue = { showToast: (_msg: string) => {} };
+        expect(() => defaultValue.showToast('test')).not.toThrow();
     });
 });

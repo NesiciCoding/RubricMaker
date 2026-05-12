@@ -283,7 +283,7 @@ describe('CommentBankPage', () => {
         renderPage(<CommentBankPage />);
         const editBtns = screen.getAllByRole('button');
         // Edit button is the second-to-last in the card
-        const editBtn = editBtns.find(b => b.querySelector('svg[class*="edit"]') || (b.getBoundingClientRect && b.title === ''));
+        const editBtn = editBtns.find(b => b.querySelector('svg[class*="edit"]') || b.title === '');
         // Just fire on 2nd-to-last button
         fireEvent.click(editBtns[editBtns.length - 2]);
         // Should show cancel/save buttons
