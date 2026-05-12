@@ -493,6 +493,8 @@
         "not_handed_in": "Not handed in",
         "not_handed_in_excl": "Not handed in (excluded from stats)",
         "grade_distribution": "Grade Distribution",
+        "no_grade_scale": "No grade scale configured for this rubric.",
+        "students": "Students",
         "criterion_avg": "Per-Criterion Average (%)",
         "score_distribution": "Score Distribution",
         "heatmap": "Criterion Heat Map",

@@ -487,22 +487,29 @@ export default function StatisticsPage() {
                                     {/* Grade distribution */}
                                     <div className="card">
                                         <h3 style={{ marginBottom: 16 }}>{t('statistics.grade_distribution')}</h3>
-                                        <ResponsiveContainer width="100%" height={340}>
-                                            <BarChart data={stats.distribution} margin={{ top: 0, right: 0, bottom: 0, left: -20 }}>
-                                                <XAxis dataKey="label" tick={{ fill: 'var(--text-muted)', fontSize: 12 }} />
-                                                <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 12 }} allowDecimals={false} />
-                                                <Tooltip
-                                                    contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8 }}
-                                                    labelStyle={{ color: 'var(--text)', fontWeight: 600 }}
-                                                    itemStyle={{ color: 'var(--text-muted)' }}
-                                                />
-                                                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                                                    {stats.distribution.map((entry, i) => (
-                                                        <Cell key={i} fill={entry.color} />
-                                                    ))}
-                                                </Bar>
-                                            </BarChart>
-                                        </ResponsiveContainer>
+                                        {stats.distribution.length === 0 ? (
+                                            <div className="empty-state" style={{ height: 280 }}>
+                                                <p className="text-muted text-sm">{t('statistics.no_grade_scale')}</p>
+                                            </div>
+                                        ) : (
+                                            <ResponsiveContainer width="100%" height={280}>
+                                                <BarChart data={stats.distribution} margin={{ top: 4, right: 8, bottom: 0, left: -16 }}>
+                                                    <XAxis dataKey="label" tick={{ fill: 'var(--text-muted)', fontSize: 12 }} />
+                                                    <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 12 }} allowDecimals={false} domain={[0, (max: number) => Math.max(max + 1, 3)]} />
+                                                    <Tooltip
+                                                        contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8 }}
+                                                        labelStyle={{ color: 'var(--text)', fontWeight: 600 }}
+                                                        itemStyle={{ color: 'var(--text-muted)' }}
+                                                        formatter={(v: number) => [v, t('statistics.students')]}
+                                                    />
+                                                    <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={60}>
+                                                        {stats.distribution.map((entry, i) => (
+                                                            <Cell key={i} fill={entry.color} />
+                                                        ))}
+                                                    </Bar>
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        )}
                                     </div>
 
                                     {/* Per-criterion chart — Bar or Radar */}

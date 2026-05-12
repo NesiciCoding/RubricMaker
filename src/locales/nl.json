@@ -493,6 +493,8 @@
         "not_handed_in": "Niet ingeleverd",
         "not_handed_in_excl": "Niet ingeleverd (uitgesloten van statistieken)",
         "grade_distribution": "Cijferverdeling",
+        "no_grade_scale": "Geen beoordelingsschaal ingesteld voor deze rubriek.",
+        "students": "Leerlingen",
         "criterion_avg": "Gemiddelde per Criterium (%)",
         "score_distribution": "Score Verdeling",
         "heatmap": "Criterium Heatmap",

@@ -1,5 +1,5 @@
 import type {
-    RubricCriterion, ScoreEntry, GradeScale, StudentRubric, Modifier, Rubric
+    RubricCriterion, ScoreEntry, GradeScale, GradeRange, StudentRubric, Modifier, Rubric
 } from '../types';
 
 // ─── Score Calculation ─────────────────────────────────────────────────────────
@@ -110,20 +110,20 @@ export function applyModifier(score: number, modifier?: Modifier): number {
 
 // ─── Letter Grade ─────────────────────────────────────────────────────────────
 
-export function calcLetterGrade(percentage: number, scale: GradeScale): string {
+// Sorted descending by min, first range where score >= range.min wins.
+// Using >= min only (no upper bound) prevents float scores like 89.7% from
+// falling in the gap between integer-bounded ranges (e.g. B: 80–89, A: 90–100).
+function matchRange(percentage: number, scale: GradeScale): GradeRange | undefined {
     const sorted = [...scale.ranges].sort((a, b) => b.min - a.min);
-    for (const range of sorted) {
-        if (percentage >= range.min && percentage <= range.max) return range.label;
-    }
-    return '—';
+    return sorted.find(r => percentage >= r.min);
+}
+
+export function calcLetterGrade(percentage: number, scale: GradeScale): string {
+    return matchRange(percentage, scale)?.label ?? '—';
 }
 
 export function calcGradeColor(percentage: number, scale: GradeScale): string {
-    const sorted = [...scale.ranges].sort((a, b) => b.min - a.min);
-    for (const range of sorted) {
-        if (percentage >= range.min && percentage <= range.max) return range.color;
-    }
-    return '#6b7280';
+    return matchRange(percentage, scale)?.color ?? '#6b7280';
 }
 
 // ─── Student Rubric Summary ───────────────────────────────────────────────────
@@ -199,11 +199,18 @@ export function calcClassStats(summaries: GradeSummary[], scale: GradeScale | nu
         ? (scores[mid - 1] + scores[mid]) / 2
         : scores[mid];
 
-    const distribution = scale ? scale.ranges.map(r => ({
-        label: r.label,
-        color: r.color,
-        count: summaries.filter(s => s.modifiedPercentage >= r.min && s.modifiedPercentage <= r.max).length,
-    })) : [];
+    const distribution = scale ? (() => {
+        // Count each summary into exactly one bucket using the same boundary logic
+        // as calcLetterGrade (sorted descending, first >= min wins).
+        const counts = new Map<string, number>(scale.ranges.map(r => [r.label, 0]));
+        for (const s of summaries) {
+            const match = matchRange(s.modifiedPercentage, scale);
+            if (match) counts.set(match.label, (counts.get(match.label) ?? 0) + 1);
+        }
+        return [...scale.ranges]
+            .sort((a, b) => b.min - a.min)
+            .map(r => ({ label: r.label, color: r.color, count: counts.get(r.label) ?? 0 }));
+    })() : [];
 
     return { average, median, highest: scores[scores.length - 1], lowest: scores[0], distribution };
 }
