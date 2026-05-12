@@ -1,4 +1,5 @@
 import type { GrammarError } from '../types';
+import nlp from 'compromise';
 
 const LT_API = 'https://api.languagetool.org/v2/check';
 const TIMEOUT_MS = 8000;
@@ -52,7 +53,6 @@ async function checkWithLanguageTool(text: string, language: string): Promise<Gr
 }
 
 async function checkWithCompromise(text: string): Promise<GrammarError[]> {
-    const nlp = (await import('compromise')).default;
     const errors: GrammarError[] = [];
     const doc = nlp(text);
 
