@@ -182,6 +182,48 @@ export interface RubricVersion {
     snapshot: Omit<Rubric, 'versions'>;
 }
 
+// ─── Vocabulary & Document Analysis Types ─────────────────────────────────────
+
+export type VocabularyCategory = 'vocabulary' | 'grammar' | 'discourse' | 'other';
+
+export interface VocabularyItem {
+    id: string;
+    phrase: string;
+    category: VocabularyCategory;
+    linkedCriterionId?: string;
+    linkedSubItemId?: string;
+    notes?: string;
+}
+
+export interface DetectedItem {
+    vocabularyItemId: string;
+    found: boolean;
+    occurrences: number;
+    contexts: string[];
+    correctUsage?: 'correct' | 'incorrect' | 'unclear';
+}
+
+export interface GrammarError {
+    message: string;
+    offset: number;
+    length: number;
+    suggestions: string[];
+    ruleId?: string;
+}
+
+export interface DocumentAnalysisResult {
+    id: string;
+    studentId: string;
+    rubricId: string;
+    attachmentId: string;
+    extractedText: string;
+    analyzedAt: string;
+    detectedItems: DetectedItem[];
+    grammarErrors: GrammarError[];
+    grammarCheckerUsed: 'languagetool' | 'compromise' | 'none';
+    grammarTextTruncated?: boolean;
+}
+
 export interface Rubric {
     id: string;
     name: string;
@@ -205,6 +247,8 @@ export interface Rubric {
     cefrAchieveThreshold?: number;
     /** Saved version snapshots for history/restore */
     versions?: RubricVersion[];
+    /** Vocabulary and grammar items to detect when analysing student documents */
+    vocabularyItems?: VocabularyItem[];
 }
 
 export interface Student {

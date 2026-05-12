@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation, Trans } from 'react-i18next';
-import { Save, Plus, Trash2, Download, Upload, Key, ExternalLink, AlertCircle, MessageSquare, Globe, Layout, Star, Cloud, LogIn, LogOut, RefreshCw } from 'lucide-react';
+import { Save, Plus, Trash2, Download, Upload, Key, ExternalLink, AlertCircle, MessageSquare, Globe, Layout, Star, Cloud, LogIn, LogOut, RefreshCw, PlayCircle } from 'lucide-react';
 import CommentBankModal from '../components/Comments/CommentBankModal';
 import TemplateUploadModal from '../components/TemplateUploadModal';
 import Topbar from '../components/Layout/Topbar';
@@ -11,6 +12,7 @@ import { exportFullBackup, importFullBackup } from '../store/storage';
 
 export default function SettingsPage() {
     const { t, i18n } = useTranslation();
+    const navigate = useNavigate();
     const {
         settings, updateSettings, gradeScales, addGradeScale, updateGradeScale, deleteGradeScale, commentBank,
         exportTemplates, addExportTemplate, deleteExportTemplate,
@@ -443,6 +445,20 @@ export default function SettingsPage() {
                     <p className="text-muted text-sm" style={{ marginTop: 12 }}>
                         {t('settings.backup_help')}
                     </p>
+                </div>
+
+                {/* Guided tour */}
+                <div className="card">
+                    <h3 style={{ marginBottom: 16 }}>{t('tutorial.restart_section_title')}</h3>
+                    <button
+                        className="btn btn-secondary"
+                        onClick={() => {
+                            updateSettings({ hasSeenTutorial: false });
+                            navigate('/');
+                        }}
+                    >
+                        <PlayCircle size={16} /> {t('tutorial.restart_button')}
+                    </button>
                 </div>
             </div>
 

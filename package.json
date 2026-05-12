@@ -16,11 +16,12 @@
     "@azure/msal-react": "^2.1.0",
     "@floating-ui/dom": "^1.7.6",
     "@hello-pangea/dnd": "^18.0.1",
-    "@tiptap/core": "^3.20.3",
-    "@tiptap/pm": "^3.20.3",
-    "@tiptap/react": "^3.20.3",
-    "@tiptap/starter-kit": "^3.20.3",
+    "@tiptap/core": "^3.23.1",
+    "@tiptap/pm": "^3.23.1",
+    "@tiptap/react": "^3.23.1",
+    "@tiptap/starter-kit": "^3.23.1",
     "@types/file-saver": "^2.0.7",
+    "compromise": "^14.15.0",
     "docx": "^9.5.3",
     "docx-preview": "^0.3.7",
     "file-saver": "^2.0.5",
@@ -37,7 +38,8 @@
     "react-router-dom": "^6.22.3",
     "react-speech-recognition": "^4.0.1",
     "recharts": "^2.12.7",
-    "regenerator-runtime": "^0.14.1"
+    "regenerator-runtime": "^0.14.1",
+    "tesseract.js": "^5.1.1"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.1",

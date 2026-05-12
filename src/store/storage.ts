@@ -1,6 +1,6 @@
 import type {
     Rubric, Student, Class, StudentRubric, Attachment,
-    GradeScale, CommentSnippet, AppSettings, RubricFormat, LinkedStandard, CommentBankItem, ExportTemplate, SelfAssessment, SpeakingSession
+    GradeScale, CommentSnippet, AppSettings, RubricFormat, LinkedStandard, CommentBankItem, ExportTemplate, SelfAssessment, SpeakingSession, DocumentAnalysisResult
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 
@@ -96,6 +96,7 @@ const KEYS = {
     peerReviews: 'rm_peer_reviews',
     selfAssessments: 'rm_self_assessments',
     speakingSessions: 'rm_speaking_sessions',
+    analysisResults: 'rm_analysis_results',
 };
 
 // ─── Generic helpers ───────────────────────────────────────────────────────────
@@ -131,6 +132,7 @@ export interface StoreData {
     peerReviews: StudentRubric[];
     selfAssessments: SelfAssessment[];
     speakingSessions: SpeakingSession[];
+    analysisResults: DocumentAnalysisResult[];
 }
 
 export function loadStore(): StoreData {
@@ -149,6 +151,7 @@ export function loadStore(): StoreData {
         peerReviews: load<StudentRubric[]>(KEYS.peerReviews, []),
         selfAssessments: load<SelfAssessment[]>(KEYS.selfAssessments, []),
         speakingSessions: load<SpeakingSession[]>(KEYS.speakingSessions, []),
+        analysisResults: load<DocumentAnalysisResult[]>(KEYS.analysisResults, []),
     };
 }
 
@@ -166,6 +169,7 @@ export function saveExportTemplates(templates: ExportTemplate[]) { save(KEYS.exp
 export function savePeerReviews(reviews: StudentRubric[]) { save(KEYS.peerReviews, reviews); }
 export function saveSelfAssessments(sas: SelfAssessment[]) { save(KEYS.selfAssessments, sas); }
 export function saveSpeakingSessions(sessions: SpeakingSession[]) { save(KEYS.speakingSessions, sessions); }
+export function saveAnalysisResults(results: DocumentAnalysisResult[]) { save(KEYS.analysisResults, results); }
 
 // ─── Full Backup / Restore ─────────────────────────────────────────────────────
 
@@ -194,6 +198,7 @@ export function importFullBackup(json: string): boolean {
         if (data.peerReviews) savePeerReviews(data.peerReviews);
         if (data.selfAssessments) saveSelfAssessments(data.selfAssessments);
         if (data.speakingSessions) saveSpeakingSessions(data.speakingSessions);
+        if (data.analysisResults) saveAnalysisResults(data.analysisResults);
         return true;
     } catch (e) {
         console.error('Import failed', e);

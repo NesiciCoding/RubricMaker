@@ -1,4 +1,28 @@
 {
+    "tutorial": {
+        "step_welcome_title": "Welcome to Rubric Maker!",
+        "step_welcome_content": "This quick tour covers the key features so you can start grading smarter. You can skip at any time and restart from Settings whenever you like.",
+        "step_rubrics_title": "Build Rubrics",
+        "step_rubrics_content": "Create rubrics with custom criteria, performance levels, and point scales. Link criteria to CEFR language standards, add a vocabulary list for automatic document analysis, or insert pre-built speaking dimensions. Version history lets you restore any previous rubric state.",
+        "step_students_title": "Students & Classes",
+        "step_students_content": "Add students and organise them into classes. Each student gets a profile showing their grades, progress over time, and CEFR achievement level. You can also configure VO tracks per class.",
+        "step_grading_title": "Grading Students",
+        "step_grading_content": "Open a rubric from the Rubrics page and pick a student to grade. Score each criterion, attach evidence files, record voice feedback, or use the Comment Bank for reusable snippets. Hit 'Save & Next' to move through your class efficiently.",
+        "step_comparative_title": "Comparative Grading",
+        "step_comparative_content": "On the Rubrics page, click 'Compare' to grade two students side by side. The app adaptively suggests adjustments based on their relative performance — ideal for calibration sessions and anchor-based grading.",
+        "step_attachments_title": "Attachments & Document Analysis",
+        "step_attachments_content": "Upload PDFs, Word documents, or images as reference materials or student submissions. During grading, click 'Analyse' to automatically extract text via OCR and detect vocabulary words and grammar structures — powered by Tesseract and LanguageTool.",
+        "step_statistics_title": "Statistics & Insights",
+        "step_statistics_content": "View grade distributions, per-criterion performance, CEFR achievement rates, and learning goal progress across your class. Use these insights to spot trends and identify students who need extra support.",
+        "step_comments_title": "Comment Bank",
+        "step_comments_content": "Build a reusable library of feedback snippets organised by tag. During grading, insert them with one click to save time and keep your feedback consistent.",
+        "step_export_title": "Export Results",
+        "step_export_content": "Export graded rubrics as formatted Word documents (using custom templates), PDFs, or CSV files. Export a single student or your entire class in one go.",
+        "step_settings_title": "Settings & Customisation",
+        "step_settings_content": "Change the theme and accent colour, manage grade scales, set your language (English or Dutch), and configure the Standards API key. You can restart this tour at any time from the Settings page.",
+        "restart_button": "Restart guided tour",
+        "restart_section_title": "Guided tour"
+    },
     "common": {
         "save": "Save",
         "cancel": "Cancel",

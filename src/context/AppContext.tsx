@@ -3,13 +3,13 @@ import React, {
 } from 'react';
 import type {
     Rubric, Student, Class, StudentRubric, Attachment,
-    GradeScale, CommentSnippet, AppSettings, ScoreEntry, Modifier, LinkedStandard, CommentBankItem, ExportTemplate, SelfAssessment, SpeakingSession, RubricVersion
+    GradeScale, CommentSnippet, AppSettings, ScoreEntry, Modifier, LinkedStandard, CommentBankItem, ExportTemplate, SelfAssessment, SpeakingSession, RubricVersion, VocabularyItem, DocumentAnalysisResult
 } from '../types';
 import {
     loadStore, StoreData,
     saveRubrics, saveStudents, saveClasses, saveStudentRubrics,
     saveAttachments, saveGradeScales, saveCommentSnippets, saveSettings, saveFavoriteStandards, saveCommentBank,
-    saveExportTemplates, exportStore, savePeerReviews, saveSelfAssessments, saveSpeakingSessions
+    saveExportTemplates, exportStore, savePeerReviews, saveSelfAssessments, saveSpeakingSessions, saveAnalysisResults
 } from '../store/storage';
 import { nanoid } from '../utils/nanoid';
 // Azure / MSAL integration disabled — not in use
@@ -56,7 +56,12 @@ type Action =
     | { type: 'DELETE_SPEAKING_SESSION', id: string }
     | { type: 'SYNC_RUBRIC_SNAPSHOT'; rubricId: string; updatedRubric: Rubric }
     | { type: 'SAVE_RUBRIC_VERSION'; rubricId: string; label?: string }
-    | { type: 'RESTORE_RUBRIC_VERSION'; rubricId: string; versionIndex: number };
+    | { type: 'RESTORE_RUBRIC_VERSION'; rubricId: string; versionIndex: number }
+    | { type: 'ADD_VOCABULARY_ITEM'; rubricId: string; payload: VocabularyItem }
+    | { type: 'UPDATE_VOCABULARY_ITEM'; rubricId: string; payload: VocabularyItem }
+    | { type: 'DELETE_VOCABULARY_ITEM'; rubricId: string; itemId: string }
+    | { type: 'SAVE_ANALYSIS_RESULT'; payload: DocumentAnalysisResult }
+    | { type: 'DELETE_ANALYSIS_RESULT'; id: string };
 
 function reducer(state: StoreData, action: Action): StoreData {
     switch (action.type) {
@@ -281,6 +286,43 @@ function reducer(state: StoreData, action: Action): StoreData {
             saveRubrics(next);
             return { ...state, rubrics: next };
         }
+        case 'ADD_VOCABULARY_ITEM': {
+            const next = state.rubrics.map(r => {
+                if (r.id !== action.rubricId) return r;
+                return { ...r, vocabularyItems: [...(r.vocabularyItems ?? []), action.payload] };
+            });
+            saveRubrics(next);
+            return { ...state, rubrics: next };
+        }
+        case 'UPDATE_VOCABULARY_ITEM': {
+            const next = state.rubrics.map(r => {
+                if (r.id !== action.rubricId) return r;
+                return { ...r, vocabularyItems: (r.vocabularyItems ?? []).map(v => v.id === action.payload.id ? action.payload : v) };
+            });
+            saveRubrics(next);
+            return { ...state, rubrics: next };
+        }
+        case 'DELETE_VOCABULARY_ITEM': {
+            const next = state.rubrics.map(r => {
+                if (r.id !== action.rubricId) return r;
+                return { ...r, vocabularyItems: (r.vocabularyItems ?? []).filter(v => v.id !== action.itemId) };
+            });
+            saveRubrics(next);
+            return { ...state, rubrics: next };
+        }
+        case 'SAVE_ANALYSIS_RESULT': {
+            const exists = state.analysisResults.findIndex(r => r.id === action.payload.id);
+            const next = exists >= 0
+                ? state.analysisResults.map(r => r.id === action.payload.id ? action.payload : r)
+                : [...state.analysisResults, action.payload];
+            saveAnalysisResults(next);
+            return { ...state, analysisResults: next };
+        }
+        case 'DELETE_ANALYSIS_RESULT': {
+            const next = state.analysisResults.filter(r => r.id !== action.id);
+            saveAnalysisResults(next);
+            return { ...state, analysisResults: next };
+        }
         default: return state;
     }
 }
@@ -335,6 +377,13 @@ interface AppContextValue extends StoreData {
     // Rubric version history
     saveRubricVersion: (rubricId: string, label?: string) => void;
     restoreRubricVersion: (rubricId: string, versionIndex: number) => void;
+    // Vocabulary items
+    addVocabularyItem: (rubricId: string, item: Omit<VocabularyItem, 'id'>) => VocabularyItem;
+    updateVocabularyItem: (rubricId: string, item: VocabularyItem) => void;
+    deleteVocabularyItem: (rubricId: string, itemId: string) => void;
+    // Document analysis results
+    saveAnalysisResult: (result: DocumentAnalysisResult) => void;
+    deleteAnalysisResult: (id: string) => void;
     // Microsoft Sync
     loginMicrosoft: () => Promise<void>;
     logoutMicrosoft: () => Promise<void>;
@@ -522,6 +571,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'RESTORE_RUBRIC_VERSION', rubricId, versionIndex });
     }, []);
 
+    const addVocabularyItem = useCallback((rubricId: string, item: Omit<VocabularyItem, 'id'>): VocabularyItem => {
+        const v: VocabularyItem = { ...item, id: nanoid() };
+        dispatch({ type: 'ADD_VOCABULARY_ITEM', rubricId, payload: v });
+        return v;
+    }, []);
+
+    const updateVocabularyItem = useCallback((rubricId: string, item: VocabularyItem) => {
+        dispatch({ type: 'UPDATE_VOCABULARY_ITEM', rubricId, payload: item });
+    }, []);
+
+    const deleteVocabularyItem = useCallback((rubricId: string, itemId: string) => {
+        dispatch({ type: 'DELETE_VOCABULARY_ITEM', rubricId, itemId });
+    }, []);
+
+    const saveAnalysisResult = useCallback((result: DocumentAnalysisResult) => {
+        dispatch({ type: 'SAVE_ANALYSIS_RESULT', payload: result });
+    }, []);
+
+    const deleteAnalysisResult = useCallback((id: string) => {
+        dispatch({ type: 'DELETE_ANALYSIS_RESULT', id });
+    }, []);
+
     // ─── Microsoft Sync (disabled — Azure integration not in use) ───
     const microsoftUser: any | null = null;
     // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -553,6 +624,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         saveSpeakingSession, deleteSpeakingSession,
         syncRubricSnapshot,
         saveRubricVersion, restoreRubricVersion,
+        addVocabularyItem, updateVocabularyItem, deleteVocabularyItem,
+        saveAnalysisResult, deleteAnalysisResult,
         loginMicrosoft, logoutMicrosoft, syncToOneDrive, restoreFromOneDrive,
         microsoftUser
     };

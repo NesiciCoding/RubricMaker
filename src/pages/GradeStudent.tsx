@@ -1,9 +1,10 @@
 import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, MessageSquare, Paperclip, CheckSquare, Square, Info, BookOpen, FileDown, Mic, MicOff, ChevronRight, Users, XCircle } from 'lucide-react';
+import { ArrowLeft, Save, MessageSquare, Paperclip, CheckSquare, Square, Info, BookOpen, FileDown, Mic, MicOff, ChevronRight, Users, XCircle, ScanSearch } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import CommentBankModal from '../components/Comments/CommentBankModal';
 import AttachmentViewer from '../components/AttachmentViewer';
+import DocumentAnalysisPanel from '../components/DocumentAnalysisPanel';
 import { useApp } from '../context/AppContext';
 import { useTranslation } from 'react-i18next';
 import { useVoiceGrading } from '../hooks/useVoiceGrading';
@@ -17,8 +18,8 @@ export default function GradeStudent() {
     const { rubricId, studentId } = useParams();
     const navigate = useNavigate();
     const {
-        rubrics, students, classes, studentRubrics, attachments,
-        gradeScales, settings, saveStudentRubric, updateSettings
+        rubrics, students, classes, studentRubrics, attachments, analysisResults,
+        gradeScales, settings, saveStudentRubric, updateSettings, saveAnalysisResult
     } = useApp();
 
     const existingSR = studentRubrics.find(sr => sr.rubricId === rubricId && sr.studentId === studentId);
@@ -50,6 +51,7 @@ export default function GradeStudent() {
     const [activeCommentCrit, setActiveCommentCrit] = useState<string | null>(null);
     const [showCommentBankFor, setShowCommentBankFor] = useState<string | null>(null);
     const [showAttachPanel, setShowAttachPanel] = useState(false);
+    const [showAnalysisPanel, setShowAnalysisPanel] = useState(false);
     const [saved, setSaved] = useState(false);
     const [isDirty, setIsDirty] = useState(false);
 
@@ -228,6 +230,8 @@ export default function GradeStudent() {
         ? (c: typeof rubric.criteria[0]) => [...c.levels].reverse()
         : (c: typeof rubric.criteria[0]) => c.levels;
     const rubricAttachments = attachments.filter(a => a.rubricId === rubricId);
+    const studentAttachments = attachments.filter(a => a.studentId === studentId);
+    const existingAnalysisResult = analysisResults.find(r => r.rubricId === rubricId && r.studentId === studentId);
 
     // Helper to set a sub-item score
     function setSubItemScore(entry: ScoreEntry, subItemId: string, score: number) {
@@ -261,6 +265,11 @@ export default function GradeStudent() {
                         <button className="btn btn-secondary btn-sm" onClick={() => setShowAttachPanel(p => !p)}>
                             <Paperclip size={15} /> {t('gradeStudent.action_attachments')}
                         </button>
+                        {liveRubric?.vocabularyItems && liveRubric.vocabularyItems.length > 0 && (
+                            <button className="btn btn-secondary btn-sm" onClick={() => setShowAnalysisPanel(true)} title={t('analysis.open_panel', 'Analyse student document')}>
+                                <ScanSearch size={15} /> {t('analysis.button', 'Analyse')}
+                            </button>
+                        )}
                         <button className="btn btn-secondary btn-sm" onClick={handleNotHandedIn} title={t('gradeStudent.action_not_handed_in')}>
                             <XCircle size={15} /> {t('gradeStudent.action_not_handed_in')}
                         </button>
@@ -558,14 +567,56 @@ export default function GradeStudent() {
                 {showAttachPanel && (
                     <div className="card" style={{ marginTop: 16 }}>
                         <h3>{t('gradeStudent.attachments_title')}</h3>
-                        <div style={{ marginTop: 16 }}>
-                            {rubricAttachments.map(att => (
-                                <AttachmentViewer key={att.id} attachment={att} />
-                            ))}
-                        </div>
+                        {studentAttachments.length > 0 && (
+                            <>
+                                <p className="text-xs text-muted" style={{ margin: '12px 0 8px', fontWeight: 600, textTransform: 'uppercase' }}>
+                                    {t('gradeStudent.student_attachments', 'Student files')}
+                                </p>
+                                <div>
+                                    {studentAttachments.map(att => (
+                                        <AttachmentViewer key={att.id} attachment={att} />
+                                    ))}
+                                </div>
+                            </>
+                        )}
+                        {rubricAttachments.length > 0 && (
+                            <>
+                                <p className="text-xs text-muted" style={{ margin: '12px 0 8px', fontWeight: 600, textTransform: 'uppercase' }}>
+                                    {t('gradeStudent.rubric_attachments', 'Rubric materials')}
+                                </p>
+                                <div>
+                                    {rubricAttachments.map(att => (
+                                        <AttachmentViewer key={att.id} attachment={att} />
+                                    ))}
+                                </div>
+                            </>
+                        )}
+                        {studentAttachments.length === 0 && rubricAttachments.length === 0 && (
+                            <p className="text-muted text-sm" style={{ marginTop: 16 }}>{t('gradeStudent.no_attachments', 'No attachments.')}</p>
+                        )}
                     </div>
                 )}
             </div>
+            {showAnalysisPanel && rubric && studentId && rubricId && (
+                <DocumentAnalysisPanel
+                    studentId={studentId}
+                    rubricId={rubricId}
+                    rubricName={rubric.name}
+                    vocabularyItems={liveRubric?.vocabularyItems ?? []}
+                    criteria={rubric.criteria}
+                    studentAttachments={studentAttachments}
+                    existingResult={existingAnalysisResult}
+                    onClose={() => setShowAnalysisPanel(false)}
+                    onSaveResult={saveAnalysisResult}
+                    onApplyToEntry={(criterionId, subItemId) => {
+                        const entry = sr?.entries.find(e => e.criterionId === criterionId);
+                        if (!entry) return;
+                        if (!entry.checkedSubItems.includes(subItemId)) {
+                            updateEntry(criterionId, { checkedSubItems: [...entry.checkedSubItems, subItemId] });
+                        }
+                    }}
+                />
+            )}
             {showCommentBankFor && (
                 <CommentBankModal
                     onClose={() => setShowCommentBankFor(null)}
