@@ -215,14 +215,21 @@ describe('gradeCalc utilities', () => {
             expect(calcLetterGrade(95, mockScale)).toBe('A');
             expect(calcLetterGrade(85, mockScale)).toBe('B');
             expect(calcLetterGrade(50, mockScale)).toBe('F');
-            expect(calcLetterGrade(-10, mockScale)).toBe('—'); // Out of bounds
+            expect(calcLetterGrade(-10, mockScale)).toBe('—'); // Below all ranges
+        });
+
+        it('assigns float scores that fall on integer boundaries correctly', () => {
+            // 89.7% must be B, not '—' (was broken with <= max integer check)
+            expect(calcLetterGrade(89.7, mockScale)).toBe('B');
+            expect(calcLetterGrade(79.9, mockScale)).toBe('F');
+            expect(calcLetterGrade(90.0, mockScale)).toBe('A');
         });
 
         it('calculates correct grade color based on percentage', () => {
             expect(calcGradeColor(95, mockScale)).toBe('#A');
             expect(calcGradeColor(85, mockScale)).toBe('#B');
             expect(calcGradeColor(50, mockScale)).toBe('#F');
-            expect(calcGradeColor(105, mockScale)).toBe('#6b7280'); // Out of bounds default
+            expect(calcGradeColor(105, mockScale)).toBe('#A'); // Above top range → top grade color
         });
     });
 
