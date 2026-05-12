@@ -5,7 +5,7 @@ import { decodeRubricShareCode } from '../utils/rubricImport';
 export default function RubricPreviewPage() {
     const { code } = useParams<{ code: string }>();
 
-    let rubric: ReturnType<typeof decodeRubricShareCode> | null = null;
+    let rubric: ReturnType<typeof decodeRubricShareCode> | null;
     try {
         rubric = code ? decodeRubricShareCode(code) : null;
     } catch {

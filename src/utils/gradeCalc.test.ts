@@ -322,4 +322,56 @@ describe('gradeCalc utilities', () => {
             expect(stats.distribution).toEqual([]);
         });
     });
+
+    // ─── Additional edge cases for coverage ──────────────────────────────────
+
+    describe('calcEntryPoints — singlePointOutcome', () => {
+        it('returns 0 for not-yet outcome', () => {
+            const criterion: RubricCriterion = {
+                id: 'c1', title: '', description: '', weight: 100,
+                levels: [{ id: 'l1', label: 'A', minPoints: 0, maxPoints: 10, description: '', subItems: [] }],
+            };
+            const entry: ScoreEntry = { criterionId: 'c1', checkedSubItems: [], comment: '', singlePointOutcome: 'not-yet' };
+            expect(calcEntryPoints(entry, criterion)).toBe(0);
+        });
+
+        it('returns maxPoints for meets outcome', () => {
+            const criterion: RubricCriterion = {
+                id: 'c1', title: '', description: '', weight: 100,
+                levels: [{ id: 'l1', label: 'A', minPoints: 0, maxPoints: 10, description: '', subItems: [] }],
+            };
+            const entry: ScoreEntry = { criterionId: 'c1', checkedSubItems: [], comment: '', singlePointOutcome: 'meets' };
+            expect(calcEntryPoints(entry, criterion)).toBe(10);
+        });
+    });
+
+    describe('calcEntryPoints — subItemScores', () => {
+        it('uses subItemScores when present', () => {
+            const criterion: RubricCriterion = {
+                id: 'c2', title: '', description: '', weight: 100,
+                levels: [
+                    {
+                        id: 'l1', label: 'A', minPoints: 5, maxPoints: 10, description: '',
+                        subItems: [
+                            { id: 's1', label: 'Sub 1', points: 2, maxPoints: 2 },
+                            { id: 's2', label: 'Sub 2', points: 3, maxPoints: 3 },
+                        ],
+                    },
+                ],
+            };
+            const entry: ScoreEntry = {
+                criterionId: 'c2', levelId: 'l1', checkedSubItems: [],
+                comment: '', selectedPoints: 5,
+                subItemScores: { s1: 2, s2: 1 },
+            };
+            // 5 (selectedPoints) + 2 + 1 = 8, capped at 10
+            expect(calcEntryPoints(entry, criterion)).toBe(8);
+        });
+    });
+
+    describe('applyModifier — unknown type fallback', () => {
+        it('returns unchanged score for unknown modifier type', () => {
+            expect(applyModifier(80, { type: 'unknown' as any, value: 5, reason: '' })).toBe(80);
+        });
+    });
 });

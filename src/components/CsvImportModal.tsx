@@ -55,11 +55,11 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
 
                 const findIndex = (...keywords: string[]) => lowerHeaders.findIndex(h => keywords.some(k => h.includes(k)));
 
-                let fnIdx = findIndex('full name', 'fullname', 'name');
-                let firstIdx = findIndex('first name', 'firstname', 'first');
-                let lastIdx = findIndex('last name', 'lastname', 'last');
-                let emailIdx = findIndex('email', 'e-mail');
-                let classIdx = findIndex('class', 'course', 'group');
+                const fnIdx = findIndex('full name', 'fullname', 'name');
+                const firstIdx = findIndex('first name', 'firstname', 'first');
+                const lastIdx = findIndex('last name', 'lastname', 'last');
+                const emailIdx = findIndex('email', 'e-mail');
+                const classIdx = findIndex('class', 'course', 'group');
 
                 if (fnIdx !== -1) autoMap.fullName = detectedHeaders[fnIdx];
                 if (firstIdx !== -1) autoMap.firstName = detectedHeaders[firstIdx];
@@ -77,7 +77,7 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
 
     const getPreviewRows = () => {
         return parsedData.slice(0, 3).map(row => {
-            let name = '';
+            let name: string;
             if (mapping.fullName && row[mapping.fullName]) {
                 name = row[mapping.fullName];
             } else {
@@ -103,7 +103,7 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
         const defaultClassId = classes[0]?.id || '';
 
         parsedData.forEach(row => {
-            let name = '';
+            let name: string;
             if (mapping.fullName && row[mapping.fullName]) {
                 name = String(row[mapping.fullName]).trim();
             } else {

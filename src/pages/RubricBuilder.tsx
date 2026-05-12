@@ -91,7 +91,7 @@ export default function RubricBuilder() {
     function toggleCollapseCriterion(id: string) {
         setCollapsedCriteria(prev => {
             const next = new Set(prev);
-            next.has(id) ? next.delete(id) : next.add(id);
+            if (next.has(id)) { next.delete(id); } else { next.add(id); }
             return next;
         });
     }
@@ -299,7 +299,7 @@ export default function RubricBuilder() {
     function toggleSubItems(levelKey: string) {
         setExpandedSubItems(prev => {
             const next = new Set(prev);
-            next.has(levelKey) ? next.delete(levelKey) : next.add(levelKey);
+            if (next.has(levelKey)) { next.delete(levelKey); } else { next.add(levelKey); }
             return next;
         });
     }

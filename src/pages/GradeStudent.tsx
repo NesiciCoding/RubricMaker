@@ -203,16 +203,9 @@ export default function GradeStudent() {
         setRecordingCritId(null);
     }, []);
 
-    if (!rubric || !student || !sr) return <div className="page-content">{t('gradeStudent.error_not_found')} <button onClick={() => navigate(-1)}>{t('gradeStudent.action_back')}</button></div>;
-
-    const handleExportPdf = async () => {
-        if (!sr || !rubric || !student) return;
-        await exportSinglePdf(sr, rubric, student, scale, { orientation: rubric.format.orientation });
-    };
-
     const voice = useVoiceGrading(
         (critIdx, lvlIdx) => {
-            const crit = rubric.criteria[critIdx];
+            const crit = rubric?.criteria[critIdx];
             if (!crit) return;
             const level = crit.levels[lvlIdx];
             if (!level) return;
@@ -224,6 +217,13 @@ export default function GradeStudent() {
         },
         settings.language === 'nl' ? 'nl-NL' : 'en-US'
     );
+
+    if (!rubric || !student || !sr) return <div className="page-content">{t('gradeStudent.error_not_found')} <button onClick={() => navigate(-1)}>{t('gradeStudent.action_back')}</button></div>;
+
+    const handleExportPdf = async () => {
+        if (!sr || !rubric || !student) return;
+        await exportSinglePdf(sr, rubric, student, scale, { orientation: rubric.format.orientation });
+    };
 
     const fmt = rubric.format;
     const orderedLevels = fmt.levelOrder === 'worst-first'

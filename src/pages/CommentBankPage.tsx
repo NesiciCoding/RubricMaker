@@ -6,7 +6,7 @@ import { useApp } from '../context/AppContext';
 const TAGS = ['positive', 'improvement', 'structure', 'content', 'creativity', 'general'];
 
 export default function CommentBankPage() {
-    const { commentSnippets, addCommentSnippet, deleteCommentSnippet } = useApp();
+    const { commentSnippets, addCommentSnippet, deleteCommentSnippet, updateCommentSnippet } = useApp();
     const [text, setText] = useState('');
     const [tag, setTag] = useState('general');
     const [filterTag, setFilterTag] = useState('all');
@@ -33,10 +33,8 @@ export default function CommentBankPage() {
 
     function handleSaveEdit(id: string) {
         if (!editText.trim()) return;
-        // @ts-ignore - updateCommentSnippet is injected by AppContext
-        if (typeof useApp().updateCommentSnippet === 'function') {
-            // @ts-ignore
-            useApp().updateCommentSnippet({ id, text: editText.trim(), tag: editTag });
+        if (typeof updateCommentSnippet === 'function') {
+            updateCommentSnippet({ id, text: editText.trim(), tag: editTag });
         }
         setEditingId(null);
     }
