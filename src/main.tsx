@@ -12,6 +12,7 @@ import './i18n';
 // Student-facing pages are outside AppProvider — they work from URL-encoded data only
 const StudentFeedbackPage = lazy(() => import('./pages/StudentFeedbackPage'));
 const RubricPreviewPage = lazy(() => import('./pages/RubricPreviewPage'));
+const StudentEssayPage = lazy(() => import('./pages/StudentEssayPage'));
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
@@ -21,6 +22,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
                 <Routes>
                     <Route path="/feedback/:code" element={<StudentFeedbackPage />} />
                     <Route path="/preview/:code" element={<RubricPreviewPage />} />
+                    <Route path="/essay/:code" element={<StudentEssayPage />} />
                     <Route path="*" element={
                         <AppProvider>
                             <ToastProvider>

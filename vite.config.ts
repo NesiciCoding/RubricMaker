@@ -35,6 +35,11 @@ export default defineConfig({
         'src/utils/pdfExport.ts',
         'src/utils/docxExport.ts',
         'src/utils/docxTemplateExport.ts',
+        // Essay feature — browser-API-heavy (TipTap canvas, sessionStorage, navigator, QR canvas, file-saver)
+        'src/pages/StudentEssayPage.tsx',
+        'src/components/Editor/EssayEditor.tsx',
+        'src/components/EssayAssignmentModal.tsx',
+        'src/components/EssaySlipSheet.tsx',
       ],
       all: true,
       thresholds: {

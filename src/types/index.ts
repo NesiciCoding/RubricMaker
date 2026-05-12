@@ -381,3 +381,32 @@ export interface SpeakingSession {
     gradedAt: string;
     rubricSnapshot?: Rubric;
 }
+
+// ─── Essay Assignment / Submission ───────────────────────────────────────────
+
+/** Configuration for a teacher-created essay assignment, encoded into the student's URL */
+export interface EssayAssignment {
+    rubricId: string;
+    studentId: string;
+    /** Opaque teacher identifier written into submissions so the teacher can filter their own rows */
+    teacherKey: string;
+    title: string;
+    prompt?: string;
+    minWords?: number;
+    maxWords?: number;
+    timeLimitMinutes?: number;
+    requireSEB?: boolean;
+    readOnlyAfterSubmit: boolean;
+    createdAt: string;
+}
+
+/** A student's completed essay, encoded into a submission code for the teacher to import */
+export interface EssaySubmission {
+    id: string;
+    assignmentRubricId: string;
+    assignmentStudentId: string;
+    teacherKey: string;
+    contentHtml: string;
+    wordCount: number;
+    submittedAt: string;
+}
