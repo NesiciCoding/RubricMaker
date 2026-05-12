@@ -1,15 +1,18 @@
 import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, MessageSquare, Paperclip, CheckSquare, Square, Info, BookOpen, FileDown, Mic, MicOff, ChevronRight, Users, XCircle, ScanSearch } from 'lucide-react';
+import { ArrowLeft, Save, MessageSquare, Paperclip, CheckSquare, Square, Info, BookOpen, FileDown, Mic, MicOff, ChevronRight, Users, XCircle, ScanSearch, PenLine, Upload } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import CommentBankModal from '../components/Comments/CommentBankModal';
 import AttachmentViewer from '../components/AttachmentViewer';
 import DocumentAnalysisPanel from '../components/DocumentAnalysisPanel';
+import EssayAssignmentModal from '../components/EssayAssignmentModal';
+import EssayImportModal from '../components/EssayImportModal';
+import EssaySlipSheet from '../components/EssaySlipSheet';
 import { useApp } from '../context/AppContext';
 import { useTranslation } from 'react-i18next';
 import { useVoiceGrading } from '../hooks/useVoiceGrading';
 import TiptapEditor from '../components/Editor/TiptapEditor';
-import type { ScoreEntry, Modifier } from '../types';
+import type { ScoreEntry, Modifier, EssayAssignment } from '../types';
 import { calcGradeSummary } from '../utils/gradeCalc';
 import { exportSinglePdf } from '../utils/pdfExport';
 
@@ -19,13 +22,18 @@ export default function GradeStudent() {
     const navigate = useNavigate();
     const {
         rubrics, students, classes, studentRubrics, attachments, analysisResults,
-        gradeScales, settings, saveStudentRubric, updateSettings, saveAnalysisResult
+        gradeScales, settings, saveStudentRubric, updateSettings, saveAnalysisResult, addAttachment
     } = useApp();
 
     const existingSR = studentRubrics.find(sr => sr.rubricId === rubricId && sr.studentId === studentId);
     const liveRubric = rubrics.find(r => r.id === rubricId);
     const rubric = existingSR?.rubricSnapshot || liveRubric;
     const student = students.find(s => s.id === studentId);
+    const classStudents = useMemo(
+        () => students.filter(s => s.classId === student?.classId).map(s => ({ id: s.id, name: s.name })),
+        [students, student?.classId]
+    );
+
     const scaleId = rubric?.gradeScaleId ?? settings.defaultGradeScaleId;
     const scale = scaleId === 'none' ? null : (gradeScales.find(g => g.id === scaleId) ?? gradeScales[0]);
 
@@ -52,6 +60,9 @@ export default function GradeStudent() {
     const [showCommentBankFor, setShowCommentBankFor] = useState<string | null>(null);
     const [showAttachPanel, setShowAttachPanel] = useState(false);
     const [showAnalysisPanel, setShowAnalysisPanel] = useState(false);
+    const [showEssayAssignment, setShowEssayAssignment] = useState(false);
+    const [showEssayImport, setShowEssayImport] = useState(false);
+    const [slipSheetData, setSlipSheetData] = useState<{ assignment: EssayAssignment; students: { id: string; name: string }[] } | null>(null);
     const [saved, setSaved] = useState(false);
     const [isDirty, setIsDirty] = useState(false);
 
@@ -270,6 +281,12 @@ export default function GradeStudent() {
                                 <ScanSearch size={15} /> {t('analysis.button', 'Analyse')}
                             </button>
                         )}
+                        <button className="btn btn-secondary btn-sm" onClick={() => setShowEssayAssignment(true)} title="Create essay assignment link">
+                            <PenLine size={15} /> Essay
+                        </button>
+                        <button className="btn btn-secondary btn-sm" onClick={() => setShowEssayImport(true)} title="Import student essay submission">
+                            <Upload size={15} /> Import essay
+                        </button>
                         <button className="btn btn-secondary btn-sm" onClick={handleNotHandedIn} title={t('gradeStudent.action_not_handed_in')}>
                             <XCircle size={15} /> {t('gradeStudent.action_not_handed_in')}
                         </button>
@@ -630,6 +647,43 @@ export default function GradeStudent() {
                         }
                         setShowCommentBankFor(null);
                     }}
+                />
+            )}
+
+            {showEssayAssignment && rubricId && studentId && rubric && student && (
+                <EssayAssignmentModal
+                    rubricId={rubricId}
+                    rubricName={rubric.name}
+                    studentId={studentId}
+                    studentName={student.name}
+                    classStudents={classStudents}
+                    onClose={() => setShowEssayAssignment(false)}
+                    onOpenSlipSheet={(assignment, sts) => {
+                        setSlipSheetData({ assignment, students: sts });
+                        setShowEssayAssignment(false);
+                    }}
+                />
+            )}
+
+            {showEssayImport && rubricId && studentId && student && (
+                <EssayImportModal
+                    rubricId={rubricId}
+                    studentId={studentId}
+                    studentName={student.name}
+                    onImport={(attachment) => {
+                        addAttachment(attachment);
+                        setShowEssayImport(false);
+                        setShowAttachPanel(true);
+                    }}
+                    onClose={() => setShowEssayImport(false)}
+                />
+            )}
+
+            {slipSheetData && (
+                <EssaySlipSheet
+                    baseAssignment={slipSheetData.assignment}
+                    students={slipSheetData.students}
+                    onClose={() => setSlipSheetData(null)}
                 />
             )}
 
