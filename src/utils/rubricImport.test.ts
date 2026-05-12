@@ -189,3 +189,73 @@ describe('rubricImport', () => {
         });
     });
 });
+
+// ─── Share Code round-trip ────────────────────────────────────────────────────
+
+describe('encodeRubricShareCode / decodeRubricShareCode', () => {
+    it('round-trips a rubric via share code', async () => {
+        const { encodeRubricShareCode, decodeRubricShareCode } = await import('./rubricImport');
+        const rubric = {
+            id: 'r1',
+            name: 'My Rubric',
+            subject: 'Math',
+            description: 'A rubric',
+            criteria: [
+                {
+                    id: 'c1', title: 'C1', description: '', weight: 100,
+                    levels: [{ id: 'l1', label: 'A', minPoints: 0, maxPoints: 10, description: '', subItems: [] }],
+                },
+            ],
+            gradeScaleId: 'gs1',
+            scoringMode: 'weighted-percentage' as const,
+            totalMaxPoints: 100,
+            format: 'grid' as any,
+            attachmentIds: [],
+            createdAt: '2024-01-01T00:00:00Z',
+            updatedAt: '2024-01-01T00:00:00Z',
+        };
+        const code = encodeRubricShareCode(rubric);
+        expect(typeof code).toBe('string');
+        expect(code.length).toBeGreaterThan(10);
+
+        const decoded = decodeRubricShareCode(code);
+        expect(decoded.name).toBe('My Rubric');
+        expect(decoded.subject).toBe('Math');
+        expect(decoded.criteria.length).toBe(1);
+        expect(decoded.criteria[0].title).toBe('C1');
+        expect(decoded.gradeScaleId).toBe('gs1');
+        expect(decoded.scoringMode).toBe('weighted-percentage');
+        expect(decoded.totalMaxPoints).toBe(100);
+    });
+
+    it('throws for invalid share code', async () => {
+        const { decodeRubricShareCode } = await import('./rubricImport');
+        expect(() => decodeRubricShareCode('not-valid-base64!!')).toThrow();
+    });
+
+    it('throws when decoded JSON has no criteria array', async () => {
+        const { decodeRubricShareCode } = await import('./rubricImport');
+        const bad = btoa(encodeURIComponent(JSON.stringify({ name: 'x' })));
+        expect(() => decodeRubricShareCode(bad)).toThrow('Invalid share code');
+    });
+});
+
+// ─── buildParsedRubric with various table shapes ──────────────────────────────
+
+describe('buildParsedRubric edge cases', () => {
+    it('returns empty result when no level columns found', async () => {
+        const { buildParsedRubric } = await import('./rubricImport');
+        const result = buildParsedRubric({ headers: [], rows: [['C1']] }, 'test');
+        expect(result.criteria.length).toBe(0);
+        expect(result.warnings.length).toBeGreaterThan(0);
+    });
+
+    it('skips rows with no criterion name', async () => {
+        const { buildParsedRubric } = await import('./rubricImport');
+        const result = buildParsedRubric({
+            headers: ['criterion', 'Level A', 'Level B'],
+            rows: [['C1', 'desc A', 'desc B'], ['', 'x', 'y']],
+        }, 'test');
+        expect(result.criteria.length).toBe(1);
+    });
+});

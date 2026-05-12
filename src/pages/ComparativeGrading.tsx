@@ -321,8 +321,8 @@ function ComparativeGradingSession({
         const sortedLevels = [...criteria.levels].sort(
             (l1, l2) => (l1.minPoints || 0) - (l2.minPoints || 0)
         );
-        let entryA = srA.entries.find(e => e.criterionId === criterionId)!;
-        let entryB = srB.entries.find(e => e.criterionId === criterionId)!;
+        const entryA = srA.entries.find(e => e.criterionId === criterionId)!;
+        const entryB = srB.entries.find(e => e.criterionId === criterionId)!;
 
         let idxA = sortedLevels.findIndex(l => l.id === entryA.levelId);
         let idxB = sortedLevels.findIndex(l => l.id === entryB.levelId);
@@ -442,7 +442,7 @@ function ComparativeGradingSession({
     function toggleComment(criterionId: string) {
         setOpenComments(prev => {
             const next = new Set(prev);
-            next.has(criterionId) ? next.delete(criterionId) : next.add(criterionId);
+            if (next.has(criterionId)) { next.delete(criterionId); } else { next.add(criterionId); }
             return next;
         });
     }

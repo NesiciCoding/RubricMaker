@@ -17,6 +17,32 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/**/*.test.{ts,tsx}',
+        'src/**/__tests__/**',
+        // Entry points and setup — not unit-testable in isolation
+        'src/main.tsx',
+        'src/App.tsx',
+        'src/i18n.ts',
+        // Static data constants — no executable logic
+        'src/data/**',
+        'src/types/**',
+        // External service integrations — require auth/network
+        'src/services/**',
+        // Browser-API-heavy utilities that require Tesseract/canvas/PDF rendering
+        'src/utils/textExtraction.ts',
+        'src/utils/pdfExport.ts',
+        'src/utils/docxExport.ts',
+        'src/utils/docxTemplateExport.ts',
+      ],
+      all: true,
+      thresholds: {
+        lines: 50,
+        statements: 47,
+        functions: 37,
+        branches: 37,
+      },
     },
   }
 } as any)

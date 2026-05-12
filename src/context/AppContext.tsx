@@ -595,13 +595,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     // ─── Microsoft Sync (disabled — Azure integration not in use) ───
     const microsoftUser: any | null = null;
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
+     
     const loginMicrosoft = useCallback(async () => {}, []);
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
+     
     const logoutMicrosoft = useCallback(async () => {}, []);
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
+     
     const syncToOneDrive = useCallback(async () => {}, []);
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
+     
     const restoreFromOneDrive = useCallback(async () => {}, []);
 
     const value: AppContextValue = {

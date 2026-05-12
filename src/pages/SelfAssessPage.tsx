@@ -80,7 +80,7 @@ export default function SelfAssessPage() {
     function toggleConfident(descriptorId: string) {
         setConfident(prev => {
             const next = new Set(prev);
-            next.has(descriptorId) ? next.delete(descriptorId) : next.add(descriptorId);
+            if (next.has(descriptorId)) { next.delete(descriptorId); } else { next.add(descriptorId); }
             return next;
         });
         setSaved(false);

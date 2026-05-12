@@ -223,6 +223,7 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Cloud Sync — disabled until Azure integration is re-enabled */}
+                {/* eslint-disable-next-line no-constant-binary-expression */}
                 {false && <div className="card" style={{ marginBottom: 24, borderLeft: '4px solid var(--purple)' }}>
                     <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
                         <Cloud size={20} style={{ color: 'var(--purple)' }} />

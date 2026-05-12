@@ -54,7 +54,7 @@ export default function CefrPickerModal({ linkedDescriptors, onAdd, onRemove, on
     function toggleLevel(level: CefrLevel) {
         setExpandedLevels(prev => {
             const next = new Set(prev);
-            next.has(level) ? next.delete(level) : next.add(level);
+            if (next.has(level)) { next.delete(level); } else { next.add(level); }
             return next;
         });
     }

@@ -50,7 +50,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-      - name: Renaming for SharePoint (Optional)
-        # If the user also wants SharePoint renaming as mentioned in README, this could be handled here or by themselves.
-        # But this workflow is specifically for GH Pages.
-        run: echo "Deployment to GH Pages complete."

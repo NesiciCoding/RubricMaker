@@ -79,7 +79,7 @@ function buildRubricGridHtml(rubric: Rubric, sr?: StudentRubric): string {
           ${l.subItems.map(si => {
         const legacyChecked = (entry?.checkedSubItems ?? []).includes(si.id);
         const max = si.maxPoints ?? si.points ?? 1;
-        let scoreLabel = "";
+        let scoreLabel: string;
         if (entry) {
           const currentScore = entry.subItemScores?.[si.id] ?? (legacyChecked ? max : (si.minPoints ?? 0));
           scoreLabel = `[${currentScore}/${max} pts]`;
