@@ -20,7 +20,6 @@
     "@hello-pangea/dnd": "^18.0.1",
     "@tiptap/core": "^3.23.1",
     "@tiptap/extension-color": "^3.23.1",
-    "@tiptap/extension-font-family": "^3.23.2",
     "@tiptap/extension-highlight": "^3.23.1",
     "@tiptap/extension-link": "^3.23.1",
     "@tiptap/extension-subscript": "^3.23.1",

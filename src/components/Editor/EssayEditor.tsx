@@ -13,7 +13,6 @@ import Link from '@tiptap/extension-link';
 import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
-import FontFamily from '@tiptap/extension-font-family';
 import {
     Bold, Italic, Underline as UnderlineIcon, Strikethrough,
     Superscript as SuperscriptIcon, Subscript as SubscriptIcon,
@@ -26,6 +25,10 @@ import {
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
+        fontFamily: {
+            setFontFamily: (fontFamily: string) => ReturnType;
+            unsetFontFamily: () => ReturnType;
+        };
         fontSize: {
             setFontSize: (size: string) => ReturnType;
             unsetFontSize: () => ReturnType;
@@ -36,6 +39,34 @@ declare module '@tiptap/core' {
         };
     }
 }
+
+// ── Custom: FontFamily ──────────────────────────────────────────────────────
+
+const FontFamily = Extension.create({
+    name: 'fontFamily',
+    addOptions() { return { types: ['textStyle'] }; },
+    addGlobalAttributes() {
+        return [{
+            types: this.options.types,
+            attributes: {
+                fontFamily: {
+                    default: null,
+                    parseHTML: (el: HTMLElement) => (el as HTMLElement).style.fontFamily || null,
+                    renderHTML: (attrs: Record<string, string | null>) =>
+                        attrs.fontFamily ? { style: `font-family: ${attrs.fontFamily}` } : {},
+                },
+            },
+        }];
+    },
+    addCommands() {
+        return {
+            setFontFamily: (fontFamily: string) => ({ chain }: { chain: () => { setMark: (name: string, attrs: Record<string, string>) => { run: () => boolean } } }) =>
+                chain().setMark('textStyle', { fontFamily }).run(),
+            unsetFontFamily: () => ({ chain }: { chain: () => { setMark: (name: string, attrs: Record<string, string | null>) => { removeEmptyTextStyle: () => { run: () => boolean } } } }) =>
+                chain().setMark('textStyle', { fontFamily: null }).removeEmptyTextStyle().run(),
+        };
+    },
+});
 
 const FontSize = Extension.create({
     name: 'fontSize',
