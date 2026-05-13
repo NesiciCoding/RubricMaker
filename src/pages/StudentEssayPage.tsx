@@ -10,6 +10,21 @@ import type { EssaySubmission } from '../types';
 const DRAFT_KEY_PREFIX = 'rm_essay_draft_';
 const TIMER_KEY_PREFIX = 'rm_essay_timer_';
 
+function copyText(text: string): boolean {
+    try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        if (ok) return true;
+    } catch { /* execCommand not available */ }
+    navigator.clipboard?.writeText(text).catch(() => {});
+    return false;
+}
+
 function countWords(html: string): number {
     const text = html.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
     return text ? text.split(' ').filter(w => w.length > 0).length : 0;
@@ -26,6 +41,7 @@ export default function StudentEssayPage() {
     const assignment = code ? decodeEssayAssignment(code) : null;
 
     const isInSEB = /SEB/i.test(navigator.userAgent);
+    const sebQuitUrl = `${window.location.origin}/#/seb-done`;
     const draftKey = DRAFT_KEY_PREFIX + (code ?? '');
     const timerKey = TIMER_KEY_PREFIX + (code ?? '');
 
@@ -86,17 +102,25 @@ export default function StudentEssayPage() {
             wordCount: countWords(html),
             submittedAt: new Date().toISOString(),
         };
-        setSubmissionCode(encodeEssaySubmission(submission));
+        const code = encodeEssaySubmission(submission);
+        setSubmissionCode(code);
         setSubmitted(true);
         if (timerRef.current) clearInterval(timerRef.current);
-    }, [assignment, html, draftKey]);
+        if (isInSEB) {
+            copyText(code);
+            setTimeout(() => { window.location.href = sebQuitUrl; }, 1500);
+        }
+    }, [assignment, html, draftKey, isInSEB, sebQuitUrl]);
 
     const handleCopy = useCallback(() => {
-        navigator.clipboard.writeText(submissionCode).then(() => {
-            setCopied(true);
+        copyText(submissionCode);
+        setCopied(true);
+        if (isInSEB) {
+            setTimeout(() => { window.location.href = sebQuitUrl; }, 800);
+        } else {
             setTimeout(() => setCopied(false), 2500);
-        });
-    }, [submissionCode]);
+        }
+    }, [submissionCode, isInSEB, sebQuitUrl]);
 
     if (!assignment) {
         return (
