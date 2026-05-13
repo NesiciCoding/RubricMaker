@@ -1,5 +1,6 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
+import { Extension } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
@@ -12,6 +13,7 @@ import Link from '@tiptap/extension-link';
 import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
+import FontFamily from '@tiptap/extension-font-family';
 import {
     Bold, Italic, Underline as UnderlineIcon, Strikethrough,
     Superscript as SuperscriptIcon, Subscript as SubscriptIcon,
@@ -19,6 +21,101 @@ import {
     List, ListOrdered, ListChecks, Quote, Minus, Link2, Table as TableIcon,
     Highlighter, Undo2, Redo2, RemoveFormatting, Unlink
 } from 'lucide-react';
+
+// ── Custom: FontSize ────────────────────────────────────────────────────────
+
+declare module '@tiptap/core' {
+    interface Commands<ReturnType> {
+        fontSize: {
+            setFontSize: (size: string) => ReturnType;
+            unsetFontSize: () => ReturnType;
+        };
+        lineHeight: {
+            setLineHeight: (lineHeight: string) => ReturnType;
+            unsetLineHeight: () => ReturnType;
+        };
+    }
+}
+
+const FontSize = Extension.create({
+    name: 'fontSize',
+    addOptions() { return { types: ['textStyle'] }; },
+    addGlobalAttributes() {
+        return [{
+            types: this.options.types,
+            attributes: {
+                fontSize: {
+                    default: null,
+                    parseHTML: (el: HTMLElement) => (el as HTMLElement).style.fontSize || null,
+                    renderHTML: (attrs: Record<string, string | null>) =>
+                        attrs.fontSize ? { style: `font-size: ${attrs.fontSize}` } : {},
+                },
+            },
+        }];
+    },
+    addCommands() {
+        return {
+            setFontSize: (fontSize: string) => ({ chain }: { chain: () => { setMark: (name: string, attrs: Record<string, string>) => { run: () => boolean } } }) =>
+                chain().setMark('textStyle', { fontSize }).run(),
+            unsetFontSize: () => ({ chain }: { chain: () => { setMark: (name: string, attrs: Record<string, string | null>) => { removeEmptyTextStyle: () => { run: () => boolean } } } }) =>
+                chain().setMark('textStyle', { fontSize: null }).removeEmptyTextStyle().run(),
+        };
+    },
+});
+
+// ── Custom: LineHeight ──────────────────────────────────────────────────────
+
+const LineHeight = Extension.create({
+    name: 'lineHeight',
+    addOptions() { return { types: ['paragraph', 'heading'] }; },
+    addGlobalAttributes() {
+        return [{
+            types: this.options.types,
+            attributes: {
+                lineHeight: {
+                    default: null,
+                    parseHTML: (el: HTMLElement) => (el as HTMLElement).style.lineHeight || null,
+                    renderHTML: (attrs: Record<string, string | null>) =>
+                        attrs.lineHeight ? { style: `line-height: ${attrs.lineHeight}` } : {},
+                },
+            },
+        }];
+    },
+    addCommands() {
+        return {
+            setLineHeight: (lineHeight: string) => ({ commands }: { commands: { updateAttributes: (type: string, attrs: Record<string, string>) => boolean } }) =>
+                (this.options.types as string[]).every(type => commands.updateAttributes(type, { lineHeight })),
+            unsetLineHeight: () => ({ commands }: { commands: { resetAttributes: (type: string, attr: string) => boolean } }) =>
+                (this.options.types as string[]).every(type => commands.resetAttributes(type, 'lineHeight')),
+        };
+    },
+});
+
+// ── Constants ───────────────────────────────────────────────────────────────
+
+const FONT_FAMILIES = [
+    { label: 'Inter (default)', value: '' },
+    { label: 'Arial', value: 'Arial, sans-serif' },
+    { label: 'Georgia', value: 'Georgia, serif' },
+    { label: 'Times New Roman', value: "'Times New Roman', serif" },
+    { label: 'Courier New', value: "'Courier New', monospace" },
+];
+
+const FONT_SIZES = ['', '8', '9', '10', '11', '12', '14', '16', '18', '20', '24', '28', '32', '36', '48', '72'];
+
+const LINE_HEIGHTS = [
+    { label: 'Line height', value: '' },
+    { label: '1.0', value: '1.0' },
+    { label: '1.15', value: '1.15' },
+    { label: '1.25', value: '1.25' },
+    { label: '1.5', value: '1.5' },
+    { label: '1.75', value: '1.75' },
+    { label: '2.0', value: '2.0' },
+    { label: '2.5', value: '2.5' },
+    { label: '3.0', value: '3.0' },
+];
+
+// ── Sub-components ──────────────────────────────────────────────────────────
 
 interface EssayEditorProps {
     content: string;
@@ -65,9 +162,23 @@ function ToolbarBtn({ active, onClick, title, disabled, children }: ToolbarBtnPr
     );
 }
 
+const selectStyle: React.CSSProperties = {
+    fontSize: '0.82rem',
+    padding: '3px 6px',
+    borderRadius: 5,
+    border: '1px solid #e2e8f0',
+    background: '#fff',
+    color: '#1e293b',
+    cursor: 'pointer',
+    height: 28,
+};
+
+// ── Editor ──────────────────────────────────────────────────────────────────
+
 export default function EssayEditor({ content, onChange, editable = true, placeholder }: EssayEditorProps) {
     const colorInputRef = useRef<HTMLInputElement>(null);
     const highlightInputRef = useRef<HTMLInputElement>(null);
+    const [showInvisibles, setShowInvisibles] = useState(false);
 
     const editor = useEditor({
         extensions: [
@@ -86,6 +197,9 @@ export default function EssayEditor({ content, onChange, editable = true, placeh
             TableCell,
             TaskList,
             TaskItem.configure({ nested: true }),
+            FontFamily,
+            FontSize,
+            LineHeight,
         ],
         content,
         editable,
@@ -109,6 +223,12 @@ export default function EssayEditor({ content, onChange, editable = true, placeh
     const handleInsertTable = () => {
         editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
     };
+
+    const currentFontFamily = editor.getAttributes('textStyle').fontFamily ?? '';
+    const currentFontSize = (editor.getAttributes('textStyle').fontSize as string | undefined)?.replace('pt', '') ?? '';
+    const currentLineHeight =
+        editor.getAttributes('paragraph').lineHeight ??
+        editor.getAttributes('heading').lineHeight ?? '';
 
     return (
         <div style={{ border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden', background: '#fff', color: '#1e293b' }}>
@@ -147,18 +267,46 @@ export default function EssayEditor({ content, onChange, editable = true, placeh
                             if (v === 'p') editor.chain().focus().setParagraph().run();
                             else editor.chain().focus().toggleHeading({ level: parseInt(v[1]) as 1 | 2 | 3 }).run();
                         }}
-                        style={{
-                            fontSize: '0.82rem', padding: '3px 6px', borderRadius: 5,
-                            border: '1px solid #e2e8f0',
-                            background: '#fff', color: '#1e293b',
-                            cursor: 'pointer', height: 28,
-                        }}
+                        style={selectStyle}
                         title="Paragraph style"
                     >
                         <option value="p">Paragraph</option>
                         <option value="h1">Heading 1</option>
                         <option value="h2">Heading 2</option>
                         <option value="h3">Heading 3</option>
+                    </select>
+
+                    {/* ── Font Family ── */}
+                    <select
+                        value={currentFontFamily}
+                        onChange={e => {
+                            const v = e.target.value;
+                            if (v === '') editor.chain().focus().unsetFontFamily().run();
+                            else editor.chain().focus().setFontFamily(v).run();
+                        }}
+                        style={{ ...selectStyle, maxWidth: 140 }}
+                        title="Font family"
+                    >
+                        {FONT_FAMILIES.map(f => (
+                            <option key={f.value} value={f.value}>{f.label}</option>
+                        ))}
+                    </select>
+
+                    {/* ── Font Size ── */}
+                    <select
+                        value={currentFontSize}
+                        onChange={e => {
+                            const v = e.target.value;
+                            if (v === '') editor.chain().focus().unsetFontSize().run();
+                            else editor.chain().focus().setFontSize(`${v}pt`).run();
+                        }}
+                        style={{ ...selectStyle, width: 60 }}
+                        title="Font size"
+                    >
+                        <option value="">Size</option>
+                        {FONT_SIZES.filter(s => s !== '').map(s => (
+                            <option key={s} value={s}>{s}</option>
+                        ))}
                     </select>
 
                     <Divider />
@@ -244,6 +392,22 @@ export default function EssayEditor({ content, onChange, editable = true, placeh
 
                     <Divider />
 
+                    {/* ── Line Height ── */}
+                    <select
+                        value={currentLineHeight}
+                        onChange={e => {
+                            const v = e.target.value;
+                            if (v === '') editor.chain().focus().unsetLineHeight().run();
+                            else editor.chain().focus().setLineHeight(v).run();
+                        }}
+                        style={{ ...selectStyle, width: 100 }}
+                        title="Line height"
+                    >
+                        {LINE_HEIGHTS.map(lh => (
+                            <option key={lh.value} value={lh.value}>{lh.label}</option>
+                        ))}
+                    </select>
+
                     {/* ── Alignment ── */}
                     <ToolbarBtn active={editor.isActive({ textAlign: 'left' })} onClick={() => editor.chain().focus().setTextAlign('left').run()} title="Align left">
                         <AlignLeft size={15} />
@@ -297,11 +461,22 @@ export default function EssayEditor({ content, onChange, editable = true, placeh
                     <ToolbarBtn onClick={handleInsertTable} title="Insert table (3×3)">
                         <TableIcon size={15} />
                     </ToolbarBtn>
+
+                    <Divider />
+
+                    {/* ── Show invisibles ── */}
+                    <ToolbarBtn
+                        active={showInvisibles}
+                        onClick={() => setShowInvisibles(v => !v)}
+                        title="Show formatting marks"
+                    >
+                        <span style={{ fontSize: 14, lineHeight: 1, fontFamily: 'serif', fontWeight: 400 }}>¶</span>
+                    </ToolbarBtn>
                 </div>
             )}
 
             {/* ── Editor area ── */}
-            <div style={{ padding: '18px 22px', minHeight: 420 }}>
+            <div style={{ padding: '18px 22px', minHeight: 420 }} className={showInvisibles ? 'show-invisibles' : ''}>
                 <EditorContent editor={editor} placeholder={placeholder} />
             </div>
 
@@ -344,6 +519,10 @@ export default function EssayEditor({ content, onChange, editable = true, placeh
                 .essay-editor-content .is-empty::before { content: attr(data-placeholder); color: var(--text-dim, #94a3b8); pointer-events: none; position: absolute; }
                 .essay-editor-content sup { font-size: 0.72em; vertical-align: super; }
                 .essay-editor-content sub { font-size: 0.72em; vertical-align: sub; }
+
+                /* ── Show invisibles ── */
+                .show-invisibles .essay-editor-content p::after { content: '¶'; color: #94a3b8; font-weight: 400; margin-left: 2px; pointer-events: none; }
+                .show-invisibles .essay-editor-content br::after { content: '↵'; color: #94a3b8; pointer-events: none; }
             `}</style>
         </div>
     );
