@@ -34,7 +34,7 @@ class MockFileReader {
         setTimeout(() => { this.onload?.({ target: { result: 'data:application/octet-stream;base64,dGVzdA==' } }); }, 0);
     }
 }
-// @ts-expect-error
+// @ts-expect-error -- override global with mock in test environment
 global.FileReader = MockFileReader;
 
 function makeFile(name: string, type = 'application/octet-stream'): File {
