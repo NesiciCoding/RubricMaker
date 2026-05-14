@@ -59,6 +59,10 @@ export default function EssayAssignmentModal({ rubricId, rubricName, studentId, 
 \t<string>${essayUrl}</string>
 \t<key>allowQuit</key>
 \t<false/>
+\t<key>quitURL</key>
+\t<string>${window.location.origin}/#/seb-done</string>
+\t<key>quitURLConfirm</key>
+\t<false/>
 \t<key>browserWindowAllowAddressBar</key>
 \t<false/>
 \t<key>URLFilterEnable</key>
