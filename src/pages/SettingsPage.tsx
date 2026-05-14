@@ -1,30 +1,48 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation, Trans } from 'react-i18next';
-import { Save, Plus, Trash2, Download, Upload, Key, ExternalLink, AlertCircle, MessageSquare, Globe, Layout, Star, Cloud, LogIn, LogOut, RefreshCw, PlayCircle } from 'lucide-react';
+import { Save, Plus, Trash2, Download, Upload, Key, ExternalLink, AlertCircle, MessageSquare, Globe, Layout, Star, Cloud, LogIn, LogOut, RefreshCw, PlayCircle, Database, Wifi, WifiOff, Copy, Check, Shield } from 'lucide-react';
 import CommentBankModal from '../components/Comments/CommentBankModal';
 import TemplateUploadModal from '../components/TemplateUploadModal';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
+import { useDbStatus } from '../hooks/useDbStatus';
 import type { GradeScale, GradeRange } from '../types';
 import { exportFullBackup, importFullBackup } from '../store/storage';
+import { loadSupabaseConfig, storageSync } from '../services/database';
 
 export default function SettingsPage() {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     const {
         settings, updateSettings, gradeScales, addGradeScale, updateGradeScale, deleteGradeScale, commentBank,
-        exportTemplates, addExportTemplate, deleteExportTemplate,
-        loginMicrosoft, logoutMicrosoft, syncToOneDrive, restoreFromOneDrive, microsoftUser
+        exportTemplates, addExportTemplate, deleteExportTemplate, rubrics,
+        loginMicrosoft, logoutMicrosoft, syncToOneDrive, restoreFromOneDrive, microsoftUser,
+        connectDatabase, disconnectDatabase, pushAllToDatabase, pullFromDatabase,
     } = useApp();
     const { showToast } = useToast();
+    const dbStatus = useDbStatus();
     const [editingScaleId, setEditingScaleId] = useState<string | null>(null);
     const [deleteScaleId, setDeleteScaleId] = useState<string | null>(null);
     const [showCommentBank, setShowCommentBank] = useState(false);
     const [showTemplateUpload, setShowTemplateUpload] = useState(false);
     const [accentInput, setAccentInput] = useState(settings.accentColor || '#3b82f6');
     const [accentError, setAccentError] = useState(false);
+
+    // DB connection form state
+    const existingConfig = loadSupabaseConfig();
+    const [dbUrl, setDbUrl] = useState(existingConfig?.supabaseUrl ?? import.meta.env.VITE_SUPABASE_URL ?? '');
+    const [dbKey, setDbKey] = useState(existingConfig?.supabaseAnonKey ?? import.meta.env.VITE_SUPABASE_ANON_KEY ?? '');
+    const [dbConnecting, setDbConnecting] = useState(false);
+    const [dbSyncing, setDbSyncing] = useState(false);
+    const [dbEmail, setDbEmail] = useState('');
+    const [dbOtp, setDbOtp] = useState('');
+    const [otpSent, setOtpSent] = useState(false);
+    const [userIdCopied, setUserIdCopied] = useState(false);
+    const [shareRubricId, setShareRubricId] = useState('');
+    const [shareTargetUser, setShareTargetUser] = useState('');
+    const [shareMode, setShareMode] = useState<'read' | 'edit'>('read');
 
     useEffect(() => {
         if (settings.language && i18n.language !== settings.language) {
@@ -283,6 +301,176 @@ export default function SettingsPage() {
                         </div>
                     )}
                 </div>}
+
+                {/* Database (Supabase) */}
+                <div className="card" style={{ marginBottom: 24, borderLeft: '4px solid var(--accent)' }}>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
+                        <Database size={20} style={{ color: 'var(--accent)' }} />
+                        <h3 style={{ margin: 0 }}>Database (Supabase)</h3>
+                        <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem' }}>
+                            {dbStatus.isConnected
+                                ? <><Wifi size={14} style={{ color: 'var(--green, #22c55e)' }} /><span style={{ color: 'var(--green, #22c55e)' }}>Connected</span></>
+                                : <><WifiOff size={14} style={{ color: 'var(--text-muted)' }} /><span style={{ color: 'var(--text-muted)' }}>Not connected</span></>
+                            }
+                        </span>
+                    </div>
+
+                    {dbStatus.isConnected ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                            {/* Status row */}
+                            <div style={{ background: 'var(--bg-elevated)', borderRadius: 8, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                    {dbStatus.lastSyncAt
+                                        ? `Last synced: ${new Date(dbStatus.lastSyncAt).toLocaleString()}`
+                                        : 'Not yet synced this session'}
+                                </div>
+                                {dbStatus.userId && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.8rem' }}>
+                                        <span style={{ color: 'var(--text-muted)' }}>Your user ID:</span>
+                                        <code style={{ background: 'var(--bg)', padding: '2px 6px', borderRadius: 4, fontSize: '0.75rem', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            {dbStatus.userId}
+                                        </code>
+                                        <button className="btn btn-ghost btn-icon btn-sm" title="Copy user ID"
+                                            onClick={() => { navigator.clipboard.writeText(dbStatus.userId!); setUserIdCopied(true); setTimeout(() => setUserIdCopied(false), 2000); }}>
+                                            {userIdCopied ? <Check size={12} /> : <Copy size={12} />}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Email sign-in upgrade */}
+                            {!dbStatus.currentUser?.email && (
+                                <div style={{ background: 'var(--bg-elevated)', borderRadius: 8, padding: '12px 16px' }}>
+                                    <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: 8 }}>Sign in with email (to enable sharing)</div>
+                                    {!otpSent ? (
+                                        <div style={{ display: 'flex', gap: 8 }}>
+                                            <input type="email" placeholder="your@email.com" value={dbEmail}
+                                                onChange={e => setDbEmail(e.target.value)}
+                                                style={{ flex: 1 }} />
+                                            <button className="btn btn-secondary btn-sm"
+                                                onClick={async () => {
+                                                    const { error } = await storageSync.adapter.signInWithEmail(dbEmail);
+                                                    if (error) showToast(error, 'error');
+                                                    else { setOtpSent(true); showToast('Check your email for a login code', 'success'); }
+                                                }}>
+                                                <LogIn size={14} /> Send code
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div style={{ display: 'flex', gap: 8 }}>
+                                            <input type="text" placeholder="Enter 6-digit code" value={dbOtp}
+                                                onChange={e => setDbOtp(e.target.value)}
+                                                maxLength={6} style={{ flex: 1 }} />
+                                            <button className="btn btn-primary btn-sm"
+                                                onClick={async () => {
+                                                    const { error } = await storageSync.adapter.verifyOtp(dbEmail, dbOtp);
+                                                    if (error) showToast(error, 'error');
+                                                    else { setOtpSent(false); setDbOtp(''); showToast('Signed in successfully', 'success'); }
+                                                }}>
+                                                <Check size={14} /> Verify
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Data migration buttons */}
+                            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                                <button className="btn btn-secondary" disabled={dbSyncing}
+                                    onClick={async () => {
+                                        setDbSyncing(true);
+                                        const result = await pushAllToDatabase();
+                                        setDbSyncing(false);
+                                        showToast(result.success ? 'All local data pushed to database' : `Push failed: ${result.error}`, result.success ? 'success' : 'error');
+                                    }}>
+                                    <Upload size={15} /> {dbSyncing ? 'Pushing…' : 'Push local → database'}
+                                </button>
+                                <button className="btn btn-secondary" disabled={dbSyncing}
+                                    onClick={async () => {
+                                        if (!confirm('This will overwrite your local data with the database. Continue?')) return;
+                                        setDbSyncing(true);
+                                        await pullFromDatabase();
+                                        setDbSyncing(false);
+                                        showToast('Data pulled from database', 'success');
+                                    }}>
+                                    <Download size={15} /> Pull database → local
+                                </button>
+                                <button className="btn btn-ghost" style={{ marginLeft: 'auto' }}
+                                    onClick={() => { disconnectDatabase(); showToast('Disconnected from database', 'info'); }}>
+                                    <LogOut size={14} /> Disconnect
+                                </button>
+                            </div>
+
+                            {/* Rubric sharing */}
+                            {dbStatus.userId && (
+                                <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
+                                    <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: 10 }}>Share a rubric</div>
+                                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                        <select value={shareRubricId} onChange={e => setShareRubricId(e.target.value)} style={{ flex: 2, minWidth: 140 }}>
+                                            <option value="">Select rubric…</option>
+                                            {rubrics.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                                        </select>
+                                        <input type="text" placeholder="Target user ID" value={shareTargetUser}
+                                            onChange={e => setShareTargetUser(e.target.value)} style={{ flex: 3, minWidth: 160 }} />
+                                        <select value={shareMode} onChange={e => setShareMode(e.target.value as 'read' | 'edit')} style={{ width: 90 }}>
+                                            <option value="read">Read</option>
+                                            <option value="edit">Edit</option>
+                                        </select>
+                                        <button className="btn btn-primary btn-sm"
+                                            onClick={async () => {
+                                                if (!shareRubricId || !shareTargetUser) return;
+                                                const result = await storageSync.adapter.shareRubric(shareRubricId, shareTargetUser, shareMode);
+                                                showToast(result.success ? 'Rubric shared' : `Share failed: ${result.error}`, result.success ? 'success' : 'error');
+                                            }}>
+                                            Share
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Danger zone */}
+                            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+                                <button className="btn btn-ghost btn-sm" style={{ color: 'var(--red, #ef4444)', fontSize: '0.8rem' }}
+                                    onClick={async () => {
+                                        if (!confirm('This will permanently delete ALL your data from the database. Your local data is not affected. Continue?')) return;
+                                        const result = await storageSync.adapter.deleteAllMyData();
+                                        showToast(result.success ? 'All database data deleted' : `Error: ${result.error}`, result.success ? 'success' : 'error');
+                                    }}>
+                                    <Trash2 size={13} /> Delete all my database data
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                            <p className="text-muted text-sm" style={{ margin: 0 }}>
+                                Connect to a Supabase database to sync your data across devices and share with colleagues.
+                                Run <code>supabase start</code> locally or create a free project at{' '}
+                                <a href="https://supabase.com" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>supabase.com <ExternalLink size={10} /></a>.
+                            </p>
+                            <div className="form-group">
+                                <label>Supabase URL</label>
+                                <input type="text" value={dbUrl} onChange={e => setDbUrl(e.target.value)}
+                                    placeholder="https://your-project.supabase.co" />
+                            </div>
+                            <div className="form-group">
+                                <label>Anon key</label>
+                                <input type="password" value={dbKey} onChange={e => setDbKey(e.target.value)}
+                                    placeholder="eyJhbGciOi…" autoComplete="off" />
+                            </div>
+                            <div>
+                                <button className="btn btn-primary" disabled={!dbUrl || !dbKey || dbConnecting}
+                                    onClick={async () => {
+                                        setDbConnecting(true);
+                                        const ok = await connectDatabase({ supabaseUrl: dbUrl, supabaseAnonKey: dbKey });
+                                        setDbConnecting(false);
+                                        showToast(ok ? 'Connected to database' : 'Connection failed — check URL and key', ok ? 'success' : 'error');
+                                    }}>
+                                    {dbConnecting ? <><RefreshCw size={15} className="spin" /> Connecting…</> : <><Database size={15} /> Connect & Sync</>}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
 
                 {/* Comment Bank */}
                 <div className="card" style={{ marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

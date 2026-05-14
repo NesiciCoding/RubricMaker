@@ -22,6 +22,7 @@ const ComparativeGrading = lazy(() => import('./pages/ComparativeGrading'));
 const PeerReviewView = lazy(() => import('./pages/PeerReviewView'));
 const SelfAssessPage = lazy(() => import('./pages/SelfAssessPage'));
 const SpeakingSession = lazy(() => import('./pages/SpeakingSession'));
+const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 
 // Forces GradeStudent to remount when studentId changes so useState re-initialises.
 function GradeStudentRoute() {
@@ -95,6 +96,7 @@ export default function App() {
                         <Route path="/statistics" element={<StatisticsPage />} />
                         <Route path="/comments" element={<CommentBankPage />} />
                         <Route path="/settings" element={<SettingsPage />} />
+                        <Route path="/privacy" element={<PrivacyPage />} />
                         <Route path="*" element={<Navigate to="/" replace />} />
                     </Routes>
                 </Suspense>

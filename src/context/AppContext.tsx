@@ -1,5 +1,5 @@
 import React, {
-    createContext, useContext, useReducer, useCallback, useEffect, ReactNode
+    createContext, useContext, useReducer, useCallback, useEffect, useRef, ReactNode
 } from 'react';
 import type {
     Rubric, Student, Class, StudentRubric, Attachment,
@@ -12,6 +12,8 @@ import {
     saveExportTemplates, exportStore, savePeerReviews, saveSelfAssessments, saveSpeakingSessions, saveAnalysisResults
 } from '../store/storage';
 import { nanoid } from '../utils/nanoid';
+import { storageSync, loadSupabaseConfig, saveSupabaseConfig } from '../services/database';
+import type { DatabaseConfig } from '../services/database';
 // Azure / MSAL integration disabled — not in use
 // import { msalInstance, loginRequest } from '../services/msalConfig';
 // import { graphService } from '../services/microsoftGraph';
@@ -384,6 +386,11 @@ interface AppContextValue extends StoreData {
     // Document analysis results
     saveAnalysisResult: (result: DocumentAnalysisResult) => void;
     deleteAnalysisResult: (id: string) => void;
+    // Database sync
+    connectDatabase: (config: DatabaseConfig) => Promise<boolean>;
+    disconnectDatabase: () => void;
+    pushAllToDatabase: () => Promise<{ success: boolean; error?: string }>;
+    pullFromDatabase: () => Promise<void>;
     // Microsoft Sync
     loginMicrosoft: () => Promise<void>;
     logoutMicrosoft: () => Promise<void>;
@@ -406,10 +413,82 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const root = document.documentElement;
         root.style.setProperty('--accent', accent);
         // Generate a hover color (simpler way: just the same for now, or use a helper)
-        root.style.setProperty('--accent-hover', accent); 
+        root.style.setProperty('--accent-hover', accent);
         root.style.setProperty('--accent-soft', `${accent}26`); // 15% opacity hex
         root.style.setProperty('--accent-glow', `${accent}66`); // 40% opacity hex
     }, [state.settings.accentColor]);
+
+    // ── Supabase: hydrate on mount ─────────────────────────────────────────────
+    useEffect(() => {
+        const config = loadSupabaseConfig();
+        if (!config) return;
+        storageSync.configure(config).then(ok => {
+            if (!ok) return;
+            storageSync.hydrate().then(fresh => {
+                if (!fresh) return;
+                // Merge DB data into current state (DB wins on conflict)
+                const merged = { ...state, ...fresh } as StoreData;
+                dispatch({ type: 'SET_ALL', payload: merged });
+                // Flush merged state back to localStorage for offline resilience
+                import('../store/storage').then(({ saveRubrics, saveStudents, saveClasses, saveStudentRubrics, saveAttachments, saveGradeScales, saveCommentSnippets, saveSettings, saveFavoriteStandards, saveCommentBank, saveExportTemplates, savePeerReviews, saveSelfAssessments, saveSpeakingSessions, saveAnalysisResults }) => {
+                    saveRubrics(merged.rubrics);
+                    saveStudents(merged.students);
+                    saveClasses(merged.classes);
+                    saveStudentRubrics(merged.studentRubrics);
+                    saveAttachments(merged.attachments);
+                    saveGradeScales(merged.gradeScales);
+                    saveCommentSnippets(merged.commentSnippets);
+                    saveSettings(merged.settings);
+                    saveFavoriteStandards(merged.favoriteStandards);
+                    saveCommentBank(merged.commentBank);
+                    saveExportTemplates(merged.exportTemplates);
+                    savePeerReviews(merged.peerReviews);
+                    saveSelfAssessments(merged.selfAssessments);
+                    saveSpeakingSessions(merged.speakingSessions);
+                    saveAnalysisResults(merged.analysisResults);
+                });
+            });
+        });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // ── Supabase: delta-sync after each mutation ───────────────────────────────
+    const prevStateRef = useRef(state);
+    useEffect(() => {
+        const prev = prevStateRef.current;
+        prevStateRef.current = state;
+        if (!storageSync.isConnected()) return;
+
+        function diff<T>(prevArr: T[], currArr: T[], entity: string, getId: (x: T) => string) {
+            const prevMap = new Map(prevArr.map(x => [getId(x), JSON.stringify(x)]));
+            const currMap = new Map(currArr.map(x => [getId(x), x]));
+            for (const id of prevMap.keys()) {
+                if (!currMap.has(id)) storageSync.pushOne(entity, 'delete', null, id);
+            }
+            for (const [id, item] of currMap) {
+                if (prevMap.get(id) !== JSON.stringify(item)) storageSync.pushOne(entity, 'upsert', item);
+            }
+        }
+
+        diff(prev.rubrics, state.rubrics, 'rubric', r => r.id);
+        diff(prev.classes, state.classes, 'class', c => c.id);
+        diff(prev.students, state.students, 'student', s => s.id);
+        diff(prev.studentRubrics, state.studentRubrics, 'studentRubric', sr => sr.id);
+        diff(prev.peerReviews, state.peerReviews, 'peerReview', sr => sr.id);
+        diff(prev.attachments, state.attachments, 'attachment', a => a.id);
+        diff(prev.gradeScales, state.gradeScales, 'gradeScale', gs => gs.id);
+        diff(prev.commentSnippets, state.commentSnippets, 'commentSnippet', cs => cs.id);
+        diff(prev.commentBank, state.commentBank, 'commentBankItem', cb => cb.id);
+        diff(prev.exportTemplates, state.exportTemplates, 'exportTemplate', t => t.id);
+        diff(prev.favoriteStandards, state.favoriteStandards, 'favoriteStandard', fs => fs.guid);
+        diff(prev.selfAssessments, state.selfAssessments, 'selfAssessment', sa => sa.id);
+        diff(prev.speakingSessions, state.speakingSessions, 'speakingSession', ss => ss.id);
+        diff(prev.analysisResults, state.analysisResults, 'analysisResult', ar => ar.id);
+
+        if (JSON.stringify(prev.settings) !== JSON.stringify(state.settings)) {
+            storageSync.pushOne('settings', 'upsert', state.settings);
+        }
+    }, [state]);
 
     const addRubric = useCallback((r: Omit<Rubric, 'id' | 'createdAt' | 'updatedAt'>): Rubric => {
         const now = new Date().toISOString();
@@ -593,6 +672,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'DELETE_ANALYSIS_RESULT', id });
     }, []);
 
+    // ─── Database sync ────────────────────────────────────────────────
+    const connectDatabase = useCallback(async (config: DatabaseConfig): Promise<boolean> => {
+        const ok = await storageSync.configure(config);
+        if (ok) {
+            saveSupabaseConfig(config);
+            const fresh = await storageSync.hydrate();
+            if (fresh) {
+                const merged = { ...state, ...fresh } as StoreData;
+                dispatch({ type: 'SET_ALL', payload: merged });
+            }
+        }
+        return ok;
+    }, [state]);
+
+    const disconnectDatabase = useCallback(() => {
+        storageSync.disconnect();
+    }, []);
+
+    const pushAllToDatabase = useCallback(async () => {
+        return storageSync.pushAll(state);
+    }, [state]);
+
+    const pullFromDatabase = useCallback(async () => {
+        const fresh = await storageSync.hydrate();
+        if (fresh) {
+            const merged = { ...state, ...fresh } as StoreData;
+            dispatch({ type: 'SET_ALL', payload: merged });
+        }
+    }, [state]);
+
     // ─── Microsoft Sync (disabled — Azure integration not in use) ───
     const microsoftUser: any | null = null;
      
@@ -626,6 +735,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         saveRubricVersion, restoreRubricVersion,
         addVocabularyItem, updateVocabularyItem, deleteVocabularyItem,
         saveAnalysisResult, deleteAnalysisResult,
+        connectDatabase, disconnectDatabase, pushAllToDatabase, pullFromDatabase,
         loginMicrosoft, logoutMicrosoft, syncToOneDrive, restoreFromOneDrive,
         microsoftUser
     };

@@ -1,0 +1,270 @@
+import { SupabaseAdapter } from './SupabaseAdapter';
+import { AttachmentSync } from './AttachmentSync';
+import type { DatabaseConfig, SyncStatus, SyncResult, DbUser } from './types';
+import type { StoreData } from '../../store/storage';
+import type { Rubric, Student, Class, StudentRubric, Attachment, GradeScale, CommentSnippet, LinkedStandard, CommentBankItem, ExportTemplate, SelfAssessment, SpeakingSession, DocumentAnalysisResult } from '../../types';
+
+const CONFIG_KEY = 'rm_supabase_config';
+const LAST_SYNC_KEY = 'rm_last_sync_at';
+
+export function loadSupabaseConfig(): DatabaseConfig | null {
+    try {
+        const envUrl = import.meta.env.VITE_SUPABASE_URL;
+        const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        const raw = localStorage.getItem(CONFIG_KEY);
+        if (raw) return JSON.parse(raw) as DatabaseConfig;
+        if (envUrl && envKey) return { supabaseUrl: envUrl, supabaseAnonKey: envKey };
+        return null;
+    } catch {
+        return null;
+    }
+}
+
+export function saveSupabaseConfig(config: DatabaseConfig) {
+    localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+}
+
+export function clearSupabaseConfig() {
+    localStorage.removeItem(CONFIG_KEY);
+}
+
+class StorageSyncService {
+    readonly adapter = new SupabaseAdapter();
+    private attachmentSync: AttachmentSync = new AttachmentSync(this.adapter);
+    private status: SyncStatus = 'offline';
+    private lastSyncAt: string | null = localStorage.getItem(LAST_SYNC_KEY);
+    private listeners: Set<() => void> = new Set();
+    private authListeners: Set<(user: DbUser | null) => void> = new Set();
+
+    // ── Status ────────────────────────────────────────────────────────────────
+
+    getStatus(): SyncStatus { return this.status; }
+    getLastSyncAt(): string | null { return this.lastSyncAt; }
+    isConnected(): boolean { return this.adapter.isConnected(); }
+    getCurrentUserId(): string | null { return this.adapter.getCurrentUserId(); }
+
+    private setStatus(s: SyncStatus) {
+        this.status = s;
+        this.notifyListeners();
+    }
+
+    subscribe(cb: () => void): () => void {
+        this.listeners.add(cb);
+        return () => this.listeners.delete(cb);
+    }
+
+    onAuthChange(cb: (user: DbUser | null) => void): () => void {
+        this.authListeners.add(cb);
+        return () => this.authListeners.delete(cb);
+    }
+
+    private notifyListeners() {
+        this.listeners.forEach(cb => cb());
+    }
+
+    private notifyAuthChange(user: DbUser | null) {
+        this.authListeners.forEach(cb => cb(user));
+    }
+
+    // ── Connection ────────────────────────────────────────────────────────────
+
+    async configure(config: DatabaseConfig): Promise<boolean> {
+        const ok = await this.adapter.connect(config);
+        if (ok) {
+            this.setStatus('idle');
+            this.adapter.setAuthChangeListener(user => {
+                this.notifyAuthChange(user);
+                this.notifyListeners();
+            });
+        } else {
+            this.setStatus('error');
+        }
+        return ok;
+    }
+
+    disconnect() {
+        this.adapter.disconnect();
+        this.setStatus('offline');
+        clearSupabaseConfig();
+    }
+
+    // ── Hydration (DB → app state) ────────────────────────────────────────────
+
+    async hydrate(): Promise<Partial<StoreData> | null> {
+        if (!this.adapter.isConnected()) return null;
+        this.setStatus('syncing');
+        try {
+            const [
+                rubrics, classes, students, studentRubrics, peerReviews,
+                gradeScales, commentSnippets, commentBank, exportTemplates,
+                favoriteStandards, selfAssessments, speakingSessions,
+                analysisResults, attachments, settings,
+            ] = await Promise.all([
+                this.adapter.fetchRubrics(),
+                this.adapter.fetchClasses(),
+                this.adapter.fetchStudents(),
+                this.adapter.fetchStudentRubrics(),
+                this.adapter.fetchPeerReviews(),
+                this.adapter.fetchGradeScales(),
+                this.adapter.fetchCommentSnippets(),
+                this.adapter.fetchCommentBank(),
+                this.attachmentSync.hydrateExportTemplates(),
+                this.adapter.fetchFavoriteStandards(),
+                this.adapter.fetchSelfAssessments(),
+                this.adapter.fetchSpeakingSessions(),
+                this.adapter.fetchAnalysisResults(),
+                this.attachmentSync.hydrateAttachments(),
+                this.adapter.fetchSettings(),
+            ]);
+
+            const now = new Date().toISOString();
+            this.lastSyncAt = now;
+            localStorage.setItem(LAST_SYNC_KEY, now);
+            this.setStatus('idle');
+
+            const result: Partial<StoreData> = {
+                rubrics,
+                classes: classes.length > 0 ? classes : undefined,
+                students,
+                studentRubrics,
+                peerReviews,
+                gradeScales: gradeScales.length > 0 ? gradeScales : undefined,
+                commentSnippets,
+                commentBank: commentBank.length > 0 ? commentBank : undefined,
+                exportTemplates,
+                favoriteStandards,
+                selfAssessments,
+                speakingSessions,
+                analysisResults,
+                attachments,
+                ...(settings ? { settings } : {}),
+            };
+
+            // Remove undefined keys so the caller can merge cleanly with defaults
+            Object.keys(result).forEach(k => {
+                if (result[k as keyof StoreData] === undefined) delete result[k as keyof StoreData];
+            });
+
+            return result;
+        } catch (e) {
+            console.error('StorageSync.hydrate failed', e);
+            this.setStatus('error');
+            return null;
+        }
+    }
+
+    // ── Push all (local → DB, used for initial migration) ────────────────────
+
+    async pushAll(state: StoreData): Promise<SyncResult> {
+        if (!this.adapter.isConnected()) return { success: false, error: 'Not connected' };
+        this.setStatus('syncing');
+        try {
+            const ups = [
+                ...state.rubrics.map(r => this.adapter.upsertRubric(r)),
+                ...state.classes.map(c => this.adapter.upsertClass(c)),
+                ...state.students.map(s => this.adapter.upsertStudent(s)),
+                ...state.studentRubrics.map(sr => this.adapter.upsertStudentRubric(sr)),
+                ...state.peerReviews.map(sr => this.adapter.upsertPeerReview(sr)),
+                ...state.gradeScales.map(gs => this.adapter.upsertGradeScale(gs)),
+                ...state.commentSnippets.map(cs => this.adapter.upsertCommentSnippet(cs)),
+                ...state.commentBank.map(cb => this.adapter.upsertCommentBankItem(cb)),
+                ...state.favoriteStandards.map(fs => this.adapter.upsertFavoriteStandard(fs)),
+                ...state.selfAssessments.map(sa => this.adapter.upsertSelfAssessment(sa)),
+                ...state.speakingSessions.map(ss => this.adapter.upsertSpeakingSession(ss)),
+                ...state.analysisResults.map(ar => this.adapter.upsertAnalysisResult(ar)),
+                this.adapter.saveSettings(state.settings),
+            ];
+            await Promise.all(ups);
+
+            // Upload file attachments (sequential to avoid memory spikes)
+            for (const att of state.attachments) {
+                await this.attachmentSync.pushAttachment(att);
+            }
+            for (const tpl of state.exportTemplates) {
+                await this.attachmentSync.pushExportTemplate(tpl);
+            }
+
+            const now = new Date().toISOString();
+            this.lastSyncAt = now;
+            localStorage.setItem(LAST_SYNC_KEY, now);
+            this.setStatus('idle');
+            return { success: true };
+        } catch (e: unknown) {
+            this.setStatus('error');
+            return { success: false, error: String(e) };
+        }
+    }
+
+    // ── Push one (fire-and-forget after a mutation) ───────────────────────────
+
+    async pushOne(entity: string, action: 'upsert' | 'delete', payload: unknown, id?: string): Promise<void> {
+        if (!this.adapter.isConnected()) return;
+        try {
+            switch (entity) {
+                case 'rubric':
+                    if (action === 'upsert') await this.adapter.upsertRubric(payload as Rubric);
+                    else if (id) await this.adapter.deleteRubric(id);
+                    break;
+                case 'class':
+                    if (action === 'upsert') await this.adapter.upsertClass(payload as Class);
+                    else if (id) await this.adapter.deleteClass(id);
+                    break;
+                case 'student':
+                    if (action === 'upsert') await this.adapter.upsertStudent(payload as Student);
+                    else if (id) await this.adapter.deleteStudent(id);
+                    break;
+                case 'studentRubric':
+                    if (action === 'upsert') await this.adapter.upsertStudentRubric(payload as StudentRubric);
+                    else if (id) await this.adapter.deleteStudentRubric(id);
+                    break;
+                case 'peerReview':
+                    if (action === 'upsert') await this.adapter.upsertPeerReview(payload as StudentRubric);
+                    else if (id) await this.adapter.deletePeerReview(id);
+                    break;
+                case 'attachment':
+                    if (action === 'upsert') await this.attachmentSync.pushAttachment(payload as Attachment);
+                    else if (id) await this.adapter.deleteAttachment(id);
+                    break;
+                case 'gradeScale':
+                    if (action === 'upsert') await this.adapter.upsertGradeScale(payload as GradeScale);
+                    else if (id) await this.adapter.deleteGradeScale(id);
+                    break;
+                case 'commentSnippet':
+                    if (action === 'upsert') await this.adapter.upsertCommentSnippet(payload as CommentSnippet);
+                    else if (id) await this.adapter.deleteCommentSnippet(id);
+                    break;
+                case 'commentBankItem':
+                    if (action === 'upsert') await this.adapter.upsertCommentBankItem(payload as CommentBankItem);
+                    else if (id) await this.adapter.deleteCommentBankItem(id);
+                    break;
+                case 'exportTemplate':
+                    if (action === 'upsert') await this.attachmentSync.pushExportTemplate(payload as ExportTemplate);
+                    else if (id) await this.adapter.deleteExportTemplate(id);
+                    break;
+                case 'favoriteStandard':
+                    if (action === 'upsert') await this.adapter.upsertFavoriteStandard(payload as LinkedStandard);
+                    else if (id) await this.adapter.removeFavoriteStandard(id);
+                    break;
+                case 'selfAssessment':
+                    if (action === 'upsert') await this.adapter.upsertSelfAssessment(payload as SelfAssessment);
+                    else if (id) await this.adapter.deleteSelfAssessment(id);
+                    break;
+                case 'speakingSession':
+                    if (action === 'upsert') await this.adapter.upsertSpeakingSession(payload as SpeakingSession);
+                    else if (id) await this.adapter.deleteSpeakingSession(id);
+                    break;
+                case 'analysisResult':
+                    if (action === 'upsert') await this.adapter.upsertAnalysisResult(payload as DocumentAnalysisResult);
+                    else if (id) await this.adapter.deleteAnalysisResult(id);
+                    break;
+                case 'settings':
+                    if (action === 'upsert') await this.adapter.saveSettings(payload as import('../../types').AppSettings);
+                    break;
+            }
+        } catch (e) {
+            console.warn(`StorageSync.pushOne(${entity}, ${action}) failed`, e);
+        }
+    }
+}
+
+export const storageSync = new StorageSyncService();

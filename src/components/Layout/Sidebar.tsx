@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
     LayoutDashboard, BookOpen, Users, FileText, Settings,
-    Download, MessageSquare, BarChart3, Layers, ChevronLeft, ChevronRight
+    Download, MessageSquare, BarChart3, Layers, ChevronLeft, ChevronRight, Shield
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
@@ -95,6 +95,15 @@ export default function Sidebar() {
                 >
                     <Settings size={16} />
                     {!collapsed && t('common.settings')}
+                </NavLink>
+                <NavLink
+                    to="/privacy"
+                    className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                    title={collapsed ? 'Privacy & AVG' : undefined}
+                    style={collapsed ? { justifyContent: 'center', padding: '10px 0' } : undefined}
+                >
+                    <Shield size={16} />
+                    {!collapsed && 'Privacy & AVG'}
                 </NavLink>
             </div>
         </aside>
