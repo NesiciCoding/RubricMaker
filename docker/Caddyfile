@@ -1,0 +1,33 @@
+# Caddy reverse-proxy — handles HTTPS automatically via Let's Encrypt.
+# Used only when the `https` Docker Compose profile is active.
+#
+# Set DOMAIN in your .env to the hostname teachers will use:
+#   DOMAIN=rubricmaker.school.nl   → HTTPS with automatic certificate
+#   DOMAIN=localhost               → HTTP only (no cert; use port 8080 instead)
+
+{$DOMAIN} {
+    reverse_proxy app:80
+
+    # Compress responses
+    encode gzip
+
+    # Security headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options    "nosniff"
+        X-Frame-Options           "SAMEORIGIN"
+        Referrer-Policy           "strict-origin-when-cross-origin"
+        -Server
+    }
+
+    # Longer timeouts for file uploads (storage proxy)
+    @storage path /storage/v1/*
+    handle @storage {
+        reverse_proxy app:80 {
+            transport http {
+                read_timeout  120s
+                write_timeout 120s
+            }
+        }
+    }
+}

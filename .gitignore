@@ -4,6 +4,11 @@ dist-ssr
 coverage
 *.local
 
+# Environment files (contain secrets — never commit)
+.env
+.env.local
+.env.production
+
 # Logs
 logs
 *.log

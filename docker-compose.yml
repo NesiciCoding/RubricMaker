@@ -1,11 +1,17 @@
 # RubricMaker — full stack docker-compose
 #
-# Quick start:
-#   cp .env.docker.example .env
-#   docker-compose up -d
+# ── LAN / single machine (HTTP) ──────────────────────────────────────────────
+#   cp .env.docker.example .env          # edit SITE_URL if needed
+#   docker-compose up -d --build
 #   Open http://localhost:8080
 #
-# On a school server, set SITE_URL=http://<server-ip>:8080 in .env before running.
+# ── VPS / public server (HTTPS) ──────────────────────────────────────────────
+#   1. Point your domain's A-record to the VPS IP
+#   2. In .env:  DOMAIN=rubricmaker.school.nl
+#                SITE_URL=https://rubricmaker.school.nl
+#   3. docker-compose --profile https up -d --build
+#   Caddy obtains a Let's Encrypt certificate automatically.
+#   Firewall: open ports 80 + 443.  Port 8080 can be blocked externally.
 
 name: rubricmaker
 
@@ -149,6 +155,29 @@ services:
       - storage
     restart: unless-stopped
 
+  # ── Caddy — HTTPS reverse proxy (opt-in) ─────────────────────────────────────
+  # Only started when you run:  docker-compose --profile https up -d
+  # Caddy fetches a free Let's Encrypt certificate for DOMAIN automatically.
+  # Requires ports 80 + 443 to be open on your server firewall.
+  caddy:
+    image: caddy:2-alpine
+    profiles: [https]
+    restart: unless-stopped
+    ports:
+      - "80:80"      # HTTP (ACME challenge + redirect to HTTPS)
+      - "443:443"    # HTTPS
+      - "443:443/udp" # HTTP/3
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data      # stores the TLS certificate (persisted across restarts)
+      - caddy-config:/config
+    environment:
+      DOMAIN: "${DOMAIN:-localhost}"
+    depends_on:
+      - app
+
 volumes:
-  db-data:     # persists the database across restarts
+  db-data:      # persists the database across restarts
   storage-data: # persists uploaded attachments and templates
+  caddy-data:   # persists TLS certificates (only used in https profile)
+  caddy-config: # persists Caddy config cache
