@@ -16,6 +16,10 @@ export class SupabaseAdapter {
 
     async connect(config: DatabaseConfig): Promise<boolean> {
         try {
+            if (!config.supabaseUrl || !config.supabaseAnonKey) return false;
+            try { new URL(config.supabaseUrl); } catch { return false; }
+            if (config.supabaseAnonKey.length < 20) return false;
+
             this.client = createClient(config.supabaseUrl, config.supabaseAnonKey, {
                 auth: {
                     persistSession: true,
@@ -489,13 +493,14 @@ export class SupabaseAdapter {
     }
 
     async fetchSharedRubrics(): Promise<Rubric[]> {
-        // Rubrics shared with current user by others (RLS exposes them via rubric_shares policy)
         const { data, error } = await this.db()
-            .from('rubrics')
-            .select('data')
-            .not('owner_id', 'eq', this.uid());
+            .from('rubric_shares')
+            .select('rubrics(data)')
+            .eq('user_id', this.uid());
         if (error) { console.error('fetchSharedRubrics', error); return []; }
-        return (data ?? []).map(r => r.data as Rubric);
+        return (data ?? [])
+            .map(r => (r as { rubrics: { data: unknown } }).rubrics?.data as Rubric)
+            .filter(Boolean);
     }
 
     // ── Class Sharing ─────────────────────────────────────────────────────────
