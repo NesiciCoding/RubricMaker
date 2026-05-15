@@ -499,7 +499,7 @@ export class SupabaseAdapter {
             .eq('user_id', this.uid());
         if (error) { console.error('fetchSharedRubrics', error); return []; }
         return (data ?? [])
-            .map(r => (r as { rubrics: { data: unknown } }).rubrics?.data as Rubric)
+            .map(r => (r as unknown as { rubrics: { data: unknown } }).rubrics?.data as Rubric)
             .filter(Boolean);
     }
 
