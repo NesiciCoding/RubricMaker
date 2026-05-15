@@ -1,0 +1,542 @@
+import { createClient, SupabaseClient, Session, AuthChangeEvent } from '@supabase/supabase-js';
+import type {
+    Rubric, Student, Class, StudentRubric, Attachment,
+    GradeScale, CommentSnippet, AppSettings, LinkedStandard,
+    CommentBankItem, ExportTemplate, SelfAssessment, SpeakingSession,
+    DocumentAnalysisResult
+} from '../../types';
+import type { DatabaseConfig, DbUser, SyncResult } from './types';
+
+export class SupabaseAdapter {
+    private client: SupabaseClient | null = null;
+    private userId: string | null = null;
+    private onAuthChange: ((user: DbUser | null) => void) | null = null;
+
+    // ── Connection ────────────────────────────────────────────────────────────
+
+    async connect(config: DatabaseConfig): Promise<boolean> {
+        try {
+            this.client = createClient(config.supabaseUrl, config.supabaseAnonKey, {
+                auth: {
+                    persistSession: true,
+                    autoRefreshToken: true,
+                }
+            });
+
+            // Restore existing session or create anonymous one
+            const { data: { session } } = await this.client.auth.getSession();
+            if (session) {
+                this.userId = session.user.id;
+            } else {
+                const { data, error } = await this.client.auth.signInAnonymously();
+                if (error || !data.session) return false;
+                this.userId = data.session.user.id;
+            }
+
+            // Listen for auth changes (e.g. when user upgrades to email auth)
+            this.client.auth.onAuthStateChange((_event: AuthChangeEvent, s: Session | null) => {
+                this.userId = s?.user.id ?? null;
+                if (this.onAuthChange) {
+                    this.onAuthChange(s ? { id: s.user.id, email: s.user.email } : null);
+                }
+            });
+
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    async signInWithEmail(email: string): Promise<{ error?: string }> {
+        if (!this.client) return { error: 'Not connected' };
+        const { error } = await this.client.auth.signInWithOtp({ email });
+        return error ? { error: error.message } : {};
+    }
+
+    async verifyOtp(email: string, token: string): Promise<{ error?: string }> {
+        if (!this.client) return { error: 'Not connected' };
+        const { error } = await this.client.auth.verifyOtp({ email, token, type: 'email' });
+        return error ? { error: error.message } : {};
+    }
+
+    async signOut(): Promise<void> {
+        await this.client?.auth.signOut();
+        this.userId = null;
+    }
+
+    setAuthChangeListener(cb: (user: DbUser | null) => void) {
+        this.onAuthChange = cb;
+    }
+
+    disconnect() {
+        this.client = null;
+        this.userId = null;
+    }
+
+    isConnected(): boolean {
+        return this.client !== null && this.userId !== null;
+    }
+
+    getCurrentUserId(): string | null {
+        return this.userId;
+    }
+
+    getClient(): SupabaseClient | null {
+        return this.client;
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private db() {
+        if (!this.client || !this.userId) throw new Error('Not connected');
+        return this.client;
+    }
+
+    private uid(): string {
+        if (!this.userId) throw new Error('Not connected');
+        return this.userId;
+    }
+
+    // ── Rubrics ───────────────────────────────────────────────────────────────
+
+    async fetchRubrics(): Promise<Rubric[]> {
+        const { data, error } = await this.db().from('rubrics').select('data').order('created_at', { ascending: false });
+        if (error) { console.error('fetchRubrics', error); return []; }
+        return (data ?? []).map(r => r.data as Rubric);
+    }
+
+    async upsertRubric(r: Rubric): Promise<SyncResult> {
+        const { error } = await this.db().from('rubrics').upsert({
+            id: r.id,
+            owner_id: this.uid(),
+            created_at: r.createdAt,
+            updated_at: r.updatedAt,
+            data: r,
+        }, { onConflict: 'id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteRubric(id: string): Promise<SyncResult> {
+        const { error } = await this.db().from('rubrics').delete().eq('id', id).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    // ── Classes ───────────────────────────────────────────────────────────────
+
+    async fetchClasses(): Promise<Class[]> {
+        const { data, error } = await this.db().from('classes').select('data');
+        if (error) { console.error('fetchClasses', error); return []; }
+        return (data ?? []).map(r => r.data as Class);
+    }
+
+    async upsertClass(c: Class): Promise<SyncResult> {
+        const { error } = await this.db().from('classes').upsert({
+            id: c.id,
+            owner_id: this.uid(),
+            data: c,
+        }, { onConflict: 'id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteClass(id: string): Promise<SyncResult> {
+        const { error } = await this.db().from('classes').delete().eq('id', id).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    // ── Students ──────────────────────────────────────────────────────────────
+
+    async fetchStudents(): Promise<Student[]> {
+        const { data, error } = await this.db().from('students').select('data');
+        if (error) { console.error('fetchStudents', error); return []; }
+        return (data ?? []).map(r => r.data as Student);
+    }
+
+    async upsertStudent(s: Student): Promise<SyncResult> {
+        const { error } = await this.db().from('students').upsert({
+            id: s.id,
+            owner_id: this.uid(),
+            class_id: s.classId,
+            data: s,
+        }, { onConflict: 'id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteStudent(id: string): Promise<SyncResult> {
+        const { error } = await this.db().from('students').delete().eq('id', id).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    // ── Student Rubrics (grades) ───────────────────────────────────────────────
+
+    async fetchStudentRubrics(): Promise<StudentRubric[]> {
+        const { data, error } = await this.db().from('student_rubrics').select('data').eq('is_peer_review', false);
+        if (error) { console.error('fetchStudentRubrics', error); return []; }
+        return (data ?? []).map(r => r.data as StudentRubric);
+    }
+
+    async upsertStudentRubric(sr: StudentRubric): Promise<SyncResult> {
+        const { error } = await this.db().from('student_rubrics').upsert({
+            id: sr.id,
+            grader_id: this.uid(),
+            rubric_id: sr.rubricId,
+            student_id: sr.studentId,
+            is_peer_review: false,
+            data: sr,
+        }, { onConflict: 'id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteStudentRubric(id: string): Promise<SyncResult> {
+        const { error } = await this.db().from('student_rubrics').delete().eq('id', id).eq('grader_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    // ── Peer Reviews ──────────────────────────────────────────────────────────
+
+    async fetchPeerReviews(): Promise<StudentRubric[]> {
+        const { data, error } = await this.db().from('student_rubrics').select('data').eq('is_peer_review', true);
+        if (error) { console.error('fetchPeerReviews', error); return []; }
+        return (data ?? []).map(r => r.data as StudentRubric);
+    }
+
+    async upsertPeerReview(sr: StudentRubric): Promise<SyncResult> {
+        const { error } = await this.db().from('student_rubrics').upsert({
+            id: sr.id,
+            grader_id: this.uid(),
+            rubric_id: sr.rubricId,
+            student_id: sr.studentId,
+            is_peer_review: true,
+            data: sr,
+        }, { onConflict: 'id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deletePeerReview(id: string): Promise<SyncResult> {
+        return this.deleteStudentRubric(id);
+    }
+
+    // ── Attachments ───────────────────────────────────────────────────────────
+
+    async fetchAttachments(): Promise<Array<Omit<Attachment, 'dataUrl'> & { storagePath?: string }>> {
+        const { data, error } = await this.db().from('attachments').select('data, storage_path');
+        if (error) { console.error('fetchAttachments', error); return []; }
+        return (data ?? []).map(r => ({ ...(r.data as Omit<Attachment, 'dataUrl'>), storagePath: r.storage_path }));
+    }
+
+    async upsertAttachment(a: Omit<Attachment, 'dataUrl'>, storagePath?: string): Promise<SyncResult> {
+        const { error } = await this.db().from('attachments').upsert({
+            id: a.id,
+            owner_id: this.uid(),
+            storage_path: storagePath ?? null,
+            data: a,
+        }, { onConflict: 'id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteAttachment(id: string): Promise<SyncResult> {
+        // Remove from storage bucket first
+        try {
+            await this.db().storage.from('attachments').remove([`${this.uid()}/${id}`]);
+        } catch { /* ignore storage error, still delete metadata */ }
+        const { error } = await this.db().from('attachments').delete().eq('id', id).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async uploadAttachmentFile(id: string, blob: Blob, mimeType: string): Promise<string | null> {
+        const path = `${this.uid()}/${id}`;
+        const { error } = await this.db().storage.from('attachments').upload(path, blob, {
+            contentType: mimeType,
+            upsert: true,
+        });
+        return error ? null : path;
+    }
+
+    async getAttachmentSignedUrl(storagePath: string): Promise<string | null> {
+        const { data, error } = await this.db().storage.from('attachments').createSignedUrl(storagePath, 3600);
+        return error ? null : (data?.signedUrl ?? null);
+    }
+
+    // ── Grade Scales ──────────────────────────────────────────────────────────
+
+    async fetchGradeScales(): Promise<GradeScale[]> {
+        const { data, error } = await this.db().from('grade_scales').select('data');
+        if (error) { console.error('fetchGradeScales', error); return []; }
+        return (data ?? []).map(r => r.data as GradeScale);
+    }
+
+    async upsertGradeScale(gs: GradeScale): Promise<SyncResult> {
+        const { error } = await this.db().from('grade_scales').upsert({
+            id: gs.id,
+            owner_id: this.uid(),
+            data: gs,
+        }, { onConflict: 'id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteGradeScale(id: string): Promise<SyncResult> {
+        const { error } = await this.db().from('grade_scales').delete().eq('id', id).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    // ── Comment Snippets ──────────────────────────────────────────────────────
+
+    async fetchCommentSnippets(): Promise<CommentSnippet[]> {
+        const { data, error } = await this.db().from('comment_snippets').select('data');
+        if (error) { console.error('fetchCommentSnippets', error); return []; }
+        return (data ?? []).map(r => r.data as CommentSnippet);
+    }
+
+    async upsertCommentSnippet(cs: CommentSnippet): Promise<SyncResult> {
+        const { error } = await this.db().from('comment_snippets').upsert({
+            id: cs.id,
+            owner_id: this.uid(),
+            data: cs,
+        }, { onConflict: 'id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteCommentSnippet(id: string): Promise<SyncResult> {
+        const { error } = await this.db().from('comment_snippets').delete().eq('id', id).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    // ── Comment Bank ──────────────────────────────────────────────────────────
+
+    async fetchCommentBank(): Promise<CommentBankItem[]> {
+        const { data, error } = await this.db().from('comment_bank').select('data');
+        if (error) { console.error('fetchCommentBank', error); return []; }
+        return (data ?? []).map(r => r.data as CommentBankItem);
+    }
+
+    async upsertCommentBankItem(item: CommentBankItem): Promise<SyncResult> {
+        const { error } = await this.db().from('comment_bank').upsert({
+            id: item.id,
+            owner_id: this.uid(),
+            data: item,
+        }, { onConflict: 'id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteCommentBankItem(id: string): Promise<SyncResult> {
+        const { error } = await this.db().from('comment_bank').delete().eq('id', id).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    // ── Export Templates ──────────────────────────────────────────────────────
+
+    async fetchExportTemplates(): Promise<Array<Omit<ExportTemplate, 'dataUrl'> & { storagePath?: string }>> {
+        const { data, error } = await this.db().from('export_templates').select('data, storage_path');
+        if (error) { console.error('fetchExportTemplates', error); return []; }
+        return (data ?? []).map(r => ({ ...(r.data as Omit<ExportTemplate, 'dataUrl'>), storagePath: r.storage_path }));
+    }
+
+    async upsertExportTemplate(t: Omit<ExportTemplate, 'dataUrl'>, storagePath?: string): Promise<SyncResult> {
+        const { error } = await this.db().from('export_templates').upsert({
+            id: t.id,
+            owner_id: this.uid(),
+            storage_path: storagePath ?? null,
+            data: t,
+        }, { onConflict: 'id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async uploadExportTemplateFile(id: string, blob: Blob): Promise<string | null> {
+        const path = `${this.uid()}/${id}`;
+        const { error } = await this.db().storage.from('export-templates').upload(path, blob, {
+            contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            upsert: true,
+        });
+        return error ? null : path;
+    }
+
+    async getExportTemplateSignedUrl(storagePath: string): Promise<string | null> {
+        const { data, error } = await this.db().storage.from('export-templates').createSignedUrl(storagePath, 3600);
+        return error ? null : (data?.signedUrl ?? null);
+    }
+
+    async deleteExportTemplate(id: string): Promise<SyncResult> {
+        try {
+            await this.db().storage.from('export-templates').remove([`${this.uid()}/${id}`]);
+        } catch { /* ignore */ }
+        const { error } = await this.db().from('export_templates').delete().eq('id', id).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    // ── Favorite Standards ────────────────────────────────────────────────────
+
+    async fetchFavoriteStandards(): Promise<LinkedStandard[]> {
+        const { data, error } = await this.db().from('favorite_standards').select('data');
+        if (error) { console.error('fetchFavoriteStandards', error); return []; }
+        return (data ?? []).map(r => r.data as LinkedStandard);
+    }
+
+    async upsertFavoriteStandard(s: LinkedStandard): Promise<SyncResult> {
+        const { error } = await this.db().from('favorite_standards').upsert({
+            guid: s.guid,
+            owner_id: this.uid(),
+            data: s,
+        }, { onConflict: 'owner_id,guid' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async removeFavoriteStandard(guid: string): Promise<SyncResult> {
+        const { error } = await this.db().from('favorite_standards').delete().eq('guid', guid).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    // ── Self Assessments ──────────────────────────────────────────────────────
+
+    async fetchSelfAssessments(): Promise<SelfAssessment[]> {
+        const { data, error } = await this.db().from('self_assessments').select('data');
+        if (error) { console.error('fetchSelfAssessments', error); return []; }
+        return (data ?? []).map(r => r.data as SelfAssessment);
+    }
+
+    async upsertSelfAssessment(sa: SelfAssessment): Promise<SyncResult> {
+        const { error } = await this.db().from('self_assessments').upsert({
+            id: sa.id,
+            owner_id: this.uid(),
+            rubric_id: sa.rubricId,
+            student_id: sa.studentId,
+            data: sa,
+        }, { onConflict: 'id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteSelfAssessment(id: string): Promise<SyncResult> {
+        const { error } = await this.db().from('self_assessments').delete().eq('id', id).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    // ── Speaking Sessions ─────────────────────────────────────────────────────
+
+    async fetchSpeakingSessions(): Promise<SpeakingSession[]> {
+        const { data, error } = await this.db().from('speaking_sessions').select('data');
+        if (error) { console.error('fetchSpeakingSessions', error); return []; }
+        return (data ?? []).map(r => r.data as SpeakingSession);
+    }
+
+    async upsertSpeakingSession(s: SpeakingSession): Promise<SyncResult> {
+        const { error } = await this.db().from('speaking_sessions').upsert({
+            id: s.id,
+            owner_id: this.uid(),
+            rubric_id: s.rubricId,
+            student_id: s.studentId,
+            data: s,
+        }, { onConflict: 'id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteSpeakingSession(id: string): Promise<SyncResult> {
+        const { error } = await this.db().from('speaking_sessions').delete().eq('id', id).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    // ── Analysis Results ──────────────────────────────────────────────────────
+
+    async fetchAnalysisResults(): Promise<DocumentAnalysisResult[]> {
+        const { data, error } = await this.db().from('analysis_results').select('data');
+        if (error) { console.error('fetchAnalysisResults', error); return []; }
+        return (data ?? []).map(r => r.data as DocumentAnalysisResult);
+    }
+
+    async upsertAnalysisResult(r: DocumentAnalysisResult): Promise<SyncResult> {
+        const { error } = await this.db().from('analysis_results').upsert({
+            id: r.id,
+            owner_id: this.uid(),
+            student_id: r.studentId,
+            rubric_id: r.rubricId,
+            data: r,
+        }, { onConflict: 'id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteAnalysisResult(id: string): Promise<SyncResult> {
+        const { error } = await this.db().from('analysis_results').delete().eq('id', id).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    // ── Settings ──────────────────────────────────────────────────────────────
+
+    async fetchSettings(): Promise<AppSettings | null> {
+        const { data, error } = await this.db().from('user_settings').select('settings').eq('user_id', this.uid()).single();
+        if (error) return null;
+        return data?.settings as AppSettings ?? null;
+    }
+
+    async saveSettings(s: AppSettings): Promise<SyncResult> {
+        const { error } = await this.db().from('user_settings').upsert({
+            user_id: this.uid(),
+            settings: s,
+        }, { onConflict: 'user_id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    // ── Rubric Sharing ────────────────────────────────────────────────────────
+
+    async shareRubric(rubricId: string, targetUserId: string, mode: 'read' | 'edit'): Promise<SyncResult> {
+        const { error } = await this.db().from('rubric_shares').upsert({
+            rubric_id: rubricId,
+            user_id: targetUserId,
+            mode,
+        }, { onConflict: 'rubric_id,user_id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async unshareRubric(rubricId: string, targetUserId: string): Promise<SyncResult> {
+        const { error } = await this.db().from('rubric_shares').delete().eq('rubric_id', rubricId).eq('user_id', targetUserId);
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async fetchSharedRubrics(): Promise<Rubric[]> {
+        // Rubrics shared with current user by others (RLS exposes them via rubric_shares policy)
+        const { data, error } = await this.db()
+            .from('rubrics')
+            .select('data')
+            .not('owner_id', 'eq', this.uid());
+        if (error) { console.error('fetchSharedRubrics', error); return []; }
+        return (data ?? []).map(r => r.data as Rubric);
+    }
+
+    // ── Class Sharing ─────────────────────────────────────────────────────────
+
+    async addClassMember(classId: string, targetUserId: string, role: 'viewer' | 'editor' = 'viewer'): Promise<SyncResult> {
+        const { error } = await this.db().from('class_members').upsert({
+            class_id: classId,
+            user_id: targetUserId,
+            role,
+        }, { onConflict: 'class_id,user_id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async removeClassMember(classId: string, targetUserId: string): Promise<SyncResult> {
+        const { error } = await this.db().from('class_members').delete().eq('class_id', classId).eq('user_id', targetUserId);
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    // ── Account deletion ──────────────────────────────────────────────────────
+
+    async deleteAllMyData(): Promise<SyncResult> {
+        const uid = this.uid();
+        const db = this.db();
+        const tables = [
+            'rubrics', 'classes', 'students', 'student_rubrics', 'attachments',
+            'grade_scales', 'comment_snippets', 'comment_bank', 'export_templates',
+            'favorite_standards', 'self_assessments', 'speaking_sessions',
+            'analysis_results', 'user_settings',
+        ];
+        for (const table of tables) {
+            const col = table === 'student_rubrics' ? 'grader_id' :
+                        table === 'user_settings' ? 'user_id' : 'owner_id';
+            await db.from(table).delete().eq(col, uid);
+        }
+        // Remove storage objects
+        try {
+            const { data: attFiles } = await db.storage.from('attachments').list(uid);
+            if (attFiles?.length) await db.storage.from('attachments').remove(attFiles.map(f => `${uid}/${f.name}`));
+            const { data: tplFiles } = await db.storage.from('export-templates').list(uid);
+            if (tplFiles?.length) await db.storage.from('export-templates').remove(tplFiles.map(f => `${uid}/${f.name}`));
+        } catch { /* ignore */ }
+        return { success: true };
+    }
+}
