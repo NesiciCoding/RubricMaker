@@ -279,14 +279,14 @@ describe('parseJsonToRubric — linked standards & sub-items', () => {
             criteria: [{
                 title: 'Crit',
                 weight: 100,
-                linkedStandard: { id: 'std1', code: 'ELA.1', description: 'English standard' },
+                linkedStandard: { guid: 'std1', statementNotation: 'ELA.1', description: 'English standard', standardSetTitle: 'ELA', jurisdictionTitle: 'US' },
                 levels: [{ label: 'Good', minPoints: 5, maxPoints: 5, description: '' }],
             }],
         };
         const file = new File([JSON.stringify(json)], 'rubric.json');
         const result = await parseJsonToRubric(file);
         expect(result.criteria[0].linkedStandard).toBeDefined();
-        expect(result.criteria[0].linkedStandard?.code).toBe('ELA.1');
+        expect(result.criteria[0].linkedStandard?.statementNotation).toBe('ELA.1');
     });
 
     it('preserves linkedStandards array when present on criterion', async () => {
@@ -296,8 +296,8 @@ describe('parseJsonToRubric — linked standards & sub-items', () => {
                 title: 'Crit',
                 weight: 100,
                 linkedStandards: [
-                    { id: 'std1', code: 'ELA.1', description: 'Standard 1' },
-                    { id: 'std2', code: 'ELA.2', description: 'Standard 2' },
+                    { guid: 'std1', statementNotation: 'ELA.1', description: 'Standard 1', standardSetTitle: 'ELA', jurisdictionTitle: 'US' },
+                    { guid: 'std2', statementNotation: 'ELA.2', description: 'Standard 2', standardSetTitle: 'ELA', jurisdictionTitle: 'US' },
                 ],
                 levels: [{ label: 'Good', minPoints: 5, maxPoints: 5, description: '' }],
             }],
@@ -318,7 +318,7 @@ describe('parseJsonToRubric — linked standards & sub-items', () => {
                     label: 'Good', minPoints: 5, maxPoints: 5, description: '',
                     subItems: [{
                         id: 'si1', label: 'Sub 1', points: 2,
-                        linkedStandards: [{ id: 'std1', code: 'ELA.1', description: 'Sub standard' }],
+                        linkedStandards: [{ guid: 'std1', statementNotation: 'ELA.1', description: 'Sub standard', standardSetTitle: 'ELA', jurisdictionTitle: 'US' }],
                     }],
                 }],
             }],
@@ -327,7 +327,7 @@ describe('parseJsonToRubric — linked standards & sub-items', () => {
         const result = await parseJsonToRubric(file);
         const subItem = result.criteria[0].levels[0].subItems[0];
         expect(subItem.linkedStandards).toBeDefined();
-        expect(subItem.linkedStandards![0].code).toBe('ELA.1');
+        expect(subItem.linkedStandards![0].statementNotation).toBe('ELA.1');
     });
 
     it('handles subItems without linkedStandards (undefined)', async () => {
