@@ -9,6 +9,9 @@ coverage
 .env.local
 .env.production
 
+# Backup output
+backups/
+
 # Logs
 logs
 *.log

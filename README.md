@@ -57,38 +57,87 @@ To run the project locally:
 
 ## 📦 Deployment
 
-Rubric Maker is a static web application, meaning it can be hosted on any static site provider (GitHub Pages, Vercel, Netlify) or even run directly from a file server.
+RubricMaker works in two modes:
 
-### General Build
+- **Offline-only** — data lives in the browser's local storage. No server needed. Works on GitHub Pages, SharePoint, or any static host.
+- **With database sync** — add an optional Supabase backend for multi-device sync, email login, and rubric sharing between teachers. Hosted on your own infrastructure.
 
-To create a production-ready build:
+---
+
+### 🐳 Docker (recommended — includes database sync)
+
+The easiest way to run the full stack. Requires [Docker](https://docs.docker.com/get-docker/).
+
+**Your own laptop or school LAN:**
 
 ```bash
-npm run build
+cp .env.docker.example .env   # defaults work as-is for localhost
+docker-compose up -d --build
 ```
 
-The output will be in the `dist/` folder.
+Open [http://localhost:8080](http://localhost:8080). To make it accessible to other teachers on the network, set `SITE_URL=http://<your-ip>:8080` in `.env` first.
 
-### SharePoint Deployment
+**VPS with a domain name (HTTPS):**
 
-You can host this application directly within a SharePoint Document Library without needing a dedicated server.
+```bash
+cp .env.docker.example .env
+# Edit .env:
+#   DOMAIN=rubricmaker.school.nl
+#   SITE_URL=https://rubricmaker.school.nl
+#   JWT_SECRET=<random 64-char string>   ← change this!
+#   POSTGRES_PASSWORD=<strong password>  ← change this!
+docker-compose --profile https up -d --build
+```
 
-1.  **Build the project**:
-    ```bash
-    npm run build
-    ```
+Caddy obtains a free Let's Encrypt certificate automatically. Open ports 80 and 443 on your firewall.
 
-2.  **Prepare for SharePoint**:
-    *   Locate the `dist/` folder.
-    *   Rename `index.html` to `index.aspx`. *SharePoint treats .aspx files as web pages, whereas .html files might be downloaded instead of displayed.*
+**Enabling email login (OTP):**
 
-3.  **Upload to SharePoint**:
-    *   Navigate to your SharePoint site.
-    *   Go to **Site Contents** -> **Documents** (or create a new Document Library).
-    *   Create a folder (e.g., `RubricMaker`).
-    *   Upload all files and folders from the `dist/` directory into this folder.
+Without SMTP, teachers log in anonymously. To allow email-linked accounts (needed for sharing rubrics across devices):
 
-4.  **Launch**:
-    *   Click on `index.aspx`. The application will launch directly in the browser.
+```bash
+# In .env:
+MAILER_AUTOCONFIRM=false
+SMTP_HOST=smtp.office365.com   # or smtp.gmail.com, smtp-relay.brevo.com
+SMTP_USER=rubricmaker@school.nl
+SMTP_PASS=your-app-password
 
-> **Note**: For the "Standards Integration" feature to work on SharePoint, you may need to ensure the SharePoint domain is added to the "Allowed Origins" in your Common Standards Project API key settings.
+docker-compose up -d --force-recreate auth
+```
+
+**Backup and restore:**
+
+```bash
+./scripts/backup.sh              # saves to ./backups/YYYYMMDD_HHMMSS/
+./scripts/restore.sh backups/20260515_120000
+```
+
+**Updating to a new version:**
+
+```bash
+git pull
+docker-compose up -d --build    # rebuilds the app image, restarts services
+# Migrations run automatically on next startup
+```
+
+---
+
+### 🌐 Static hosting (offline mode only)
+
+No database sync — all data stays in the browser. Works on any static host.
+
+**Build:**
+```bash
+npm run build   # output in dist/
+```
+
+Deploy the `dist/` folder to GitHub Pages, Vercel, Netlify, or any web server.
+
+**SharePoint:**
+
+1. Run `npm run build`
+2. In `dist/`, rename `index.html` → `index.aspx`
+3. Upload the entire `dist/` folder to a SharePoint Document Library
+4. Click `index.aspx` to launch
+
+> For Standards Integration on SharePoint, add the SharePoint domain to your Common Standards Project API key's allowed origins.
