@@ -27,14 +27,29 @@ pop3_port = 54326
 file_size_limit = "52mb"
 
 [auth]
+# In production: change this to the URL where the app is served (e.g. http://192.168.1.10:8080)
 site_url = "http://localhost:5173"
-# Allow anonymous sign-in (used as the default auth method before email login)
+# Allow anonymous sign-in (default auth before teacher adds email)
 enable_anonymous_sign_ins = true
-# Email OTP for magic-link login (no password required)
+
 [auth.email]
 enable_signup = true
 double_confirm_changes = true
-enable_confirmations = false  # set to true in production
+# Development: false (Inbucket catches emails, no real delivery needed)
+# Production:  true  (requires SMTP config below)
+enable_confirmations = false
+
+# ── Production SMTP ────────────────────────────────────────────────────────────
+# Uncomment and fill in when deploying to a server.
+# Common options: school Exchange/Office 365, Gmail app-password, Brevo (free tier).
+#
+# [auth.email.smtp]
+# host     = "smtp.office365.com"    # or smtp.gmail.com / smtp-relay.brevo.com
+# port     = 587
+# user     = "rubricmaker@school.nl"
+# pass     = "env(SMTP_PASSWORD)"    # set SMTP_PASSWORD in the server environment
+# admin_email = "rubricmaker@school.nl"
+# sender_name = "RubricMaker"
 
 [[auth.mfa.totp]]
 enroll_enabled = false
