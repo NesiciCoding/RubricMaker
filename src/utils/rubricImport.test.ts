@@ -258,4 +258,93 @@ describe('buildParsedRubric edge cases', () => {
         }, 'test');
         expect(result.criteria.length).toBe(1);
     });
+
+    it('returns "no criteria" error when all rows have empty criterion name', async () => {
+        const { buildParsedRubric } = await import('./rubricImport');
+        const result = buildParsedRubric({
+            headers: ['criterion', 'Level A', 'Level B'],
+            rows: [['', 'x', 'y'], ['', 'a', 'b']],
+        }, 'test');
+        expect(result.criteria.length).toBe(0);
+        expect(result.warnings).toContain('Table found but no criteria could be extracted.');
+    });
+});
+
+// ─── parseJsonToRubric — linked standards / subItem edge cases ─────────────────
+
+describe('parseJsonToRubric — linked standards & sub-items', () => {
+    it('preserves linkedStandard when present on criterion', async () => {
+        const { parseJsonToRubric } = await import('./rubricImport');
+        const json = {
+            criteria: [{
+                title: 'Crit',
+                weight: 100,
+                linkedStandard: { id: 'std1', code: 'ELA.1', description: 'English standard' },
+                levels: [{ label: 'Good', minPoints: 5, maxPoints: 5, description: '' }],
+            }],
+        };
+        const file = new File([JSON.stringify(json)], 'rubric.json');
+        const result = await parseJsonToRubric(file);
+        expect(result.criteria[0].linkedStandard).toBeDefined();
+        expect(result.criteria[0].linkedStandard?.code).toBe('ELA.1');
+    });
+
+    it('preserves linkedStandards array when present on criterion', async () => {
+        const { parseJsonToRubric } = await import('./rubricImport');
+        const json = {
+            criteria: [{
+                title: 'Crit',
+                weight: 100,
+                linkedStandards: [
+                    { id: 'std1', code: 'ELA.1', description: 'Standard 1' },
+                    { id: 'std2', code: 'ELA.2', description: 'Standard 2' },
+                ],
+                levels: [{ label: 'Good', minPoints: 5, maxPoints: 5, description: '' }],
+            }],
+        };
+        const file = new File([JSON.stringify(json)], 'rubric.json');
+        const result = await parseJsonToRubric(file);
+        expect(Array.isArray(result.criteria[0].linkedStandards)).toBe(true);
+        expect(result.criteria[0].linkedStandards!.length).toBe(2);
+    });
+
+    it('preserves subItems with linkedStandards when present', async () => {
+        const { parseJsonToRubric } = await import('./rubricImport');
+        const json = {
+            criteria: [{
+                title: 'Crit',
+                weight: 100,
+                levels: [{
+                    label: 'Good', minPoints: 5, maxPoints: 5, description: '',
+                    subItems: [{
+                        id: 'si1', label: 'Sub 1', points: 2,
+                        linkedStandards: [{ id: 'std1', code: 'ELA.1', description: 'Sub standard' }],
+                    }],
+                }],
+            }],
+        };
+        const file = new File([JSON.stringify(json)], 'rubric.json');
+        const result = await parseJsonToRubric(file);
+        const subItem = result.criteria[0].levels[0].subItems[0];
+        expect(subItem.linkedStandards).toBeDefined();
+        expect(subItem.linkedStandards![0].code).toBe('ELA.1');
+    });
+
+    it('handles subItems without linkedStandards (undefined)', async () => {
+        const { parseJsonToRubric } = await import('./rubricImport');
+        const json = {
+            criteria: [{
+                title: 'Crit',
+                weight: 100,
+                levels: [{
+                    label: 'Good', minPoints: 5, maxPoints: 5, description: '',
+                    subItems: [{ id: 'si1', label: 'Sub 1', points: 2 }],
+                }],
+            }],
+        };
+        const file = new File([JSON.stringify(json)], 'rubric.json');
+        const result = await parseJsonToRubric(file);
+        const subItem = result.criteria[0].levels[0].subItems[0];
+        expect(subItem.linkedStandards).toBeUndefined();
+    });
 });
