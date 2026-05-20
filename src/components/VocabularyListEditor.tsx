@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Plus, Trash2, Upload, ChevronDown } from 'lucide-react';
+import { Plus, Trash2, Upload, ChevronDown, Square, CheckSquare } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { VocabularyItem, VocabularyCategory, RubricCriterion } from '../types';
 import { nanoid } from '../utils/nanoid';
@@ -11,6 +11,7 @@ interface Props {
     onAdd: (item: Omit<VocabularyItem, 'id'>) => void;
     onUpdate: (item: VocabularyItem) => void;
     onDelete: (itemId: string) => void;
+    onDeleteMultiple: (itemIds: string[]) => void;
 }
 
 const CATEGORIES: VocabularyCategory[] = ['vocabulary', 'grammar', 'discourse', 'other'];
@@ -22,7 +23,7 @@ const CATEGORY_COLORS: Record<VocabularyCategory, string> = {
     other: '#8b5cf6',
 };
 
-export default function VocabularyListEditor({ rubricId: _rubricId, items, criteria, onAdd, onUpdate, onDelete }: Props) {
+export default function VocabularyListEditor({ rubricId: _rubricId, items, criteria, onAdd, onUpdate, onDelete, onDeleteMultiple }: Props) {
     const { t } = useTranslation();
     const [filterCat, setFilterCat] = useState<VocabularyCategory | 'all'>('all');
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -31,6 +32,8 @@ export default function VocabularyListEditor({ rubricId: _rubricId, items, crite
     const [newCriterionId, setNewCriterionId] = useState('');
     const [newNotes, setNewNotes] = useState('');
     const csvRef = useRef<HTMLInputElement>(null);
+    const [selectionMode, setSelectionMode] = useState(false);
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
     function handleAdd() {
         const phrase = newPhrase.trim();
@@ -69,6 +72,32 @@ export default function VocabularyListEditor({ rubricId: _rubricId, items, crite
 
     const visible = filterCat === 'all' ? items : items.filter(i => i.category === filterCat);
 
+    function toggleItem(id: string) {
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) { next.delete(id); } else { next.add(id); }
+            return next;
+        });
+    }
+
+    function toggleAll() {
+        if (selectedIds.size === visible.length) {
+            setSelectedIds(new Set());
+        } else {
+            setSelectedIds(new Set(visible.map(i => i.id)));
+        }
+    }
+
+    function exitSelectionMode() {
+        setSelectionMode(false);
+        setSelectedIds(new Set());
+    }
+
+    function handleDeleteSelected() {
+        onDeleteMultiple([...selectedIds]);
+        exitSelectionMode();
+    }
+
     return (
         <div>
             {/* Filter bar */}
@@ -86,10 +115,48 @@ export default function VocabularyListEditor({ rubricId: _rubricId, items, crite
                 ))}
                 <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
                     <input ref={csvRef} type="file" accept=".csv,.txt" style={{ display: 'none' }} onChange={handleCsvImport} />
-                    <button className="btn btn-ghost btn-sm" onClick={() => csvRef.current?.click()} title={t('vocabulary.import_csv', 'Import from CSV')}>
-                        <Upload size={14} />
-                        {t('vocabulary.import_csv', 'Import CSV')}
-                    </button>
+                    {!selectionMode && (
+                        <>
+                            <button className="btn btn-ghost btn-sm" onClick={() => csvRef.current?.click()} title={t('vocabulary.import_csv', 'Import from CSV')}>
+                                <Upload size={14} />
+                                {t('vocabulary.import_csv', 'Import CSV')}
+                            </button>
+                            {items.length > 0 && (
+                                <button className="btn btn-ghost btn-sm" onClick={() => setSelectionMode(true)}>
+                                    <Square size={14} />
+                                    {t('vocabulary.select', 'Select')}
+                                </button>
+                            )}
+                        </>
+                    )}
+                    {selectionMode && (
+                        <>
+                            <button className="btn btn-ghost btn-sm" onClick={toggleAll}>
+                                {selectedIds.size === visible.length && visible.length > 0
+                                    ? <CheckSquare size={14} />
+                                    : <Square size={14} />}
+                                {selectedIds.size === visible.length && visible.length > 0
+                                    ? t('vocabulary.deselect_all', 'Deselect all')
+                                    : t('vocabulary.select_all', 'Select all')}
+                            </button>
+                            <span className="text-xs text-muted" style={{ alignSelf: 'center' }}>
+                                {selectedIds.size} / {visible.length}
+                            </span>
+                            {selectedIds.size > 0 && (
+                                <button
+                                    className="btn btn-ghost btn-sm"
+                                    style={{ color: 'var(--danger)' }}
+                                    onClick={handleDeleteSelected}
+                                >
+                                    <Trash2 size={14} />
+                                    {t('vocabulary.delete_selected', 'Delete')} ({selectedIds.size})
+                                </button>
+                            )}
+                            <button className="btn btn-ghost btn-sm" onClick={exitSelectionMode}>
+                                {t('common.cancel', 'Cancel')}
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -104,7 +171,13 @@ export default function VocabularyListEditor({ rubricId: _rubricId, items, crite
                     <div
                         key={item.id}
                         className="card"
-                        style={{ padding: '10px 14px', borderLeft: `3px solid ${CATEGORY_COLORS[item.category]}` }}
+                        style={{
+                            padding: '10px 14px',
+                            borderLeft: `3px solid ${CATEGORY_COLORS[item.category]}`,
+                            cursor: selectionMode ? 'pointer' : undefined,
+                            background: selectionMode && selectedIds.has(item.id) ? 'var(--surface-hover, rgba(0,0,0,0.04))' : undefined,
+                        }}
+                        onClick={selectionMode ? () => toggleItem(item.id) : undefined}
                     >
                         {editingId === item.id ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -149,6 +222,15 @@ export default function VocabularyListEditor({ rubricId: _rubricId, items, crite
                             </div>
                         ) : (
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                {selectionMode && (
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedIds.has(item.id)}
+                                        onChange={() => toggleItem(item.id)}
+                                        onClick={e => e.stopPropagation()}
+                                        style={{ flexShrink: 0 }}
+                                    />
+                                )}
                                 <span style={{ fontWeight: 600, flex: 1 }}>{item.phrase}</span>
                                 <span className="text-xs text-muted" style={{ minWidth: 80 }}>{item.category}</span>
                                 {item.linkedCriterionId && (
@@ -157,12 +239,16 @@ export default function VocabularyListEditor({ rubricId: _rubricId, items, crite
                                     </span>
                                 )}
                                 {item.notes && <span className="text-xs text-muted" style={{ fontStyle: 'italic' }}>{item.notes}</span>}
-                                <button className="btn btn-ghost btn-sm" style={{ padding: '2px 6px' }} onClick={() => setEditingId(item.id)}>
-                                    <ChevronDown size={14} />
-                                </button>
-                                <button className="btn btn-ghost btn-sm" style={{ padding: '2px 6px', color: 'var(--danger)' }} onClick={() => onDelete(item.id)}>
-                                    <Trash2 size={14} />
-                                </button>
+                                {!selectionMode && (
+                                    <>
+                                        <button className="btn btn-ghost btn-sm" style={{ padding: '2px 6px' }} onClick={() => setEditingId(item.id)}>
+                                            <ChevronDown size={14} />
+                                        </button>
+                                        <button className="btn btn-ghost btn-sm" style={{ padding: '2px 6px', color: 'var(--danger)' }} onClick={() => onDelete(item.id)}>
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </>
+                                )}
                             </div>
                         )}
                     </div>

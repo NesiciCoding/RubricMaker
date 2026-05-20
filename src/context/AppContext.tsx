@@ -62,6 +62,7 @@ type Action =
     | { type: 'ADD_VOCABULARY_ITEM'; rubricId: string; payload: VocabularyItem }
     | { type: 'UPDATE_VOCABULARY_ITEM'; rubricId: string; payload: VocabularyItem }
     | { type: 'DELETE_VOCABULARY_ITEM'; rubricId: string; itemId: string }
+    | { type: 'DELETE_VOCABULARY_ITEMS_BATCH'; rubricId: string; itemIds: string[] }
     | { type: 'SAVE_ANALYSIS_RESULT'; payload: DocumentAnalysisResult }
     | { type: 'DELETE_ANALYSIS_RESULT'; id: string };
 
@@ -312,6 +313,15 @@ function reducer(state: StoreData, action: Action): StoreData {
             saveRubrics(next);
             return { ...state, rubrics: next };
         }
+        case 'DELETE_VOCABULARY_ITEMS_BATCH': {
+            const idSet = new Set(action.itemIds);
+            const next = state.rubrics.map(r => {
+                if (r.id !== action.rubricId) return r;
+                return { ...r, vocabularyItems: (r.vocabularyItems ?? []).filter(v => !idSet.has(v.id)) };
+            });
+            saveRubrics(next);
+            return { ...state, rubrics: next };
+        }
         case 'SAVE_ANALYSIS_RESULT': {
             const exists = state.analysisResults.findIndex(r => r.id === action.payload.id);
             const next = exists >= 0
@@ -383,6 +393,7 @@ interface AppContextValue extends StoreData {
     addVocabularyItem: (rubricId: string, item: Omit<VocabularyItem, 'id'>) => VocabularyItem;
     updateVocabularyItem: (rubricId: string, item: VocabularyItem) => void;
     deleteVocabularyItem: (rubricId: string, itemId: string) => void;
+    deleteVocabularyItems: (rubricId: string, itemIds: string[]) => void;
     // Document analysis results
     saveAnalysisResult: (result: DocumentAnalysisResult) => void;
     deleteAnalysisResult: (id: string) => void;
@@ -664,6 +675,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'DELETE_VOCABULARY_ITEM', rubricId, itemId });
     }, []);
 
+    const deleteVocabularyItems = useCallback((rubricId: string, itemIds: string[]) => {
+        dispatch({ type: 'DELETE_VOCABULARY_ITEMS_BATCH', rubricId, itemIds });
+    }, []);
+
     const saveAnalysisResult = useCallback((result: DocumentAnalysisResult) => {
         dispatch({ type: 'SAVE_ANALYSIS_RESULT', payload: result });
     }, []);
@@ -733,7 +748,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         saveSpeakingSession, deleteSpeakingSession,
         syncRubricSnapshot,
         saveRubricVersion, restoreRubricVersion,
-        addVocabularyItem, updateVocabularyItem, deleteVocabularyItem,
+        addVocabularyItem, updateVocabularyItem, deleteVocabularyItem, deleteVocabularyItems,
         saveAnalysisResult, deleteAnalysisResult,
         connectDatabase, disconnectDatabase, pushAllToDatabase, pullFromDatabase,
         loginMicrosoft, logoutMicrosoft, syncToOneDrive, restoreFromOneDrive,

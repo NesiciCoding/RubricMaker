@@ -49,7 +49,7 @@ export default function RubricBuilder() {
     const navigate = useNavigate();
     const { id } = useParams();
     const location = useLocation();
-    const { rubrics, studentRubrics, peerReviews, addRubric, updateRubric, syncRubricSnapshot, saveRubricVersion, restoreRubricVersion, gradeScales, settings, addVocabularyItem, updateVocabularyItem, deleteVocabularyItem } = useApp();
+    const { rubrics, studentRubrics, peerReviews, addRubric, updateRubric, syncRubricSnapshot, saveRubricVersion, restoreRubricVersion, gradeScales, settings, addVocabularyItem, updateVocabularyItem, deleteVocabularyItem, deleteVocabularyItems } = useApp();
 
     const existing = id ? rubrics.find(r => r.id === id) : undefined;
     const template = location.state?.template as Partial<Rubric> | undefined;
@@ -574,6 +574,7 @@ export default function RubricBuilder() {
                                         onAdd={item => addVocabularyItem(id, item)}
                                         onUpdate={item => updateVocabularyItem(id, item)}
                                         onDelete={itemId => deleteVocabularyItem(id, itemId)}
+                                        onDeleteMultiple={itemIds => deleteVocabularyItems(id, itemIds)}
                                     />
                                 </div>
                             )}
