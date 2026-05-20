@@ -2,7 +2,7 @@
  * Smoke tests for components that were at 0% coverage.
  */
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Attachment, VocabularyItem } from '../../types';
 import AttachmentViewer from '../AttachmentViewer';
@@ -127,6 +127,19 @@ describe('AttachmentViewer', () => {
         render(<AttachmentViewer attachment={makeAttachment('image/png', 'my-image.png')} />);
         expect(screen.getByText('my-image.png')).toBeInTheDocument();
     });
+
+    it('shows error message when docx rendering fails', async () => {
+        // Make fetch throw so the catch block in the useEffect fires
+        const origFetch = globalThis.fetch;
+        globalThis.fetch = vi.fn().mockRejectedValue(new Error('fetch failed'));
+        render(<AttachmentViewer attachment={makeAttachment(
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'doc.docx'
+        )} />);
+        await waitFor(() => {
+            expect(screen.getByText(/Failed to preview Word document/i)).toBeInTheDocument();
+        });
+        globalThis.fetch = origFetch;
+    });
 });
 
 // ─── VocabularyListEditor ─────────────────────────────────────────────────────
@@ -140,6 +153,7 @@ describe('VocabularyListEditor', () => {
         onAdd: noop,
         onUpdate: noop,
         onDelete: noop,
+        onDeleteMultiple: noop,
     };
 
     beforeEach(() => { vi.clearAllMocks(); });
