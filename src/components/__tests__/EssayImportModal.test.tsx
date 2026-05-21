@@ -108,8 +108,7 @@ describe('EssayImportModal', () => {
 
     it('close button calls onClose', () => {
         render(<EssayImportModal {...baseProps} />);
-        fireEvent.click(screen.getByRole('button', { name: '' }));
-        // The X icon button — use Cancel as alternate
+        fireEvent.click(screen.getByRole('button', { name: /close/i }));
     });
 
     it('cancel button calls onClose', () => {

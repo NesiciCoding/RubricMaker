@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { X, Upload, CheckCircle } from 'lucide-react';
 import { decodeEssaySubmission } from '../utils/essaySubmissionCode';
+import Modal from './Modal';
 import type { Attachment } from '../types';
 
 interface Props {
@@ -45,26 +46,25 @@ export default function EssayImportModal({ rubricId, studentId, studentName, onI
     }, [code, rubricId, studentId, studentName, onImport]);
 
     return (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
-            <div style={{ background: 'var(--bg)', borderRadius: 14, width: '100%', maxWidth: 500, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', overflow: 'hidden' }}>
+        <Modal titleId="essay-import-title" onClose={onClose} maxWidth={500}>
                 {/* Header */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <Upload size={18} style={{ color: 'var(--accent)' }} />
-                        <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>Import essay — {studentName}</h2>
+                        <Upload size={18} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                        <h2 id="essay-import-title" style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>Import essay — {studentName}</h2>
                     </div>
-                    <button className="btn btn-ghost btn-icon btn-sm" onClick={onClose}><X size={16} /></button>
+                    <button className="btn btn-ghost btn-icon btn-sm" onClick={onClose} aria-label="Close"><X size={16} /></button>
                 </div>
 
                 <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
                     {imported && meta ? (
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '16px 0', textAlign: 'center' }}>
-                            <CheckCircle size={40} style={{ color: '#16a34a' }} />
-                            <div style={{ fontWeight: 700, fontSize: '1rem', color: '#15803d' }}>Essay imported successfully!</div>
-                            <div style={{ fontSize: '0.875rem', color: '#475569' }}>
+                            <CheckCircle size={40} style={{ color: 'var(--green)' }} />
+                            <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--green)' }}>Essay imported successfully!</div>
+                            <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
                                 {meta.wordCount} words · submitted {new Date(meta.submittedAt).toLocaleString()}
                             </div>
-                            <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: 0 }}>
+                            <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)', margin: 0 }}>
                                 The essay has been added as an attachment. You can now view and analyse it in the Attachments panel.
                             </p>
                             <button className="btn btn-primary btn-sm" onClick={onClose}>Close</button>
@@ -85,7 +85,7 @@ export default function EssayImportModal({ rubricId, studentId, studentName, onI
                                 />
                             </div>
                             {error && (
-                                <div style={{ padding: '8px 12px', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, fontSize: '0.8rem', color: '#dc2626' }}>
+                                <div style={{ padding: '8px 12px', background: 'color-mix(in srgb, var(--red) 10%, transparent)', border: '1px solid var(--red)', borderRadius: 8, fontSize: '0.8rem', color: 'var(--red)' }}>
                                     {error}
                                 </div>
                             )}
@@ -98,7 +98,6 @@ export default function EssayImportModal({ rubricId, studentId, studentName, onI
                         </>
                     )}
                 </div>
-            </div>
-        </div>
+        </Modal>
     );
 }

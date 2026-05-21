@@ -1,17 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard, BookOpen, Users, FileText, Settings,
-    Download, MessageSquare, BarChart3, Layers, ChevronLeft, ChevronRight, Shield
+    Download, MessageSquare, BarChart3, Layers, ChevronLeft, ChevronRight, Shield, X
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
 
 const COLLAPSE_KEY = 'rm_sidebar_collapsed';
 
-export default function Sidebar() {
+interface SidebarProps {
+    mobileOpen?: boolean;
+    onMobileClose?: () => void;
+}
+
+export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
     const { t } = useTranslation();
     const { rubrics, students } = useApp();
+    const location = useLocation();
 
     const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === 'true');
 
@@ -20,6 +26,15 @@ export default function Sidebar() {
         document.documentElement.style.setProperty('--sidebar-w', w);
         localStorage.setItem(COLLAPSE_KEY, String(collapsed));
     }, [collapsed]);
+
+    // Auto-close mobile drawer on navigation
+    useEffect(() => {
+        if (mobileOpen && onMobileClose) {
+            onMobileClose();
+        }
+        // We intentionally only depend on location — not mobileOpen/onMobileClose
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [location]);
 
     const navItems = [
         { to: '/', icon: LayoutDashboard, label: t('navigation.dashboard'), end: true },
@@ -32,7 +47,19 @@ export default function Sidebar() {
     ];
 
     return (
-        <aside className="sidebar" data-collapsed={collapsed ? 'true' : undefined} style={{ width: collapsed ? 64 : 260 }}>
+        <>
+            {/* Mobile backdrop — click to close drawer */}
+            <div
+                className={`sidebar-backdrop${mobileOpen ? ' visible' : ''}`}
+                onClick={onMobileClose}
+                aria-hidden="true"
+            />
+        <aside
+            className={`sidebar${mobileOpen ? ' mobile-open' : ''}`}
+            data-collapsed={collapsed ? 'true' : undefined}
+            style={{ width: collapsed ? 64 : 260 }}
+            aria-hidden={undefined /* always visible on desktop; CSS handles mobile */}
+        >
             {/* Logo + collapse toggle */}
             <div className="sidebar-logo" style={{ justifyContent: collapsed ? 'center' : 'space-between', padding: collapsed ? '18px 14px' : '18px 16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, overflow: 'hidden' }}>
@@ -41,8 +68,17 @@ export default function Sidebar() {
                     </div>
                     {!collapsed && <span style={{ fontWeight: 700, fontSize: '0.95rem', whiteSpace: 'nowrap' }}>Rubric Maker</span>}
                 </div>
+                {/* On mobile, show close (✕) button; on desktop, show collapse toggle */}
                 <button
-                    className="btn btn-ghost btn-icon btn-sm"
+                    className="btn btn-ghost btn-icon btn-sm sidebar-close-btn"
+                    onClick={onMobileClose}
+                    aria-label="Close navigation menu"
+                    style={{ flexShrink: 0 }}
+                >
+                    <X size={15} />
+                </button>
+                <button
+                    className="btn btn-ghost btn-icon btn-sm sidebar-collapse-btn"
                     onClick={() => setCollapsed(c => !c)}
                     title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
                     style={{ flexShrink: 0, marginLeft: collapsed ? 0 : 4 }}
@@ -60,10 +96,11 @@ export default function Sidebar() {
                         end={end}
                         className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
                         data-tour={to}
-                        title={collapsed ? label : undefined}
+                        aria-label={collapsed ? label : undefined}
+                        data-tooltip={collapsed ? label : undefined}
                         style={collapsed ? { justifyContent: 'center', padding: '10px 0' } : undefined}
                     >
-                        <Icon size={16} />
+                        <Icon size={16} aria-hidden="true" />
                         {!collapsed && label}
                     </NavLink>
                 ))}
@@ -90,22 +127,25 @@ export default function Sidebar() {
                     to="/settings"
                     className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
                     data-tour="/settings"
-                    title={collapsed ? t('common.settings') : undefined}
+                    aria-label={collapsed ? t('common.settings') : undefined}
+                    data-tooltip={collapsed ? t('common.settings') : undefined}
                     style={collapsed ? { justifyContent: 'center', padding: '10px 0' } : undefined}
                 >
-                    <Settings size={16} />
+                    <Settings size={16} aria-hidden="true" />
                     {!collapsed && t('common.settings')}
                 </NavLink>
                 <NavLink
                     to="/privacy"
                     className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-                    title={collapsed ? 'Privacy & AVG' : undefined}
+                    aria-label={collapsed ? 'Privacy & AVG' : undefined}
+                    data-tooltip={collapsed ? 'Privacy & AVG' : undefined}
                     style={collapsed ? { justifyContent: 'center', padding: '10px 0' } : undefined}
                 >
-                    <Shield size={16} />
+                    <Shield size={16} aria-hidden="true" />
                     {!collapsed && 'Privacy & AVG'}
                 </NavLink>
             </div>
         </aside>
+        </>
     );
 }

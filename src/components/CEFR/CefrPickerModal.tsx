@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { X, Search, Plus, Check, BookOpen, ChevronDown, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import Modal from '../Modal';
 import {
     CEFR_LEVELS,
     CEFR_SKILLS,
@@ -74,18 +75,17 @@ export default function CefrPickerModal({ linkedDescriptors, onAdd, onRemove, on
     }
 
     return (
-        <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-            <div className="modal" role="dialog" aria-modal="true" aria-label="CEFR Level Picker" style={{ maxWidth: 720, width: '95vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column', padding: 0 }} onClick={e => e.stopPropagation()}>
+        <Modal titleId="cefr-picker-title" onClose={onClose} maxWidth={720} style={{ width: '95vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column', padding: 0 }}>
                 {/* Header */}
                 <div className="modal-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <BookOpen size={18} style={{ color: 'var(--accent)' }} />
+                        <BookOpen size={18} style={{ color: 'var(--accent)' }} aria-hidden="true" />
                         <div>
-                            <div style={{ fontWeight: 600, fontSize: 15 }}>{t('cefr.picker_title')}</div>
+                            <div id="cefr-picker-title" style={{ fontWeight: 600, fontSize: 15 }}>{t('cefr.picker_title')}</div>
                             <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('cefr.picker_subtitle')}</div>
                         </div>
                     </div>
-                    <button className="btn btn-ghost btn-sm btn-icon" onClick={onClose}><X size={16} /></button>
+                    <button className="btn btn-ghost btn-sm btn-icon" onClick={onClose} aria-label="Close"><X size={16} /></button>
                 </div>
 
                 {/* Filters */}
@@ -243,7 +243,6 @@ export default function CefrPickerModal({ linkedDescriptors, onAdd, onRemove, on
                     </span>
                     <button className="btn btn-primary btn-sm" onClick={onClose}>{t('common.save')}</button>
                 </div>
-            </div>
-        </div>
+        </Modal>
     );
 }

@@ -505,6 +505,9 @@ describe('SettingsPage — deeper', () => {
 
     it('renders grade scale section with Letter grade', () => {
         renderPage(<SettingsPage />);
+        // Grade scales are on the Teaching tab — navigate there first
+        const teachingTab = screen.queryByRole('button', { name: /teaching/i });
+        if (teachingTab) fireEvent.click(teachingTab);
         expect(screen.queryAllByText('Letter').length).toBeGreaterThan(0);
     });
 

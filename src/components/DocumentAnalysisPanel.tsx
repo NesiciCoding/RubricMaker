@@ -24,9 +24,9 @@ type Phase = 'select' | 'analysing' | 'done' | 'error';
 
 const CATEGORY_COLORS: Record<string, string> = {
     vocabulary: 'var(--accent)',
-    grammar: '#22c55e',
-    discourse: '#f59e0b',
-    other: '#8b5cf6',
+    grammar: 'var(--green)',
+    discourse: 'var(--yellow)',
+    other: 'var(--purple)',
 };
 
 export default function DocumentAnalysisPanel({
@@ -194,7 +194,7 @@ export default function DocumentAnalysisPanel({
                                     </select>
                                     {isAudioVideo && (
                                         <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginTop: 10, padding: '10px 12px', background: 'var(--bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
-                                            <AlertTriangle size={15} style={{ color: '#f59e0b', flexShrink: 0, marginTop: 1 }} />
+                                            <AlertTriangle size={15} style={{ color: 'var(--yellow)', flexShrink: 0, marginTop: 1 }} />
                                             <p className="text-xs text-muted" style={{ margin: 0 }}>
                                                 {t('analysis.audio_video_note', 'Audio and video files cannot be automatically transcribed (no server-side processing). Use "Paste transcript" to analyse the spoken content.')}
                                             </p>
@@ -249,18 +249,27 @@ export default function DocumentAnalysisPanel({
                     {/* Error */}
                     {phase === 'error' && (
                         <div style={{ padding: '12px 16px', background: 'rgba(239,68,68,0.08)', borderRadius: 8, border: '1px solid rgba(239,68,68,0.3)' }}>
-                            <p style={{ margin: 0, color: '#ef4444', fontSize: '0.9rem' }}>{errorMsg}</p>
+                            <p style={{ margin: 0, color: 'var(--red)', fontSize: '0.9rem' }}>{errorMsg}</p>
                         </div>
                     )}
 
                     {/* Progress */}
                     {phase === 'analysing' && (
                         <div className="card" style={{ padding: 16, textAlign: 'center' }}>
-                            <p style={{ marginBottom: 12, fontWeight: 600 }}>{progressStatus || t('analysis.analysing', 'Analysing…')}</p>
-                            <div style={{ height: 8, background: 'var(--bg)', borderRadius: 4, overflow: 'hidden' }}>
+                            <p style={{ marginBottom: 12, fontWeight: 600 }} aria-live="polite" aria-atomic="true">
+                                {progressStatus || t('analysis.analysing', 'Analysing…')}
+                            </p>
+                            <div
+                                role="progressbar"
+                                aria-valuenow={progress}
+                                aria-valuemin={0}
+                                aria-valuemax={100}
+                                aria-label={t('analysis.analysing', 'Analysing…')}
+                                style={{ height: 8, background: 'var(--bg)', borderRadius: 4, overflow: 'hidden' }}
+                            >
                                 <div style={{ height: '100%', width: `${progress}%`, background: 'var(--accent)', borderRadius: 4, transition: 'width 0.3s' }} />
                             </div>
-                            <p className="text-xs text-muted" style={{ marginTop: 8 }}>{progress}%</p>
+                            <p className="text-xs text-muted" style={{ marginTop: 8 }} aria-hidden="true">{progress}%</p>
                         </div>
                     )}
 
@@ -386,7 +395,7 @@ export default function DocumentAnalysisPanel({
                                         {result.grammarErrors.slice(0, 20).map((err, i) => (
                                             <div key={i} className="card" style={{ padding: '10px 14px', borderLeft: '3px solid #f59e0b' }}>
                                                 <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                                                    <AlertTriangle size={15} style={{ color: '#f59e0b', flexShrink: 0, marginTop: 2 }} />
+                                                    <AlertTriangle size={15} style={{ color: 'var(--yellow)', flexShrink: 0, marginTop: 2 }} />
                                                     <div>
                                                         <p style={{ margin: 0, fontSize: '0.875rem' }}>{err.message}</p>
                                                         {err.suggestions.length > 0 && (
