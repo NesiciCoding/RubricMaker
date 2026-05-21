@@ -381,4 +381,59 @@ describe('gradeCalc utilities', () => {
             expect(applyModifier(80, { type: 'unknown' as any, value: 5, reason: '' })).toBe(80);
         });
     });
+
+    describe('calcWeightedScore — maxPoints === 0 branch', () => {
+        it('skips criteria where all level maxPoints are 0', () => {
+            const criteria: RubricCriterion[] = [
+                {
+                    id: 'c1', title: 'Normal', description: '', weight: 50,
+                    levels: [{ id: 'l1', label: 'A', minPoints: 0, maxPoints: 10, description: '', subItems: [] }],
+                },
+                {
+                    id: 'c2', title: 'Zero-max', description: '', weight: 50,
+                    // All levels have maxPoints: 0 — this criterion must be skipped
+                    levels: [{ id: 'l2', label: 'B', minPoints: 0, maxPoints: 0, description: '', subItems: [] }],
+                },
+            ];
+            const entries: ScoreEntry[] = [
+                { criterionId: 'c1', levelId: 'l1', checkedSubItems: [], comment: '', selectedPoints: 5 },
+                { criterionId: 'c2', levelId: 'l2', checkedSubItems: [], comment: '' },
+            ];
+            // Only c1 contributes: 5/10 * 50 = 25; totalWeight is 100 but only c1's weight=50 matters
+            // calcWeightedScore: weightedSum = (5/10)*50 = 25; totalWeight = 100
+            // Result: (25/100)*100 = 25
+            expect(calcWeightedScore(entries, criteria)).toBe(25);
+        });
+    });
+
+    describe('calcClassStats — additional branches', () => {
+        const mockScale: GradeScale = {
+            id: 's1', type: 'letter', name: 'Scale',
+            ranges: [
+                { min: 80, max: 100, label: 'High', color: '#1' },
+                { min: 0, max: 79, label: 'Low', color: '#2' }
+            ]
+        };
+
+        it('returns empty distribution when scale is null', () => {
+            const summaries: any[] = [
+                { modifiedPercentage: 80 },
+                { modifiedPercentage: 90 },
+            ];
+            const stats = calcClassStats(summaries, null);
+            expect(stats.distribution).toEqual([]);
+            expect(stats.average).toBe(85);
+        });
+
+        it('calculates median correctly for an odd number of scores', () => {
+            const summaries: any[] = [
+                { modifiedPercentage: 70 },
+                { modifiedPercentage: 80 },
+                { modifiedPercentage: 90 },
+            ];
+            const stats = calcClassStats(summaries, mockScale);
+            // Sorted: [70, 80, 90], mid = 1 → median = scores[1] = 80
+            expect(stats.median).toBe(80);
+        });
+    });
 });

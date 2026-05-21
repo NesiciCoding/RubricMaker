@@ -55,6 +55,18 @@ describe('checkGrammar — LanguageTool path', () => {
         expect(result.textWasTruncated).toBe(false);
     });
 
+    it('reports textWasTruncated as true and truncates text exceeding 20 KB', async () => {
+        (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+            ok: true,
+            status: 200,
+            json: vi.fn().mockResolvedValue({ matches: [] }),
+        });
+        // 25 000 ASCII chars = 25 000 bytes — well above the 20 480-byte limit
+        const longText = 'a'.repeat(25_000);
+        const result = await checkGrammar(longText);
+        expect(result.textWasTruncated).toBe(true);
+    });
+
     it('caps suggestions at 3', async () => {
         (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
             ok: true,
