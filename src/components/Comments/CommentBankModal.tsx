@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { X, Plus, Search, Trash2, Edit2, Tag, Check, Save } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { CommentBankItem } from '../../types';
+import Modal from '../Modal';
 
 interface CommentBankModalProps {
     onClose: () => void;
@@ -72,11 +73,10 @@ export default function CommentBankModal({ onClose, onSelect }: CommentBankModal
     };
 
     return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div className="modal" role="dialog" aria-modal="true" aria-label="Comment Bank" onClick={e => e.stopPropagation()} style={{ width: 600, maxWidth: '95vw', display: 'flex', flexDirection: 'column', maxHeight: '85vh' }}>
+        <Modal titleId="comment-bank-title" onClose={onClose} maxWidth={600} style={{ display: 'flex', flexDirection: 'column', maxHeight: '85vh' }}>
                 <div className="modal-header">
-                    <h3>Comment Bank</h3>
-                    <button className="btn btn-ghost btn-icon" onClick={onClose}><X size={18} /></button>
+                    <h3 id="comment-bank-title">Comment Bank</h3>
+                    <button className="btn btn-ghost btn-icon" onClick={onClose} aria-label="Close"><X size={18} /></button>
                 </div>
 
                 <div className="modal-body" style={{ padding: 0, display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
@@ -180,7 +180,6 @@ export default function CommentBankModal({ onClose, onSelect }: CommentBankModal
                         )}
                     </div>
                 </div>
-            </div>
-        </div>
+        </Modal>
     );
 }

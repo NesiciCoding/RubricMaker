@@ -3,6 +3,7 @@ import { X, Copy, Download, Check, FileText } from 'lucide-react';
 import { saveAs } from 'file-saver';
 import { encodeEssayAssignment } from '../utils/essayShareCode';
 import { nanoid } from '../utils/nanoid';
+import Modal from './Modal';
 import type { EssayAssignment } from '../types';
 
 interface Props {
@@ -93,15 +94,14 @@ export default function EssayAssignmentModal({ rubricId, rubricName, studentId, 
     }, [buildAssignment, studentId, classStudents, onOpenSlipSheet, onClose]);
 
     return (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
-            <div style={{ background: 'var(--bg)', borderRadius: 14, width: '100%', maxWidth: 560, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', overflow: 'hidden' }}>
+        <Modal titleId="essay-assignment-title" onClose={onClose} maxWidth={560}>
                 {/* Header */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <FileText size={18} style={{ color: 'var(--accent)' }} />
-                        <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>Essay Assignment — {studentName}</h2>
+                        <FileText size={18} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                        <h2 id="essay-assignment-title" style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>Essay Assignment — {studentName}</h2>
                     </div>
-                    <button className="btn btn-ghost btn-icon btn-sm" onClick={onClose}><X size={16} /></button>
+                    <button className="btn btn-ghost btn-icon btn-sm" onClick={onClose} aria-label="Close"><X size={16} /></button>
                 </div>
 
                 <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14, maxHeight: '70vh', overflowY: 'auto' }}>
@@ -173,7 +173,6 @@ export default function EssayAssignmentModal({ rubricId, rubricName, studentId, 
                         {copied ? 'Link copied!' : 'Copy link'}
                     </button>
                 </div>
-            </div>
-        </div>
+        </Modal>
     );
 }

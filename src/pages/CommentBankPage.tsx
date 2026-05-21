@@ -92,8 +92,18 @@ export default function CommentBankPage() {
 
                 {filtered.length === 0 ? (
                     <div className="empty-state">
-                        <MessageSquare size={32} />
-                        <p>No snippets yet. Add some above for one-click insertion while grading.</p>
+                        <MessageSquare size={40} />
+                        <h3>{filterTag === 'all' && !searchTerm ? 'No snippets yet' : 'No snippets match your filters'}</h3>
+                        <p className="text-muted text-sm">
+                            {filterTag === 'all' && !searchTerm
+                                ? 'Save reusable feedback phrases here for one-click insertion while grading.'
+                                : 'Try clearing the search or changing the tag filter.'}
+                        </p>
+                        {filterTag === 'all' && !searchTerm && (
+                            <button className="btn btn-primary btn-sm" onClick={() => { const el = document.querySelector('textarea'); el?.focus(); }}>
+                                <Plus size={14} /> Create your first snippet
+                            </button>
+                        )}
                     </div>
                 ) : (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>

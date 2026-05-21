@@ -318,6 +318,9 @@ export interface CommentSnippet {
     tag: string;
 }
 
+/** Role controlling which settings a user can access */
+export type UserRole = 'admin' | 'user' | 'student';
+
 export interface AppSettings {
     defaultGradeScaleId: string;
     theme: 'light' | 'dark';
@@ -343,6 +346,17 @@ export interface AppSettings {
     microsoftClientId?: string;
     microsoftTenantId?: string;
     microsoftLastSyncAt?: string;
+    /**
+     * Active role — determines which settings sections are visible/editable.
+     * Defaults to 'admin' so existing installs are unaffected.
+     */
+    userRole?: UserRole;
+    /**
+     * Password required to switch back to admin from a lower-privilege role.
+     * Stored as plain text; this is UI access control, not cryptographic security.
+     * If undefined, no password is required.
+     */
+    adminPin?: string;
 }
 
 export interface CommentBankItem {

@@ -221,8 +221,8 @@ describe('CommentBankModal', () => {
     });
 
     it('renders with onSelect callback', () => {
-        const { container } = render(<CommentBankModal onClose={vi.fn()} onSelect={vi.fn()} />);
-        expect(container.firstChild).toBeTruthy();
+        render(<CommentBankModal onClose={vi.fn()} onSelect={vi.fn()} />);
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
 
     it('clicking New button shows editor form', () => {
@@ -314,14 +314,14 @@ describe('CommentBankModal', () => {
 
 describe('ImportRubricModal', () => {
     it('renders upload stage initially', () => {
-        const { container } = render(<ImportRubricModal onClose={vi.fn()} onImport={vi.fn()} />);
-        expect(container.firstChild).toBeTruthy();
+        render(<ImportRubricModal onClose={vi.fn()} onImport={vi.fn()} />);
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
 
     it('shows drag/drop area', () => {
         render(<ImportRubricModal onClose={vi.fn()} onImport={vi.fn()} />);
         // Should show some upload/drag UI
-        expect(screen.getByRole('button', { name: '' }) || true).toBeTruthy();
+        expect(screen.getByRole('button', { name: /close/i }) || true).toBeTruthy();
     });
 });
 
@@ -329,13 +329,13 @@ describe('ImportRubricModal', () => {
 
 describe('TemplateUploadModal', () => {
     it('renders upload area', () => {
-        const { container } = render(<TemplateUploadModal onClose={vi.fn()} onSave={vi.fn()} />);
-        expect(container.firstChild).toBeTruthy();
+        render(<TemplateUploadModal onClose={vi.fn()} onSave={vi.fn()} />);
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
 
     it('shows template name label', () => {
-        const { container } = render(<TemplateUploadModal onClose={vi.fn()} onSave={vi.fn()} />);
-        expect(container.firstChild).toBeTruthy();
+        render(<TemplateUploadModal onClose={vi.fn()} onSave={vi.fn()} />);
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
 });
 
@@ -350,8 +350,8 @@ describe('CefrPickerModal', () => {
     };
 
     it('renders without crash', () => {
-        const { container } = render(<CefrPickerModal {...baseProps} />);
-        expect(container.firstChild).toBeTruthy();
+        render(<CefrPickerModal {...baseProps} />);
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
 
     it('shows skill filter buttons', () => {
@@ -380,10 +380,8 @@ describe('CefrPickerModal', () => {
 
 describe('StandardsPickerModal', () => {
     it('renders without crash', () => {
-        const { container } = render(
-            <StandardsPickerModal apiKey="test-key" onSelect={vi.fn()} onClose={vi.fn()} />
-        );
-        expect(container.firstChild).toBeTruthy();
+        render(<StandardsPickerModal apiKey="test-key" onSelect={vi.fn()} onClose={vi.fn()} />);
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
 
     it('shows Browse and Favorites tabs', () => {
@@ -408,14 +406,12 @@ describe('CsvImportModal', () => {
     }
 
     it('renders without crash', () => {
-        const { container } = render(
-            <CsvImportModal file={makeFile()} onClose={vi.fn()} onSuccess={vi.fn()} />
-        );
-        expect(container.firstChild).toBeTruthy();
+        render(<CsvImportModal file={makeFile()} onClose={vi.fn()} onSuccess={vi.fn()} />);
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
 
     it('shows header mapping UI after parse', () => {
-        const { container } = render(<CsvImportModal file={makeFile()} onClose={vi.fn()} onSuccess={vi.fn()} />);
-        expect(container.firstChild).toBeTruthy();
+        render(<CsvImportModal file={makeFile()} onClose={vi.fn()} onSuccess={vi.fn()} />);
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
 });

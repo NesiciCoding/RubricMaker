@@ -51,9 +51,9 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
 }
 
 const TYPE_STYLES: Record<ToastType, { bg: string; border: string; icon: string }> = {
-    success: { bg: '#166534', border: '#22c55e', icon: '✓' },
-    error:   { bg: '#7f1d1d', border: '#ef4444', icon: '✕' },
-    info:    { bg: '#1e3a5f', border: '#3b82f6', icon: 'ℹ' },
+    success: { bg: 'color-mix(in srgb, var(--green) 18%, var(--bg-elevated))', border: 'var(--green)', icon: '✓' },
+    error:   { bg: 'color-mix(in srgb, var(--red) 18%, var(--bg-elevated))', border: 'var(--red)', icon: '✕' },
+    info:    { bg: 'color-mix(in srgb, var(--accent) 18%, var(--bg-elevated))', border: 'var(--accent)', icon: 'ℹ' },
 };
 
 function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: number) => void }) {
@@ -69,7 +69,7 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: number)
                 borderRadius: '0.5rem',
                 background: s.bg,
                 border: `1px solid ${s.border}`,
-                color: '#f1f5f9',
+                color: 'var(--text)',
                 fontSize: '0.875rem',
                 lineHeight: '1.4',
                 boxShadow: '0 4px 12px rgba(0,0,0,0.4)',

@@ -1,8 +1,9 @@
-import React, { Suspense, lazy, useMemo } from 'react';
+import React, { Suspense, lazy, useMemo, useState } from 'react';
 import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import Sidebar from './components/Layout/Sidebar';
 import Joyride, { CallBackProps, STATUS } from 'react-joyride';
 import { useApp } from './context/AppContext';
+import { MobileMenuContext } from './context/MobileMenuContext';
 import { getTutorialSteps } from './components/TutorialSteps';
 import { useTranslation } from 'react-i18next';
 import { Loader } from 'lucide-react';
@@ -32,8 +33,8 @@ function GradeStudentRoute() {
 
 const Spinner = () => {
     return (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
-            <Loader className="spin" size={24} style={{ color: 'var(--text-muted)' }} />
+        <div role="status" aria-label="Loading" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
+            <Loader className="spin" size={24} aria-hidden="true" style={{ color: 'var(--text-muted)' }} />
         </div>
     );
 };
@@ -41,6 +42,7 @@ const Spinner = () => {
 export default function App() {
     const { settings, updateSettings } = useApp();
     const { t, i18n } = useTranslation();
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     const steps = useMemo(() => getTutorialSteps(t), [t, i18n.language]);
 
@@ -53,6 +55,7 @@ export default function App() {
     };
 
     return (
+        <MobileMenuContext.Provider value={{ open: () => setMobileMenuOpen(true) }}>
         <div className="app-layout">
             <a href="#main-content" className="skip-nav">Skip to main content</a>
             <Joyride
@@ -76,7 +79,7 @@ export default function App() {
                     }
                 }}
             />
-            <Sidebar />
+            <Sidebar mobileOpen={mobileMenuOpen} onMobileClose={() => setMobileMenuOpen(false)} />
             <div className="main-area" id="main-content">
                 <Suspense fallback={<Spinner />}>
                     <Routes>
@@ -102,5 +105,6 @@ export default function App() {
                 </Suspense>
             </div>
         </div>
+        </MobileMenuContext.Provider>
     );
 }

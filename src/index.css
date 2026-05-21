@@ -279,6 +279,38 @@ h3 {
   flex-shrink: 0;
 }
 
+/* Sidebar tooltip for collapsed state — visible on hover and keyboard focus */
+.nav-item[data-tooltip] {
+  position: relative;
+}
+
+.nav-item[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 500;
+  white-space: nowrap;
+  padding: 5px 10px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 500;
+  role: tooltip;
+}
+
+.nav-item[data-tooltip]:hover::after,
+.nav-item[data-tooltip]:focus-visible::after {
+  opacity: 1;
+}
+
 .sidebar-footer {
   padding: 12px 8px;
   border-top: 1px solid var(--border);
@@ -571,24 +603,27 @@ select option {
 }
 
 /* ─── Modal ─────────────────────────────────────────────────────────────────── */
+/* Radix Dialog renders Overlay and Content as siblings in a portal, so the
+   overlay is a pure backdrop and the modal box uses fixed centering. */
 .modal-overlay {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   z-index: 1000;
-  padding: 20px;
   backdrop-filter: blur(4px);
 }
 
 .modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1001;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
-  width: 100%;
+  width: calc(100% - 40px);
   max-width: 640px;
   max-height: 90vh;
   overflow-y: auto;
@@ -832,10 +867,77 @@ select option {
   }
 }
 
+/* ─── Mobile hamburger / slide-in drawer ────────────────────────────────────── */
+
+/* Hamburger button inside Topbar — hidden on desktop, shown on mobile */
+.topbar-menu-btn {
+  display: none;
+}
+
+/* Mobile backdrop — hidden by default */
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 399;
+}
+
+/* Mobile close button in sidebar header — hidden on desktop */
+.sidebar-close-btn {
+  display: none;
+}
+
+/* Desktop collapse button — always visible on desktop */
+.sidebar-collapse-btn {
+  display: flex;
+}
+
 /* ─── Responsive ─────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
+  /* Show hamburger in topbar */
+  .topbar-menu-btn {
+    display: flex;
+  }
+
+  /* Show backdrop when drawer is open */
+  .sidebar-backdrop.visible {
+    display: block;
+  }
+
+  /* Sidebar becomes a fixed overlay drawer */
   .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 400;
+    width: 260px !important;  /* always fully expanded on mobile */
+    transform: translateX(-100%);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  /* Show close button, hide collapse toggle */
+  .sidebar-close-btn {
+    display: flex;
+  }
+
+  .sidebar-collapse-btn {
     display: none;
+  }
+
+  /* Content area takes full width (sidebar is overlaid, not in-flow) */
+  .app-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .main-area {
+    margin-left: 0 !important;
+    width: 100%;
   }
 
   .page-content {
@@ -843,17 +945,134 @@ select option {
   }
 }
 
+/* ─── Settings tabs ──────────────────────────────────────────────────────────── */
+.settings-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+
+.settings-tab {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  border-radius: var(--radius) var(--radius) 0 0;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.settings-tab:hover {
+  color: var(--text);
+  background: var(--bg-elevated);
+}
+
+.settings-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.settings-tab.tab-locked {
+  color: var(--text-dim);
+}
+
+.settings-tab.tab-locked:hover {
+  color: var(--text-muted);
+}
+
+/* Role badge */
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.role-badge-admin {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.role-badge-user {
+  background: color-mix(in srgb, var(--green) 15%, transparent);
+  color: var(--green);
+  border: 1px solid color-mix(in srgb, var(--green) 35%, transparent);
+}
+
+.role-badge-student {
+  background: color-mix(in srgb, var(--yellow) 15%, transparent);
+  color: var(--yellow);
+  border: 1px solid color-mix(in srgb, var(--yellow) 35%, transparent);
+}
+
+/* Admin lock overlay on card */
+.admin-locked-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 48px 24px;
+  text-align: center;
+}
+
 /* ─── Utility ────────────────────────────────────────────────────────────────── */
 .flex {
   display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
 }
 
 .items-center {
   align-items: center;
 }
 
+.items-start {
+  align-items: flex-start;
+}
+
 .justify-between {
   justify-content: space-between;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.justify-end {
+  justify-content: flex-end;
+}
+
+.shrink-0 {
+  flex-shrink: 0;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.gap-1 {
+  gap: 4px;
 }
 
 .gap-2 {
@@ -868,12 +1087,32 @@ select option {
   gap: 16px;
 }
 
+.gap-6 {
+  gap: 24px;
+}
+
+.mt-2 {
+  margin-top: 8px;
+}
+
+.mt-3 {
+  margin-top: 12px;
+}
+
 .mt-4 {
   margin-top: 16px;
 }
 
 .mt-6 {
   margin-top: 24px;
+}
+
+.mb-2 {
+  margin-bottom: 8px;
+}
+
+.mb-3 {
+  margin-bottom: 12px;
 }
 
 .mb-4 {

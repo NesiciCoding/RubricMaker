@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Upload, FileText, AlertTriangle, CheckCircle, X, Loader, ChevronRight } from 'lucide-react';
 import type { ParsedRubric } from '../utils/rubricImport';
+import Modal from './Modal';
 import { parseDocxToRubric, parsePdfToRubric, parseJsonToRubric } from '../utils/rubricImport';
 import type { RubricCriterion, RubricLevel } from '../types';
 
@@ -79,13 +80,12 @@ export default function ImportRubricModal({ onClose, onImport }: Props) {
     };
 
     return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div className="modal" role="dialog" aria-modal="true" aria-label="Import Rubric" style={{ maxWidth: 680, width: '95vw' }} onClick={e => e.stopPropagation()}>
+        <Modal titleId="import-rubric-title" onClose={onClose} maxWidth={680} style={{ width: '95vw' }}>
                 <div className="modal-header">
-                    <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <Upload size={18} /> Import Rubric
+                    <h3 id="import-rubric-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Upload size={18} aria-hidden="true" /> Import Rubric
                     </h3>
-                    <button className="btn btn-ghost btn-icon" onClick={onClose}><X size={16} /></button>
+                    <button className="btn btn-ghost btn-icon" onClick={onClose} aria-label="Close"><X size={16} /></button>
                 </div>
 
                 <div className="modal-body">
@@ -245,7 +245,6 @@ export default function ImportRubricModal({ onClose, onImport }: Props) {
                         </button>
                     )}
                 </div>
-            </div>
-        </div>
+        </Modal>
     );
 }

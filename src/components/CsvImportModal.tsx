@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Papa from 'papaparse';
 import { Upload, ChevronRight, CheckCircle, X, AlertTriangle, Table } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import Modal from './Modal';
 
 interface Props {
     file: File;
@@ -145,13 +146,12 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
     const previewRows = getPreviewRows();
 
     return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div className="modal" style={{ maxWidth: 640 }} onClick={e => e.stopPropagation()}>
+        <Modal titleId="csv-import-title" onClose={onClose} maxWidth={640}>
                 <div className="modal-header">
-                    <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <Upload size={18} /> Map CSV Columns
+                    <h3 id="csv-import-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Upload size={18} aria-hidden="true" /> Map CSV Columns
                     </h3>
-                    <button className="btn btn-ghost btn-icon" onClick={onClose}><X size={16} /></button>
+                    <button className="btn btn-ghost btn-icon" onClick={onClose} aria-label="Close"><X size={16} /></button>
                 </div>
 
                 <div className="modal-body">
@@ -245,7 +245,6 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                         </button>
                     )}
                 </div>
-            </div>
-        </div>
+        </Modal>
     );
 }

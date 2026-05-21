@@ -321,8 +321,11 @@ export default function StudentsPage() {
                         </div>
                         {filteredStudents.length === 0 ? (
                             <div className="empty-state">
-                                <UsersIcon size={32} />
-                                <p>{studentSearch ? t('studentsPage.no_students_match') : t('studentsPage.no_students')}</p>
+                                <UsersIcon size={40} />
+                                <h3>{studentSearch ? t('studentsPage.no_students_match') : t('studentsPage.no_students')}</h3>
+                                {!studentSearch && (
+                                    <p className="text-muted text-sm">{t('studentsPage.add_student_hint', 'Add students to this class to start grading.')}</p>
+                                )}
                                 {!studentSearch && <button className="btn btn-primary btn-sm" onClick={() => setShowAddModal(true)}>
                                     <Plus size={14} /> {t('studentsPage.add_student')}
                                 </button>}
@@ -393,24 +396,24 @@ export default function StudentsPage() {
 
                 {showAddModal && (
                     <div className="modal-overlay" onClick={() => { setShowAddModal(false); setEditStudent(null); }}>
-                        <div className="modal" onClick={e => e.stopPropagation()}>
+                        <div className="modal" role="dialog" aria-modal="true" aria-labelledby="student-modal-title" onClick={e => e.stopPropagation()}>
                             <div className="modal-header">
-                                <h3>{editStudent ? t('studentsPage.edit_student_title') : t('studentsPage.add_student_title')}</h3>
-                                <button className="btn btn-ghost btn-icon" onClick={() => { setShowAddModal(false); setEditStudent(null); }}>✕</button>
+                                <h3 id="student-modal-title">{editStudent ? t('studentsPage.edit_student_title') : t('studentsPage.add_student_title')}</h3>
+                                <button className="btn btn-ghost btn-icon" onClick={() => { setShowAddModal(false); setEditStudent(null); }} aria-label={t('common.close', 'Close')}>✕</button>
                             </div>
                             <div className="modal-body">
                                 <div className="form-group" style={{ marginBottom: 12 }}>
-                                    <label>{t('studentsPage.form_full_name')}</label>
-                                    <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder={t('studentsPage.form_name_placeholder')} autoFocus />
+                                    <label htmlFor="student-name">{t('studentsPage.form_full_name')}</label>
+                                    <input id="student-name" type="text" value={name} onChange={e => setName(e.target.value)} placeholder={t('studentsPage.form_name_placeholder')} autoFocus />
                                 </div>
                                 <div className="form-group" style={{ marginBottom: 12 }}>
-                                    <label>{t('studentsPage.form_email')}</label>
-                                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={t('studentsPage.form_email_placeholder')} />
+                                    <label htmlFor="student-email">{t('studentsPage.form_email')}</label>
+                                    <input id="student-email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={t('studentsPage.form_email_placeholder')} />
                                 </div>
                                 {editStudent && (
                                     <div className="form-group">
-                                        <label>{t('studentsPage.form_class')}</label>
-                                        <select value={editStudentClassId} onChange={e => setEditStudentClassId(e.target.value)}>
+                                        <label htmlFor="student-class">{t('studentsPage.form_class')}</label>
+                                        <select id="student-class" value={editStudentClassId} onChange={e => setEditStudentClassId(e.target.value)}>
                                             {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                         </select>
                                     </div>

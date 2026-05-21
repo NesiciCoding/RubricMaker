@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Plus, Trash2, Upload, ChevronDown, Square, CheckSquare } from 'lucide-react';
+import { Plus, Trash2, Upload, ChevronDown, Square, CheckSquare, BookOpen, SpellCheck, MessagesSquare, Tag } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { VocabularyItem, VocabularyCategory, RubricCriterion } from '../types';
 import { nanoid } from '../utils/nanoid';
@@ -18,9 +18,16 @@ const CATEGORIES: VocabularyCategory[] = ['vocabulary', 'grammar', 'discourse', 
 
 const CATEGORY_COLORS: Record<VocabularyCategory, string> = {
     vocabulary: 'var(--accent)',
-    grammar: '#22c55e',
-    discourse: '#f59e0b',
-    other: '#8b5cf6',
+    grammar: 'var(--green)',
+    discourse: 'var(--yellow)',
+    other: 'var(--purple)',
+};
+
+const CATEGORY_ICONS: Record<VocabularyCategory, React.ReactNode> = {
+    vocabulary: <BookOpen size={12} aria-hidden="true" />,
+    grammar: <SpellCheck size={12} aria-hidden="true" />,
+    discourse: <MessagesSquare size={12} aria-hidden="true" />,
+    other: <Tag size={12} aria-hidden="true" />,
 };
 
 export default function VocabularyListEditor({ rubricId: _rubricId, items, criteria, onAdd, onUpdate, onDelete, onDeleteMultiple }: Props) {
@@ -101,7 +108,7 @@ export default function VocabularyListEditor({ rubricId: _rubricId, items, crite
     return (
         <div>
             {/* Filter bar */}
-            <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+            <div className="flex flex-wrap items-center gap-2" style={{ marginBottom: 16 }}>
                 {(['all', ...CATEGORIES] as const).map(cat => (
                     <button
                         key={cat}
@@ -109,11 +116,12 @@ export default function VocabularyListEditor({ rubricId: _rubricId, items, crite
                         onClick={() => setFilterCat(cat)}
                         style={cat !== 'all' && filterCat !== cat ? { borderLeft: `3px solid ${CATEGORY_COLORS[cat]}` } : undefined}
                     >
+                        {cat !== 'all' && CATEGORY_ICONS[cat]}
                         {cat === 'all' ? t('vocabulary.filter_all', 'All') : t(`vocabulary.category_${cat}`, cat)}
                         {cat !== 'all' && ` (${items.filter(i => i.category === cat).length})`}
                     </button>
                 ))}
-                <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+                <div className="flex gap-2" style={{ marginLeft: 'auto' }}>
                     <input ref={csvRef} type="file" accept=".csv,.txt" style={{ display: 'none' }} onChange={handleCsvImport} />
                     {!selectionMode && (
                         <>
@@ -161,7 +169,7 @@ export default function VocabularyListEditor({ rubricId: _rubricId, items, crite
             </div>
 
             {/* Item list */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 }}>
+            <div className="flex flex-col" style={{ gap: 6, marginBottom: 16 }}>
                 {visible.length === 0 && (
                     <p className="text-muted text-sm" style={{ textAlign: 'center', padding: '20px 0' }}>
                         {t('vocabulary.empty', 'No items yet. Add phrases below.')}
@@ -181,7 +189,7 @@ export default function VocabularyListEditor({ rubricId: _rubricId, items, crite
                     >
                         {editingId === item.id ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                <div className="flex flex-wrap gap-2">
                                     <input
                                         className="input"
                                         style={{ flex: 1, minWidth: 160 }}
@@ -207,7 +215,7 @@ export default function VocabularyListEditor({ rubricId: _rubricId, items, crite
                                         {criteria.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
                                     </select>
                                 </div>
-                                <div style={{ display: 'flex', gap: 8 }}>
+                                <div className="flex gap-2">
                                     <input
                                         className="input"
                                         style={{ flex: 1 }}
@@ -221,7 +229,7 @@ export default function VocabularyListEditor({ rubricId: _rubricId, items, crite
                                 </div>
                             </div>
                         ) : (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div className="flex items-center" style={{ gap: 10 }}>
                                 {selectionMode && (
                                     <input
                                         type="checkbox"
@@ -232,7 +240,14 @@ export default function VocabularyListEditor({ rubricId: _rubricId, items, crite
                                     />
                                 )}
                                 <span style={{ fontWeight: 600, flex: 1 }}>{item.phrase}</span>
-                                <span className="text-xs text-muted" style={{ minWidth: 80 }}>{item.category}</span>
+                                <span
+                                    className="text-xs"
+                                    style={{ minWidth: 80, display: 'inline-flex', alignItems: 'center', gap: 4, color: CATEGORY_COLORS[item.category] }}
+                                    aria-label={item.category}
+                                >
+                                    {CATEGORY_ICONS[item.category]}
+                                    {t(`vocabulary.category_${item.category}`, item.category)}
+                                </span>
                                 {item.linkedCriterionId && (
                                     <span className="text-xs text-muted">
                                         {criteria.find(c => c.id === item.linkedCriterionId)?.title ?? ''}
@@ -260,7 +275,7 @@ export default function VocabularyListEditor({ rubricId: _rubricId, items, crite
                 <p className="text-xs text-muted" style={{ marginBottom: 10, fontWeight: 600, textTransform: 'uppercase' }}>
                     {t('vocabulary.add_item', 'Add item')}
                 </p>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+                <div className="flex flex-wrap gap-2" style={{ marginBottom: 8 }}>
                     <input
                         className="input"
                         style={{ flex: 1, minWidth: 160 }}
@@ -277,7 +292,7 @@ export default function VocabularyListEditor({ rubricId: _rubricId, items, crite
                         {criteria.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
                     </select>
                 </div>
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div className="flex gap-2">
                     <input
                         className="input"
                         style={{ flex: 1 }}

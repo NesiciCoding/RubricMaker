@@ -291,6 +291,9 @@ describe('SettingsPage deep coverage', () => {
 
     it('default grade scale dropdown change calls updateSettings', () => {
         renderPage(<SettingsPage />);
+        // Grade scale is on the Teaching tab — navigate there first
+        const teachingTab = screen.queryByRole('button', { name: /teaching/i });
+        if (teachingTab) fireEvent.click(teachingTab);
         const selects = screen.getAllByRole('combobox');
         const scaleSelect = selects.find(s =>
             Array.from(s.querySelectorAll('option')).some(o => o.value === 'gs1')
@@ -323,11 +326,15 @@ describe('SettingsPage deep coverage', () => {
 
     it('grade scale name renders in list', () => {
         renderPage(<SettingsPage />);
+        const teachingTab = screen.queryByRole('button', { name: /teaching/i });
+        if (teachingTab) fireEvent.click(teachingTab);
         expect(screen.getAllByText('Letter').length).toBeGreaterThanOrEqual(1);
     });
 
     it('clicking delete grade scale sets deleteScaleId (shows confirm)', () => {
         renderPage(<SettingsPage />);
+        const teachingTab = screen.queryByRole('button', { name: /teaching/i });
+        if (teachingTab) fireEvent.click(teachingTab);
         const trashBtns = screen.getAllByRole('button').filter(b =>
             b.querySelector('svg') && !b.textContent?.match(/add|new|backup|upload|save/i)
         );
@@ -346,6 +353,8 @@ describe('SettingsPage deep coverage', () => {
 
     it('comparisons limit input calls updateSettings with parsed number', () => {
         renderPage(<SettingsPage />);
+        const teachingTab = screen.queryByRole('button', { name: /teaching/i });
+        if (teachingTab) fireEvent.click(teachingTab);
         const numberInputs = screen.getAllByRole('spinbutton');
         if (numberInputs.length > 0) {
             fireEvent.change(numberInputs[0], { target: { value: '10' } });

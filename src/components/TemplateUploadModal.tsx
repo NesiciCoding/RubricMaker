@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { Upload, FileText, AlertTriangle, CheckCircle, X, Loader } from 'lucide-react';
 import { parseTemplateHeaders } from '../utils/docxTemplateExport';
 import type { ExportTemplate } from '../types';
+import Modal from './Modal';
 
 interface Props {
     onClose: () => void;
@@ -63,13 +64,12 @@ export default function TemplateUploadModal({ onClose, onSave }: Props) {
     };
 
     return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div className="modal" style={{ maxWidth: 560 }} onClick={e => e.stopPropagation()}>
+        <Modal titleId="template-upload-title" onClose={onClose} maxWidth={560}>
                 <div className="modal-header">
-                    <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <FileText size={18} /> Upload Export Template
+                    <h3 id="template-upload-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <FileText size={18} aria-hidden="true" /> Upload Export Template
                     </h3>
-                    <button className="btn btn-ghost btn-icon" onClick={onClose}><X size={16} /></button>
+                    <button className="btn btn-ghost btn-icon" onClick={onClose} aria-label="Close"><X size={16} /></button>
                 </div>
                 <div className="modal-body">
                     <div style={{ background: 'var(--bg-elevated)', borderRadius: 10, padding: '12px 16px', fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: 16 }}>
@@ -158,7 +158,6 @@ export default function TemplateUploadModal({ onClose, onSave }: Props) {
                         </button>
                     )}
                 </div>
-            </div>
-        </div>
+        </Modal>
     );
 }

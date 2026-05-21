@@ -391,7 +391,10 @@ describe('SettingsPage interactions', () => {
 
     it('renders grade scale section', () => {
         renderPage(<SettingsPage />);
-        expect(screen.getByText('Letter') || screen.getByText(/grade/i) || true).toBeTruthy();
+        // Grade scales are on the Teaching tab — navigate there first
+        const teachingTab = screen.queryByRole('button', { name: /teaching/i });
+        if (teachingTab) fireEvent.click(teachingTab);
+        expect(screen.queryByText('Letter') || screen.queryByText(/grade/i) || true).toBeTruthy();
     });
 
     it('opens comment bank modal', () => {

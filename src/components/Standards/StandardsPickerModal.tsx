@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Search, ChevronRight, ChevronDown, Link2, AlertCircle, Loader, BookOpen, Star } from 'lucide-react';
+import Modal from '../Modal';
 import {
     fetchJurisdictions, fetchStandardSets, fetchStandardSetDetail, flattenStandards,
     type CspJurisdiction, type CspStandardSet, type CspStandard,
@@ -192,13 +193,12 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
     ];
 
     return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div className="modal" role="dialog" aria-modal="true" aria-label="Standards Picker" style={{ width: 800, height: '85vh', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
+        <Modal titleId="standards-picker-title" onClose={onClose} maxWidth={800} style={{ height: '85vh', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
                 <div className="modal-header">
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <BookOpen size={20} style={{ color: 'var(--accent)' }} />
-                            <h3>Link Standard</h3>
+                            <BookOpen size={20} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                            <h3 id="standards-picker-title">Link Standard</h3>
                         </div>
                         {/* View Toggles */}
                         <div style={{ display: 'flex', background: 'var(--bg-elevated)', borderRadius: 6, padding: 2, marginLeft: 16 }}>
@@ -217,7 +217,7 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
                             </button>
                         </div>
                     </div>
-                    <button className="btn btn-ghost btn-icon" onClick={onClose}>✕</button>
+                    <button className="btn btn-ghost btn-icon" onClick={onClose} aria-label="Close">✕</button>
                 </div>
 
                 {/* Browse Breadcrumb */}
@@ -424,7 +424,6 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
                         </>
                     )}
                 </div>
-            </div>
-        </div>
+        </Modal>
     );
 }
