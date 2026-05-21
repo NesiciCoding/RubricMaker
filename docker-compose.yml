@@ -1,6 +1,201 @@
+# RubricMaker — full stack docker-compose
+#
+# ── LAN / single machine (HTTP) ──────────────────────────────────────────────
+#   cp .env.docker.example .env          # edit SITE_URL if needed
+#   docker-compose up -d --build
+#   Open http://localhost:8080
+#
+# ── VPS / public server (HTTPS) ──────────────────────────────────────────────
+#   1. Point your domain's A-record to the VPS IP
+#   2. In .env:  DOMAIN=rubricmaker.school.nl
+#                SITE_URL=https://rubricmaker.school.nl
+#   3. docker-compose --profile https up -d --build
+#   Caddy obtains a Let's Encrypt certificate automatically.
+#   Firewall: open ports 80 + 443.  Port 8080 can be blocked externally.
+
+name: rubricmaker
+
 services:
-  rubricmaker:
-    build: .
+
+  # ── PostgreSQL (Supabase flavour) ────────────────────────────────────────────
+  db:
+    image: public.ecr.aws/supabase/postgres:15.8.1.085
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U supabase_admin -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # ── Run migrations once the DB is healthy ────────────────────────────────────
+  db_migrate:
+    image: postgres:15-alpine
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./supabase/migrations:/migrations:ro
+      - ./docker/migrate.sh:/migrate.sh:ro
+    entrypoint: ["bash", "/migrate.sh"]
+    environment:
+      DATABASE_URL: "postgresql://supabase_admin:${POSTGRES_PASSWORD:-postgres}@db:5432/postgres"
+    restart: "no"
+
+  # ── GoTrue — authentication ──────────────────────────────────────────────────
+  auth:
+    image: public.ecr.aws/supabase/gotrue:v2.188.1
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 9999"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    environment:
+      GOTRUE_API_HOST: "0.0.0.0"
+      GOTRUE_API_PORT: "9999"
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: "postgresql://supabase_auth_admin:postgres@db:5432/postgres"
+      API_EXTERNAL_URL: "${SITE_URL:-http://localhost:8080}/auth/v1"
+      GOTRUE_SITE_URL: "${SITE_URL:-http://localhost:8080}"
+      GOTRUE_JWT_SECRET: "${JWT_SECRET:-super-secret-jwt-token-with-at-least-32-characters-long}"
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_EXP: "3600"
+      GOTRUE_JWT_ISSUER: "${SITE_URL:-http://localhost:8080}/auth/v1"
+      GOTRUE_DISABLE_SIGNUP: "false"
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
+      GOTRUE_EXTERNAL_PHONE_ENABLED: "false"
+      GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED: "true"
+      # Email confirmation — set MAILER_AUTOCONFIRM=false and configure SMTP for production
+      GOTRUE_MAILER_AUTOCONFIRM: "${MAILER_AUTOCONFIRM:-true}"
+      GOTRUE_MAILER_OTP_EXP: "3600"
+      GOTRUE_MAILER_OTP_LENGTH: "6"
+      GOTRUE_MAILER_URLPATHS_CONFIRMATION: "${SITE_URL:-http://localhost:8080}/auth/v1/verify"
+      GOTRUE_MAILER_URLPATHS_INVITE: "${SITE_URL:-http://localhost:8080}/auth/v1/verify"
+      GOTRUE_MAILER_URLPATHS_RECOVERY: "${SITE_URL:-http://localhost:8080}/auth/v1/verify"
+      GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE: "${SITE_URL:-http://localhost:8080}/auth/v1/verify"
+      GOTRUE_SMTP_HOST: "${SMTP_HOST:-}"
+      GOTRUE_SMTP_PORT: "${SMTP_PORT:-587}"
+      GOTRUE_SMTP_USER: "${SMTP_USER:-}"
+      GOTRUE_SMTP_PASS: "${SMTP_PASS:-}"
+      GOTRUE_SMTP_ADMIN_EMAIL: "${SMTP_SENDER:-rubricmaker@school.nl}"
+      GOTRUE_SMTP_SENDER_NAME: RubricMaker
+      GOTRUE_SMTP_MAX_FREQUENCY: 1s
+      GOTRUE_SECURITY_REFRESH_TOKEN_ROTATION_ENABLED: "true"
+      GOTRUE_RATE_LIMIT_ANONYMOUS_USERS: "30"
+      GOTRUE_RATE_LIMIT_EMAIL_SENT: "360000"
+      GOTRUE_RATE_LIMIT_OTP: "30"
+
+  # ── PostgREST — REST API over the database ───────────────────────────────────
+  rest:
+    image: public.ecr.aws/supabase/postgrest:v14.10
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGRST_DB_URI: "postgresql://authenticator:postgres@db:5432/postgres"
+      PGRST_DB_SCHEMAS: "public,storage,graphql_public"
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_DB_EXTRA_SEARCH_PATH: "public,extensions"
+      PGRST_JWT_SECRET: "${JWT_SECRET:-super-secret-jwt-token-with-at-least-32-characters-long}"
+      PGRST_DB_MAX_ROWS: "1000"
+
+  # ── Supabase Storage — file uploads ──────────────────────────────────────────
+  storage:
+    image: public.ecr.aws/supabase/storage-api:v1.54.1
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      rest:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 5000"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    volumes:
+      - storage-data:/mnt/storage
+    environment:
+      DATABASE_URL: "postgresql://supabase_storage_admin:postgres@db:5432/postgres"
+      PGRST_JWT_SECRET: "${JWT_SECRET:-super-secret-jwt-token-with-at-least-32-characters-long}"
+      ANON_KEY: "${ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0}"
+      SERVICE_KEY: "${SERVICE_ROLE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU}"
+      # JWT JWKS — the "k" value is base64url(JWT_SECRET); update when changing JWT_SECRET.
+      # Generator: node -e "console.log(Buffer.from(process.env.JWT_SECRET).toString('base64url'))"
+      JWT_JWKS: '${JWT_JWKS:-{"keys":[{"kty":"oct","k":"c3VwZXItc2VjcmV0LWp3dC10b2tlbi13aXRoLWF0LWxlYXN0LTMyLWNoYXJhY3RlcnMtbG9uZw"}]}}'
+      TENANT_ID: stub
+      REGION: local
+      GLOBAL_S3_BUCKET: stub
+      STORAGE_BACKEND: file
+      FILE_STORAGE_BACKEND_PATH: /mnt/storage
+      FILE_SIZE_LIMIT: "54525952"
+      ENABLE_IMAGE_TRANSFORMATION: "false"
+      SERVER_HOST: "0.0.0.0"
+      SERVER_PORT: "5000"
+      S3_PROTOCOL_ENABLED: "false"
+      TUS_URL_PATH: /storage/v1/upload/resumable
+
+  # ── Web app + API proxy ───────────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      args:
+        # Bakes the Supabase URL into the app so Settings > Database is pre-filled.
+        # Change SITE_URL in .env if deploying to a school server.
+        VITE_SUPABASE_URL: "${SITE_URL:-http://localhost:8080}"
+        VITE_SUPABASE_ANON_KEY: "${ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0}"
     ports:
       - "8080:80"
+    volumes:
+      # Override nginx config with the production version that proxies Supabase
+      - ./docker/nginx.prod.conf:/etc/nginx/conf.d/default.conf:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/ | grep -q 'RubricMaker'"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    depends_on:
+      auth:
+        condition: service_healthy
+      rest:
+        condition: service_started   # PostgREST is a scratch image with no healthcheck tools
+      storage:
+        condition: service_healthy
     restart: unless-stopped
+
+  # ── Caddy — HTTPS reverse proxy (opt-in) ─────────────────────────────────────
+  # Only started when you run:  docker-compose --profile https up -d
+  # Caddy fetches a free Let's Encrypt certificate for DOMAIN automatically.
+  # Requires ports 80 + 443 to be open on your server firewall.
+  caddy:
+    image: caddy:2-alpine
+    profiles: [https]
+    restart: unless-stopped
+    ports:
+      - "80:80"      # HTTP (ACME challenge + redirect to HTTPS)
+      - "443:443"    # HTTPS
+      - "443:443/udp" # HTTP/3
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data      # stores the TLS certificate (persisted across restarts)
+      - caddy-config:/config
+    environment:
+      DOMAIN: "${DOMAIN:-localhost}"
+    depends_on:
+      - app
+
+volumes:
+  db-data:      # persists the database across restarts
+  storage-data: # persists uploaded attachments and templates
+  caddy-data:   # persists TLS certificates (only used in https profile)
+  caddy-config: # persists Caddy config cache

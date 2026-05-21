@@ -11,7 +11,12 @@
     "lint": "eslint src",
     "test": "vitest run",
     "test:ui": "vitest --ui",
-    "coverage": "vitest run --coverage"
+    "coverage": "vitest run --coverage",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:status": "supabase status",
+    "postinstall": "node scripts/patch-rollup-native.cjs"
   },
   "dependencies": {
     "@azure/msal-browser": "^3.2.0",
@@ -73,6 +78,8 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "jsdom": "^28.1.0",
+    "@rollup/wasm-node": "^4.60.4",
+    "supabase": "^2.98.2",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.59.3",
     "vite": "^7.3.1",

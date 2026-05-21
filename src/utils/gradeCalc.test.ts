@@ -436,4 +436,61 @@ describe('gradeCalc utilities', () => {
             expect(stats.median).toBe(80);
         });
     });
+
+    describe('calcGradeSummary — total-points mode with 0 max', () => {
+        const mockScale: GradeScale = {
+            id: 's1', type: 'letter', name: 'Scale',
+            ranges: [{ min: 0, max: 100, label: 'P', color: '#000' }],
+        };
+
+        it('falls back to calculatedMax when totalMaxPoints is 0', () => {
+            const studentRubric: StudentRubric = {
+                id: 'sr1', rubricId: 'r1', studentId: 'stu1', isPeerReview: false, overallComment: '',
+                entries: [
+                    { criterionId: 'c1', levelId: 'l1a', checkedSubItems: [], comment: '', selectedPoints: 5 },
+                ],
+            };
+            const rubric: Pick<Rubric, 'scoringMode' | 'totalMaxPoints'> = {
+                scoringMode: 'total-points',
+                totalMaxPoints: 0, // 0 → falls back to calculatedMax
+            };
+            const summary = calcGradeSummary(studentRubric, mockCriteria, mockScale, rubric);
+            // totalMaxPoints === 0 → uses calculatedMax (15 for mockCriteria)
+            expect(summary.configuredMaxPoints).toBe(15);
+        });
+
+        it('returns 0 percentage when calculated max is also 0', () => {
+            const zeroCriteria: RubricCriterion[] = [
+                { id: 'c1', title: '', description: '', weight: 0,
+                  levels: [{ id: 'l1', label: '', minPoints: 0, maxPoints: 0, description: '', subItems: [] }] },
+            ];
+            const studentRubric: StudentRubric = {
+                id: 'sr1', rubricId: 'r1', studentId: 'stu1', isPeerReview: false, overallComment: '',
+                entries: [],
+            };
+            const summary = calcGradeSummary(studentRubric, zeroCriteria, mockScale);
+            expect(summary.percentage).toBe(0);
+        });
+    });
+
+    describe('calcClassStats — null scale', () => {
+        it('returns empty distribution when scale is null', () => {
+            const summaries: any[] = [
+                { modifiedPercentage: 80 },
+                { modifiedPercentage: 60 },
+            ];
+            const stats = calcClassStats(summaries, null);
+            expect(stats.distribution).toEqual([]);
+            expect(stats.average).toBe(70);
+            expect(stats.highest).toBe(80);
+            expect(stats.lowest).toBe(60);
+        });
+
+        it('calculates odd-length median (single element)', () => {
+            const summaries: any[] = [{ modifiedPercentage: 55 }];
+            const stats = calcClassStats(summaries, null);
+            expect(stats.median).toBe(55);
+            expect(stats.average).toBe(55);
+        });
+    });
 });

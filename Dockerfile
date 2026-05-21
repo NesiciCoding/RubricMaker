@@ -3,6 +3,10 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
+# Optional: pre-fill the DB connection form in Settings > Database.
+# Set via docker-compose build args or --build-arg flags.
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_ANON_KEY
 RUN npm run build
 
 FROM nginx:alpine
