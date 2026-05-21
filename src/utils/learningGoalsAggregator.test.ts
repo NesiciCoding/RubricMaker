@@ -227,3 +227,70 @@ describe('learningGoalsAggregator', () => {
         expect(results[0].history).toHaveLength(2);
     });
 });
+
+// ─── Additional branch coverage ───────────────────────────────────────────────
+
+describe('getStudentGoalScores — uncovered branches', () => {
+    it('falls back to selectedLevel.minPoints when selectedPoints is undefined (level-based scoring)', () => {
+        const rubrics: any[] = [
+            {
+                id: 'r1', name: 'Rubric', subject: 'Math', description: '', gradeScaleId: '1',
+                criteria: [
+                    {
+                        id: 'c1', title: 'Crit', description: '', weight: 100,
+                        linkedStandards: [{ guid: 'std1', description: 'Desc', statementNotation: 'S1', standardSetTitle: '', jurisdictionTitle: '' }],
+                        levels: [
+                            { id: 'l1', label: 'Good', minPoints: 7, maxPoints: 10, description: '', subItems: [] }
+                        ]
+                    }
+                ]
+            }
+        ];
+        const studentRubrics: any[] = [
+            {
+                id: 'sr1', rubricId: 'r1', studentId: 's1', overallComment: '', gradedAt: '2023-01-01', isPeerReview: false,
+                // No selectedPoints — should fall back to selectedLevel.minPoints (7)
+                entries: [{ criterionId: 'c1', levelId: 'l1', checkedSubItems: [], comment: '' }]
+            }
+        ];
+        const results = getStudentGoalScores('s1', studentRubrics, rubrics);
+        expect(results).toHaveLength(1);
+        expect(results[0].guid).toBe('std1');
+        // earned = minPoints (7), max = max of levels (10)
+        expect(results[0].history[0].earnedPoints).toBe(7);
+        expect(results[0].history[0].maxPoints).toBe(10);
+    });
+
+    it('skips standard aggregation when maxPointsPerStandard is 0 (division-by-zero guard)', () => {
+        // Sub-item with points=0 and maxPoints=0, linked to a standard.
+        // Both earned and max end up 0 → the guard at line ~139 fires and result is excluded.
+        const rubrics: any[] = [
+            {
+                id: 'r1', name: 'Rubric', subject: 'Math', description: '', gradeScaleId: '1',
+                criteria: [
+                    {
+                        id: 'c1', title: 'Crit', description: '', weight: 100,
+                        levels: [
+                            {
+                                id: 'l1', label: 'Good', minPoints: 0, maxPoints: 0, description: '',
+                                subItems: [
+                                    { id: 'si1', label: 'Sub', points: 0, maxPoints: 0,
+                                      linkedStandards: [{ guid: 'std-zero', description: 'zero', standardSetTitle: '', jurisdictionTitle: '' }] }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ];
+        const studentRubrics: any[] = [
+            {
+                id: 'sr1', rubricId: 'r1', studentId: 's1', overallComment: '', gradedAt: '2023-01-01', isPeerReview: false,
+                entries: [{ criterionId: 'c1', levelId: 'l1', checkedSubItems: ['si1'], comment: '' }]
+            }
+        ];
+        // std-zero has max=0 so the guard returns early — result array is empty
+        const results = getStudentGoalScores('s1', studentRubrics, rubrics);
+        expect(results.find(r => r.guid === 'std-zero')).toBeUndefined();
+    });
+});

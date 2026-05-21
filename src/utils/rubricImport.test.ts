@@ -348,3 +348,82 @@ describe('parseJsonToRubric — linked standards & sub-items', () => {
         expect(subItem.linkedStandards).toBeUndefined();
     });
 });
+
+describe('parseJsonToRubric — edge case branches', () => {
+    it('uses "Untitled Criterion" when criterion title is missing', async () => {
+        const json = {
+            criteria: [
+                { levels: [{ label: 'Good', minPoints: 0, maxPoints: 5, description: '' }] }
+                // no title field
+            ]
+        };
+        const file = new File([JSON.stringify(json)], 'rubric.json', { type: 'application/json' });
+        const result = await parseJsonToRubric(file);
+        expect(result.criteria[0].title).toBe('Untitled Criterion');
+    });
+
+    it('deep-clones linkedStandards array on criterion', async () => {
+        const json = {
+            name: 'Test',
+            criteria: [
+                {
+                    title: 'Crit 1',
+                    weight: 100,
+                    linkedStandards: [
+                        { guid: 'std1', description: 'Standard 1', statementNotation: 'S1' }
+                    ],
+                    levels: [{ label: 'Good', minPoints: 0, maxPoints: 10, description: '' }]
+                }
+            ]
+        };
+        const file = new File([JSON.stringify(json)], 'rubric.json', { type: 'application/json' });
+        const result = await parseJsonToRubric(file);
+        expect(result.criteria[0].linkedStandards).toHaveLength(1);
+        expect(result.criteria[0].linkedStandards![0].guid).toBe('std1');
+    });
+
+    it('leaves linkedStandards undefined when not an array', async () => {
+        const json = {
+            name: 'Test',
+            criteria: [
+                {
+                    title: 'Crit',
+                    weight: 100,
+                    linkedStandards: null, // not an array
+                    levels: [{ label: 'Good', minPoints: 0, maxPoints: 5, description: '' }]
+                }
+            ]
+        };
+        const file = new File([JSON.stringify(json)], 'rubric.json', { type: 'application/json' });
+        const result = await parseJsonToRubric(file);
+        expect(result.criteria[0].linkedStandards).toBeUndefined();
+    });
+
+    it('deep-clones subItems with linkedStandards inside levels', async () => {
+        const json = {
+            name: 'Test',
+            criteria: [
+                {
+                    title: 'Crit',
+                    weight: 100,
+                    levels: [
+                        {
+                            label: 'Good', minPoints: 0, maxPoints: 10, description: '',
+                            subItems: [
+                                { label: 'Sub A', points: 3, linkedStandards: [{ guid: 'si-std1' }] },
+                                { label: 'Sub B', points: 7 } // no linkedStandards
+                            ]
+                        }
+                    ]
+                }
+            ]
+        };
+        const file = new File([JSON.stringify(json)], 'rubric.json', { type: 'application/json' });
+        const result = await parseJsonToRubric(file);
+        const level = result.criteria[0].levels[0];
+        expect(level.subItems).toHaveLength(2);
+        expect(level.subItems[0].linkedStandards).toHaveLength(1);
+        expect(level.subItems[0].linkedStandards![0].guid).toBe('si-std1');
+        expect(level.subItems[1].linkedStandards).toBeUndefined();
+    });
+});
