@@ -1,0 +1,53 @@
+name: Deploy to HestiaCP VPS
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+concurrency:
+  group: "hestiacp-deploy"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+      - name: Deploy via rsync
+        uses: burnett01/rsync-deployments@7.0.1
+        with:
+          switches: -avz --delete
+          path: dist/
+          # HestiaCP web root: /home/<user>/web/<domain>/public_html/
+          remote_path: /home/rubricmaker/web/${{ secrets.VPS_DOMAIN }}/public_html/
+          remote_host: ${{ secrets.VPS_HOST }}
+          remote_user: root
+          remote_key: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: Upload .htaccess
+        uses: burnett01/rsync-deployments@7.0.1
+        with:
+          switches: -avz
+          path: deploy/.htaccess
+          remote_path: /home/rubricmaker/web/${{ secrets.VPS_DOMAIN }}/public_html/.htaccess
+          remote_host: ${{ secrets.VPS_HOST }}
+          remote_user: root
+          remote_key: ${{ secrets.VPS_SSH_KEY }}
