@@ -1,0 +1,73 @@
+# RubricMaker — Apache configuration for Virtualmin
+# Place this file in your Virtualmin public_html web root.
+# Requires: mod_rewrite, mod_headers, mod_deflate
+
+# ─── SPA Routing ─────────────────────────────────────────────────────────────
+# RubricMaker uses HashRouter so the server never sees sub-paths, but this
+# fallback ensures a direct hit on /index.html works if somehow needed.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+    RewriteRule ^index\.html$ - [L]
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule . /index.html [L]
+</IfModule>
+
+# ─── Security Headers ─────────────────────────────────────────────────────────
+<IfModule mod_headers.c>
+    # Prevent MIME sniffing
+    Header always set X-Content-Type-Options "nosniff"
+
+    # Block framing from other origins (clickjacking protection)
+    Header always set X-Frame-Options "SAMEORIGIN"
+
+    # Enable XSS filtering in older browsers
+    Header always set X-XSS-Protection "1; mode=block"
+
+    # Force HTTPS for 1 year once visited (only effective after SSL is live)
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+    # Referrer policy
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Permissions policy — disable APIs the app doesn't use
+    Header always set Permissions-Policy "geolocation=(), camera=(), payment=()"
+</IfModule>
+
+# ─── Caching ──────────────────────────────────────────────────────────────────
+<IfModule mod_headers.c>
+    # Vite hashes JS/CSS filenames — cache them aggressively
+    <FilesMatch "\.(js|css|woff2?|ttf|eot|otf|svg|png|jpg|jpeg|gif|ico|webp)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+
+    # Never cache index.html so the browser always fetches the latest asset hashes
+    <FilesMatch "^index\.html$">
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+    </FilesMatch>
+</IfModule>
+
+# ─── Compression ─────────────────────────────────────────────────────────────
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/json
+    AddOutputFilterByType DEFLATE image/svg+xml
+    AddOutputFilterByType DEFLATE font/woff2
+    AddOutputFilterByType DEFLATE application/manifest+json
+</IfModule>
+
+# ─── MIME Types ──────────────────────────────────────────────────────────────
+<IfModule mod_mime.c>
+    AddType application/javascript .js .mjs
+    AddType text/css .css
+    AddType font/woff2 .woff2
+    AddType application/manifest+json .webmanifest
+</IfModule>
+
+# ─── Directory listing ────────────────────────────────────────────────────────
+Options -Indexes
