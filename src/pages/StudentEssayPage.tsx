@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { Clock, CheckCircle, Copy, AlertTriangle, Mail, KeyRound, Loader2 } from 'lucide-react';
 import EssayEditor from '../components/Editor/EssayEditor';
@@ -137,12 +137,15 @@ export default function StudentEssayPage() {
     const { code } = useParams<{ code: string }>();
     const assignment = code ? decodeEssayAssignment(code) : null;
 
-    // Determine if this assignment uses Supabase DB submission
+    // Determine if this assignment uses Supabase DB submission.
+    // useMemo keeps the adapter instance stable for the component's lifetime
+    // (assignment comes from the URL and never changes mid-session).
     const hasDb = !!(assignment?.supabaseUrl && assignment?.supabaseAnonKey);
-    const adapter = useRef<EssayAdapter | null>(null);
-    if (hasDb && !adapter.current) {
-        adapter.current = new EssayAdapter(assignment!.supabaseUrl!, assignment!.supabaseAnonKey!);
-    }
+    const adapter = useMemo<EssayAdapter | null>(() => {
+        if (!assignment?.supabaseUrl || !assignment?.supabaseAnonKey) return null;
+        return new EssayAdapter(assignment.supabaseUrl, assignment.supabaseAnonKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // intentionally stable — assignment is decoded from the URL and never changes
 
     const isInSEB = /SEB/i.test(navigator.userAgent);
     const sebQuitUrl = `${window.location.origin}/#/seb-done`;
@@ -220,10 +223,10 @@ export default function StudentEssayPage() {
         const legacyCode = encodeEssaySubmission(submissionObj);
 
         // DB path: upload to Supabase Storage + insert submission row
-        if (hasDb && adapter.current && studentUserId && studentEmail) {
+        if (hasDb && adapter && studentUserId && studentEmail) {
             setSubmitting(true);
             setSubmitError('');
-            const result = await adapter.current.submitEssay(
+            const result = await adapter.submitEssay(
                 assignment, submissionId, html, studentEmail, studentUserId, wordCount
             );
             setSubmitting(false);
@@ -239,7 +242,7 @@ export default function StudentEssayPage() {
             copyText(legacyCode);
             setTimeout(() => { window.location.href = sebQuitUrl; }, 1500);
         }
-    }, [assignment, html, draftKey, hasDb, studentUserId, studentEmail, isInSEB, sebQuitUrl]);
+    }, [assignment, html, draftKey, hasDb, adapter, studentUserId, studentEmail, isInSEB, sebQuitUrl]);
 
     const handleCopy = useCallback(() => {
         copyText(submissionCode);
@@ -268,7 +271,7 @@ export default function StudentEssayPage() {
     if (hasDb && !studentUserId) {
         return (
             <OtpGate
-                adapter={adapter.current!}
+                adapter={adapter!}
                 onAuthenticated={(uid, email) => { setStudentUserId(uid); setStudentEmail(email); }}
             />
         );
