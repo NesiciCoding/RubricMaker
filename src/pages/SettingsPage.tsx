@@ -51,6 +51,7 @@ export default function SettingsPage() {
         exportTemplates, addExportTemplate, deleteExportTemplate, rubrics,
         loginMicrosoft, logoutMicrosoft, syncToOneDrive, restoreFromOneDrive, microsoftUser,
         connectDatabase, disconnectDatabase, pushAllToDatabase, pullFromDatabase,
+        fetchAllUsers, updateUserRole, updateMyProfile,
     } = useApp();
     const { showToast } = useToast();
     const dbStatus = useDbStatus();
@@ -104,6 +105,26 @@ export default function SettingsPage() {
     const [shareRubricId, setShareRubricId] = useState('');
     const [shareTargetUser, setShareTargetUser] = useState('');
     const [shareMode, setShareMode] = useState<'read' | 'edit'>('read');
+
+    // ─── Profile / user management state ────────────────────────────────────────
+    const [displayNameInput, setDisplayNameInput] = useState(dbStatus.currentUser?.displayName ?? '');
+    const [savingDisplayName, setSavingDisplayName] = useState(false);
+    const [allDbUsers, setAllDbUsers] = useState<import('../services/database').DbUser[]>([]);
+    const [userRoleChanges, setUserRoleChanges] = useState<Record<string, 'admin' | 'user' | 'student'>>({});
+    const [savingRoles, setSavingRoles] = useState<Record<string, boolean>>({});
+    const [loadingUsers, setLoadingUsers] = useState(false);
+
+    useEffect(() => {
+        if (!dbStatus.isConnected || !isAdmin) return;
+        setLoadingUsers(true);
+        fetchAllUsers().then(users => {
+            setAllDbUsers(users);
+            const initial: Record<string, 'admin' | 'user' | 'student'> = {};
+            users.forEach(u => { initial[u.id] = u.role; });
+            setUserRoleChanges(initial);
+        }).finally(() => setLoadingUsers(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [dbStatus.isConnected, isAdmin]);
 
     useEffect(() => {
         if (settings.language && i18n.language !== settings.language) {
@@ -723,6 +744,26 @@ export default function SettingsPage() {
                                                 )}
                                             </div>
 
+                                            {/* Display name */}
+                                            <div style={{ background: 'var(--bg-elevated)', borderRadius: 8, padding: '12px 16px' }}>
+                                                <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: 8 }}>Display name</div>
+                                                <div style={{ display: 'flex', gap: 8 }}>
+                                                    <input type="text" value={displayNameInput}
+                                                        onChange={e => setDisplayNameInput(e.target.value)}
+                                                        placeholder="Your name (visible to colleagues)"
+                                                        style={{ flex: 1 }} />
+                                                    <button className="btn btn-secondary btn-sm" disabled={savingDisplayName}
+                                                        onClick={async () => {
+                                                            setSavingDisplayName(true);
+                                                            const result = await updateMyProfile({ displayName: displayNameInput.trim() || undefined });
+                                                            setSavingDisplayName(false);
+                                                            showToast(result.success ? 'Display name saved' : `Error: ${result.error}`, result.success ? 'success' : 'error');
+                                                        }}>
+                                                        <Save size={13} aria-hidden="true" /> {savingDisplayName ? 'Saving…' : 'Save'}
+                                                    </button>
+                                                </div>
+                                            </div>
+
                                             {!dbStatus.currentUser?.email && (
                                                 <div style={{ background: 'var(--bg-elevated)', borderRadius: 8, padding: '12px 16px' }}>
                                                     <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: 8 }}>Sign in with email (to enable sharing)</div>
@@ -805,6 +846,82 @@ export default function SettingsPage() {
                                                             Share
                                                         </button>
                                                     </div>
+                                                </div>
+                                            )}
+
+                                            {/* Admin: user management */}
+                                            {isAdmin && (
+                                                <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                                                        <Shield size={14} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                                                        <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>User management</span>
+                                                        <button className="btn btn-ghost btn-icon btn-sm" title="Refresh user list"
+                                                            disabled={loadingUsers}
+                                                            onClick={async () => {
+                                                                setLoadingUsers(true);
+                                                                const users = await fetchAllUsers();
+                                                                setAllDbUsers(users);
+                                                                const roles: Record<string, 'admin' | 'user' | 'student'> = {};
+                                                                users.forEach(u => { roles[u.id] = u.role; });
+                                                                setUserRoleChanges(roles);
+                                                                setLoadingUsers(false);
+                                                            }}>
+                                                            <RefreshCw size={12} aria-hidden="true" />
+                                                        </button>
+                                                    </div>
+                                                    {loadingUsers ? (
+                                                        <p className="text-muted text-sm" style={{ margin: 0 }}>Loading users…</p>
+                                                    ) : allDbUsers.length === 0 ? (
+                                                        <p className="text-muted text-sm" style={{ margin: 0 }}>No users found.</p>
+                                                    ) : (
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                                            {allDbUsers.map(u => {
+                                                                const isMe = u.id === dbStatus.userId;
+                                                                const isSaving = savingRoles[u.id];
+                                                                const pendingRole = userRoleChanges[u.id] ?? u.role;
+                                                                const changed = pendingRole !== u.role;
+                                                                return (
+                                                                    <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-elevated)', borderRadius: 6, padding: '8px 10px' }}>
+                                                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                                                            <div style={{ fontSize: '0.85rem', fontWeight: u.displayName ? 600 : 400, color: u.displayName ? undefined : 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                                {u.displayName || 'Anonymous'}
+                                                                                {isMe && <span style={{ marginLeft: 6, fontSize: '0.7rem', color: 'var(--accent)', fontWeight: 400 }}>(you)</span>}
+                                                                            </div>
+                                                                            {u.email && (
+                                                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.email}</div>
+                                                                            )}
+                                                                        </div>
+                                                                        <select
+                                                                            value={pendingRole}
+                                                                            disabled={isMe || isSaving}
+                                                                            title={isMe ? 'Cannot change your own role' : undefined}
+                                                                            onChange={e => setUserRoleChanges(prev => ({ ...prev, [u.id]: e.target.value as 'admin' | 'user' | 'student' }))}
+                                                                            style={{ width: 110, fontSize: '0.8rem' }}>
+                                                                            <option value="admin">Administrator</option>
+                                                                            <option value="user">Teacher</option>
+                                                                            <option value="student">Student</option>
+                                                                        </select>
+                                                                        {!isMe && (
+                                                                            <button className="btn btn-primary btn-sm" disabled={!changed || isSaving}
+                                                                                onClick={async () => {
+                                                                                    setSavingRoles(prev => ({ ...prev, [u.id]: true }));
+                                                                                    const result = await updateUserRole(u.id, pendingRole);
+                                                                                    setSavingRoles(prev => ({ ...prev, [u.id]: false }));
+                                                                                    if (result.success) {
+                                                                                        setAllDbUsers(prev => prev.map(x => x.id === u.id ? { ...x, role: pendingRole } : x));
+                                                                                        showToast('Role updated', 'success');
+                                                                                    } else {
+                                                                                        showToast(`Error: ${result.error}`, 'error');
+                                                                                    }
+                                                                                }}>
+                                                                                {isSaving ? 'Saving…' : 'Save'}
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
 

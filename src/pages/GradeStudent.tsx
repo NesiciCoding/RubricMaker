@@ -22,7 +22,8 @@ export default function GradeStudent() {
     const navigate = useNavigate();
     const {
         rubrics, students, classes, studentRubrics, attachments, analysisResults,
-        gradeScales, settings, saveStudentRubric, updateSettings, saveAnalysisResult, addAttachment
+        gradeScales, settings, saveStudentRubric, updateSettings, saveAnalysisResult, addAttachment,
+        saveEssayAssignment, fetchEssaySubmissionsForStudent, deleteEssaySubmission, getEssaySignedUrl,
     } = useApp();
 
     const existingSR = studentRubrics.find(sr => sr.rubricId === rubricId && sr.studentId === studentId);
@@ -658,6 +659,7 @@ export default function GradeStudent() {
                     studentName={student.name}
                     classStudents={classStudents}
                     onClose={() => setShowEssayAssignment(false)}
+                    onSaveAssignment={saveEssayAssignment}
                     onOpenSlipSheet={(assignment, sts) => {
                         setSlipSheetData({ assignment, students: sts });
                         setShowEssayAssignment(false);
@@ -670,6 +672,9 @@ export default function GradeStudent() {
                     rubricId={rubricId}
                     studentId={studentId}
                     studentName={student.name}
+                    onFetchSubmissions={(_key) => fetchEssaySubmissionsForStudent(rubricId, studentId)}
+                    onGetSignedUrl={getEssaySignedUrl}
+                    onDeleteSubmission={deleteEssaySubmission}
                     onImport={(attachment) => {
                         addAttachment(attachment);
                         setShowEssayImport(false);
