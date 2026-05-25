@@ -3,7 +3,7 @@ import type {
     Rubric, Student, Class, StudentRubric, Attachment,
     GradeScale, CommentSnippet, AppSettings, LinkedStandard,
     CommentBankItem, ExportTemplate, SelfAssessment, SpeakingSession,
-    DocumentAnalysisResult
+    DocumentAnalysisResult, EssayAssignment
 } from '../../types';
 import type { DatabaseConfig, DbUser, SyncResult } from './types';
 
@@ -11,6 +11,8 @@ export class SupabaseAdapter {
     private client: SupabaseClient | null = null;
     private userId: string | null = null;
     private onAuthChange: ((user: DbUser | null) => void) | null = null;
+    private activeUrl: string | null = null;
+    private activeKey: string | null = null;
 
     // ── Connection ────────────────────────────────────────────────────────────
 
@@ -20,12 +22,32 @@ export class SupabaseAdapter {
             try { new URL(config.supabaseUrl); } catch { return false; }
             if (config.supabaseAnonKey.length < 20) return false;
 
+            // Reuse existing client if config hasn't changed — avoids duplicate GoTrueClient warning
+            if (
+                this.client &&
+                this.activeUrl === config.supabaseUrl &&
+                this.activeKey === config.supabaseAnonKey
+            ) {
+                const { data: { session } } = await this.client.auth.getSession();
+                if (session) {
+                    this.userId = session.user.id;
+                    return true;
+                }
+                // Session lost; fall through to re-auth below without recreating the client
+                const { data, error } = await this.client.auth.signInAnonymously();
+                if (error || !data.session) return false;
+                this.userId = data.session.user.id;
+                return true;
+            }
+
             this.client = createClient(config.supabaseUrl, config.supabaseAnonKey, {
                 auth: {
                     persistSession: true,
                     autoRefreshToken: true,
                 }
             });
+            this.activeUrl = config.supabaseUrl;
+            this.activeKey = config.supabaseAnonKey;
 
             // Restore existing session or create anonymous one
             const { data: { session } } = await this.client.auth.getSession();
@@ -37,11 +59,17 @@ export class SupabaseAdapter {
                 this.userId = data.session.user.id;
             }
 
-            // Listen for auth changes (e.g. when user upgrades to email auth)
-            this.client.auth.onAuthStateChange((_event: AuthChangeEvent, s: Session | null) => {
+            // Listen for auth changes (e.g. when user upgrades to email auth).
+            // Fetch the full profile so callers get the DB role.
+            this.client.auth.onAuthStateChange(async (_event: AuthChangeEvent, s: Session | null) => {
                 this.userId = s?.user.id ?? null;
                 if (this.onAuthChange) {
-                    this.onAuthChange(s ? { id: s.user.id, email: s.user.email } : null);
+                    if (s) {
+                        const profile = await this.fetchMyProfile();
+                        this.onAuthChange(profile ?? { id: s.user.id, email: s.user.email, role: 'user' });
+                    } else {
+                        this.onAuthChange(null);
+                    }
                 }
             });
 
@@ -72,9 +100,62 @@ export class SupabaseAdapter {
         this.onAuthChange = cb;
     }
 
+    // ── Profile management ────────────────────────────────────────────────────
+
+    async fetchMyProfile(): Promise<DbUser | null> {
+        if (!this.client || !this.userId) return null;
+        const { data, error } = await this.client
+            .from('profiles')
+            .select('id, email, display_name, role')
+            .eq('id', this.userId)
+            .single();
+        if (error || !data) return null;
+        return {
+            id: data.id,
+            email: data.email ?? undefined,
+            displayName: data.display_name ?? undefined,
+            role: (data.role as 'admin' | 'user' | 'student') ?? 'user',
+        };
+    }
+
+    async updateMyProfile(updates: { displayName?: string }): Promise<SyncResult> {
+        if (!this.client || !this.userId) return { success: false, error: 'Not connected' };
+        const { error } = await this.client
+            .from('profiles')
+            .update({ display_name: updates.displayName ?? null })
+            .eq('id', this.userId);
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async fetchAllProfiles(): Promise<DbUser[]> {
+        if (!this.client) return [];
+        const { data, error } = await this.client
+            .from('profiles')
+            .select('id, email, display_name, role')
+            .order('created_at', { ascending: true });
+        if (error || !data) return [];
+        return data.map(p => ({
+            id: p.id,
+            email: p.email ?? undefined,
+            displayName: p.display_name ?? undefined,
+            role: (p.role as 'admin' | 'user' | 'student') ?? 'user',
+        }));
+    }
+
+    async updateUserRole(userId: string, role: 'admin' | 'user' | 'student'): Promise<SyncResult> {
+        if (!this.client) return { success: false, error: 'Not connected' };
+        const { error } = await this.client
+            .from('profiles')
+            .update({ role })
+            .eq('id', userId);
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
     disconnect() {
         this.client = null;
         this.userId = null;
+        this.activeUrl = null;
+        this.activeKey = null;
     }
 
     isConnected(): boolean {
@@ -458,6 +539,132 @@ export class SupabaseAdapter {
     async deleteAnalysisResult(id: string): Promise<SyncResult> {
         const { error } = await this.db().from('analysis_results').delete().eq('id', id).eq('owner_id', this.uid());
         return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    // ── Essay assignments & submissions (teacher side) ────────────────────────
+
+    /** Persist the assignment to the DB so the student page can validate it */
+    async saveEssayAssignment(a: EssayAssignment): Promise<SyncResult> {
+        const { error } = await this.db().from('essay_assignments').upsert({
+            id: a.teacherKey,
+            owner_id: this.uid(),
+            rubric_id: a.rubricId,
+            student_id: a.studentId,
+            title: a.title,
+            prompt: a.prompt ?? null,
+            min_words: a.minWords ?? null,
+            max_words: a.maxWords ?? null,
+            time_limit_minutes: a.timeLimitMinutes ?? null,
+            require_seb: a.requireSEB ?? false,
+            read_only_after_submit: a.readOnlyAfterSubmit,
+            created_at: a.createdAt,
+        }, { onConflict: 'id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteEssayAssignment(teacherKey: string): Promise<SyncResult> {
+        const { error } = await this.db().from('essay_assignments').delete()
+            .eq('id', teacherKey).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    /**
+     * Fetch all submissions for a given assignment (by teacherKey / assignment id).
+     * Returns raw DB rows; caller fetches signed URLs as needed.
+     */
+    async fetchEssaySubmissions(teacherKey: string): Promise<Array<{
+        id: string;
+        studentEmail: string | null;
+        wordCount: number;
+        submittedAt: string;
+        storagePath: string;
+    }>> {
+        const { data, error } = await this.db()
+            .from('essay_submissions')
+            .select('id, student_email, word_count, submitted_at, storage_path')
+            .eq('assignment_id', teacherKey)
+            .order('submitted_at', { ascending: false });
+        if (error || !data) return [];
+        return data.map(r => ({
+            id: r.id,
+            studentEmail: r.student_email ?? null,
+            wordCount: r.word_count,
+            submittedAt: r.submitted_at,
+            storagePath: r.storage_path,
+        }));
+    }
+
+    /** Fetch all submissions across ALL of this teacher's assignments */
+    async fetchAllEssaySubmissions(): Promise<Array<{
+        id: string;
+        assignmentId: string;
+        rubricId: string;
+        studentId: string;
+        assignmentTitle: string;
+        studentEmail: string | null;
+        wordCount: number;
+        submittedAt: string;
+        storagePath: string;
+    }>> {
+        const { data, error } = await this.db()
+            .from('essay_submissions')
+            .select('id, assignment_id, word_count, submitted_at, storage_path, student_email, essay_assignments(rubric_id, student_id, title)')
+            .order('submitted_at', { ascending: false });
+        if (error || !data) return [];
+        return data.map(r => {
+            const ea = r.essay_assignments as unknown as { rubric_id: string; student_id: string; title: string } | null;
+            return {
+                id: r.id,
+                assignmentId: r.assignment_id,
+                rubricId: ea?.rubric_id ?? '',
+                studentId: ea?.student_id ?? '',
+                assignmentTitle: ea?.title ?? '',
+                studentEmail: r.student_email ?? null,
+                wordCount: r.word_count,
+                submittedAt: r.submitted_at,
+                storagePath: r.storage_path,
+            };
+        });
+    }
+
+    /** Fetch submissions for a specific student + rubric (no teacherKey needed) */
+    async fetchEssaySubmissionsForStudent(rubricId: string, studentId: string): Promise<Array<{
+        id: string;
+        assignmentId: string;
+        studentEmail: string | null;
+        wordCount: number;
+        submittedAt: string;
+        storagePath: string;
+    }>> {
+        const { data, error } = await this.db()
+            .from('essay_submissions')
+            .select('id, assignment_id, student_email, word_count, submitted_at, storage_path, essay_assignments!inner(rubric_id, student_id)')
+            .eq('essay_assignments.rubric_id', rubricId)
+            .eq('essay_assignments.student_id', studentId)
+            .order('submitted_at', { ascending: false });
+        if (error || !data) return [];
+        return data.map(r => ({
+            id: r.id,
+            assignmentId: r.assignment_id,
+            studentEmail: r.student_email ?? null,
+            wordCount: r.word_count,
+            submittedAt: r.submitted_at,
+            storagePath: r.storage_path,
+        }));
+    }
+
+    async deleteEssaySubmission(submissionId: string, storagePath: string): Promise<SyncResult> {
+        // Remove the file first (best-effort)
+        await this.db().storage.from('essays').remove([storagePath]).catch(() => {});
+        const { error } = await this.db().from('essay_submissions').delete().eq('id', submissionId);
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async getEssaySignedUrl(storagePath: string): Promise<string | null> {
+        const { data, error } = await this.db().storage
+            .from('essays')
+            .createSignedUrl(storagePath, 3600);
+        return error ? null : (data?.signedUrl ?? null);
     }
 
     // ── Settings ──────────────────────────────────────────────────────────────

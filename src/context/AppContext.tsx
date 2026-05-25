@@ -3,7 +3,7 @@ import React, {
 } from 'react';
 import type {
     Rubric, Student, Class, StudentRubric, Attachment,
-    GradeScale, CommentSnippet, AppSettings, ScoreEntry, Modifier, LinkedStandard, CommentBankItem, ExportTemplate, SelfAssessment, SpeakingSession, RubricVersion, VocabularyItem, DocumentAnalysisResult
+    GradeScale, CommentSnippet, AppSettings, ScoreEntry, Modifier, LinkedStandard, CommentBankItem, ExportTemplate, SelfAssessment, SpeakingSession, RubricVersion, VocabularyItem, DocumentAnalysisResult, EssayAssignment
 } from '../types';
 import {
     loadStore, StoreData,
@@ -13,7 +13,7 @@ import {
 } from '../store/storage';
 import { nanoid } from '../utils/nanoid';
 import { storageSync, loadSupabaseConfig, saveSupabaseConfig } from '../services/database';
-import type { DatabaseConfig } from '../services/database';
+import type { DatabaseConfig, DbUser, SyncResult } from '../services/database';
 // Azure / MSAL integration disabled — not in use
 // import { msalInstance, loginRequest } from '../services/msalConfig';
 // import { graphService } from '../services/microsoftGraph';
@@ -402,6 +402,18 @@ interface AppContextValue extends StoreData {
     disconnectDatabase: () => void;
     pushAllToDatabase: () => Promise<{ success: boolean; error?: string }>;
     pullFromDatabase: () => Promise<void>;
+    // User / profile management
+    fetchAllUsers: () => Promise<DbUser[]>;
+    updateUserRole: (userId: string, role: 'admin' | 'user' | 'student') => Promise<SyncResult>;
+    updateMyProfile: (updates: { displayName?: string }) => Promise<SyncResult>;
+    // Essay assignments (teacher side)
+    saveEssayAssignment: (a: EssayAssignment) => Promise<SyncResult>;
+    deleteEssayAssignment: (teacherKey: string) => Promise<SyncResult>;
+    fetchEssaySubmissions: (teacherKey: string) => Promise<Awaited<ReturnType<typeof storageSync.fetchEssaySubmissions>>>;
+    fetchEssaySubmissionsForStudent: (rubricId: string, studentId: string) => Promise<Awaited<ReturnType<typeof storageSync.fetchEssaySubmissionsForStudent>>>;
+    fetchAllEssaySubmissions: () => Promise<Awaited<ReturnType<typeof storageSync.fetchAllEssaySubmissions>>>;
+    deleteEssaySubmission: (submissionId: string, storagePath: string) => Promise<SyncResult>;
+    getEssaySignedUrl: (storagePath: string) => Promise<string | null>;
     // Microsoft Sync
     loginMicrosoft: () => Promise<void>;
     logoutMicrosoft: () => Promise<void>;
@@ -717,6 +729,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
     }, [state]);
 
+    const fetchAllUsers = useCallback((): Promise<DbUser[]> => {
+        return storageSync.fetchAllProfiles();
+    }, []);
+
+    const updateUserRole = useCallback(async (userId: string, role: 'admin' | 'user' | 'student'): Promise<SyncResult> => {
+        const result = await storageSync.updateUserRole(userId, role);
+        // If the role change affected the current user, sync it to local settings
+        if (result.success && userId === storageSync.getCurrentUserId()) {
+            dispatch({ type: 'UPDATE_SETTINGS', payload: { userRole: role } });
+        }
+        return result;
+    }, []);
+
+    const updateMyProfile = useCallback(async (updates: { displayName?: string }): Promise<SyncResult> => {
+        return storageSync.updateMyProfile(updates);
+    }, []);
+
+    const saveEssayAssignment = useCallback((a: EssayAssignment) => storageSync.saveEssayAssignment(a), []);
+    const deleteEssayAssignment = useCallback((teacherKey: string) => storageSync.deleteEssayAssignment(teacherKey), []);
+    const fetchEssaySubmissions = useCallback((teacherKey: string) => storageSync.fetchEssaySubmissions(teacherKey), []);
+    const fetchEssaySubmissionsForStudent = useCallback((rubricId: string, studentId: string) => storageSync.fetchEssaySubmissionsForStudent(rubricId, studentId), []);
+    const fetchAllEssaySubmissions = useCallback(() => storageSync.fetchAllEssaySubmissions(), []);
+    const deleteEssaySubmission = useCallback((id: string, path: string) => storageSync.deleteEssaySubmission(id, path), []);
+    const getEssaySignedUrl = useCallback((path: string) => storageSync.getEssaySignedUrl(path), []);
+
     // ─── Microsoft Sync (disabled — Azure integration not in use) ───
     const microsoftUser: any | null = null;
      
@@ -751,6 +788,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         addVocabularyItem, updateVocabularyItem, deleteVocabularyItem, deleteVocabularyItems,
         saveAnalysisResult, deleteAnalysisResult,
         connectDatabase, disconnectDatabase, pushAllToDatabase, pullFromDatabase,
+        fetchAllUsers, updateUserRole, updateMyProfile,
+        saveEssayAssignment, deleteEssayAssignment,
+        fetchEssaySubmissions, fetchEssaySubmissionsForStudent, fetchAllEssaySubmissions,
+        deleteEssaySubmission, getEssaySignedUrl,
         loginMicrosoft, logoutMicrosoft, syncToOneDrive, restoreFromOneDrive,
         microsoftUser
     };

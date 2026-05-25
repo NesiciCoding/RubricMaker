@@ -2,7 +2,7 @@ import { SupabaseAdapter } from './SupabaseAdapter';
 import { AttachmentSync } from './AttachmentSync';
 import type { DatabaseConfig, SyncStatus, SyncResult, DbUser } from './types';
 import type { StoreData } from '../../store/storage';
-import type { Rubric, Student, Class, StudentRubric, Attachment, GradeScale, CommentSnippet, LinkedStandard, CommentBankItem, ExportTemplate, SelfAssessment, SpeakingSession, DocumentAnalysisResult } from '../../types';
+import type { Rubric, Student, Class, StudentRubric, Attachment, GradeScale, CommentSnippet, LinkedStandard, CommentBankItem, ExportTemplate, SelfAssessment, SpeakingSession, DocumentAnalysisResult, EssayAssignment } from '../../types';
 
 const CONFIG_KEY = 'rm_supabase_config';
 const LAST_SYNC_KEY = 'rm_last_sync_at';
@@ -88,6 +88,54 @@ class StorageSyncService {
         clearSupabaseConfig();
     }
 
+    // ── Profile management (pass-through to adapter) ──────────────────────────
+
+    async fetchMyProfile(): Promise<DbUser | null> {
+        return this.adapter.fetchMyProfile();
+    }
+
+    async updateMyProfile(updates: { displayName?: string }): Promise<SyncResult> {
+        return this.adapter.updateMyProfile(updates);
+    }
+
+    async fetchAllProfiles(): Promise<DbUser[]> {
+        return this.adapter.fetchAllProfiles();
+    }
+
+    async updateUserRole(userId: string, role: 'admin' | 'user' | 'student'): Promise<SyncResult> {
+        return this.adapter.updateUserRole(userId, role);
+    }
+
+    // ── Essay management (pass-through to adapter) ───────────────────────────
+
+    async saveEssayAssignment(a: EssayAssignment): Promise<SyncResult> {
+        return this.adapter.saveEssayAssignment(a);
+    }
+
+    async deleteEssayAssignment(teacherKey: string): Promise<SyncResult> {
+        return this.adapter.deleteEssayAssignment(teacherKey);
+    }
+
+    async fetchEssaySubmissions(teacherKey: string) {
+        return this.adapter.fetchEssaySubmissions(teacherKey);
+    }
+
+    async fetchEssaySubmissionsForStudent(rubricId: string, studentId: string) {
+        return this.adapter.fetchEssaySubmissionsForStudent(rubricId, studentId);
+    }
+
+    async fetchAllEssaySubmissions() {
+        return this.adapter.fetchAllEssaySubmissions();
+    }
+
+    async deleteEssaySubmission(submissionId: string, storagePath: string): Promise<SyncResult> {
+        return this.adapter.deleteEssaySubmission(submissionId, storagePath);
+    }
+
+    async getEssaySignedUrl(storagePath: string): Promise<string | null> {
+        return this.adapter.getEssaySignedUrl(storagePath);
+    }
+
     // ── Hydration (DB → app state) ────────────────────────────────────────────
 
     async hydrate(): Promise<Partial<StoreData> | null> {
@@ -98,7 +146,7 @@ class StorageSyncService {
                 rubrics, classes, students, studentRubrics, peerReviews,
                 gradeScales, commentSnippets, commentBank, exportTemplates,
                 favoriteStandards, selfAssessments, speakingSessions,
-                analysisResults, attachments, settings,
+                analysisResults, attachments, settings, profile,
             ] = await Promise.all([
                 this.adapter.fetchRubrics(),
                 this.adapter.fetchClasses(),
@@ -115,12 +163,19 @@ class StorageSyncService {
                 this.adapter.fetchAnalysisResults(),
                 this.attachmentSync.hydrateAttachments(),
                 this.adapter.fetchSettings(),
+                this.adapter.fetchMyProfile(),
             ]);
 
             const now = new Date().toISOString();
             this.lastSyncAt = now;
             localStorage.setItem(LAST_SYNC_KEY, now);
             this.setStatus('idle');
+
+            // The profile.role is authoritative; always override whatever userRole
+            // is stored in user_settings so the DB is the single source of truth.
+            const mergedSettings = profile?.role
+                ? { ...(settings ?? {}), userRole: profile.role }
+                : settings ?? undefined;
 
             const result: Partial<StoreData> = {
                 rubrics,
@@ -137,7 +192,7 @@ class StorageSyncService {
                 speakingSessions,
                 analysisResults,
                 attachments,
-                ...(settings ? { settings } : {}),
+                ...(mergedSettings ? { settings: mergedSettings as StoreData['settings'] } : {}),
             };
 
             // Remove undefined keys so the caller can merge cleanly with defaults

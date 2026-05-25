@@ -412,6 +412,13 @@ export interface EssayAssignment {
     requireSEB?: boolean;
     readOnlyAfterSubmit: boolean;
     createdAt: string;
+    // ── Supabase integration (optional) ────────────────────────────────────────
+    /** Teacher's Supabase project URL — when present the student page uses DB submission */
+    supabaseUrl?: string;
+    /** Teacher's Supabase anon key — embedded so the student's browser can connect */
+    supabaseAnonKey?: string;
+    /** Teacher's Supabase user ID — used as the storage folder prefix */
+    ownerUserId?: string;
 }
 
 /** A student's completed essay, encoded into a submission code for the teacher to import */
