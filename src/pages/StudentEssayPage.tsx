@@ -291,33 +291,6 @@ export default function StudentEssayPage() {
         return () => clearInterval(interval);
     }, [html, draftKey, submitted]);
 
-    // Countdown — auto-submit when time runs out
-    useEffect(() => {
-        if (secondsLeft === null || secondsLeft <= 0 || submitted) return;
-        timerRef.current = setInterval(() => {
-            setSecondsLeft(prev => {
-                if (prev === null) return null;
-                const next = prev - 1;
-                sessionStorage.setItem(timerKey, String(next));
-                if (next <= 0) {
-                    // Auto-submit: stop interval first, then trigger submit asynchronously
-                    if (timerRef.current) clearInterval(timerRef.current);
-                    setTimeout(() => handleSubmit(), 0);
-                }
-                return next;
-            });
-        }, 1000);
-        return () => { if (timerRef.current) clearInterval(timerRef.current); };
-    }, [secondsLeft === null, submitted]); // eslint-disable-line react-hooks/exhaustive-deps
-
-    // Disable right-click in SEB
-    useEffect(() => {
-        if (!isInSEB) return;
-        const prevent = (e: MouseEvent) => e.preventDefault();
-        document.addEventListener('contextmenu', prevent);
-        return () => document.removeEventListener('contextmenu', prevent);
-    }, [isInSEB]);
-
     const handleSubmit = useCallback(async () => {
         if (!assignment) return;
         sessionStorage.setItem(draftKey, html);
@@ -360,6 +333,33 @@ export default function StudentEssayPage() {
             setTimeout(() => { window.location.href = sebQuitUrl; }, 1500);
         }
     }, [assignment, html, draftKey, hasDb, adapter, studentUserId, studentEmail, isInSEB, sebQuitUrl]);
+
+    // Countdown — auto-submit when time runs out
+    useEffect(() => {
+        if (secondsLeft === null || secondsLeft <= 0 || submitted) return;
+        timerRef.current = setInterval(() => {
+            setSecondsLeft(prev => {
+                if (prev === null) return null;
+                const next = prev - 1;
+                sessionStorage.setItem(timerKey, String(next));
+                if (next <= 0) {
+                    // Auto-submit: stop interval first, then trigger submit asynchronously
+                    if (timerRef.current) clearInterval(timerRef.current);
+                    setTimeout(() => handleSubmit(), 0);
+                }
+                return next;
+            });
+        }, 1000);
+        return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    }, [secondsLeft === null, submitted]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Disable right-click in SEB
+    useEffect(() => {
+        if (!isInSEB) return;
+        const prevent = (e: MouseEvent) => e.preventDefault();
+        document.addEventListener('contextmenu', prevent);
+        return () => document.removeEventListener('contextmenu', prevent);
+    }, [isInSEB]);
 
     const handleCopy = useCallback(() => {
         copyText(submissionCode);
