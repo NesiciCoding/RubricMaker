@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useState } from 'react';
 
-export type ToastType = 'success' | 'error' | 'info';
+export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
 export interface Toast {
     id: number;
@@ -23,14 +23,14 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
     const showToast = useCallback((message: string, type: ToastType = 'info') => {
         const id = ++nextId;
-        setToasts(prev => [...prev, { id, message, type }]);
+        setToasts((prev) => [...prev, { id, message, type }]);
         setTimeout(() => {
-            setToasts(prev => prev.filter(t => t.id !== id));
+            setToasts((prev) => prev.filter((t) => t.id !== id));
         }, 4000);
     }, []);
 
     const dismiss = useCallback((id: number) => {
-        setToasts(prev => prev.filter(t => t.id !== id));
+        setToasts((prev) => prev.filter((t) => t.id !== id));
     }, []);
 
     return (
@@ -44,16 +44,34 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: number) => void }) {
     if (toasts.length === 0) return null;
     return (
-        <div style={{ position: 'fixed', bottom: '1.5rem', right: '1.5rem', zIndex: 9999, display: 'flex', flexDirection: 'column', gap: '0.5rem', maxWidth: '22rem' }}>
-            {toasts.map(t => <ToastItem key={t.id} toast={t} onDismiss={onDismiss} />)}
+        <div
+            style={{
+                position: 'fixed',
+                bottom: '1.5rem',
+                right: '1.5rem',
+                zIndex: 9999,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.5rem',
+                maxWidth: '22rem',
+            }}
+        >
+            {toasts.map((t) => (
+                <ToastItem key={t.id} toast={t} onDismiss={onDismiss} />
+            ))}
         </div>
     );
 }
 
 const TYPE_STYLES: Record<ToastType, { bg: string; border: string; icon: string }> = {
     success: { bg: 'color-mix(in srgb, var(--green) 18%, var(--bg-elevated))', border: 'var(--green)', icon: '✓' },
-    error:   { bg: 'color-mix(in srgb, var(--red) 18%, var(--bg-elevated))', border: 'var(--red)', icon: '✕' },
-    info:    { bg: 'color-mix(in srgb, var(--accent) 18%, var(--bg-elevated))', border: 'var(--accent)', icon: 'ℹ' },
+    error: { bg: 'color-mix(in srgb, var(--red) 18%, var(--bg-elevated))', border: 'var(--red)', icon: '✕' },
+    info: { bg: 'color-mix(in srgb, var(--accent) 18%, var(--bg-elevated))', border: 'var(--accent)', icon: 'ℹ' },
+    warning: {
+        bg: 'color-mix(in srgb, var(--yellow) 18%, var(--bg-elevated))',
+        border: 'var(--yellow)',
+        icon: '⚠',
+    },
 };
 
 function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: number) => void }) {
@@ -91,7 +109,9 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: number)
                     lineHeight: 1,
                     flexShrink: 0,
                 }}
-            >×</button>
+            >
+                ×
+            </button>
         </div>
     );
 }

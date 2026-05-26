@@ -1,15 +1,54 @@
 import React, {
-    createContext, useContext, useReducer, useCallback, useEffect, useRef, useState, ReactNode
+    createContext,
+    useContext,
+    useReducer,
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+    ReactNode,
 } from 'react';
 import type {
-    Rubric, Student, Class, StudentRubric, Attachment,
-    GradeScale, CommentSnippet, AppSettings, ScoreEntry, Modifier, LinkedStandard, CommentBankItem, ExportTemplate, SelfAssessment, SpeakingSession, RubricVersion, VocabularyItem, DocumentAnalysisResult, EssayAssignment
+    Rubric,
+    Student,
+    Class,
+    StudentRubric,
+    Attachment,
+    GradeScale,
+    CommentSnippet,
+    AppSettings,
+    ScoreEntry,
+    Modifier,
+    LinkedStandard,
+    CommentBankItem,
+    ExportTemplate,
+    SelfAssessment,
+    SpeakingSession,
+    RubricVersion,
+    VocabularyItem,
+    DocumentAnalysisResult,
+    EssayAssignment,
 } from '../types';
 import {
-    loadStore, StoreData,
-    saveRubrics, saveStudents, saveClasses, saveStudentRubrics,
-    saveAttachments, saveGradeScales, saveCommentSnippets, saveSettings, saveFavoriteStandards, saveCommentBank,
-    saveExportTemplates, exportStore, savePeerReviews, saveSelfAssessments, saveSpeakingSessions, saveAnalysisResults
+    loadStore,
+    StoreData,
+    saveRubrics,
+    saveStudents,
+    saveClasses,
+    saveStudentRubrics,
+    saveAttachments,
+    saveGradeScales,
+    saveCommentSnippets,
+    saveSettings,
+    saveFavoriteStandards,
+    saveCommentBank,
+    saveExportTemplates,
+    exportStore,
+    savePeerReviews,
+    saveSelfAssessments,
+    saveSpeakingSessions,
+    saveAnalysisResults,
+    importFullBackup,
 } from '../store/storage';
 import { nanoid } from '../utils/nanoid';
 import { storageSync, loadSupabaseConfig, saveSupabaseConfig } from '../services/database';
@@ -46,12 +85,12 @@ type Action =
     | { type: 'DELETE_COMMENT_BANK_ITEM'; id: string }
     | { type: 'ADD_EXPORT_TEMPLATE'; payload: ExportTemplate }
     | { type: 'DELETE_EXPORT_TEMPLATE'; id: string }
-    | { type: 'SAVE_PEER_REVIEW', payload: StudentRubric }
-    | { type: 'DELETE_PEER_REVIEW', id: string }
-    | { type: 'SAVE_SELF_ASSESSMENT', payload: SelfAssessment }
-    | { type: 'DELETE_SELF_ASSESSMENT', id: string }
-    | { type: 'SAVE_SPEAKING_SESSION', payload: SpeakingSession }
-    | { type: 'DELETE_SPEAKING_SESSION', id: string }
+    | { type: 'SAVE_PEER_REVIEW'; payload: StudentRubric }
+    | { type: 'DELETE_PEER_REVIEW'; id: string }
+    | { type: 'SAVE_SELF_ASSESSMENT'; payload: SelfAssessment }
+    | { type: 'DELETE_SELF_ASSESSMENT'; id: string }
+    | { type: 'SAVE_SPEAKING_SESSION'; payload: SpeakingSession }
+    | { type: 'DELETE_SPEAKING_SESSION'; id: string }
     | { type: 'SYNC_RUBRIC_SNAPSHOT'; rubricId: string; updatedRubric: Rubric }
     | { type: 'SAVE_RUBRIC_VERSION'; rubricId: string; label?: string }
     | { type: 'RESTORE_RUBRIC_VERSION'; rubricId: string; versionIndex: number }
@@ -64,19 +103,20 @@ type Action =
 
 function reducer(state: StoreData, action: Action): StoreData {
     switch (action.type) {
-        case 'SET_ALL': return action.payload;
+        case 'SET_ALL':
+            return action.payload;
         case 'ADD_RUBRIC': {
             const next = [...state.rubrics, action.payload];
             saveRubrics(next);
             return { ...state, rubrics: next };
         }
         case 'UPDATE_RUBRIC': {
-            const next = state.rubrics.map(r => r.id === action.payload.id ? action.payload : r);
+            const next = state.rubrics.map((r) => (r.id === action.payload.id ? action.payload : r));
             saveRubrics(next);
             return { ...state, rubrics: next };
         }
         case 'DELETE_RUBRIC': {
-            const next = state.rubrics.filter(r => r.id !== action.id);
+            const next = state.rubrics.filter((r) => r.id !== action.id);
             saveRubrics(next);
             return { ...state, rubrics: next };
         }
@@ -86,12 +126,12 @@ function reducer(state: StoreData, action: Action): StoreData {
             return { ...state, students: next };
         }
         case 'UPDATE_STUDENT': {
-            const next = state.students.map(s => s.id === action.payload.id ? action.payload : s);
+            const next = state.students.map((s) => (s.id === action.payload.id ? action.payload : s));
             saveStudents(next);
             return { ...state, students: next };
         }
         case 'DELETE_STUDENT': {
-            const next = state.students.filter(s => s.id !== action.id);
+            const next = state.students.filter((s) => s.id !== action.id);
             saveStudents(next);
             return { ...state, students: next };
         }
@@ -101,25 +141,26 @@ function reducer(state: StoreData, action: Action): StoreData {
             return { ...state, classes: next };
         }
         case 'UPDATE_CLASS': {
-            const next = state.classes.map(c => c.id === action.payload.id ? action.payload : c);
+            const next = state.classes.map((c) => (c.id === action.payload.id ? action.payload : c));
             saveClasses(next);
             return { ...state, classes: next };
         }
         case 'DELETE_CLASS': {
-            const next = state.classes.filter(c => c.id !== action.id);
+            const next = state.classes.filter((c) => c.id !== action.id);
             saveClasses(next);
             return { ...state, classes: next };
         }
         case 'SAVE_STUDENT_RUBRIC': {
-            const exists = state.studentRubrics.findIndex(sr => sr.id === action.payload.id);
-            const next = exists >= 0
-                ? state.studentRubrics.map(sr => sr.id === action.payload.id ? action.payload : sr)
-                : [...state.studentRubrics, action.payload];
+            const exists = state.studentRubrics.findIndex((sr) => sr.id === action.payload.id);
+            const next =
+                exists >= 0
+                    ? state.studentRubrics.map((sr) => (sr.id === action.payload.id ? action.payload : sr))
+                    : [...state.studentRubrics, action.payload];
             saveStudentRubrics(next);
             return { ...state, studentRubrics: next };
         }
         case 'DELETE_STUDENT_RUBRIC': {
-            const next = state.studentRubrics.filter(sr => sr.id !== action.id);
+            const next = state.studentRubrics.filter((sr) => sr.id !== action.id);
             saveStudentRubrics(next);
             return { ...state, studentRubrics: next };
         }
@@ -129,7 +170,7 @@ function reducer(state: StoreData, action: Action): StoreData {
             return { ...state, attachments: next };
         }
         case 'DELETE_ATTACHMENT': {
-            const next = state.attachments.filter(a => a.id !== action.id);
+            const next = state.attachments.filter((a) => a.id !== action.id);
             saveAttachments(next);
             return { ...state, attachments: next };
         }
@@ -139,12 +180,12 @@ function reducer(state: StoreData, action: Action): StoreData {
             return { ...state, gradeScales: next };
         }
         case 'UPDATE_GRADE_SCALE': {
-            const next = state.gradeScales.map(gs => gs.id === action.payload.id ? action.payload : gs);
+            const next = state.gradeScales.map((gs) => (gs.id === action.payload.id ? action.payload : gs));
             saveGradeScales(next);
             return { ...state, gradeScales: next };
         }
         case 'DELETE_GRADE_SCALE': {
-            const next = state.gradeScales.filter(gs => gs.id !== action.id);
+            const next = state.gradeScales.filter((gs) => gs.id !== action.id);
             saveGradeScales(next);
             return { ...state, gradeScales: next };
         }
@@ -154,12 +195,12 @@ function reducer(state: StoreData, action: Action): StoreData {
             return { ...state, commentSnippets: next };
         }
         case 'UPDATE_COMMENT_SNIPPET': {
-            const next = state.commentSnippets.map(cs => cs.id === action.payload.id ? action.payload : cs);
+            const next = state.commentSnippets.map((cs) => (cs.id === action.payload.id ? action.payload : cs));
             saveCommentSnippets(next);
             return { ...state, commentSnippets: next };
         }
         case 'DELETE_COMMENT_SNIPPET': {
-            const next = state.commentSnippets.filter(cs => cs.id !== action.id);
+            const next = state.commentSnippets.filter((cs) => cs.id !== action.id);
             saveCommentSnippets(next);
             return { ...state, commentSnippets: next };
         }
@@ -169,13 +210,13 @@ function reducer(state: StoreData, action: Action): StoreData {
             return { ...state, settings: next };
         }
         case 'ADD_FAVORITE_STANDARD': {
-            if (state.favoriteStandards.some(s => s.guid === action.payload.guid)) return state;
+            if (state.favoriteStandards.some((s) => s.guid === action.payload.guid)) return state;
             const next = [...state.favoriteStandards, action.payload];
             saveFavoriteStandards(next);
             return { ...state, favoriteStandards: next };
         }
         case 'REMOVE_FAVORITE_STANDARD': {
-            const next = state.favoriteStandards.filter(s => s.guid !== action.guid);
+            const next = state.favoriteStandards.filter((s) => s.guid !== action.guid);
             saveFavoriteStandards(next);
             return { ...state, favoriteStandards: next };
         }
@@ -185,12 +226,12 @@ function reducer(state: StoreData, action: Action): StoreData {
             return { ...state, commentBank: next };
         }
         case 'UPDATE_COMMENT_BANK_ITEM': {
-            const next = state.commentBank.map(i => i.id === action.payload.id ? action.payload : i);
+            const next = state.commentBank.map((i) => (i.id === action.payload.id ? action.payload : i));
             saveCommentBank(next);
             return { ...state, commentBank: next };
         }
         case 'DELETE_COMMENT_BANK_ITEM': {
-            const next = state.commentBank.filter(i => i.id !== action.id);
+            const next = state.commentBank.filter((i) => i.id !== action.id);
             saveCommentBank(next);
             return { ...state, commentBank: next };
         }
@@ -200,58 +241,63 @@ function reducer(state: StoreData, action: Action): StoreData {
             return { ...state, exportTemplates: next };
         }
         case 'DELETE_EXPORT_TEMPLATE': {
-            const next = state.exportTemplates.filter(t => t.id !== action.id);
+            const next = state.exportTemplates.filter((t) => t.id !== action.id);
             saveExportTemplates(next);
             return { ...state, exportTemplates: next };
         }
         case 'SAVE_PEER_REVIEW': {
-            const exists = state.peerReviews.findIndex(sr => sr.id === action.payload.id);
-            const next = exists >= 0
-                ? state.peerReviews.map(sr => sr.id === action.payload.id ? action.payload : sr)
-                : [...state.peerReviews, action.payload];
+            const exists = state.peerReviews.findIndex((sr) => sr.id === action.payload.id);
+            const next =
+                exists >= 0
+                    ? state.peerReviews.map((sr) => (sr.id === action.payload.id ? action.payload : sr))
+                    : [...state.peerReviews, action.payload];
             savePeerReviews(next);
             return { ...state, peerReviews: next };
         }
         case 'DELETE_PEER_REVIEW': {
-            const next = state.peerReviews.filter(sr => sr.id !== action.id);
+            const next = state.peerReviews.filter((sr) => sr.id !== action.id);
             savePeerReviews(next);
             return { ...state, peerReviews: next };
         }
         case 'SAVE_SELF_ASSESSMENT': {
-            const exists = state.selfAssessments.findIndex(sa => sa.id === action.payload.id);
-            const next = exists >= 0
-                ? state.selfAssessments.map(sa => sa.id === action.payload.id ? action.payload : sa)
-                : [...state.selfAssessments, action.payload];
+            const exists = state.selfAssessments.findIndex((sa) => sa.id === action.payload.id);
+            const next =
+                exists >= 0
+                    ? state.selfAssessments.map((sa) => (sa.id === action.payload.id ? action.payload : sa))
+                    : [...state.selfAssessments, action.payload];
             saveSelfAssessments(next);
             return { ...state, selfAssessments: next };
         }
         case 'DELETE_SELF_ASSESSMENT': {
-            const next = state.selfAssessments.filter(sa => sa.id !== action.id);
+            const next = state.selfAssessments.filter((sa) => sa.id !== action.id);
             saveSelfAssessments(next);
             return { ...state, selfAssessments: next };
         }
         case 'SAVE_SPEAKING_SESSION': {
-            const existing = state.speakingSessions.find(s => s.id === action.payload.id);
+            const existing = state.speakingSessions.find((s) => s.id === action.payload.id);
             const next = existing
-                ? state.speakingSessions.map(s => s.id === action.payload.id ? action.payload : s)
+                ? state.speakingSessions.map((s) => (s.id === action.payload.id ? action.payload : s))
                 : [...state.speakingSessions, action.payload];
             saveSpeakingSessions(next);
             return { ...state, speakingSessions: next };
         }
         case 'DELETE_SPEAKING_SESSION': {
-            const next = state.speakingSessions.filter(s => s.id !== action.id);
+            const next = state.speakingSessions.filter((s) => s.id !== action.id);
             saveSpeakingSessions(next);
             return { ...state, speakingSessions: next };
         }
         case 'SYNC_RUBRIC_SNAPSHOT': {
             const { rubricId, updatedRubric } = action;
             const makeEntry = (c: Rubric['criteria'][0]) => ({
-                criterionId: c.id, levelId: null as null, comment: '', checkedSubItems: [] as string[],
+                criterionId: c.id,
+                levelId: null as null,
+                comment: '',
+                checkedSubItems: [] as string[],
             });
             const syncSr = (sr: StudentRubric): StudentRubric => {
                 if (sr.rubricId !== rubricId) return sr;
                 const newEntries = updatedRubric.criteria
-                    .filter(c => !sr.entries.find(e => e.criterionId === c.id))
+                    .filter((c) => !sr.entries.find((e) => e.criterionId === c.id))
                     .map(makeEntry);
                 return { ...sr, rubricSnapshot: updatedRubric, entries: [...sr.entries, ...newEntries] };
             };
@@ -262,7 +308,7 @@ function reducer(state: StoreData, action: Action): StoreData {
             return { ...state, studentRubrics: nextSRs, peerReviews: nextPRs };
         }
         case 'SAVE_RUBRIC_VERSION': {
-            const rubric = state.rubrics.find(r => r.id === action.rubricId);
+            const rubric = state.rubrics.find((r) => r.id === action.rubricId);
             if (!rubric) return state;
             const { versions: _v, ...snapshotFields } = rubric;
             const version: RubricVersion = {
@@ -271,22 +317,26 @@ function reducer(state: StoreData, action: Action): StoreData {
                 snapshot: snapshotFields,
             };
             const updated = { ...rubric, versions: [...(rubric.versions ?? []), version] };
-            const next = state.rubrics.map(r => r.id === action.rubricId ? updated : r);
+            const next = state.rubrics.map((r) => (r.id === action.rubricId ? updated : r));
             saveRubrics(next);
             return { ...state, rubrics: next };
         }
         case 'RESTORE_RUBRIC_VERSION': {
-            const rubric = state.rubrics.find(r => r.id === action.rubricId);
+            const rubric = state.rubrics.find((r) => r.id === action.rubricId);
             if (!rubric) return state;
             const version = rubric.versions?.[action.versionIndex];
             if (!version) return state;
-            const restored: Rubric = { ...version.snapshot, versions: rubric.versions, updatedAt: new Date().toISOString() };
-            const next = state.rubrics.map(r => r.id === action.rubricId ? restored : r);
+            const restored: Rubric = {
+                ...version.snapshot,
+                versions: rubric.versions,
+                updatedAt: new Date().toISOString(),
+            };
+            const next = state.rubrics.map((r) => (r.id === action.rubricId ? restored : r));
             saveRubrics(next);
             return { ...state, rubrics: next };
         }
         case 'ADD_VOCABULARY_ITEM': {
-            const next = state.rubrics.map(r => {
+            const next = state.rubrics.map((r) => {
                 if (r.id !== action.rubricId) return r;
                 return { ...r, vocabularyItems: [...(r.vocabularyItems ?? []), action.payload] };
             });
@@ -294,44 +344,51 @@ function reducer(state: StoreData, action: Action): StoreData {
             return { ...state, rubrics: next };
         }
         case 'UPDATE_VOCABULARY_ITEM': {
-            const next = state.rubrics.map(r => {
+            const next = state.rubrics.map((r) => {
                 if (r.id !== action.rubricId) return r;
-                return { ...r, vocabularyItems: (r.vocabularyItems ?? []).map(v => v.id === action.payload.id ? action.payload : v) };
+                return {
+                    ...r,
+                    vocabularyItems: (r.vocabularyItems ?? []).map((v) =>
+                        v.id === action.payload.id ? action.payload : v
+                    ),
+                };
             });
             saveRubrics(next);
             return { ...state, rubrics: next };
         }
         case 'DELETE_VOCABULARY_ITEM': {
-            const next = state.rubrics.map(r => {
+            const next = state.rubrics.map((r) => {
                 if (r.id !== action.rubricId) return r;
-                return { ...r, vocabularyItems: (r.vocabularyItems ?? []).filter(v => v.id !== action.itemId) };
+                return { ...r, vocabularyItems: (r.vocabularyItems ?? []).filter((v) => v.id !== action.itemId) };
             });
             saveRubrics(next);
             return { ...state, rubrics: next };
         }
         case 'DELETE_VOCABULARY_ITEMS_BATCH': {
             const idSet = new Set(action.itemIds);
-            const next = state.rubrics.map(r => {
+            const next = state.rubrics.map((r) => {
                 if (r.id !== action.rubricId) return r;
-                return { ...r, vocabularyItems: (r.vocabularyItems ?? []).filter(v => !idSet.has(v.id)) };
+                return { ...r, vocabularyItems: (r.vocabularyItems ?? []).filter((v) => !idSet.has(v.id)) };
             });
             saveRubrics(next);
             return { ...state, rubrics: next };
         }
         case 'SAVE_ANALYSIS_RESULT': {
-            const exists = state.analysisResults.findIndex(r => r.id === action.payload.id);
-            const next = exists >= 0
-                ? state.analysisResults.map(r => r.id === action.payload.id ? action.payload : r)
-                : [...state.analysisResults, action.payload];
+            const exists = state.analysisResults.findIndex((r) => r.id === action.payload.id);
+            const next =
+                exists >= 0
+                    ? state.analysisResults.map((r) => (r.id === action.payload.id ? action.payload : r))
+                    : [...state.analysisResults, action.payload];
             saveAnalysisResults(next);
             return { ...state, analysisResults: next };
         }
         case 'DELETE_ANALYSIS_RESULT': {
-            const next = state.analysisResults.filter(r => r.id !== action.id);
+            const next = state.analysisResults.filter((r) => r.id !== action.id);
             saveAnalysisResults(next);
             return { ...state, analysisResults: next };
         }
-        default: return state;
+        default:
+            return state;
     }
 }
 
@@ -405,11 +462,18 @@ interface AppContextValue extends StoreData {
     // Essay assignments (teacher side)
     saveEssayAssignment: (a: EssayAssignment) => Promise<SyncResult>;
     deleteEssayAssignment: (teacherKey: string) => Promise<SyncResult>;
-    fetchEssaySubmissions: (teacherKey: string) => Promise<Awaited<ReturnType<typeof storageSync.fetchEssaySubmissions>>>;
-    fetchEssaySubmissionsForStudent: (rubricId: string, studentId: string) => Promise<Awaited<ReturnType<typeof storageSync.fetchEssaySubmissionsForStudent>>>;
+    fetchEssaySubmissions: (
+        teacherKey: string
+    ) => Promise<Awaited<ReturnType<typeof storageSync.fetchEssaySubmissions>>>;
+    fetchEssaySubmissionsForStudent: (
+        rubricId: string,
+        studentId: string
+    ) => Promise<Awaited<ReturnType<typeof storageSync.fetchEssaySubmissionsForStudent>>>;
     fetchAllEssaySubmissions: () => Promise<Awaited<ReturnType<typeof storageSync.fetchAllEssaySubmissions>>>;
     deleteEssaySubmission: (submissionId: string, storagePath: string) => Promise<SyncResult>;
     getEssaySignedUrl: (storagePath: string) => Promise<string | null>;
+    // Backup / restore
+    importBackup: (json: string) => boolean;
     // Landing / auth flow
     showLanding: boolean;
     isCheckingSession: boolean;
@@ -435,7 +499,23 @@ const LOCAL_MODE_KEY = 'rm_local_mode';
 const MIGRATION_DONE_KEY = 'rm_migration_done';
 
 async function flushToLocalStorage(merged: StoreData) {
-    const { saveRubrics, saveStudents, saveClasses, saveStudentRubrics, saveAttachments, saveGradeScales, saveCommentSnippets, saveSettings, saveFavoriteStandards, saveCommentBank, saveExportTemplates, savePeerReviews, saveSelfAssessments, saveSpeakingSessions, saveAnalysisResults } = await import('../store/storage');
+    const {
+        saveRubrics,
+        saveStudents,
+        saveClasses,
+        saveStudentRubrics,
+        saveAttachments,
+        saveGradeScales,
+        saveCommentSnippets,
+        saveSettings,
+        saveFavoriteStandards,
+        saveCommentBank,
+        saveExportTemplates,
+        savePeerReviews,
+        saveSelfAssessments,
+        saveSpeakingSessions,
+        saveAnalysisResults,
+    } = await import('../store/storage');
     saveRubrics(merged.rubrics);
     saveStudents(merged.students);
     saveClasses(merged.classes);
@@ -496,7 +576,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
             // Session found — auto-connect and hydrate
             saveSupabaseConfig(config);
             const ok = await storageSync.configure(config);
-            if (!ok) { setLandingState('show'); return; }
+            if (!ok) {
+                setLandingState('show');
+                return;
+            }
 
             const fresh = await storageSync.hydrate();
             if (fresh) {
@@ -515,7 +598,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 }
             }
         });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // ── Supabase: delta-sync after each mutation ───────────────────────────────
@@ -526,8 +609,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (!storageSync.isConnected()) return;
 
         function diff<T>(prevArr: T[], currArr: T[], entity: string, getId: (x: T) => string) {
-            const prevMap = new Map(prevArr.map(x => [getId(x), JSON.stringify(x)]));
-            const currMap = new Map(currArr.map(x => [getId(x), x]));
+            const prevMap = new Map(prevArr.map((x) => [getId(x), JSON.stringify(x)]));
+            const currMap = new Map(currArr.map((x) => [getId(x), x]));
             for (const id of prevMap.keys()) {
                 if (!currMap.has(id)) storageSync.pushOne(entity, 'delete', null, id);
             }
@@ -536,20 +619,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
             }
         }
 
-        diff(prev.rubrics, state.rubrics, 'rubric', r => r.id);
-        diff(prev.classes, state.classes, 'class', c => c.id);
-        diff(prev.students, state.students, 'student', s => s.id);
-        diff(prev.studentRubrics, state.studentRubrics, 'studentRubric', sr => sr.id);
-        diff(prev.peerReviews, state.peerReviews, 'peerReview', sr => sr.id);
-        diff(prev.attachments, state.attachments, 'attachment', a => a.id);
-        diff(prev.gradeScales, state.gradeScales, 'gradeScale', gs => gs.id);
-        diff(prev.commentSnippets, state.commentSnippets, 'commentSnippet', cs => cs.id);
-        diff(prev.commentBank, state.commentBank, 'commentBankItem', cb => cb.id);
-        diff(prev.exportTemplates, state.exportTemplates, 'exportTemplate', t => t.id);
-        diff(prev.favoriteStandards, state.favoriteStandards, 'favoriteStandard', fs => fs.guid);
-        diff(prev.selfAssessments, state.selfAssessments, 'selfAssessment', sa => sa.id);
-        diff(prev.speakingSessions, state.speakingSessions, 'speakingSession', ss => ss.id);
-        diff(prev.analysisResults, state.analysisResults, 'analysisResult', ar => ar.id);
+        diff(prev.rubrics, state.rubrics, 'rubric', (r) => r.id);
+        diff(prev.classes, state.classes, 'class', (c) => c.id);
+        diff(prev.students, state.students, 'student', (s) => s.id);
+        diff(prev.studentRubrics, state.studentRubrics, 'studentRubric', (sr) => sr.id);
+        diff(prev.peerReviews, state.peerReviews, 'peerReview', (sr) => sr.id);
+        diff(prev.attachments, state.attachments, 'attachment', (a) => a.id);
+        diff(prev.gradeScales, state.gradeScales, 'gradeScale', (gs) => gs.id);
+        diff(prev.commentSnippets, state.commentSnippets, 'commentSnippet', (cs) => cs.id);
+        diff(prev.commentBank, state.commentBank, 'commentBankItem', (cb) => cb.id);
+        diff(prev.exportTemplates, state.exportTemplates, 'exportTemplate', (t) => t.id);
+        diff(prev.favoriteStandards, state.favoriteStandards, 'favoriteStandard', (fs) => fs.guid);
+        diff(prev.selfAssessments, state.selfAssessments, 'selfAssessment', (sa) => sa.id);
+        diff(prev.speakingSessions, state.speakingSessions, 'speakingSession', (ss) => ss.id);
+        diff(prev.analysisResults, state.analysisResults, 'analysisResult', (ar) => ar.id);
 
         if (JSON.stringify(prev.settings) !== JSON.stringify(state.settings)) {
             storageSync.pushOne('settings', 'upsert', state.settings);
@@ -584,55 +667,64 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return cls;
     }, []);
     const updateClass = useCallback((c: Class) => dispatch({ type: 'UPDATE_CLASS', payload: c }), []);
-    const deleteClass = useCallback((id: string, deleteStudents: boolean = false) => {
-        if (deleteStudents) {
-            state.students.filter(s => s.classId === id).forEach(s => deleteStudent(s.id));
-        }
-        dispatch({ type: 'DELETE_CLASS', id });
-    }, [state.students, deleteStudent]);
-
-    const mergeClasses = useCallback((sourceClassId: string, targetClassId: string) => {
-        // Move all students to the target class
-        const studentsToMove = state.students.filter(s => s.classId === sourceClassId);
-        studentsToMove.forEach(s => updateStudent({ ...s, classId: targetClassId }));
-        // Merge rubricIds: union source and target rubric associations
-        const sourceClass = state.classes.find(c => c.id === sourceClassId);
-        const targetClass = state.classes.find(c => c.id === targetClassId);
-        if (sourceClass && targetClass) {
-            const sourceRubricIds = sourceClass.rubricIds ?? [];
-            const targetRubricIds = targetClass.rubricIds ?? [];
-            if (sourceRubricIds.length > 0) {
-                const merged = Array.from(new Set([...targetRubricIds, ...sourceRubricIds]));
-                dispatch({ type: 'UPDATE_CLASS', payload: { ...targetClass, rubricIds: merged } });
+    const deleteClass = useCallback(
+        (id: string, deleteStudents: boolean = false) => {
+            if (deleteStudents) {
+                state.students.filter((s) => s.classId === id).forEach((s) => deleteStudent(s.id));
             }
-        }
-        // Delete the old class
-        deleteClass(sourceClassId, false);
-    }, [state.students, state.classes, updateStudent, deleteClass, dispatch]);
+            dispatch({ type: 'DELETE_CLASS', id });
+        },
+        [state.students, deleteStudent]
+    );
+
+    const mergeClasses = useCallback(
+        (sourceClassId: string, targetClassId: string) => {
+            // Move all students to the target class
+            const studentsToMove = state.students.filter((s) => s.classId === sourceClassId);
+            studentsToMove.forEach((s) => updateStudent({ ...s, classId: targetClassId }));
+            // Merge rubricIds: union source and target rubric associations
+            const sourceClass = state.classes.find((c) => c.id === sourceClassId);
+            const targetClass = state.classes.find((c) => c.id === targetClassId);
+            if (sourceClass && targetClass) {
+                const sourceRubricIds = sourceClass.rubricIds ?? [];
+                const targetRubricIds = targetClass.rubricIds ?? [];
+                if (sourceRubricIds.length > 0) {
+                    const merged = Array.from(new Set([...targetRubricIds, ...sourceRubricIds]));
+                    dispatch({ type: 'UPDATE_CLASS', payload: { ...targetClass, rubricIds: merged } });
+                }
+            }
+            // Delete the old class
+            deleteClass(sourceClassId, false);
+        },
+        [state.students, state.classes, updateStudent, deleteClass, dispatch]
+    );
 
     const saveStudentRubricFn = useCallback((sr: StudentRubric) => {
         dispatch({ type: 'SAVE_STUDENT_RUBRIC', payload: sr });
     }, []);
 
-    const createStudentRubric = useCallback((rubricId: string, studentId: string): StudentRubric => {
-        const rubric = state.rubrics.find(r => r.id === rubricId);
-        const entries: ScoreEntry[] = (rubric?.criteria ?? []).map(c => ({
-            criterionId: c.id,
-            levelId: null,
-            comment: '',
-            checkedSubItems: [],
-        }));
-        const sr: StudentRubric = {
-            id: nanoid(),
-            rubricId,
-            studentId,
-            entries,
-            overallComment: '',
-            isPeerReview: false,
-        };
-        dispatch({ type: 'SAVE_STUDENT_RUBRIC', payload: sr });
-        return sr;
-    }, [state.rubrics]);
+    const createStudentRubric = useCallback(
+        (rubricId: string, studentId: string): StudentRubric => {
+            const rubric = state.rubrics.find((r) => r.id === rubricId);
+            const entries: ScoreEntry[] = (rubric?.criteria ?? []).map((c) => ({
+                criterionId: c.id,
+                levelId: null,
+                comment: '',
+                checkedSubItems: [],
+            }));
+            const sr: StudentRubric = {
+                id: nanoid(),
+                rubricId,
+                studentId,
+                entries,
+                overallComment: '',
+                isPeerReview: false,
+            };
+            dispatch({ type: 'SAVE_STUDENT_RUBRIC', payload: sr });
+            return sr;
+        },
+        [state.rubrics]
+    );
 
     const deleteStudentRubric = useCallback((id: string) => dispatch({ type: 'DELETE_STUDENT_RUBRIC', id }), []);
 
@@ -659,18 +751,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return snip;
     }, []);
 
-    const updateCommentSnippet = useCallback((cs: CommentSnippet) => dispatch({ type: 'UPDATE_COMMENT_SNIPPET', payload: cs }), []);
+    const updateCommentSnippet = useCallback(
+        (cs: CommentSnippet) => dispatch({ type: 'UPDATE_COMMENT_SNIPPET', payload: cs }),
+        []
+    );
     const deleteCommentSnippet = useCallback((id: string) => dispatch({ type: 'DELETE_COMMENT_SNIPPET', id }), []);
-    const updateSettings = useCallback((s: Partial<AppSettings>) => dispatch({ type: 'UPDATE_SETTINGS', payload: s }), []);
+    const updateSettings = useCallback(
+        (s: Partial<AppSettings>) => dispatch({ type: 'UPDATE_SETTINGS', payload: s }),
+        []
+    );
 
     const getActiveGradeScale = useCallback((): GradeScale => {
-        return state.gradeScales.find(gs => gs.id === state.settings.defaultGradeScaleId)
-            ?? state.gradeScales[0];
+        return state.gradeScales.find((gs) => gs.id === state.settings.defaultGradeScaleId) ?? state.gradeScales[0];
     }, [state.gradeScales, state.settings.defaultGradeScaleId]);
 
-    const addFavoriteStandard = useCallback((s: LinkedStandard) => dispatch({ type: 'ADD_FAVORITE_STANDARD', payload: s }), []);
-    const removeFavoriteStandard = useCallback((guid: string) => dispatch({ type: 'REMOVE_FAVORITE_STANDARD', guid }), []);
-    const isFavoriteStandard = useCallback((guid: string) => state.favoriteStandards.some(s => s.guid === guid), [state.favoriteStandards]);
+    const addFavoriteStandard = useCallback(
+        (s: LinkedStandard) => dispatch({ type: 'ADD_FAVORITE_STANDARD', payload: s }),
+        []
+    );
+    const removeFavoriteStandard = useCallback(
+        (guid: string) => dispatch({ type: 'REMOVE_FAVORITE_STANDARD', guid }),
+        []
+    );
+    const isFavoriteStandard = useCallback(
+        (guid: string) => state.favoriteStandards.some((s) => s.guid === guid),
+        [state.favoriteStandards]
+    );
 
     const addCommentBankItem = useCallback((text: string, tags: string[]): CommentBankItem => {
         const item: CommentBankItem = { id: nanoid(), text, tags, createdAt: new Date().toISOString() };
@@ -678,7 +784,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return item;
     }, []);
 
-    const updateCommentBankItem = useCallback((item: CommentBankItem) => dispatch({ type: 'UPDATE_COMMENT_BANK_ITEM', payload: item }), []);
+    const updateCommentBankItem = useCallback(
+        (item: CommentBankItem) => dispatch({ type: 'UPDATE_COMMENT_BANK_ITEM', payload: item }),
+        []
+    );
     const deleteCommentBankItem = useCallback((id: string) => dispatch({ type: 'DELETE_COMMENT_BANK_ITEM', id }), []);
 
     const addExportTemplate = useCallback((t: Omit<ExportTemplate, 'id' | 'addedAt'>): ExportTemplate => {
@@ -743,18 +852,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }, []);
 
     // ─── Database sync ────────────────────────────────────────────────
-    const connectDatabase = useCallback(async (config: DatabaseConfig): Promise<boolean> => {
-        const ok = await storageSync.configure(config);
-        if (ok) {
-            saveSupabaseConfig(config);
-            const fresh = await storageSync.hydrate();
-            if (fresh) {
-                const merged = { ...state, ...fresh } as StoreData;
-                dispatch({ type: 'SET_ALL', payload: merged });
+    const connectDatabase = useCallback(
+        async (config: DatabaseConfig): Promise<boolean> => {
+            const ok = await storageSync.configure(config);
+            if (ok) {
+                saveSupabaseConfig(config);
+                const fresh = await storageSync.hydrate();
+                if (fresh) {
+                    const merged = { ...state, ...fresh } as StoreData;
+                    dispatch({ type: 'SET_ALL', payload: merged });
+                }
             }
-        }
-        return ok;
-    }, [state]);
+            return ok;
+        },
+        [state]
+    );
 
     const disconnectDatabase = useCallback(() => {
         storageSync.disconnect();
@@ -776,25 +888,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return storageSync.fetchAllProfiles();
     }, []);
 
-    const updateUserRole = useCallback(async (userId: string, role: 'admin' | 'user' | 'student'): Promise<SyncResult> => {
-        const result = await storageSync.updateUserRole(userId, role);
-        // If the role change affected the current user, sync it to local settings
-        if (result.success && userId === storageSync.getCurrentUserId()) {
-            dispatch({ type: 'UPDATE_SETTINGS', payload: { userRole: role } });
-        }
-        return result;
-    }, []);
+    const updateUserRole = useCallback(
+        async (userId: string, role: 'admin' | 'user' | 'student'): Promise<SyncResult> => {
+            const result = await storageSync.updateUserRole(userId, role);
+            // If the role change affected the current user, sync it to local settings
+            if (result.success && userId === storageSync.getCurrentUserId()) {
+                dispatch({ type: 'UPDATE_SETTINGS', payload: { userRole: role } });
+            }
+            return result;
+        },
+        []
+    );
 
     const updateMyProfile = useCallback(async (updates: { displayName?: string }): Promise<SyncResult> => {
         return storageSync.updateMyProfile(updates);
     }, []);
 
     const saveEssayAssignment = useCallback((a: EssayAssignment) => storageSync.saveEssayAssignment(a), []);
-    const deleteEssayAssignment = useCallback((teacherKey: string) => storageSync.deleteEssayAssignment(teacherKey), []);
-    const fetchEssaySubmissions = useCallback((teacherKey: string) => storageSync.fetchEssaySubmissions(teacherKey), []);
-    const fetchEssaySubmissionsForStudent = useCallback((rubricId: string, studentId: string) => storageSync.fetchEssaySubmissionsForStudent(rubricId, studentId), []);
+    const deleteEssayAssignment = useCallback(
+        (teacherKey: string) => storageSync.deleteEssayAssignment(teacherKey),
+        []
+    );
+    const fetchEssaySubmissions = useCallback(
+        (teacherKey: string) => storageSync.fetchEssaySubmissions(teacherKey),
+        []
+    );
+    const fetchEssaySubmissionsForStudent = useCallback(
+        (rubricId: string, studentId: string) => storageSync.fetchEssaySubmissionsForStudent(rubricId, studentId),
+        []
+    );
     const fetchAllEssaySubmissions = useCallback(() => storageSync.fetchAllEssaySubmissions(), []);
-    const deleteEssaySubmission = useCallback((id: string, path: string) => storageSync.deleteEssaySubmission(id, path), []);
+    const deleteEssaySubmission = useCallback(
+        (id: string, path: string) => storageSync.deleteEssaySubmission(id, path),
+        []
+    );
     const getEssaySignedUrl = useCallback((path: string) => storageSync.getEssaySignedUrl(path), []);
 
     // ─── Landing / auth flow ──────────────────────────────────────────
@@ -808,11 +935,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return storageSync.initAuth(config);
     }, []);
 
-    const dismissMigrationPrompt = useCallback(async (upload: boolean) => {
-        setShowMigrationPrompt(false);
-        localStorage.setItem(MIGRATION_DONE_KEY, 'true');
-        if (upload) await storageSync.pushAll(state);
-    }, [state]);
+    const dismissMigrationPrompt = useCallback(
+        async (upload: boolean) => {
+            setShowMigrationPrompt(false);
+            localStorage.setItem(MIGRATION_DONE_KEY, 'true');
+            if (upload) await storageSync.pushAll(state);
+        },
+        [state]
+    );
 
     const signInWithGoogle = useCallback((): Promise<{ error?: string }> => {
         return storageSync.signInWithGoogle();
@@ -833,6 +963,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
     }, []);
 
+    // ─── Backup restore ─────────────────────────────────────────────────────────
+    const importBackup = useCallback((json: string): boolean => {
+        const ok = importFullBackup(json);
+        if (ok) {
+            dispatch({ type: 'SET_ALL', payload: loadStore() });
+        }
+        return ok;
+    }, []);
+
     // ─── Microsoft Sync (disabled — Azure integration not in use) ───
     const microsoftUser: any | null = null;
     const loginMicrosoft = useCallback(async () => {}, []);
@@ -843,37 +982,82 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const value: AppContextValue = {
         ...state,
         dispatch,
-        addRubric, updateRubric, deleteRubric,
-        addStudent, updateStudent, deleteStudent,
-        addClass, updateClass, deleteClass, mergeClasses,
+        addRubric,
+        updateRubric,
+        deleteRubric,
+        addStudent,
+        updateStudent,
+        deleteStudent,
+        addClass,
+        updateClass,
+        deleteClass,
+        mergeClasses,
         saveStudentRubric: saveStudentRubricFn,
-        createStudentRubric, deleteStudentRubric,
-        addAttachment, deleteAttachment,
-        addGradeScale, updateGradeScale, deleteGradeScale,
-        addCommentSnippet, updateCommentSnippet, deleteCommentSnippet,
-        updateSettings, getActiveGradeScale,
-        addFavoriteStandard, removeFavoriteStandard, isFavoriteStandard,
-        addCommentBankItem, updateCommentBankItem, deleteCommentBankItem,
-        addExportTemplate, deleteExportTemplate,
-        savePeerReview, deletePeerReview,
-        saveSelfAssessment, deleteSelfAssessment,
-        saveSpeakingSession, deleteSpeakingSession,
+        createStudentRubric,
+        deleteStudentRubric,
+        addAttachment,
+        deleteAttachment,
+        addGradeScale,
+        updateGradeScale,
+        deleteGradeScale,
+        addCommentSnippet,
+        updateCommentSnippet,
+        deleteCommentSnippet,
+        updateSettings,
+        getActiveGradeScale,
+        addFavoriteStandard,
+        removeFavoriteStandard,
+        isFavoriteStandard,
+        addCommentBankItem,
+        updateCommentBankItem,
+        deleteCommentBankItem,
+        addExportTemplate,
+        deleteExportTemplate,
+        savePeerReview,
+        deletePeerReview,
+        saveSelfAssessment,
+        deleteSelfAssessment,
+        saveSpeakingSession,
+        deleteSpeakingSession,
         syncRubricSnapshot,
-        saveRubricVersion, restoreRubricVersion,
-        addVocabularyItem, updateVocabularyItem, deleteVocabularyItem, deleteVocabularyItems,
-        saveAnalysisResult, deleteAnalysisResult,
-        connectDatabase, disconnectDatabase, pushAllToDatabase, pullFromDatabase,
-        fetchAllUsers, updateUserRole, updateMyProfile,
-        saveEssayAssignment, deleteEssayAssignment,
-        fetchEssaySubmissions, fetchEssaySubmissionsForStudent, fetchAllEssaySubmissions,
-        deleteEssaySubmission, getEssaySignedUrl,
+        saveRubricVersion,
+        restoreRubricVersion,
+        addVocabularyItem,
+        updateVocabularyItem,
+        deleteVocabularyItem,
+        deleteVocabularyItems,
+        saveAnalysisResult,
+        deleteAnalysisResult,
+        connectDatabase,
+        disconnectDatabase,
+        pushAllToDatabase,
+        pullFromDatabase,
+        fetchAllUsers,
+        updateUserRole,
+        updateMyProfile,
+        saveEssayAssignment,
+        deleteEssayAssignment,
+        fetchEssaySubmissions,
+        fetchEssaySubmissionsForStudent,
+        fetchAllEssaySubmissions,
+        deleteEssaySubmission,
+        getEssaySignedUrl,
+        importBackup,
         showLanding: landingState === 'show',
         isCheckingSession: landingState === 'checking',
         showMigrationPrompt,
-        enterLocalMode, connectForOAuth, dismissMigrationPrompt,
-        signInWithGoogle, signInWithMicrosoftPersonal, signInWithAzureAD, signOutFromDatabase,
-        loginMicrosoft, logoutMicrosoft, syncToOneDrive, restoreFromOneDrive,
-        microsoftUser
+        enterLocalMode,
+        connectForOAuth,
+        dismissMigrationPrompt,
+        signInWithGoogle,
+        signInWithMicrosoftPersonal,
+        signInWithAzureAD,
+        signOutFromDatabase,
+        loginMicrosoft,
+        logoutMicrosoft,
+        syncToOneDrive,
+        restoreFromOneDrive,
+        microsoftUser,
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

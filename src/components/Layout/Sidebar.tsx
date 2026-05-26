@@ -1,8 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
-    LayoutDashboard, BookOpen, Users, FileText, Settings,
-    Download, MessageSquare, BarChart3, Layers, ChevronLeft, ChevronRight, Shield, X
+    LayoutDashboard,
+    BookOpen,
+    Users,
+    FileText,
+    Settings,
+    Download,
+    MessageSquare,
+    BarChart3,
+    Layers,
+    ChevronLeft,
+    ChevronRight,
+    Shield,
+    X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
@@ -54,98 +65,110 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
                 onClick={onMobileClose}
                 aria-hidden="true"
             />
-        <aside
-            className={`sidebar${mobileOpen ? ' mobile-open' : ''}`}
-            data-collapsed={collapsed ? 'true' : undefined}
-            style={{ width: collapsed ? 64 : 260 }}
-            aria-hidden={undefined /* always visible on desktop; CSS handles mobile */}
-        >
-            {/* Logo + collapse toggle */}
-            <div className="sidebar-logo" style={{ justifyContent: collapsed ? 'center' : 'space-between', padding: collapsed ? '18px 14px' : '18px 16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, overflow: 'hidden' }}>
-                    <div className="logo-icon" style={{ flexShrink: 0 }}>
-                        <Layers size={18} />
+            <aside
+                className={`sidebar${mobileOpen ? ' mobile-open' : ''}`}
+                data-collapsed={collapsed ? 'true' : undefined}
+                style={{ width: collapsed ? 64 : 260 }}
+                aria-hidden={undefined /* always visible on desktop; CSS handles mobile */}
+            >
+                {/* Logo + collapse toggle */}
+                <div
+                    className="sidebar-logo"
+                    style={{
+                        justifyContent: collapsed ? 'center' : 'space-between',
+                        padding: collapsed ? '18px 14px' : '18px 16px',
+                    }}
+                >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, overflow: 'hidden' }}>
+                        <div className="logo-icon" style={{ flexShrink: 0 }}>
+                            <Layers size={18} />
+                        </div>
+                        {!collapsed && (
+                            <span style={{ fontWeight: 700, fontSize: '0.95rem', whiteSpace: 'nowrap' }}>
+                                Rubric Maker
+                            </span>
+                        )}
                     </div>
-                    {!collapsed && <span style={{ fontWeight: 700, fontSize: '0.95rem', whiteSpace: 'nowrap' }}>Rubric Maker</span>}
+                    {/* On mobile, show close (✕) button; on desktop, show collapse toggle */}
+                    <button
+                        className="btn btn-ghost btn-icon btn-sm sidebar-close-btn"
+                        onClick={onMobileClose}
+                        aria-label="Close navigation menu"
+                        style={{ flexShrink: 0 }}
+                    >
+                        <X size={15} />
+                    </button>
+                    <button
+                        className="btn btn-ghost btn-icon btn-sm sidebar-collapse-btn"
+                        onClick={() => setCollapsed((c) => !c)}
+                        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                        style={{ flexShrink: 0, marginLeft: collapsed ? 0 : 4 }}
+                    >
+                        {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
+                    </button>
                 </div>
-                {/* On mobile, show close (✕) button; on desktop, show collapse toggle */}
-                <button
-                    className="btn btn-ghost btn-icon btn-sm sidebar-close-btn"
-                    onClick={onMobileClose}
-                    aria-label="Close navigation menu"
-                    style={{ flexShrink: 0 }}
-                >
-                    <X size={15} />
-                </button>
-                <button
-                    className="btn btn-ghost btn-icon btn-sm sidebar-collapse-btn"
-                    onClick={() => setCollapsed(c => !c)}
-                    title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-                    style={{ flexShrink: 0, marginLeft: collapsed ? 0 : 4 }}
-                >
-                    {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
-                </button>
-            </div>
 
-            <nav className="sidebar-nav">
-                {!collapsed && <span className="nav-section-label">{t('sidebar.main_section')}</span>}
-                {navItems.map(({ to, icon: Icon, label, end }) => (
+                <nav className="sidebar-nav">
+                    {!collapsed && <span className="nav-section-label">{t('sidebar.main_section')}</span>}
+                    {navItems.map(({ to, icon: Icon, label, end }) => (
+                        <NavLink
+                            key={to}
+                            to={to}
+                            end={end}
+                            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                            data-tour={to}
+                            aria-label={collapsed ? label : undefined}
+                            data-tooltip={collapsed ? label : undefined}
+                            style={collapsed ? { justifyContent: 'center', padding: '10px 0' } : undefined}
+                        >
+                            <Icon size={16} aria-hidden="true" />
+                            {!collapsed && label}
+                        </NavLink>
+                    ))}
+
+                    {!collapsed && (
+                        <>
+                            <span className="nav-section-label" style={{ marginTop: 12 }}>
+                                {t('sidebar.quick_stats')}
+                            </span>
+                            <div style={{ padding: '8px 12px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                                    <span>{t('sidebar.rubrics_count')}</span>
+                                    <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{rubrics.length}</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span>{t('sidebar.students_count')}</span>
+                                    <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{students.length}</span>
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </nav>
+
+                <div className="sidebar-footer">
                     <NavLink
-                        key={to}
-                        to={to}
-                        end={end}
+                        to="/settings"
                         className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-                        data-tour={to}
-                        aria-label={collapsed ? label : undefined}
-                        data-tooltip={collapsed ? label : undefined}
+                        data-tour="/settings"
+                        aria-label={collapsed ? t('common.settings') : undefined}
+                        data-tooltip={collapsed ? t('common.settings') : undefined}
                         style={collapsed ? { justifyContent: 'center', padding: '10px 0' } : undefined}
                     >
-                        <Icon size={16} aria-hidden="true" />
-                        {!collapsed && label}
+                        <Settings size={16} aria-hidden="true" />
+                        {!collapsed && t('common.settings')}
                     </NavLink>
-                ))}
-
-                {!collapsed && (
-                    <>
-                        <span className="nav-section-label" style={{ marginTop: 12 }}>{t('sidebar.quick_stats')}</span>
-                        <div style={{ padding: '8px 12px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                                <span>{t('sidebar.rubrics_count')}</span>
-                                <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{rubrics.length}</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span>{t('sidebar.students_count')}</span>
-                                <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{students.length}</span>
-                            </div>
-                        </div>
-                    </>
-                )}
-            </nav>
-
-            <div className="sidebar-footer">
-                <NavLink
-                    to="/settings"
-                    className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-                    data-tour="/settings"
-                    aria-label={collapsed ? t('common.settings') : undefined}
-                    data-tooltip={collapsed ? t('common.settings') : undefined}
-                    style={collapsed ? { justifyContent: 'center', padding: '10px 0' } : undefined}
-                >
-                    <Settings size={16} aria-hidden="true" />
-                    {!collapsed && t('common.settings')}
-                </NavLink>
-                <NavLink
-                    to="/privacy"
-                    className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-                    aria-label={collapsed ? 'Privacy & AVG' : undefined}
-                    data-tooltip={collapsed ? 'Privacy & AVG' : undefined}
-                    style={collapsed ? { justifyContent: 'center', padding: '10px 0' } : undefined}
-                >
-                    <Shield size={16} aria-hidden="true" />
-                    {!collapsed && 'Privacy & AVG'}
-                </NavLink>
-            </div>
-        </aside>
+                    <NavLink
+                        to="/privacy"
+                        className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                        aria-label={collapsed ? 'Privacy & AVG' : undefined}
+                        data-tooltip={collapsed ? 'Privacy & AVG' : undefined}
+                        style={collapsed ? { justifyContent: 'center', padding: '10px 0' } : undefined}
+                    >
+                        <Shield size={16} aria-hidden="true" />
+                        {!collapsed && 'Privacy & AVG'}
+                    </NavLink>
+                </div>
+            </aside>
         </>
     );
 }

@@ -18,22 +18,32 @@ export default function LandingPage() {
     const [configError, setConfigError] = useState('');
 
     async function handleConfigure() {
-        if (!dbUrl.trim() || !dbKey.trim()) { setConfigError('Both fields are required.'); return; }
+        if (!dbUrl.trim() || !dbKey.trim()) {
+            setConfigError('Both fields are required.');
+            return;
+        }
         setConfiguring(true);
         setConfigError('');
         const ok = await connectForOAuth({ supabaseUrl: dbUrl.trim(), supabaseAnonKey: dbKey.trim() });
         setConfiguring(false);
-        if (ok) { setSupabaseReady(true); setShowAdvanced(false); }
-        else setConfigError('Could not connect — check the URL and key.');
+        if (ok) {
+            setSupabaseReady(true);
+            setShowAdvanced(false);
+        } else setConfigError('Could not connect — check the URL and key.');
     }
 
     return (
-        <div style={{
-            minHeight: '100vh', display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center',
-            background: 'linear-gradient(135deg, #f0f4ff 0%, #fafbff 60%, #f5f0ff 100%)',
-            padding: '32px 16px',
-        }}>
+        <div
+            style={{
+                minHeight: '100vh',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'linear-gradient(135deg, #f0f4ff 0%, #fafbff 60%, #f5f0ff 100%)',
+                padding: '32px 16px',
+            }}
+        >
             {/* Logo / title */}
             <div style={{ textAlign: 'center', marginBottom: 40 }}>
                 <div style={{ fontSize: '2rem', fontWeight: 800, color: '#1e293b', letterSpacing: '-0.03em' }}>
@@ -45,13 +55,15 @@ export default function LandingPage() {
             </div>
 
             {/* Three-column card grid */}
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-                gap: 20,
-                width: '100%',
-                maxWidth: 900,
-            }}>
+            <div
+                style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+                    gap: 20,
+                    width: '100%',
+                    maxWidth: 900,
+                }}
+            >
                 {/* ── Column 1: Try-out / Offline ── */}
                 <Card
                     icon={<Laptop size={28} style={{ color: '#64748b' }} />}
@@ -61,8 +73,8 @@ export default function LandingPage() {
                     accentSoft="#f1f5f9"
                 >
                     <p style={{ color: '#64748b', fontSize: '0.88rem', lineHeight: 1.6, margin: '0 0 20px' }}>
-                        All your rubrics and grades stay in this browser. Nothing is sent to a server.
-                        You can always connect an account later in Settings.
+                        All your rubrics and grades stay in this browser. Nothing is sent to a server. You can always
+                        connect an account later in Settings.
                     </p>
                     <button className="btn btn-secondary" style={{ width: '100%' }} onClick={enterLocalMode}>
                         Continue without account
@@ -78,15 +90,14 @@ export default function LandingPage() {
                     accentSoft="#eef2ff"
                     highlighted
                 >
-                    <LoginButtons
-                        supabaseReady={supabaseReady}
-                        onNeedConfig={() => setShowAdvanced(true)}
-                    />
+                    <LoginButtons supabaseReady={supabaseReady} onNeedConfig={() => setShowAdvanced(true)} />
                     <AdvancedConfig
                         open={showAdvanced}
-                        onToggle={() => setShowAdvanced(o => !o)}
-                        dbUrl={dbUrl} setDbUrl={setDbUrl}
-                        dbKey={dbKey} setDbKey={setDbKey}
+                        onToggle={() => setShowAdvanced((o) => !o)}
+                        dbUrl={dbUrl}
+                        setDbUrl={setDbUrl}
+                        dbKey={dbKey}
+                        setDbKey={setDbKey}
                         configuring={configuring}
                         configError={configError}
                         onConfigure={handleConfigure}
@@ -108,16 +119,16 @@ export default function LandingPage() {
                             Your teacher will give you the assignment link — you don't need an account to submit.
                         </span>
                     </p>
-                    <LoginButtons
-                        supabaseReady={supabaseReady}
-                        onNeedConfig={() => setShowAdvanced(true)}
-                    />
+                    <LoginButtons supabaseReady={supabaseReady} onNeedConfig={() => setShowAdvanced(true)} />
                 </Card>
             </div>
 
             <p style={{ marginTop: 32, fontSize: '0.78rem', color: '#94a3b8' }}>
                 By continuing you agree to the{' '}
-                <a href="#/privacy" style={{ color: '#94a3b8', textDecoration: 'underline' }}>privacy statement</a>.
+                <a href="#/privacy" style={{ color: '#94a3b8', textDecoration: 'underline' }}>
+                    privacy statement
+                </a>
+                .
             </p>
         </div>
     );
@@ -137,21 +148,30 @@ interface CardProps {
 
 function Card({ icon, title, subtitle, accentSoft, highlighted, children }: CardProps) {
     return (
-        <div style={{
-            background: '#fff',
-            borderRadius: 16,
-            padding: 28,
-            boxShadow: highlighted
-                ? '0 8px 32px rgba(99,102,241,0.12), 0 2px 8px rgba(0,0,0,0.06)'
-                : '0 2px 12px rgba(0,0,0,0.06)',
-            border: highlighted ? '2px solid var(--accent, #6366f1)' : '1px solid #e2e8f0',
-            display: 'flex',
-            flexDirection: 'column',
-        }}>
-            <div style={{
-                display: 'flex', alignItems: 'center', gap: 12,
-                background: accentSoft, borderRadius: 10, padding: '12px 14px', marginBottom: 18,
-            }}>
+        <div
+            style={{
+                background: '#fff',
+                borderRadius: 16,
+                padding: 28,
+                boxShadow: highlighted
+                    ? '0 8px 32px rgba(99,102,241,0.12), 0 2px 8px rgba(0,0,0,0.06)'
+                    : '0 2px 12px rgba(0,0,0,0.06)',
+                border: highlighted ? '2px solid var(--accent, #6366f1)' : '1px solid #e2e8f0',
+                display: 'flex',
+                flexDirection: 'column',
+            }}
+        >
+            <div
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    background: accentSoft,
+                    borderRadius: 10,
+                    padding: '12px 14px',
+                    marginBottom: 18,
+                }}
+            >
                 {icon}
                 <div>
                     <div style={{ fontWeight: 700, fontSize: '1rem', color: '#1e293b' }}>{title}</div>
@@ -166,23 +186,42 @@ function Card({ icon, title, subtitle, accentSoft, highlighted, children }: Card
 interface AdvancedConfigProps {
     open: boolean;
     onToggle: () => void;
-    dbUrl: string; setDbUrl: (v: string) => void;
-    dbKey: string; setDbKey: (v: string) => void;
+    dbUrl: string;
+    setDbUrl: (v: string) => void;
+    dbKey: string;
+    setDbKey: (v: string) => void;
     configuring: boolean;
     configError: string;
     onConfigure: () => void;
 }
 
-function AdvancedConfig({ open, onToggle, dbUrl, setDbUrl, dbKey, setDbKey, configuring, configError, onConfigure }: AdvancedConfigProps) {
+function AdvancedConfig({
+    open,
+    onToggle,
+    dbUrl,
+    setDbUrl,
+    dbKey,
+    setDbKey,
+    configuring,
+    configError,
+    onConfigure,
+}: AdvancedConfigProps) {
     return (
         <div style={{ marginTop: 12 }}>
             <button
                 onClick={onToggle}
                 style={{
-                    display: 'flex', alignItems: 'center', gap: 6,
-                    background: 'none', border: 'none', cursor: 'pointer',
-                    color: '#94a3b8', fontSize: '0.78rem', padding: '4px 0',
-                }}>
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#94a3b8',
+                    fontSize: '0.78rem',
+                    padding: '4px 0',
+                }}
+            >
                 {open ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
                 Self-hosted / advanced
             </button>
@@ -191,27 +230,46 @@ function AdvancedConfig({ open, onToggle, dbUrl, setDbUrl, dbKey, setDbKey, conf
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
                     <p style={{ margin: 0, fontSize: '0.78rem', color: '#94a3b8', lineHeight: 1.5 }}>
                         Run your own Supabase instance or use a custom project.{' '}
-                        <a href="https://supabase.com" target="_blank" rel="noopener noreferrer"
-                            style={{ color: '#94a3b8' }}>
+                        <a
+                            href="https://supabase.com"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: '#94a3b8' }}
+                        >
                             supabase.com <ExternalLink size={9} />
                         </a>
                     </p>
                     <input
-                        type="text" value={dbUrl}
-                        onChange={e => setDbUrl(e.target.value)}
+                        type="text"
+                        value={dbUrl}
+                        onChange={(e) => setDbUrl(e.target.value)}
                         placeholder="https://your-project.supabase.co"
-                        style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid #e2e8f0', fontSize: '0.82rem' }}
+                        style={{
+                            padding: '8px 10px',
+                            borderRadius: 6,
+                            border: '1px solid #e2e8f0',
+                            fontSize: '0.82rem',
+                        }}
                     />
                     <input
-                        type="password" value={dbKey}
-                        onChange={e => setDbKey(e.target.value)}
+                        type="password"
+                        value={dbKey}
+                        onChange={(e) => setDbKey(e.target.value)}
                         placeholder="anon key (eyJhbGci…)"
                         autoComplete="off"
-                        style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid #e2e8f0', fontSize: '0.82rem' }}
+                        style={{
+                            padding: '8px 10px',
+                            borderRadius: 6,
+                            border: '1px solid #e2e8f0',
+                            fontSize: '0.82rem',
+                        }}
                     />
                     {configError && <p style={{ margin: 0, color: '#ef4444', fontSize: '0.78rem' }}>{configError}</p>}
-                    <button className="btn btn-secondary btn-sm" disabled={configuring || !dbUrl || !dbKey}
-                        onClick={onConfigure}>
+                    <button
+                        className="btn btn-secondary btn-sm"
+                        disabled={configuring || !dbUrl || !dbKey}
+                        onClick={onConfigure}
+                    >
                         <Database size={13} />
                         {configuring ? 'Connecting…' : 'Use this Supabase instance'}
                     </button>

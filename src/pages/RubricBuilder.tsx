@@ -1,18 +1,51 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
-    Plus, Trash2, GripVertical, Save, ChevronUp, ChevronDown,
-    Settings, Eye, ArrowLeft, Link2, BookOpen, X, ChevronRight, FileDown, FileText,
-    Wand2, AlignLeft, AlignCenter, AlignRight, LayoutGrid, Rows3, CheckSquare, Square,
-    MoveLeft, MoveRight, Copy, GripHorizontal, Clock, RotateCcw
+    Plus,
+    Trash2,
+    GripVertical,
+    Save,
+    ChevronUp,
+    ChevronDown,
+    Settings,
+    Eye,
+    ArrowLeft,
+    Link2,
+    BookOpen,
+    X,
+    ChevronRight,
+    FileDown,
+    FileText,
+    Wand2,
+    AlignLeft,
+    AlignCenter,
+    AlignRight,
+    LayoutGrid,
+    Rows3,
+    CheckSquare,
+    Square,
+    MoveLeft,
+    MoveRight,
+    Copy,
+    GripHorizontal,
+    Clock,
+    RotateCcw,
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import { useTranslation, Trans } from 'react-i18next';
 import type {
-    Rubric, RubricCriterion, RubricLevel, RubricFormat, SubItem,
-    LinkedStandard, ScoringMode, CefrLevel, CefrSkill, LinkedCefrDescriptor,
+    Rubric,
+    RubricCriterion,
+    RubricLevel,
+    RubricFormat,
+    SubItem,
+    LinkedStandard,
+    ScoringMode,
+    CefrLevel,
+    CefrSkill,
+    LinkedCefrDescriptor,
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 import { nanoid } from '../utils/nanoid';
@@ -26,7 +59,12 @@ import { getSpeakingDimensions } from '../data/speakingDimensions';
 
 function newLevel(min = 0, max = 0, label = ''): RubricLevel {
     return {
-        id: nanoid(), label, minPoints: min, maxPoints: max, description: '', subItems: [],
+        id: nanoid(),
+        label,
+        minPoints: min,
+        maxPoints: max,
+        description: '',
+        subItems: [],
     };
 }
 
@@ -49,18 +87,40 @@ export default function RubricBuilder() {
     const navigate = useNavigate();
     const { id } = useParams();
     const location = useLocation();
-    const { rubrics, studentRubrics, peerReviews, addRubric, updateRubric, syncRubricSnapshot, saveRubricVersion, restoreRubricVersion, gradeScales, settings, addVocabularyItem, updateVocabularyItem, deleteVocabularyItem, deleteVocabularyItems } = useApp();
+    const {
+        rubrics,
+        studentRubrics,
+        peerReviews,
+        addRubric,
+        updateRubric,
+        syncRubricSnapshot,
+        saveRubricVersion,
+        restoreRubricVersion,
+        gradeScales,
+        settings,
+        addVocabularyItem,
+        updateVocabularyItem,
+        deleteVocabularyItem,
+        deleteVocabularyItems,
+    } = useApp();
 
-    const existing = id ? rubrics.find(r => r.id === id) : undefined;
+    const existing = id ? rubrics.find((r) => r.id === id) : undefined;
     const template = location.state?.template as Partial<Rubric> | undefined;
 
     const [name, setName] = useState(existing?.name ?? template?.name ?? '');
+    const [nameError, setNameError] = useState('');
     const [subject, setSubject] = useState(existing?.subject ?? template?.subject ?? '');
     const [description, setDescription] = useState(existing?.description ?? template?.description ?? '');
-    const [criteria, setCriteria] = useState<RubricCriterion[]>(existing?.criteria ?? template?.criteria ?? [newCriterion()]);
-    const [gradeScaleId, setGradeScaleId] = useState(existing?.gradeScaleId ?? template?.gradeScaleId ?? settings.defaultGradeScaleId);
+    const [criteria, setCriteria] = useState<RubricCriterion[]>(
+        existing?.criteria ?? template?.criteria ?? [newCriterion()]
+    );
+    const [gradeScaleId, setGradeScaleId] = useState(
+        existing?.gradeScaleId ?? template?.gradeScaleId ?? settings.defaultGradeScaleId
+    );
     const [format, setFormat] = useState<RubricFormat>(existing?.format ?? template?.format ?? DEFAULT_FORMAT);
-    const [scoringMode, setScoringMode] = useState<ScoringMode>(existing?.scoringMode ?? template?.scoringMode ?? 'weighted-percentage');
+    const [scoringMode, setScoringMode] = useState<ScoringMode>(
+        existing?.scoringMode ?? template?.scoringMode ?? 'weighted-percentage'
+    );
     const [totalMaxPoints, setTotalMaxPoints] = useState(existing?.totalMaxPoints ?? template?.totalMaxPoints ?? 100);
     const [showFormat, setShowFormat] = useState(false);
     const [showVocabulary, setShowVocabulary] = useState(false);
@@ -70,7 +130,9 @@ export default function RubricBuilder() {
     const [saved, setSaved] = useState(false);
     const [expandedSubItems, setExpandedSubItems] = useState<Set<string>>(new Set());
 
-    type StandardTarget = { type: 'criterion'; cid: string } | { type: 'subitem'; cid: string; lid: string; sid: string };
+    type StandardTarget =
+        | { type: 'criterion'; cid: string }
+        | { type: 'subitem'; cid: string; lid: string; sid: string };
     const [pickingStandardFor, setPickingStandardFor] = useState<StandardTarget | null>(null);
     const [showExportMenu, setShowExportMenu] = useState(false);
     const { t, i18n } = useTranslation();
@@ -89,9 +151,13 @@ export default function RubricBuilder() {
     // ── Collapsible criteria ─────────────────────────────────────────────────
     const [collapsedCriteria, setCollapsedCriteria] = useState<Set<string>>(new Set());
     function toggleCollapseCriterion(id: string) {
-        setCollapsedCriteria(prev => {
+        setCollapsedCriteria((prev) => {
             const next = new Set(prev);
-            if (next.has(id)) { next.delete(id); } else { next.add(id); }
+            if (next.has(id)) {
+                next.delete(id);
+            } else {
+                next.add(id);
+            }
             return next;
         });
     }
@@ -100,29 +166,68 @@ export default function RubricBuilder() {
     const [isDirty, setIsDirty] = useState(false);
     const mountedRef = useRef(false);
     useEffect(() => {
-        if (!mountedRef.current) { mountedRef.current = true; return; }
+        if (!mountedRef.current) {
+            mountedRef.current = true;
+            return;
+        }
         setIsDirty(true);
-    }, [name, subject, description, criteria, format, scoringMode, totalMaxPoints, cefrTargetLevel, cefrSkill, cefrAchieveThreshold]);
+    }, [
+        name,
+        subject,
+        description,
+        criteria,
+        format,
+        scoringMode,
+        totalMaxPoints,
+        cefrTargetLevel,
+        cefrSkill,
+        cefrAchieveThreshold,
+    ]);
     useEffect(() => {
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-            if (isDirty) { e.preventDefault(); e.returnValue = ''; }
+            if (isDirty) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
         };
         window.addEventListener('beforeunload', handleBeforeUnload);
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, [isDirty]);
 
-    const getRubricData = useCallback((): Rubric => ({
-        id: existing?.id ?? 'temp',
-        name: name || t('rubricBuilder.placeholder_name').replace('...', ''),
-        subject, description, criteria, gradeScaleId, format,
-        scoringMode, totalMaxPoints,
-        attachmentIds: existing?.attachmentIds ?? [],
-        createdAt: existing?.createdAt ?? new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        cefrTargetLevel: cefrTargetLevel || undefined,
-        cefrSkill: cefrSkill || undefined,
-        cefrAchieveThreshold: cefrTargetLevel ? cefrAchieveThreshold : undefined,
-    }), [existing, name, subject, description, criteria, gradeScaleId, format, scoringMode, totalMaxPoints, t, cefrTargetLevel, cefrSkill, cefrAchieveThreshold]);
+    const getRubricData = useCallback(
+        (): Rubric => ({
+            id: existing?.id ?? 'temp',
+            name: name || t('rubricBuilder.placeholder_name').replace('...', ''),
+            subject,
+            description,
+            criteria,
+            gradeScaleId,
+            format,
+            scoringMode,
+            totalMaxPoints,
+            attachmentIds: existing?.attachmentIds ?? [],
+            createdAt: existing?.createdAt ?? new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            cefrTargetLevel: cefrTargetLevel || undefined,
+            cefrSkill: cefrSkill || undefined,
+            cefrAchieveThreshold: cefrTargetLevel ? cefrAchieveThreshold : undefined,
+        }),
+        [
+            existing,
+            name,
+            subject,
+            description,
+            criteria,
+            gradeScaleId,
+            format,
+            scoringMode,
+            totalMaxPoints,
+            t,
+            cefrTargetLevel,
+            cefrSkill,
+            cefrAchieveThreshold,
+        ]
+    );
 
     const onDragEnd = (result: DropResult) => {
         if (!result.destination) return;
@@ -152,10 +257,20 @@ export default function RubricBuilder() {
     };
 
     const handleSave = useCallback(() => {
+        if (!name.trim()) {
+            setNameError(t('rubricBuilder.name_required', 'Rubric name is required.'));
+            return;
+        }
+        setNameError('');
         const rubricData = {
-            name: name || t('rubricBuilder.placeholder_name').replace('...', ''),
-            subject, description, criteria, gradeScaleId, format,
-            scoringMode, totalMaxPoints,
+            name: name.trim(),
+            subject,
+            description,
+            criteria,
+            gradeScaleId,
+            format,
+            scoringMode,
+            totalMaxPoints,
             attachmentIds: existing?.attachmentIds ?? [],
             cefrTargetLevel: cefrTargetLevel || undefined,
             cefrSkill: cefrSkill || undefined,
@@ -166,8 +281,8 @@ export default function RubricBuilder() {
             updateRubric(savedRubric);
             // Offer to sync rubricSnapshot for all existing graded submissions
             const affectedCount =
-                studentRubrics.filter(sr => sr.rubricId === existing.id).length +
-                peerReviews.filter(pr => pr.rubricId === existing.id).length;
+                studentRubrics.filter((sr) => sr.rubricId === existing.id).length +
+                peerReviews.filter((pr) => pr.rubricId === existing.id).length;
             if (affectedCount > 0) {
                 setSyncDialogRubric(savedRubric);
             }
@@ -178,9 +293,26 @@ export default function RubricBuilder() {
         setSaved(true);
         setIsDirty(false);
         setTimeout(() => setSaved(false), 2000);
-    }, [name, subject, description, criteria, gradeScaleId, format, scoringMode, totalMaxPoints,
-        existing, addRubric, updateRubric, navigate, cefrTargetLevel, cefrSkill, cefrAchieveThreshold, t,
-        studentRubrics, peerReviews]);
+    }, [
+        name,
+        subject,
+        description,
+        criteria,
+        gradeScaleId,
+        format,
+        scoringMode,
+        totalMaxPoints,
+        existing,
+        addRubric,
+        updateRubric,
+        navigate,
+        cefrTargetLevel,
+        cefrSkill,
+        cefrAchieveThreshold,
+        t,
+        studentRubrics,
+        peerReviews,
+    ]);
 
     // ── Criterion operations ────────────────────────────────────────────────────
     function moveCriterion(idx: number, dir: -1 | 1) {
@@ -191,24 +323,26 @@ export default function RubricBuilder() {
         setCriteria(next);
     }
     function duplicateCriterion(idx: number) {
-        setCriteria(prev => {
+        setCriteria((prev) => {
             const source = prev[idx];
             const clone: RubricCriterion = {
                 ...source,
                 id: nanoid(),
                 title: `${source.title} (Copy)`,
-                levels: source.levels.map(l => ({
+                levels: source.levels.map((l) => ({
                     ...l,
                     id: nanoid(),
-                    subItems: l.subItems.map(si => ({ ...si, id: nanoid() }))
-                }))
+                    subItems: l.subItems.map((si) => ({ ...si, id: nanoid() })),
+                })),
             };
             const next = [...prev];
             next.splice(idx + 1, 0, clone);
             return next;
         });
     }
-    function deleteCriterion(cid: string) { setCriteria(c => c.filter(x => x.id !== cid)); }
+    function deleteCriterion(cid: string) {
+        setCriteria((c) => c.filter((x) => x.id !== cid));
+    }
 
     function copyToClipboard(criterion: RubricCriterion) {
         try {
@@ -226,80 +360,100 @@ export default function RubricBuilder() {
             const clone: RubricCriterion = {
                 ...source,
                 id: nanoid(),
-                levels: source.levels.map(l => ({
+                levels: source.levels.map((l) => ({
                     ...l,
                     id: nanoid(),
-                    subItems: l.subItems.map(si => ({ ...si, id: nanoid() }))
-                }))
+                    subItems: l.subItems.map((si) => ({ ...si, id: nanoid() })),
+                })),
             };
-            setCriteria(c => [...c, clone]);
+            setCriteria((c) => [...c, clone]);
         } catch (e) {
             console.error('Failed to paste criterion', e);
         }
     }
     function updateCriterion(cid: string, patch: Partial<RubricCriterion>) {
-        setCriteria(c => c.map(x => x.id === cid ? { ...x, ...patch } : x));
+        setCriteria((c) => c.map((x) => (x.id === cid ? { ...x, ...patch } : x)));
     }
 
     // ── Level operations ────────────────────────────────────────────────────────
     function addLevel(cid: string) {
-        setCriteria(c => c.map(x => x.id === cid
-            ? { ...x, levels: [...x.levels, newLevel(0, 0, 'New Level')] }
-            : x
-        ));
+        setCriteria((c) =>
+            c.map((x) => (x.id === cid ? { ...x, levels: [...x.levels, newLevel(0, 0, 'New Level')] } : x))
+        );
     }
     function deleteLevel(cid: string, lid: string) {
-        setCriteria(c => c.map(x => x.id === cid
-            ? { ...x, levels: x.levels.filter(l => l.id !== lid) }
-            : x
-        ));
+        setCriteria((c) => c.map((x) => (x.id === cid ? { ...x, levels: x.levels.filter((l) => l.id !== lid) } : x)));
     }
     function updateLevel(cid: string, lid: string, patch: Partial<RubricLevel>) {
-        setCriteria(c => c.map(x => x.id === cid
-            ? { ...x, levels: x.levels.map(l => l.id === lid ? { ...l, ...patch } : l) }
-            : x
-        ));
+        setCriteria((c) =>
+            c.map((x) =>
+                x.id === cid ? { ...x, levels: x.levels.map((l) => (l.id === lid ? { ...l, ...patch } : l)) } : x
+            )
+        );
     }
 
     // ── Sub-item operations ─────────────────────────────────────────────────────
     function addSubItem(cid: string, lid: string) {
-        setCriteria(c => c.map(x => x.id === cid
-            ? {
-                ...x, levels: x.levels.map(l => l.id === lid
-                    ? { ...l, subItems: [...l.subItems, { id: nanoid(), label: '', points: 1, minPoints: 0, maxPoints: 1 }] }
-                    : l
-                )
-            }
-            : x
-        ));
+        setCriteria((c) =>
+            c.map((x) =>
+                x.id === cid
+                    ? {
+                          ...x,
+                          levels: x.levels.map((l) =>
+                              l.id === lid
+                                  ? {
+                                        ...l,
+                                        subItems: [
+                                            ...l.subItems,
+                                            { id: nanoid(), label: '', points: 1, minPoints: 0, maxPoints: 1 },
+                                        ],
+                                    }
+                                  : l
+                          ),
+                      }
+                    : x
+            )
+        );
     }
     function updateSubItem(cid: string, lid: string, sid: string, patch: Partial<SubItem>) {
-        setCriteria(c => c.map(x => x.id === cid
-            ? {
-                ...x, levels: x.levels.map(l => l.id === lid
-                    ? { ...l, subItems: l.subItems.map(s => s.id === sid ? { ...s, ...patch } : s) }
-                    : l
-                )
-            }
-            : x
-        ));
+        setCriteria((c) =>
+            c.map((x) =>
+                x.id === cid
+                    ? {
+                          ...x,
+                          levels: x.levels.map((l) =>
+                              l.id === lid
+                                  ? { ...l, subItems: l.subItems.map((s) => (s.id === sid ? { ...s, ...patch } : s)) }
+                                  : l
+                          ),
+                      }
+                    : x
+            )
+        );
     }
     function deleteSubItem(cid: string, lid: string, sid: string) {
-        setCriteria(c => c.map(x => x.id === cid
-            ? {
-                ...x, levels: x.levels.map(l => l.id === lid
-                    ? { ...l, subItems: l.subItems.filter(s => s.id !== sid) }
-                    : l
-                )
-            }
-            : x
-        ));
+        setCriteria((c) =>
+            c.map((x) =>
+                x.id === cid
+                    ? {
+                          ...x,
+                          levels: x.levels.map((l) =>
+                              l.id === lid ? { ...l, subItems: l.subItems.filter((s) => s.id !== sid) } : l
+                          ),
+                      }
+                    : x
+            )
+        );
     }
 
     function toggleSubItems(levelKey: string) {
-        setExpandedSubItems(prev => {
+        setExpandedSubItems((prev) => {
             const next = new Set(prev);
-            if (next.has(levelKey)) { next.delete(levelKey); } else { next.add(levelKey); }
+            if (next.has(levelKey)) {
+                next.delete(levelKey);
+            } else {
+                next.add(levelKey);
+            }
             return next;
         });
     }
@@ -307,76 +461,97 @@ export default function RubricBuilder() {
     // ── Standards linking ───────────────────────────────────────────────────────
     function linkStandard(target: StandardTarget, std: LinkedStandard) {
         if (target.type === 'criterion') {
-            setCriteria(c => c.map(x => x.id === target.cid
-                ? { ...x, linkedStandards: [...(x.linkedStandards || []), std] }
-                : x
-            ));
+            setCriteria((c) =>
+                c.map((x) => (x.id === target.cid ? { ...x, linkedStandards: [...(x.linkedStandards || []), std] } : x))
+            );
         } else if (target.type === 'subitem') {
-            setCriteria(c => c.map(x => x.id === target.cid
-                ? {
-                    ...x, levels: x.levels.map(l => l.id === target.lid
+            setCriteria((c) =>
+                c.map((x) =>
+                    x.id === target.cid
                         ? {
-                            ...l, subItems: l.subItems.map(s => s.id === target.sid
-                                ? { ...s, linkedStandards: [...(s.linkedStandards || []), std] }
-                                : s
-                            )
-                        }
-                        : l
-                    )
-                }
-                : x
-            ));
+                              ...x,
+                              levels: x.levels.map((l) =>
+                                  l.id === target.lid
+                                      ? {
+                                            ...l,
+                                            subItems: l.subItems.map((s) =>
+                                                s.id === target.sid
+                                                    ? { ...s, linkedStandards: [...(s.linkedStandards || []), std] }
+                                                    : s
+                                            ),
+                                        }
+                                      : l
+                              ),
+                          }
+                        : x
+                )
+            );
         }
     }
     function unlinkStandard(target: StandardTarget, stdIndex: number) {
         if (target.type === 'criterion') {
-            setCriteria(c => c.map(x => {
-                if (x.id !== target.cid) return x;
-                const newStandards = [...(x.linkedStandards || [])];
-                newStandards.splice(stdIndex, 1);
-                return { ...x, linkedStandards: newStandards };
-            }));
+            setCriteria((c) =>
+                c.map((x) => {
+                    if (x.id !== target.cid) return x;
+                    const newStandards = [...(x.linkedStandards || [])];
+                    newStandards.splice(stdIndex, 1);
+                    return { ...x, linkedStandards: newStandards };
+                })
+            );
         } else if (target.type === 'subitem') {
-            setCriteria(c => c.map(x => x.id === target.cid
-                ? {
-                    ...x, levels: x.levels.map(l => l.id === target.lid
+            setCriteria((c) =>
+                c.map((x) =>
+                    x.id === target.cid
                         ? {
-                            ...l, subItems: l.subItems.map(s => {
-                                if (s.id !== target.sid) return s;
-                                const newStandards = [...(s.linkedStandards || [])];
-                                newStandards.splice(stdIndex, 1);
-                                return { ...s, linkedStandards: newStandards };
-                            })
-                        }
-                        : l
-                    )
-                }
-                : x
-            ));
+                              ...x,
+                              levels: x.levels.map((l) =>
+                                  l.id === target.lid
+                                      ? {
+                                            ...l,
+                                            subItems: l.subItems.map((s) => {
+                                                if (s.id !== target.sid) return s;
+                                                const newStandards = [...(s.linkedStandards || [])];
+                                                newStandards.splice(stdIndex, 1);
+                                                return { ...s, linkedStandards: newStandards };
+                                            }),
+                                        }
+                                      : l
+                              ),
+                          }
+                        : x
+                )
+            );
         }
     }
 
     // Legacy support for removing the single linkedStandard if it exists
     function unlinkLegacyStandard(cid: string) {
-        setCriteria(c => c.map(x => {
-            if (x.id !== cid) return x;
-            const { linkedStandard, ...rest } = x;
-            return rest;
-        }));
+        setCriteria((c) =>
+            c.map((x) => {
+                if (x.id !== cid) return x;
+                const { linkedStandard, ...rest } = x;
+                return rest;
+            })
+        );
     }
 
     // ── CEFR descriptor operations ──────────────────────────────────────────────
     function addCefrDescriptor(cid: string, descriptor: LinkedCefrDescriptor) {
-        setCriteria(c => c.map(x => x.id === cid
-            ? { ...x, cefrDescriptors: [...(x.cefrDescriptors || []), descriptor] }
-            : x
-        ));
+        setCriteria((c) =>
+            c.map((x) => (x.id === cid ? { ...x, cefrDescriptors: [...(x.cefrDescriptors || []), descriptor] } : x))
+        );
     }
     function removeCefrDescriptor(cid: string, descriptorId: string) {
-        setCriteria(c => c.map(x => x.id === cid
-            ? { ...x, cefrDescriptors: (x.cefrDescriptors || []).filter(d => d.descriptorId !== descriptorId) }
-            : x
-        ));
+        setCriteria((c) =>
+            c.map((x) =>
+                x.id === cid
+                    ? {
+                          ...x,
+                          cefrDescriptors: (x.cefrDescriptors || []).filter((d) => d.descriptorId !== descriptorId),
+                      }
+                    : x
+            )
+        );
     }
 
     return (
@@ -388,9 +563,30 @@ export default function RubricBuilder() {
                         <button className="btn btn-ghost btn-sm" onClick={() => navigate('/rubrics')}>
                             <ArrowLeft size={15} /> {t('rubricBuilder.action_back')}
                         </button>
-                        <div style={{ display: 'flex', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 8, padding: 2, marginRight: 8 }}>
-                            <button className={`btn btn-sm ${viewMode === 'form' ? 'btn-secondary' : 'btn-ghost'}`} onClick={() => setViewMode('form')} style={{ border: 'none' }}>{t('rubricBuilder.action_form_view')}</button>
-                            <button className={`btn btn-sm ${viewMode === 'designer' ? 'btn-secondary' : 'btn-ghost'}`} onClick={() => setViewMode('designer')} style={{ border: 'none' }}>{t('rubricBuilder.action_designer_view')}</button>
+                        <div
+                            style={{
+                                display: 'flex',
+                                background: 'var(--bg-elevated)',
+                                border: '1px solid var(--border)',
+                                borderRadius: 8,
+                                padding: 2,
+                                marginRight: 8,
+                            }}
+                        >
+                            <button
+                                className={`btn btn-sm ${viewMode === 'form' ? 'btn-secondary' : 'btn-ghost'}`}
+                                onClick={() => setViewMode('form')}
+                                style={{ border: 'none' }}
+                            >
+                                {t('rubricBuilder.action_form_view')}
+                            </button>
+                            <button
+                                className={`btn btn-sm ${viewMode === 'designer' ? 'btn-secondary' : 'btn-ghost'}`}
+                                onClick={() => setViewMode('designer')}
+                                style={{ border: 'none' }}
+                            >
+                                {t('rubricBuilder.action_designer_view')}
+                            </button>
                         </div>
                         <button className="btn btn-secondary btn-sm" onClick={() => setShowFormat(!showFormat)}>
                             <Settings size={15} /> FORMAT
@@ -399,24 +595,52 @@ export default function RubricBuilder() {
                             <Eye size={15} /> {t('rubricBuilder.action_preview')}
                         </button>
                         <div style={{ position: 'relative' }}>
-                            <button className="btn btn-secondary btn-sm" onClick={() => setShowExportMenu(!showExportMenu)}>
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => setShowExportMenu(!showExportMenu)}
+                            >
                                 <FileDown size={15} /> {t('rubricBuilder.action_export')}
                             </button>
                             {showExportMenu && (
                                 <>
-                                    <div style={{ position: 'fixed', inset: 0, zIndex: 5 }} onClick={() => setShowExportMenu(false)} />
-                                    <div className="card" style={{
-                                        position: 'absolute', top: '100%', right: 0, marginTop: 4,
-                                        padding: 4, minWidth: 160, zIndex: 10,
-                                        display: 'flex', flexDirection: 'column', gap: 2
-                                    }}>
-                                        <button className="btn btn-ghost btn-sm" style={{ justifyContent: 'flex-start' }} onClick={() => handleExport('pdf')}>
+                                    <div
+                                        style={{ position: 'fixed', inset: 0, zIndex: 5 }}
+                                        onClick={() => setShowExportMenu(false)}
+                                    />
+                                    <div
+                                        className="card"
+                                        style={{
+                                            position: 'absolute',
+                                            top: '100%',
+                                            right: 0,
+                                            marginTop: 4,
+                                            padding: 4,
+                                            minWidth: 160,
+                                            zIndex: 10,
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: 2,
+                                        }}
+                                    >
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            style={{ justifyContent: 'flex-start' }}
+                                            onClick={() => handleExport('pdf')}
+                                        >
                                             <FileText size={14} /> {t('rubricBuilder.action_export_pdf')}
                                         </button>
-                                        <button className="btn btn-ghost btn-sm" style={{ justifyContent: 'flex-start' }} onClick={() => handleExport('docx')}>
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            style={{ justifyContent: 'flex-start' }}
+                                            onClick={() => handleExport('docx')}
+                                        >
                                             <FileText size={14} /> {t('rubricBuilder.action_export_docx')}
                                         </button>
-                                        <button className="btn btn-ghost btn-sm" style={{ justifyContent: 'flex-start' }} onClick={() => handleExport('json')}>
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            style={{ justifyContent: 'flex-start' }}
+                                            onClick={() => handleExport('json')}
+                                        >
                                             <FileText size={14} /> {t('rubricBuilder.action_download_json')}
                                         </button>
                                     </div>
@@ -424,18 +648,30 @@ export default function RubricBuilder() {
                             )}
                         </div>
                         {id && (
-                            <button className="btn btn-secondary btn-sm" onClick={() => setShowVersionHistory(p => !p)} title={t('rubricBuilder.version_history')}>
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => setShowVersionHistory((p) => !p)}
+                                title={t('rubricBuilder.version_history')}
+                            >
                                 <Clock size={15} /> {t('rubricBuilder.version_history')}
                             </button>
                         )}
                         <button className="btn btn-primary btn-sm" onClick={handleSave}>
-                            <Save size={15} /> {saved ? t('rubricBuilder.action_saved') : t('rubricBuilder.action_save')}
+                            <Save size={15} />{' '}
+                            {saved ? t('rubricBuilder.action_saved') : t('rubricBuilder.action_save')}
                         </button>
                     </>
                 }
             />
             <div className="page-content fade-in">
-                <div style={{ display: 'grid', gridTemplateColumns: showFormat ? '1fr 300px' : '1fr', gap: 24, alignItems: 'start' }}>
+                <div
+                    style={{
+                        display: 'grid',
+                        gridTemplateColumns: showFormat ? '1fr 300px' : '1fr',
+                        gap: 24,
+                        alignItems: 'start',
+                    }}
+                >
                     <div style={{ display: viewMode === 'form' ? 'block' : 'none' }}>
                         {/* Rubric Meta */}
                         <div className="card" style={{ marginBottom: 20 }}>
@@ -443,44 +679,110 @@ export default function RubricBuilder() {
                             <div className="grid-2" style={{ gap: 12 }}>
                                 <div className="form-group">
                                     <label>Rubric Name *</label>
-                                    <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder={t('rubricBuilder.placeholder_name')} />
+                                    <input
+                                        type="text"
+                                        value={name}
+                                        onChange={(e) => {
+                                            setName(e.target.value);
+                                            if (nameError) setNameError('');
+                                        }}
+                                        placeholder={t('rubricBuilder.placeholder_name')}
+                                        className={nameError ? 'input-error' : undefined}
+                                        aria-describedby={nameError ? 'name-error' : undefined}
+                                    />
+                                    {nameError && (
+                                        <span id="name-error" className="field-error" role="alert">
+                                            {nameError}
+                                        </span>
+                                    )}
                                 </div>
                                 <div className="form-group">
                                     <label>Subject</label>
-                                    <input type="text" value={subject} onChange={e => setSubject(e.target.value)} placeholder={t('rubricBuilder.placeholder_subject')} />
+                                    <input
+                                        type="text"
+                                        value={subject}
+                                        onChange={(e) => setSubject(e.target.value)}
+                                        placeholder={t('rubricBuilder.placeholder_subject')}
+                                    />
                                 </div>
                             </div>
                             <div className="form-group" style={{ marginTop: 12 }}>
                                 <label>Description</label>
-                                <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder={t('rubricBuilder.placeholder_description')} rows={2} />
+                                <textarea
+                                    value={description}
+                                    onChange={(e) => setDescription(e.target.value)}
+                                    placeholder={t('rubricBuilder.placeholder_description')}
+                                    rows={2}
+                                />
                             </div>
                             <div className="grid-2" style={{ gap: 12, marginTop: 12 }}>
                                 <div className="form-group">
                                     <label>Grade Scale</label>
-                                    <select value={gradeScaleId} onChange={e => setGradeScaleId(e.target.value)}>
+                                    <select value={gradeScaleId} onChange={(e) => setGradeScaleId(e.target.value)}>
                                         <option value="none">None (raw points only)</option>
-                                        {gradeScales.map(gs => <option key={gs.id} value={gs.id}>{gs.name}</option>)}
+                                        {gradeScales.map((gs) => (
+                                            <option key={gs.id} value={gs.id}>
+                                                {gs.name}
+                                            </option>
+                                        ))}
                                     </select>
                                 </div>
                             </div>
 
                             {/* ── Scoring mode ── */}
-                            <div style={{ background: 'var(--bg-elevated)', borderRadius: 10, padding: 16, marginTop: 16, border: '1px solid var(--border)' }}>
-                                <h4 style={{ margin: '0 0 12px', fontSize: '0.9rem', color: 'var(--text)' }}>{t('rubricBuilder.label_scoring_mode')}</h4>
+                            <div
+                                style={{
+                                    background: 'var(--bg-elevated)',
+                                    borderRadius: 10,
+                                    padding: 16,
+                                    marginTop: 16,
+                                    border: '1px solid var(--border)',
+                                }}
+                            >
+                                <h4 style={{ margin: '0 0 12px', fontSize: '0.9rem', color: 'var(--text)' }}>
+                                    {t('rubricBuilder.label_scoring_mode')}
+                                </h4>
                                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                                    {(['weighted-percentage', 'total-points', 'single-point'] as ScoringMode[]).map(mode => (
-                                        <label key={mode} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', textTransform: 'none', letterSpacing: 0, fontWeight: scoringMode === mode ? 600 : 400 }}>
-                                            <input type="radio" name="scoringMode" value={mode} checked={scoringMode === mode} onChange={() => setScoringMode(mode)} />
-                                            {mode === 'weighted-percentage' ? t('rubricBuilder.mode_weighted') : mode === 'total-points' ? t('rubricBuilder.mode_total_points') : t('rubricBuilder.mode_single_point')}
-                                        </label>
-                                    ))}
+                                    {(['weighted-percentage', 'total-points', 'single-point'] as ScoringMode[]).map(
+                                        (mode) => (
+                                            <label
+                                                key={mode}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 8,
+                                                    cursor: 'pointer',
+                                                    textTransform: 'none',
+                                                    letterSpacing: 0,
+                                                    fontWeight: scoringMode === mode ? 600 : 400,
+                                                }}
+                                            >
+                                                <input
+                                                    type="radio"
+                                                    name="scoringMode"
+                                                    value={mode}
+                                                    checked={scoringMode === mode}
+                                                    onChange={() => setScoringMode(mode)}
+                                                />
+                                                {mode === 'weighted-percentage'
+                                                    ? t('rubricBuilder.mode_weighted')
+                                                    : mode === 'total-points'
+                                                      ? t('rubricBuilder.mode_total_points')
+                                                      : t('rubricBuilder.mode_single_point')}
+                                            </label>
+                                        )
+                                    )}
                                 </div>
                                 {scoringMode === 'total-points' && (
                                     <div className="form-group" style={{ marginTop: 12, maxWidth: 200 }}>
                                         <label>{t('rubricBuilder.label_total_max_points')}</label>
-                                        <input type="number" min={1} value={totalMaxPoints}
-                                            onChange={e => setTotalMaxPoints(Number(e.target.value))}
-                                            placeholder="e.g. 100" />
+                                        <input
+                                            type="number"
+                                            min={1}
+                                            value={totalMaxPoints}
+                                            onChange={(e) => setTotalMaxPoints(Number(e.target.value))}
+                                            placeholder="e.g. 100"
+                                        />
                                         <div className="text-xs text-muted" style={{ marginTop: 4 }}>
                                             Grade = rawScore / {totalMaxPoints} × 100%
                                         </div>
@@ -489,28 +791,54 @@ export default function RubricBuilder() {
                             </div>
 
                             {/* ── CEFR / ERK ── */}
-                            <div style={{ background: 'var(--bg-elevated)', borderRadius: 10, padding: 16, marginTop: 16, border: '1px solid var(--border)' }}>
+                            <div
+                                style={{
+                                    background: 'var(--bg-elevated)',
+                                    borderRadius: 10,
+                                    padding: 16,
+                                    marginTop: 16,
+                                    border: '1px solid var(--border)',
+                                }}
+                            >
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                                     <BookOpen size={15} style={{ color: 'var(--accent)' }} />
-                                    <h4 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text)' }}>{t('cefr.rubric_section_title')}</h4>
-                                    <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 4 }}>{t('cefr.rubric_section_subtitle')}</span>
+                                    <h4 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text)' }}>
+                                        {t('cefr.rubric_section_title')}
+                                    </h4>
+                                    <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 4 }}>
+                                        {t('cefr.rubric_section_subtitle')}
+                                    </span>
                                 </div>
                                 <div className="grid-2" style={{ gap: 12 }}>
                                     <div className="form-group">
                                         <label>{t('cefr.target_level_label')}</label>
-                                        <select value={cefrTargetLevel} onChange={e => setCefrTargetLevel(e.target.value as CefrLevel | '')}>
+                                        <select
+                                            value={cefrTargetLevel}
+                                            onChange={(e) => setCefrTargetLevel(e.target.value as CefrLevel | '')}
+                                        >
                                             <option value="">{t('cefr.no_level')}</option>
-                                            {CEFR_LEVELS.map(lvl => (
-                                                <option key={lvl} value={lvl}>{lvl} – {t(`cefr.level_${lvl}`)}</option>
+                                            {CEFR_LEVELS.map((lvl) => (
+                                                <option key={lvl} value={lvl}>
+                                                    {lvl} – {t(`cefr.level_${lvl}`)}
+                                                </option>
                                             ))}
                                         </select>
                                     </div>
                                     <div className="form-group">
                                         <label>{t('cefr.skill_label')}</label>
-                                        <select value={cefrSkill} onChange={e => setCefrSkill(e.target.value as CefrSkill | '')}>
+                                        <select
+                                            value={cefrSkill}
+                                            onChange={(e) => setCefrSkill(e.target.value as CefrSkill | '')}
+                                        >
                                             <option value="">{t('cefr.no_skill')}</option>
-                                            {CEFR_SKILLS.map(skill => (
-                                                <option key={skill} value={skill}>{CEFR_SKILL_LABELS[skill][i18n.language.startsWith('nl') ? 'nl' : 'en']}</option>
+                                            {CEFR_SKILLS.map((skill) => (
+                                                <option key={skill} value={skill}>
+                                                    {
+                                                        CEFR_SKILL_LABELS[skill][
+                                                            i18n.language.startsWith('nl') ? 'nl' : 'en'
+                                                        ]
+                                                    }
+                                                </option>
                                             ))}
                                         </select>
                                     </div>
@@ -518,27 +846,54 @@ export default function RubricBuilder() {
                                 {cefrTargetLevel && (
                                     <>
                                         <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
-                                            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('cefr.target_label')}:</span>
-                                            <span style={{
-                                                background: CEFR_LEVEL_COLORS[cefrTargetLevel as CefrLevel],
-                                                color: '#fff',
-                                                borderRadius: 5,
-                                                padding: '2px 10px',
-                                                fontSize: 13,
-                                                fontWeight: 700,
-                                            }}>{cefrTargetLevel}</span>
-                                            {cefrSkill && <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>· {CEFR_SKILL_LABELS[cefrSkill as CefrSkill][i18n.language.startsWith('nl') ? 'nl' : 'en']}</span>}
+                                            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                                                {t('cefr.target_label')}:
+                                            </span>
+                                            <span
+                                                style={{
+                                                    background: CEFR_LEVEL_COLORS[cefrTargetLevel as CefrLevel],
+                                                    color: '#fff',
+                                                    borderRadius: 5,
+                                                    padding: '2px 10px',
+                                                    fontSize: 13,
+                                                    fontWeight: 700,
+                                                }}
+                                            >
+                                                {cefrTargetLevel}
+                                            </span>
+                                            {cefrSkill && (
+                                                <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                                                    ·{' '}
+                                                    {
+                                                        CEFR_SKILL_LABELS[cefrSkill as CefrSkill][
+                                                            i18n.language.startsWith('nl') ? 'nl' : 'en'
+                                                        ]
+                                                    }
+                                                </span>
+                                            )}
                                         </div>
                                         <div className="form-group" style={{ marginTop: 12 }}>
-                                            <label style={{ fontSize: '0.85rem' }}>{t('cefr.achieve_threshold_label')}</label>
+                                            <label style={{ fontSize: '0.85rem' }}>
+                                                {t('cefr.achieve_threshold_label')}
+                                            </label>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                <input type="number" min={1} max={100}
+                                                <input
+                                                    type="number"
+                                                    min={1}
+                                                    max={100}
                                                     value={cefrAchieveThreshold}
-                                                    onChange={e => setCefrAchieveThreshold(Math.min(100, Math.max(1, Number(e.target.value))))}
-                                                    style={{ maxWidth: 80 }} />
+                                                    onChange={(e) =>
+                                                        setCefrAchieveThreshold(
+                                                            Math.min(100, Math.max(1, Number(e.target.value)))
+                                                        )
+                                                    }
+                                                    style={{ maxWidth: 80 }}
+                                                />
                                                 <span className="text-muted text-xs">%</span>
                                             </div>
-                                            <div className="text-muted text-xs" style={{ marginTop: 4 }}>{t('cefr.achieve_threshold_help')}</div>
+                                            <div className="text-muted text-xs" style={{ marginTop: 4 }}>
+                                                {t('cefr.achieve_threshold_help')}
+                                            </div>
                                         </div>
                                     </>
                                 )}
@@ -546,35 +901,60 @@ export default function RubricBuilder() {
                         </div>
 
                         {/* Vocabulary List */}
-                        <div style={{ background: 'var(--bg-elevated)', borderRadius: 10, padding: 16, marginTop: 16, border: '1px solid var(--border)' }}>
+                        <div
+                            style={{
+                                background: 'var(--bg-elevated)',
+                                borderRadius: 10,
+                                padding: 16,
+                                marginTop: 16,
+                                border: '1px solid var(--border)',
+                            }}
+                        >
                             <div
                                 style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
-                                onClick={() => setShowVocabulary(v => !v)}
+                                onClick={() => setShowVocabulary((v) => !v)}
                             >
                                 <BookOpen size={15} style={{ color: 'var(--accent)' }} />
                                 <h4 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text)', flex: 1 }}>
                                     {t('vocabulary.section_title', 'Vocabulary & Grammar List')}
                                     {existing?.vocabularyItems?.length ? (
-                                        <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--text-muted)', fontWeight: 400 }}>
+                                        <span
+                                            style={{
+                                                marginLeft: 8,
+                                                fontSize: 11,
+                                                color: 'var(--text-muted)',
+                                                fontWeight: 400,
+                                            }}
+                                        >
                                             {existing.vocabularyItems.length} {t('vocabulary.items', 'items')}
                                         </span>
                                     ) : null}
                                 </h4>
-                                <ChevronDown size={15} style={{ transform: showVocabulary ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', color: 'var(--text-muted)' }} />
+                                <ChevronDown
+                                    size={15}
+                                    style={{
+                                        transform: showVocabulary ? 'rotate(180deg)' : 'none',
+                                        transition: 'transform 0.2s',
+                                        color: 'var(--text-muted)',
+                                    }}
+                                />
                             </div>
                             {showVocabulary && id && (
                                 <div style={{ marginTop: 16 }}>
                                     <p className="text-xs text-muted" style={{ marginBottom: 14 }}>
-                                        {t('vocabulary.section_help', 'Add words, phrases, or grammar structures to detect when analysing student documents. Link items to rubric criteria to auto-check them during grading.')}
+                                        {t(
+                                            'vocabulary.section_help',
+                                            'Add words, phrases, or grammar structures to detect when analysing student documents. Link items to rubric criteria to auto-check them during grading.'
+                                        )}
                                     </p>
                                     <VocabularyListEditor
                                         rubricId={id}
                                         items={existing?.vocabularyItems ?? []}
                                         criteria={criteria}
-                                        onAdd={item => addVocabularyItem(id, item)}
-                                        onUpdate={item => updateVocabularyItem(id, item)}
-                                        onDelete={itemId => deleteVocabularyItem(id, itemId)}
-                                        onDeleteMultiple={itemIds => deleteVocabularyItems(id, itemIds)}
+                                        onAdd={(item) => addVocabularyItem(id, item)}
+                                        onUpdate={(item) => updateVocabularyItem(id, item)}
+                                        onDelete={(itemId) => deleteVocabularyItem(id, itemId)}
+                                        onDeleteMultiple={(itemIds) => deleteVocabularyItems(id, itemIds)}
                                     />
                                 </div>
                             )}
@@ -586,32 +966,61 @@ export default function RubricBuilder() {
                         </div>
 
                         {/* Criteria */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, marginTop: 20 }}>
+                        <div
+                            style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                marginBottom: 14,
+                                marginTop: 20,
+                            }}
+                        >
                             <h2>{t('rubricBuilder.label_criterion')}</h2>
                             <div style={{ display: 'flex', gap: 8 }}>
-                                {criteria.length > 1 && (
-                                    collapsedCriteria.size === criteria.length
-                                        ? <button className="btn btn-ghost btn-sm" onClick={() => setCollapsedCriteria(new Set())}>Expand all</button>
-                                        : <button className="btn btn-ghost btn-sm" onClick={() => setCollapsedCriteria(new Set(criteria.map(c => c.id)))}>Collapse all</button>
-                                )}
+                                {criteria.length > 1 &&
+                                    (collapsedCriteria.size === criteria.length ? (
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            onClick={() => setCollapsedCriteria(new Set())}
+                                        >
+                                            Expand all
+                                        </button>
+                                    ) : (
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            onClick={() => setCollapsedCriteria(new Set(criteria.map((c) => c.id)))}
+                                        >
+                                            Collapse all
+                                        </button>
+                                    ))}
                                 {(cefrSkill === 'speaking_production' || cefrSkill === 'speaking_interaction') && (
-                                    <button className="btn btn-secondary btn-sm" onClick={() => {
-                                        const msg = criteria.length > 0
-                                            ? t('rubricBuilder.insert_speaking_confirm')
-                                            : null;
-                                        if (!msg || window.confirm(msg)) {
-                                            const dims = getSpeakingDimensions('');
-                                            setCriteria(criteria.length > 0 ? dims : dims);
-                                        }
-                                    }}>
+                                    <button
+                                        className="btn btn-secondary btn-sm"
+                                        onClick={() => {
+                                            const msg =
+                                                criteria.length > 0 ? t('rubricBuilder.insert_speaking_confirm') : null;
+                                            if (!msg || window.confirm(msg)) {
+                                                const dims = getSpeakingDimensions('');
+                                                setCriteria(criteria.length > 0 ? dims : dims);
+                                            }
+                                        }}
+                                    >
                                         <BookOpen size={14} /> {t('rubricBuilder.insert_speaking_dims')}
                                     </button>
                                 )}
-                                <button className="btn btn-secondary btn-sm" onClick={pasteFromClipboard} title="Paste criterion from clipboard">
+                                <button
+                                    className="btn btn-secondary btn-sm"
+                                    onClick={pasteFromClipboard}
+                                    title="Paste criterion from clipboard"
+                                >
                                     <Plus size={15} /> Paste
                                 </button>
-                                <button className="btn btn-primary btn-sm" onClick={() => setCriteria(c => [...c, newCriterion()])}>
-                                    <Plus size={15} /> {t('rubricBuilder.action_add_first_criterion').replace('First ', '')}
+                                <button
+                                    className="btn btn-primary btn-sm"
+                                    onClick={() => setCriteria((c) => [...c, newCriterion()])}
+                                >
+                                    <Plus size={15} />{' '}
+                                    {t('rubricBuilder.action_add_first_criterion').replace('First ', '')}
                                 </button>
                             </div>
                         </div>
@@ -633,308 +1042,1117 @@ export default function RubricBuilder() {
                                                         }}
                                                     >
                                                         {/* Criterion header */}
-                                                        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 14 }}>
+                                                        <div
+                                                            style={{
+                                                                display: 'flex',
+                                                                gap: 10,
+                                                                alignItems: 'flex-start',
+                                                                marginBottom: 14,
+                                                            }}
+                                                        >
                                                             <div
                                                                 {...provided.dragHandleProps}
                                                                 aria-label={`Drag to reorder criterion: ${criterion.title || 'Untitled'}`}
-                                                                style={{ display: 'flex', flexDirection: 'column', gap: 2, paddingTop: 4, cursor: 'grab' }}
+                                                                style={{
+                                                                    display: 'flex',
+                                                                    flexDirection: 'column',
+                                                                    gap: 2,
+                                                                    paddingTop: 4,
+                                                                    cursor: 'grab',
+                                                                }}
                                                             >
-                                                                <button className="btn btn-ghost btn-icon btn-sm" aria-label="Move criterion up" onClick={() => moveCriterion(cIdx, -1)} disabled={cIdx === 0}><ChevronUp size={14} /></button>
-                                                                <GripVertical size={16} style={{ color: 'var(--text-dim)', alignSelf: 'center' }} aria-hidden="true" />
-                                                                <button className="btn btn-ghost btn-icon btn-sm" aria-label="Move criterion down" onClick={() => moveCriterion(cIdx, 1)} disabled={cIdx === criteria.length - 1}><ChevronDown size={14} /></button>
+                                                                <button
+                                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                                    aria-label="Move criterion up"
+                                                                    onClick={() => moveCriterion(cIdx, -1)}
+                                                                    disabled={cIdx === 0}
+                                                                >
+                                                                    <ChevronUp size={14} />
+                                                                </button>
+                                                                <GripVertical
+                                                                    size={16}
+                                                                    style={{
+                                                                        color: 'var(--text-dim)',
+                                                                        alignSelf: 'center',
+                                                                    }}
+                                                                    aria-hidden="true"
+                                                                />
+                                                                <button
+                                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                                    aria-label="Move criterion down"
+                                                                    onClick={() => moveCriterion(cIdx, 1)}
+                                                                    disabled={cIdx === criteria.length - 1}
+                                                                >
+                                                                    <ChevronDown size={14} />
+                                                                </button>
                                                             </div>
-                                    <div style={{ flex: 1 }}>
-                                        <div className="grid-2" style={{ gap: 10, gridTemplateColumns: '1fr 1fr auto' }}>
-                                            <div className="form-group">
-                                                <label>{t('rubricBuilder.label_criterion')}</label>
-                                                <input type="text" value={criterion.title}
-                                                    onChange={e => updateCriterion(criterion.id, { title: e.target.value })}
-                                                    placeholder={t('rubricBuilder.placeholder_criterion_name')} />
-                                            </div>
-                                            <div className="form-group">
-                                                <label>{t('rubricBuilder.placeholder_criterion_description')}</label>
-                                                <input type="text" value={criterion.description}
-                                                    onChange={e => updateCriterion(criterion.id, { description: e.target.value })}
-                                                    placeholder={t('rubricBuilder.placeholder_description')} />
-                                            </div>
-                                            <div className="form-group">
-                                                <label>{t('rubricBuilder.label_weight')}</label>
-                                                <input type="number" value={criterion.weight} min={0} max={100}
-                                                    onChange={e => updateCriterion(criterion.id, { weight: Number(e.target.value) })}
-                                                    style={{ width: 70 }} />
-                                            </div>
-                                        </div>
+                                                            <div style={{ flex: 1 }}>
+                                                                <div
+                                                                    className="grid-2"
+                                                                    style={{
+                                                                        gap: 10,
+                                                                        gridTemplateColumns: '1fr 1fr auto',
+                                                                    }}
+                                                                >
+                                                                    <div className="form-group">
+                                                                        <label>
+                                                                            {t('rubricBuilder.label_criterion')}
+                                                                        </label>
+                                                                        <input
+                                                                            type="text"
+                                                                            value={criterion.title}
+                                                                            onChange={(e) =>
+                                                                                updateCriterion(criterion.id, {
+                                                                                    title: e.target.value,
+                                                                                })
+                                                                            }
+                                                                            placeholder={t(
+                                                                                'rubricBuilder.placeholder_criterion_name'
+                                                                            )}
+                                                                        />
+                                                                    </div>
+                                                                    <div className="form-group">
+                                                                        <label>
+                                                                            {t(
+                                                                                'rubricBuilder.placeholder_criterion_description'
+                                                                            )}
+                                                                        </label>
+                                                                        <input
+                                                                            type="text"
+                                                                            value={criterion.description}
+                                                                            onChange={(e) =>
+                                                                                updateCriterion(criterion.id, {
+                                                                                    description: e.target.value,
+                                                                                })
+                                                                            }
+                                                                            placeholder={t(
+                                                                                'rubricBuilder.placeholder_description'
+                                                                            )}
+                                                                        />
+                                                                    </div>
+                                                                    <div className="form-group">
+                                                                        <label>{t('rubricBuilder.label_weight')}</label>
+                                                                        <input
+                                                                            type="number"
+                                                                            value={criterion.weight}
+                                                                            min={0}
+                                                                            max={100}
+                                                                            onChange={(e) =>
+                                                                                updateCriterion(criterion.id, {
+                                                                                    weight: Number(e.target.value),
+                                                                                })
+                                                                            }
+                                                                            style={{ width: 70 }}
+                                                                        />
+                                                                    </div>
+                                                                </div>
 
-                                        {/* Standard link */}
-                                        <div style={{ marginTop: 8 }}>
-                                            {(criterion.linkedStandards || []).map((std, idx) => (
-                                                <div key={std.guid + idx} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'var(--accent-soft)', border: '1px solid var(--accent)', borderRadius: 8, padding: '6px 12px', fontSize: '0.8rem', marginRight: 8, marginBottom: 8 }}>
-                                                    <BookOpen size={13} style={{ color: 'var(--accent)' }} />
-                                                    <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
-                                                        {std.statementNotation ?? std.guid}
-                                                    </span>
-                                                    <span style={{ color: 'var(--text)', maxWidth: 320, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                        {std.description}
-                                                    </span>
-                                                    <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--text-muted)', padding: 2 }}
-                                                        onClick={() => unlinkStandard({ type: 'criterion', cid: criterion.id }, idx)}>
-                                                        <X size={12} />
-                                                    </button>
-                                                </div>
-                                            ))}
-                                            {criterion.linkedStandard && (
-                                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'var(--accent-soft)', border: '1px solid var(--accent)', borderRadius: 8, padding: '6px 12px', fontSize: '0.8rem', marginRight: 8, marginBottom: 8 }}>
-                                                    <BookOpen size={13} style={{ color: 'var(--accent)' }} />
-                                                    <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
-                                                        {criterion.linkedStandard.statementNotation ?? criterion.linkedStandard.guid}
-                                                    </span>
-                                                    <span style={{ color: 'var(--text)', maxWidth: 320, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                        {criterion.linkedStandard.description}
-                                                    </span>
-                                                    <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--text-muted)', padding: 2 }}
-                                                        onClick={() => unlinkLegacyStandard(criterion.id)}>
-                                                        <X size={12} />
-                                                    </button>
-                                                </div>
-                                            )}
-                                            <button className="btn btn-ghost btn-sm" style={{ color: 'var(--accent)', marginTop: 4 }}
-                                                onClick={() => setPickingStandardFor({ type: 'criterion', cid: criterion.id })}>
-                                                <Link2 size={13} /> {t('rubricBuilder.action_link_standard')}
-                                            </button>
-                                            <button className="btn btn-ghost btn-sm" style={{ color: 'var(--accent)', marginTop: 4 }}
-                                                onClick={() => setPickingCefrFor(criterion.id)}>
-                                                <BookOpen size={13} /> {t('cefr.action_link_descriptor')}
-                                                {(criterion.cefrDescriptors || []).length > 0 && (
-                                                    <span style={{ background: 'var(--accent)', color: '#fff', borderRadius: 8, padding: '0px 6px', fontSize: 10, fontWeight: 700, marginLeft: 4 }}>
-                                                        {criterion.cefrDescriptors!.length}
-                                                    </span>
-                                                )}
-                                            </button>
-                                        </div>
-
-                                        {/* CEFR descriptors display */}
-                                        {(criterion.cefrDescriptors || []).length > 0 && (
-                                            <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                                                {criterion.cefrDescriptors!.map(d => (
-                                                    <div key={d.descriptorId} style={{
-                                                        display: 'inline-flex', alignItems: 'center', gap: 6,
-                                                        background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
-                                                        border: '1px solid color-mix(in srgb, var(--accent) 25%, transparent)',
-                                                        borderRadius: 8, padding: '4px 10px', fontSize: '0.78rem',
-                                                    }}>
-                                                        <span style={{
-                                                            background: CEFR_LEVEL_COLORS[d.level],
-                                                            color: '#fff', borderRadius: 4,
-                                                            padding: '1px 5px', fontSize: 10, fontWeight: 700,
-                                                        }}>{d.level}</span>
-                                                        <span style={{ color: 'var(--text)', maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                            {i18n.language.startsWith('nl') ? d.descriptionNl : d.descriptionEn}
-                                                        </span>
-                                                        <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--text-muted)', padding: 2 }}
-                                                            onClick={() => removeCefrDescriptor(criterion.id, d.descriptorId)}>
-                                                            <X size={11} />
-                                                        </button>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div style={{ display: 'flex', gap: 4, marginTop: 20 }}>
-                                        <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--text-dim)' }}
-                                            onClick={() => toggleCollapseCriterion(criterion.id)}
-                                            title={collapsedCriteria.has(criterion.id) ? 'Expand' : 'Collapse'}>
-                                            {collapsedCriteria.has(criterion.id) ? <ChevronDown size={15} /> : <ChevronUp size={15} />}
-                                        </button>
-                                        <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--accent)' }}
-                                            onClick={() => copyToClipboard(criterion)} title="Copy to clipboard">
-                                            <Copy size={15} />
-                                        </button>
-                                        <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--text-muted)' }}
-                                            onClick={() => duplicateCriterion(cIdx)} title="Duplicate Criterion">
-                                            <Copy size={15} />
-                                        </button>
-                                        <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--red)' }}
-                                            onClick={() => deleteCriterion(criterion.id)} title="Delete Criterion">
-                                            <Trash2 size={15} />
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Collapsed: level pills summary */}
-                                {collapsedCriteria.has(criterion.id) && (
-                                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', paddingLeft: 4 }}>
-                                        {criterion.levels.map(l => (
-                                            <span key={l.id} className="badge" style={{ fontSize: '0.75rem' }}>{l.label}</span>
-                                        ))}
-                                    </div>
-                                )}
-
-                                {/* Single-point: simplified proficiency descriptor */}
-                                {!collapsedCriteria.has(criterion.id) && scoringMode === 'single-point' && (
-                                    <div style={{ display: 'flex', gap: 16, marginTop: 4, alignItems: 'flex-start' }}>
-                                        <div style={{ flex: 1 }}>
-                                            <div className="text-xs text-muted" style={{ marginBottom: 4, textTransform: 'uppercase', fontWeight: 600 }}>Proficiency descriptor — what "meets standard" looks like</div>
-                                            <textarea
-                                                value={criterion.levels[0]?.description ?? ''}
-                                                onChange={e => {
-                                                    if (!criterion.levels[0]) {
-                                                        addLevel(criterion.id);
-                                                    }
-                                                    updateLevel(criterion.id, criterion.levels[0]?.id ?? '', { description: e.target.value });
-                                                }}
-                                                placeholder="Describe what a student does when they meet this standard…"
-                                                rows={4}
-                                                style={{ width: '100%', fontSize: '0.85rem' }}
-                                            />
-                                        </div>
-                                        <div style={{ width: 120, flexShrink: 0 }}>
-                                            <div className="text-xs text-muted" style={{ marginBottom: 4, textTransform: 'uppercase', fontWeight: 600 }}>Points (meets)</div>
-                                            <input type="number" min={0}
-                                                value={criterion.levels[0]?.maxPoints ?? 1}
-                                                onChange={e => updateLevel(criterion.id, criterion.levels[0]?.id ?? '', { maxPoints: Number(e.target.value), minPoints: 0 })}
-                                            />
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Levels (hidden when collapsed or single-point) */}
-                                {!collapsedCriteria.has(criterion.id) && scoringMode !== 'single-point' && <div style={{ overflowX: 'auto' }}>
-                                    <div style={{ display: 'flex', gap: 10, minWidth: 'max-content', paddingBottom: 4 }}>
-                                        {criterion.levels.map((level) => {
-                                            const levelKey = `${criterion.id}_${level.id}`;
-                                            const subExpanded = expandedSubItems.has(levelKey);
-                                            return (
-                                                <div key={level.id} style={{
-                                                    width: 210, flexShrink: 0, background: 'var(--bg-elevated)',
-                                                    border: '1px solid var(--border)', borderRadius: 8, padding: 12,
-                                                }}>
-                                                    {/* Level label + delete */}
-                                                    <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
-                                                        <input type="text" value={level.label}
-                                                            onChange={e => updateLevel(criterion.id, level.id, { label: e.target.value })}
-                                                            style={{ flex: 1, fontWeight: 600 }} placeholder={t('rubricBuilder.placeholder_level_name')} />
-                                                        {criterion.levels.length > 1 && (
-                                                            <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--red)' }}
-                                                                onClick={() => deleteLevel(criterion.id, level.id)}>
-                                                                <Trash2 size={13} />
-                                                            </button>
-                                                        )}
-                                                    </div>
-
-                                                    {/* Min/Max points */}
-                                                    <div style={{ display: 'flex', gap: 6, marginBottom: 8, alignItems: 'center' }}>
-                                                        <div style={{ flex: 1 }}>
-                                                            <div className="text-xs text-muted" style={{ marginBottom: 2 }}>{t('rubricBuilder.label_min_pts')}</div>
-                                                            <input type="number" value={level.minPoints} min={0}
-                                                                onChange={e => updateLevel(criterion.id, level.id, { minPoints: Number(e.target.value) })} />
-                                                        </div>
-                                                        <span style={{ color: 'var(--text-muted)', paddingTop: 16 }}>–</span>
-                                                        <div style={{ flex: 1 }}>
-                                                            <div className="text-xs text-muted" style={{ marginBottom: 2 }}>{t('rubricBuilder.label_max_pts')}</div>
-                                                            <input type="number" value={level.maxPoints} min={0}
-                                                                onChange={e => updateLevel(criterion.id, level.id, { maxPoints: Number(e.target.value) })} />
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Description */}
-                                                    <textarea value={level.description}
-                                                        onChange={e => updateLevel(criterion.id, level.id, { description: e.target.value })}
-                                                        placeholder={t('rubricBuilder.placeholder_level_description')}
-                                                        rows={3}
-                                                        style={{ fontSize: '0.8rem', width: '100%', marginBottom: level.description && /\b(good|adequate|poor|excellent|satisfactory|bad|fair|very good|great|wonderful)\b/i.test(level.description) && !/\b(student|demonstrates|shows|uses|writes|includes|provides|explains|applies|describes|identifies|analyzes|creates)\b/i.test(level.description) ? 2 : 8 }} />
-                                                    {level.description && /\b(good|adequate|poor|excellent|satisfactory|bad|fair|very good|great|wonderful)\b/i.test(level.description) && !/\b(student|demonstrates|shows|uses|writes|includes|provides|explains|applies|describes|identifies|analyzes|creates)\b/i.test(level.description) && (
-                                                        <div style={{ fontSize: '0.7rem', color: 'var(--yellow, #b45309)', background: 'rgba(251,191,36,0.12)', borderRadius: 4, padding: '3px 7px', marginBottom: 6 }}>
-                                                            💡 Tip: describe what the student <em>does</em>, not just how good it is (e.g. "uses 3+ examples to support each claim")
-                                                        </div>
-                                                    )}
-
-                                                    {/* Sub-items toggle */}
-                                                    <button className="btn btn-ghost btn-sm" style={{ width: '100%', justifyContent: 'space-between' }}
-                                                        onClick={() => toggleSubItems(levelKey)}>
-                                                        <span style={{ fontSize: '0.78rem' }}>
-                                                            {t('rubricBuilder.label_sub_items')} ({level.subItems.length})
-                                                        </span>
-                                                        <ChevronRight size={13} style={{ transform: subExpanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }} />
-                                                    </button>
-
-                                                    {subExpanded && (
-                                                        <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                                                            {level.subItems.map(si => (
-                                                                <div key={si.id} style={{ display: 'flex', flexDirection: 'column', gap: 4, paddingBottom: 6, borderBottom: '1px solid var(--border)' }}>
-                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                                                                        <textarea value={si.label}
-                                                                            onChange={e => updateSubItem(criterion.id, level.id, si.id, { label: e.target.value })}
-                                                                            placeholder={t('rubricBuilder.placeholder_sub_item_label')}
-                                                                            rows={2}
-                                                                            style={{ width: '100%', fontSize: '0.78rem', resize: 'vertical', minHeight: 40, fontFamily: 'inherit', padding: '6px 8px', borderRadius: 4, border: '1px solid var(--border)' }} />
-                                                                        <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', justifyContent: 'flex-start' }}>
-                                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                                                                <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>{t('rubricBuilder.label_sub_item_min')}</span>
-                                                                                <input type="number" value={si.minPoints ?? 0} min={0}
-                                                                                    onChange={e => updateSubItem(criterion.id, level.id, si.id, { minPoints: Number(e.target.value) })}
-                                                                                    style={{ width: 45, fontSize: '0.78rem', height: 26, padding: '2px 4px' }}
-                                                                                    title="Min points for this sub-item" />
+                                                                {/* Standard link */}
+                                                                <div style={{ marginTop: 8 }}>
+                                                                    {(criterion.linkedStandards || []).map(
+                                                                        (std, idx) => (
+                                                                            <div
+                                                                                key={std.guid + idx}
+                                                                                style={{
+                                                                                    display: 'inline-flex',
+                                                                                    alignItems: 'center',
+                                                                                    gap: 8,
+                                                                                    background: 'var(--accent-soft)',
+                                                                                    border: '1px solid var(--accent)',
+                                                                                    borderRadius: 8,
+                                                                                    padding: '6px 12px',
+                                                                                    fontSize: '0.8rem',
+                                                                                    marginRight: 8,
+                                                                                    marginBottom: 8,
+                                                                                }}
+                                                                            >
+                                                                                <BookOpen
+                                                                                    size={13}
+                                                                                    style={{ color: 'var(--accent)' }}
+                                                                                />
+                                                                                <span
+                                                                                    style={{
+                                                                                        color: 'var(--accent)',
+                                                                                        fontWeight: 600,
+                                                                                    }}
+                                                                                >
+                                                                                    {std.statementNotation ?? std.guid}
+                                                                                </span>
+                                                                                <span
+                                                                                    style={{
+                                                                                        color: 'var(--text)',
+                                                                                        maxWidth: 320,
+                                                                                        overflow: 'hidden',
+                                                                                        textOverflow: 'ellipsis',
+                                                                                        whiteSpace: 'nowrap',
+                                                                                    }}
+                                                                                >
+                                                                                    {std.description}
+                                                                                </span>
+                                                                                <button
+                                                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                                                    style={{
+                                                                                        color: 'var(--text-muted)',
+                                                                                        padding: 2,
+                                                                                    }}
+                                                                                    onClick={() =>
+                                                                                        unlinkStandard(
+                                                                                            {
+                                                                                                type: 'criterion',
+                                                                                                cid: criterion.id,
+                                                                                            },
+                                                                                            idx
+                                                                                        )
+                                                                                    }
+                                                                                >
+                                                                                    <X size={12} />
+                                                                                </button>
                                                                             </div>
-                                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                                                                <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>{t('rubricBuilder.label_sub_item_max')}</span>
-                                                                                <input type="number" value={si.maxPoints ?? si.points ?? 1} min={si.minPoints ?? 0}
-                                                                                    onChange={e => updateSubItem(criterion.id, level.id, si.id, { maxPoints: Number(e.target.value) })}
-                                                                                    style={{ width: 45, fontSize: '0.78rem', height: 26, padding: '2px 4px' }}
-                                                                                    title="Max points for this sub-item" />
-                                                                            </div>
-                                                                            <div style={{ flex: 1 }} />
-                                                                            <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--accent)', height: 26, width: 26 }}
-                                                                                onClick={() => setPickingStandardFor({ type: 'subitem', cid: criterion.id, lid: level.id, sid: si.id })}
-                                                                                title="Link standard to this sub-item">
-                                                                                <Link2 size={11} />
+                                                                        )
+                                                                    )}
+                                                                    {criterion.linkedStandard && (
+                                                                        <div
+                                                                            style={{
+                                                                                display: 'inline-flex',
+                                                                                alignItems: 'center',
+                                                                                gap: 8,
+                                                                                background: 'var(--accent-soft)',
+                                                                                border: '1px solid var(--accent)',
+                                                                                borderRadius: 8,
+                                                                                padding: '6px 12px',
+                                                                                fontSize: '0.8rem',
+                                                                                marginRight: 8,
+                                                                                marginBottom: 8,
+                                                                            }}
+                                                                        >
+                                                                            <BookOpen
+                                                                                size={13}
+                                                                                style={{ color: 'var(--accent)' }}
+                                                                            />
+                                                                            <span
+                                                                                style={{
+                                                                                    color: 'var(--accent)',
+                                                                                    fontWeight: 600,
+                                                                                }}
+                                                                            >
+                                                                                {criterion.linkedStandard
+                                                                                    .statementNotation ??
+                                                                                    criterion.linkedStandard.guid}
+                                                                            </span>
+                                                                            <span
+                                                                                style={{
+                                                                                    color: 'var(--text)',
+                                                                                    maxWidth: 320,
+                                                                                    overflow: 'hidden',
+                                                                                    textOverflow: 'ellipsis',
+                                                                                    whiteSpace: 'nowrap',
+                                                                                }}
+                                                                            >
+                                                                                {criterion.linkedStandard.description}
+                                                                            </span>
+                                                                            <button
+                                                                                className="btn btn-ghost btn-icon btn-sm"
+                                                                                style={{
+                                                                                    color: 'var(--text-muted)',
+                                                                                    padding: 2,
+                                                                                }}
+                                                                                onClick={() =>
+                                                                                    unlinkLegacyStandard(criterion.id)
+                                                                                }
+                                                                            >
+                                                                                <X size={12} />
                                                                             </button>
-                                                                            <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--red)', height: 26, width: 26 }}
-                                                                                onClick={() => deleteSubItem(criterion.id, level.id, si.id)}
-                                                                                title="Delete sub-item">
-                                                                                <Trash2 size={11} />
+                                                                        </div>
+                                                                    )}
+                                                                    <button
+                                                                        className="btn btn-ghost btn-sm"
+                                                                        style={{ color: 'var(--accent)', marginTop: 4 }}
+                                                                        onClick={() =>
+                                                                            setPickingStandardFor({
+                                                                                type: 'criterion',
+                                                                                cid: criterion.id,
+                                                                            })
+                                                                        }
+                                                                    >
+                                                                        <Link2 size={13} />{' '}
+                                                                        {t('rubricBuilder.action_link_standard')}
+                                                                    </button>
+                                                                    <button
+                                                                        className="btn btn-ghost btn-sm"
+                                                                        style={{ color: 'var(--accent)', marginTop: 4 }}
+                                                                        onClick={() => setPickingCefrFor(criterion.id)}
+                                                                    >
+                                                                        <BookOpen size={13} />{' '}
+                                                                        {t('cefr.action_link_descriptor')}
+                                                                        {(criterion.cefrDescriptors || []).length >
+                                                                            0 && (
+                                                                            <span
+                                                                                style={{
+                                                                                    background: 'var(--accent)',
+                                                                                    color: '#fff',
+                                                                                    borderRadius: 8,
+                                                                                    padding: '0px 6px',
+                                                                                    fontSize: 10,
+                                                                                    fontWeight: 700,
+                                                                                    marginLeft: 4,
+                                                                                }}
+                                                                            >
+                                                                                {criterion.cefrDescriptors!.length}
+                                                                            </span>
+                                                                        )}
+                                                                    </button>
+                                                                </div>
+
+                                                                {/* CEFR descriptors display */}
+                                                                {(criterion.cefrDescriptors || []).length > 0 && (
+                                                                    <div
+                                                                        style={{
+                                                                            marginTop: 8,
+                                                                            display: 'flex',
+                                                                            flexWrap: 'wrap',
+                                                                            gap: 6,
+                                                                        }}
+                                                                    >
+                                                                        {criterion.cefrDescriptors!.map((d) => (
+                                                                            <div
+                                                                                key={d.descriptorId}
+                                                                                style={{
+                                                                                    display: 'inline-flex',
+                                                                                    alignItems: 'center',
+                                                                                    gap: 6,
+                                                                                    background:
+                                                                                        'color-mix(in srgb, var(--accent) 8%, transparent)',
+                                                                                    border: '1px solid color-mix(in srgb, var(--accent) 25%, transparent)',
+                                                                                    borderRadius: 8,
+                                                                                    padding: '4px 10px',
+                                                                                    fontSize: '0.78rem',
+                                                                                }}
+                                                                            >
+                                                                                <span
+                                                                                    style={{
+                                                                                        background:
+                                                                                            CEFR_LEVEL_COLORS[d.level],
+                                                                                        color: '#fff',
+                                                                                        borderRadius: 4,
+                                                                                        padding: '1px 5px',
+                                                                                        fontSize: 10,
+                                                                                        fontWeight: 700,
+                                                                                    }}
+                                                                                >
+                                                                                    {d.level}
+                                                                                </span>
+                                                                                <span
+                                                                                    style={{
+                                                                                        color: 'var(--text)',
+                                                                                        maxWidth: 280,
+                                                                                        overflow: 'hidden',
+                                                                                        textOverflow: 'ellipsis',
+                                                                                        whiteSpace: 'nowrap',
+                                                                                    }}
+                                                                                >
+                                                                                    {i18n.language.startsWith('nl')
+                                                                                        ? d.descriptionNl
+                                                                                        : d.descriptionEn}
+                                                                                </span>
+                                                                                <button
+                                                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                                                    style={{
+                                                                                        color: 'var(--text-muted)',
+                                                                                        padding: 2,
+                                                                                    }}
+                                                                                    onClick={() =>
+                                                                                        removeCefrDescriptor(
+                                                                                            criterion.id,
+                                                                                            d.descriptorId
+                                                                                        )
+                                                                                    }
+                                                                                >
+                                                                                    <X size={11} />
+                                                                                </button>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <div style={{ display: 'flex', gap: 4, marginTop: 20 }}>
+                                                                <button
+                                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                                    style={{ color: 'var(--text-dim)' }}
+                                                                    onClick={() =>
+                                                                        toggleCollapseCriterion(criterion.id)
+                                                                    }
+                                                                    title={
+                                                                        collapsedCriteria.has(criterion.id)
+                                                                            ? 'Expand'
+                                                                            : 'Collapse'
+                                                                    }
+                                                                >
+                                                                    {collapsedCriteria.has(criterion.id) ? (
+                                                                        <ChevronDown size={15} />
+                                                                    ) : (
+                                                                        <ChevronUp size={15} />
+                                                                    )}
+                                                                </button>
+                                                                <button
+                                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                                    style={{ color: 'var(--accent)' }}
+                                                                    onClick={() => copyToClipboard(criterion)}
+                                                                    title="Copy to clipboard"
+                                                                >
+                                                                    <Copy size={15} />
+                                                                </button>
+                                                                <button
+                                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                                    style={{ color: 'var(--text-muted)' }}
+                                                                    onClick={() => duplicateCriterion(cIdx)}
+                                                                    title="Duplicate Criterion"
+                                                                >
+                                                                    <Copy size={15} />
+                                                                </button>
+                                                                <button
+                                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                                    style={{ color: 'var(--red)' }}
+                                                                    onClick={() => deleteCriterion(criterion.id)}
+                                                                    title="Delete Criterion"
+                                                                >
+                                                                    <Trash2 size={15} />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Collapsed: level pills summary */}
+                                                        {collapsedCriteria.has(criterion.id) && (
+                                                            <div
+                                                                style={{
+                                                                    display: 'flex',
+                                                                    gap: 6,
+                                                                    flexWrap: 'wrap',
+                                                                    paddingLeft: 4,
+                                                                }}
+                                                            >
+                                                                {criterion.levels.map((l) => (
+                                                                    <span
+                                                                        key={l.id}
+                                                                        className="badge"
+                                                                        style={{ fontSize: '0.75rem' }}
+                                                                    >
+                                                                        {l.label}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        )}
+
+                                                        {/* Single-point: simplified proficiency descriptor */}
+                                                        {!collapsedCriteria.has(criterion.id) &&
+                                                            scoringMode === 'single-point' && (
+                                                                <div
+                                                                    style={{
+                                                                        display: 'flex',
+                                                                        gap: 16,
+                                                                        marginTop: 4,
+                                                                        alignItems: 'flex-start',
+                                                                    }}
+                                                                >
+                                                                    <div style={{ flex: 1 }}>
+                                                                        <div
+                                                                            className="text-xs text-muted"
+                                                                            style={{
+                                                                                marginBottom: 4,
+                                                                                textTransform: 'uppercase',
+                                                                                fontWeight: 600,
+                                                                            }}
+                                                                        >
+                                                                            Proficiency descriptor — what "meets
+                                                                            standard" looks like
+                                                                        </div>
+                                                                        <textarea
+                                                                            value={
+                                                                                criterion.levels[0]?.description ?? ''
+                                                                            }
+                                                                            onChange={(e) => {
+                                                                                if (!criterion.levels[0]) {
+                                                                                    addLevel(criterion.id);
+                                                                                }
+                                                                                updateLevel(
+                                                                                    criterion.id,
+                                                                                    criterion.levels[0]?.id ?? '',
+                                                                                    { description: e.target.value }
+                                                                                );
+                                                                            }}
+                                                                            placeholder="Describe what a student does when they meet this standard…"
+                                                                            rows={4}
+                                                                            style={{
+                                                                                width: '100%',
+                                                                                fontSize: '0.85rem',
+                                                                            }}
+                                                                        />
+                                                                    </div>
+                                                                    <div style={{ width: 120, flexShrink: 0 }}>
+                                                                        <div
+                                                                            className="text-xs text-muted"
+                                                                            style={{
+                                                                                marginBottom: 4,
+                                                                                textTransform: 'uppercase',
+                                                                                fontWeight: 600,
+                                                                            }}
+                                                                        >
+                                                                            Points (meets)
+                                                                        </div>
+                                                                        <input
+                                                                            type="number"
+                                                                            min={0}
+                                                                            value={criterion.levels[0]?.maxPoints ?? 1}
+                                                                            onChange={(e) =>
+                                                                                updateLevel(
+                                                                                    criterion.id,
+                                                                                    criterion.levels[0]?.id ?? '',
+                                                                                    {
+                                                                                        maxPoints: Number(
+                                                                                            e.target.value
+                                                                                        ),
+                                                                                        minPoints: 0,
+                                                                                    }
+                                                                                )
+                                                                            }
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            )}
+
+                                                        {/* Levels (hidden when collapsed or single-point) */}
+                                                        {!collapsedCriteria.has(criterion.id) &&
+                                                            scoringMode !== 'single-point' && (
+                                                                <div style={{ overflowX: 'auto' }}>
+                                                                    <div
+                                                                        style={{
+                                                                            display: 'flex',
+                                                                            gap: 10,
+                                                                            minWidth: 'max-content',
+                                                                            paddingBottom: 4,
+                                                                        }}
+                                                                    >
+                                                                        {criterion.levels.map((level) => {
+                                                                            const levelKey = `${criterion.id}_${level.id}`;
+                                                                            const subExpanded =
+                                                                                expandedSubItems.has(levelKey);
+                                                                            return (
+                                                                                <div
+                                                                                    key={level.id}
+                                                                                    style={{
+                                                                                        width: 210,
+                                                                                        flexShrink: 0,
+                                                                                        background:
+                                                                                            'var(--bg-elevated)',
+                                                                                        border: '1px solid var(--border)',
+                                                                                        borderRadius: 8,
+                                                                                        padding: 12,
+                                                                                    }}
+                                                                                >
+                                                                                    {/* Level label + delete */}
+                                                                                    <div
+                                                                                        style={{
+                                                                                            display: 'flex',
+                                                                                            gap: 6,
+                                                                                            marginBottom: 8,
+                                                                                        }}
+                                                                                    >
+                                                                                        <input
+                                                                                            type="text"
+                                                                                            value={level.label}
+                                                                                            onChange={(e) =>
+                                                                                                updateLevel(
+                                                                                                    criterion.id,
+                                                                                                    level.id,
+                                                                                                    {
+                                                                                                        label: e.target
+                                                                                                            .value,
+                                                                                                    }
+                                                                                                )
+                                                                                            }
+                                                                                            style={{
+                                                                                                flex: 1,
+                                                                                                fontWeight: 600,
+                                                                                            }}
+                                                                                            placeholder={t(
+                                                                                                'rubricBuilder.placeholder_level_name'
+                                                                                            )}
+                                                                                        />
+                                                                                        {criterion.levels.length >
+                                                                                            1 && (
+                                                                                            <button
+                                                                                                className="btn btn-ghost btn-icon btn-sm"
+                                                                                                style={{
+                                                                                                    color: 'var(--red)',
+                                                                                                }}
+                                                                                                onClick={() =>
+                                                                                                    deleteLevel(
+                                                                                                        criterion.id,
+                                                                                                        level.id
+                                                                                                    )
+                                                                                                }
+                                                                                            >
+                                                                                                <Trash2 size={13} />
+                                                                                            </button>
+                                                                                        )}
+                                                                                    </div>
+
+                                                                                    {/* Min/Max points */}
+                                                                                    <div
+                                                                                        style={{
+                                                                                            display: 'flex',
+                                                                                            gap: 6,
+                                                                                            marginBottom: 8,
+                                                                                            alignItems: 'center',
+                                                                                        }}
+                                                                                    >
+                                                                                        <div style={{ flex: 1 }}>
+                                                                                            <div
+                                                                                                className="text-xs text-muted"
+                                                                                                style={{
+                                                                                                    marginBottom: 2,
+                                                                                                }}
+                                                                                            >
+                                                                                                {t(
+                                                                                                    'rubricBuilder.label_min_pts'
+                                                                                                )}
+                                                                                            </div>
+                                                                                            <input
+                                                                                                type="number"
+                                                                                                value={level.minPoints}
+                                                                                                min={0}
+                                                                                                onChange={(e) =>
+                                                                                                    updateLevel(
+                                                                                                        criterion.id,
+                                                                                                        level.id,
+                                                                                                        {
+                                                                                                            minPoints:
+                                                                                                                Number(
+                                                                                                                    e
+                                                                                                                        .target
+                                                                                                                        .value
+                                                                                                                ),
+                                                                                                        }
+                                                                                                    )
+                                                                                                }
+                                                                                            />
+                                                                                        </div>
+                                                                                        <span
+                                                                                            style={{
+                                                                                                color: 'var(--text-muted)',
+                                                                                                paddingTop: 16,
+                                                                                            }}
+                                                                                        >
+                                                                                            –
+                                                                                        </span>
+                                                                                        <div style={{ flex: 1 }}>
+                                                                                            <div
+                                                                                                className="text-xs text-muted"
+                                                                                                style={{
+                                                                                                    marginBottom: 2,
+                                                                                                }}
+                                                                                            >
+                                                                                                {t(
+                                                                                                    'rubricBuilder.label_max_pts'
+                                                                                                )}
+                                                                                            </div>
+                                                                                            <input
+                                                                                                type="number"
+                                                                                                value={level.maxPoints}
+                                                                                                min={0}
+                                                                                                onChange={(e) =>
+                                                                                                    updateLevel(
+                                                                                                        criterion.id,
+                                                                                                        level.id,
+                                                                                                        {
+                                                                                                            maxPoints:
+                                                                                                                Number(
+                                                                                                                    e
+                                                                                                                        .target
+                                                                                                                        .value
+                                                                                                                ),
+                                                                                                        }
+                                                                                                    )
+                                                                                                }
+                                                                                            />
+                                                                                        </div>
+                                                                                    </div>
+
+                                                                                    {/* Description */}
+                                                                                    <textarea
+                                                                                        value={level.description}
+                                                                                        onChange={(e) =>
+                                                                                            updateLevel(
+                                                                                                criterion.id,
+                                                                                                level.id,
+                                                                                                {
+                                                                                                    description:
+                                                                                                        e.target.value,
+                                                                                                }
+                                                                                            )
+                                                                                        }
+                                                                                        placeholder={t(
+                                                                                            'rubricBuilder.placeholder_level_description'
+                                                                                        )}
+                                                                                        rows={3}
+                                                                                        style={{
+                                                                                            fontSize: '0.8rem',
+                                                                                            width: '100%',
+                                                                                            marginBottom:
+                                                                                                level.description &&
+                                                                                                /\b(good|adequate|poor|excellent|satisfactory|bad|fair|very good|great|wonderful)\b/i.test(
+                                                                                                    level.description
+                                                                                                ) &&
+                                                                                                !/\b(student|demonstrates|shows|uses|writes|includes|provides|explains|applies|describes|identifies|analyzes|creates)\b/i.test(
+                                                                                                    level.description
+                                                                                                )
+                                                                                                    ? 2
+                                                                                                    : 8,
+                                                                                        }}
+                                                                                    />
+                                                                                    {level.description &&
+                                                                                        /\b(good|adequate|poor|excellent|satisfactory|bad|fair|very good|great|wonderful)\b/i.test(
+                                                                                            level.description
+                                                                                        ) &&
+                                                                                        !/\b(student|demonstrates|shows|uses|writes|includes|provides|explains|applies|describes|identifies|analyzes|creates)\b/i.test(
+                                                                                            level.description
+                                                                                        ) && (
+                                                                                            <div
+                                                                                                style={{
+                                                                                                    fontSize: '0.7rem',
+                                                                                                    color: 'var(--yellow, #b45309)',
+                                                                                                    background:
+                                                                                                        'rgba(251,191,36,0.12)',
+                                                                                                    borderRadius: 4,
+                                                                                                    padding: '3px 7px',
+                                                                                                    marginBottom: 6,
+                                                                                                }}
+                                                                                            >
+                                                                                                💡 Tip: describe what
+                                                                                                the student{' '}
+                                                                                                <em>does</em>, not just
+                                                                                                how good it is (e.g.
+                                                                                                "uses 3+ examples to
+                                                                                                support each claim")
+                                                                                            </div>
+                                                                                        )}
+
+                                                                                    {/* Sub-items toggle */}
+                                                                                    <button
+                                                                                        className="btn btn-ghost btn-sm"
+                                                                                        style={{
+                                                                                            width: '100%',
+                                                                                            justifyContent:
+                                                                                                'space-between',
+                                                                                        }}
+                                                                                        onClick={() =>
+                                                                                            toggleSubItems(levelKey)
+                                                                                        }
+                                                                                    >
+                                                                                        <span
+                                                                                            style={{
+                                                                                                fontSize: '0.78rem',
+                                                                                            }}
+                                                                                        >
+                                                                                            {t(
+                                                                                                'rubricBuilder.label_sub_items'
+                                                                                            )}{' '}
+                                                                                            ({level.subItems.length})
+                                                                                        </span>
+                                                                                        <ChevronRight
+                                                                                            size={13}
+                                                                                            style={{
+                                                                                                transform: subExpanded
+                                                                                                    ? 'rotate(90deg)'
+                                                                                                    : 'none',
+                                                                                                transition:
+                                                                                                    'transform 0.2s',
+                                                                                            }}
+                                                                                        />
+                                                                                    </button>
+
+                                                                                    {subExpanded && (
+                                                                                        <div
+                                                                                            style={{
+                                                                                                marginTop: 8,
+                                                                                                display: 'flex',
+                                                                                                flexDirection: 'column',
+                                                                                                gap: 6,
+                                                                                            }}
+                                                                                        >
+                                                                                            {level.subItems.map(
+                                                                                                (si) => (
+                                                                                                    <div
+                                                                                                        key={si.id}
+                                                                                                        style={{
+                                                                                                            display:
+                                                                                                                'flex',
+                                                                                                            flexDirection:
+                                                                                                                'column',
+                                                                                                            gap: 4,
+                                                                                                            paddingBottom: 6,
+                                                                                                            borderBottom:
+                                                                                                                '1px solid var(--border)',
+                                                                                                        }}
+                                                                                                    >
+                                                                                                        <div
+                                                                                                            style={{
+                                                                                                                display:
+                                                                                                                    'flex',
+                                                                                                                flexDirection:
+                                                                                                                    'column',
+                                                                                                                gap: 6,
+                                                                                                            }}
+                                                                                                        >
+                                                                                                            <textarea
+                                                                                                                value={
+                                                                                                                    si.label
+                                                                                                                }
+                                                                                                                onChange={(
+                                                                                                                    e
+                                                                                                                ) =>
+                                                                                                                    updateSubItem(
+                                                                                                                        criterion.id,
+                                                                                                                        level.id,
+                                                                                                                        si.id,
+                                                                                                                        {
+                                                                                                                            label: e
+                                                                                                                                .target
+                                                                                                                                .value,
+                                                                                                                        }
+                                                                                                                    )
+                                                                                                                }
+                                                                                                                placeholder={t(
+                                                                                                                    'rubricBuilder.placeholder_sub_item_label'
+                                                                                                                )}
+                                                                                                                rows={2}
+                                                                                                                style={{
+                                                                                                                    width: '100%',
+                                                                                                                    fontSize:
+                                                                                                                        '0.78rem',
+                                                                                                                    resize: 'vertical',
+                                                                                                                    minHeight: 40,
+                                                                                                                    fontFamily:
+                                                                                                                        'inherit',
+                                                                                                                    padding:
+                                                                                                                        '6px 8px',
+                                                                                                                    borderRadius: 4,
+                                                                                                                    border: '1px solid var(--border)',
+                                                                                                                }}
+                                                                                                            />
+                                                                                                            <div
+                                                                                                                style={{
+                                                                                                                    display:
+                                                                                                                        'flex',
+                                                                                                                    gap: 6,
+                                                                                                                    alignItems:
+                                                                                                                        'flex-end',
+                                                                                                                    justifyContent:
+                                                                                                                        'flex-start',
+                                                                                                                }}
+                                                                                                            >
+                                                                                                                <div
+                                                                                                                    style={{
+                                                                                                                        display:
+                                                                                                                            'flex',
+                                                                                                                        flexDirection:
+                                                                                                                            'column',
+                                                                                                                        gap: 2,
+                                                                                                                    }}
+                                                                                                                >
+                                                                                                                    <span
+                                                                                                                        style={{
+                                                                                                                            fontSize:
+                                                                                                                                '9px',
+                                                                                                                            color: 'var(--text-muted)',
+                                                                                                                        }}
+                                                                                                                    >
+                                                                                                                        {t(
+                                                                                                                            'rubricBuilder.label_sub_item_min'
+                                                                                                                        )}
+                                                                                                                    </span>
+                                                                                                                    <input
+                                                                                                                        type="number"
+                                                                                                                        value={
+                                                                                                                            si.minPoints ??
+                                                                                                                            0
+                                                                                                                        }
+                                                                                                                        min={
+                                                                                                                            0
+                                                                                                                        }
+                                                                                                                        onChange={(
+                                                                                                                            e
+                                                                                                                        ) =>
+                                                                                                                            updateSubItem(
+                                                                                                                                criterion.id,
+                                                                                                                                level.id,
+                                                                                                                                si.id,
+                                                                                                                                {
+                                                                                                                                    minPoints:
+                                                                                                                                        Number(
+                                                                                                                                            e
+                                                                                                                                                .target
+                                                                                                                                                .value
+                                                                                                                                        ),
+                                                                                                                                }
+                                                                                                                            )
+                                                                                                                        }
+                                                                                                                        style={{
+                                                                                                                            width: 45,
+                                                                                                                            fontSize:
+                                                                                                                                '0.78rem',
+                                                                                                                            height: 26,
+                                                                                                                            padding:
+                                                                                                                                '2px 4px',
+                                                                                                                        }}
+                                                                                                                        title="Min points for this sub-item"
+                                                                                                                    />
+                                                                                                                </div>
+                                                                                                                <div
+                                                                                                                    style={{
+                                                                                                                        display:
+                                                                                                                            'flex',
+                                                                                                                        flexDirection:
+                                                                                                                            'column',
+                                                                                                                        gap: 2,
+                                                                                                                    }}
+                                                                                                                >
+                                                                                                                    <span
+                                                                                                                        style={{
+                                                                                                                            fontSize:
+                                                                                                                                '9px',
+                                                                                                                            color: 'var(--text-muted)',
+                                                                                                                        }}
+                                                                                                                    >
+                                                                                                                        {t(
+                                                                                                                            'rubricBuilder.label_sub_item_max'
+                                                                                                                        )}
+                                                                                                                    </span>
+                                                                                                                    <input
+                                                                                                                        type="number"
+                                                                                                                        value={
+                                                                                                                            si.maxPoints ??
+                                                                                                                            si.points ??
+                                                                                                                            1
+                                                                                                                        }
+                                                                                                                        min={
+                                                                                                                            si.minPoints ??
+                                                                                                                            0
+                                                                                                                        }
+                                                                                                                        onChange={(
+                                                                                                                            e
+                                                                                                                        ) =>
+                                                                                                                            updateSubItem(
+                                                                                                                                criterion.id,
+                                                                                                                                level.id,
+                                                                                                                                si.id,
+                                                                                                                                {
+                                                                                                                                    maxPoints:
+                                                                                                                                        Number(
+                                                                                                                                            e
+                                                                                                                                                .target
+                                                                                                                                                .value
+                                                                                                                                        ),
+                                                                                                                                }
+                                                                                                                            )
+                                                                                                                        }
+                                                                                                                        style={{
+                                                                                                                            width: 45,
+                                                                                                                            fontSize:
+                                                                                                                                '0.78rem',
+                                                                                                                            height: 26,
+                                                                                                                            padding:
+                                                                                                                                '2px 4px',
+                                                                                                                        }}
+                                                                                                                        title="Max points for this sub-item"
+                                                                                                                    />
+                                                                                                                </div>
+                                                                                                                <div
+                                                                                                                    style={{
+                                                                                                                        flex: 1,
+                                                                                                                    }}
+                                                                                                                />
+                                                                                                                <button
+                                                                                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                                                                                    style={{
+                                                                                                                        color: 'var(--accent)',
+                                                                                                                        height: 26,
+                                                                                                                        width: 26,
+                                                                                                                    }}
+                                                                                                                    onClick={() =>
+                                                                                                                        setPickingStandardFor(
+                                                                                                                            {
+                                                                                                                                type: 'subitem',
+                                                                                                                                cid: criterion.id,
+                                                                                                                                lid: level.id,
+                                                                                                                                sid: si.id,
+                                                                                                                            }
+                                                                                                                        )
+                                                                                                                    }
+                                                                                                                    title="Link standard to this sub-item"
+                                                                                                                >
+                                                                                                                    <Link2
+                                                                                                                        size={
+                                                                                                                            11
+                                                                                                                        }
+                                                                                                                    />
+                                                                                                                </button>
+                                                                                                                <button
+                                                                                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                                                                                    style={{
+                                                                                                                        color: 'var(--red)',
+                                                                                                                        height: 26,
+                                                                                                                        width: 26,
+                                                                                                                    }}
+                                                                                                                    onClick={() =>
+                                                                                                                        deleteSubItem(
+                                                                                                                            criterion.id,
+                                                                                                                            level.id,
+                                                                                                                            si.id
+                                                                                                                        )
+                                                                                                                    }
+                                                                                                                    title="Delete sub-item"
+                                                                                                                >
+                                                                                                                    <Trash2
+                                                                                                                        size={
+                                                                                                                            11
+                                                                                                                        }
+                                                                                                                    />
+                                                                                                                </button>
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                        {si.linkedStandards &&
+                                                                                                            si
+                                                                                                                .linkedStandards
+                                                                                                                .length >
+                                                                                                                0 && (
+                                                                                                                <div
+                                                                                                                    style={{
+                                                                                                                        display:
+                                                                                                                            'flex',
+                                                                                                                        flexWrap:
+                                                                                                                            'wrap',
+                                                                                                                        gap: 4,
+                                                                                                                    }}
+                                                                                                                >
+                                                                                                                    {si.linkedStandards.map(
+                                                                                                                        (
+                                                                                                                            std,
+                                                                                                                            idx
+                                                                                                                        ) => (
+                                                                                                                            <div
+                                                                                                                                key={
+                                                                                                                                    std.guid +
+                                                                                                                                    idx
+                                                                                                                                }
+                                                                                                                                style={{
+                                                                                                                                    display:
+                                                                                                                                        'inline-flex',
+                                                                                                                                    alignItems:
+                                                                                                                                        'center',
+                                                                                                                                    gap: 4,
+                                                                                                                                    background:
+                                                                                                                                        'var(--accent-soft)',
+                                                                                                                                    borderRadius: 4,
+                                                                                                                                    padding:
+                                                                                                                                        '2px 6px',
+                                                                                                                                    fontSize:
+                                                                                                                                        '0.65rem',
+                                                                                                                                }}
+                                                                                                                            >
+                                                                                                                                <span
+                                                                                                                                    style={{
+                                                                                                                                        color: 'var(--accent)',
+                                                                                                                                        fontWeight: 600,
+                                                                                                                                    }}
+                                                                                                                                >
+                                                                                                                                    {std.statementNotation ??
+                                                                                                                                        std.guid}
+                                                                                                                                </span>
+                                                                                                                                <button
+                                                                                                                                    className="btn btn-ghost btn-icon"
+                                                                                                                                    style={{
+                                                                                                                                        padding: 0,
+                                                                                                                                        height: 'auto',
+                                                                                                                                        minHeight: 0,
+                                                                                                                                        color: 'var(--text-muted)',
+                                                                                                                                    }}
+                                                                                                                                    onClick={() =>
+                                                                                                                                        unlinkStandard(
+                                                                                                                                            {
+                                                                                                                                                type: 'subitem',
+                                                                                                                                                cid: criterion.id,
+                                                                                                                                                lid: level.id,
+                                                                                                                                                sid: si.id,
+                                                                                                                                            },
+                                                                                                                                            idx
+                                                                                                                                        )
+                                                                                                                                    }
+                                                                                                                                >
+                                                                                                                                    <X
+                                                                                                                                        size={
+                                                                                                                                            10
+                                                                                                                                        }
+                                                                                                                                    />
+                                                                                                                                </button>
+                                                                                                                            </div>
+                                                                                                                        )
+                                                                                                                    )}
+                                                                                                                </div>
+                                                                                                            )}
+                                                                                                    </div>
+                                                                                                )
+                                                                                            )}
+                                                                                            <button
+                                                                                                className="btn btn-ghost btn-sm"
+                                                                                                style={{
+                                                                                                    fontSize: '0.78rem',
+                                                                                                }}
+                                                                                                onClick={() =>
+                                                                                                    addSubItem(
+                                                                                                        criterion.id,
+                                                                                                        level.id
+                                                                                                    )
+                                                                                                }
+                                                                                            >
+                                                                                                <Plus size={12} />{' '}
+                                                                                                {t(
+                                                                                                    'rubricBuilder.action_add_sub_item'
+                                                                                                )}
+                                                                                            </button>
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                            );
+                                                                        })}
+                                                                        <div
+                                                                            style={{
+                                                                                width: 210,
+                                                                                flexShrink: 0,
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                justifyContent: 'center',
+                                                                            }}
+                                                                        >
+                                                                            <button
+                                                                                className="btn btn-ghost btn-sm"
+                                                                                onClick={() => addLevel(criterion.id)}
+                                                                            >
+                                                                                <Plus size={14} />{' '}
+                                                                                {t('rubricBuilder.action_add_level')}
                                                                             </button>
                                                                         </div>
                                                                     </div>
-                                                                    {si.linkedStandards && si.linkedStandards.length > 0 && (
-                                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                                                                            {si.linkedStandards.map((std, idx) => (
-                                                                                <div key={std.guid + idx} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'var(--accent-soft)', borderRadius: 4, padding: '2px 6px', fontSize: '0.65rem' }}>
-                                                                                    <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{std.statementNotation ?? std.guid}</span>
-                                                                                    <button className="btn btn-ghost btn-icon" style={{ padding: 0, height: 'auto', minHeight: 0, color: 'var(--text-muted)' }}
-                                                                                        onClick={() => unlinkStandard({ type: 'subitem', cid: criterion.id, lid: level.id, sid: si.id }, idx)}>
-                                                                                        <X size={10} />
-                                                                                    </button>
-                                                                                </div>
-                                                                            ))}
-                                                                        </div>
-                                                                    )}
                                                                 </div>
-                                                            ))}
-                                                            <button className="btn btn-ghost btn-sm" style={{ fontSize: '0.78rem' }}
-                                                                onClick={() => addSubItem(criterion.id, level.id)}>
-                                                                <Plus size={12} /> {t('rubricBuilder.action_add_sub_item')}
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
-                                        <div style={{ width: 210, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <button className="btn btn-ghost btn-sm" onClick={() => addLevel(criterion.id)}>
-                                                <Plus size={14} /> {t('rubricBuilder.action_add_level')}
-                                            </button>
-                                        </div>
+                                                            )}
+                                                    </div>
+                                                )}
+                                            </Draggable>
+                                        ))}
+                                        {provided.placeholder}
                                     </div>
-                                </div>}
-                            </div>
-                        )}
-                    </Draggable>
-                ))}
-                {provided.placeholder}
-            </div>
-        )}
-    </Droppable>
-</DragDropContext>
+                                )}
+                            </Droppable>
+                        </DragDropContext>
 
                         {criteria.length === 0 && (
                             <div className="empty-state">
@@ -956,7 +2174,7 @@ export default function RubricBuilder() {
                                 format={format}
                                 updateCriterion={updateCriterion}
                                 updateLevel={updateLevel}
-                                addCriterion={() => setCriteria(c => [...c, newCriterion()])}
+                                addCriterion={() => setCriteria((c) => [...c, newCriterion()])}
                                 addCriterionLevel={(cid) => addLevel(cid)}
                                 criteriaSetter={setCriteria}
                                 totalMaxPoints={totalMaxPoints}
@@ -972,14 +2190,31 @@ export default function RubricBuilder() {
                             <h3 style={{ marginBottom: 16 }}>{t('rubricBuilder.format_title')}</h3>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                                 {[
-                                    { label: t('rubricBuilder.format_criterion_width'), key: 'criterionColWidth', min: 120, max: 400 },
-                                    { label: t('rubricBuilder.format_level_width'), key: 'levelColWidth', min: 100, max: 400 },
+                                    {
+                                        label: t('rubricBuilder.format_criterion_width'),
+                                        key: 'criterionColWidth',
+                                        min: 120,
+                                        max: 400,
+                                    },
+                                    {
+                                        label: t('rubricBuilder.format_level_width'),
+                                        key: 'levelColWidth',
+                                        min: 100,
+                                        max: 400,
+                                    },
                                     { label: t('rubricBuilder.format_font_size'), key: 'fontSize', min: 10, max: 20 },
                                 ].map(({ label, key, min, max }) => (
                                     <div className="form-group" key={key}>
                                         <label>{label}</label>
-                                        <input type="number" value={(format as any)[key]} min={min} max={max}
-                                            onChange={e => setFormat(f => ({ ...f, [key]: Number(e.target.value) }))} />
+                                        <input
+                                            type="number"
+                                            value={(format as any)[key]}
+                                            min={min}
+                                            max={max}
+                                            onChange={(e) =>
+                                                setFormat((f) => ({ ...f, [key]: Number(e.target.value) }))
+                                            }
+                                        />
                                     </div>
                                 ))}
                                 {[
@@ -990,18 +2225,33 @@ export default function RubricBuilder() {
                                     <div className="form-group" key={key}>
                                         <label>{label}</label>
                                         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                                            <input type="color" value={(format as any)[key]}
-                                                onChange={e => setFormat(f => ({ ...f, [key]: e.target.value }))}
-                                                style={{ width: 40, height: 36, padding: 2, border: '1px solid var(--border)', borderRadius: 6 }} />
-                                            <input type="text" value={(format as any)[key]}
-                                                onChange={e => setFormat(f => ({ ...f, [key]: e.target.value }))}
-                                                style={{ flex: 1 }} />
+                                            <input
+                                                type="color"
+                                                value={(format as any)[key]}
+                                                onChange={(e) => setFormat((f) => ({ ...f, [key]: e.target.value }))}
+                                                style={{
+                                                    width: 40,
+                                                    height: 36,
+                                                    padding: 2,
+                                                    border: '1px solid var(--border)',
+                                                    borderRadius: 6,
+                                                }}
+                                            />
+                                            <input
+                                                type="text"
+                                                value={(format as any)[key]}
+                                                onChange={(e) => setFormat((f) => ({ ...f, [key]: e.target.value }))}
+                                                style={{ flex: 1 }}
+                                            />
                                         </div>
                                     </div>
                                 ))}
                                 <div className="form-group">
                                     <label>{t('rubricBuilder.format_font_family')}</label>
-                                    <select value={format.fontFamily} onChange={e => setFormat(f => ({ ...f, fontFamily: e.target.value }))}>
+                                    <select
+                                        value={format.fontFamily}
+                                        onChange={(e) => setFormat((f) => ({ ...f, fontFamily: e.target.value }))}
+                                    >
                                         <option value="Inter, system-ui, sans-serif">Sans Serif (Inter)</option>
                                         <option value="Arial, Helvetica, sans-serif">Arial</option>
                                         <option value='"Times New Roman", Times, serif'>Times New Roman</option>
@@ -1011,16 +2261,32 @@ export default function RubricBuilder() {
                                 </div>
                                 <div className="form-group">
                                     <label>{t('rubricBuilder.format_level_order')}</label>
-                                    <select value={format.levelOrder}
-                                        onChange={e => setFormat(f => ({ ...f, levelOrder: e.target.value as 'best-first' | 'worst-first' }))}>
+                                    <select
+                                        value={format.levelOrder}
+                                        onChange={(e) =>
+                                            setFormat((f) => ({
+                                                ...f,
+                                                levelOrder: e.target.value as 'best-first' | 'worst-first',
+                                            }))
+                                        }
+                                    >
                                         <option value="best-first">{t('rubricBuilder.format_order_best_first')}</option>
-                                        <option value="worst-first">{t('rubricBuilder.format_order_worst_first')}</option>
+                                        <option value="worst-first">
+                                            {t('rubricBuilder.format_order_worst_first')}
+                                        </option>
                                     </select>
                                 </div>
                                 <div className="form-group">
                                     <label>{t('rubricBuilder.format_orientation')}</label>
-                                    <select value={format.orientation || 'portrait'}
-                                        onChange={e => setFormat(f => ({ ...f, orientation: e.target.value as 'portrait' | 'landscape' }))}>
+                                    <select
+                                        value={format.orientation || 'portrait'}
+                                        onChange={(e) =>
+                                            setFormat((f) => ({
+                                                ...f,
+                                                orientation: e.target.value as 'portrait' | 'landscape',
+                                            }))
+                                        }
+                                    >
                                         <option value="portrait">{t('rubricBuilder.format_portrait')}</option>
                                         <option value="landscape">{t('rubricBuilder.format_landscape')}</option>
                                     </select>
@@ -1029,28 +2295,77 @@ export default function RubricBuilder() {
                                     <div className="form-group">
                                         <label>{t('rubricBuilder.format_header_align')}</label>
                                         <div style={{ display: 'flex', gap: 4 }}>
-                                            {(['left', 'center', 'right'] as const).map(align => (
-                                                <button key={align}
+                                            {(['left', 'center', 'right'] as const).map((align) => (
+                                                <button
+                                                    key={align}
                                                     className={`btn btn-sm ${format.headerTextAlign === align ? 'btn-secondary' : 'btn-ghost'}`}
-                                                    onClick={() => setFormat(f => ({ ...f, headerTextAlign: align }))}
-                                                    style={{ flex: 1, textTransform: 'capitalize' }}>
-                                                    {align === 'left' ? <AlignLeft size={14} /> : align === 'center' ? <AlignCenter size={14} /> : <AlignRight size={14} />}
+                                                    onClick={() => setFormat((f) => ({ ...f, headerTextAlign: align }))}
+                                                    style={{ flex: 1, textTransform: 'capitalize' }}
+                                                >
+                                                    {align === 'left' ? (
+                                                        <AlignLeft size={14} />
+                                                    ) : align === 'center' ? (
+                                                        <AlignCenter size={14} />
+                                                    ) : (
+                                                        <AlignRight size={14} />
+                                                    )}
                                                 </button>
                                             ))}
                                         </div>
                                     </div>
                                     {[
-                                        { label: t('rubricBuilder.format_show_weights'), key: 'showWeights' as keyof RubricFormat },
-                                        { label: t('rubricBuilder.format_show_points'), key: 'showPoints' as keyof RubricFormat },
-                                        { label: t('rubricBuilder.format_calculate_grade'), key: 'showCalculatedGrade' as keyof RubricFormat },
-                                        { label: t('rubricBuilder.format_show_borders'), key: 'showBorders' as keyof RubricFormat, icon: <LayoutGrid size={14} /> },
-                                        { label: t('rubricBuilder.format_alternate_rows'), key: 'rowStriping' as keyof RubricFormat, icon: <Rows3 size={14} /> },
+                                        {
+                                            label: t('rubricBuilder.format_show_weights'),
+                                            key: 'showWeights' as keyof RubricFormat,
+                                        },
+                                        {
+                                            label: t('rubricBuilder.format_show_points'),
+                                            key: 'showPoints' as keyof RubricFormat,
+                                        },
+                                        {
+                                            label: t('rubricBuilder.format_calculate_grade'),
+                                            key: 'showCalculatedGrade' as keyof RubricFormat,
+                                        },
+                                        {
+                                            label: t('rubricBuilder.format_show_borders'),
+                                            key: 'showBorders' as keyof RubricFormat,
+                                            icon: <LayoutGrid size={14} />,
+                                        },
+                                        {
+                                            label: t('rubricBuilder.format_alternate_rows'),
+                                            key: 'rowStriping' as keyof RubricFormat,
+                                            icon: <Rows3 size={14} />,
+                                        },
                                     ].map(({ label, key, icon }) => (
-                                        <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', textTransform: 'none', letterSpacing: 0, paddingLeft: 2 }}>
-                                            <div style={{ color: format[key] ? 'var(--accent)' : 'var(--text-muted)' }} onClick={() => setFormat(f => ({ ...f, [key]: !f[key] }))}>
+                                        <label
+                                            key={key}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 8,
+                                                cursor: 'pointer',
+                                                textTransform: 'none',
+                                                letterSpacing: 0,
+                                                paddingLeft: 2,
+                                            }}
+                                        >
+                                            <div
+                                                style={{ color: format[key] ? 'var(--accent)' : 'var(--text-muted)' }}
+                                                onClick={() => setFormat((f) => ({ ...f, [key]: !f[key] }))}
+                                            >
                                                 {format[key] ? <CheckSquare size={16} /> : <Square size={16} />}
                                             </div>
-                                            {icon && <span style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>{icon}</span>}
+                                            {icon && (
+                                                <span
+                                                    style={{
+                                                        color: 'var(--text-muted)',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                    }}
+                                                >
+                                                    {icon}
+                                                </span>
+                                            )}
                                             {label}
                                         </label>
                                     ))}
@@ -1066,13 +2381,35 @@ export default function RubricBuilder() {
                 {/* Preview Modal */}
                 {showPreview && (
                     <div className="modal-overlay" onClick={() => setShowPreview(false)}>
-                        <div style={{ background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', padding: 24, maxWidth: '90vw', maxHeight: '90vh', overflow: 'auto' }}
-                            onClick={e => e.stopPropagation()}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                        <div
+                            style={{
+                                background: 'var(--bg-card)',
+                                borderRadius: 'var(--radius-lg)',
+                                padding: 24,
+                                maxWidth: '90vw',
+                                maxHeight: '90vh',
+                                overflow: 'auto',
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    marginBottom: 16,
+                                }}
+                            >
                                 <h3>{t('rubricBuilder.preview_title')}</h3>
-                                <button className="btn btn-ghost btn-sm" onClick={() => setShowPreview(false)}>✕ {t('rubricBuilder.action_close')}</button>
+                                <button className="btn btn-ghost btn-sm" onClick={() => setShowPreview(false)}>
+                                    ✕ {t('rubricBuilder.action_close')}
+                                </button>
                             </div>
-                            <RubricPreviewTable name={name || t('rubricBuilder.placeholder_name').replace('...', '')} criteria={criteria} format={format} />
+                            <RubricPreviewTable
+                                name={name || t('rubricBuilder.placeholder_name').replace('...', '')}
+                                criteria={criteria}
+                                format={format}
+                            />
                         </div>
                     </div>
                 )}
@@ -1081,28 +2418,62 @@ export default function RubricBuilder() {
                 {pickingStandardFor && settings.standardsApiKey ? (
                     <StandardsPickerModal
                         apiKey={settings.standardsApiKey}
-                        onSelect={(std) => { linkStandard(pickingStandardFor, std); setPickingStandardFor(null); }}
+                        onSelect={(std) => {
+                            linkStandard(pickingStandardFor, std);
+                            setPickingStandardFor(null);
+                        }}
                         onClose={() => setPickingStandardFor(null)}
                     />
                 ) : pickingStandardFor && !settings.standardsApiKey ? (
                     <div className="modal-overlay" onClick={() => setPickingStandardFor(null)}>
-                        <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 460 }}>
+                        <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 460 }}>
                             <div className="modal-header">
-                                <h3><BookOpen size={16} /> {t('rubricBuilder.standards_modal_title')}</h3>
-                                <button className="btn btn-ghost btn-icon" onClick={() => setPickingStandardFor(null)}>✕</button>
+                                <h3>
+                                    <BookOpen size={16} /> {t('rubricBuilder.standards_modal_title')}
+                                </h3>
+                                <button className="btn btn-ghost btn-icon" onClick={() => setPickingStandardFor(null)}>
+                                    ✕
+                                </button>
                             </div>
                             <div className="modal-body">
-                                <p style={{ marginBottom: 12 }}><Trans i18nKey="rubricBuilder.standards_modal_desc">To link academic standards you need a <strong>Common Standards Project API key</strong>.</Trans></p>
+                                <p style={{ marginBottom: 12 }}>
+                                    <Trans i18nKey="rubricBuilder.standards_modal_desc">
+                                        To link academic standards you need a{' '}
+                                        <strong>Common Standards Project API key</strong>.
+                                    </Trans>
+                                </p>
                                 <ol style={{ paddingLeft: 20, lineHeight: 2, fontSize: '0.9rem' }}>
-                                    <li>Register at <a href="https://commonstandardsproject.com" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>commonstandardsproject.com</a></li>
+                                    <li>
+                                        Register at{' '}
+                                        <a
+                                            href="https://commonstandardsproject.com"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            style={{ color: 'var(--accent)' }}
+                                        >
+                                            commonstandardsproject.com
+                                        </a>
+                                    </li>
                                     <li>Copy your API key from the developer dashboard</li>
-                                    <li>Add your app URL to the <strong>CORS Allowed Origins</strong> list</li>
-                                    <li>Paste the key in <strong>Settings → Standards Integration</strong></li>
+                                    <li>
+                                        Add your app URL to the <strong>CORS Allowed Origins</strong> list
+                                    </li>
+                                    <li>
+                                        Paste the key in <strong>Settings → Standards Integration</strong>
+                                    </li>
                                 </ol>
                             </div>
                             <div className="modal-footer">
-                                <button className="btn btn-secondary" onClick={() => setPickingStandardFor(null)}>{t('rubricBuilder.action_close')}</button>
-                                <button className="btn btn-primary" onClick={() => { setPickingStandardFor(null); navigate('/settings'); }}>
+                                <button className="btn btn-secondary" onClick={() => setPickingStandardFor(null)}>
+                                    {t('rubricBuilder.action_close')}
+                                </button>
+                                <button
+                                    className="btn btn-primary"
+                                    onClick={() => {
+                                        setPickingStandardFor(null);
+                                        navigate('/settings');
+                                    }}
+                                >
                                     {t('rubricBuilder.action_open_settings')}
                                 </button>
                             </div>
@@ -1111,39 +2482,49 @@ export default function RubricBuilder() {
                 ) : null}
 
                 {/* CEFR Picker Modal */}
-                {pickingCefrFor && (() => {
-                    const criterion = criteria.find(c => c.id === pickingCefrFor);
-                    if (!criterion) return null;
-                    return (
-                        <CefrPickerModal
-                            linkedDescriptors={criterion.cefrDescriptors || []}
-                            onAdd={(d) => addCefrDescriptor(pickingCefrFor, d)}
-                            onRemove={(dId) => removeCefrDescriptor(pickingCefrFor, dId)}
-                            onClose={() => setPickingCefrFor(null)}
-                        />
-                    );
-                })()}
+                {pickingCefrFor &&
+                    (() => {
+                        const criterion = criteria.find((c) => c.id === pickingCefrFor);
+                        if (!criterion) return null;
+                        return (
+                            <CefrPickerModal
+                                linkedDescriptors={criterion.cefrDescriptors || []}
+                                onAdd={(d) => addCefrDescriptor(pickingCefrFor, d)}
+                                onRemove={(dId) => removeCefrDescriptor(pickingCefrFor, dId)}
+                                onClose={() => setPickingCefrFor(null)}
+                            />
+                        );
+                    })()}
 
                 {/* Markdown Hint Modal */}
                 {showMarkdownHint && (
                     <div className="modal-overlay" onClick={() => setShowMarkdownHint(false)}>
-                        <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 400 }}>
+                        <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 400 }}>
                             <div className="modal-header">
                                 <h3>{t('rubricBuilder.md_modal_title')}</h3>
-                                <button className="btn btn-ghost btn-icon" onClick={() => setShowMarkdownHint(false)}>✕</button>
+                                <button className="btn btn-ghost btn-icon" onClick={() => setShowMarkdownHint(false)}>
+                                    ✕
+                                </button>
                             </div>
                             <div className="modal-body">
                                 <p style={{ marginBottom: 16 }}>{t('rubricBuilder.md_modal_desc')}</p>
                                 <ul style={{ paddingLeft: 20, lineHeight: 2 }}>
-                                    <li><code>**bold**</code> for <strong>bold text</strong></li>
-                                    <li><code>*italic*</code> for <em>italic text</em></li>
+                                    <li>
+                                        <code>**bold**</code> for <strong>bold text</strong>
+                                    </li>
+                                    <li>
+                                        <code>*italic*</code> for <em>italic text</em>
+                                    </li>
                                 </ul>
                                 <p style={{ marginTop: 16, fontSize: '0.9em', color: 'var(--text-muted)' }}>
-                                    Just type the asterisks around your words. The formatting will apply as soon as you click outside the text box!
+                                    Just type the asterisks around your words. The formatting will apply as soon as you
+                                    click outside the text box!
                                 </p>
                             </div>
                             <div className="modal-footer">
-                                <button className="btn btn-primary" onClick={() => setShowMarkdownHint(false)}>{t('rubricBuilder.action_got_it')}</button>
+                                <button className="btn btn-primary" onClick={() => setShowMarkdownHint(false)}>
+                                    {t('rubricBuilder.action_got_it')}
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -1154,10 +2535,15 @@ export default function RubricBuilder() {
             {/* Version History Panel */}
             {showVersionHistory && id && (
                 <div className="modal-overlay" onClick={() => setShowVersionHistory(false)}>
-                    <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 500 }}>
+                    <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 500 }}>
                         <div className="modal-header">
-                            <h3><Clock size={16} style={{ marginRight: 6, verticalAlign: 'middle' }} />{t('rubricBuilder.version_history')}</h3>
-                            <button className="btn btn-ghost btn-icon" onClick={() => setShowVersionHistory(false)}>✕</button>
+                            <h3>
+                                <Clock size={16} style={{ marginRight: 6, verticalAlign: 'middle' }} />
+                                {t('rubricBuilder.version_history')}
+                            </h3>
+                            <button className="btn btn-ghost btn-icon" onClick={() => setShowVersionHistory(false)}>
+                                ✕
+                            </button>
                         </div>
                         <div className="modal-body">
                             {/* Save new version */}
@@ -1165,14 +2551,17 @@ export default function RubricBuilder() {
                                 <input
                                     type="text"
                                     value={versionLabel}
-                                    onChange={e => setVersionLabel(e.target.value)}
+                                    onChange={(e) => setVersionLabel(e.target.value)}
                                     placeholder={t('rubricBuilder.version_label_placeholder')}
                                     style={{ flex: 1 }}
                                 />
-                                <button className="btn btn-primary btn-sm" onClick={() => {
-                                    saveRubricVersion(id, versionLabel || undefined);
-                                    setVersionLabel('');
-                                }}>
+                                <button
+                                    className="btn btn-primary btn-sm"
+                                    onClick={() => {
+                                        saveRubricVersion(id, versionLabel || undefined);
+                                        setVersionLabel('');
+                                    }}
+                                >
                                     <Save size={13} /> {t('rubricBuilder.save_version')}
                                 </button>
                             </div>
@@ -1184,11 +2573,26 @@ export default function RubricBuilder() {
                                     {[...(existing?.versions ?? [])].reverse().map((v, ri) => {
                                         const actualIndex = (existing?.versions?.length ?? 0) - 1 - ri;
                                         return (
-                                            <div key={actualIndex} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: 'var(--bg-elevated)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                                            <div
+                                                key={actualIndex}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 10,
+                                                    padding: '10px 12px',
+                                                    background: 'var(--bg-elevated)',
+                                                    borderRadius: 8,
+                                                    border: '1px solid var(--border)',
+                                                }}
+                                            >
                                                 <div style={{ flex: 1 }}>
-                                                    <div style={{ fontWeight: 600, fontSize: '0.87rem' }}>{v.label || t('rubricBuilder.version_n', { n: actualIndex + 1 })}</div>
+                                                    <div style={{ fontWeight: 600, fontSize: '0.87rem' }}>
+                                                        {v.label ||
+                                                            t('rubricBuilder.version_n', { n: actualIndex + 1 })}
+                                                    </div>
                                                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                                        {new Date(v.savedAt).toLocaleString()} · {v.snapshot.criteria.length} {t('rubricBuilder.criteria_count')}
+                                                        {new Date(v.savedAt).toLocaleString()} ·{' '}
+                                                        {v.snapshot.criteria.length} {t('rubricBuilder.criteria_count')}
                                                     </div>
                                                 </div>
                                                 <button
@@ -1214,16 +2618,19 @@ export default function RubricBuilder() {
 
             {syncDialogRubric && (
                 <div className="modal-overlay" onClick={() => setSyncDialogRubric(null)}>
-                    <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 420 }}>
+                    <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 420 }}>
                         <div className="modal-header">
                             <h3>{t('rubricBuilder.sync_dialog_title')}</h3>
-                            <button className="btn btn-ghost btn-icon" onClick={() => setSyncDialogRubric(null)}>✕</button>
+                            <button className="btn btn-ghost btn-icon" onClick={() => setSyncDialogRubric(null)}>
+                                ✕
+                            </button>
                         </div>
                         <div className="modal-body">
                             <p>
                                 {t('rubricBuilder.sync_dialog_body', {
-                                    count: studentRubrics.filter(sr => sr.rubricId === syncDialogRubric.id).length +
-                                           peerReviews.filter(pr => pr.rubricId === syncDialogRubric.id).length
+                                    count:
+                                        studentRubrics.filter((sr) => sr.rubricId === syncDialogRubric.id).length +
+                                        peerReviews.filter((pr) => pr.rubricId === syncDialogRubric.id).length,
                                 })}
                             </p>
                         </div>
@@ -1231,10 +2638,13 @@ export default function RubricBuilder() {
                             <button className="btn btn-secondary" onClick={() => setSyncDialogRubric(null)}>
                                 {t('rubricBuilder.sync_dialog_skip')}
                             </button>
-                            <button className="btn btn-primary" onClick={() => {
-                                syncRubricSnapshot(syncDialogRubric.id, syncDialogRubric);
-                                setSyncDialogRubric(null);
-                            }}>
+                            <button
+                                className="btn btn-primary"
+                                onClick={() => {
+                                    syncRubricSnapshot(syncDialogRubric.id, syncDialogRubric);
+                                    setSyncDialogRubric(null);
+                                }}
+                            >
                                 {t('rubricBuilder.sync_dialog_confirm')}
                             </button>
                         </div>
@@ -1245,7 +2655,15 @@ export default function RubricBuilder() {
     );
 }
 
-function RubricPreviewTable({ name, criteria, format }: { name: string; criteria: RubricCriterion[]; format: RubricFormat }) {
+function RubricPreviewTable({
+    name,
+    criteria,
+    format,
+}: {
+    name: string;
+    criteria: RubricCriterion[];
+    format: RubricFormat;
+}) {
     const { t } = useTranslation();
     const headers = criteria[0]?.levels ?? [];
     return (
@@ -1254,22 +2672,63 @@ function RubricPreviewTable({ name, criteria, format }: { name: string; criteria
             <table className="rubric-grid" style={{ tableLayout: 'fixed' }}>
                 <thead>
                     <tr style={{ background: format.headerColor, color: format.headerTextColor }}>
-                        <th style={{ width: format.criterionColWidth, textAlign: 'left', border: format.showBorders ? '1px solid var(--border)' : 'none', padding: 8 }}>{t('rubricBuilder.label_criterion')}</th>
-                        {headers.map(h => (
-                            <th key={h.id} style={{ width: format.levelColWidth, textAlign: format.headerTextAlign, border: format.showBorders ? '1px solid var(--border)' : 'none', padding: 8 }}>
+                        <th
+                            style={{
+                                width: format.criterionColWidth,
+                                textAlign: 'left',
+                                border: format.showBorders ? '1px solid var(--border)' : 'none',
+                                padding: 8,
+                            }}
+                        >
+                            {t('rubricBuilder.label_criterion')}
+                        </th>
+                        {headers.map((h) => (
+                            <th
+                                key={h.id}
+                                style={{
+                                    width: format.levelColWidth,
+                                    textAlign: format.headerTextAlign,
+                                    border: format.showBorders ? '1px solid var(--border)' : 'none',
+                                    padding: 8,
+                                }}
+                            >
                                 {h.label}
-                                {format.showPoints ? ` (${h.minPoints}${h.minPoints !== h.maxPoints ? `–${h.maxPoints}` : ''}pts)` : ''}
+                                {format.showPoints
+                                    ? ` (${h.minPoints}${h.minPoints !== h.maxPoints ? `–${h.maxPoints}` : ''}pts)`
+                                    : ''}
                             </th>
                         ))}
-                        {format.showWeights && <th style={{ width: 80, border: format.showBorders ? '1px solid var(--border)' : 'none', padding: 8 }}>{t('rubricBuilder.label_weight_th')}</th>}
+                        {format.showWeights && (
+                            <th
+                                style={{
+                                    width: 80,
+                                    border: format.showBorders ? '1px solid var(--border)' : 'none',
+                                    padding: 8,
+                                }}
+                            >
+                                {t('rubricBuilder.label_weight_th')}
+                            </th>
+                        )}
                     </tr>
                 </thead>
                 <tbody>
                     {criteria.map((c, i) => (
-                        <tr key={c.id} style={{ background: format.rowStriping && i % 2 !== 0 ? 'var(--bg-elevated)' : 'transparent' }}>
-                            <td className="criterion-cell" style={{ border: format.showBorders ? '1px solid var(--border)' : 'none', padding: 8 }}>
+                        <tr
+                            key={c.id}
+                            style={{
+                                background: format.rowStriping && i % 2 !== 0 ? 'var(--bg-elevated)' : 'transparent',
+                            }}
+                        >
+                            <td
+                                className="criterion-cell"
+                                style={{ border: format.showBorders ? '1px solid var(--border)' : 'none', padding: 8 }}
+                            >
                                 <div style={{ fontWeight: 600 }}>{c.title}</div>
-                                {c.description && <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', marginTop: 4 }}>{c.description}</div>}
+                                {c.description && (
+                                    <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', marginTop: 4 }}>
+                                        {c.description}
+                                    </div>
+                                )}
                                 {c.linkedStandard && (
                                     <div style={{ marginTop: 6, fontSize: '0.75em', color: 'var(--accent)' }}>
                                         📌 {c.linkedStandard.statementNotation ?? c.linkedStandard.guid}
@@ -1281,17 +2740,39 @@ function RubricPreviewTable({ name, criteria, format }: { name: string; criteria
                                     </div>
                                 ))}
                             </td>
-                            {c.levels.map(l => (
-                                <td key={l.id} className="level-cell" style={{ border: format.showBorders ? '1px solid var(--border)' : 'none', padding: 8 }}>
+                            {c.levels.map((l) => (
+                                <td
+                                    key={l.id}
+                                    className="level-cell"
+                                    style={{
+                                        border: format.showBorders ? '1px solid var(--border)' : 'none',
+                                        padding: 8,
+                                    }}
+                                >
                                     {l.description || <span style={{ color: 'var(--text-dim)' }}>—</span>}
                                     {l.subItems.length > 0 && (
-                                        <ul style={{ margin: '6px 0 0', padding: '0 0 0 14px', fontSize: '0.85em', color: 'var(--text-muted)' }}>
-                                            {l.subItems.map(si => (
+                                        <ul
+                                            style={{
+                                                margin: '6px 0 0',
+                                                padding: '0 0 0 14px',
+                                                fontSize: '0.85em',
+                                                color: 'var(--text-muted)',
+                                            }}
+                                        >
+                                            {l.subItems.map((si) => (
                                                 <li key={si.id}>
                                                     {si.label} ({si.points}pts)
                                                     {si.linkedStandards && si.linkedStandards.length > 0 && (
-                                                        <div style={{ fontSize: '0.85em', color: 'var(--accent)', marginTop: 2 }}>
-                                                            {si.linkedStandards.map(std => `[${std.statementNotation ?? std.guid}]`).join(' ')}
+                                                        <div
+                                                            style={{
+                                                                fontSize: '0.85em',
+                                                                color: 'var(--accent)',
+                                                                marginTop: 2,
+                                                            }}
+                                                        >
+                                                            {si.linkedStandards
+                                                                .map((std) => `[${std.statementNotation ?? std.guid}]`)
+                                                                .join(' ')}
                                                         </div>
                                                     )}
                                                 </li>
@@ -1300,7 +2781,17 @@ function RubricPreviewTable({ name, criteria, format }: { name: string; criteria
                                     )}
                                 </td>
                             ))}
-                            {format.showWeights && <td style={{ textAlign: 'center', border: format.showBorders ? '1px solid var(--border)' : 'none', padding: 8 }}>{c.weight}%</td>}
+                            {format.showWeights && (
+                                <td
+                                    style={{
+                                        textAlign: 'center',
+                                        border: format.showBorders ? '1px solid var(--border)' : 'none',
+                                        padding: 8,
+                                    }}
+                                >
+                                    {c.weight}%
+                                </td>
+                            )}
                         </tr>
                     ))}
                 </tbody>
@@ -1326,9 +2817,24 @@ interface WYSIWYGProps {
 }
 
 // Very basic Markdown parser
-function MarkdownRender({ text, style, className, onClick }: { text: string; style?: React.CSSProperties; className?: string; onClick?: () => void }) {
+function MarkdownRender({
+    text,
+    style,
+    className,
+    onClick,
+}: {
+    text: string;
+    style?: React.CSSProperties;
+    className?: string;
+    onClick?: () => void;
+}) {
     const { t } = useTranslation();
-    if (!text) return <div style={style} className={className} onClick={onClick}><span style={{ opacity: 0.5 }}>{t('rubricBuilder.placeholder_click_to_edit')}</span></div>;
+    if (!text)
+        return (
+            <div style={style} className={className} onClick={onClick}>
+                <span style={{ opacity: 0.5 }}>{t('rubricBuilder.placeholder_click_to_edit')}</span>
+            </div>
+        );
 
     // Very naive markdown parsing for bold and italics
     const parts = text.split(/(\*\*.*?\*\*|\*.*?\*)/g);
@@ -1356,7 +2862,20 @@ const RUBRIC_BANK = [
     { title: 'Creativity & Originality', desc: 'Work shows unique thought and goes beyond basics.' },
 ];
 
-function RubricWysiwygEditor({ name, setName, criteria, format, updateCriterion, updateLevel, addCriterion, addCriterionLevel, criteriaSetter, scoringMode, totalMaxPoints, onShowMarkdownHint }: WYSIWYGProps) {
+function RubricWysiwygEditor({
+    name,
+    setName,
+    criteria,
+    format,
+    updateCriterion,
+    updateLevel,
+    addCriterion,
+    addCriterionLevel,
+    criteriaSetter,
+    scoringMode,
+    totalMaxPoints,
+    onShowMarkdownHint,
+}: WYSIWYGProps) {
     const { t } = useTranslation();
     const headers = criteria[0]?.levels ?? [];
     const [editingCell, setEditingCell] = useState<string | null>(null);
@@ -1381,7 +2900,7 @@ function RubricWysiwygEditor({ name, setName, criteria, format, updateCriterion,
         margin: -4,
         borderRadius: 4,
         fontWeight: 'inherit',
-        textAlign: 'inherit'
+        textAlign: 'inherit',
     };
 
     const inputStyle: React.CSSProperties = {
@@ -1391,17 +2910,19 @@ function RubricWysiwygEditor({ name, setName, criteria, format, updateCriterion,
     };
 
     function moveLevel(lIdx: number, dir: -1 | 1) {
-        criteriaSetter(prev => prev.map(c => {
-            const nextL = [...c.levels];
-            const swap = lIdx + dir;
-            if (swap < 0 || swap >= nextL.length) return c;
-            [nextL[lIdx], nextL[swap]] = [nextL[swap], nextL[lIdx]];
-            return { ...c, levels: nextL };
-        }));
+        criteriaSetter((prev) =>
+            prev.map((c) => {
+                const nextL = [...c.levels];
+                const swap = lIdx + dir;
+                if (swap < 0 || swap >= nextL.length) return c;
+                [nextL[lIdx], nextL[swap]] = [nextL[swap], nextL[lIdx]];
+                return { ...c, levels: nextL };
+            })
+        );
     }
 
     function moveCriterion(cIdx: number, dir: -1 | 1) {
-        criteriaSetter(prev => {
+        criteriaSetter((prev) => {
             const next = [...prev];
             const swap = cIdx + dir;
             if (swap < 0 || swap >= next.length) return prev;
@@ -1411,21 +2932,21 @@ function RubricWysiwygEditor({ name, setName, criteria, format, updateCriterion,
     }
 
     function deleteCriterionWysiwyg(cIdx: number) {
-        criteriaSetter(prev => prev.filter((_, i) => i !== cIdx));
+        criteriaSetter((prev) => prev.filter((_, i) => i !== cIdx));
     }
 
     function duplicateCriterionWysiwyg(cIdx: number) {
-        criteriaSetter(prev => {
+        criteriaSetter((prev) => {
             const source = prev[cIdx];
             const clone: RubricCriterion = {
                 ...source,
                 id: nanoid(),
                 title: `${source.title} (Copy)`,
-                levels: source.levels.map(l => ({
+                levels: source.levels.map((l) => ({
                     ...l,
                     id: nanoid(),
-                    subItems: l.subItems.map(si => ({ ...si, id: nanoid() }))
-                }))
+                    subItems: l.subItems.map((si) => ({ ...si, id: nanoid() })),
+                })),
             };
             const next = [...prev];
             next.splice(cIdx + 1, 0, clone);
@@ -1439,54 +2960,58 @@ function RubricWysiwygEditor({ name, setName, criteria, format, updateCriterion,
         const baseWeight = Math.floor(100 / criteria.length);
         const remainder = 100 % criteria.length;
 
-        criteriaSetter(prev => prev.map((c, i) => ({
-            ...c,
-            weight: baseWeight + (i === 0 ? remainder : 0) // Give remainder to first item
-        })));
+        criteriaSetter((prev) =>
+            prev.map((c, i) => ({
+                ...c,
+                weight: baseWeight + (i === 0 ? remainder : 0), // Give remainder to first item
+            }))
+        );
     }
 
     function smartAllocatePoints() {
         if (!criteria.length || headers.length < 2) return;
 
-        criteriaSetter(prev => prev.map(c => {
-            const nextLevels = [...c.levels];
-            // Find max and min points from first and last level (assuming order)
-            const pts1 = nextLevels[0].maxPoints;
-            const pts2 = nextLevels[nextLevels.length - 1].maxPoints;
+        criteriaSetter((prev) =>
+            prev.map((c) => {
+                const nextLevels = [...c.levels];
+                // Find max and min points from first and last level (assuming order)
+                const pts1 = nextLevels[0].maxPoints;
+                const pts2 = nextLevels[nextLevels.length - 1].maxPoints;
 
-            const maxPts = Math.max(pts1, pts2);
-            const minPts = Math.min(pts1, pts2);
+                const maxPts = Math.max(pts1, pts2);
+                const minPts = Math.min(pts1, pts2);
 
-            // Distribute evenly
-            const step = (maxPts - minPts) / (nextLevels.length - 1);
+                // Distribute evenly
+                const step = (maxPts - minPts) / (nextLevels.length - 1);
 
-            // Re-apply to all levels linearly
-            return {
-                ...c,
-                levels: nextLevels.map((l, i) => {
-                    // if it's highest to lowest
-                    const rawScore = pts1 > pts2 ? pts1 - (step * i) : pts1 + (step * i);
-                    const roundedScore = Math.round(rawScore * 10) / 10;
-                    return { ...l, minPoints: roundedScore, maxPoints: roundedScore };
-                })
-            };
-        }));
+                // Re-apply to all levels linearly
+                return {
+                    ...c,
+                    levels: nextLevels.map((l, i) => {
+                        // if it's highest to lowest
+                        const rawScore = pts1 > pts2 ? pts1 - step * i : pts1 + step * i;
+                        const roundedScore = Math.round(rawScore * 10) / 10;
+                        return { ...l, minPoints: roundedScore, maxPoints: roundedScore };
+                    }),
+                };
+            })
+        );
     }
 
-    function insertFromBank(item: { title: string, desc: string }) {
-        criteriaSetter(c => {
+    function insertFromBank(item: { title: string; desc: string }) {
+        criteriaSetter((c) => {
             const nc = newCriterion();
             nc.title = item.title;
             nc.description = item.desc;
             // Match the level headers of the active rubric if they exist
             if (c.length > 0 && c[0].levels.length > 0) {
-                nc.levels = c[0].levels.map(l => ({
+                nc.levels = c[0].levels.map((l) => ({
                     id: nanoid(),
                     label: l.label,
                     minPoints: l.minPoints,
                     maxPoints: l.maxPoints,
                     description: '',
-                    subItems: []
+                    subItems: [],
                 }));
             }
             return [...c, nc];
@@ -1494,18 +3019,45 @@ function RubricWysiwygEditor({ name, setName, criteria, format, updateCriterion,
     }
 
     return (
-        <div style={{ fontFamily: format.fontFamily, fontSize: format.fontSize, background: 'var(--bg-card)', padding: 24, borderRadius: 12, border: '1px solid var(--border)', minHeight: 400 }}>
+        <div
+            style={{
+                fontFamily: format.fontFamily,
+                fontSize: format.fontSize,
+                background: 'var(--bg-card)',
+                padding: 24,
+                borderRadius: 12,
+                border: '1px solid var(--border)',
+                minHeight: 400,
+            }}
+        >
             {/* Toolbar */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 16 }}>
-                <button className="btn btn-ghost btn-sm" onClick={onShowMarkdownHint} title={t('rubricBuilder.action_formatting_help')} style={{ marginRight: 'auto', color: 'var(--text-muted)' }}>
+                <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={onShowMarkdownHint}
+                    title={t('rubricBuilder.action_formatting_help')}
+                    style={{ marginRight: 'auto', color: 'var(--text-muted)' }}
+                >
                     <BookOpen size={13} style={{ marginRight: 4 }} /> {t('rubricBuilder.action_formatting_help')}
                 </button>
-                <button className="btn btn-secondary btn-sm" onClick={smartAllocatePoints} title={t('rubricBuilder.action_smart_allocate')}>
+                <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={smartAllocatePoints}
+                    title={t('rubricBuilder.action_smart_allocate')}
+                >
                     <Wand2 size={13} /> {t('rubricBuilder.action_smart_allocate')}
-                    {scoringMode === 'total-points' && <span style={{ opacity: 0.5, fontSize: '0.9em' }}>({totalMaxPoints} {t('rubricBuilder.label_max')})</span>}
+                    {scoringMode === 'total-points' && (
+                        <span style={{ opacity: 0.5, fontSize: '0.9em' }}>
+                            ({totalMaxPoints} {t('rubricBuilder.label_max')})
+                        </span>
+                    )}
                 </button>
                 {format.showWeights && (
-                    <button className="btn btn-secondary btn-sm" onClick={balanceWeights} title={t('rubricBuilder.action_balance_weights')}>
+                    <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={balanceWeights}
+                        title={t('rubricBuilder.action_balance_weights')}
+                    >
                         <Wand2 size={13} /> {t('rubricBuilder.action_balance_weights')}
                     </button>
                 )}
@@ -1513,7 +3065,7 @@ function RubricWysiwygEditor({ name, setName, criteria, format, updateCriterion,
 
             <textarea
                 value={name}
-                onChange={e => setName(e.target.value)}
+                onChange={(e) => setName(e.target.value)}
                 onInput={handleInput}
                 placeholder={t('rubricBuilder.placeholder_name')}
                 style={{ ...textareaStyle, fontSize: '1.8em', fontWeight: 700, marginBottom: 16, width: '100%' }}
@@ -1522,21 +3074,73 @@ function RubricWysiwygEditor({ name, setName, criteria, format, updateCriterion,
             <table className="rubric-grid" style={{ tableLayout: 'fixed', width: '100%' }}>
                 <thead>
                     <tr style={{ background: format.headerColor, color: format.headerTextColor }}>
-                        <th style={{ width: format.criterionColWidth, textAlign: 'left', border: format.showBorders ? '1px solid var(--border)' : 'none' }}>
+                        <th
+                            style={{
+                                width: format.criterionColWidth,
+                                textAlign: 'left',
+                                border: format.showBorders ? '1px solid var(--border)' : 'none',
+                            }}
+                        >
                             <div style={{ padding: '12px 14px' }}>{t('rubricBuilder.label_criterion')}</div>
                         </th>
                         {headers.map((h, i) => (
-                            <th key={h.id} style={{ width: format.levelColWidth, border: format.showBorders ? '1px solid var(--border)' : 'none', position: 'relative' }} className="designer-th">
-                                <div style={{ display: 'flex', gap: 4, position: 'absolute', top: 4, right: 4, opacity: 0 }} className="th-actions">
-                                    <button className="btn btn-ghost btn-icon btn-sm" onClick={() => moveLevel(i, -1)} disabled={i === 0} style={{ padding: 2, height: 20, width: 20, color: 'inherit' }}><MoveLeft size={12} /></button>
-                                    <button className="btn btn-ghost btn-icon btn-sm" onClick={() => moveLevel(i, 1)} disabled={i === headers.length - 1} style={{ padding: 2, height: 20, width: 20, color: 'inherit' }}><MoveRight size={12} /></button>
+                            <th
+                                key={h.id}
+                                style={{
+                                    width: format.levelColWidth,
+                                    border: format.showBorders ? '1px solid var(--border)' : 'none',
+                                    position: 'relative',
+                                }}
+                                className="designer-th"
+                            >
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        gap: 4,
+                                        position: 'absolute',
+                                        top: 4,
+                                        right: 4,
+                                        opacity: 0,
+                                    }}
+                                    className="th-actions"
+                                >
+                                    <button
+                                        className="btn btn-ghost btn-icon btn-sm"
+                                        onClick={() => moveLevel(i, -1)}
+                                        disabled={i === 0}
+                                        style={{ padding: 2, height: 20, width: 20, color: 'inherit' }}
+                                    >
+                                        <MoveLeft size={12} />
+                                    </button>
+                                    <button
+                                        className="btn btn-ghost btn-icon btn-sm"
+                                        onClick={() => moveLevel(i, 1)}
+                                        disabled={i === headers.length - 1}
+                                        style={{ padding: 2, height: 20, width: 20, color: 'inherit' }}
+                                    >
+                                        <MoveRight size={12} />
+                                    </button>
                                 </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: format.headerTextAlign === 'left' ? 'flex-start' : format.headerTextAlign === 'right' ? 'flex-end' : 'center', padding: '12px 14px' }}>
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems:
+                                            format.headerTextAlign === 'left'
+                                                ? 'flex-start'
+                                                : format.headerTextAlign === 'right'
+                                                  ? 'flex-end'
+                                                  : 'center',
+                                        padding: '12px 14px',
+                                    }}
+                                >
                                     <textarea
                                         value={h.label}
-                                        onChange={e => {
+                                        onChange={(e) => {
                                             // Update this level's label across all criteria to keep them synced
-                                            criteria.forEach(c => updateLevel(c.id, c.levels[i].id, { label: e.target.value }));
+                                            criteria.forEach((c) =>
+                                                updateLevel(c.id, c.levels[i].id, { label: e.target.value })
+                                            );
                                         }}
                                         onInput={handleInput}
                                         placeholder={t('rubricBuilder.placeholder_level_name')}
@@ -1544,50 +3148,143 @@ function RubricWysiwygEditor({ name, setName, criteria, format, updateCriterion,
                                         className="hover-border"
                                     />
                                     {format.showPoints && (
-                                        <div style={{ fontSize: '0.85em', opacity: 0.8, marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-                                            (<input type="number"
+                                        <div
+                                            style={{
+                                                fontSize: '0.85em',
+                                                opacity: 0.8,
+                                                marginTop: 4,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: 2,
+                                            }}
+                                        >
+                                            (
+                                            <input
+                                                type="number"
                                                 value={h.minPoints}
-                                                onChange={e => {
-                                                    criteria.forEach(c => updateLevel(c.id, c.levels[i].id, { minPoints: Number(e.target.value) }));
+                                                onChange={(e) => {
+                                                    criteria.forEach((c) =>
+                                                        updateLevel(c.id, c.levels[i].id, {
+                                                            minPoints: Number(e.target.value),
+                                                        })
+                                                    );
                                                 }}
-                                                style={{ ...inputStyle, width: 30, textAlign: 'center', padding: 0, margin: 0 }}
+                                                style={{
+                                                    ...inputStyle,
+                                                    width: 30,
+                                                    textAlign: 'center',
+                                                    padding: 0,
+                                                    margin: 0,
+                                                }}
                                                 className="hover-border"
                                             />
                                             {h.minPoints !== h.maxPoints && (
                                                 <>
                                                     -
-                                                    <input type="number"
+                                                    <input
+                                                        type="number"
                                                         value={h.maxPoints}
-                                                        onChange={e => {
-                                                            criteria.forEach(c => updateLevel(c.id, c.levels[i].id, { maxPoints: Number(e.target.value) }));
+                                                        onChange={(e) => {
+                                                            criteria.forEach((c) =>
+                                                                updateLevel(c.id, c.levels[i].id, {
+                                                                    maxPoints: Number(e.target.value),
+                                                                })
+                                                            );
                                                         }}
-                                                        style={{ ...inputStyle, width: 30, textAlign: 'center', padding: 0, margin: 0 }}
+                                                        style={{
+                                                            ...inputStyle,
+                                                            width: 30,
+                                                            textAlign: 'center',
+                                                            padding: 0,
+                                                            margin: 0,
+                                                        }}
                                                         className="hover-border"
                                                     />
                                                 </>
-                                            )}pts)
+                                            )}
+                                            pts)
                                         </div>
                                     )}
                                 </div>
                             </th>
                         ))}
-                        {format.showWeights && <th style={{ width: 80, textAlign: 'center', border: format.showBorders ? '1px solid var(--border)' : 'none', padding: '12px 14px' }}>{t('rubricBuilder.label_weight_th')}</th>}
+                        {format.showWeights && (
+                            <th
+                                style={{
+                                    width: 80,
+                                    textAlign: 'center',
+                                    border: format.showBorders ? '1px solid var(--border)' : 'none',
+                                    padding: '12px 14px',
+                                }}
+                            >
+                                {t('rubricBuilder.label_weight_th')}
+                            </th>
+                        )}
                     </tr>
                 </thead>
                 <tbody>
                     {criteria.map((c, cIdx) => (
-                        <tr key={c.id} style={{ background: format.rowStriping && cIdx % 2 !== 0 ? 'var(--bg-elevated)' : 'transparent' }}>
-                            <td className="criterion-cell designer-td" style={{ position: 'relative', border: format.showBorders ? '1px solid var(--border)' : 'none' }}>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 2, position: 'absolute', top: 4, right: 4, opacity: 0 }} className="td-actions">
-                                    <button className="btn btn-ghost btn-icon btn-sm" onClick={() => moveCriterion(cIdx, -1)} disabled={cIdx === 0} style={{ padding: 2, height: 20, width: 20 }}><ChevronUp size={14} /></button>
-                                    <button className="btn btn-ghost btn-icon btn-sm" onClick={() => duplicateCriterionWysiwyg(cIdx)} style={{ padding: 2, height: 20, width: 20, color: 'var(--text-muted)' }}><Copy size={13} /></button>
-                                    <button className="btn btn-ghost btn-icon btn-sm" onClick={() => deleteCriterionWysiwyg(cIdx)} style={{ padding: 2, height: 20, width: 20, color: 'var(--red)' }}><Trash2 size={13} /></button>
-                                    <button className="btn btn-ghost btn-icon btn-sm" onClick={() => moveCriterion(cIdx, 1)} disabled={cIdx === criteria.length - 1} style={{ padding: 2, height: 20, width: 20 }}><ChevronDown size={14} /></button>
+                        <tr
+                            key={c.id}
+                            style={{
+                                background: format.rowStriping && cIdx % 2 !== 0 ? 'var(--bg-elevated)' : 'transparent',
+                            }}
+                        >
+                            <td
+                                className="criterion-cell designer-td"
+                                style={{
+                                    position: 'relative',
+                                    border: format.showBorders ? '1px solid var(--border)' : 'none',
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: 2,
+                                        position: 'absolute',
+                                        top: 4,
+                                        right: 4,
+                                        opacity: 0,
+                                    }}
+                                    className="td-actions"
+                                >
+                                    <button
+                                        className="btn btn-ghost btn-icon btn-sm"
+                                        onClick={() => moveCriterion(cIdx, -1)}
+                                        disabled={cIdx === 0}
+                                        style={{ padding: 2, height: 20, width: 20 }}
+                                    >
+                                        <ChevronUp size={14} />
+                                    </button>
+                                    <button
+                                        className="btn btn-ghost btn-icon btn-sm"
+                                        onClick={() => duplicateCriterionWysiwyg(cIdx)}
+                                        style={{ padding: 2, height: 20, width: 20, color: 'var(--text-muted)' }}
+                                    >
+                                        <Copy size={13} />
+                                    </button>
+                                    <button
+                                        className="btn btn-ghost btn-icon btn-sm"
+                                        onClick={() => deleteCriterionWysiwyg(cIdx)}
+                                        style={{ padding: 2, height: 20, width: 20, color: 'var(--red)' }}
+                                    >
+                                        <Trash2 size={13} />
+                                    </button>
+                                    <button
+                                        className="btn btn-ghost btn-icon btn-sm"
+                                        onClick={() => moveCriterion(cIdx, 1)}
+                                        disabled={cIdx === criteria.length - 1}
+                                        style={{ padding: 2, height: 20, width: 20 }}
+                                    >
+                                        <ChevronDown size={14} />
+                                    </button>
                                 </div>
                                 <div style={{ padding: '10px 12px', paddingRight: 30 }}>
                                     <textarea
                                         value={c.title}
-                                        onChange={e => updateCriterion(c.id, { title: e.target.value })}
+                                        onChange={(e) => updateCriterion(c.id, { title: e.target.value })}
                                         onInput={handleInput}
                                         placeholder={t('rubricBuilder.placeholder_criterion_name')}
                                         style={{ ...textareaStyle, fontWeight: 600 }}
@@ -1597,18 +3294,29 @@ function RubricWysiwygEditor({ name, setName, criteria, format, updateCriterion,
                                         <textarea
                                             autoFocus
                                             value={c.description}
-                                            onChange={e => updateCriterion(c.id, { description: e.target.value })}
+                                            onChange={(e) => updateCriterion(c.id, { description: e.target.value })}
                                             onBlur={() => setEditingCell(null)}
                                             onInput={handleInput}
                                             placeholder={t('rubricBuilder.placeholder_criterion_description')}
-                                            style={{ ...textareaStyle, fontSize: '0.8em', color: 'var(--text-muted)', marginTop: 4, minHeight: 40 }}
+                                            style={{
+                                                ...textareaStyle,
+                                                fontSize: '0.8em',
+                                                color: 'var(--text-muted)',
+                                                marginTop: 4,
+                                                minHeight: 40,
+                                            }}
                                             className="hover-border"
                                         />
                                     ) : (
                                         <MarkdownRender
                                             text={c.description}
                                             onClick={() => setEditingCell(`${c.id}_desc`)}
-                                            style={{ fontSize: '0.8em', color: 'var(--text-muted)', marginTop: 4, cursor: 'text' }}
+                                            style={{
+                                                fontSize: '0.8em',
+                                                color: 'var(--text-muted)',
+                                                marginTop: 4,
+                                                cursor: 'text',
+                                            }}
                                             className="hover-border"
                                         />
                                     )}
@@ -1618,20 +3326,32 @@ function RubricWysiwygEditor({ name, setName, criteria, format, updateCriterion,
                                         </div>
                                     )}
                                     {(c.linkedStandards || []).map((std, idx) => (
-                                        <div key={idx} style={{ marginTop: 6, fontSize: '0.75em', color: 'var(--accent)' }}>
+                                        <div
+                                            key={idx}
+                                            style={{ marginTop: 6, fontSize: '0.75em', color: 'var(--accent)' }}
+                                        >
                                             📌 {std.statementNotation ?? std.guid}
                                         </div>
                                     ))}
                                 </div>
                             </td>
-                            {c.levels.map(l => (
-                                <td key={l.id} className="level-cell" style={{ verticalAlign: 'top', border: format.showBorders ? '1px solid var(--border)' : 'none' }}>
+                            {c.levels.map((l) => (
+                                <td
+                                    key={l.id}
+                                    className="level-cell"
+                                    style={{
+                                        verticalAlign: 'top',
+                                        border: format.showBorders ? '1px solid var(--border)' : 'none',
+                                    }}
+                                >
                                     <div style={{ padding: '10px 12px' }}>
                                         {editingCell === `${c.id}_${l.id}` ? (
                                             <textarea
                                                 autoFocus
                                                 value={l.description}
-                                                onChange={e => updateLevel(c.id, l.id, { description: e.target.value })}
+                                                onChange={(e) =>
+                                                    updateLevel(c.id, l.id, { description: e.target.value })
+                                                }
                                                 onBlur={() => setEditingCell(null)}
                                                 onInput={handleInput}
                                                 placeholder={t('rubricBuilder.placeholder_level_description')}
@@ -1647,13 +3367,31 @@ function RubricWysiwygEditor({ name, setName, criteria, format, updateCriterion,
                                             />
                                         )}
                                         {l.subItems.length > 0 && (
-                                            <ul style={{ margin: '6px 0 0', padding: '0 0 0 14px', fontSize: '0.85em', color: 'var(--text-muted)' }}>
-                                                {l.subItems.map(si => (
+                                            <ul
+                                                style={{
+                                                    margin: '6px 0 0',
+                                                    padding: '0 0 0 14px',
+                                                    fontSize: '0.85em',
+                                                    color: 'var(--text-muted)',
+                                                }}
+                                            >
+                                                {l.subItems.map((si) => (
                                                     <li key={si.id}>
                                                         {si.label} ({si.points}pts)
                                                         {si.linkedStandards && si.linkedStandards.length > 0 && (
-                                                            <div style={{ fontSize: '0.85em', color: 'var(--accent)', marginTop: 2 }}>
-                                                                {si.linkedStandards.map(std => `[${std.statementNotation ?? std.guid}]`).join(' ')}
+                                                            <div
+                                                                style={{
+                                                                    fontSize: '0.85em',
+                                                                    color: 'var(--accent)',
+                                                                    marginTop: 2,
+                                                                }}
+                                                            >
+                                                                {si.linkedStandards
+                                                                    .map(
+                                                                        (std) =>
+                                                                            `[${std.statementNotation ?? std.guid}]`
+                                                                    )
+                                                                    .join(' ')}
                                                             </div>
                                                         )}
                                                     </li>
@@ -1664,19 +3402,36 @@ function RubricWysiwygEditor({ name, setName, criteria, format, updateCriterion,
                                 </td>
                             ))}
                             {format.showWeights && (
-                                <td style={{ textAlign: 'center', verticalAlign: 'middle', border: format.showBorders ? '1px solid var(--border)' : 'none', padding: '10px 12px' }}>
-                                    <input type="number"
+                                <td
+                                    style={{
+                                        textAlign: 'center',
+                                        verticalAlign: 'middle',
+                                        border: format.showBorders ? '1px solid var(--border)' : 'none',
+                                        padding: '10px 12px',
+                                    }}
+                                >
+                                    <input
+                                        type="number"
                                         value={c.weight}
-                                        onChange={e => updateCriterion(c.id, { weight: Number(e.target.value) })}
+                                        onChange={(e) => updateCriterion(c.id, { weight: Number(e.target.value) })}
                                         style={{ ...inputStyle, width: 44, textAlign: 'center' }}
                                         className="hover-border"
-                                    />%
+                                    />
+                                    %
                                 </td>
                             )}
                         </tr>
                     ))}
                     <tr>
-                        <td colSpan={(format.showWeights ? 2 : 1) + headers.length} style={{ padding: 12, textAlign: 'center', border: '1px dashed var(--border)', background: 'transparent' }}>
+                        <td
+                            colSpan={(format.showWeights ? 2 : 1) + headers.length}
+                            style={{
+                                padding: 12,
+                                textAlign: 'center',
+                                border: '1px dashed var(--border)',
+                                background: 'transparent',
+                            }}
+                        >
                             <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
                                 <button className="btn btn-ghost btn-sm" onClick={addCriterion}>
                                     <Plus size={14} /> {t('rubricBuilder.action_add_row')}
@@ -1684,16 +3439,20 @@ function RubricWysiwygEditor({ name, setName, criteria, format, updateCriterion,
                                 <select
                                     className="btn btn-ghost btn-sm"
                                     style={{ padding: '0 8px', maxWidth: 160 }}
-                                    onChange={e => {
+                                    onChange={(e) => {
                                         if (!e.target.value) return;
-                                        const item = RUBRIC_BANK.find(i => i.title === e.target.value);
+                                        const item = RUBRIC_BANK.find((i) => i.title === e.target.value);
                                         if (item) insertFromBank(item);
                                         e.target.value = ''; // reset
                                     }}
                                 >
-                                    <option value="" disabled selected>{t('rubricBuilder.action_insert_from_bank')}</option>
-                                    {RUBRIC_BANK.map(item => (
-                                        <option key={item.title} value={item.title}>{item.title}</option>
+                                    <option value="" disabled selected>
+                                        {t('rubricBuilder.action_insert_from_bank')}
+                                    </option>
+                                    {RUBRIC_BANK.map((item) => (
+                                        <option key={item.title} value={item.title}>
+                                            {item.title}
+                                        </option>
                                     ))}
                                 </select>
                             </div>
@@ -1703,7 +3462,11 @@ function RubricWysiwygEditor({ name, setName, criteria, format, updateCriterion,
             </table>
 
             <div style={{ display: 'flex', justifyContent: 'center', marginTop: 12 }}>
-                <button className="btn btn-ghost btn-sm" onClick={() => addCriterionLevel(criteria[0]?.id)} disabled={!criteria.length}>
+                <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => addCriterionLevel(criteria[0]?.id)}
+                    disabled={!criteria.length}
+                >
                     <Plus size={14} /> {t('rubricBuilder.action_add_column_level')}
                 </button>
             </div>

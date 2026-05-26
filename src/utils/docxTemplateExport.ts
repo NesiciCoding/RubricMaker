@@ -8,8 +8,17 @@
  */
 
 import {
-    Document, Packer, Paragraph, Table, TableCell, TableRow,
-    WidthType, TextRun, AlignmentType, HeadingLevel, ShadingType,
+    Document,
+    Packer,
+    Paragraph,
+    Table,
+    TableCell,
+    TableRow,
+    WidthType,
+    TextRun,
+    AlignmentType,
+    HeadingLevel,
+    ShadingType,
 } from 'docx';
 import { saveAs } from 'file-saver';
 import type { Rubric, RubricCriterion, ExportTemplate } from '../types';
@@ -35,7 +44,10 @@ export async function parseTemplateHeaders(file: File): Promise<{
     const headerCells = Array.from(headerRow?.querySelectorAll('td, th') ?? []);
 
     // All cells after the first are level columns
-    const levelHeaders = headerCells.slice(1).map(td => td.textContent?.trim() ?? '').filter(Boolean);
+    const levelHeaders = headerCells
+        .slice(1)
+        .map((td) => td.textContent?.trim() ?? '')
+        .filter(Boolean);
 
     // Try to detect a background colour from inline style or class (basic extraction)
     let headerColor = '#1e3a5f';
@@ -54,17 +66,18 @@ export async function exportRubricWithTemplate(rubric: Rubric, template: ExportT
     // Use template level headers if count matches; fall back to rubric's own labels
     const firstCriterion = rubric.criteria[0];
     const rubricLevelLabels = firstCriterion
-        ? (fmt.levelOrder === 'worst-first' ? [...firstCriterion.levels].reverse() : firstCriterion.levels).map(l => l.label)
+        ? (fmt.levelOrder === 'worst-first' ? [...firstCriterion.levels].reverse() : firstCriterion.levels).map(
+              (l) => l.label
+          )
         : [];
 
-    const useTemplateHeaders = template.levelHeaders.length === rubricLevelLabels.length
-        && template.levelHeaders.length > 0;
+    const useTemplateHeaders =
+        template.levelHeaders.length === rubricLevelLabels.length && template.levelHeaders.length > 0;
 
     const levelLabels = useTemplateHeaders ? template.levelHeaders : rubricLevelLabels;
     const headerBg = (template.headerColor ?? fmt.headerColor).replace('#', '');
 
-    const getLevels = (c: RubricCriterion) =>
-        fmt.levelOrder === 'worst-first' ? [...c.levels].reverse() : c.levels;
+    const getLevels = (c: RubricCriterion) => (fmt.levelOrder === 'worst-first' ? [...c.levels].reverse() : c.levels);
 
     // ── Header Row ──────────────────────────────────────────────────────────────
     const headerRow = new TableRow({
@@ -73,32 +86,41 @@ export async function exportRubricWithTemplate(rubric: Rubric, template: ExportT
             new TableCell({
                 width: { size: 22, type: WidthType.PERCENTAGE },
                 shading: { fill: headerBg, type: ShadingType.CLEAR, color: headerBg },
-                children: [new Paragraph({
-                    children: [new TextRun({ text: 'Criterion', bold: true, color: 'FFFFFF', size: fmt.fontSize * 2 })],
-                })],
+                children: [
+                    new Paragraph({
+                        children: [
+                            new TextRun({ text: 'Criterion', bold: true, color: 'FFFFFF', size: fmt.fontSize * 2 }),
+                        ],
+                    }),
+                ],
             }),
             ...levelLabels.map((label, i) => {
                 const rubricLevel = rubric.criteria[0] ? getLevels(rubric.criteria[0])[i] : undefined;
-                const pointsStr = fmt.showPoints && rubricLevel
-                    ? ` (${rubricLevel.minPoints === rubricLevel.maxPoints ? rubricLevel.maxPoints : `${rubricLevel.minPoints}–${rubricLevel.maxPoints}`} pts)`
-                    : '';
+                const pointsStr =
+                    fmt.showPoints && rubricLevel
+                        ? ` (${rubricLevel.minPoints === rubricLevel.maxPoints ? rubricLevel.maxPoints : `${rubricLevel.minPoints}–${rubricLevel.maxPoints}`} pts)`
+                        : '';
                 return new TableCell({
-                    width: { size: (78 / levelLabels.length), type: WidthType.PERCENTAGE },
+                    width: { size: 78 / levelLabels.length, type: WidthType.PERCENTAGE },
                     shading: { fill: headerBg, type: ShadingType.CLEAR, color: headerBg },
-                    children: [new Paragraph({
-                        alignment: AlignmentType.CENTER,
-                        children: [
-                            new TextRun({ text: label, bold: true, color: 'FFFFFF', size: fmt.fontSize * 2 }),
-                            ...(pointsStr ? [new TextRun({ text: pointsStr, color: 'FFFFFF', size: (fmt.fontSize - 2) * 2 })] : []),
-                        ],
-                    })],
+                    children: [
+                        new Paragraph({
+                            alignment: AlignmentType.CENTER,
+                            children: [
+                                new TextRun({ text: label, bold: true, color: 'FFFFFF', size: fmt.fontSize * 2 }),
+                                ...(pointsStr
+                                    ? [new TextRun({ text: pointsStr, color: 'FFFFFF', size: (fmt.fontSize - 2) * 2 })]
+                                    : []),
+                            ],
+                        }),
+                    ],
                 });
             }),
         ],
     });
 
     // ── Body Rows ───────────────────────────────────────────────────────────────
-    const bodyRows = rubric.criteria.map(c => {
+    const bodyRows = rubric.criteria.map((c) => {
         const levels = getLevels(c);
         return new TableRow({
             children: [
@@ -107,45 +129,86 @@ export async function exportRubricWithTemplate(rubric: Rubric, template: ExportT
                     width: { size: 22, type: WidthType.PERCENTAGE },
                     shading: { fill: 'F8F9FA', type: ShadingType.CLEAR, color: 'F8F9FA' },
                     children: [
-                        new Paragraph({ children: [new TextRun({ text: c.title, bold: true, size: fmt.fontSize * 2 })] }),
-                        ...(c.description ? [new Paragraph({ children: [new TextRun({ text: c.description, size: (fmt.fontSize - 2) * 2, color: '666666' })] })] : []),
-                        ...(fmt.showWeights ? [new Paragraph({ children: [new TextRun({ text: `Weight: ${c.weight}%`, size: (fmt.fontSize - 2) * 2, color: '888888' })], spacing: { before: 80 } })] : []),
+                        new Paragraph({
+                            children: [new TextRun({ text: c.title, bold: true, size: fmt.fontSize * 2 })],
+                        }),
+                        ...(c.description
+                            ? [
+                                  new Paragraph({
+                                      children: [
+                                          new TextRun({
+                                              text: c.description,
+                                              size: (fmt.fontSize - 2) * 2,
+                                              color: '666666',
+                                          }),
+                                      ],
+                                  }),
+                              ]
+                            : []),
+                        ...(fmt.showWeights
+                            ? [
+                                  new Paragraph({
+                                      children: [
+                                          new TextRun({
+                                              text: `Weight: ${c.weight}%`,
+                                              size: (fmt.fontSize - 2) * 2,
+                                              color: '888888',
+                                          }),
+                                      ],
+                                      spacing: { before: 80 },
+                                  }),
+                              ]
+                            : []),
                     ],
                 }),
                 // Level cells
-                ...levels.map(l => {
-                    const subItemParagraphs = l.subItems.map(si => {
+                ...levels.map((l) => {
+                    const subItemParagraphs = l.subItems.map((si) => {
                         const max = si.maxPoints ?? si.points ?? 1;
                         return new Paragraph({
                             children: [
-                                new TextRun({ text: "[ ] ", size: (fmt.fontSize - 2) * 2, color: "666666" }),
-                                new TextRun({ text: si.label, size: (fmt.fontSize - 2) * 2, color: "666666" }),
-                                new TextRun({ text: ` (${si.minPoints ?? 0}-${max} pts)`, size: (fmt.fontSize - 3) * 2, color: "888888" })
+                                new TextRun({ text: '[ ] ', size: (fmt.fontSize - 2) * 2, color: '666666' }),
+                                new TextRun({ text: si.label, size: (fmt.fontSize - 2) * 2, color: '666666' }),
+                                new TextRun({
+                                    text: ` (${si.minPoints ?? 0}-${max} pts)`,
+                                    size: (fmt.fontSize - 3) * 2,
+                                    color: '888888',
+                                }),
                             ],
-                            spacing: { before: 60 }
+                            spacing: { before: 60 },
                         });
                     });
 
                     return new TableCell({
-                        width: { size: (78 / levels.length), type: WidthType.PERCENTAGE },
+                        width: { size: 78 / levels.length, type: WidthType.PERCENTAGE },
                         children: [
-                            new Paragraph({ children: [new TextRun({ text: l.description || '—', size: fmt.fontSize * 2 })] }),
-                            ...(fmt.showPoints ? [new Paragraph({
-                                alignment: AlignmentType.RIGHT,
-                                spacing: { before: 80 },
-                                children: [new TextRun({
-                                    text: `${l.minPoints === l.maxPoints ? l.maxPoints : `${l.minPoints}–${l.maxPoints}`} pts`,
-                                    bold: true,
-                                    size: (fmt.fontSize - 2) * 2,
-                                })],
-                            })] : []),
-                            ...(l.subItems.length > 0 ? [
-                                new Paragraph({
-                                    children: [], // spacing paragraph
-                                    spacing: { before: 80 }
-                                }),
-                                ...subItemParagraphs
-                            ] : [])
+                            new Paragraph({
+                                children: [new TextRun({ text: l.description || '—', size: fmt.fontSize * 2 })],
+                            }),
+                            ...(fmt.showPoints
+                                ? [
+                                      new Paragraph({
+                                          alignment: AlignmentType.RIGHT,
+                                          spacing: { before: 80 },
+                                          children: [
+                                              new TextRun({
+                                                  text: `${l.minPoints === l.maxPoints ? l.maxPoints : `${l.minPoints}–${l.maxPoints}`} pts`,
+                                                  bold: true,
+                                                  size: (fmt.fontSize - 2) * 2,
+                                              }),
+                                          ],
+                                      }),
+                                  ]
+                                : []),
+                            ...(l.subItems.length > 0
+                                ? [
+                                      new Paragraph({
+                                          children: [], // spacing paragraph
+                                          spacing: { before: 80 },
+                                      }),
+                                      ...subItemParagraphs,
+                                  ]
+                                : []),
                         ],
                     });
                 }),
@@ -155,37 +218,53 @@ export async function exportRubricWithTemplate(rubric: Rubric, template: ExportT
 
     // ── Assemble Document ────────────────────────────────────────────────────────
     const doc = new Document({
-        sections: [{
-            children: [
-                new Paragraph({
-                    text: rubric.name,
-                    heading: HeadingLevel.HEADING_1,
-                    spacing: { after: 200 },
-                }),
-                ...(rubric.subject ? [new Paragraph({
-                    text: rubric.subject,
-                    heading: HeadingLevel.HEADING_2,
-                    spacing: { after: 300 },
-                })] : []),
-                ...(rubric.description ? [new Paragraph({
-                    children: [new TextRun({ text: rubric.description, italics: true, color: '555555' })],
-                    spacing: { after: 400 },
-                })] : []),
-                new Table({
-                    rows: [headerRow, ...bodyRows],
-                    width: { size: 100, type: WidthType.PERCENTAGE },
-                }),
-                ...(useTemplateHeaders ? [] : [
+        sections: [
+            {
+                children: [
                     new Paragraph({
-                        children: [new TextRun({
-                            text: `Note: Template column count (${template.levelHeaders.length}) did not match rubric levels (${rubricLevelLabels.length}); rubric level labels were used instead.`,
-                            color: '888888', italics: true, size: 18,
-                        })],
-                        spacing: { before: 300 },
+                        text: rubric.name,
+                        heading: HeadingLevel.HEADING_1,
+                        spacing: { after: 200 },
                     }),
-                ]),
-            ],
-        }],
+                    ...(rubric.subject
+                        ? [
+                              new Paragraph({
+                                  text: rubric.subject,
+                                  heading: HeadingLevel.HEADING_2,
+                                  spacing: { after: 300 },
+                              }),
+                          ]
+                        : []),
+                    ...(rubric.description
+                        ? [
+                              new Paragraph({
+                                  children: [new TextRun({ text: rubric.description, italics: true, color: '555555' })],
+                                  spacing: { after: 400 },
+                              }),
+                          ]
+                        : []),
+                    new Table({
+                        rows: [headerRow, ...bodyRows],
+                        width: { size: 100, type: WidthType.PERCENTAGE },
+                    }),
+                    ...(useTemplateHeaders
+                        ? []
+                        : [
+                              new Paragraph({
+                                  children: [
+                                      new TextRun({
+                                          text: `Note: Template column count (${template.levelHeaders.length}) did not match rubric levels (${rubricLevelLabels.length}); rubric level labels were used instead.`,
+                                          color: '888888',
+                                          italics: true,
+                                          size: 18,
+                                      }),
+                                  ],
+                                  spacing: { before: 300 },
+                              }),
+                          ]),
+                ],
+            },
+        ],
     });
 
     const blob = await Packer.toBlob(doc);

@@ -54,27 +54,17 @@ export async function fetchJurisdictions(apiKey: string): Promise<CspJurisdictio
     return json.data ?? [];
 }
 
-export async function fetchStandardSets(
-    apiKey: string,
-    jurisdictionId: string,
-): Promise<CspStandardSet[]> {
-    const res = await fetch(
-        `${BASE}/jurisdictions/${encodeURIComponent(jurisdictionId)}`,
-        { headers: headers(apiKey) },
-    );
+export async function fetchStandardSets(apiKey: string, jurisdictionId: string): Promise<CspStandardSet[]> {
+    const res = await fetch(`${BASE}/jurisdictions/${encodeURIComponent(jurisdictionId)}`, {
+        headers: headers(apiKey),
+    });
     if (!res.ok) throw new Error(`CSP API error ${res.status}: ${res.statusText}`);
     const json = await res.json();
     return json.data.standardSets ?? [];
 }
 
-export async function fetchStandardSetDetail(
-    apiKey: string,
-    standardSetId: string,
-): Promise<CspStandardSetDetail> {
-    const res = await fetch(
-        `${BASE}/standard_sets/${encodeURIComponent(standardSetId)}`,
-        { headers: headers(apiKey) },
-    );
+export async function fetchStandardSetDetail(apiKey: string, standardSetId: string): Promise<CspStandardSetDetail> {
+    const res = await fetch(`${BASE}/standard_sets/${encodeURIComponent(standardSetId)}`, { headers: headers(apiKey) });
     if (!res.ok) throw new Error(`CSP API error ${res.status}: ${res.statusText}`);
     const json = await res.json();
     return json.data;
@@ -94,7 +84,7 @@ export function flattenStandards(standardsMap: Record<string, CspStandard>): Csp
     };
 
     // 1. Build hierarchy based on availability in the current set
-    standards.forEach(std => {
+    standards.forEach((std) => {
         const parentId = std.ancestorIds.length > 0 ? std.ancestorIds[std.ancestorIds.length - 1] : null;
         // If parent exists in this set, attach to it. Otherwise treat as root.
         if (parentId && standardsMap[parentId]) {
@@ -107,12 +97,12 @@ export function flattenStandards(standardsMap: Record<string, CspStandard>): Csp
 
     // 2. Sort roots and children lists
     roots.sort(sortFn);
-    Object.values(childrenMap).forEach(list => list.sort(sortFn));
+    Object.values(childrenMap).forEach((list) => list.sort(sortFn));
 
     // 3. DFS Traversal to Flatten
     const result: CspStandard[] = [];
     const traverse = (nodes: CspStandard[]) => {
-        nodes.forEach(node => {
+        nodes.forEach((node) => {
             result.push(node);
             if (childrenMap[node.id]) {
                 traverse(childrenMap[node.id]);
