@@ -6,11 +6,20 @@ import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import { calcEntryPoints, calcGradeSummary } from '../utils/gradeCalc';
 import { nanoid } from '../utils/nanoid';
-import type { ScoreEntry, PronunciationErrorType, PronunciationMark, SpeakingSession as SpeakingSessionType } from '../types';
+import type {
+    ScoreEntry,
+    PronunciationErrorType,
+    PronunciationMark,
+    SpeakingSession as SpeakingSessionType,
+} from '../types';
 
 const ERROR_TYPES: PronunciationErrorType[] = [
-    'word_stress', 'sentence_stress', 'th_sound',
-    'connected_speech', 'vowel_sound', 'final_consonant',
+    'word_stress',
+    'sentence_stress',
+    'th_sound',
+    'connected_speech',
+    'vowel_sound',
+    'final_consonant',
 ];
 
 export default function SpeakingSession() {
@@ -19,12 +28,13 @@ export default function SpeakingSession() {
     const { t } = useTranslation();
     const { rubrics, students, gradeScales, settings, speakingSessions, saveSpeakingSession } = useApp();
 
-    const rubric = rubrics.find(r => r.id === rubricId);
-    const student = students.find(s => s.id === studentId);
-    const scale = gradeScales.find(g => g.id === (rubric?.gradeScaleId ?? settings.defaultGradeScaleId)) ?? gradeScales[0];
+    const rubric = rubrics.find((r) => r.id === rubricId);
+    const student = students.find((s) => s.id === studentId);
+    const scale =
+        gradeScales.find((g) => g.id === (rubric?.gradeScaleId ?? settings.defaultGradeScaleId)) ?? gradeScales[0];
 
     // Existing session if returning to edit
-    const existingSession = speakingSessions.find(s => s.rubricId === rubricId && s.studentId === studentId);
+    const existingSession = speakingSessions.find((s) => s.rubricId === rubricId && s.studentId === studentId);
 
     // ── Timer state ─────────────────────────────────────────────────────────────
     const [durationMinutes, setDurationMinutes] = useState(2);
@@ -38,7 +48,7 @@ export default function SpeakingSession() {
     const criteria = rubric?.criteria ?? [];
     const [entries, setEntries] = useState<ScoreEntry[]>(() => {
         if (existingSession) return existingSession.entries;
-        return criteria.map(c => ({
+        return criteria.map((c) => ({
             criterionId: c.id,
             levelId: null,
             comment: '',
@@ -56,7 +66,10 @@ export default function SpeakingSession() {
 
     useEffect(() => {
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-            if (isDirty) { e.preventDefault(); e.returnValue = ''; }
+            if (isDirty) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
         };
         window.addEventListener('beforeunload', handleBeforeUnload);
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
@@ -75,7 +88,7 @@ export default function SpeakingSession() {
     useEffect(() => {
         if (!timerRunning) return;
         intervalRef.current = setInterval(() => {
-            setElapsed(prev => {
+            setElapsed((prev) => {
                 const next = prev + 1;
                 if (next >= durationSeconds && autoLock) {
                     stopTimer(true);
@@ -83,11 +96,15 @@ export default function SpeakingSession() {
                 return next;
             });
         }, 1000);
-        return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+        return () => {
+            if (intervalRef.current) clearInterval(intervalRef.current);
+        };
     }, [timerRunning, durationSeconds, autoLock, stopTimer]);
 
     function formatTime(secs: number) {
-        const m = Math.floor(secs / 60).toString().padStart(2, '0');
+        const m = Math.floor(secs / 60)
+            .toString()
+            .padStart(2, '0');
         const s = (secs % 60).toString().padStart(2, '0');
         return `${m}:${s}`;
     }
@@ -99,20 +116,18 @@ export default function SpeakingSession() {
     // ── Scoring helpers ─────────────────────────────────────────────────────────
     function selectLevel(criterionId: string, levelId: string) {
         setIsDirty(true);
-        setEntries(prev => prev.map(e =>
-            e.criterionId === criterionId ? { ...e, levelId } : e
-        ));
+        setEntries((prev) => prev.map((e) => (e.criterionId === criterionId ? { ...e, levelId } : e)));
     }
 
     // ── Pronunciation helpers ───────────────────────────────────────────────────
     function addMark(errorType: PronunciationErrorType) {
         setIsDirty(true);
-        setMarks(prev => [...prev, { errorType }]);
+        setMarks((prev) => [...prev, { errorType }]);
     }
 
     function removeMark(idx: number) {
         setIsDirty(true);
-        setMarks(prev => prev.filter((_, i) => i !== idx));
+        setMarks((prev) => prev.filter((_, i) => i !== idx));
     }
 
     // ── Save ────────────────────────────────────────────────────────────────────
@@ -137,16 +152,22 @@ export default function SpeakingSession() {
     }
 
     // ── Grade summary ───────────────────────────────────────────────────────────
-    const summary = rubric ? calcGradeSummary(
-        { id: 'tmp', rubricId: rubricId!, studentId: studentId!, entries, overallComment, isPeerReview: false },
-        criteria, scale, rubric
-    ) : null;
+    const summary = rubric
+        ? calcGradeSummary(
+              { id: 'tmp', rubricId: rubricId!, studentId: studentId!, entries, overallComment, isPeerReview: false },
+              criteria,
+              scale,
+              rubric
+          )
+        : null;
 
     if (!rubric || !student) {
         return (
             <div className="page-content">
                 <p>{t('gradeStudent.error_not_found')}</p>
-                <button className="btn btn-secondary" onClick={() => navigate(-1)}>{t('gradeStudent.action_back')}</button>
+                <button className="btn btn-secondary" onClick={() => navigate(-1)}>
+                    {t('gradeStudent.action_back')}
+                </button>
             </div>
         );
     }
@@ -182,9 +203,14 @@ export default function SpeakingSession() {
                         <div className="form-group" style={{ maxWidth: 200, marginBottom: 16 }}>
                             <label style={{ fontSize: '0.85rem' }}>{t('speaking.duration_minutes')}</label>
                             <input
-                                type="number" min={1} max={30}
+                                type="number"
+                                min={1}
+                                max={30}
                                 value={durationMinutes}
-                                onChange={e => { setDurationMinutes(Math.max(1, Number(e.target.value))); setElapsed(0); }}
+                                onChange={(e) => {
+                                    setDurationMinutes(Math.max(1, Number(e.target.value)));
+                                    setElapsed(0);
+                                }}
                                 disabled={timerRunning}
                                 style={{ maxWidth: 80 }}
                             />
@@ -192,21 +218,41 @@ export default function SpeakingSession() {
                     )}
 
                     {/* Progress bar */}
-                    <div style={{ height: 8, background: 'var(--bg-elevated)', borderRadius: 4, marginBottom: 12, overflow: 'hidden' }}>
-                        <div style={{
-                            height: '100%',
-                            width: `${timerPct}%`,
-                            background: timeUp ? 'var(--red)' : 'var(--accent)',
-                            transition: 'width 0.5s linear',
+                    <div
+                        style={{
+                            height: 8,
+                            background: 'var(--bg-elevated)',
                             borderRadius: 4,
-                        }} />
+                            marginBottom: 12,
+                            overflow: 'hidden',
+                        }}
+                    >
+                        <div
+                            style={{
+                                height: '100%',
+                                width: `${timerPct}%`,
+                                background: timeUp ? 'var(--red)' : 'var(--accent)',
+                                transition: 'width 0.5s linear',
+                                borderRadius: 4,
+                            }}
+                        />
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-                        <div style={{ fontFamily: 'monospace', fontSize: '2.5rem', fontWeight: 700, color: timeUp ? 'var(--red)' : 'var(--text)', minWidth: 100 }}>
+                        <div
+                            style={{
+                                fontFamily: 'monospace',
+                                fontSize: '2.5rem',
+                                fontWeight: 700,
+                                color: timeUp ? 'var(--red)' : 'var(--text)',
+                                minWidth: 100,
+                            }}
+                        >
                             {formatTime(timeRemaining)}
                         </div>
-                        {timeUp && <span style={{ color: 'var(--red)', fontWeight: 700 }}>{t('speaking.time_up')}</span>}
+                        {timeUp && (
+                            <span style={{ color: 'var(--red)', fontWeight: 700 }}>{t('speaking.time_up')}</span>
+                        )}
 
                         {!timerLocked ? (
                             <div style={{ display: 'flex', gap: 8 }}>
@@ -229,8 +275,17 @@ export default function SpeakingSession() {
                     </div>
 
                     {!timerLocked && (
-                        <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, fontSize: '0.85rem', cursor: 'pointer' }}>
-                            <input type="checkbox" checked={autoLock} onChange={e => setAutoLock(e.target.checked)} />
+                        <label
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 8,
+                                marginTop: 12,
+                                fontSize: '0.85rem',
+                                cursor: 'pointer',
+                            }}
+                        >
+                            <input type="checkbox" checked={autoLock} onChange={(e) => setAutoLock(e.target.checked)} />
                             {t('speaking.auto_lock')}
                         </label>
                     )}
@@ -244,17 +299,20 @@ export default function SpeakingSession() {
                 <div className="card" style={{ marginBottom: 24 }}>
                     <h3 style={{ marginBottom: 12 }}>{t('speaking.pronunciation_panel')}</h3>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-                        {ERROR_TYPES.map(type => (
-                            <button
-                                key={type}
-                                className="btn btn-secondary btn-sm"
-                                onClick={() => addMark(type)}
-                            >
+                        {ERROR_TYPES.map((type) => (
+                            <button key={type} className="btn btn-secondary btn-sm" onClick={() => addMark(type)}>
                                 {t(`speaking.error_types.${type}`)}
                             </button>
                         ))}
                         {marks.length > 0 && (
-                            <button className="btn btn-ghost btn-sm" style={{ color: 'var(--text-muted)' }} onClick={() => { setMarks([]); setIsDirty(true); }}>
+                            <button
+                                className="btn btn-ghost btn-sm"
+                                style={{ color: 'var(--text-muted)' }}
+                                onClick={() => {
+                                    setMarks([]);
+                                    setIsDirty(true);
+                                }}
+                            >
                                 <Trash2 size={12} /> {t('speaking.clear_marks')}
                             </button>
                         )}
@@ -269,18 +327,32 @@ export default function SpeakingSession() {
                             </p>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                                 {marks.map((mark, idx) => (
-                                    <div key={idx} style={{
-                                        display: 'flex', alignItems: 'flex-start', gap: 10,
-                                        background: 'var(--bg-elevated)', borderRadius: 8,
-                                        padding: '8px 12px', border: '1px solid var(--border)',
-                                    }}>
+                                    <div
+                                        key={idx}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'flex-start',
+                                            gap: 10,
+                                            background: 'var(--bg-elevated)',
+                                            borderRadius: 8,
+                                            padding: '8px 12px',
+                                            border: '1px solid var(--border)',
+                                        }}
+                                    >
                                         <div style={{ flex: 1 }}>
-                                            <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{t(`speaking.error_types.${mark.errorType}`)}</div>
-                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                                            <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>
+                                                {t(`speaking.error_types.${mark.errorType}`)}
+                                            </div>
+                                            <div
+                                                style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 2 }}
+                                            >
                                                 {t(`speaking.pronunciationFeedback.${mark.errorType}`)}
                                             </div>
                                         </div>
-                                        <button className="btn btn-ghost btn-icon btn-sm" onClick={() => removeMark(idx)}>
+                                        <button
+                                            className="btn btn-ghost btn-icon btn-sm"
+                                            onClick={() => removeMark(idx)}
+                                        >
                                             <X size={13} />
                                         </button>
                                     </div>
@@ -294,23 +366,35 @@ export default function SpeakingSession() {
                 <div className="card" style={{ marginBottom: 24 }}>
                     <h3 style={{ marginBottom: 16 }}>{rubric.name}</h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                        {criteria.map(criterion => {
-                            const entry = entries.find(e => e.criterionId === criterion.id);
+                        {criteria.map((criterion) => {
+                            const entry = entries.find((e) => e.criterionId === criterion.id);
                             const points = entry ? calcEntryPoints(entry, criterion) : 0;
-                            const maxPts = Math.max(...criterion.levels.map(l => l.maxPoints));
+                            const maxPts = Math.max(...criterion.levels.map((l) => l.maxPoints));
                             return (
-                                <div key={criterion.id} style={{
-                                    background: 'var(--bg-elevated)', borderRadius: 10,
-                                    padding: 16, border: '1px solid var(--border)',
-                                }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
+                                <div
+                                    key={criterion.id}
+                                    style={{
+                                        background: 'var(--bg-elevated)',
+                                        borderRadius: 10,
+                                        padding: 16,
+                                        border: '1px solid var(--border)',
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'baseline',
+                                            marginBottom: 10,
+                                        }}
+                                    >
                                         <div style={{ fontWeight: 600 }}>{criterion.title}</div>
                                         <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                                             {points} / {maxPts} pts
                                         </div>
                                     </div>
                                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                                        {criterion.levels.map(level => {
+                                        {criterion.levels.map((level) => {
                                             const isSelected = entry?.levelId === level.id;
                                             return (
                                                 <button
@@ -337,9 +421,9 @@ export default function SpeakingSession() {
                                             );
                                         })}
                                     </div>
-                                    {criterion.levels.find(l => l.id === entry?.levelId)?.description && (
+                                    {criterion.levels.find((l) => l.id === entry?.levelId)?.description && (
                                         <p style={{ marginTop: 8, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                            {criterion.levels.find(l => l.id === entry?.levelId)?.description}
+                                            {criterion.levels.find((l) => l.id === entry?.levelId)?.description}
                                         </p>
                                     )}
                                 </div>
@@ -355,7 +439,10 @@ export default function SpeakingSession() {
                     </label>
                     <textarea
                         value={overallComment}
-                        onChange={e => { setOverallComment(e.target.value); setIsDirty(true); }}
+                        onChange={(e) => {
+                            setOverallComment(e.target.value);
+                            setIsDirty(true);
+                        }}
                         placeholder={t('gradeStudent.overall_comment_placeholder')}
                         rows={3}
                         style={{ width: '100%', resize: 'vertical', fontFamily: 'inherit', fontSize: '0.9rem' }}
@@ -366,16 +453,49 @@ export default function SpeakingSession() {
                 {summary && (
                     <div className="card" style={{ marginBottom: 24, display: 'flex', gap: 24, alignItems: 'center' }}>
                         <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>{t('gradeStudent.label_grade')}</div>
-                            <div style={{ fontSize: '2rem', fontWeight: 700, color: summary.gradeColor }}>{summary.letterGrade}</div>
+                            <div
+                                style={{
+                                    fontSize: '0.75rem',
+                                    color: 'var(--text-muted)',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: 1,
+                                }}
+                            >
+                                {t('gradeStudent.label_grade')}
+                            </div>
+                            <div style={{ fontSize: '2rem', fontWeight: 700, color: summary.gradeColor }}>
+                                {summary.letterGrade}
+                            </div>
                         </div>
                         <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>{t('gradeStudent.label_percentage')}</div>
-                            <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{summary.modifiedPercentage.toFixed(1)}%</div>
+                            <div
+                                style={{
+                                    fontSize: '0.75rem',
+                                    color: 'var(--text-muted)',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: 1,
+                                }}
+                            >
+                                {t('gradeStudent.label_percentage')}
+                            </div>
+                            <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>
+                                {summary.modifiedPercentage.toFixed(1)}%
+                            </div>
                         </div>
                         <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>{t('gradeStudent.label_total_points')}</div>
-                            <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{summary.rawScore} / {summary.maxRawScore}</div>
+                            <div
+                                style={{
+                                    fontSize: '0.75rem',
+                                    color: 'var(--text-muted)',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: 1,
+                                }}
+                            >
+                                {t('gradeStudent.label_total_points')}
+                            </div>
+                            <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>
+                                {summary.rawScore} / {summary.maxRawScore}
+                            </div>
                         </div>
                     </div>
                 )}

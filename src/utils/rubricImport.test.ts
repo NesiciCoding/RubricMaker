@@ -1,15 +1,19 @@
 import { describe, it, expect, vi } from 'vitest';
-import { 
-    parseJsonToRubric, 
-    splitCells, 
-    detectTableFromLines, 
-    buildParsedRubric, 
-    extractTableFromHtml 
+import {
+    parseJsonToRubric,
+    splitCells,
+    detectTableFromLines,
+    buildParsedRubric,
+    extractTableFromHtml,
 } from './rubricImport';
 
 // Mock dynamic imports
 vi.mock('mammoth', () => ({
-    convertToHtml: vi.fn().mockResolvedValue({ value: '<table><tr><td>Crit</td><td>Good</td></tr><tr><td>C1</td><td>L1</td></tr></table>' })
+    convertToHtml: vi
+        .fn()
+        .mockResolvedValue({
+            value: '<table><tr><td>Crit</td><td>Good</td></tr><tr><td>C1</td><td>L1</td></tr></table>',
+        }),
 }));
 
 vi.mock('pdfjs-dist', () => ({
@@ -26,12 +30,12 @@ vi.mock('pdfjs-dist', () => ({
                         { str: '  Satisfactory  ', transform: [0, 0, 0, 0, 0, 100] },
                         { str: 'C1', transform: [0, 0, 0, 0, 0, 80] },
                         { str: '  L1  ', transform: [0, 0, 0, 0, 0, 80] },
-                        { str: '  L2  ', transform: [0, 0, 0, 0, 0, 80] }
-                    ]
-                })
-            })
-        })
-    })
+                        { str: '  L2  ', transform: [0, 0, 0, 0, 0, 80] },
+                    ],
+                }),
+            }),
+        }),
+    }),
 }));
 
 describe('rubricImport', () => {
@@ -45,11 +49,9 @@ describe('rubricImport', () => {
                     {
                         title: 'Criterion 1',
                         weight: 100,
-                        levels: [
-                            { label: 'Good', minPoints: 5, maxPoints: 5, description: '' }
-                        ]
-                    }
-                ]
+                        levels: [{ label: 'Good', minPoints: 5, maxPoints: 5, description: '' }],
+                    },
+                ],
             };
             const file = new File([JSON.stringify(validJson)], 'test-rubric.json', { type: 'application/json' });
 
@@ -112,7 +114,7 @@ describe('rubricImport', () => {
                 'Rubric Title',
                 'Criterion  Excellent  Satisfactory  Poor',
                 'Content    Great      Ok            Bad',
-                'Design     Pretty     Fine          Ugly'
+                'Design     Pretty     Fine          Ugly',
             ];
             const result = detectTableFromLines(lines);
             expect(result.headers).toEqual(['Criterion', 'Excellent', 'Satisfactory', 'Poor']);
@@ -132,7 +134,10 @@ describe('rubricImport', () => {
         it('returns high confidence for standard structure', () => {
             const raw = {
                 headers: ['Criterion', 'High', 'Low'],
-                rows: [['Crit1', 'Desc1', 'Desc2'], ['Crit2', 'Desc3', 'Desc4']]
+                rows: [
+                    ['Crit1', 'Desc1', 'Desc2'],
+                    ['Crit2', 'Desc3', 'Desc4'],
+                ],
             };
             const result = buildParsedRubric(raw, 'Test');
             expect(result.confidence).toBe('high');
@@ -143,7 +148,7 @@ describe('rubricImport', () => {
         it('generates warnings for small tables', () => {
             const raw = {
                 headers: ['Crit', 'Level'],
-                rows: [['OnlyOne', 'Desc']]
+                rows: [['OnlyOne', 'Desc']],
             };
             const result = buildParsedRubric(raw, 'Test');
             expect(result.warnings.length).toBeGreaterThan(0);
@@ -202,7 +207,10 @@ describe('encodeRubricShareCode / decodeRubricShareCode', () => {
             description: 'A rubric',
             criteria: [
                 {
-                    id: 'c1', title: 'C1', description: '', weight: 100,
+                    id: 'c1',
+                    title: 'C1',
+                    description: '',
+                    weight: 100,
                     levels: [{ id: 'l1', label: 'A', minPoints: 0, maxPoints: 10, description: '', subItems: [] }],
                 },
             ],
@@ -252,19 +260,31 @@ describe('buildParsedRubric edge cases', () => {
 
     it('skips rows with no criterion name', async () => {
         const { buildParsedRubric } = await import('./rubricImport');
-        const result = buildParsedRubric({
-            headers: ['criterion', 'Level A', 'Level B'],
-            rows: [['C1', 'desc A', 'desc B'], ['', 'x', 'y']],
-        }, 'test');
+        const result = buildParsedRubric(
+            {
+                headers: ['criterion', 'Level A', 'Level B'],
+                rows: [
+                    ['C1', 'desc A', 'desc B'],
+                    ['', 'x', 'y'],
+                ],
+            },
+            'test'
+        );
         expect(result.criteria.length).toBe(1);
     });
 
     it('returns "no criteria" error when all rows have empty criterion name', async () => {
         const { buildParsedRubric } = await import('./rubricImport');
-        const result = buildParsedRubric({
-            headers: ['criterion', 'Level A', 'Level B'],
-            rows: [['', 'x', 'y'], ['', 'a', 'b']],
-        }, 'test');
+        const result = buildParsedRubric(
+            {
+                headers: ['criterion', 'Level A', 'Level B'],
+                rows: [
+                    ['', 'x', 'y'],
+                    ['', 'a', 'b'],
+                ],
+            },
+            'test'
+        );
         expect(result.criteria.length).toBe(0);
         expect(result.warnings).toContain('Table found but no criteria could be extracted.');
     });
@@ -276,12 +296,20 @@ describe('parseJsonToRubric — linked standards & sub-items', () => {
     it('preserves linkedStandard when present on criterion', async () => {
         const { parseJsonToRubric } = await import('./rubricImport');
         const json = {
-            criteria: [{
-                title: 'Crit',
-                weight: 100,
-                linkedStandard: { guid: 'std1', statementNotation: 'ELA.1', description: 'English standard', standardSetTitle: 'ELA', jurisdictionTitle: 'US' },
-                levels: [{ label: 'Good', minPoints: 5, maxPoints: 5, description: '' }],
-            }],
+            criteria: [
+                {
+                    title: 'Crit',
+                    weight: 100,
+                    linkedStandard: {
+                        guid: 'std1',
+                        statementNotation: 'ELA.1',
+                        description: 'English standard',
+                        standardSetTitle: 'ELA',
+                        jurisdictionTitle: 'US',
+                    },
+                    levels: [{ label: 'Good', minPoints: 5, maxPoints: 5, description: '' }],
+                },
+            ],
         };
         const file = new File([JSON.stringify(json)], 'rubric.json');
         const result = await parseJsonToRubric(file);
@@ -292,15 +320,29 @@ describe('parseJsonToRubric — linked standards & sub-items', () => {
     it('preserves linkedStandards array when present on criterion', async () => {
         const { parseJsonToRubric } = await import('./rubricImport');
         const json = {
-            criteria: [{
-                title: 'Crit',
-                weight: 100,
-                linkedStandards: [
-                    { guid: 'std1', statementNotation: 'ELA.1', description: 'Standard 1', standardSetTitle: 'ELA', jurisdictionTitle: 'US' },
-                    { guid: 'std2', statementNotation: 'ELA.2', description: 'Standard 2', standardSetTitle: 'ELA', jurisdictionTitle: 'US' },
-                ],
-                levels: [{ label: 'Good', minPoints: 5, maxPoints: 5, description: '' }],
-            }],
+            criteria: [
+                {
+                    title: 'Crit',
+                    weight: 100,
+                    linkedStandards: [
+                        {
+                            guid: 'std1',
+                            statementNotation: 'ELA.1',
+                            description: 'Standard 1',
+                            standardSetTitle: 'ELA',
+                            jurisdictionTitle: 'US',
+                        },
+                        {
+                            guid: 'std2',
+                            statementNotation: 'ELA.2',
+                            description: 'Standard 2',
+                            standardSetTitle: 'ELA',
+                            jurisdictionTitle: 'US',
+                        },
+                    ],
+                    levels: [{ label: 'Good', minPoints: 5, maxPoints: 5, description: '' }],
+                },
+            ],
         };
         const file = new File([JSON.stringify(json)], 'rubric.json');
         const result = await parseJsonToRubric(file);
@@ -311,17 +353,36 @@ describe('parseJsonToRubric — linked standards & sub-items', () => {
     it('preserves subItems with linkedStandards when present', async () => {
         const { parseJsonToRubric } = await import('./rubricImport');
         const json = {
-            criteria: [{
-                title: 'Crit',
-                weight: 100,
-                levels: [{
-                    label: 'Good', minPoints: 5, maxPoints: 5, description: '',
-                    subItems: [{
-                        id: 'si1', label: 'Sub 1', points: 2,
-                        linkedStandards: [{ guid: 'std1', statementNotation: 'ELA.1', description: 'Sub standard', standardSetTitle: 'ELA', jurisdictionTitle: 'US' }],
-                    }],
-                }],
-            }],
+            criteria: [
+                {
+                    title: 'Crit',
+                    weight: 100,
+                    levels: [
+                        {
+                            label: 'Good',
+                            minPoints: 5,
+                            maxPoints: 5,
+                            description: '',
+                            subItems: [
+                                {
+                                    id: 'si1',
+                                    label: 'Sub 1',
+                                    points: 2,
+                                    linkedStandards: [
+                                        {
+                                            guid: 'std1',
+                                            statementNotation: 'ELA.1',
+                                            description: 'Sub standard',
+                                            standardSetTitle: 'ELA',
+                                            jurisdictionTitle: 'US',
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
+                },
+            ],
         };
         const file = new File([JSON.stringify(json)], 'rubric.json');
         const result = await parseJsonToRubric(file);
@@ -333,14 +394,21 @@ describe('parseJsonToRubric — linked standards & sub-items', () => {
     it('handles subItems without linkedStandards (undefined)', async () => {
         const { parseJsonToRubric } = await import('./rubricImport');
         const json = {
-            criteria: [{
-                title: 'Crit',
-                weight: 100,
-                levels: [{
-                    label: 'Good', minPoints: 5, maxPoints: 5, description: '',
-                    subItems: [{ id: 'si1', label: 'Sub 1', points: 2 }],
-                }],
-            }],
+            criteria: [
+                {
+                    title: 'Crit',
+                    weight: 100,
+                    levels: [
+                        {
+                            label: 'Good',
+                            minPoints: 5,
+                            maxPoints: 5,
+                            description: '',
+                            subItems: [{ id: 'si1', label: 'Sub 1', points: 2 }],
+                        },
+                    ],
+                },
+            ],
         };
         const file = new File([JSON.stringify(json)], 'rubric.json');
         const result = await parseJsonToRubric(file);
@@ -353,9 +421,9 @@ describe('parseJsonToRubric — edge case branches', () => {
     it('uses "Untitled Criterion" when criterion title is missing', async () => {
         const json = {
             criteria: [
-                { levels: [{ label: 'Good', minPoints: 0, maxPoints: 5, description: '' }] }
+                { levels: [{ label: 'Good', minPoints: 0, maxPoints: 5, description: '' }] },
                 // no title field
-            ]
+            ],
         };
         const file = new File([JSON.stringify(json)], 'rubric.json', { type: 'application/json' });
         const result = await parseJsonToRubric(file);
@@ -369,12 +437,10 @@ describe('parseJsonToRubric — edge case branches', () => {
                 {
                     title: 'Crit 1',
                     weight: 100,
-                    linkedStandards: [
-                        { guid: 'std1', description: 'Standard 1', statementNotation: 'S1' }
-                    ],
-                    levels: [{ label: 'Good', minPoints: 0, maxPoints: 10, description: '' }]
-                }
-            ]
+                    linkedStandards: [{ guid: 'std1', description: 'Standard 1', statementNotation: 'S1' }],
+                    levels: [{ label: 'Good', minPoints: 0, maxPoints: 10, description: '' }],
+                },
+            ],
         };
         const file = new File([JSON.stringify(json)], 'rubric.json', { type: 'application/json' });
         const result = await parseJsonToRubric(file);
@@ -390,9 +456,9 @@ describe('parseJsonToRubric — edge case branches', () => {
                     title: 'Crit',
                     weight: 100,
                     linkedStandards: null, // not an array
-                    levels: [{ label: 'Good', minPoints: 0, maxPoints: 5, description: '' }]
-                }
-            ]
+                    levels: [{ label: 'Good', minPoints: 0, maxPoints: 5, description: '' }],
+                },
+            ],
         };
         const file = new File([JSON.stringify(json)], 'rubric.json', { type: 'application/json' });
         const result = await parseJsonToRubric(file);
@@ -408,15 +474,18 @@ describe('parseJsonToRubric — edge case branches', () => {
                     weight: 100,
                     levels: [
                         {
-                            label: 'Good', minPoints: 0, maxPoints: 10, description: '',
+                            label: 'Good',
+                            minPoints: 0,
+                            maxPoints: 10,
+                            description: '',
                             subItems: [
                                 { label: 'Sub A', points: 3, linkedStandards: [{ guid: 'si-std1' }] },
-                                { label: 'Sub B', points: 7 } // no linkedStandards
-                            ]
-                        }
-                    ]
-                }
-            ]
+                                { label: 'Sub B', points: 7 }, // no linkedStandards
+                            ],
+                        },
+                    ],
+                },
+            ],
         };
         const file = new File([JSON.stringify(json)], 'rubric.json', { type: 'application/json' });
         const result = await parseJsonToRubric(file);

@@ -1,7 +1,13 @@
 import React from 'react';
 import {
-    RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
-    Tooltip, Legend, ResponsiveContainer,
+    RadarChart,
+    Radar,
+    PolarGrid,
+    PolarAngleAxis,
+    PolarRadiusAxis,
+    Tooltip,
+    Legend,
+    ResponsiveContainer,
 } from 'recharts';
 
 export interface CriterionRadarDataPoint {
@@ -24,7 +30,13 @@ interface Props {
     height?: number;
 }
 
-export default function CriterionRadarChart({ data, accentColor, selectedStudents, classAverageLabel = 'Class Average', height = 420 }: Props) {
+export default function CriterionRadarChart({
+    data,
+    accentColor,
+    selectedStudents,
+    classAverageLabel = 'Class Average',
+    height = 420,
+}: Props) {
     if (data.length < 3) {
         return (
             <p className="text-muted text-sm" style={{ textAlign: 'center', padding: '40px 0' }}>
@@ -39,10 +51,7 @@ export default function CriterionRadarChart({ data, accentColor, selectedStudent
         <ResponsiveContainer width="100%" height={height}>
             <RadarChart data={data} margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
                 <PolarGrid strokeOpacity={0.3} />
-                <PolarAngleAxis
-                    dataKey="name"
-                    tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
-                />
+                <PolarAngleAxis dataKey="name" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} />
                 <PolarRadiusAxis
                     domain={[0, 100]}
                     tick={{ fill: 'var(--text-dim)', fontSize: 10 }}
@@ -64,16 +73,17 @@ export default function CriterionRadarChart({ data, accentColor, selectedStudent
                     fill={accentColor}
                     fillOpacity={0.25}
                 />
-                {hasStudents && selectedStudents!.map(s => (
-                    <Radar
-                        key={s.id}
-                        name={s.name}
-                        dataKey={s.id}
-                        stroke={s.color}
-                        fill={s.color}
-                        fillOpacity={0.18}
-                    />
-                ))}
+                {hasStudents &&
+                    selectedStudents!.map((s) => (
+                        <Radar
+                            key={s.id}
+                            name={s.name}
+                            dataKey={s.id}
+                            stroke={s.color}
+                            fill={s.color}
+                            fillOpacity={0.18}
+                        />
+                    ))}
                 {hasStudents && <Legend />}
             </RadarChart>
         </ResponsiveContainer>
