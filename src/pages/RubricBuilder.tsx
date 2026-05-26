@@ -147,6 +147,7 @@ export default function RubricBuilder() {
     const [syncDialogRubric, setSyncDialogRubric] = useState<Rubric | null>(null);
     const [showVersionHistory, setShowVersionHistory] = useState(false);
     const [versionLabel, setVersionLabel] = useState('');
+    const [showPreviewStdDesc, setShowPreviewStdDesc] = useState(false);
 
     // ── Collapsible criteria ─────────────────────────────────────────────────
     const [collapsedCriteria, setCollapsedCriteria] = useState<Set<string>>(new Set());
@@ -2398,17 +2399,62 @@ export default function RubricBuilder() {
                                     justifyContent: 'space-between',
                                     alignItems: 'center',
                                     marginBottom: 16,
+                                    gap: 12,
                                 }}
                             >
                                 <h3>{t('rubricBuilder.preview_title')}</h3>
-                                <button className="btn btn-ghost btn-sm" onClick={() => setShowPreview(false)}>
-                                    ✕ {t('rubricBuilder.action_close')}
-                                </button>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    {criteria.some(
+                                        (c) =>
+                                            c.linkedStandard ||
+                                            (c.linkedStandards && c.linkedStandards.length > 0)
+                                    ) && (
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 4,
+                                                fontSize: '0.75rem',
+                                                color: 'var(--text-muted)',
+                                            }}
+                                        >
+                                            Standards:
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    background: 'var(--bg-elevated)',
+                                                    borderRadius: 6,
+                                                    padding: 2,
+                                                    marginLeft: 4,
+                                                }}
+                                            >
+                                                <button
+                                                    className={`btn btn-sm ${!showPreviewStdDesc ? 'btn-white shadow-sm' : 'btn-ghost'}`}
+                                                    onClick={() => setShowPreviewStdDesc(false)}
+                                                    style={{ fontSize: '0.72rem', padding: '2px 8px' }}
+                                                >
+                                                    Code
+                                                </button>
+                                                <button
+                                                    className={`btn btn-sm ${showPreviewStdDesc ? 'btn-white shadow-sm' : 'btn-ghost'}`}
+                                                    onClick={() => setShowPreviewStdDesc(true)}
+                                                    style={{ fontSize: '0.72rem', padding: '2px 8px' }}
+                                                >
+                                                    Description
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                    <button className="btn btn-ghost btn-sm" onClick={() => setShowPreview(false)}>
+                                        ✕ {t('rubricBuilder.action_close')}
+                                    </button>
+                                </div>
                             </div>
                             <RubricPreviewTable
                                 name={name || t('rubricBuilder.placeholder_name').replace('...', '')}
                                 criteria={criteria}
                                 format={format}
+                                showDescriptions={showPreviewStdDesc}
                             />
                         </div>
                     </div>
@@ -2659,10 +2705,12 @@ function RubricPreviewTable({
     name,
     criteria,
     format,
+    showDescriptions = false,
 }: {
     name: string;
     criteria: RubricCriterion[];
     format: RubricFormat;
+    showDescriptions?: boolean;
 }) {
     const { t } = useTranslation();
     const headers = criteria[0]?.levels ?? [];
@@ -2730,13 +2778,17 @@ function RubricPreviewTable({
                                     </div>
                                 )}
                                 {c.linkedStandard && (
-                                    <div style={{ marginTop: 6, fontSize: '0.75em', color: 'var(--accent)' }}>
-                                        📌 {c.linkedStandard.statementNotation ?? c.linkedStandard.guid}
+                                    <div style={{ marginTop: 6, fontSize: '0.75em', color: 'var(--accent)' }}
+                                        title={showDescriptions ? (c.linkedStandard.statementNotation ?? '') : c.linkedStandard.description}
+                                    >
+                                        📌 {showDescriptions ? c.linkedStandard.description : (c.linkedStandard.statementNotation ?? c.linkedStandard.guid)}
                                     </div>
                                 )}
                                 {(c.linkedStandards || []).map((std, idx) => (
-                                    <div key={idx} style={{ marginTop: 6, fontSize: '0.75em', color: 'var(--accent)' }}>
-                                        📌 {std.statementNotation ?? std.guid}
+                                    <div key={idx} style={{ marginTop: 6, fontSize: '0.75em', color: 'var(--accent)' }}
+                                        title={showDescriptions ? (std.statementNotation ?? '') : std.description}
+                                    >
+                                        📌 {showDescriptions ? std.description : (std.statementNotation ?? std.guid)}
                                     </div>
                                 ))}
                             </td>
@@ -2771,7 +2823,7 @@ function RubricPreviewTable({
                                                             }}
                                                         >
                                                             {si.linkedStandards
-                                                                .map((std) => `[${std.statementNotation ?? std.guid}]`)
+                                                                .map((std) => showDescriptions ? std.description : `[${std.statementNotation ?? std.guid}]`)
                                                                 .join(' ')}
                                                         </div>
                                                     )}
@@ -2879,6 +2931,7 @@ function RubricWysiwygEditor({
     const { t } = useTranslation();
     const headers = criteria[0]?.levels ?? [];
     const [editingCell, setEditingCell] = useState<string | null>(null);
+    const [showStdDesc, setShowStdDesc] = useState(false);
 
     // Auto-resize textarea
     const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
@@ -3040,6 +3093,45 @@ function RubricWysiwygEditor({
                 >
                     <BookOpen size={13} style={{ marginRight: 4 }} /> {t('rubricBuilder.action_formatting_help')}
                 </button>
+                {criteria.some(
+                    (c) => c.linkedStandard || (c.linkedStandards && c.linkedStandards.length > 0)
+                ) && (
+                    <div
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            fontSize: '0.75rem',
+                            color: 'var(--text-muted)',
+                        }}
+                    >
+                        Standards:
+                        <div
+                            style={{
+                                display: 'flex',
+                                background: 'var(--bg-elevated)',
+                                borderRadius: 6,
+                                padding: 2,
+                                marginLeft: 4,
+                            }}
+                        >
+                            <button
+                                className={`btn btn-sm ${!showStdDesc ? 'btn-white shadow-sm' : 'btn-ghost'}`}
+                                onClick={() => setShowStdDesc(false)}
+                                style={{ fontSize: '0.72rem', padding: '2px 8px' }}
+                            >
+                                Code
+                            </button>
+                            <button
+                                className={`btn btn-sm ${showStdDesc ? 'btn-white shadow-sm' : 'btn-ghost'}`}
+                                onClick={() => setShowStdDesc(true)}
+                                style={{ fontSize: '0.72rem', padding: '2px 8px' }}
+                            >
+                                Description
+                            </button>
+                        </div>
+                    </div>
+                )}
                 <button
                     className="btn btn-secondary btn-sm"
                     onClick={smartAllocatePoints}
@@ -3321,16 +3413,19 @@ function RubricWysiwygEditor({
                                         />
                                     )}
                                     {c.linkedStandard && (
-                                        <div style={{ marginTop: 6, fontSize: '0.75em', color: 'var(--accent)' }}>
-                                            📌 {c.linkedStandard.statementNotation ?? c.linkedStandard.guid}
+                                        <div style={{ marginTop: 6, fontSize: '0.75em', color: 'var(--accent)' }}
+                                            title={showStdDesc ? (c.linkedStandard.statementNotation ?? '') : c.linkedStandard.description}
+                                        >
+                                            📌 {showStdDesc ? c.linkedStandard.description : (c.linkedStandard.statementNotation ?? c.linkedStandard.guid)}
                                         </div>
                                     )}
                                     {(c.linkedStandards || []).map((std, idx) => (
                                         <div
                                             key={idx}
                                             style={{ marginTop: 6, fontSize: '0.75em', color: 'var(--accent)' }}
+                                            title={showStdDesc ? (std.statementNotation ?? '') : std.description}
                                         >
-                                            📌 {std.statementNotation ?? std.guid}
+                                            📌 {showStdDesc ? std.description : (std.statementNotation ?? std.guid)}
                                         </div>
                                     ))}
                                 </div>
@@ -3389,7 +3484,7 @@ function RubricWysiwygEditor({
                                                                 {si.linkedStandards
                                                                     .map(
                                                                         (std) =>
-                                                                            `[${std.statementNotation ?? std.guid}]`
+                                                                            showStdDesc ? std.description : `[${std.statementNotation ?? std.guid}]`
                                                                     )
                                                                     .join(' ')}
                                                             </div>
