@@ -8,19 +8,46 @@ updates:
       time: "09:00"
     open-pull-requests-limit: 10
     groups:
-      dev-tooling:
+      # All tiptap packages must move together — strict peer deps require identical versions
+      tiptap:
         patterns:
-          - "@types/*"
-          - "eslint*"
-          - "typescript*"
-          - "vite*"
-          - "vitest*"
-      react:
+          - "@tiptap/*"
+
+      # Packages that peer-depend on React; bump together so React major upgrades
+      # also pull in compatible versions of ecosystem libraries in one shot
+      react-ecosystem:
         patterns:
           - "react"
           - "react-dom"
-          - "react-router*"
-          - "@types/react*"
+          - "@types/react"
+          - "@types/react-dom"
+          - "react-router-dom"
+          - "react-i18next"
+          - "react-joyride"
+          - "react-speech-recognition"
+          - "lucide-react"
+          - "recharts"
+          - "@hello-pangea/dnd"
+          - "@radix-ui/*"
+          - "@testing-library/*"
+
+      # Dev/build tooling; @vitejs/* must move with vite (peer dep on same major)
+      dev-tooling:
+        patterns:
+          - "vite"
+          - "@vitejs/*"
+          - "vitest"
+          - "@vitest/*"
+          - "eslint"
+          - "eslint-*"
+          - "typescript"
+          - "typescript-eslint"
+          - "prettier"
+          - "eslint-config-prettier"
+          - "@rollup/*"
+          - "jsdom"
+          - "supabase"
+          - "@types/*"
 
   - package-ecosystem: "github-actions"
     directory: "/"
