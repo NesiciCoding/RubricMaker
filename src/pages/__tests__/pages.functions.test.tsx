@@ -12,7 +12,9 @@ import type { Rubric, Student, Class, GradeScale, AppSettings, StudentRubric } f
 // ─── Shared data ──────────────────────────────────────────────────────────────
 
 const mockGradeScale: GradeScale = {
-    id: 'gs1', name: 'Letter', type: 'letter',
+    id: 'gs1',
+    name: 'Letter',
+    type: 'letter',
     ranges: [
         { min: 90, max: 100, label: 'A', color: '#22c55e' },
         { min: 0, max: 89, label: 'B', color: '#84cc16' },
@@ -20,20 +22,27 @@ const mockGradeScale: GradeScale = {
 };
 
 const mockRubric: Rubric = {
-    id: 'r1', name: 'Essay Rubric', subject: 'English', description: '',
+    id: 'r1',
+    name: 'Essay Rubric',
+    subject: 'English',
+    description: '',
     criteria: [
         {
-            id: 'c1', title: 'Criterion 1', description: '', weight: 60,
+            id: 'c1',
+            title: 'Criterion 1',
+            description: '',
+            weight: 60,
             levels: [
                 { id: 'l1', label: 'Excellent', minPoints: 90, maxPoints: 100, description: '', subItems: [] },
                 { id: 'l2', label: 'Good', minPoints: 70, maxPoints: 89, description: '', subItems: [] },
             ],
         },
         {
-            id: 'c2', title: 'Criterion 2', description: '', weight: 40,
-            levels: [
-                { id: 'l3', label: 'Excellent', minPoints: 90, maxPoints: 100, description: '', subItems: [] },
-            ],
+            id: 'c2',
+            title: 'Criterion 2',
+            description: '',
+            weight: 40,
+            levels: [{ id: 'l3', label: 'Excellent', minPoints: 90, maxPoints: 100, description: '', subItems: [] }],
         },
     ],
     gradeScaleId: 'gs1',
@@ -52,26 +61,33 @@ const mockStudent2: Student = { id: 's2', name: 'Bob', classId: 'c1' };
 const mockClass: Class = { id: 'c1', name: 'Class A' };
 
 const mockSr1: StudentRubric = {
-    id: 'sr1', rubricId: 'r1', studentId: 's1',
+    id: 'sr1',
+    rubricId: 'r1',
+    studentId: 's1',
     entries: [
         { criterionId: 'c1', levelId: 'l1', checkedSubItems: [], comment: '' },
         { criterionId: 'c2', levelId: 'l3', checkedSubItems: [], comment: '' },
     ],
-    overallComment: '', isPeerReview: false,
+    overallComment: '',
+    isPeerReview: false,
     gradedAt: '2024-01-01T00:00:00Z',
 };
 const mockSr2: StudentRubric = {
-    id: 'sr2', rubricId: 'r1', studentId: 's2',
-    entries: [
-        { criterionId: 'c1', levelId: 'l2', checkedSubItems: [], comment: '' },
-    ],
-    overallComment: '', isPeerReview: false,
+    id: 'sr2',
+    rubricId: 'r1',
+    studentId: 's2',
+    entries: [{ criterionId: 'c1', levelId: 'l2', checkedSubItems: [], comment: '' }],
+    overallComment: '',
+    isPeerReview: false,
     gradedAt: '2024-01-02T00:00:00Z',
 };
 
 const mockSettings: AppSettings = {
-    defaultGradeScaleId: 'gs1', theme: 'dark', language: 'en',
-    accentColor: '#3b82f6', defaultFormat: DEFAULT_FORMAT,
+    defaultGradeScaleId: 'gs1',
+    theme: 'dark',
+    language: 'en',
+    accentColor: '#3b82f6',
+    defaultFormat: DEFAULT_FORMAT,
 };
 
 const mockSaveStudentRubric = vi.fn();
@@ -180,7 +196,8 @@ vi.mock('../../components/Editor/TiptapEditor', () => ({
 }));
 
 vi.mock('@hello-pangea/dnd', () => ({
-    DragDropContext: ({ children }: { children: React.ReactNode }) => React.createElement(React.Fragment, null, children),
+    DragDropContext: ({ children }: { children: React.ReactNode }) =>
+        React.createElement(React.Fragment, null, children),
     Droppable: ({ children }: { children: (p: any) => React.ReactNode }) =>
         children({ innerRef: vi.fn(), droppableProps: {}, placeholder: null } as any),
     Draggable: ({ children }: { children: (p: any) => React.ReactNode }) =>
@@ -237,33 +254,51 @@ vi.mock('papaparse', () => ({
 }));
 
 vi.mock('../../components/Comments/CommentBankModal', () => ({
-    default: ({ onClose }: any) => React.createElement('div', { 'data-testid': 'comment-bank-modal' },
-        React.createElement('button', { onClick: onClose }, 'Close')
-    ),
+    default: ({ onClose }: any) =>
+        React.createElement(
+            'div',
+            { 'data-testid': 'comment-bank-modal' },
+            React.createElement('button', { onClick: onClose }, 'Close')
+        ),
 }));
 vi.mock('../../components/TemplateUploadModal', () => ({
-    default: ({ onClose }: any) => React.createElement('div', { 'data-testid': 'template-modal' },
-        React.createElement('button', { onClick: onClose }, 'Close')
-    ),
+    default: ({ onClose }: any) =>
+        React.createElement(
+            'div',
+            { 'data-testid': 'template-modal' },
+            React.createElement('button', { onClick: onClose }, 'Close')
+        ),
 }));
 vi.mock('../../components/ImportRubricModal', () => ({
-    default: ({ onClose, onImport }: any) => React.createElement('div', { 'data-testid': 'import-modal' },
-        React.createElement('button', { onClick: onClose }, 'Close'),
-        React.createElement('button', {
-            onClick: () => onImport({ name: 'I', subject: 'S', description: '', criteria: [] })
-        }, 'DoImport')
-    ),
+    default: ({ onClose, onImport }: any) =>
+        React.createElement(
+            'div',
+            { 'data-testid': 'import-modal' },
+            React.createElement('button', { onClick: onClose }, 'Close'),
+            React.createElement(
+                'button',
+                {
+                    onClick: () => onImport({ name: 'I', subject: 'S', description: '', criteria: [] }),
+                },
+                'DoImport'
+            )
+        ),
 }));
 vi.mock('../../components/CsvImportModal', () => ({
-    default: ({ onClose }: any) => React.createElement('div', { 'data-testid': 'csv-modal' },
-        React.createElement('button', { onClick: onClose }, 'Close')
-    ),
+    default: ({ onClose }: any) =>
+        React.createElement(
+            'div',
+            { 'data-testid': 'csv-modal' },
+            React.createElement('button', { onClick: onClose }, 'Close')
+        ),
 }));
 
 function renderPage(el: React.ReactElement, route = '/', path = '/') {
     return render(
         <MemoryRouter initialEntries={[route]}>
-            <Routes><Route path={path} element={el} /></Routes>
+            <Routes>
+                <Route path={path} element={el} />
+            </Routes>
         </MemoryRouter>
     );
 }
@@ -292,9 +327,9 @@ describe('ExportPage — handler functions', () => {
 
     it('toggleAll selects all when none selected', () => {
         renderPage(<ExportPage />);
-        const toggleAllBtn = screen.queryAllByRole('button').find(b =>
-            b.textContent?.match(/select all|all|toggle/i)
-        );
+        const toggleAllBtn = screen
+            .queryAllByRole('button')
+            .find((b) => b.textContent?.match(/select all|all|toggle/i));
         if (toggleAllBtn) {
             fireEvent.click(toggleAllBtn);
         }
@@ -313,7 +348,7 @@ describe('ExportPage — handler functions', () => {
     it('bulk comment button opens textarea', () => {
         renderPage(<ExportPage />);
         const btns = screen.getAllByRole('button');
-        const bulkBtn = btns.find(b => b.textContent?.match(/bulk.*comment|add.*comment/i));
+        const bulkBtn = btns.find((b) => b.textContent?.match(/bulk.*comment|add.*comment/i));
         if (bulkBtn) {
             fireEvent.click(bulkBtn);
             const textarea = screen.queryByRole('textbox');
@@ -324,8 +359,8 @@ describe('ExportPage — handler functions', () => {
     it('orientation toggle buttons work', () => {
         renderPage(<ExportPage />);
         const btns = screen.getAllByRole('button');
-        const portraitBtn = btns.find(b => b.textContent?.match(/portrait/i));
-        const landscapeBtn = btns.find(b => b.textContent?.match(/landscape/i));
+        const portraitBtn = btns.find((b) => b.textContent?.match(/portrait/i));
+        const landscapeBtn = btns.find((b) => b.textContent?.match(/landscape/i));
         if (portraitBtn) fireEvent.click(portraitBtn);
         if (landscapeBtn) fireEvent.click(landscapeBtn);
         expect(true).toBe(true);
@@ -347,7 +382,7 @@ describe('SettingsPage — grade scale handlers', () => {
     it('add grade scale button triggers addGradeScale', () => {
         renderPage(<SettingsPage />);
         const btns = screen.getAllByRole('button');
-        const addBtn = btns.find(b => b.textContent?.match(/add.*scale|new.*scale|create.*scale/i));
+        const addBtn = btns.find((b) => b.textContent?.match(/add.*scale|new.*scale|create.*scale/i));
         if (addBtn) {
             fireEvent.click(addBtn);
             expect(mockAddGradeScale).toHaveBeenCalled();
@@ -357,7 +392,7 @@ describe('SettingsPage — grade scale handlers', () => {
     it('delete grade scale shows confirmation then deletes', () => {
         renderPage(<SettingsPage />);
         const btns = screen.getAllByRole('button');
-        const deleteBtn = btns.find(b => b.title?.match(/delete/i) || b.getAttribute('aria-label')?.match(/delete/i));
+        const deleteBtn = btns.find((b) => b.title?.match(/delete/i) || b.getAttribute('aria-label')?.match(/delete/i));
         if (deleteBtn) {
             fireEvent.click(deleteBtn);
         }
@@ -376,7 +411,7 @@ describe('SettingsPage — grade scale handlers', () => {
     it('theme toggle calls updateSettings', () => {
         renderPage(<SettingsPage />);
         const btns = screen.getAllByRole('button');
-        const themeBtn = btns.find(b => b.textContent?.match(/theme|dark|light/i) || b.title?.match(/theme/i));
+        const themeBtn = btns.find((b) => b.textContent?.match(/theme|dark|light/i) || b.title?.match(/theme/i));
         if (themeBtn) {
             fireEvent.click(themeBtn);
             expect(mockUpdateSettings).toHaveBeenCalled();
@@ -399,7 +434,7 @@ describe('RubricList — handler coverage', () => {
     it('delete confirmation then cancel does not delete', () => {
         renderPage(<RubricList />);
         const deleteButtons = screen.getAllByRole('button');
-        const deleteBtn = deleteButtons.find(b => b.title?.match(/delete/i));
+        const deleteBtn = deleteButtons.find((b) => b.title?.match(/delete/i));
         if (deleteBtn) {
             fireEvent.click(deleteBtn);
             const cancelBtn = screen.queryByRole('button', { name: /cancel/i });
@@ -413,13 +448,13 @@ describe('RubricList — handler coverage', () => {
     it('confirm delete calls deleteRubric', () => {
         renderPage(<RubricList />);
         const btns = screen.getAllByRole('button');
-        const deleteBtn = btns.find(b => b.title?.match(/delete/i));
+        const deleteBtn = btns.find((b) => b.title?.match(/delete/i));
         if (deleteBtn) {
             fireEvent.click(deleteBtn);
             // Find confirmation buttons that appeared
             const newBtns = screen.getAllByRole('button');
-            const confirmBtn = newBtns.find(b =>
-                (b.textContent?.match(/confirm|yes/i) && !b.textContent?.match(/cancel/i))
+            const confirmBtn = newBtns.find(
+                (b) => b.textContent?.match(/confirm|yes/i) && !b.textContent?.match(/cancel/i)
             );
             if (confirmBtn) {
                 fireEvent.click(confirmBtn);
@@ -440,14 +475,14 @@ describe('RubricList — handler coverage', () => {
     it('import from code modal flow', () => {
         renderPage(<RubricList />);
         const btns = screen.getAllByRole('button');
-        const codeBtn = btns.find(b => b.textContent?.match(/code|paste/i));
+        const codeBtn = btns.find((b) => b.textContent?.match(/code|paste/i));
         if (codeBtn) {
             fireEvent.click(codeBtn);
             const inputs = screen.queryAllByRole('textbox');
             if (inputs.length > 0) {
                 fireEvent.change(inputs[0], { target: { value: 'ABC123' } });
                 const allBtns = screen.queryAllByRole('button');
-                const importBtn = allBtns.find(b => b.textContent?.match(/^import$/i));
+                const importBtn = allBtns.find((b) => b.textContent?.match(/^import$/i));
                 if (importBtn) fireEvent.click(importBtn);
             }
         }
@@ -470,7 +505,7 @@ describe('GradeStudent — more handlers', () => {
     it('selecting Good level updates entry', () => {
         renderPage(<GradeStudent />, '/grade/r1/s1', '/grade/:rubricId/:studentId');
         const btns = screen.getAllByRole('button');
-        const goodBtn = btns.find(b => b.textContent?.includes('Good'));
+        const goodBtn = btns.find((b) => b.textContent?.includes('Good'));
         if (goodBtn) {
             fireEvent.click(goodBtn);
             expect(goodBtn).toBeInTheDocument();
@@ -479,7 +514,7 @@ describe('GradeStudent — more handlers', () => {
 
     it('save button triggers saveStudentRubric', () => {
         renderPage(<GradeStudent />, '/grade/r1/s1', '/grade/:rubricId/:studentId');
-        const saveBtn = screen.queryAllByRole('button').find(b => b.textContent?.match(/save/i));
+        const saveBtn = screen.queryAllByRole('button').find((b) => b.textContent?.match(/save/i));
         if (saveBtn) {
             fireEvent.click(saveBtn);
             expect(mockSaveStudentRubric).toHaveBeenCalled();
@@ -510,7 +545,7 @@ describe('SpeakingSession — save handler', () => {
 
     it('save button exists and does not crash', () => {
         renderPage(<SpeakingSession />, '/speaking/r1/s1', '/speaking/:rubricId/:studentId');
-        const saveBtn = screen.queryAllByRole('button').find(b => b.textContent?.match(/save/i));
+        const saveBtn = screen.queryAllByRole('button').find((b) => b.textContent?.match(/save/i));
         if (saveBtn) {
             fireEvent.click(saveBtn);
         }
@@ -520,7 +555,7 @@ describe('SpeakingSession — save handler', () => {
     it('criterion level buttons work', () => {
         renderPage(<SpeakingSession />, '/speaking/r1/s1', '/speaking/:rubricId/:studentId');
         const btns = screen.getAllByRole('button');
-        const levelBtn = btns.find(b => b.textContent?.includes('Excellent') || b.textContent?.includes('Good'));
+        const levelBtn = btns.find((b) => b.textContent?.includes('Excellent') || b.textContent?.includes('Good'));
         if (levelBtn) {
             fireEvent.click(levelBtn);
         }
@@ -543,7 +578,7 @@ describe('StatisticsPage — view switching', () => {
     it('switches to student view mode', () => {
         renderPage(<StatisticsPage />);
         const btns = screen.getAllByRole('button');
-        const studentBtn = btns.find(b => b.textContent?.match(/student/i));
+        const studentBtn = btns.find((b) => b.textContent?.match(/student/i));
         if (studentBtn) {
             fireEvent.click(studentBtn);
         }
@@ -553,7 +588,7 @@ describe('StatisticsPage — view switching', () => {
     it('sort column buttons work', () => {
         renderPage(<StatisticsPage />);
         const btns = screen.getAllByRole('button');
-        const sortBtn = btns.find(b => b.textContent?.match(/score|grade|name/i));
+        const sortBtn = btns.find((b) => b.textContent?.match(/score|grade|name/i));
         if (sortBtn) {
             fireEvent.click(sortBtn);
             fireEvent.click(sortBtn); // toggle direction
@@ -586,9 +621,9 @@ describe('PeerReviewView — save handler', () => {
     it('level click and submit flow', () => {
         renderPage(<PeerReviewView />, '/peer-review/r1/s1', '/peer-review/:rubricId/:studentId');
         const btns = screen.getAllByRole('button');
-        const levelBtn = btns.find(b => b.textContent?.includes('Excellent'));
+        const levelBtn = btns.find((b) => b.textContent?.includes('Excellent'));
         if (levelBtn) fireEvent.click(levelBtn);
-        const submitBtn = btns.find(b => b.textContent?.match(/submit|save/i));
+        const submitBtn = btns.find((b) => b.textContent?.match(/submit|save/i));
         if (submitBtn) fireEvent.click(submitBtn);
         expect(true).toBe(true);
     });
@@ -612,7 +647,7 @@ describe('SelfAssessPage — handlers', () => {
         if (btns.length > 0) {
             fireEvent.click(btns[0]);
         }
-        const submitBtn = btns.find(b => b.textContent?.match(/submit|save/i));
+        const submitBtn = btns.find((b) => b.textContent?.match(/submit|save/i));
         if (submitBtn) fireEvent.click(submitBtn);
         expect(true).toBe(true);
     });

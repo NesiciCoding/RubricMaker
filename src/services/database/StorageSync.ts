@@ -2,7 +2,22 @@ import { SupabaseAdapter } from './SupabaseAdapter';
 import { AttachmentSync } from './AttachmentSync';
 import type { DatabaseConfig, SyncStatus, SyncResult, DbUser } from './types';
 import type { StoreData } from '../../store/storage';
-import type { Rubric, Student, Class, StudentRubric, Attachment, GradeScale, CommentSnippet, LinkedStandard, CommentBankItem, ExportTemplate, SelfAssessment, SpeakingSession, DocumentAnalysisResult, EssayAssignment } from '../../types';
+import type {
+    Rubric,
+    Student,
+    Class,
+    StudentRubric,
+    Attachment,
+    GradeScale,
+    CommentSnippet,
+    LinkedStandard,
+    CommentBankItem,
+    ExportTemplate,
+    SelfAssessment,
+    SpeakingSession,
+    DocumentAnalysisResult,
+    EssayAssignment,
+} from '../../types';
 
 const CONFIG_KEY = 'rm_supabase_config';
 const LAST_SYNC_KEY = 'rm_last_sync_at';
@@ -38,10 +53,18 @@ class StorageSyncService {
 
     // ── Status ────────────────────────────────────────────────────────────────
 
-    getStatus(): SyncStatus { return this.status; }
-    getLastSyncAt(): string | null { return this.lastSyncAt; }
-    isConnected(): boolean { return this.adapter.isConnected(); }
-    getCurrentUserId(): string | null { return this.adapter.getCurrentUserId(); }
+    getStatus(): SyncStatus {
+        return this.status;
+    }
+    getLastSyncAt(): string | null {
+        return this.lastSyncAt;
+    }
+    isConnected(): boolean {
+        return this.adapter.isConnected();
+    }
+    getCurrentUserId(): string | null {
+        return this.adapter.getCurrentUserId();
+    }
 
     private setStatus(s: SyncStatus) {
         this.status = s;
@@ -59,11 +82,11 @@ class StorageSyncService {
     }
 
     private notifyListeners() {
-        this.listeners.forEach(cb => cb());
+        this.listeners.forEach((cb) => cb());
     }
 
     private notifyAuthChange(user: DbUser | null) {
-        this.authListeners.forEach(cb => cb(user));
+        this.authListeners.forEach((cb) => cb(user));
     }
 
     // ── Connection ────────────────────────────────────────────────────────────
@@ -75,7 +98,7 @@ class StorageSyncService {
     async initAuth(config: DatabaseConfig): Promise<boolean> {
         const ok = await this.adapter.initClient(config);
         if (ok) {
-            this.adapter.setAuthChangeListener(user => {
+            this.adapter.setAuthChangeListener((user) => {
                 this.notifyAuthChange(user);
                 this.notifyListeners();
             });
@@ -92,7 +115,7 @@ class StorageSyncService {
         const ok = await this.adapter.connect(config);
         if (ok) {
             this.setStatus('idle');
-            this.adapter.setAuthChangeListener(user => {
+            this.adapter.setAuthChangeListener((user) => {
                 this.notifyAuthChange(user);
                 this.notifyListeners();
             });
@@ -181,10 +204,22 @@ class StorageSyncService {
         this.setStatus('syncing');
         try {
             const [
-                rubrics, classes, students, studentRubrics, peerReviews,
-                gradeScales, commentSnippets, commentBank, exportTemplates,
-                favoriteStandards, selfAssessments, speakingSessions,
-                analysisResults, attachments, settings, profile,
+                rubrics,
+                classes,
+                students,
+                studentRubrics,
+                peerReviews,
+                gradeScales,
+                commentSnippets,
+                commentBank,
+                exportTemplates,
+                favoriteStandards,
+                selfAssessments,
+                speakingSessions,
+                analysisResults,
+                attachments,
+                settings,
+                profile,
             ] = await Promise.all([
                 this.adapter.fetchRubrics(),
                 this.adapter.fetchClasses(),
@@ -213,7 +248,7 @@ class StorageSyncService {
             // is stored in user_settings so the DB is the single source of truth.
             const mergedSettings = profile?.role
                 ? { ...(settings ?? {}), userRole: profile.role }
-                : settings ?? undefined;
+                : (settings ?? undefined);
 
             const result: Partial<StoreData> = {
                 rubrics,
@@ -234,7 +269,7 @@ class StorageSyncService {
             };
 
             // Remove undefined keys so the caller can merge cleanly with defaults
-            Object.keys(result).forEach(k => {
+            Object.keys(result).forEach((k) => {
                 if (result[k as keyof StoreData] === undefined) delete result[k as keyof StoreData];
             });
 
@@ -253,18 +288,18 @@ class StorageSyncService {
         this.setStatus('syncing');
         try {
             const ups = [
-                ...state.rubrics.map(r => this.adapter.upsertRubric(r)),
-                ...state.classes.map(c => this.adapter.upsertClass(c)),
-                ...state.students.map(s => this.adapter.upsertStudent(s)),
-                ...state.studentRubrics.map(sr => this.adapter.upsertStudentRubric(sr)),
-                ...state.peerReviews.map(sr => this.adapter.upsertPeerReview(sr)),
-                ...state.gradeScales.map(gs => this.adapter.upsertGradeScale(gs)),
-                ...state.commentSnippets.map(cs => this.adapter.upsertCommentSnippet(cs)),
-                ...state.commentBank.map(cb => this.adapter.upsertCommentBankItem(cb)),
-                ...state.favoriteStandards.map(fs => this.adapter.upsertFavoriteStandard(fs)),
-                ...state.selfAssessments.map(sa => this.adapter.upsertSelfAssessment(sa)),
-                ...state.speakingSessions.map(ss => this.adapter.upsertSpeakingSession(ss)),
-                ...state.analysisResults.map(ar => this.adapter.upsertAnalysisResult(ar)),
+                ...state.rubrics.map((r) => this.adapter.upsertRubric(r)),
+                ...state.classes.map((c) => this.adapter.upsertClass(c)),
+                ...state.students.map((s) => this.adapter.upsertStudent(s)),
+                ...state.studentRubrics.map((sr) => this.adapter.upsertStudentRubric(sr)),
+                ...state.peerReviews.map((sr) => this.adapter.upsertPeerReview(sr)),
+                ...state.gradeScales.map((gs) => this.adapter.upsertGradeScale(gs)),
+                ...state.commentSnippets.map((cs) => this.adapter.upsertCommentSnippet(cs)),
+                ...state.commentBank.map((cb) => this.adapter.upsertCommentBankItem(cb)),
+                ...state.favoriteStandards.map((fs) => this.adapter.upsertFavoriteStandard(fs)),
+                ...state.selfAssessments.map((sa) => this.adapter.upsertSelfAssessment(sa)),
+                ...state.speakingSessions.map((ss) => this.adapter.upsertSpeakingSession(ss)),
+                ...state.analysisResults.map((ar) => this.adapter.upsertAnalysisResult(ar)),
                 this.adapter.saveSettings(state.settings),
             ];
             await Promise.all(ups);
@@ -351,7 +386,8 @@ class StorageSyncService {
                     else if (id) await this.adapter.deleteAnalysisResult(id);
                     break;
                 case 'settings':
-                    if (action === 'upsert') await this.adapter.saveSettings(payload as import('../../types').AppSettings);
+                    if (action === 'upsert')
+                        await this.adapter.saveSettings(payload as import('../../types').AppSettings);
                     break;
             }
         } catch (e) {

@@ -61,7 +61,9 @@ const baseProps = {
 };
 
 describe('DocumentAnalysisPanel', () => {
-    beforeEach(() => { vi.clearAllMocks(); });
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
 
     it('renders in select phase initially', () => {
         render(<DocumentAnalysisPanel {...baseProps} />);
@@ -73,7 +75,7 @@ describe('DocumentAnalysisPanel', () => {
         const onClose = vi.fn();
         render(<DocumentAnalysisPanel {...baseProps} onClose={onClose} />);
         const btns = screen.getAllByRole('button');
-        const closeBtn = btns.find(b => b.title === 'Close' || b.getAttribute('aria-label') === 'Close');
+        const closeBtn = btns.find((b) => b.title === 'Close' || b.getAttribute('aria-label') === 'Close');
         if (closeBtn) {
             fireEvent.click(closeBtn);
             expect(onClose).toHaveBeenCalled();
@@ -101,9 +103,7 @@ describe('DocumentAnalysisPanel', () => {
             attachmentId: 'att1',
             extractedText: 'sample text',
             analyzedAt: '2024-01-01',
-            detectedItems: [
-                { vocabularyItemId: 'vi1', found: true, occurrences: 2, contexts: ['good morning'] },
-            ],
+            detectedItems: [{ vocabularyItemId: 'vi1', found: true, occurrences: 2, contexts: ['good morning'] }],
             grammarErrors: [],
             grammarCheckerUsed: 'none',
         };
@@ -121,7 +121,7 @@ describe('DocumentAnalysisPanel', () => {
         render(<DocumentAnalysisPanel {...baseProps} />);
         const btns = screen.getAllByRole('button');
         // Find transcript toggle button
-        const transcriptBtn = btns.find(b => b.textContent?.match(/transcript|paste/i));
+        const transcriptBtn = btns.find((b) => b.textContent?.match(/transcript|paste/i));
         if (transcriptBtn) {
             fireEvent.click(transcriptBtn);
             expect(screen.queryByRole('textbox') || true).toBeTruthy();
@@ -174,7 +174,7 @@ describe('DocumentAnalysisPanel', () => {
         const onApplyToEntry = vi.fn();
         render(<DocumentAnalysisPanel {...baseProps} existingResult={result} onApplyToEntry={onApplyToEntry} />);
         const btns = screen.getAllByRole('button');
-        const applyBtn = btns.find(b => b.title?.match(/apply/i) || b.textContent?.match(/apply/i));
+        const applyBtn = btns.find((b) => b.title?.match(/apply/i) || b.textContent?.match(/apply/i));
         if (applyBtn) {
             expect(() => fireEvent.click(applyBtn)).not.toThrow();
         }

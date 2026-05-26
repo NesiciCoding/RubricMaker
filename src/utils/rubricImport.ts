@@ -20,8 +20,8 @@ export interface ParsedRubric {
 }
 
 interface RawTable {
-    headers: string[];   // first row (level names)
-    rows: string[][];    // [criterionName, desc1, desc2, ...]
+    headers: string[]; // first row (level names)
+    rows: string[][]; // [criterionName, desc1, desc2, ...]
 }
 
 // ─── DOCX Parsing ──────────────────────────────────────────────────────────────
@@ -44,9 +44,12 @@ export async function parseDocxToRubric(file: File): Promise<ParsedRubric> {
     // Pick the largest table (most likely the rubric)
     let best: Element = tables[0];
     let bestCells = 0;
-    tables.forEach(t => {
+    tables.forEach((t) => {
         const cells = t.querySelectorAll('td, th').length;
-        if (cells > bestCells) { bestCells = cells; best = t; }
+        if (cells > bestCells) {
+            bestCells = cells;
+            best = t;
+        }
     });
 
     const rawTable = extractTableFromHtml(best);
@@ -55,12 +58,12 @@ export async function parseDocxToRubric(file: File): Promise<ParsedRubric> {
 
 export function extractTableFromHtml(table: Element): RawTable {
     const rows: string[][] = [];
-    table.querySelectorAll('tr').forEach(tr => {
+    table.querySelectorAll('tr').forEach((tr) => {
         const cells: string[] = [];
-        tr.querySelectorAll('td, th').forEach(td => {
+        tr.querySelectorAll('td, th').forEach((td) => {
             cells.push(td.textContent?.trim() ?? '');
         });
-        if (cells.some(c => c.length > 0)) rows.push(cells);
+        if (cells.some((c) => c.length > 0)) rows.push(cells);
     });
 
     if (rows.length < 2) return { headers: [], rows: [] };
@@ -120,7 +123,8 @@ export async function parsePdfToRubric(file: File): Promise<ParsedRubric> {
  */
 export function detectTableFromLines(lines: string[]): RawTable {
     // First pass: look for a header line (short label cols like "Excellent Good Adequate Poor")
-    const LEVEL_KEYWORDS = /\b(excellent|good|adequate|poor|satisfactory|needs improvement|beginning|developing|proficient|advanced|unsatisfactory|outstanding|distinguished|basic|emerging|mastering|insufficient|sufficient|fair|very good|meets|exceeds|below|approaching|not yet|limited|partial|full|complete|1|2|3|4|5|6|7|8|9|10)\b/i;
+    const LEVEL_KEYWORDS =
+        /\b(excellent|good|adequate|poor|satisfactory|needs improvement|beginning|developing|proficient|advanced|unsatisfactory|outstanding|distinguished|basic|emerging|mastering|insufficient|sufficient|fair|very good|meets|exceeds|below|approaching|not yet|limited|partial|full|complete|1|2|3|4|5|6|7|8|9|10)\b/i;
 
     let headerIdx = -1;
     for (let i = 0; i < Math.min(lines.length, 20); i++) {
@@ -133,7 +137,7 @@ export function detectTableFromLines(lines: string[]): RawTable {
 
     if (headerIdx === -1) {
         // Fallback: split all lines into chunks of equal size
-        return { headers: [], rows: lines.map(l => [l]) };
+        return { headers: [], rows: lines.map((l) => [l]) };
     }
 
     // Parse header line: split by multiple spaces or common delimiters
@@ -163,7 +167,10 @@ export function detectTableFromLines(lines: string[]): RawTable {
 
 export function splitCells(line: string): string[] {
     // Split on 2+ spaces, tabs, or pipe characters
-    return line.split(/\t|\|{1,2}|  +/).map(s => s.trim()).filter(s => s.length > 0);
+    return line
+        .split(/\t|\|{1,2}|  +/)
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
 }
 
 // ─── Build ParsedRubric from RawTable ─────────────────────────────────────────
@@ -177,14 +184,10 @@ export function buildParsedRubric(raw: RawTable, defaultName: string): ParsedRub
 
     // Determine level labels from header row (skip first col which is "Criterion")
     const firstHeader = raw.headers[0].toLowerCase();
-    const criterionColIdx = firstHeader.includes('criterion') || firstHeader.includes('criteria')
-        || firstHeader.length < 30
-        ? 0
-        : -1;
+    const criterionColIdx =
+        firstHeader.includes('criterion') || firstHeader.includes('criteria') || firstHeader.length < 30 ? 0 : -1;
 
-    const levelLabels = criterionColIdx === 0
-        ? raw.headers.slice(1)
-        : raw.headers;
+    const levelLabels = criterionColIdx === 0 ? raw.headers.slice(1) : raw.headers;
 
     if (levelLabels.length === 0) {
         return emptyResult(['Found a table but could not detect level columns.']);
@@ -228,12 +231,17 @@ export function buildParsedRubric(raw: RawTable, defaultName: string): ParsedRub
         return emptyResult(['Table found but no criteria could be extracted.']);
     }
 
-    if (criteria.length < 2) warnings.push('Only one criterion was detected — the document may not be a standard rubric.');
-    if (levelLabels.length < 2) warnings.push('Only one level was detected — columns may not have been parsed correctly.');
+    if (criteria.length < 2)
+        warnings.push('Only one criterion was detected — the document may not be a standard rubric.');
+    if (levelLabels.length < 2)
+        warnings.push('Only one level was detected — columns may not have been parsed correctly.');
 
     const confidence: ParsedRubric['confidence'] =
-        criteria.length >= 2 && levelLabels.length >= 2 ? 'high' :
-            criteria.length >= 1 && levelLabels.length >= 1 ? 'medium' : 'low';
+        criteria.length >= 2 && levelLabels.length >= 2
+            ? 'high'
+            : criteria.length >= 1 && levelLabels.length >= 1
+              ? 'medium'
+              : 'low';
 
     return {
         name: defaultName,
@@ -274,7 +282,9 @@ export async function parseJsonToRubric(file: File): Promise<ParsedRubric> {
             description: c.description || '',
             weight: typeof c.weight === 'number' ? c.weight : 0,
             linkedStandard: c.linkedStandard ? { ...c.linkedStandard } : undefined,
-            linkedStandards: Array.isArray(c.linkedStandards) ? c.linkedStandards.map((s: any) => ({ ...s })) : undefined,
+            linkedStandards: Array.isArray(c.linkedStandards)
+                ? c.linkedStandards.map((s: any) => ({ ...s }))
+                : undefined,
             levels: (c.levels || []).map((l: any) => ({
                 id: nanoid(),
                 label: l.label || 'Level',
@@ -285,9 +295,11 @@ export async function parseJsonToRubric(file: File): Promise<ParsedRubric> {
                     id: nanoid(),
                     label: si.label || '',
                     points: typeof si.points === 'number' ? si.points : 0,
-                    linkedStandards: Array.isArray(si.linkedStandards) ? si.linkedStandards.map((s: any) => ({ ...s })) : undefined
-                }))
-            }))
+                    linkedStandards: Array.isArray(si.linkedStandards)
+                        ? si.linkedStandards.map((s: any) => ({ ...s }))
+                        : undefined,
+                })),
+            })),
         }));
 
         return {
@@ -322,7 +334,9 @@ export function encodeRubricShareCode(rubric: Rubric): string {
 }
 
 /** Decodes a share code back into a ParsedRubric (ready for import). */
-export function decodeRubricShareCode(code: string): ParsedRubric & { gradeScaleId?: string; scoringMode?: string; totalMaxPoints?: number; format?: unknown } {
+export function decodeRubricShareCode(
+    code: string
+): ParsedRubric & { gradeScaleId?: string; scoringMode?: string; totalMaxPoints?: number; format?: unknown } {
     const json = decodeURIComponent(atob(code.trim()));
     const data = JSON.parse(json);
     if (!Array.isArray(data.criteria)) throw new Error('Invalid share code: missing criteria');

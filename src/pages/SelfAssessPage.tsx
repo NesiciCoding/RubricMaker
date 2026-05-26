@@ -17,8 +17,8 @@ export default function SelfAssessPage() {
 
     const { rubrics, students, selfAssessments, saveSelfAssessment } = useApp();
 
-    const rubric = rubrics.find(r => r.id === rubricId);
-    const student = students.find(s => s.id === studentId);
+    const rubric = rubrics.find((r) => r.id === rubricId);
+    const student = students.find((s) => s.id === studentId);
 
     // Collect all CEFR descriptors linked to this rubric's criteria (deduplicated)
     const linkedDescriptors = useMemo((): LinkedCefrDescriptor[] => {
@@ -39,13 +39,15 @@ export default function SelfAssessPage() {
                 level: rubric.cefrTargetLevel,
                 skill: rubric.cefrSkill,
             });
-            fallback.forEach(d => result.push({
-                descriptorId: d.id,
-                level: d.level,
-                skill: d.skill,
-                descriptionEn: d.descriptionEn,
-                descriptionNl: d.descriptionNl,
-            }));
+            fallback.forEach((d) =>
+                result.push({
+                    descriptorId: d.id,
+                    level: d.level,
+                    skill: d.skill,
+                    descriptionEn: d.descriptionEn,
+                    descriptionNl: d.descriptionNl,
+                })
+            );
         }
         return result;
     }, [rubric]);
@@ -61,10 +63,10 @@ export default function SelfAssessPage() {
     }, [linkedDescriptors]);
 
     // Load existing self-assessment if present
-    const existing = selfAssessments.find(sa => sa.rubricId === rubricId && sa.studentId === studentId);
+    const existing = selfAssessments.find((sa) => sa.rubricId === rubricId && sa.studentId === studentId);
 
     const [confident, setConfident] = useState<Set<string>>(
-        new Set(existing?.ratings.filter(r => r.confident).map(r => r.descriptorId) ?? [])
+        new Set(existing?.ratings.filter((r) => r.confident).map((r) => r.descriptorId) ?? [])
     );
     const [reflection, setReflection] = useState(existing?.reflection ?? '');
     const [saved, setSaved] = useState(false);
@@ -72,22 +74,26 @@ export default function SelfAssessPage() {
     // Keep confident in sync if existing changes (e.g. navigating back)
     useEffect(() => {
         if (existing) {
-            setConfident(new Set(existing.ratings.filter(r => r.confident).map(r => r.descriptorId)));
+            setConfident(new Set(existing.ratings.filter((r) => r.confident).map((r) => r.descriptorId)));
             setReflection(existing.reflection ?? '');
         }
     }, [existing?.id]);
 
     function toggleConfident(descriptorId: string) {
-        setConfident(prev => {
+        setConfident((prev) => {
             const next = new Set(prev);
-            if (next.has(descriptorId)) { next.delete(descriptorId); } else { next.add(descriptorId); }
+            if (next.has(descriptorId)) {
+                next.delete(descriptorId);
+            } else {
+                next.add(descriptorId);
+            }
             return next;
         });
         setSaved(false);
     }
 
     function handleSave() {
-        const ratings: SelfAssessmentRating[] = linkedDescriptors.map(d => ({
+        const ratings: SelfAssessmentRating[] = linkedDescriptors.map((d) => ({
             descriptorId: d.descriptorId,
             level: d.level,
             skill: d.skill,
@@ -109,9 +115,14 @@ export default function SelfAssessPage() {
     if (!rubric || !student) {
         return (
             <>
-                <Topbar title={t('selfAssess.title')} actions={
-                    <button className="btn btn-ghost btn-sm" onClick={() => navigate(-1)}><ArrowLeft size={14} /> {t('gradeStudent.action_back')}</button>
-                } />
+                <Topbar
+                    title={t('selfAssess.title')}
+                    actions={
+                        <button className="btn btn-ghost btn-sm" onClick={() => navigate(-1)}>
+                            <ArrowLeft size={14} /> {t('gradeStudent.action_back')}
+                        </button>
+                    }
+                />
                 <div className="page-content">
                     <div className="empty-state">
                         <AlertCircle size={36} />
@@ -125,9 +136,14 @@ export default function SelfAssessPage() {
     if (linkedDescriptors.length === 0) {
         return (
             <>
-                <Topbar title={t('selfAssess.title')} actions={
-                    <button className="btn btn-ghost btn-sm" onClick={() => navigate(-1)}><ArrowLeft size={14} /> {t('gradeStudent.action_back')}</button>
-                } />
+                <Topbar
+                    title={t('selfAssess.title')}
+                    actions={
+                        <button className="btn btn-ghost btn-sm" onClick={() => navigate(-1)}>
+                            <ArrowLeft size={14} /> {t('gradeStudent.action_back')}
+                        </button>
+                    }
+                />
                 <div className="page-content">
                     <div className="empty-state">
                         <BookOpen size={36} />
@@ -163,16 +179,35 @@ export default function SelfAssessPage() {
             <div className="page-content fade-in">
                 {/* Header */}
                 <div className="card" style={{ marginBottom: 24, display: 'flex', gap: 16, alignItems: 'center' }}>
-                    <div style={{
-                        width: 56, height: 56, borderRadius: '50%', background: 'var(--accent-soft)',
-                        color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: '1.4rem', fontWeight: 700, flexShrink: 0,
-                    }}>
+                    <div
+                        style={{
+                            width: 56,
+                            height: 56,
+                            borderRadius: '50%',
+                            background: 'var(--accent-soft)',
+                            color: 'var(--accent)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '1.4rem',
+                            fontWeight: 700,
+                            flexShrink: 0,
+                        }}
+                    >
                         {student.name.charAt(0).toUpperCase()}
                     </div>
                     <div style={{ flex: 1 }}>
                         <h2 style={{ margin: '0 0 4px' }}>{student.name}</h2>
-                        <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <div
+                            style={{
+                                color: 'var(--text-muted)',
+                                fontSize: '0.9rem',
+                                display: 'flex',
+                                gap: 10,
+                                alignItems: 'center',
+                                flexWrap: 'wrap',
+                            }}
+                        >
                             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                 <BookOpen size={14} /> {rubric.name}
                             </span>
@@ -180,13 +215,20 @@ export default function SelfAssessPage() {
                         </div>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                        <div style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--accent)' }}>{confidentCount}/{totalCount}</div>
-                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('selfAssess.confident_count')}</div>
+                        <div style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--accent)' }}>
+                            {confidentCount}/{totalCount}
+                        </div>
+                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                            {t('selfAssess.confident_count')}
+                        </div>
                     </div>
                 </div>
 
                 {/* Intro */}
-                <div className="card" style={{ marginBottom: 24, background: 'var(--accent-soft)', border: '1px solid var(--accent)' }}>
+                <div
+                    className="card"
+                    style={{ marginBottom: 24, background: 'var(--accent-soft)', border: '1px solid var(--accent)' }}
+                >
                     <p style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text)' }}>
                         {t('selfAssess.instruction')}
                     </p>
@@ -202,7 +244,7 @@ export default function SelfAssessPage() {
                                 {skillLabel}
                             </h3>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                {descriptors.map(d => {
+                                {descriptors.map((d) => {
                                     const isConfident = confident.has(d.descriptorId);
                                     const text = lang === 'nl' ? d.descriptionNl : d.descriptionEn;
                                     const color = CEFR_LEVEL_COLORS[d.level];
@@ -225,19 +267,33 @@ export default function SelfAssessPage() {
                                             }}
                                         >
                                             {/* Checkbox indicator */}
-                                            <div style={{
-                                                width: 24, height: 24, borderRadius: 6, flexShrink: 0,
-                                                border: `2px solid ${isConfident ? color : 'var(--border)'}`,
-                                                background: isConfident ? color : 'transparent',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                marginTop: 1,
-                                                transition: 'background 0.15s, border-color 0.15s',
-                                            }}>
+                                            <div
+                                                style={{
+                                                    width: 24,
+                                                    height: 24,
+                                                    borderRadius: 6,
+                                                    flexShrink: 0,
+                                                    border: `2px solid ${isConfident ? color : 'var(--border)'}`,
+                                                    background: isConfident ? color : 'transparent',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    marginTop: 1,
+                                                    transition: 'background 0.15s, border-color 0.15s',
+                                                }}
+                                            >
                                                 {isConfident && <Check size={14} color="#fff" strokeWidth={3} />}
                                             </div>
                                             {/* Text + level badge */}
                                             <div style={{ flex: 1 }}>
-                                                <div style={{ fontSize: '0.95rem', lineHeight: 1.5, color: 'var(--text)', fontWeight: isConfident ? 500 : 400 }}>
+                                                <div
+                                                    style={{
+                                                        fontSize: '0.95rem',
+                                                        lineHeight: 1.5,
+                                                        color: 'var(--text)',
+                                                        fontWeight: isConfident ? 500 : 400,
+                                                    }}
+                                                >
                                                     {text}
                                                 </div>
                                                 <div style={{ marginTop: 6 }}>
@@ -260,9 +316,23 @@ export default function SelfAssessPage() {
                     </p>
                     <textarea
                         value={reflection}
-                        onChange={e => { setReflection(e.target.value); setSaved(false); }}
+                        onChange={(e) => {
+                            setReflection(e.target.value);
+                            setSaved(false);
+                        }}
                         placeholder={t('selfAssess.reflection_placeholder')}
-                        style={{ width: '100%', minHeight: 100, resize: 'vertical', fontSize: '0.9rem', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text)', fontFamily: 'inherit' }}
+                        style={{
+                            width: '100%',
+                            minHeight: 100,
+                            resize: 'vertical',
+                            fontSize: '0.9rem',
+                            padding: '10px 12px',
+                            borderRadius: 8,
+                            border: '1px solid var(--border)',
+                            background: 'var(--bg-elevated)',
+                            color: 'var(--text)',
+                            fontFamily: 'inherit',
+                        }}
                     />
                 </div>
 

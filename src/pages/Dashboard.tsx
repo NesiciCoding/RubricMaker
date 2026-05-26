@@ -1,6 +1,16 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Users, FileText, Plus, ArrowRight, TrendingUp, CheckCircle, AlertTriangle, Clock } from 'lucide-react';
+import {
+    BookOpen,
+    Users,
+    FileText,
+    Plus,
+    ArrowRight,
+    TrendingUp,
+    CheckCircle,
+    AlertTriangle,
+    Clock,
+} from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
@@ -20,54 +30,63 @@ export default function Dashboard() {
     const navigate = useNavigate();
     const { rubrics, students, studentRubrics, gradeScales, settings } = useApp();
 
-    const scale = useMemo(() =>
-        gradeScales.find(g => g.id === settings.defaultGradeScaleId) ?? gradeScales[0],
+    const scale = useMemo(
+        () => gradeScales.find((g) => g.id === settings.defaultGradeScaleId) ?? gradeScales[0],
         [gradeScales, settings.defaultGradeScaleId]
     );
 
     const recentActivity = useMemo(() => {
-        type GradeItem = { type: 'grading'; timestamp: string; studentName: string; rubricName: string; rubricId: string; studentId: string };
-        type EditItem  = { type: 'rubric_edit'; timestamp: string; rubricName: string; rubricId: string };
+        type GradeItem = {
+            type: 'grading';
+            timestamp: string;
+            studentName: string;
+            rubricName: string;
+            rubricId: string;
+            studentId: string;
+        };
+        type EditItem = { type: 'rubric_edit'; timestamp: string; rubricName: string; rubricId: string };
         type Item = GradeItem | EditItem;
 
         const gradings: GradeItem[] = studentRubrics
-            .filter(sr => sr.gradedAt)
-            .map(sr => ({
+            .filter((sr) => sr.gradedAt)
+            .map((sr) => ({
                 type: 'grading' as const,
                 timestamp: sr.gradedAt!,
-                studentName: students.find(s => s.id === sr.studentId)?.name ?? '?',
-                rubricName: rubrics.find(r => r.id === sr.rubricId)?.name ?? sr.rubricId,
+                studentName: students.find((s) => s.id === sr.studentId)?.name ?? '?',
+                rubricName: rubrics.find((r) => r.id === sr.rubricId)?.name ?? sr.rubricId,
                 rubricId: sr.rubricId,
                 studentId: sr.studentId,
             }));
 
-        const edits: EditItem[] = rubrics.map(r => ({
+        const edits: EditItem[] = rubrics.map((r) => ({
             type: 'rubric_edit' as const,
             timestamp: r.updatedAt,
             rubricName: r.name,
             rubricId: r.id,
         }));
 
-        const all: Item[] = [...gradings, ...edits]
-            .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        const all: Item[] = [...gradings, ...edits].sort(
+            (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        );
 
         // Deduplicate: for each rubric_edit, if there's a grading for the same rubric within the same second skip the edit
         const seen = new Set<string>();
-        return all.filter(item => {
-            const key = item.type === 'grading'
-                ? `grading_${item.rubricId}_${item.studentId}`
-                : `edit_${item.rubricId}`;
-            if (seen.has(key)) return false;
-            seen.add(key);
-            return true;
-        }).slice(0, 8);
+        return all
+            .filter((item) => {
+                const key =
+                    item.type === 'grading' ? `grading_${item.rubricId}_${item.studentId}` : `edit_${item.rubricId}`;
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            })
+            .slice(0, 8);
     }, [studentRubrics, rubrics, students]);
 
     const completedCount = useMemo(() => {
-        return studentRubrics.filter(sr => {
-            const rubric = rubrics.find(r => r.id === sr.rubricId);
+        return studentRubrics.filter((sr) => {
+            const rubric = rubrics.find((r) => r.id === sr.rubricId);
             if (!rubric) return false;
-            return sr.entries.every(e => e.levelId !== null || e.overridePoints !== undefined);
+            return sr.entries.every((e) => e.levelId !== null || e.overridePoints !== undefined);
         }).length;
     }, [studentRubrics, rubrics]);
 
@@ -80,19 +99,20 @@ export default function Dashboard() {
         const gradesByStudent = new Map<string, { pct: number; gradedAt: string; rubricId: string }[]>();
         for (const sr of studentRubrics) {
             if (sr.notHandedIn || !sr.gradedAt) continue;
-            const rubric = rubrics.find(r => r.id === sr.rubricId) ?? sr.rubricSnapshot;
+            const rubric = rubrics.find((r) => r.id === sr.rubricId) ?? sr.rubricSnapshot;
             if (!rubric) continue;
             const resolvedScaleId = rubric.gradeScaleId ?? scale?.id;
-            const sc = resolvedScaleId && resolvedScaleId !== 'none'
-                ? (gradeScales.find(g => g.id === resolvedScaleId) ?? null)
-                : null;
+            const sc =
+                resolvedScaleId && resolvedScaleId !== 'none'
+                    ? (gradeScales.find((g) => g.id === resolvedScaleId) ?? null)
+                    : null;
             const summary = calcGradeSummary(sr, rubric.criteria, sc);
             const list = gradesByStudent.get(sr.studentId) ?? [];
             list.push({ pct: summary.modifiedPercentage, gradedAt: sr.gradedAt, rubricId: sr.rubricId });
             gradesByStudent.set(sr.studentId, list);
         }
 
-        const atRisk: { student: typeof students[0]; recentPct: number; gradedAt: string; rubricId: string }[] = [];
+        const atRisk: { student: (typeof students)[0]; recentPct: number; gradedAt: string; rubricId: string }[] = [];
         const feedbackAgeMap = new Map<string, number>(); // studentId → days
 
         for (const [sid, grades] of gradesByStudent) {
@@ -102,10 +122,16 @@ export default function Dashboard() {
             feedbackAgeMap.set(sid, daysSince);
 
             const recent = grades.slice(0, 3);
-            const belowThreshold = recent.filter(g => g.pct < AT_RISK_THRESHOLD);
+            const belowThreshold = recent.filter((g) => g.pct < AT_RISK_THRESHOLD);
             if (belowThreshold.length >= AT_RISK_MIN_GRADES) {
-                const student = students.find(s => s.id === sid);
-                if (student) atRisk.push({ student, recentPct: latest.pct, gradedAt: latest.gradedAt, rubricId: latest.rubricId });
+                const student = students.find((s) => s.id === sid);
+                if (student)
+                    atRisk.push({
+                        student,
+                        recentPct: latest.pct,
+                        gradedAt: latest.gradedAt,
+                        rubricId: latest.rubricId,
+                    });
             }
         }
 
@@ -114,15 +140,22 @@ export default function Dashboard() {
 
     return (
         <>
-            <Topbar title={t('dashboard.title')} actions={
-                <button className="btn btn-primary btn-sm" onClick={() => navigate('/rubrics/new')}>
-                    <Plus size={15} /> {t('dashboard.new_rubric')}
-                </button>
-            } />
+            <Topbar
+                title={t('dashboard.title')}
+                actions={
+                    <button className="btn btn-primary btn-sm" onClick={() => navigate('/rubrics/new')}>
+                        <Plus size={15} /> {t('dashboard.new_rubric')}
+                    </button>
+                }
+            />
             <div className="page-content fade-in dashboard-container">
                 {/* Stat cards */}
                 <div className="grid-3 mb-4">
-                    <div className="card hoverable" onClick={() => navigate('/rubrics')} style={{ borderTop: '3px solid var(--accent)', cursor: 'pointer' }}>
+                    <div
+                        className="card hoverable"
+                        onClick={() => navigate('/rubrics')}
+                        style={{ borderTop: '3px solid var(--accent)', cursor: 'pointer' }}
+                    >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                             <div style={{ background: 'var(--accent-soft)', padding: 10, borderRadius: 10 }}>
                                 <BookOpen size={20} style={{ color: 'var(--accent)' }} />
@@ -133,7 +166,11 @@ export default function Dashboard() {
                             </div>
                         </div>
                     </div>
-                    <div className="card hoverable" onClick={() => navigate('/students')} style={{ borderTop: '3px solid var(--green)', cursor: 'pointer' }}>
+                    <div
+                        className="card hoverable"
+                        onClick={() => navigate('/students')}
+                        style={{ borderTop: '3px solid var(--green)', cursor: 'pointer' }}
+                    >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                             <div style={{ background: 'rgba(34,197,94,0.12)', padding: 10, borderRadius: 10 }}>
                                 <Users size={20} style={{ color: 'var(--green)' }} />
@@ -144,7 +181,12 @@ export default function Dashboard() {
                             </div>
                         </div>
                     </div>
-                    <div className="card hoverable" data-tour="dashboard-grades" onClick={() => navigate('/export')} style={{ borderTop: '3px solid var(--purple)', cursor: 'pointer' }}>
+                    <div
+                        className="card hoverable"
+                        data-tour="dashboard-grades"
+                        onClick={() => navigate('/export')}
+                        style={{ borderTop: '3px solid var(--purple)', cursor: 'pointer' }}
+                    >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                             <div style={{ background: 'rgba(139,92,246,0.12)', padding: 10, borderRadius: 10 }}>
                                 <TrendingUp size={20} style={{ color: 'var(--purple)' }} />
@@ -163,7 +205,9 @@ export default function Dashboard() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                             <AlertTriangle size={16} style={{ color: 'var(--red)' }} />
                             <h3 style={{ margin: 0, color: 'var(--red)' }}>At-Risk Students</h3>
-                            <span className="text-muted text-xs" style={{ marginLeft: 4 }}>(scored below 55% on 2+ recent assessments)</span>
+                            <span className="text-muted text-xs" style={{ marginLeft: 4 }}>
+                                (scored below 55% on 2+ recent assessments)
+                            </span>
                         </div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                             {atRiskStudents.map(({ student, recentPct, rubricId }) => (
@@ -174,10 +218,20 @@ export default function Dashboard() {
                                     style={{ display: 'flex', alignItems: 'center', gap: 6 }}
                                 >
                                     <span style={{ fontWeight: 600 }}>{student.name}</span>
-                                    <span style={{ color: 'var(--red)', fontSize: '0.78rem' }}>{recentPct.toFixed(0)}%</span>
+                                    <span style={{ color: 'var(--red)', fontSize: '0.78rem' }}>
+                                        {recentPct.toFixed(0)}%
+                                    </span>
                                     {feedbackAge.has(student.id) && feedbackAge.get(student.id)! >= 7 && (
                                         <span title={`Last feedback ${feedbackAge.get(student.id)} days ago`}>
-                                            <Clock size={11} style={{ color: feedbackAge.get(student.id)! >= 10 ? 'var(--red)' : 'var(--yellow, #f59e0b)' }} />
+                                            <Clock
+                                                size={11}
+                                                style={{
+                                                    color:
+                                                        feedbackAge.get(student.id)! >= 10
+                                                            ? 'var(--red)'
+                                                            : 'var(--yellow, #f59e0b)',
+                                                }}
+                                            />
                                         </span>
                                     )}
                                 </button>
@@ -203,23 +257,32 @@ export default function Dashboard() {
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                 {recentActivity.map((item, idx) => (
-                                    <div key={idx} style={{
-                                        display: 'flex', alignItems: 'center', gap: 12,
-                                        padding: '9px 12px', background: 'var(--bg-elevated)',
-                                        borderRadius: 8, border: '1px solid var(--border)',
-                                    }}>
+                                    <div
+                                        key={idx}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 12,
+                                            padding: '9px 12px',
+                                            background: 'var(--bg-elevated)',
+                                            borderRadius: 8,
+                                            border: '1px solid var(--border)',
+                                        }}
+                                    >
                                         <div style={{ flexShrink: 0 }}>
-                                            {item.type === 'grading'
-                                                ? <CheckCircle size={16} style={{ color: 'var(--green)' }} />
-                                                : <BookOpen size={16} style={{ color: 'var(--accent)' }} />
-                                            }
+                                            {item.type === 'grading' ? (
+                                                <CheckCircle size={16} style={{ color: 'var(--green)' }} />
+                                            ) : (
+                                                <BookOpen size={16} style={{ color: 'var(--accent)' }} />
+                                            )}
                                         </div>
                                         <div style={{ flex: 1, minWidth: 0 }}>
                                             {item.type === 'grading' ? (
                                                 <div style={{ fontSize: '0.85rem' }}>
                                                     {t('dashboard.activity_graded_prefix', 'Graded')}{' '}
                                                     <strong>{item.studentName}</strong>
-                                                    {' — '}{item.rubricName}
+                                                    {' — '}
+                                                    {item.rubricName}
                                                 </div>
                                             ) : (
                                                 <div style={{ fontSize: '0.85rem' }}>
@@ -228,25 +291,46 @@ export default function Dashboard() {
                                                 </div>
                                             )}
                                         </div>
-                                        <span className="text-muted text-xs" style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                            {item.type === 'grading' && (() => {
-                                                const days = feedbackAge.get(item.studentId);
-                                                if (days === undefined) return null;
-                                                if (days >= 10) return <span title={`${days}d ago — feedback may be stale`}><Clock size={11} style={{ color: 'var(--red)' }} /></span>;
-                                                if (days >= 7) return <span title={`${days}d ago`}><Clock size={11} style={{ color: 'var(--yellow, #f59e0b)' }} /></span>;
-                                                return null;
-                                            })()}
+                                        <span
+                                            className="text-muted text-xs"
+                                            style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 }}
+                                        >
+                                            {item.type === 'grading' &&
+                                                (() => {
+                                                    const days = feedbackAge.get(item.studentId);
+                                                    if (days === undefined) return null;
+                                                    if (days >= 10)
+                                                        return (
+                                                            <span title={`${days}d ago — feedback may be stale`}>
+                                                                <Clock size={11} style={{ color: 'var(--red)' }} />
+                                                            </span>
+                                                        );
+                                                    if (days >= 7)
+                                                        return (
+                                                            <span title={`${days}d ago`}>
+                                                                <Clock
+                                                                    size={11}
+                                                                    style={{ color: 'var(--yellow, #f59e0b)' }}
+                                                                />
+                                                            </span>
+                                                        );
+                                                    return null;
+                                                })()}
                                             {timeAgo(item.timestamp)}
                                         </span>
                                         <button
                                             className="btn btn-ghost btn-sm"
                                             style={{ flexShrink: 0, fontSize: '0.75rem', padding: '3px 8px' }}
-                                            onClick={() => item.type === 'grading'
-                                                ? navigate(`/rubrics/${item.rubricId}/grade/${item.studentId}`)
-                                                : navigate(`/rubrics/${item.rubricId}`)
+                                            onClick={() =>
+                                                item.type === 'grading'
+                                                    ? navigate(`/rubrics/${item.rubricId}/grade/${item.studentId}`)
+                                                    : navigate(`/rubrics/${item.rubricId}`)
                                             }
                                         >
-                                            {item.type === 'grading' ? t('dashboard.action_resume') : t('dashboard.action_open')} <ArrowRight size={12} />
+                                            {item.type === 'grading'
+                                                ? t('dashboard.action_resume')
+                                                : t('dashboard.action_open')}{' '}
+                                            <ArrowRight size={12} />
                                         </button>
                                     </div>
                                 ))}
@@ -260,9 +344,24 @@ export default function Dashboard() {
                             <h3 style={{ marginBottom: 16 }}>{t('dashboard.quick_actions')}</h3>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                                 {[
-                                    { label: t('dashboard.action_create_rubric'), icon: BookOpen, color: 'var(--accent)', path: '/rubrics/new' },
-                                    { label: t('dashboard.action_add_student'), icon: Users, color: 'var(--green)', path: '/students' },
-                                    { label: t('dashboard.action_upload_attachment'), icon: FileText, color: 'var(--purple)', path: '/attachments' },
+                                    {
+                                        label: t('dashboard.action_create_rubric'),
+                                        icon: BookOpen,
+                                        color: 'var(--accent)',
+                                        path: '/rubrics/new',
+                                    },
+                                    {
+                                        label: t('dashboard.action_add_student'),
+                                        icon: Users,
+                                        color: 'var(--green)',
+                                        path: '/students',
+                                    },
+                                    {
+                                        label: t('dashboard.action_upload_attachment'),
+                                        icon: FileText,
+                                        color: 'var(--purple)',
+                                        path: '/attachments',
+                                    },
                                 ].map(({ label, icon: Icon, color, path }) => (
                                     <button
                                         key={path}
@@ -283,15 +382,31 @@ export default function Dashboard() {
                                 {QUICK_START_TEMPLATES.map((tpl, i) => (
                                     <div
                                         key={i}
-                                        style={{ padding: '12px 14px', background: 'var(--bg-elevated)', borderRadius: 10, border: '1px solid var(--border)', cursor: 'pointer', transition: 'all 0.2s' }}
+                                        style={{
+                                            padding: '12px 14px',
+                                            background: 'var(--bg-elevated)',
+                                            borderRadius: 10,
+                                            border: '1px solid var(--border)',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                        }}
                                         onClick={() => {
-                                            const newRubric = { ...tpl, id: undefined, createdAt: undefined, updatedAt: undefined } as any;
+                                            const newRubric = {
+                                                ...tpl,
+                                                id: undefined,
+                                                createdAt: undefined,
+                                                updatedAt: undefined,
+                                            } as any;
                                             navigate('/rubrics/new', { state: { template: newRubric } });
                                         }}
                                         className="hoverable"
                                     >
-                                        <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: 2 }}>{tpl.name}</div>
-                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{tpl.subject}</div>
+                                        <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: 2 }}>
+                                            {tpl.name}
+                                        </div>
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                            {tpl.subject}
+                                        </div>
                                     </div>
                                 ))}
                             </div>

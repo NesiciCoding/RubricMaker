@@ -30,23 +30,23 @@ export function getStudentGoalScores(
 ): LearningGoalAggregate[] {
     const goalMap = new Map<string, LearningGoalAggregate>();
 
-    const studentSubmissions = studentRubrics.filter(sr => sr.studentId === studentId && sr.gradedAt);
+    const studentSubmissions = studentRubrics.filter((sr) => sr.studentId === studentId && sr.gradedAt);
 
     // Sort submissions by date
     studentSubmissions.sort((a, b) => new Date(a.gradedAt!).getTime() - new Date(b.gradedAt!).getTime());
 
     for (const submission of studentSubmissions) {
-        const rubric = rubrics.find(r => r.id === submission.rubricId);
+        const rubric = rubrics.find((r) => r.id === submission.rubricId);
         if (!rubric) continue;
 
         // For each submission, we need to track points earned per standard
         const pointsEarnedPerStandard = new Map<string, number>();
         const maxPointsPerStandard = new Map<string, number>();
-        const standardInfo = new Map<string, { title: string, description: string }>();
+        const standardInfo = new Map<string, { title: string; description: string }>();
 
         // Go through each entry
         for (const entry of submission.entries) {
-            const criterion = rubric.criteria.find(c => c.id === entry.criterionId);
+            const criterion = rubric.criteria.find((c) => c.id === entry.criterionId);
             if (!criterion) continue;
 
             // Collect all standards tied to this entry (from criterion or sub-items)
@@ -55,24 +55,30 @@ export function getStudentGoalScores(
             // Criterion-level standards
             if (criterion.linkedStandard) activeStandards.set(criterion.linkedStandard.guid, criterion.linkedStandard);
             if (criterion.linkedStandards) {
-                criterion.linkedStandards.forEach(std => activeStandards.set(std.guid, std));
+                criterion.linkedStandards.forEach((std) => activeStandards.set(std.guid, std));
             }
 
             // Also check sub-items if they are checked
             let criterionEarned = 0;
             let criterionMax = 0;
 
-            const selectedLevel = criterion.levels.find(l => l.id === entry.levelId);
+            const selectedLevel = criterion.levels.find((l) => l.id === entry.levelId);
 
             if (entry.overridePoints !== undefined) {
                 // If there's an override, we just have the override points vs max points of the criterion
                 criterionEarned = entry.overridePoints;
-                criterionMax = Math.max(...criterion.levels.map(l => l.maxPoints));
+                criterionMax = Math.max(...criterion.levels.map((l) => l.maxPoints));
 
                 // Track standard scores for criterion-level
-                activeStandards.forEach(std => {
-                    standardInfo.set(std.guid, { title: std.statementNotation || std.guid, description: std.description });
-                    pointsEarnedPerStandard.set(std.guid, (pointsEarnedPerStandard.get(std.guid) || 0) + criterionEarned);
+                activeStandards.forEach((std) => {
+                    standardInfo.set(std.guid, {
+                        title: std.statementNotation || std.guid,
+                        description: std.description,
+                    });
+                    pointsEarnedPerStandard.set(
+                        std.guid,
+                        (pointsEarnedPerStandard.get(std.guid) || 0) + criterionEarned
+                    );
                     maxPointsPerStandard.set(std.guid, (maxPointsPerStandard.get(std.guid) || 0) + criterionMax);
                 });
             } else if (selectedLevel && selectedLevel.subItems && selectedLevel.subItems.length > 0) {
@@ -100,9 +106,15 @@ export function getStudentGoalScores(
                     let hasSubItemStandard = false;
                     if (si.linkedStandards && si.linkedStandards.length > 0) {
                         hasSubItemStandard = true;
-                        si.linkedStandards.forEach(std => {
-                            standardInfo.set(std.guid, { title: std.statementNotation || std.guid, description: std.description });
-                            pointsEarnedPerStandard.set(std.guid, (pointsEarnedPerStandard.get(std.guid) || 0) + earned);
+                        si.linkedStandards.forEach((std) => {
+                            standardInfo.set(std.guid, {
+                                title: std.statementNotation || std.guid,
+                                description: std.description,
+                            });
+                            pointsEarnedPerStandard.set(
+                                std.guid,
+                                (pointsEarnedPerStandard.get(std.guid) || 0) + earned
+                            );
                             maxPointsPerStandard.set(std.guid, (maxPointsPerStandard.get(std.guid) || 0) + max);
                         });
                     }
@@ -113,9 +125,15 @@ export function getStudentGoalScores(
 
                     // If the sub-item didn't have its own standard, let the criterion standard absorb the score
                     if (!hasSubItemStandard && activeStandards.size > 0) {
-                        activeStandards.forEach(std => {
-                            standardInfo.set(std.guid, { title: std.statementNotation || std.guid, description: std.description });
-                            pointsEarnedPerStandard.set(std.guid, (pointsEarnedPerStandard.get(std.guid) || 0) + earned);
+                        activeStandards.forEach((std) => {
+                            standardInfo.set(std.guid, {
+                                title: std.statementNotation || std.guid,
+                                description: std.description,
+                            });
+                            pointsEarnedPerStandard.set(
+                                std.guid,
+                                (pointsEarnedPerStandard.get(std.guid) || 0) + earned
+                            );
                             maxPointsPerStandard.set(std.guid, (maxPointsPerStandard.get(std.guid) || 0) + max);
                         });
                     }
@@ -123,11 +141,17 @@ export function getStudentGoalScores(
             } else if (selectedLevel) {
                 // Just level based scoring points
                 criterionEarned = entry.selectedPoints !== undefined ? entry.selectedPoints : selectedLevel.minPoints; // use min points as fallback if no precision selected
-                criterionMax = Math.max(...criterion.levels.map(l => l.maxPoints));
+                criterionMax = Math.max(...criterion.levels.map((l) => l.maxPoints));
 
-                activeStandards.forEach(std => {
-                    standardInfo.set(std.guid, { title: std.statementNotation || std.guid, description: std.description });
-                    pointsEarnedPerStandard.set(std.guid, (pointsEarnedPerStandard.get(std.guid) || 0) + criterionEarned);
+                activeStandards.forEach((std) => {
+                    standardInfo.set(std.guid, {
+                        title: std.statementNotation || std.guid,
+                        description: std.description,
+                    });
+                    pointsEarnedPerStandard.set(
+                        std.guid,
+                        (pointsEarnedPerStandard.get(std.guid) || 0) + criterionEarned
+                    );
                     maxPointsPerStandard.set(std.guid, (maxPointsPerStandard.get(std.guid) || 0) + criterionMax);
                 });
             }
@@ -151,7 +175,7 @@ export function getStudentGoalScores(
                 percentage: pct,
                 guid,
                 title: info.title,
-                description: info.description
+                description: info.description,
             };
 
             if (!goalMap.has(guid)) {
@@ -162,7 +186,7 @@ export function getStudentGoalScores(
                     history: [],
                     averagePercentage: 0,
                     totalEarned: 0,
-                    totalMax: 0
+                    totalMax: 0,
                 });
             }
             const agg = goalMap.get(guid)!;
@@ -178,11 +202,11 @@ export function getStudentGoalScores(
 
 export function getClassGoalScores(
     classId: string,
-    students: { id: string, classId: string }[],
+    students: { id: string; classId: string }[],
     studentRubrics: StudentRubric[],
     rubrics: Rubric[]
 ): LearningGoalAggregate[] {
-    const classStudentIds = new Set(students.filter(s => s.classId === classId).map(s => s.id));
+    const classStudentIds = new Set(students.filter((s) => s.classId === classId).map((s) => s.id));
     const allAggregates = new Map<string, LearningGoalAggregate>();
 
     for (const studentId of classStudentIds) {
@@ -196,7 +220,7 @@ export function getClassGoalScores(
                     history: [],
                     averagePercentage: 0,
                     totalEarned: 0,
-                    totalMax: 0
+                    totalMax: 0,
                 });
             }
             const masterAgg = allAggregates.get(agg.guid)!;
