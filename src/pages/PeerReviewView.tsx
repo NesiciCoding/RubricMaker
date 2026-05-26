@@ -14,8 +14,8 @@ export default function PeerReviewView() {
     const { t } = useTranslation();
     const { rubrics, students, peerReviews, savePeerReview } = useApp();
 
-    const [rubric] = useState(rubrics.find(r => r.id === rubricId));
-    const [student] = useState(students.find(s => s.id === studentId));
+    const [rubric] = useState(rubrics.find((r) => r.id === rubricId));
+    const [student] = useState(students.find((s) => s.id === studentId));
     const [entry, setEntry] = useState<StudentRubric | null>(null);
     const [isSaved, setIsSaved] = useState(false);
     const [isDirty, setIsDirty] = useState(false);
@@ -23,23 +23,28 @@ export default function PeerReviewView() {
 
     useEffect(() => {
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-            if (isDirty) { e.preventDefault(); e.returnValue = ''; }
+            if (isDirty) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
         };
         window.addEventListener('beforeunload', handleBeforeUnload);
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, [isDirty]);
 
-    const existingRounds = peerReviews.filter(pr => pr.rubricId === rubricId && pr.studentId === studentId);
+    const existingRounds = peerReviews.filter((pr) => pr.rubricId === rubricId && pr.studentId === studentId);
     const maxRound = existingRounds.reduce((max, pr) => Math.max(max, pr.round ?? 1), 0);
 
     useEffect(() => {
         if (!rubric || !student) return;
 
-        const existing = peerReviews.find(pr => pr.rubricId === rubricId && pr.studentId === studentId && (pr.round ?? 1) === activeRound);
+        const existing = peerReviews.find(
+            (pr) => pr.rubricId === rubricId && pr.studentId === studentId && (pr.round ?? 1) === activeRound
+        );
         if (existing) {
             setEntry({ ...existing });
         } else {
-            const initialEntries: ScoreEntry[] = (rubric.criteria ?? []).map(c => ({
+            const initialEntries: ScoreEntry[] = (rubric.criteria ?? []).map((c) => ({
                 criterionId: c.id,
                 levelId: null,
                 comment: '',
@@ -85,34 +90,35 @@ export default function PeerReviewView() {
 
     const updateScore = (criterionId: string, levelId: string) => {
         setIsDirty(true);
-        setEntry(prev => {
+        setEntry((prev) => {
             if (!prev) return null;
             return {
                 ...prev,
-                entries: prev.entries.map(e => e.criterionId === criterionId ? { ...e, levelId } : e)
+                entries: prev.entries.map((e) => (e.criterionId === criterionId ? { ...e, levelId } : e)),
             };
         });
     };
 
     const updateComment = (criterionId: string, comment: string) => {
         setIsDirty(true);
-        setEntry(prev => {
+        setEntry((prev) => {
             if (!prev) return null;
             return {
                 ...prev,
-                entries: prev.entries.map(e => e.criterionId === criterionId ? { ...e, comment } : e)
+                entries: prev.entries.map((e) => (e.criterionId === criterionId ? { ...e, comment } : e)),
             };
         });
     };
 
     return (
         <>
-            <Topbar 
-                title={`${t('rubricList.grade_students')} - ${student.name}`} 
+            <Topbar
+                title={`${t('rubricList.grade_students')} - ${student.name}`}
                 actions={
                     <div style={{ display: 'flex', gap: 8 }}>
                         <button className={`btn ${isSaved ? 'btn-success' : 'btn-primary'}`} onClick={handleSave}>
-                            <Save size={18} /> {isSaved ? t('gradeStudent.action_saved') : t('gradeStudent.action_save')}
+                            <Save size={18} />{' '}
+                            {isSaved ? t('gradeStudent.action_saved') : t('gradeStudent.action_save')}
                         </button>
                     </div>
                 }
@@ -127,22 +133,29 @@ export default function PeerReviewView() {
                     <p className="text-muted text-sm">{rubric.description}</p>
                     {/* Round selector */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>{t('peerReview.round_label')}:</span>
-                        {Array.from({ length: Math.max(maxRound, activeRound) }, (_, i) => i + 1).map(round => (
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                            {t('peerReview.round_label')}:
+                        </span>
+                        {Array.from({ length: Math.max(maxRound, activeRound) }, (_, i) => i + 1).map((round) => (
                             <button
                                 key={round}
                                 className={`btn btn-sm ${activeRound === round ? 'btn-primary' : 'btn-secondary'}`}
-                                onClick={() => { if (isDirty && !window.confirm('Unsaved changes will be lost. Continue?')) return; setActiveRound(round); }}
+                                onClick={() => {
+                                    if (isDirty && !window.confirm('Unsaved changes will be lost. Continue?')) return;
+                                    setActiveRound(round);
+                                }}
                             >
                                 {t('peerReview.round_n', { n: round })}
                             </button>
                         ))}
-                        <button className="btn btn-ghost btn-sm" onClick={addRound}>+ {t('peerReview.add_round')}</button>
+                        <button className="btn btn-ghost btn-sm" onClick={addRound}>
+                            + {t('peerReview.add_round')}
+                        </button>
                     </div>
                 </div>
 
-                {rubric.criteria.map(criterion => {
-                    const score = entry.entries.find(e => e.criterionId === criterion.id);
+                {rubric.criteria.map((criterion) => {
+                    const score = entry.entries.find((e) => e.criterionId === criterion.id);
                     return (
                         <div key={criterion.id} className="card" style={{ marginBottom: 20 }}>
                             <div style={{ marginBottom: 16 }}>
@@ -151,19 +164,27 @@ export default function PeerReviewView() {
                             </div>
 
                             <div className="grid-3" style={{ gap: 12, marginBottom: 16 }}>
-                                {criterion.levels.map(level => (
-                                    <div 
+                                {criterion.levels.map((level) => (
+                                    <div
                                         key={level.id}
                                         className={`card selectable ${score?.levelId === level.id ? 'active' : ''}`}
                                         onClick={() => updateScore(criterion.id, level.id)}
-                                        style={{ 
-                                            padding: 12, 
+                                        style={{
+                                            padding: 12,
                                             cursor: 'pointer',
-                                            border: score?.levelId === level.id ? '2px solid var(--accent)' : '1px solid var(--border)',
-                                            background: score?.levelId === level.id ? 'var(--accent-soft)' : 'var(--bg-elevated)',
+                                            border:
+                                                score?.levelId === level.id
+                                                    ? '2px solid var(--accent)'
+                                                    : '1px solid var(--border)',
+                                            background:
+                                                score?.levelId === level.id
+                                                    ? 'var(--accent-soft)'
+                                                    : 'var(--bg-elevated)',
                                         }}
                                     >
-                                        <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: 4 }}>{level.label}</div>
+                                        <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: 4 }}>
+                                            {level.label}
+                                        </div>
                                         <div className="text-muted text-xs">{level.description}</div>
                                     </div>
                                 ))}
@@ -171,9 +192,9 @@ export default function PeerReviewView() {
 
                             <div className="form-group">
                                 <label className="text-xs">{t('gradeStudent.comment_placeholder')}</label>
-                                <TiptapEditor 
+                                <TiptapEditor
                                     content={score?.comment || ''}
-                                    onChange={html => updateComment(criterion.id, html)}
+                                    onChange={(html) => updateComment(criterion.id, html)}
                                     placeholder={t('gradeStudent.comment_placeholder')}
                                 />
                             </div>
@@ -183,9 +204,9 @@ export default function PeerReviewView() {
 
                 <div className="card">
                     <h3 style={{ marginBottom: 16 }}>{t('gradeStudent.overall_comment_label')}</h3>
-                    <TiptapEditor 
+                    <TiptapEditor
                         content={entry.overallComment}
-                        onChange={html => setEntry(prev => prev ? { ...prev, overallComment: html } : null)}
+                        onChange={(html) => setEntry((prev) => (prev ? { ...prev, overallComment: html } : null))}
                         placeholder={t('gradeStudent.overall_comment_placeholder')}
                     />
                 </div>

@@ -1,6 +1,17 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { Clock, CheckCircle, Copy, AlertTriangle, Mail, KeyRound, Loader2, Save, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+    Clock,
+    CheckCircle,
+    Copy,
+    AlertTriangle,
+    Mail,
+    KeyRound,
+    Loader2,
+    Save,
+    ChevronDown,
+    ChevronUp,
+} from 'lucide-react';
 import EssayEditor from '../components/Editor/EssayEditor';
 import { decodeEssayAssignment } from '../utils/essayShareCode';
 import { encodeEssaySubmission } from '../utils/essaySubmissionCode';
@@ -10,7 +21,7 @@ import type { EssaySubmission } from '../types';
 import { EssayAdapter } from '../services/database/EssayAdapter';
 
 const DRAFT_KEY_PREFIX = 'rm_essay_draft_';
-const TIMER_KEY_PREFIX  = 'rm_essay_timer_';
+const TIMER_KEY_PREFIX = 'rm_essay_timer_';
 
 function copyText(text: string): boolean {
     try {
@@ -22,13 +33,17 @@ function copyText(text: string): boolean {
         const ok = document.execCommand('copy');
         document.body.removeChild(ta);
         if (ok) return true;
-    } catch { /* execCommand not available */ }
+    } catch {
+        /* execCommand not available */
+    }
     navigator.clipboard?.writeText(text).catch(() => {});
     return false;
 }
 
 function formatTime(seconds: number): string {
-    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const m = Math.floor(seconds / 60)
+        .toString()
+        .padStart(2, '0');
     const s = (seconds % 60).toString().padStart(2, '0');
     return `${m}:${s}`;
 }
@@ -41,14 +56,14 @@ interface OtpGateProps {
 }
 
 function OtpGate({ adapter, onAuthenticated }: OtpGateProps) {
-    const [email, setEmail]           = useState('');
-    const [otp, setOtp]               = useState('');
-    const [step, setStep]             = useState<'email' | 'otp'>('email');
-    const [busy, setBusy]             = useState(false);
+    const [email, setEmail] = useState('');
+    const [otp, setOtp] = useState('');
+    const [step, setStep] = useState<'email' | 'otp'>('email');
+    const [busy, setBusy] = useState(false);
     const [sessionChecking, setSessionChecking] = useState(true);
-    const [oauthBusy, setOauthBusy]   = useState<string | null>(null);
-    const [error, setError]           = useState('');
-    const [showEmail, setShowEmail]   = useState(false);
+    const [oauthBusy, setOauthBusy] = useState<string | null>(null);
+    const [error, setError] = useState('');
+    const [showEmail, setShowEmail] = useState(false);
 
     // Check if there's already a valid session (page reload after OAuth)
     useEffect(() => {
@@ -60,7 +75,15 @@ function OtpGate({ adapter, onAuthenticated }: OtpGateProps) {
 
     if (sessionChecking) {
         return (
-            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc' }}>
+            <div
+                style={{
+                    minHeight: '100vh',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: '#f8fafc',
+                }}
+            >
                 <Loader2 size={28} style={{ color: '#6366f1', animation: 'spin 1s linear infinite' }} />
             </div>
         );
@@ -73,26 +96,41 @@ function OtpGate({ adapter, onAuthenticated }: OtpGateProps) {
         if (provider === 'google') result = await adapter.signInWithGoogle();
         else if (provider === 'ms-personal') result = await adapter.signInWithMicrosoftPersonal();
         else result = await adapter.signInWithAzureAD();
-        if (result.error) { setError(result.error); setOauthBusy(null); }
+        if (result.error) {
+            setError(result.error);
+            setOauthBusy(null);
+        }
         // On success browser redirects — no further action needed
     };
 
     const handleSendOtp = async () => {
-        if (!email.trim()) { setError('Enter your email address.'); return; }
-        setBusy(true); setError('');
+        if (!email.trim()) {
+            setError('Enter your email address.');
+            return;
+        }
+        setBusy(true);
+        setError('');
         const result = await adapter.sendOtp(email.trim());
         setBusy(false);
-        if (result.success) { setStep('otp'); }
-        else { setError(result.error ?? 'Failed to send code. Try again.'); }
+        if (result.success) {
+            setStep('otp');
+        } else {
+            setError(result.error ?? 'Failed to send code. Try again.');
+        }
     };
 
     const handleVerify = async () => {
-        if (!otp.trim()) { setError('Enter the 6-digit code from your email.'); return; }
-        setBusy(true); setError('');
+        if (!otp.trim()) {
+            setError('Enter the 6-digit code from your email.');
+            return;
+        }
+        setBusy(true);
+        setError('');
         const { userId, error: e } = await adapter.verifyOtp(email.trim(), otp.trim());
         setBusy(false);
-        if (userId) { onAuthenticated(userId, email.trim()); }
-        else {
+        if (userId) {
+            onAuthenticated(userId, email.trim());
+        } else {
             const msg = e ?? '';
             if (/expired|otp expired/i.test(msg)) {
                 setError('This code has expired. Click "Use a different email" and request a new code.');
@@ -103,15 +141,44 @@ function OtpGate({ adapter, onAuthenticated }: OtpGateProps) {
     };
 
     const btnBase: React.CSSProperties = {
-        display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px',
-        borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff',
-        fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        padding: '10px 16px',
+        borderRadius: 8,
+        border: '1px solid #e2e8f0',
+        background: '#fff',
+        fontSize: '0.9rem',
+        fontWeight: 600,
+        cursor: 'pointer',
+        width: '100%',
         transition: 'background 0.15s',
     };
 
     return (
-        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', padding: 24 }}>
-            <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 4px 24px rgba(0,0,0,0.10)', padding: 36, maxWidth: 420, width: '100%', display: 'flex', flexDirection: 'column', gap: 18 }}>
+        <div
+            style={{
+                minHeight: '100vh',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: '#f8fafc',
+                padding: 24,
+            }}
+        >
+            <div
+                style={{
+                    background: '#fff',
+                    borderRadius: 14,
+                    boxShadow: '0 4px 24px rgba(0,0,0,0.10)',
+                    padding: 36,
+                    maxWidth: 420,
+                    width: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 18,
+                }}
+            >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <KeyRound size={22} style={{ color: '#6366f1' }} />
                     <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>Sign in to start</h2>
@@ -121,58 +188,124 @@ function OtpGate({ adapter, onAuthenticated }: OtpGateProps) {
                 </p>
 
                 {/* OAuth buttons */}
-                <button style={btnBase} disabled={!!oauthBusy}
+                <button
+                    style={btnBase}
+                    disabled={!!oauthBusy}
                     onClick={() => handleOAuth('google')}
-                    onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')}
-                    onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
-                    {oauthBusy === 'google'
-                        ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }} />
-                        : <GoogleIcon />}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = '#fff')}
+                >
+                    {oauthBusy === 'google' ? (
+                        <Loader2 size={18} style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }} />
+                    ) : (
+                        <GoogleIcon />
+                    )}
                     Sign in with Google
                 </button>
 
-                <button style={{ ...btnBase, borderColor: '#bfdbfe', background: '#eff6ff' }} disabled={!!oauthBusy}
+                <button
+                    style={{ ...btnBase, borderColor: '#bfdbfe', background: '#eff6ff' }}
+                    disabled={!!oauthBusy}
                     onClick={() => handleOAuth('ms-personal')}
-                    onMouseEnter={e => (e.currentTarget.style.background = '#dbeafe')}
-                    onMouseLeave={e => (e.currentTarget.style.background = '#eff6ff')}>
-                    {oauthBusy === 'ms-personal'
-                        ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }} />
-                        : <MicrosoftIcon />}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = '#dbeafe')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = '#eff6ff')}
+                >
+                    {oauthBusy === 'ms-personal' ? (
+                        <Loader2 size={18} style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }} />
+                    ) : (
+                        <MicrosoftIcon />
+                    )}
                     Sign in with Microsoft
                 </button>
 
-                <button style={{ ...btnBase, borderColor: '#c7d2fe', background: '#eef2ff' }} disabled={!!oauthBusy}
+                <button
+                    style={{ ...btnBase, borderColor: '#c7d2fe', background: '#eef2ff' }}
+                    disabled={!!oauthBusy}
                     onClick={() => handleOAuth('azure-ad')}
-                    onMouseEnter={e => (e.currentTarget.style.background = '#e0e7ff')}
-                    onMouseLeave={e => (e.currentTarget.style.background = '#eef2ff')}>
-                    {oauthBusy === 'azure-ad'
-                        ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }} />
-                        : <MicrosoftIcon />}
-                    <span>Sign in with Microsoft <span style={{ fontSize: '0.75rem', fontWeight: 400 }}>(school / work)</span></span>
+                    onMouseEnter={(e) => (e.currentTarget.style.background = '#e0e7ff')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = '#eef2ff')}
+                >
+                    {oauthBusy === 'azure-ad' ? (
+                        <Loader2 size={18} style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }} />
+                    ) : (
+                        <MicrosoftIcon />
+                    )}
+                    <span>
+                        Sign in with Microsoft{' '}
+                        <span style={{ fontSize: '0.75rem', fontWeight: 400 }}>(school / work)</span>
+                    </span>
                 </button>
 
                 {/* Email OTP toggle */}
-                <button style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', fontSize: '0.83rem', padding: '2px 0' }}
-                    onClick={() => setShowEmail(o => !o)}>
+                <button
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: '#64748b',
+                        fontSize: '0.83rem',
+                        padding: '2px 0',
+                    }}
+                    onClick={() => setShowEmail((o) => !o)}
+                >
                     <Mail size={14} />
                     Use email instead
-                    {showEmail ? <ChevronUp size={13} style={{ marginLeft: 'auto' }} /> : <ChevronDown size={13} style={{ marginLeft: 'auto' }} />}
+                    {showEmail ? (
+                        <ChevronUp size={13} style={{ marginLeft: 'auto' }} />
+                    ) : (
+                        <ChevronDown size={13} style={{ marginLeft: 'auto' }} />
+                    )}
                 </button>
 
                 {showEmail && step === 'email' && (
                     <>
                         <input
-                            type="email" value={email}
-                            onChange={e => { setEmail(e.target.value); setError(''); }}
-                            onKeyDown={e => e.key === 'Enter' && handleSendOtp()}
+                            type="email"
+                            value={email}
+                            onChange={(e) => {
+                                setEmail(e.target.value);
+                                setError('');
+                            }}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSendOtp()}
                             placeholder="student@school.nl"
-                            style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: '0.95rem', outline: 'none' }}
+                            style={{
+                                padding: '10px 14px',
+                                borderRadius: 8,
+                                border: '1px solid #e2e8f0',
+                                fontSize: '0.95rem',
+                                outline: 'none',
+                            }}
                             autoFocus
                         />
                         {error && <p style={{ margin: 0, color: '#ef4444', fontSize: '0.825rem' }}>{error}</p>}
-                        <button onClick={handleSendOtp} disabled={busy}
-                            style={{ padding: '11px 0', borderRadius: 8, border: 'none', background: '#6366f1', color: '#fff', fontWeight: 700, fontSize: '0.95rem', cursor: busy ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                            {busy ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Sending…</> : 'Send login code'}
+                        <button
+                            onClick={handleSendOtp}
+                            disabled={busy}
+                            style={{
+                                padding: '11px 0',
+                                borderRadius: 8,
+                                border: 'none',
+                                background: '#6366f1',
+                                color: '#fff',
+                                fontWeight: 700,
+                                fontSize: '0.95rem',
+                                cursor: busy ? 'not-allowed' : 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 8,
+                            }}
+                        >
+                            {busy ? (
+                                <>
+                                    <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Sending…
+                                </>
+                            ) : (
+                                'Send login code'
+                            )}
                         </button>
                     </>
                 )}
@@ -182,20 +315,71 @@ function OtpGate({ adapter, onAuthenticated }: OtpGateProps) {
                 {showEmail && step === 'otp' && (
                     <>
                         <input
-                            type="text" value={otp} maxLength={6}
-                            onChange={e => { setOtp(e.target.value.replace(/\D/g, '')); setError(''); }}
-                            onKeyDown={e => e.key === 'Enter' && handleVerify()}
+                            type="text"
+                            value={otp}
+                            maxLength={6}
+                            onChange={(e) => {
+                                setOtp(e.target.value.replace(/\D/g, ''));
+                                setError('');
+                            }}
+                            onKeyDown={(e) => e.key === 'Enter' && handleVerify()}
                             placeholder="123456"
-                            style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: '1.2rem', letterSpacing: '0.3em', textAlign: 'center', fontFamily: 'monospace', outline: 'none' }}
+                            style={{
+                                padding: '10px 14px',
+                                borderRadius: 8,
+                                border: '1px solid #e2e8f0',
+                                fontSize: '1.2rem',
+                                letterSpacing: '0.3em',
+                                textAlign: 'center',
+                                fontFamily: 'monospace',
+                                outline: 'none',
+                            }}
                             autoFocus
                         />
                         {error && <p style={{ margin: 0, color: '#ef4444', fontSize: '0.825rem' }}>{error}</p>}
-                        <button onClick={handleVerify} disabled={busy || otp.length < 6}
-                            style={{ padding: '11px 0', borderRadius: 8, border: 'none', background: otp.length === 6 ? '#6366f1' : '#e2e8f0', color: otp.length === 6 ? '#fff' : '#94a3b8', fontWeight: 700, fontSize: '0.95rem', cursor: otp.length < 6 || busy ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                            {busy ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Verifying…</> : <><KeyRound size={15} /> Verify &amp; start essay</>}
+                        <button
+                            onClick={handleVerify}
+                            disabled={busy || otp.length < 6}
+                            style={{
+                                padding: '11px 0',
+                                borderRadius: 8,
+                                border: 'none',
+                                background: otp.length === 6 ? '#6366f1' : '#e2e8f0',
+                                color: otp.length === 6 ? '#fff' : '#94a3b8',
+                                fontWeight: 700,
+                                fontSize: '0.95rem',
+                                cursor: otp.length < 6 || busy ? 'not-allowed' : 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 8,
+                            }}
+                        >
+                            {busy ? (
+                                <>
+                                    <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Verifying…
+                                </>
+                            ) : (
+                                <>
+                                    <KeyRound size={15} /> Verify &amp; start essay
+                                </>
+                            )}
                         </button>
-                        <button onClick={() => { setStep('email'); setOtp(''); setError(''); }}
-                            style={{ background: 'none', border: 'none', color: '#6366f1', fontSize: '0.825rem', cursor: 'pointer', textDecoration: 'underline' }}>
+                        <button
+                            onClick={() => {
+                                setStep('email');
+                                setOtp('');
+                                setError('');
+                            }}
+                            style={{
+                                background: 'none',
+                                border: 'none',
+                                color: '#6366f1',
+                                fontSize: '0.825rem',
+                                cursor: 'pointer',
+                                textDecoration: 'underline',
+                            }}
+                        >
                             Use a different email
                         </button>
                     </>
@@ -210,10 +394,22 @@ function OtpGate({ adapter, onAuthenticated }: OtpGateProps) {
 function GoogleIcon() {
     return (
         <svg width="18" height="18" viewBox="0 0 18 18" style={{ flexShrink: 0 }}>
-            <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" />
-            <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" />
-            <path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" />
-            <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" />
+            <path
+                fill="#4285F4"
+                d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"
+            />
+            <path
+                fill="#34A853"
+                d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"
+            />
+            <path
+                fill="#FBBC05"
+                d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"
+            />
+            <path
+                fill="#EA4335"
+                d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"
+            />
         </svg>
     );
 }
@@ -242,7 +438,7 @@ export default function StudentEssayPage() {
     const adapter = useMemo<EssayAdapter | null>(() => {
         if (!assignment?.supabaseUrl || !assignment?.supabaseAnonKey) return null;
         return new EssayAdapter(assignment.supabaseUrl, assignment.supabaseAnonKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []); // intentionally stable — assignment is decoded from the URL and never changes
 
     // SEB detection is user-agent sniffing only — a tech-savvy student can spoof it.
@@ -254,15 +450,15 @@ export default function StudentEssayPage() {
 
     // Auth state (only used in DB mode)
     const [studentUserId, setStudentUserId] = useState<string | null>(null);
-    const [studentEmail, setStudentEmail]   = useState<string | null>(null);
+    const [studentEmail, setStudentEmail] = useState<string | null>(null);
 
-    const [html, setHtml]                   = useState<string>(() => sessionStorage.getItem(draftKey) ?? '');
-    const [submitted, setSubmitted]         = useState(false);
+    const [html, setHtml] = useState<string>(() => sessionStorage.getItem(draftKey) ?? '');
+    const [submitted, setSubmitted] = useState(false);
     const [submissionCode, setSubmissionCode] = useState('');
-    const [copied, setCopied]               = useState(false);
-    const [submitting, setSubmitting]       = useState(false);
-    const [submitError, setSubmitError]     = useState('');
-    const [draftSavedAt, setDraftSavedAt]   = useState<Date | null>(null);
+    const [copied, setCopied] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState('');
+    const [draftSavedAt, setDraftSavedAt] = useState<Date | null>(null);
 
     // Timer
     const [secondsLeft, setSecondsLeft] = useState<number | null>(() => {
@@ -278,7 +474,9 @@ export default function StudentEssayPage() {
         if (!assignment) return;
         const prev = document.title;
         document.title = assignment.title;
-        return () => { document.title = prev; };
+        return () => {
+            document.title = prev;
+        };
     }, [assignment?.title]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Auto-save draft every 30 s and record timestamp for the indicator
@@ -297,8 +495,8 @@ export default function StudentEssayPage() {
         if (timerRef.current) clearInterval(timerRef.current);
 
         const submissionId = nanoid();
-        const wordCount    = countWords(html);
-        const now          = new Date().toISOString();
+        const wordCount = countWords(html);
+        const now = new Date().toISOString();
 
         // Always generate the legacy code as a fallback / receipt
         const submissionObj: EssaySubmission = {
@@ -317,7 +515,12 @@ export default function StudentEssayPage() {
             setSubmitting(true);
             setSubmitError('');
             const result = await adapter.submitEssay(
-                assignment, submissionId, html, studentEmail, studentUserId, wordCount
+                assignment,
+                submissionId,
+                html,
+                studentEmail,
+                studentUserId,
+                wordCount
             );
             setSubmitting(false);
             if (!result.success) {
@@ -330,7 +533,9 @@ export default function StudentEssayPage() {
         setSubmitted(true);
         if (isInSEB) {
             copyText(legacyCode);
-            setTimeout(() => { window.location.href = sebQuitUrl; }, 1500);
+            setTimeout(() => {
+                window.location.href = sebQuitUrl;
+            }, 1500);
         }
     }, [assignment, html, draftKey, hasDb, adapter, studentUserId, studentEmail, isInSEB, sebQuitUrl]);
 
@@ -338,7 +543,7 @@ export default function StudentEssayPage() {
     useEffect(() => {
         if (secondsLeft === null || secondsLeft <= 0 || submitted) return;
         timerRef.current = setInterval(() => {
-            setSecondsLeft(prev => {
+            setSecondsLeft((prev) => {
                 if (prev === null) return null;
                 const next = prev - 1;
                 sessionStorage.setItem(timerKey, String(next));
@@ -350,7 +555,9 @@ export default function StudentEssayPage() {
                 return next;
             });
         }, 1000);
-        return () => { if (timerRef.current) clearInterval(timerRef.current); };
+        return () => {
+            if (timerRef.current) clearInterval(timerRef.current);
+        };
     }, [secondsLeft === null, submitted]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Disable right-click in SEB
@@ -365,7 +572,9 @@ export default function StudentEssayPage() {
         copyText(submissionCode);
         setCopied(true);
         if (isInSEB) {
-            setTimeout(() => { window.location.href = sebQuitUrl; }, 800);
+            setTimeout(() => {
+                window.location.href = sebQuitUrl;
+            }, 800);
         } else {
             setTimeout(() => setCopied(false), 2500);
         }
@@ -374,11 +583,22 @@ export default function StudentEssayPage() {
     // ── Guard: invalid link ───────────────────────────────────────────────────
     if (!assignment) {
         return (
-            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', padding: 24 }}>
+            <div
+                style={{
+                    minHeight: '100vh',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: '#f8fafc',
+                    padding: 24,
+                }}
+            >
                 <div style={{ maxWidth: 480, textAlign: 'center' }}>
                     <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
                     <h2 style={{ marginBottom: 8 }}>Invalid or expired link</h2>
-                    <p style={{ color: '#64748b' }}>This essay link is not valid. Please ask your teacher for a new link.</p>
+                    <p style={{ color: '#64748b' }}>
+                        This essay link is not valid. Please ask your teacher for a new link.
+                    </p>
                 </div>
             </div>
         );
@@ -387,7 +607,16 @@ export default function StudentEssayPage() {
     // ── Guard: assignment expired ─────────────────────────────────────────────
     if (assignment.expiresAt && new Date(assignment.expiresAt) < new Date()) {
         return (
-            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', padding: 24 }}>
+            <div
+                style={{
+                    minHeight: '100vh',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: '#f8fafc',
+                    padding: 24,
+                }}
+            >
                 <div style={{ maxWidth: 480, textAlign: 'center' }}>
                     <div style={{ fontSize: 48, marginBottom: 16 }}>⏰</div>
                     <h2 style={{ marginBottom: 8 }}>Assignment deadline has passed</h2>
@@ -404,46 +633,103 @@ export default function StudentEssayPage() {
         return (
             <OtpGate
                 adapter={adapter!}
-                onAuthenticated={(uid, email) => { setStudentUserId(uid); setStudentEmail(email); }}
+                onAuthenticated={(uid, email) => {
+                    setStudentUserId(uid);
+                    setStudentEmail(email);
+                }}
             />
         );
     }
 
-    const wordCount   = countWords(html);
-    const isOverLimit = assignment.maxWords  ? wordCount > assignment.maxWords  : false;
-    const isBelowMin  = assignment.minWords  ? wordCount < assignment.minWords  : false;
-    const timedOut    = secondsLeft !== null && secondsLeft <= 0;
-    const sebBlocked  = !!(assignment.requireSEB && !isInSEB);
-    const canSubmit   = !isOverLimit && !timedOut && !submitted && !submitting && !sebBlocked;
+    const wordCount = countWords(html);
+    const isOverLimit = assignment.maxWords ? wordCount > assignment.maxWords : false;
+    const isBelowMin = assignment.minWords ? wordCount < assignment.minWords : false;
+    const timedOut = secondsLeft !== null && secondsLeft <= 0;
+    const sebBlocked = !!(assignment.requireSEB && !isInSEB);
+    const canSubmit = !isOverLimit && !timedOut && !submitted && !submitting && !sebBlocked;
     const wordCountColor = isOverLimit ? '#ef4444' : isBelowMin ? '#f59e0b' : '#10b981';
 
     return (
-        <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: 'Inter, system-ui, sans-serif', colorScheme: 'light', color: '#1e293b' }}>
+        <div
+            style={{
+                minHeight: '100vh',
+                background: '#f8fafc',
+                fontFamily: 'Inter, system-ui, sans-serif',
+                colorScheme: 'light',
+                color: '#1e293b',
+            }}
+        >
             {/* SEB blocking banner */}
             {sebBlocked && (
-                <div style={{ background: '#fef2f2', borderBottom: '1px solid #fca5a5', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.875rem', color: '#991b1b', fontWeight: 600 }}>
+                <div
+                    style={{
+                        background: '#fef2f2',
+                        borderBottom: '1px solid #fca5a5',
+                        padding: '12px 20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        fontSize: '0.875rem',
+                        color: '#991b1b',
+                        fontWeight: 600,
+                    }}
+                >
                     <AlertTriangle size={16} style={{ flexShrink: 0 }} />
-                    This exam must be opened in Safe Exam Browser. Submission is blocked until you reopen this link inside SEB.
+                    This exam must be opened in Safe Exam Browser. Submission is blocked until you reopen this link
+                    inside SEB.
                 </div>
             )}
 
             {/* Header */}
-            <div style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '14px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+            <div
+                style={{
+                    background: '#fff',
+                    borderBottom: '1px solid #e2e8f0',
+                    padding: '14px 28px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 16,
+                    flexWrap: 'wrap',
+                }}
+            >
                 <div>
-                    <h1 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#1e293b' }}>{assignment.title}</h1>
+                    <h1 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#1e293b' }}>
+                        {assignment.title}
+                    </h1>
                     {studentEmail && (
-                        <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 2 }}>Signed in as {studentEmail}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 2 }}>
+                            Signed in as {studentEmail}
+                        </div>
                     )}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
                     {draftSavedAt && !submitted && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', color: '#64748b' }}>
+                        <div
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 4,
+                                fontSize: '0.75rem',
+                                color: '#64748b',
+                            }}
+                        >
                             <Save size={12} />
                             Saved {draftSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </div>
                     )}
                     {secondsLeft !== null && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: '1.05rem', fontVariantNumeric: 'tabular-nums', color: secondsLeft < 120 ? '#ef4444' : '#374151' }}>
+                        <div
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                fontWeight: 700,
+                                fontSize: '1.05rem',
+                                fontVariantNumeric: 'tabular-nums',
+                                color: secondsLeft < 120 ? '#ef4444' : '#374151',
+                            }}
+                        >
                             <Clock size={17} />
                             {timedOut ? 'Time up' : formatTime(secondsLeft)}
                         </div>
@@ -462,15 +748,50 @@ export default function StudentEssayPage() {
             <div style={{ maxWidth: 860, margin: '0 auto', padding: '24px 20px' }}>
                 {/* Prompt */}
                 {assignment.prompt && (
-                    <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: '14px 18px', marginBottom: 20, fontSize: '0.95rem', color: '#1e40af', lineHeight: 1.6 }}>
-                        <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', color: '#3b82f6', marginBottom: 6, letterSpacing: '0.05em' }}>Assignment prompt</div>
+                    <div
+                        style={{
+                            background: '#eff6ff',
+                            border: '1px solid #bfdbfe',
+                            borderRadius: 10,
+                            padding: '14px 18px',
+                            marginBottom: 20,
+                            fontSize: '0.95rem',
+                            color: '#1e40af',
+                            lineHeight: 1.6,
+                        }}
+                    >
+                        <div
+                            style={{
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                textTransform: 'uppercase',
+                                color: '#3b82f6',
+                                marginBottom: 6,
+                                letterSpacing: '0.05em',
+                            }}
+                        >
+                            Assignment prompt
+                        </div>
                         {assignment.prompt}
                     </div>
                 )}
 
                 {/* DB submission error */}
                 {submitError && (
-                    <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 10, padding: '12px 16px', marginBottom: 16, fontSize: '0.875rem', color: '#b91c1c', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                    <div
+                        style={{
+                            background: '#fef2f2',
+                            border: '1px solid #fca5a5',
+                            borderRadius: 10,
+                            padding: '12px 16px',
+                            marginBottom: 16,
+                            fontSize: '0.875rem',
+                            color: '#b91c1c',
+                            display: 'flex',
+                            gap: 8,
+                            alignItems: 'flex-start',
+                        }}
+                    >
                         <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
                         {submitError}
                     </div>
@@ -478,7 +799,15 @@ export default function StudentEssayPage() {
 
                 {/* Submitted confirmation */}
                 {submitted && (
-                    <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 12, padding: 20, marginBottom: 20 }}>
+                    <div
+                        style={{
+                            background: '#f0fdf4',
+                            border: '1px solid #86efac',
+                            borderRadius: 12,
+                            padding: 20,
+                            marginBottom: 20,
+                        }}
+                    >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                             <CheckCircle size={20} style={{ color: '#16a34a', flexShrink: 0 }} />
                             <span style={{ fontWeight: 700, fontSize: '1rem', color: '#15803d' }}>
@@ -487,7 +816,8 @@ export default function StudentEssayPage() {
                         </div>
                         {hasDb && !submitError ? (
                             <p style={{ margin: '0 0 12px', fontSize: '0.875rem', color: '#166534' }}>
-                                Your teacher can see your submission in RubricMaker. Keep the backup code below just in case.
+                                Your teacher can see your submission in RubricMaker. Keep the backup code below just in
+                                case.
                             </p>
                         ) : (
                             <p style={{ margin: '0 0 12px', fontSize: '0.875rem', color: '#166534' }}>
@@ -495,10 +825,39 @@ export default function StudentEssayPage() {
                             </p>
                         )}
                         <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
-                            <textarea readOnly value={submissionCode} rows={6}
-                                style={{ flex: 1, fontFamily: 'monospace', fontSize: '0.72rem', resize: 'vertical', background: '#fff', border: '1px solid #86efac', borderRadius: 8, padding: 10, color: '#374151' }} />
-                            <button onClick={handleCopy}
-                                style={{ padding: '0 16px', background: copied ? '#16a34a' : '#22c55e', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.875rem', flexShrink: 0 }}>
+                            <textarea
+                                readOnly
+                                value={submissionCode}
+                                rows={6}
+                                style={{
+                                    flex: 1,
+                                    fontFamily: 'monospace',
+                                    fontSize: '0.72rem',
+                                    resize: 'vertical',
+                                    background: '#fff',
+                                    border: '1px solid #86efac',
+                                    borderRadius: 8,
+                                    padding: 10,
+                                    color: '#374151',
+                                }}
+                            />
+                            <button
+                                onClick={handleCopy}
+                                style={{
+                                    padding: '0 16px',
+                                    background: copied ? '#16a34a' : '#22c55e',
+                                    color: '#fff',
+                                    border: 'none',
+                                    borderRadius: 8,
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 6,
+                                    fontSize: '0.875rem',
+                                    flexShrink: 0,
+                                }}
+                            >
                                 <Copy size={14} />
                                 {copied ? 'Copied!' : 'Copy'}
                             </button>
@@ -516,12 +875,49 @@ export default function StudentEssayPage() {
 
                 {/* Submit row */}
                 {!submitted && (
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12, marginTop: 16 }}>
-                        {timedOut && <span style={{ fontSize: '0.875rem', color: '#ef4444', fontWeight: 600 }}>Time is up — your essay was submitted automatically.</span>}
-                        {isOverLimit && <span style={{ fontSize: '0.875rem', color: '#ef4444' }}>Over limit by {wordCount - (assignment.maxWords ?? 0)} words.</span>}
-                        <button onClick={handleSubmit} disabled={!canSubmit}
-                            style={{ padding: '10px 32px', borderRadius: 8, border: 'none', fontWeight: 700, fontSize: '0.95rem', background: canSubmit ? '#6366f1' : '#e2e8f0', color: canSubmit ? '#fff' : '#94a3b8', cursor: canSubmit ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', gap: 8 }}>
-                            {submitting ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Submitting…</> : 'Submit essay'}
+                    <div
+                        style={{
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                            alignItems: 'center',
+                            gap: 12,
+                            marginTop: 16,
+                        }}
+                    >
+                        {timedOut && (
+                            <span style={{ fontSize: '0.875rem', color: '#ef4444', fontWeight: 600 }}>
+                                Time is up — your essay was submitted automatically.
+                            </span>
+                        )}
+                        {isOverLimit && (
+                            <span style={{ fontSize: '0.875rem', color: '#ef4444' }}>
+                                Over limit by {wordCount - (assignment.maxWords ?? 0)} words.
+                            </span>
+                        )}
+                        <button
+                            onClick={handleSubmit}
+                            disabled={!canSubmit}
+                            style={{
+                                padding: '10px 32px',
+                                borderRadius: 8,
+                                border: 'none',
+                                fontWeight: 700,
+                                fontSize: '0.95rem',
+                                background: canSubmit ? '#6366f1' : '#e2e8f0',
+                                color: canSubmit ? '#fff' : '#94a3b8',
+                                cursor: canSubmit ? 'pointer' : 'not-allowed',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 8,
+                            }}
+                        >
+                            {submitting ? (
+                                <>
+                                    <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Submitting…
+                                </>
+                            ) : (
+                                'Submit essay'
+                            )}
                         </button>
                     </div>
                 )}

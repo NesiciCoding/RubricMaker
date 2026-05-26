@@ -9,8 +9,12 @@ import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('../../data/cefrDescriptors', () => ({
     CEFR_LEVEL_COLORS: {
-        A1: '#22c55e', A2: '#16a34a', B1: '#3b82f6', B2: '#2563eb',
-        C1: '#f59e0b', C2: '#d97706',
+        A1: '#22c55e',
+        A2: '#16a34a',
+        B1: '#3b82f6',
+        B2: '#2563eb',
+        C1: '#f59e0b',
+        C2: '#d97706',
     },
 }));
 
