@@ -1,0 +1,57 @@
+name: Feature Request
+description: Suggest an improvement or new capability
+labels: ["enhancement", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Got an idea? Tell us about it. The more context you give, the easier it is to evaluate.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part of RubricMaker does this relate to?
+      options:
+        - Rubric creation / editing
+        - Student essay submission
+        - Grading & feedback
+        - Authentication / accounts
+        - Export / reporting
+        - Accessibility
+        - Performance
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the situation where you felt something was missing or frustrating.
+      placeholder: "As a teacher, I often need to... but currently I have to..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Describe the feature you'd like
+      placeholder: "I'd like to be able to..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you've considered
+      placeholder: "I've tried workarounds like..."
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and this hasn't been requested before.
+          required: true
