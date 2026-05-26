@@ -1,5 +1,5 @@
 import React, {
-    createContext, useContext, useReducer, useCallback, useEffect, useRef, ReactNode
+    createContext, useContext, useReducer, useCallback, useEffect, useRef, useState, ReactNode
 } from 'react';
 import type {
     Rubric, Student, Class, StudentRubric, Attachment,
@@ -410,12 +410,56 @@ interface AppContextValue extends StoreData {
     fetchAllEssaySubmissions: () => Promise<Awaited<ReturnType<typeof storageSync.fetchAllEssaySubmissions>>>;
     deleteEssaySubmission: (submissionId: string, storagePath: string) => Promise<SyncResult>;
     getEssaySignedUrl: (storagePath: string) => Promise<string | null>;
+    // Landing / auth flow
+    showLanding: boolean;
+    isCheckingSession: boolean;
+    showMigrationPrompt: boolean;
+    enterLocalMode: () => void;
+    connectForOAuth: (config: DatabaseConfig) => Promise<boolean>;
+    dismissMigrationPrompt: (upload: boolean) => Promise<void>;
+    signInWithGoogle: () => Promise<{ error?: string }>;
+    signInWithMicrosoftPersonal: () => Promise<{ error?: string }>;
+    signInWithAzureAD: () => Promise<{ error?: string }>;
+    signOutFromDatabase: () => Promise<void>;
+    // Microsoft Sync
+    loginMicrosoft: () => Promise<void>;
+    logoutMicrosoft: () => Promise<void>;
+    syncToOneDrive: () => Promise<void>;
+    restoreFromOneDrive: () => Promise<void>;
+    microsoftUser: any | null;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
 
+const LOCAL_MODE_KEY = 'rm_local_mode';
+const MIGRATION_DONE_KEY = 'rm_migration_done';
+
+async function flushToLocalStorage(merged: StoreData) {
+    const { saveRubrics, saveStudents, saveClasses, saveStudentRubrics, saveAttachments, saveGradeScales, saveCommentSnippets, saveSettings, saveFavoriteStandards, saveCommentBank, saveExportTemplates, savePeerReviews, saveSelfAssessments, saveSpeakingSessions, saveAnalysisResults } = await import('../store/storage');
+    saveRubrics(merged.rubrics);
+    saveStudents(merged.students);
+    saveClasses(merged.classes);
+    saveStudentRubrics(merged.studentRubrics);
+    saveAttachments(merged.attachments);
+    saveGradeScales(merged.gradeScales);
+    saveCommentSnippets(merged.commentSnippets);
+    saveSettings(merged.settings);
+    saveFavoriteStandards(merged.favoriteStandards);
+    saveCommentBank(merged.commentBank);
+    saveExportTemplates(merged.exportTemplates);
+    savePeerReviews(merged.peerReviews);
+    saveSelfAssessments(merged.selfAssessments);
+    saveSpeakingSessions(merged.speakingSessions);
+    saveAnalysisResults(merged.analysisResults);
+}
+
 export function AppProvider({ children }: { children: ReactNode }) {
     const [state, dispatch] = useReducer(reducer, null, loadStore);
+    const initialStateRef = useRef(state);
+
+    // 'checking' while we detect session; 'show' = show landing; 'hide' = in app
+    const [landingState, setLandingState] = useState<'checking' | 'show' | 'hide'>('checking');
+    const [showMigrationPrompt, setShowMigrationPrompt] = useState(false);
 
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', state.settings.theme);
@@ -425,42 +469,51 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const accent = state.settings.accentColor || '#3b82f6';
         const root = document.documentElement;
         root.style.setProperty('--accent', accent);
-        // Generate a hover color (simpler way: just the same for now, or use a helper)
         root.style.setProperty('--accent-hover', accent);
-        root.style.setProperty('--accent-soft', `${accent}26`); // 15% opacity hex
-        root.style.setProperty('--accent-glow', `${accent}66`); // 40% opacity hex
+        root.style.setProperty('--accent-soft', `${accent}26`);
+        root.style.setProperty('--accent-glow', `${accent}66`);
     }, [state.settings.accentColor]);
 
-    // ── Supabase: hydrate on mount ─────────────────────────────────────────────
+    // ── Startup: detect local mode / existing session / OAuth callback ────────
     useEffect(() => {
+        if (localStorage.getItem(LOCAL_MODE_KEY) === 'true') {
+            setLandingState('hide');
+            return;
+        }
+
         const config = loadSupabaseConfig();
-        if (!config) return;
-        storageSync.configure(config).then(ok => {
-            if (!ok) return;
-            storageSync.hydrate().then(fresh => {
-                if (!fresh) return;
-                // Merge DB data into current state (DB wins on conflict)
-                const merged = { ...state, ...fresh } as StoreData;
+        if (!config) {
+            setLandingState('show');
+            return;
+        }
+
+        storageSync.initAuth(config).then(async () => {
+            if (!storageSync.hasSession()) {
+                setLandingState('show');
+                return;
+            }
+
+            // Session found — auto-connect and hydrate
+            saveSupabaseConfig(config);
+            const ok = await storageSync.configure(config);
+            if (!ok) { setLandingState('show'); return; }
+
+            const fresh = await storageSync.hydrate();
+            if (fresh) {
+                const merged = { ...initialStateRef.current, ...fresh } as StoreData;
                 dispatch({ type: 'SET_ALL', payload: merged });
-                // Flush merged state back to localStorage for offline resilience
-                import('../store/storage').then(({ saveRubrics, saveStudents, saveClasses, saveStudentRubrics, saveAttachments, saveGradeScales, saveCommentSnippets, saveSettings, saveFavoriteStandards, saveCommentBank, saveExportTemplates, savePeerReviews, saveSelfAssessments, saveSpeakingSessions, saveAnalysisResults }) => {
-                    saveRubrics(merged.rubrics);
-                    saveStudents(merged.students);
-                    saveClasses(merged.classes);
-                    saveStudentRubrics(merged.studentRubrics);
-                    saveAttachments(merged.attachments);
-                    saveGradeScales(merged.gradeScales);
-                    saveCommentSnippets(merged.commentSnippets);
-                    saveSettings(merged.settings);
-                    saveFavoriteStandards(merged.favoriteStandards);
-                    saveCommentBank(merged.commentBank);
-                    saveExportTemplates(merged.exportTemplates);
-                    savePeerReviews(merged.peerReviews);
-                    saveSelfAssessments(merged.selfAssessments);
-                    saveSpeakingSessions(merged.speakingSessions);
-                    saveAnalysisResults(merged.analysisResults);
-                });
-            });
+                flushToLocalStorage(merged);
+            }
+
+            setLandingState('hide');
+
+            // Show migration prompt once if local data exists and hasn't been migrated
+            if (localStorage.getItem(MIGRATION_DONE_KEY) !== 'true') {
+                const s = initialStateRef.current;
+                if (s.rubrics.length > 0 || s.students.length > 0 || s.classes.length > 0) {
+                    setShowMigrationPrompt(true);
+                }
+            }
         });
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -744,6 +797,49 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const deleteEssaySubmission = useCallback((id: string, path: string) => storageSync.deleteEssaySubmission(id, path), []);
     const getEssaySignedUrl = useCallback((path: string) => storageSync.getEssaySignedUrl(path), []);
 
+    // ─── Landing / auth flow ──────────────────────────────────────────
+    const enterLocalMode = useCallback(() => {
+        localStorage.setItem(LOCAL_MODE_KEY, 'true');
+        setLandingState('hide');
+    }, []);
+
+    const connectForOAuth = useCallback(async (config: DatabaseConfig): Promise<boolean> => {
+        saveSupabaseConfig(config);
+        return storageSync.initAuth(config);
+    }, []);
+
+    const dismissMigrationPrompt = useCallback(async (upload: boolean) => {
+        setShowMigrationPrompt(false);
+        localStorage.setItem(MIGRATION_DONE_KEY, 'true');
+        if (upload) await storageSync.pushAll(state);
+    }, [state]);
+
+    const signInWithGoogle = useCallback((): Promise<{ error?: string }> => {
+        return storageSync.signInWithGoogle();
+    }, []);
+
+    const signInWithMicrosoftPersonal = useCallback((): Promise<{ error?: string }> => {
+        return storageSync.signInWithMicrosoftPersonal();
+    }, []);
+
+    const signInWithAzureAD = useCallback((): Promise<{ error?: string }> => {
+        return storageSync.signInWithAzureAD();
+    }, []);
+
+    const signOutFromDatabase = useCallback(async () => {
+        await storageSync.signOut();
+        if (localStorage.getItem(LOCAL_MODE_KEY) !== 'true') {
+            setLandingState('show');
+        }
+    }, []);
+
+    // ─── Microsoft Sync (disabled — Azure integration not in use) ───
+    const microsoftUser: any | null = null;
+    const loginMicrosoft = useCallback(async () => {}, []);
+    const logoutMicrosoft = useCallback(async () => {}, []);
+    const syncToOneDrive = useCallback(async () => {}, []);
+    const restoreFromOneDrive = useCallback(async () => {}, []);
+
     const value: AppContextValue = {
         ...state,
         dispatch,
@@ -771,6 +867,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         saveEssayAssignment, deleteEssayAssignment,
         fetchEssaySubmissions, fetchEssaySubmissionsForStudent, fetchAllEssaySubmissions,
         deleteEssaySubmission, getEssaySignedUrl,
+        showLanding: landingState === 'show',
+        isCheckingSession: landingState === 'checking',
+        showMigrationPrompt,
+        enterLocalMode, connectForOAuth, dismissMigrationPrompt,
+        signInWithGoogle, signInWithMicrosoftPersonal, signInWithAzureAD, signOutFromDatabase,
+        loginMicrosoft, logoutMicrosoft, syncToOneDrive, restoreFromOneDrive,
+        microsoftUser
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

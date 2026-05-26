@@ -13,8 +13,64 @@ export class SupabaseAdapter {
     private onAuthChange: ((user: DbUser | null) => void) | null = null;
     private activeUrl: string | null = null;
     private activeKey: string | null = null;
+    private authListenerRegistered = false;
+
+    // ── Auth listener (registered once per client instance) ───────────────────
+
+    private registerAuthListener() {
+        if (!this.client || this.authListenerRegistered) return;
+        this.authListenerRegistered = true;
+        this.client.auth.onAuthStateChange(async (_event: AuthChangeEvent, s: Session | null) => {
+            this.userId = s?.user.id ?? null;
+            if (this.onAuthChange) {
+                if (s) {
+                    const profile = await this.fetchMyProfile();
+                    this.onAuthChange(profile ?? { id: s.user.id, email: s.user.email, role: 'user' });
+                } else {
+                    this.onAuthChange(null);
+                }
+            }
+        });
+    }
 
     // ── Connection ────────────────────────────────────────────────────────────
+
+    /**
+     * Initialise the Supabase client for auth/OAuth without signing in anonymously.
+     * Call this on app startup so OAuth callbacks and existing sessions are detected.
+     */
+    async initClient(config: DatabaseConfig): Promise<boolean> {
+        try {
+            if (!config.supabaseUrl || !config.supabaseAnonKey) return false;
+            try { new URL(config.supabaseUrl); } catch { return false; }
+
+            // Reuse existing client if config unchanged
+            if (this.client && this.activeUrl === config.supabaseUrl && this.activeKey === config.supabaseAnonKey) {
+                return true;
+            }
+
+            this.client = createClient(config.supabaseUrl, config.supabaseAnonKey, {
+                auth: { persistSession: true, autoRefreshToken: true }
+            });
+            this.activeUrl = config.supabaseUrl;
+            this.activeKey = config.supabaseAnonKey;
+            this.authListenerRegistered = false;
+
+            // Detect existing session (covers returning OAuth users and email-OTP users)
+            const { data: { session } } = await this.client.auth.getSession();
+            if (session) this.userId = session.user.id;
+
+            this.registerAuthListener();
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    /** True if a session is active (real or anonymous). */
+    hasSession(): boolean {
+        return this.userId !== null && this.client !== null;
+    }
 
     async connect(config: DatabaseConfig): Promise<boolean> {
         try {
@@ -33,7 +89,7 @@ export class SupabaseAdapter {
                     this.userId = session.user.id;
                     return true;
                 }
-                // Session lost; fall through to re-auth below without recreating the client
+                // Session lost; sign in anonymously for backward compat
                 const { data, error } = await this.client.auth.signInAnonymously();
                 if (error || !data.session) return false;
                 this.userId = data.session.user.id;
@@ -41,13 +97,11 @@ export class SupabaseAdapter {
             }
 
             this.client = createClient(config.supabaseUrl, config.supabaseAnonKey, {
-                auth: {
-                    persistSession: true,
-                    autoRefreshToken: true,
-                }
+                auth: { persistSession: true, autoRefreshToken: true }
             });
             this.activeUrl = config.supabaseUrl;
             this.activeKey = config.supabaseAnonKey;
+            this.authListenerRegistered = false;
 
             // Restore existing session or create anonymous one
             const { data: { session } } = await this.client.auth.getSession();
@@ -59,20 +113,7 @@ export class SupabaseAdapter {
                 this.userId = data.session.user.id;
             }
 
-            // Listen for auth changes (e.g. when user upgrades to email auth).
-            // Fetch the full profile so callers get the DB role.
-            this.client.auth.onAuthStateChange(async (_event: AuthChangeEvent, s: Session | null) => {
-                this.userId = s?.user.id ?? null;
-                if (this.onAuthChange) {
-                    if (s) {
-                        const profile = await this.fetchMyProfile();
-                        this.onAuthChange(profile ?? { id: s.user.id, email: s.user.email, role: 'user' });
-                    } else {
-                        this.onAuthChange(null);
-                    }
-                }
-            });
-
+            this.registerAuthListener();
             return true;
         } catch {
             return false;
@@ -88,6 +129,41 @@ export class SupabaseAdapter {
     async verifyOtp(email: string, token: string): Promise<{ error?: string }> {
         if (!this.client) return { error: 'Not connected' };
         const { error } = await this.client.auth.verifyOtp({ email, token, type: 'email' });
+        return error ? { error: error.message } : {};
+    }
+
+    async signInWithGoogle(): Promise<{ error?: string }> {
+        if (!this.client) return { error: 'Supabase not initialised' };
+        const { error } = await this.client.auth.signInWithOAuth({
+            provider: 'google',
+            options: { redirectTo: window.location.origin },
+        });
+        return error ? { error: error.message } : {};
+    }
+
+    async signInWithMicrosoftPersonal(): Promise<{ error?: string }> {
+        if (!this.client) return { error: 'Supabase not initialised' };
+        const { error } = await this.client.auth.signInWithOAuth({
+            provider: 'azure',
+            options: {
+                redirectTo: window.location.origin,
+                scopes: 'openid profile email',
+                queryParams: { domain_hint: 'consumers' },
+            },
+        });
+        return error ? { error: error.message } : {};
+    }
+
+    async signInWithAzureAD(): Promise<{ error?: string }> {
+        if (!this.client) return { error: 'Supabase not initialised' };
+        const { error } = await this.client.auth.signInWithOAuth({
+            provider: 'azure',
+            options: {
+                redirectTo: window.location.origin,
+                scopes: 'openid profile email',
+                queryParams: { domain_hint: 'organizations' },
+            },
+        });
         return error ? { error: error.message } : {};
     }
 
@@ -156,6 +232,7 @@ export class SupabaseAdapter {
         this.userId = null;
         this.activeUrl = null;
         this.activeKey = null;
+        this.authListenerRegistered = false;
     }
 
     isConnected(): boolean {
@@ -168,6 +245,29 @@ export class SupabaseAdapter {
 
     getClient(): SupabaseClient | null {
         return this.client;
+    }
+
+    // ── Site config (anon-readable) ───────────────────────────────────────────
+
+    /**
+     * Fetch the list of enabled auth providers from the `site_config` table.
+     * Uses `this.client` directly — no session required — so it works on the
+     * landing page before the user has signed in.
+     * Returns `null` on any error; callers should treat null as "show all" (fail open).
+     */
+    async fetchAuthProviders(): Promise<string[] | null> {
+        if (!this.client) return null;
+        try {
+            const { data, error } = await this.client
+                .from('site_config')
+                .select('value')
+                .eq('key', 'auth_providers')
+                .single();
+            if (error || !data) return null;
+            return Array.isArray(data.value) ? (data.value as string[]) : null;
+        } catch {
+            return null;
+        }
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
