@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/NesiciCoding/RubricMaker/security/advisories/new
+    about: Report a security issue privately via GitHub's advisory system.
+  - name: Question or discussion
+    url: https://github.com/NesiciCoding/RubricMaker/discussions
+    about: Ask a question or start a discussion rather than opening an issue.
