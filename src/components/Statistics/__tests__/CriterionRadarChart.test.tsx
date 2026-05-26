@@ -51,7 +51,7 @@ describe('CriterionRadarChart', () => {
     it('renders a Legend when selectedStudents are provided', () => {
         const { container } = render(
             <CriterionRadarChart
-                data={threePoint.map(d => ({ ...d, s1: 60 }))}
+                data={threePoint.map((d) => ({ ...d, s1: 60 }))}
                 accentColor="#3b82f6"
                 selectedStudents={[{ id: 's1', name: 'Alice', color: 'var(--purple)' }]}
             />
@@ -60,7 +60,7 @@ describe('CriterionRadarChart', () => {
     });
 
     it('does not crash when all students have identical scores (overlapping polygons)', () => {
-        const data = threePoint.map(d => ({ ...d, s1: d.avg }));
+        const data = threePoint.map((d) => ({ ...d, s1: d.avg }));
         expect(() =>
             render(
                 <CriterionRadarChart
@@ -73,8 +73,6 @@ describe('CriterionRadarChart', () => {
     });
 
     it('renders without crashing when accentColor is a CSS var string', () => {
-        expect(() =>
-            render(<CriterionRadarChart data={threePoint} accentColor="var(--accent)" />)
-        ).not.toThrow();
+        expect(() => render(<CriterionRadarChart data={threePoint} accentColor="var(--accent)" />)).not.toThrow();
     });
 });

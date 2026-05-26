@@ -165,7 +165,8 @@ vi.mock('../../components/Editor/TiptapEditor', () => ({
 }));
 
 vi.mock('@hello-pangea/dnd', () => ({
-    DragDropContext: ({ children }: { children: React.ReactNode }) => React.createElement(React.Fragment, null, children),
+    DragDropContext: ({ children }: { children: React.ReactNode }) =>
+        React.createElement(React.Fragment, null, children),
     Droppable: ({ children }: { children: (provided: any) => React.ReactNode }) =>
         children({ innerRef: vi.fn(), droppableProps: {}, placeholder: null } as any),
     Draggable: ({ children }: { children: (provided: any) => React.ReactNode }) =>
@@ -269,21 +270,13 @@ describe('Page smoke tests — render without crash', () => {
     it('RubricPreviewPage renders with code param', async () => {
         const { default: RubricPreviewPage } = await import('../RubricPreviewPage');
         // Renders "Invalid rubric link" for unknown code — still a valid render
-        const { container } = renderPage(
-            <RubricPreviewPage />,
-            '/preview/invalid-code',
-            '/preview/:code'
-        );
+        const { container } = renderPage(<RubricPreviewPage />, '/preview/invalid-code', '/preview/:code');
         expect(container.firstChild).toBeTruthy();
     });
 
     it('StudentFeedbackPage renders with code param', async () => {
         const { default: StudentFeedbackPage } = await import('../StudentFeedbackPage');
-        const { container } = renderPage(
-            <StudentFeedbackPage />,
-            '/feedback/invalid-code',
-            '/feedback/:code'
-        );
+        const { container } = renderPage(<StudentFeedbackPage />, '/feedback/invalid-code', '/feedback/:code');
         expect(container.firstChild).toBeTruthy();
     });
 
@@ -299,81 +292,49 @@ describe('Page smoke tests — render without crash', () => {
 
     it('GradeStudent renders with known params', async () => {
         const { default: GradeStudent } = await import('../GradeStudent');
-        const { container } = renderPage(
-            <GradeStudent />,
-            '/grade/r1/s1',
-            '/grade/:rubricId/:studentId'
-        );
+        const { container } = renderPage(<GradeStudent />, '/grade/r1/s1', '/grade/:rubricId/:studentId');
         expect(container.firstChild).toBeTruthy();
     });
 
     it('StudentProfilePage renders with unknown studentId', async () => {
         const { default: StudentProfilePage } = await import('../StudentProfilePage');
-        const { container } = renderPage(
-            <StudentProfilePage />,
-            '/students/unknown',
-            '/students/:studentId'
-        );
+        const { container } = renderPage(<StudentProfilePage />, '/students/unknown', '/students/:studentId');
         expect(container.firstChild).toBeTruthy();
     });
 
     it('StudentProfilePage renders with known studentId', async () => {
         const { default: StudentProfilePage } = await import('../StudentProfilePage');
-        const { container } = renderPage(
-            <StudentProfilePage />,
-            '/students/s1',
-            '/students/:studentId'
-        );
+        const { container } = renderPage(<StudentProfilePage />, '/students/s1', '/students/:studentId');
         expect(container.firstChild).toBeTruthy();
     });
 
     it('SelfAssessPage renders with params', async () => {
         const { default: SelfAssessPage } = await import('../SelfAssessPage');
-        const { container } = renderPage(
-            <SelfAssessPage />,
-            '/self-assess/r1/s1',
-            '/self-assess/:rubricId/:studentId'
-        );
+        const { container } = renderPage(<SelfAssessPage />, '/self-assess/r1/s1', '/self-assess/:rubricId/:studentId');
         expect(container.firstChild).toBeTruthy();
     });
 
     it('PeerReviewView renders with params', async () => {
         const { default: PeerReviewView } = await import('../PeerReviewView');
-        const { container } = renderPage(
-            <PeerReviewView />,
-            '/peer-review/r1/s1',
-            '/peer-review/:rubricId/:studentId'
-        );
+        const { container } = renderPage(<PeerReviewView />, '/peer-review/r1/s1', '/peer-review/:rubricId/:studentId');
         expect(container.firstChild).toBeTruthy();
     });
 
     it('ComparativeGrading renders with params', async () => {
         const { default: ComparativeGrading } = await import('../ComparativeGrading');
-        const { container } = renderPage(
-            <ComparativeGrading />,
-            '/comparative/r1',
-            '/comparative/:rubricId'
-        );
+        const { container } = renderPage(<ComparativeGrading />, '/comparative/r1', '/comparative/:rubricId');
         expect(container.firstChild).toBeTruthy();
     });
 
     it('SpeakingSession renders with params', async () => {
         const { default: SpeakingSession } = await import('../SpeakingSession');
-        const { container } = renderPage(
-            <SpeakingSession />,
-            '/speaking/r1/s1',
-            '/speaking/:rubricId/:studentId'
-        );
+        const { container } = renderPage(<SpeakingSession />, '/speaking/r1/s1', '/speaking/:rubricId/:studentId');
         expect(container.firstChild).toBeTruthy();
     });
 
     it('RubricBuilder renders with known rubricId', async () => {
         const { default: RubricBuilder } = await import('../RubricBuilder');
-        const { container } = renderPage(
-            <RubricBuilder />,
-            '/rubrics/r1',
-            '/rubrics/:rubricId'
-        );
+        const { container } = renderPage(<RubricBuilder />, '/rubrics/r1', '/rubrics/:rubricId');
         expect(container.firstChild).toBeTruthy();
     });
 });

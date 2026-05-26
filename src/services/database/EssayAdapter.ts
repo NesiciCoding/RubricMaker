@@ -12,7 +12,7 @@ import type { SyncResult } from './types';
 
 export interface EssaySubmissionPayload {
     id: string;
-    assignmentId: string;        // = assignment.teacherKey (the essay_assignments PK)
+    assignmentId: string; // = assignment.teacherKey (the essay_assignments PK)
     studentEmail: string;
     studentUserId: string;
     wordCount: number;
@@ -59,7 +59,11 @@ export class EssayAdapter {
     async signInWithMicrosoftPersonal(): Promise<{ error?: string }> {
         const { error } = await this.client.auth.signInWithOAuth({
             provider: 'azure',
-            options: { redirectTo: window.location.href, scopes: 'openid profile email', queryParams: { domain_hint: 'consumers' } },
+            options: {
+                redirectTo: window.location.href,
+                scopes: 'openid profile email',
+                queryParams: { domain_hint: 'consumers' },
+            },
         });
         return error ? { error: error.message } : {};
     }
@@ -68,14 +72,20 @@ export class EssayAdapter {
     async signInWithAzureAD(): Promise<{ error?: string }> {
         const { error } = await this.client.auth.signInWithOAuth({
             provider: 'azure',
-            options: { redirectTo: window.location.href, scopes: 'openid profile email', queryParams: { domain_hint: 'organizations' } },
+            options: {
+                redirectTo: window.location.href,
+                scopes: 'openid profile email',
+                queryParams: { domain_hint: 'organizations' },
+            },
         });
         return error ? { error: error.message } : {};
     }
 
     /** Get the current session (in case the student refreshes or returns after OAuth). */
     async getSession(): Promise<{ userId: string | null; email: string | null }> {
-        const { data: { session } } = await this.client.auth.getSession();
+        const {
+            data: { session },
+        } = await this.client.auth.getSession();
         return {
             userId: session?.user.id ?? null,
             email: session?.user.email ?? null,
@@ -96,9 +106,11 @@ export class EssayAdapter {
         html: string,
         studentEmail: string,
         _studentUserId: string,
-        wordCount: number,
+        wordCount: number
     ): Promise<SyncResult> {
-        const { data: { session } } = await this.client.auth.getSession();
+        const {
+            data: { session },
+        } = await this.client.auth.getSession();
         if (!session) return { success: false, error: 'Not authenticated' };
 
         let response: Response;
@@ -107,8 +119,8 @@ export class EssayAdapter {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session.access_token}`,
-                    'apikey': assignment.supabaseAnonKey ?? '',
+                    Authorization: `Bearer ${session.access_token}`,
+                    apikey: assignment.supabaseAnonKey ?? '',
                 },
                 body: JSON.stringify({
                     assignmentId: assignment.teacherKey,

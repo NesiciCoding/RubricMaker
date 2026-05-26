@@ -2,7 +2,7 @@
  * Unit-level tests for simpler pages that have mostly uncovered branches.
  */
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
@@ -190,7 +190,9 @@ vi.mock('../../store/storage', () => ({
 function renderPage(el: React.ReactElement, route = '/', path = '/') {
     return render(
         <MemoryRouter initialEntries={[route]}>
-            <Routes><Route path={path} element={el} /></Routes>
+            <Routes>
+                <Route path={path} element={el} />
+            </Routes>
         </MemoryRouter>
     );
 }
@@ -268,7 +270,7 @@ describe('CommentBankPage', () => {
         });
         renderPage(<CommentBankPage />);
         const btns = screen.getAllByRole('button');
-        const deleteBtn = btns.find(b => b.style?.color?.includes('red') || b.querySelector('svg'));
+        const deleteBtn = btns.find((b) => b.style?.color?.includes('red') || b.querySelector('svg'));
         // find delete button specifically by proximity
         const allBtns = screen.getAllByRole('button');
         // The delete button is the last icon button in the snippet card
@@ -283,7 +285,7 @@ describe('CommentBankPage', () => {
         renderPage(<CommentBankPage />);
         const editBtns = screen.getAllByRole('button');
         // Edit button is the second-to-last in the card
-        const editBtn = editBtns.find(b => b.querySelector('svg[class*="edit"]') || b.title === '');
+        const editBtn = editBtns.find((b) => b.querySelector('svg[class*="edit"]') || b.title === '');
         // Just fire on 2nd-to-last button
         fireEvent.click(editBtns[editBtns.length - 2]);
         // Should show cancel/save buttons
@@ -321,7 +323,7 @@ describe('AttachmentsPage', () => {
     it('rubric selector shows rubric names', () => {
         renderPage(<AttachmentsPage />);
         const options = screen.getAllByRole('option');
-        expect(options.some(o => o.textContent?.includes('Essay Rubric'))).toBe(true);
+        expect(options.some((o) => o.textContent?.includes('Essay Rubric'))).toBe(true);
     });
 
     it('selecting a rubric shows student selectors', () => {
@@ -350,12 +352,24 @@ describe('AttachmentsPage', () => {
         expect(screen.getByText('Alice')).toBeInTheDocument();
     });
 
-    it('delete button calls deleteAttachment', () => {
+    it('delete button opens confirm dialog and calls deleteAttachment on confirm', async () => {
         currentApp = makeApp({ attachments: [mockAttachment] });
         renderPage(<AttachmentsPage />);
         const btns = screen.getAllByRole('button');
-        // Delete button is the last button in the row
-        fireEvent.click(btns[btns.length - 1]);
+        // Delete button is the last button in the row — click opens confirm dialog
+        await act(async () => {
+            fireEvent.click(btns[btns.length - 1]);
+        });
+        // Find and click the confirm button rendered by ConfirmDialog (via Radix Portal into document.body)
+        const confirmBtn = screen
+            .getAllByRole('button')
+            .find((b) => b.className?.match(/danger/i) && b.textContent?.match(/confirm/i));
+        if (confirmBtn) {
+            // Wrap in act so the Promise resolution and subsequent deleteAttachment call are flushed
+            await act(async () => {
+                fireEvent.click(confirmBtn);
+            });
+        }
         expect(mockDeleteAttachment).toHaveBeenCalledWith('att1');
     });
 
