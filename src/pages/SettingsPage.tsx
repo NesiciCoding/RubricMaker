@@ -276,8 +276,8 @@ export default function SettingsPage() {
         const file = e.target.files?.[0];
         if (!file) return;
         const reader = new FileReader();
-        reader.onload = () => {
-            const ok = importBackup(reader.result as string);
+        reader.onload = async () => {
+            const ok = await importBackup(reader.result as string);
             if (ok) showToast(t('toast.import_success'), 'success');
             else showToast(t('toast.import_error'), 'error');
         };

@@ -473,7 +473,7 @@ interface AppContextValue extends StoreData {
     deleteEssaySubmission: (submissionId: string, storagePath: string) => Promise<SyncResult>;
     getEssaySignedUrl: (storagePath: string) => Promise<string | null>;
     // Backup / restore
-    importBackup: (json: string) => boolean;
+    importBackup: (json: string) => Promise<boolean>;
     // Landing / auth flow
     showLanding: boolean;
     isCheckingSession: boolean;
@@ -964,10 +964,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }, []);
 
     // ─── Backup restore ─────────────────────────────────────────────────────────
-    const importBackup = useCallback((json: string): boolean => {
+    const importBackup = useCallback(async (json: string): Promise<boolean> => {
         const ok = importFullBackup(json);
         if (ok) {
-            dispatch({ type: 'SET_ALL', payload: loadStore() });
+            const newState = loadStore();
+            dispatch({ type: 'SET_ALL', payload: newState });
+            if (storageSync.isConnected()) {
+                await storageSync.pushAll(newState);
+            }
         }
         return ok;
     }, []);
