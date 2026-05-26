@@ -15,12 +15,15 @@ export function useDbStatus(): DbStatus {
     const [currentUser, setCurrentUser] = useState<DbUser | null>(null);
 
     useEffect(() => {
-        const unsubSync = storageSync.subscribe(() => setTick(t => t + 1));
-        const unsubAuth = storageSync.onAuthChange(user => {
+        const unsubSync = storageSync.subscribe(() => setTick((t) => t + 1));
+        const unsubAuth = storageSync.onAuthChange((user) => {
             setCurrentUser(user);
-            setTick(t => t + 1);
+            setTick((t) => t + 1);
         });
-        return () => { unsubSync(); unsubAuth(); };
+        return () => {
+            unsubSync();
+            unsubAuth();
+        };
     }, []);
 
     return {

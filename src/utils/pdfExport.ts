@@ -2,52 +2,57 @@ import type { Rubric, Student, StudentRubric, GradeScale } from '../types';
 import { calcGradeSummary } from './gradeCalc';
 
 function parseMd(text: string) {
-  if (!text) return text;
-  let html = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-  html = html.replace(/\n/g, '<br/>');
-  return html;
+    if (!text) return text;
+    let html = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    html = html.replace(/\n/g, '<br/>');
+    return html;
 }
 
 function buildSinglePointGridHtml(rubric: Rubric, sr?: StudentRubric): string {
-  const fmt = rubric.format;
-  const notYetColor = '#ef4444';
-  const exceedsColor = '#10b981';
+    const fmt = rubric.format;
+    const notYetColor = '#ef4444';
+    const exceedsColor = '#10b981';
 
-  const rows = rubric.criteria.map((c, i) => {
-    const entry = sr?.entries.find(e => e.criterionId === c.id);
-    const outcome = entry?.singlePointOutcome;
-    const comment = entry?.comment
-      ? entry.comment.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
-      : '';
+    const rows = rubric.criteria
+        .map((c, i) => {
+            const entry = sr?.entries.find((e) => e.criterionId === c.id);
+            const outcome = entry?.singlePointOutcome;
+            const comment = entry?.comment
+                ? entry.comment
+                      .replace(/<[^>]*>/g, ' ')
+                      .replace(/\s+/g, ' ')
+                      .trim()
+                : '';
 
-    const isNotYet = outcome === 'not-yet';
-    const isMeets = outcome === 'meets';
-    const isExceeds = outcome === 'exceeds';
-    const stripeBg = (sr && fmt.rowStriping && i % 2 !== 0) || !sr ? '#f8fafc' : '#ffffff';
+            const isNotYet = outcome === 'not-yet';
+            const isMeets = outcome === 'meets';
+            const isExceeds = outcome === 'exceeds';
+            const stripeBg = (sr && fmt.rowStriping && i % 2 !== 0) || !sr ? '#f8fafc' : '#ffffff';
 
-    const notYetCell = `<td style="padding:10px 12px;border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};vertical-align:top;font-size:12px;width:30%;${isNotYet ? `background:${notYetColor}18;border:2px solid ${notYetColor};` : `background:${stripeBg};`}">
+            const notYetCell = `<td style="padding:10px 12px;border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};vertical-align:top;font-size:12px;width:30%;${isNotYet ? `background:${notYetColor}18;border:2px solid ${notYetColor};` : `background:${stripeBg};`}">
       ${sr ? `<div style="font-size:10px;font-weight:700;color:${notYetColor};margin-bottom:4px;">✗ Not Yet</div>` : '<div style="font-size:10px;font-weight:700;color:#6b7280;margin-bottom:4px;">Areas for Growth</div>'}
       ${isNotYet && comment ? `<div style="font-size:11px;color:#374151;font-style:italic">${parseMd(comment)}</div>` : ''}
     </td>`;
 
-    const proficiencyDesc = c.levels[0]?.description ?? c.description ?? '';
-    const centerCell = `<td style="padding:10px 12px;border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};vertical-align:top;font-size:12px;width:40%;${isMeets ? `background:${fmt.accentColor}18;border:2px solid ${fmt.accentColor};` : ''}">
+            const proficiencyDesc = c.levels[0]?.description ?? c.description ?? '';
+            const centerCell = `<td style="padding:10px 12px;border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};vertical-align:top;font-size:12px;width:40%;${isMeets ? `background:${fmt.accentColor}18;border:2px solid ${fmt.accentColor};` : ''}">
       <div style="font-weight:700;margin-bottom:4px;">${parseMd(c.title)}</div>
       ${proficiencyDesc ? `<div style="font-size:11px;color:#6b7280">${parseMd(proficiencyDesc)}</div>` : ''}
       ${fmt.showWeights ? `<div style="font-size:10px;color:#6b7280;margin-top:4px">Weight: ${c.weight}%</div>` : ''}
       ${isMeets && comment ? `<div style="font-size:11px;color:#374151;font-style:italic;margin-top:6px;padding-top:6px;border-top:1px solid #e5e7eb">${parseMd(comment)}</div>` : ''}
     </td>`;
 
-    const exceedsCell = `<td style="padding:10px 12px;border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};vertical-align:top;font-size:12px;width:30%;${isExceeds ? `background:${exceedsColor}18;border:2px solid ${exceedsColor};` : `background:${stripeBg};`}">
+            const exceedsCell = `<td style="padding:10px 12px;border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};vertical-align:top;font-size:12px;width:30%;${isExceeds ? `background:${exceedsColor}18;border:2px solid ${exceedsColor};` : `background:${stripeBg};`}">
       ${sr ? `<div style="font-size:10px;font-weight:700;color:${exceedsColor};margin-bottom:4px;">▲ Exceeds</div>` : '<div style="font-size:10px;font-weight:700;color:#6b7280;margin-bottom:4px;">Exceeds Standard</div>'}
       ${isExceeds && comment ? `<div style="font-size:11px;color:#374151;font-style:italic">${parseMd(comment)}</div>` : ''}
     </td>`;
 
-    return `<tr style="page-break-inside: avoid;">${notYetCell}${centerCell}${exceedsCell}</tr>`;
-  }).join('');
+            return `<tr style="page-break-inside: avoid;">${notYetCell}${centerCell}${exceedsCell}</tr>`;
+        })
+        .join('');
 
-  return `
+    return `
     <table style="width:100%;border-collapse:collapse;margin-top:16px;">
       <thead>
         <tr style="background:${fmt.headerColor};color:${fmt.headerTextColor}">
@@ -62,46 +67,56 @@ function buildSinglePointGridHtml(rubric: Rubric, sr?: StudentRubric): string {
 }
 
 function buildRubricGridHtml(rubric: Rubric, sr?: StudentRubric): string {
-  if (rubric.scoringMode === 'single-point') return buildSinglePointGridHtml(rubric, sr);
+    if (rubric.scoringMode === 'single-point') return buildSinglePointGridHtml(rubric, sr);
 
-  const fmt = rubric.format;
-  const orderedLevels = (criterion: typeof rubric.criteria[0]) =>
-    fmt.levelOrder === 'worst-first' ? [...criterion.levels].reverse() : criterion.levels;
+    const fmt = rubric.format;
+    const orderedLevels = (criterion: (typeof rubric.criteria)[0]) =>
+        fmt.levelOrder === 'worst-first' ? [...criterion.levels].reverse() : criterion.levels;
 
-  const rows = rubric.criteria.map((c, i) => {
-    const entry = sr?.entries.find(e => e.criterionId === c.id);
-    const levels = orderedLevels(c);
-    const cells = levels.map(l => {
-      const selected = entry?.levelId === l.id;
+    const rows = rubric.criteria
+        .map((c, i) => {
+            const entry = sr?.entries.find((e) => e.criterionId === c.id);
+            const levels = orderedLevels(c);
+            const cells = levels
+                .map((l) => {
+                    const selected = entry?.levelId === l.id;
 
-      const subItemsHtml = l.subItems.length > 0 ? `
+                    const subItemsHtml =
+                        l.subItems.length > 0
+                            ? `
         <div style="margin-top:8px;padding-top:6px;border-top:1px solid #e5e7eb;font-size:10px;">
-          ${l.subItems.map(si => {
-        const legacyChecked = (entry?.checkedSubItems ?? []).includes(si.id);
-        const max = si.maxPoints ?? si.points ?? 1;
-        let scoreLabel: string;
-        if (entry) {
-          const currentScore = entry.subItemScores?.[si.id] ?? (legacyChecked ? max : (si.minPoints ?? 0));
-          scoreLabel = `[${currentScore}/${max} pts]`;
-        } else {
-          scoreLabel = `(${si.minPoints ?? 0}-${max} pts)`;
-        }
-        return `<div style="margin-bottom:3px;">${entry ? '•' : '[ ]'} ${parseMd(si.label)} <span style="color:#6b7280;font-size:9px">${scoreLabel}</span></div>`;
-      }).join('')}
+          ${l.subItems
+              .map((si) => {
+                  const legacyChecked = (entry?.checkedSubItems ?? []).includes(si.id);
+                  const max = si.maxPoints ?? si.points ?? 1;
+                  let scoreLabel: string;
+                  if (entry) {
+                      const currentScore = entry.subItemScores?.[si.id] ?? (legacyChecked ? max : (si.minPoints ?? 0));
+                      scoreLabel = `[${currentScore}/${max} pts]`;
+                  } else {
+                      scoreLabel = `(${si.minPoints ?? 0}-${max} pts)`;
+                  }
+                  return `<div style="margin-bottom:3px;">${entry ? '•' : '[ ]'} ${parseMd(si.label)} <span style="color:#6b7280;font-size:9px">${scoreLabel}</span></div>`;
+              })
+              .join('')}
         </div>
-      ` : '';
+      `
+                            : '';
 
-      return `<td style="padding:10px 12px;border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};vertical-align:top;font-size:12px;${selected ? `background:${fmt.accentColor}22;border-color:${fmt.accentColor};border-style:solid;border-width:2px;font-weight:600;` : ''}">
+                    return `<td style="padding:10px 12px;border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};vertical-align:top;font-size:12px;${selected ? `background:${fmt.accentColor}22;border-color:${fmt.accentColor};border-style:solid;border-width:2px;font-weight:600;` : ''}">
         ${parseMd(l.description) || '–'}
         ${fmt.showPoints ? `<br/><small style="color:${selected ? fmt.accentColor : '#6b7280'}">${l.minPoints === l.maxPoints ? l.maxPoints : `${l.minPoints}-${l.maxPoints}`}pts</small>` : ''}
         ${subItemsHtml}
       </td>`;
-    }).join('');
+                })
+                .join('');
 
-    const comment = entry?.comment ? `<div style="font-size:10px;color:#6b7280;margin-top:4px;font-style:italic">${parseMd(entry.comment)}</div>` : '';
-    const stripeBg = (sr && fmt.rowStriping && i % 2 !== 0) || (!sr) ? '#f8fafc' : '#ffffff';
+            const comment = entry?.comment
+                ? `<div style="font-size:10px;color:#6b7280;margin-top:4px;font-style:italic">${parseMd(entry.comment)}</div>`
+                : '';
+            const stripeBg = (sr && fmt.rowStriping && i % 2 !== 0) || !sr ? '#f8fafc' : '#ffffff';
 
-    return `<tr style="background:${stripeBg}; page-break-inside: avoid;">
+            return `<tr style="background:${stripeBg}; page-break-inside: avoid;">
       <td style="padding:10px 12px;border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};font-weight:600;font-size:12px;background:${stripeBg};min-width:${fmt.criterionColWidth}px">
         ${parseMd(c.title)}
         ${c.description ? `<div style="font-size:10px;color:#6b7280;font-weight:400">${parseMd(c.description)}</div>` : ''}
@@ -110,15 +125,19 @@ function buildRubricGridHtml(rubric: Rubric, sr?: StudentRubric): string {
       </td>
       ${cells}
     </tr>`;
-  }).join('');
+        })
+        .join('');
 
-  const headerCells = (rubric.criteria[0] ? orderedLevels(rubric.criteria[0]) : []).map(l =>
-    `<th style="padding:12px 14px;text-align:${fmt.headerTextAlign || 'center'};border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};min-width:${fmt.levelColWidth}px;font-size:12px">
+    const headerCells = (rubric.criteria[0] ? orderedLevels(rubric.criteria[0]) : [])
+        .map(
+            (l) =>
+                `<th style="padding:12px 14px;text-align:${fmt.headerTextAlign || 'center'};border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};min-width:${fmt.levelColWidth}px;font-size:12px">
       ${parseMd(l.label)}${fmt.showPoints ? ` (${l.minPoints === l.maxPoints ? l.maxPoints : `${l.minPoints}-${l.maxPoints}`}pts)` : ''}
     </th>`
-  ).join('');
+        )
+        .join('');
 
-  return `
+    return `
       <table style="width: 100%; border-collapse: collapse; margin-top: 16px;">
         <thead>
           <tr style="background:${fmt.headerColor};color:${fmt.headerTextColor}">
@@ -132,17 +151,17 @@ function buildRubricGridHtml(rubric: Rubric, sr?: StudentRubric): string {
 }
 
 function buildRubricHTML(
-  sr: StudentRubric,
-  rubric: Rubric,
-  student: Student,
-  scale: GradeScale | null,
-  breakBeforeRight = false,
+    sr: StudentRubric,
+    rubric: Rubric,
+    student: Student,
+    scale: GradeScale | null,
+    breakBeforeRight = false
 ): string {
-  const summary = calcGradeSummary(sr, rubric.criteria, scale);
-  const fmt = rubric.format;
-  const gridHtml = buildRubricGridHtml(rubric, sr);
+    const summary = calcGradeSummary(sr, rubric.criteria, scale);
+    const fmt = rubric.format;
+    const gridHtml = buildRubricGridHtml(rubric, sr);
 
-  return `
+    return `
   <div class="print-page" style="${breakBeforeRight ? 'break-before: right; page-break-before: right; ' : ''}page-break-after: always; font-family: ${fmt.fontFamily}; color: #1e293b; background: #fff;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px">
         <div>
@@ -153,27 +172,39 @@ function buildRubricHTML(
           <div style="font-size:12px;color:#6b7280;margin-top:4px">Graded: ${sr.gradedAt ? new Date(sr.gradedAt).toLocaleDateString() : 'N/A'}</div>
         </div>
         <div style="text-align:right">
-          ${fmt.showCalculatedGrade !== false && scale !== null ? `
+          ${
+              fmt.showCalculatedGrade !== false && scale !== null
+                  ? `
           <div style="font-size:42px;font-weight:800;color:${summary.gradeColor};line-height:1">${summary.letterGrade}</div>
           <div style="font-size:16px;font-weight:600;color:#374151">${summary.modifiedPercentage.toFixed(1)}%</div>
-          ` : fmt.showCalculatedGrade !== false ? `
+          `
+                  : fmt.showCalculatedGrade !== false
+                    ? `
           <div style="font-size:16px;font-weight:600;color:#374151">${summary.modifiedPercentage.toFixed(1)}%</div>
-          ` : ''}
+          `
+                    : ''
+          }
           <div style="font-size:12px;color:#6b7280">${summary.rawScore}/${summary.maxRawScore} pts</div>
-          ${sr.globalModifier && sr.globalModifier.value !== 0
-      ? `<div style="font-size:11px;color:#f59e0b;margin-top:4px">Modifier: ${sr.globalModifier.value > 0 ? '+' : ''}${sr.globalModifier.value}${sr.globalModifier.type === 'percentage' ? '%' : 'pts'}
+          ${
+              sr.globalModifier && sr.globalModifier.value !== 0
+                  ? `<div style="font-size:11px;color:#f59e0b;margin-top:4px">Modifier: ${sr.globalModifier.value > 0 ? '+' : ''}${sr.globalModifier.value}${sr.globalModifier.type === 'percentage' ? '%' : 'pts'}
                ${sr.globalModifier.reason ? `(${sr.globalModifier.reason})` : ''}</div>`
-      : ''}
+                  : ''
+          }
         </div>
       </div>
 
       ${gridHtml}
 
-      ${sr.overallComment ? `
+      ${
+          sr.overallComment
+              ? `
         <div style="margin-top:18px;page-break-inside: avoid;padding:14px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0">
           <strong style="font-size:12px;color:#374151">Overall Comment:</strong>
           <p style="margin:6px 0 0;font-size:13px;color:#475569">${parseMd(sr.overallComment)}</p>
-        </div>` : ''}
+        </div>`
+              : ''
+      }
 
       <div style="margin-top:16px;font-size:11px;color:#94a3b8;text-align:right">
         Generated by Rubric Maker · ${new Date().toLocaleDateString()}
@@ -183,10 +214,10 @@ function buildRubricHTML(
 }
 
 function buildEmptyRubricHTML(rubric: Rubric): string {
-  const fmt = rubric.format;
-  const gridHtml = buildRubricGridHtml(rubric);
+    const fmt = rubric.format;
+    const gridHtml = buildRubricGridHtml(rubric);
 
-  return `
+    return `
   <div class="print-page" style="page-break-after: always; font-family: ${fmt.fontFamily}; color: #1e293b; background: #fff;">
       <div style="margin-bottom:18px">
         <h1 style="margin:0;font-size:20px">${rubric.name}</h1>
@@ -203,20 +234,20 @@ function buildEmptyRubricHTML(rubric: Rubric): string {
 }
 
 function printHtml(html: string, orientation?: 'portrait' | 'landscape') {
-  return new Promise<void>((resolve) => {
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = '0';
-    document.body.appendChild(iframe);
+    return new Promise<void>((resolve) => {
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'fixed';
+        iframe.style.right = '0';
+        iframe.style.bottom = '0';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = '0';
+        document.body.appendChild(iframe);
 
-    const doc = iframe.contentWindow?.document;
-    if (doc) {
-      doc.open();
-      doc.write(`
+        const doc = iframe.contentWindow?.document;
+        if (doc) {
+            doc.open();
+            doc.write(`
                 <!DOCTYPE html>
                 <html>
                 <head>
@@ -230,48 +261,48 @@ function printHtml(html: string, orientation?: 'portrait' | 'landscape') {
                 </body>
                 </html>
             `);
-      doc.close();
+            doc.close();
 
-      setTimeout(() => {
-        iframe.contentWindow?.focus();
-        iframe.contentWindow?.print();
-        setTimeout(() => {
-          document.body.removeChild(iframe);
-          resolve();
-        }, 100);
-      }, 500);
-    } else {
-      resolve();
-    }
-  });
+            setTimeout(() => {
+                iframe.contentWindow?.focus();
+                iframe.contentWindow?.print();
+                setTimeout(() => {
+                    document.body.removeChild(iframe);
+                    resolve();
+                }, 100);
+            }, 500);
+        } else {
+            resolve();
+        }
+    });
 }
 
 export async function exportSinglePdf(
-  sr: StudentRubric,
-  rubric: Rubric,
-  student: Student,
-  scale: GradeScale | null,
-  options: { orientation?: 'portrait' | 'landscape' } = {}
+    sr: StudentRubric,
+    rubric: Rubric,
+    student: Student,
+    scale: GradeScale | null,
+    options: { orientation?: 'portrait' | 'landscape' } = {}
 ): Promise<void> {
-  const htmlStr = buildRubricHTML(sr, rubric, student, scale);
-  await printHtml(htmlStr, options.orientation || rubric.format.orientation || 'portrait');
+    const htmlStr = buildRubricHTML(sr, rubric, student, scale);
+    await printHtml(htmlStr, options.orientation || rubric.format.orientation || 'portrait');
 }
 
 export async function exportBatchPdf(
-  entries: { sr: StudentRubric; student: Student }[],
-  rubric: Rubric,
-  scale: GradeScale | null,
-  options: { orientation?: 'portrait' | 'landscape', padForDoubleSided?: boolean } = {}
+    entries: { sr: StudentRubric; student: Student }[],
+    rubric: Rubric,
+    scale: GradeScale | null,
+    options: { orientation?: 'portrait' | 'landscape'; padForDoubleSided?: boolean } = {}
 ): Promise<void> {
-  const htmlParts = entries.map(({ sr, student }, index) => {
-    // For double-sided mode: break-before: right lets the browser insert a blank
-    // page only when needed so each student always starts on the front of a sheet.
-    return buildRubricHTML(sr, rubric, student, scale, options.padForDoubleSided === true && index > 0);
-  });
-  await printHtml(htmlParts.join(''), options.orientation || rubric.format.orientation || 'portrait');
+    const htmlParts = entries.map(({ sr, student }, index) => {
+        // For double-sided mode: break-before: right lets the browser insert a blank
+        // page only when needed so each student always starts on the front of a sheet.
+        return buildRubricHTML(sr, rubric, student, scale, options.padForDoubleSided === true && index > 0);
+    });
+    await printHtml(htmlParts.join(''), options.orientation || rubric.format.orientation || 'portrait');
 }
 
 export async function exportRubricGridPdf(rubric: Rubric): Promise<void> {
-  const htmlStr = buildEmptyRubricHTML(rubric);
-  await printHtml(htmlStr, rubric.format.orientation || 'portrait');
+    const htmlStr = buildEmptyRubricHTML(rubric);
+    await printHtml(htmlStr, rubric.format.orientation || 'portrait');
 }

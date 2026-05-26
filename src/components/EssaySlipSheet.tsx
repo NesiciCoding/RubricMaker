@@ -26,13 +26,17 @@ function SlipItem({ student, assignment }: { student: ClassStudent; assignment: 
 
     useEffect(() => {
         if (!canvasRef.current) return;
-        QRCode.toCanvas(canvasRef.current, url, { width: 80, margin: 0 }).catch(() => {/* ignore */});
+        QRCode.toCanvas(canvasRef.current, url, { width: 80, margin: 0 }).catch(() => {
+            /* ignore */
+        });
     }, [url]);
 
     return (
         <div className="slip-item">
             <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 700, fontSize: '1rem', color: '#1e293b', marginBottom: 4 }}>{student.name}</div>
+                <div style={{ fontWeight: 700, fontSize: '1rem', color: '#1e293b', marginBottom: 4 }}>
+                    {student.name}
+                </div>
                 <div style={{ fontSize: '0.78rem', color: '#475569', marginBottom: 4 }}>{assignment.title}</div>
                 {assignment.timeLimitMinutes && (
                     <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>⏱ {assignment.timeLimitMinutes} min</div>
@@ -42,8 +46,17 @@ function SlipItem({ student, assignment }: { student: ClassStudent; assignment: 
                         Words: {assignment.minWords ?? 0}–{assignment.maxWords ?? '∞'}
                     </div>
                 )}
-                <div style={{ marginTop: 6, fontSize: '0.65rem', color: '#94a3b8', wordBreak: 'break-all', fontFamily: 'monospace' }}>
-                    {url.slice(0, 60)}{url.length > 60 ? '…' : ''}
+                <div
+                    style={{
+                        marginTop: 6,
+                        fontSize: '0.65rem',
+                        color: '#94a3b8',
+                        wordBreak: 'break-all',
+                        fontFamily: 'monospace',
+                    }}
+                >
+                    {url.slice(0, 60)}
+                    {url.length > 60 ? '…' : ''}
                 </div>
             </div>
             <canvas ref={canvasRef} style={{ flexShrink: 0 }} />
@@ -76,10 +89,47 @@ export default function EssaySlipSheet({ baseAssignment, students, onClose }: Pr
                 }
             `}</style>
 
-            <div className="slip-sheet-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1100, padding: 24, overflowY: 'auto' }}>
-                <div className="slip-sheet-container" style={{ background: '#f8fafc', borderRadius: 14, width: '100%', maxWidth: 860, boxShadow: '0 20px 60px rgba(0,0,0,0.25)', maxHeight: '90vh', overflow: 'auto' }}>
+            <div
+                className="slip-sheet-overlay"
+                style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(0,0,0,0.5)',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    justifyContent: 'center',
+                    zIndex: 1100,
+                    padding: 24,
+                    overflowY: 'auto',
+                }}
+            >
+                <div
+                    className="slip-sheet-container"
+                    style={{
+                        background: '#f8fafc',
+                        borderRadius: 14,
+                        width: '100%',
+                        maxWidth: 860,
+                        boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
+                        maxHeight: '90vh',
+                        overflow: 'auto',
+                    }}
+                >
                     {/* Controls bar */}
-                    <div className="slip-sheet-controls" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1px solid #e2e8f0', background: '#fff', position: 'sticky', top: 0, zIndex: 10 }}>
+                    <div
+                        className="slip-sheet-controls"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '14px 20px',
+                            borderBottom: '1px solid #e2e8f0',
+                            background: '#fff',
+                            position: 'sticky',
+                            top: 0,
+                            zIndex: 10,
+                        }}
+                    >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                             <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>
                                 Class slips — {students.length} students
@@ -88,24 +138,33 @@ export default function EssaySlipSheet({ baseAssignment, students, onClose }: Pr
                                 <button
                                     onClick={() => setColumns(2)}
                                     className={`btn btn-sm ${columns === 2 ? 'btn-primary' : 'btn-secondary'}`}
-                                >2 columns</button>
+                                >
+                                    2 columns
+                                </button>
                                 <button
                                     onClick={() => setColumns(4)}
                                     className={`btn btn-sm ${columns === 4 ? 'btn-primary' : 'btn-secondary'}`}
-                                >4 columns</button>
+                                >
+                                    4 columns
+                                </button>
                             </div>
                         </div>
                         <div style={{ display: 'flex', gap: 8 }}>
                             <button className="btn btn-primary btn-sm" onClick={() => window.print()}>
                                 <Printer size={14} /> Print
                             </button>
-                            <button className="btn btn-ghost btn-icon btn-sm" onClick={onClose}><X size={16} /></button>
+                            <button className="btn btn-ghost btn-icon btn-sm" onClick={onClose}>
+                                <X size={16} />
+                            </button>
                         </div>
                     </div>
 
                     {/* Slip grid */}
-                    <div className="slip-sheet-grid" style={{ display: 'grid', gridTemplateColumns: `repeat(${columns}, 1fr)`, gap: 8, padding: 20 }}>
-                        {students.map(s => (
+                    <div
+                        className="slip-sheet-grid"
+                        style={{ display: 'grid', gridTemplateColumns: `repeat(${columns}, 1fr)`, gap: 8, padding: 20 }}
+                    >
+                        {students.map((s) => (
                             <SlipItem key={s.id} student={s} assignment={baseAssignment} />
                         ))}
                     </div>

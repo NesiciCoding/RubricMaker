@@ -20,13 +20,16 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
                     <Route path="/feedback/:code" element={<StudentFeedbackPage />} />
                     <Route path="/preview/:code" element={<RubricPreviewPage />} />
                     <Route path="/essay/:code" element={<StudentEssayPage />} />
-                    <Route path="*" element={
-                        <AppProvider>
-                            <ToastProvider>
-                                <App />
-                            </ToastProvider>
-                        </AppProvider>
-                    } />
+                    <Route
+                        path="*"
+                        element={
+                            <AppProvider>
+                                <ToastProvider>
+                                    <App />
+                                </ToastProvider>
+                            </AppProvider>
+                        }
+                    />
                 </Routes>
             </Suspense>
         </HashRouter>
