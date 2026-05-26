@@ -68,6 +68,26 @@ class StorageSyncService {
 
     // ── Connection ────────────────────────────────────────────────────────────
 
+    /**
+     * Initialise the Supabase client for auth/OAuth without connecting for data sync.
+     * Called on app startup so existing sessions and OAuth callbacks are detected.
+     */
+    async initAuth(config: DatabaseConfig): Promise<boolean> {
+        const ok = await this.adapter.initClient(config);
+        if (ok) {
+            this.adapter.setAuthChangeListener(user => {
+                this.notifyAuthChange(user);
+                this.notifyListeners();
+            });
+        }
+        return ok;
+    }
+
+    /** True if the adapter has an active session (real or anonymous). */
+    hasSession(): boolean {
+        return this.adapter.hasSession();
+    }
+
     async configure(config: DatabaseConfig): Promise<boolean> {
         const ok = await this.adapter.connect(config);
         if (ok) {
@@ -86,6 +106,24 @@ class StorageSyncService {
         this.adapter.disconnect();
         this.setStatus('offline');
         clearSupabaseConfig();
+    }
+
+    async signOut(): Promise<void> {
+        await this.adapter.signOut();
+        this.setStatus('offline');
+        clearSupabaseConfig();
+    }
+
+    async signInWithGoogle(): Promise<{ error?: string }> {
+        return this.adapter.signInWithGoogle();
+    }
+
+    async signInWithMicrosoftPersonal(): Promise<{ error?: string }> {
+        return this.adapter.signInWithMicrosoftPersonal();
+    }
+
+    async signInWithAzureAD(): Promise<{ error?: string }> {
+        return this.adapter.signInWithAzureAD();
     }
 
     // ── Profile management (pass-through to adapter) ──────────────────────────

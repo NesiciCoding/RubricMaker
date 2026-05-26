@@ -7,6 +7,8 @@ import { MobileMenuContext } from './context/MobileMenuContext';
 import { getTutorialSteps } from './components/TutorialSteps';
 import { useTranslation } from 'react-i18next';
 import { Loader } from 'lucide-react';
+import LandingPage from './pages/LandingPage';
+import MigrationPrompt from './components/auth/MigrationPrompt';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const RubricList = lazy(() => import('./pages/RubricList'));
@@ -40,11 +42,20 @@ const Spinner = () => {
 };
 
 export default function App() {
-    const { settings, updateSettings } = useApp();
+    const { settings, updateSettings, showLanding, isCheckingSession } = useApp();
     const { t, i18n } = useTranslation();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
     const steps = useMemo(() => getTutorialSteps(t), [t, i18n.language]);
+
+    if (isCheckingSession) {
+        return (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+                <Loader className="spin" size={28} style={{ color: '#94a3b8' }} />
+            </div>
+        );
+    }
+
+    if (showLanding) return <LandingPage />;
 
     const handleJoyrideCallback = (data: CallBackProps) => {
         const { status } = data;
@@ -56,6 +67,7 @@ export default function App() {
 
     return (
         <MobileMenuContext.Provider value={{ open: () => setMobileMenuOpen(true) }}>
+        <MigrationPrompt />
         <div className="app-layout">
             <a href="#main-content" className="skip-nav">Skip to main content</a>
             <Joyride

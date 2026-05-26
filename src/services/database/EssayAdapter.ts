@@ -25,7 +25,9 @@ export class EssayAdapter {
 
     constructor(supabaseUrl: string, supabaseAnonKey: string) {
         this.client = createClient(supabaseUrl, supabaseAnonKey, {
-            auth: { persistSession: false, autoRefreshToken: true },
+            // Persist session so OAuth callbacks survive the page redirect.
+            // Uses an isolated storageKey to avoid conflicting with the teacher's session.
+            auth: { persistSession: true, autoRefreshToken: true, storageKey: 'rm_student_auth' },
         });
     }
 
@@ -44,7 +46,34 @@ export class EssayAdapter {
         return { userId: data.session.user.id };
     }
 
-    /** Get the current session (in case the student refreshes the page) */
+    /** OAuth — redirects to Google, then back to the current page URL. */
+    async signInWithGoogle(): Promise<{ error?: string }> {
+        const { error } = await this.client.auth.signInWithOAuth({
+            provider: 'google',
+            options: { redirectTo: window.location.href },
+        });
+        return error ? { error: error.message } : {};
+    }
+
+    /** OAuth — Microsoft personal accounts. */
+    async signInWithMicrosoftPersonal(): Promise<{ error?: string }> {
+        const { error } = await this.client.auth.signInWithOAuth({
+            provider: 'azure',
+            options: { redirectTo: window.location.href, scopes: 'openid profile email', queryParams: { domain_hint: 'consumers' } },
+        });
+        return error ? { error: error.message } : {};
+    }
+
+    /** OAuth — Microsoft school / work (Azure AD). */
+    async signInWithAzureAD(): Promise<{ error?: string }> {
+        const { error } = await this.client.auth.signInWithOAuth({
+            provider: 'azure',
+            options: { redirectTo: window.location.href, scopes: 'openid profile email', queryParams: { domain_hint: 'organizations' } },
+        });
+        return error ? { error: error.message } : {};
+    }
+
+    /** Get the current session (in case the student refreshes or returns after OAuth). */
     async getSession(): Promise<{ userId: string | null; email: string | null }> {
         const { data: { session } } = await this.client.auth.getSession();
         return {

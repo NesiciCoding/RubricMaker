@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { Clock, CheckCircle, Copy, AlertTriangle, Mail, KeyRound, Loader2 } from 'lucide-react';
+import { Clock, CheckCircle, Copy, AlertTriangle, Mail, KeyRound, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import EssayEditor from '../components/Editor/EssayEditor';
 import { decodeEssayAssignment } from '../utils/essayShareCode';
 import { encodeEssaySubmission } from '../utils/essaySubmissionCode';
@@ -49,14 +49,27 @@ function OtpGate({ adapter, onAuthenticated }: OtpGateProps) {
     const [otp, setOtp]           = useState('');
     const [step, setStep]         = useState<'email' | 'otp'>('email');
     const [busy, setBusy]         = useState(false);
+    const [oauthBusy, setOauthBusy] = useState<string | null>(null);
     const [error, setError]       = useState('');
+    const [showEmail, setShowEmail] = useState(false);
 
-    // Check if there's already a valid session (page reload)
+    // Check if there's already a valid session (page reload after OAuth)
     useEffect(() => {
         adapter.getSession().then(({ userId, email: e }) => {
             if (userId && e) onAuthenticated(userId, e);
         });
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const handleOAuth = async (provider: 'google' | 'ms-personal' | 'azure-ad') => {
+        setError('');
+        setOauthBusy(provider);
+        let result: { error?: string };
+        if (provider === 'google') result = await adapter.signInWithGoogle();
+        else if (provider === 'ms-personal') result = await adapter.signInWithMicrosoftPersonal();
+        else result = await adapter.signInWithAzureAD();
+        if (result.error) { setError(result.error); setOauthBusy(null); }
+        // On success browser redirects — no further action needed
+    };
 
     const handleSendOtp = async () => {
         if (!email.trim()) { setError('Enter your email address.'); return; }
@@ -76,20 +89,64 @@ function OtpGate({ adapter, onAuthenticated }: OtpGateProps) {
         else { setError(e ?? 'Invalid code. Check your email and try again.'); }
     };
 
+    const btnBase: React.CSSProperties = {
+        display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px',
+        borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff',
+        fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', width: '100%',
+        transition: 'background 0.15s',
+    };
+
     return (
         <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', padding: 24 }}>
-            <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 4px 24px rgba(0,0,0,0.10)', padding: 36, maxWidth: 400, width: '100%', display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 4px 24px rgba(0,0,0,0.10)', padding: 36, maxWidth: 420, width: '100%', display: 'flex', flexDirection: 'column', gap: 18 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <Mail size={22} style={{ color: '#6366f1' }} />
-                    <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>Verify your email</h2>
+                    <KeyRound size={22} style={{ color: '#6366f1' }} />
+                    <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>Sign in to start</h2>
                 </div>
-                <p style={{ margin: 0, fontSize: '0.9rem', color: '#64748b', lineHeight: 1.5 }}>
-                    {step === 'email'
-                        ? 'Enter your school email address to receive a login code before you can start writing.'
-                        : `We sent a 6-digit code to ${email}. Enter it below.`}
+                <p style={{ margin: 0, fontSize: '0.88rem', color: '#64748b', lineHeight: 1.5 }}>
+                    Sign in with your school account before you can start writing.
                 </p>
 
-                {step === 'email' ? (
+                {/* OAuth buttons */}
+                <button style={btnBase} disabled={!!oauthBusy}
+                    onClick={() => handleOAuth('google')}
+                    onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')}
+                    onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
+                    {oauthBusy === 'google'
+                        ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }} />
+                        : <GoogleIcon />}
+                    Sign in with Google
+                </button>
+
+                <button style={{ ...btnBase, borderColor: '#bfdbfe', background: '#eff6ff' }} disabled={!!oauthBusy}
+                    onClick={() => handleOAuth('ms-personal')}
+                    onMouseEnter={e => (e.currentTarget.style.background = '#dbeafe')}
+                    onMouseLeave={e => (e.currentTarget.style.background = '#eff6ff')}>
+                    {oauthBusy === 'ms-personal'
+                        ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }} />
+                        : <MicrosoftIcon />}
+                    Sign in with Microsoft
+                </button>
+
+                <button style={{ ...btnBase, borderColor: '#c7d2fe', background: '#eef2ff' }} disabled={!!oauthBusy}
+                    onClick={() => handleOAuth('azure-ad')}
+                    onMouseEnter={e => (e.currentTarget.style.background = '#e0e7ff')}
+                    onMouseLeave={e => (e.currentTarget.style.background = '#eef2ff')}>
+                    {oauthBusy === 'azure-ad'
+                        ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }} />
+                        : <MicrosoftIcon />}
+                    <span>Sign in with Microsoft <span style={{ fontSize: '0.75rem', fontWeight: 400 }}>(school / work)</span></span>
+                </button>
+
+                {/* Email OTP toggle */}
+                <button style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', fontSize: '0.83rem', padding: '2px 0' }}
+                    onClick={() => setShowEmail(o => !o)}>
+                    <Mail size={14} />
+                    Use email instead
+                    {showEmail ? <ChevronUp size={13} style={{ marginLeft: 'auto' }} /> : <ChevronDown size={13} style={{ marginLeft: 'auto' }} />}
+                </button>
+
+                {showEmail && step === 'email' && (
                     <>
                         <input
                             type="email" value={email}
@@ -105,7 +162,11 @@ function OtpGate({ adapter, onAuthenticated }: OtpGateProps) {
                             {busy ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Sending…</> : 'Send login code'}
                         </button>
                     </>
-                ) : (
+                )}
+
+                {!showEmail && error && <p style={{ margin: 0, color: '#ef4444', fontSize: '0.825rem' }}>{error}</p>}
+
+                {showEmail && step === 'otp' && (
                     <>
                         <input
                             type="text" value={otp} maxLength={6}
@@ -128,6 +189,30 @@ function OtpGate({ adapter, onAuthenticated }: OtpGateProps) {
                 )}
             </div>
         </div>
+    );
+}
+
+// ── Brand icons ──────────────────────────────────────────────────────────────
+
+function GoogleIcon() {
+    return (
+        <svg width="18" height="18" viewBox="0 0 18 18" style={{ flexShrink: 0 }}>
+            <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" />
+            <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" />
+            <path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" />
+            <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" />
+        </svg>
+    );
+}
+
+function MicrosoftIcon() {
+    return (
+        <svg width="18" height="18" viewBox="0 0 21 21" style={{ flexShrink: 0 }}>
+            <rect x="1" y="1" width="9" height="9" fill="#f25022" />
+            <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
+            <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
+            <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
+        </svg>
     );
 }
 
