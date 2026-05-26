@@ -5,8 +5,7 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 import en from './locales/en.json';
 import nl from './locales/nl.json';
 
-i18n
-    .use(LanguageDetector)
+i18n.use(LanguageDetector)
     .use(initReactI18next)
     .init({
         resources: {
@@ -15,7 +14,7 @@ i18n
             },
             nl: {
                 translation: nl,
-            }
+            },
         },
         fallbackLng: 'en',
         interpolation: {

@@ -9,12 +9,11 @@ import {
     calcLetterGrade,
     calcGradeColor,
     calcGradeSummary,
-    calcClassStats
+    calcClassStats,
 } from './gradeCalc';
 import type { RubricCriterion, ScoreEntry, GradeScale, StudentRubric, Rubric } from '../types';
 
 describe('gradeCalc utilities', () => {
-
     const mockCriteria: RubricCriterion[] = [
         {
             id: 'c1',
@@ -23,8 +22,8 @@ describe('gradeCalc utilities', () => {
             weight: 50,
             levels: [
                 { id: 'l1a', label: 'Excellent', minPoints: 4, maxPoints: 5, description: '', subItems: [] },
-                { id: 'l1b', label: 'Good', minPoints: 2, maxPoints: 3, description: '', subItems: [] }
-            ]
+                { id: 'l1b', label: 'Good', minPoints: 2, maxPoints: 3, description: '', subItems: [] },
+            ],
         },
         {
             id: 'c2',
@@ -33,19 +32,30 @@ describe('gradeCalc utilities', () => {
             weight: 50,
             levels: [
                 {
-                    id: 'l2a', label: 'Level A', minPoints: 8, maxPoints: 10, description: '', subItems: [
+                    id: 'l2a',
+                    label: 'Level A',
+                    minPoints: 8,
+                    maxPoints: 10,
+                    description: '',
+                    subItems: [
                         { id: 's1', label: 'Sub 1', points: 1 },
-                        { id: 's2', label: 'Sub 2', points: 1 }
-                    ]
+                        { id: 's2', label: 'Sub 2', points: 1 },
+                    ],
                 },
-                { id: 'l2b', label: 'Level B', minPoints: 0, maxPoints: 7, description: '', subItems: [] }
-            ]
-        }
+                { id: 'l2b', label: 'Level B', minPoints: 0, maxPoints: 7, description: '', subItems: [] },
+            ],
+        },
     ];
 
     describe('calcEntryPoints', () => {
         it('returns override points if specified', () => {
-            const entry: ScoreEntry = { criterionId: 'c1', levelId: 'l1a', checkedSubItems: [], comment: '', overridePoints: 10 };
+            const entry: ScoreEntry = {
+                criterionId: 'c1',
+                levelId: 'l1a',
+                checkedSubItems: [],
+                comment: '',
+                overridePoints: 10,
+            };
             expect(calcEntryPoints(entry, mockCriteria[0])).toBe(10);
         });
 
@@ -59,21 +69,45 @@ describe('gradeCalc utilities', () => {
             const entry1: ScoreEntry = { criterionId: 'c1', levelId: 'l1a', checkedSubItems: [], comment: '' };
             expect(calcEntryPoints(entry1, mockCriteria[0])).toBe(4);
 
-            const entry2: ScoreEntry = { criterionId: 'c1', levelId: 'l1a', checkedSubItems: [], comment: '', selectedPoints: 4.5 };
+            const entry2: ScoreEntry = {
+                criterionId: 'c1',
+                levelId: 'l1a',
+                checkedSubItems: [],
+                comment: '',
+                selectedPoints: 4.5,
+            };
             expect(calcEntryPoints(entry2, mockCriteria[0])).toBe(4.5);
 
             // Bounds check
-            const entry3: ScoreEntry = { criterionId: 'c1', levelId: 'l1a', checkedSubItems: [], comment: '', selectedPoints: 10 };
+            const entry3: ScoreEntry = {
+                criterionId: 'c1',
+                levelId: 'l1a',
+                checkedSubItems: [],
+                comment: '',
+                selectedPoints: 10,
+            };
             expect(calcEntryPoints(entry3, mockCriteria[0])).toBe(5); // Capped at max
         });
 
         it('calculates points with sub-items', () => {
-            const entry: ScoreEntry = { criterionId: 'c2', levelId: 'l2a', checkedSubItems: ['s1'], comment: '', selectedPoints: 8 };
+            const entry: ScoreEntry = {
+                criterionId: 'c2',
+                levelId: 'l2a',
+                checkedSubItems: ['s1'],
+                comment: '',
+                selectedPoints: 8,
+            };
             expect(calcEntryPoints(entry, mockCriteria[1])).toBe(9); // 8 (min/selected) + 1 (subitem)
         });
 
         it('caps sub-item points to level maxPoints', () => {
-            const entry: ScoreEntry = { criterionId: 'c2', levelId: 'l2a', checkedSubItems: ['s1', 's2'], comment: '', selectedPoints: 9 };
+            const entry: ScoreEntry = {
+                criterionId: 'c2',
+                levelId: 'l2a',
+                checkedSubItems: ['s1', 's2'],
+                comment: '',
+                selectedPoints: 9,
+            };
             // 9 + 2 = 11, should cap at 10
             expect(calcEntryPoints(entry, mockCriteria[1])).toBe(10);
         });
@@ -119,7 +153,7 @@ describe('gradeCalc utilities', () => {
         it('calculates total raw score for multiple entries', () => {
             const entries: ScoreEntry[] = [
                 { criterionId: 'c1', levelId: 'l1a', checkedSubItems: [], comment: '', selectedPoints: 5 },
-                { criterionId: 'c2', levelId: 'l2b', checkedSubItems: [], comment: '', selectedPoints: 7 }
+                { criterionId: 'c2', levelId: 'l2b', checkedSubItems: [], comment: '', selectedPoints: 7 },
             ];
             expect(calcRawScore(entries, mockCriteria)).toBe(12);
         });
@@ -135,7 +169,7 @@ describe('gradeCalc utilities', () => {
         it('calculates correct percentage of raw score over max raw score', () => {
             const entries: ScoreEntry[] = [
                 { criterionId: 'c1', levelId: 'l1a', checkedSubItems: [], comment: '', selectedPoints: 5 },
-                { criterionId: 'c2', levelId: 'l2b', checkedSubItems: [], comment: '', selectedPoints: 7 }
+                { criterionId: 'c2', levelId: 'l2b', checkedSubItems: [], comment: '', selectedPoints: 7 },
             ];
             // sum = 12, max = 15 => (12/15) * 100 = 80
             expect(calcPercentage(entries, mockCriteria)).toBe(80);
@@ -143,7 +177,10 @@ describe('gradeCalc utilities', () => {
 
         it('returns 0 if max raw score is 0', () => {
             const zeroCriteria: RubricCriterion[] = [
-                { ...mockCriteria[0], levels: [{ id: 'l1', label: '1', minPoints: 0, maxPoints: 0, description: '', subItems: [] }] }
+                {
+                    ...mockCriteria[0],
+                    levels: [{ id: 'l1', label: '1', minPoints: 0, maxPoints: 0, description: '', subItems: [] }],
+                },
             ];
             expect(calcPercentage([], zeroCriteria)).toBe(0);
         });
@@ -153,21 +190,21 @@ describe('gradeCalc utilities', () => {
         it('calculates weighted score percentage correctly', () => {
             const criteria: RubricCriterion[] = [
                 { ...mockCriteria[0], weight: 70 }, // max points: 5
-                { ...mockCriteria[1], weight: 30 }  // max points: 10
+                { ...mockCriteria[1], weight: 30 }, // max points: 10
             ];
             const entries: ScoreEntry[] = [
                 { criterionId: 'c1', levelId: 'l1a', checkedSubItems: [], comment: '', selectedPoints: 4 }, // 4/5 * 70 = 56
-                { criterionId: 'c2', levelId: 'l2b', checkedSubItems: [], comment: '', selectedPoints: 5 }  // 5/10 * 30 = 15
+                { criterionId: 'c2', levelId: 'l2b', checkedSubItems: [], comment: '', selectedPoints: 5 }, // 5/10 * 30 = 15
             ];
             // Total weighted sum = 71
             expect(calcWeightedScore(entries, criteria)).toBe(71);
         });
 
         it('falls back to standard percentage if total weight is 0', () => {
-            const criteriaZeroWeight: RubricCriterion[] = mockCriteria.map(c => ({ ...c, weight: 0 }));
+            const criteriaZeroWeight: RubricCriterion[] = mockCriteria.map((c) => ({ ...c, weight: 0 }));
             const entries: ScoreEntry[] = [
                 { criterionId: 'c1', levelId: 'l1a', checkedSubItems: [], comment: '', selectedPoints: 5 },
-                { criterionId: 'c2', levelId: 'l2b', checkedSubItems: [], comment: '', selectedPoints: 4 }
+                { criterionId: 'c2', levelId: 'l2b', checkedSubItems: [], comment: '', selectedPoints: 4 },
             ];
             // Raw: 9, Max raw: 15. Percentage: 60%
             expect(calcWeightedScore(entries, criteriaZeroWeight)).toBe(60);
@@ -207,8 +244,8 @@ describe('gradeCalc utilities', () => {
             ranges: [
                 { min: 90, max: 100, label: 'A', color: '#A' },
                 { min: 80, max: 89, label: 'B', color: '#B' },
-                { min: 0, max: 79, label: 'F', color: '#F' }
-            ]
+                { min: 0, max: 79, label: 'F', color: '#F' },
+            ],
         };
 
         it('calculates correct letter grade based on percentage', () => {
@@ -235,17 +272,23 @@ describe('gradeCalc utilities', () => {
 
     describe('calcGradeSummary', () => {
         const mockScale: GradeScale = {
-            id: 's1', type: 'letter', name: 'Scale',
-            ranges: [{ min: 0, max: 100, label: 'P', color: '#000' }]
+            id: 's1',
+            type: 'letter',
+            name: 'Scale',
+            ranges: [{ min: 0, max: 100, label: 'P', color: '#000' }],
         };
 
         it('returns summary for standard weighted mode', () => {
             const studentRubric: StudentRubric = {
-                id: 'sr1', rubricId: 'r1', studentId: 'stu1', isPeerReview: false, overallComment: '',
+                id: 'sr1',
+                rubricId: 'r1',
+                studentId: 'stu1',
+                isPeerReview: false,
+                overallComment: '',
                 entries: [
                     { criterionId: 'c1', levelId: 'l1a', checkedSubItems: [], comment: '', selectedPoints: 4 }, // 4/5 * 50 = 40
-                    { criterionId: 'c2', levelId: 'l2b', checkedSubItems: [], comment: '', selectedPoints: 5 }  // 5/10 * 50 = 25
-                ]
+                    { criterionId: 'c2', levelId: 'l2b', checkedSubItems: [], comment: '', selectedPoints: 5 }, // 5/10 * 50 = 25
+                ],
             };
             const summary = calcGradeSummary(studentRubric, mockCriteria, mockScale);
 
@@ -259,14 +302,21 @@ describe('gradeCalc utilities', () => {
 
         it('handles total-points scoring mode', () => {
             const studentRubric: StudentRubric = {
-                id: 'sr1', rubricId: 'r1', studentId: 'stu1', isPeerReview: false, overallComment: '',
+                id: 'sr1',
+                rubricId: 'r1',
+                studentId: 'stu1',
+                isPeerReview: false,
+                overallComment: '',
                 entries: [
                     { criterionId: 'c1', levelId: 'l1a', checkedSubItems: [], comment: '', selectedPoints: 5 },
-                    { criterionId: 'c2', levelId: 'l2a', checkedSubItems: [], comment: '', selectedPoints: 10 }
-                ]
+                    { criterionId: 'c2', levelId: 'l2a', checkedSubItems: [], comment: '', selectedPoints: 10 },
+                ],
             };
             // Raw score: 15. Total points configured: 20
-            const rubric: Pick<Rubric, 'scoringMode' | 'totalMaxPoints'> = { scoringMode: 'total-points', totalMaxPoints: 20 };
+            const rubric: Pick<Rubric, 'scoringMode' | 'totalMaxPoints'> = {
+                scoringMode: 'total-points',
+                totalMaxPoints: 20,
+            };
             const summary = calcGradeSummary(studentRubric, mockCriteria, mockScale, rubric);
 
             expect(summary.rawScore).toBe(15);
@@ -276,12 +326,16 @@ describe('gradeCalc utilities', () => {
 
         it('applies modifiers to modifiedPercentage', () => {
             const studentRubric: StudentRubric = {
-                id: 'sr1', rubricId: 'r1', studentId: 'stu1', isPeerReview: false, overallComment: '',
+                id: 'sr1',
+                rubricId: 'r1',
+                studentId: 'stu1',
+                isPeerReview: false,
+                overallComment: '',
                 globalModifier: { type: 'percentage', value: 10, reason: '' },
                 entries: [
                     { criterionId: 'c1', levelId: 'l1a', checkedSubItems: [], comment: '', selectedPoints: 4 }, // 40
-                    { criterionId: 'c2', levelId: 'l2b', checkedSubItems: [], comment: '', selectedPoints: 5 }  // 25
-                ] // total 65%
+                    { criterionId: 'c2', levelId: 'l2b', checkedSubItems: [], comment: '', selectedPoints: 5 }, // 25
+                ], // total 65%
             };
             const summary = calcGradeSummary(studentRubric, mockCriteria, mockScale);
             expect(summary.percentage).toBe(65);
@@ -291,11 +345,13 @@ describe('gradeCalc utilities', () => {
 
     describe('calcClassStats', () => {
         const mockScale: GradeScale = {
-            id: 's1', type: 'letter', name: 'Scale',
+            id: 's1',
+            type: 'letter',
+            name: 'Scale',
             ranges: [
                 { min: 80, max: 100, label: 'High', color: '#1' },
-                { min: 0, max: 79, label: 'Low', color: '#2' }
-            ]
+                { min: 0, max: 79, label: 'Low', color: '#2' },
+            ],
         };
 
         it('calculates class statistics', () => {
@@ -303,7 +359,7 @@ describe('gradeCalc utilities', () => {
                 { modifiedPercentage: 80 },
                 { modifiedPercentage: 90 },
                 { modifiedPercentage: 70 },
-                { modifiedPercentage: 100 }
+                { modifiedPercentage: 100 },
             ];
 
             const stats = calcClassStats(summaries, mockScale);
@@ -316,7 +372,7 @@ describe('gradeCalc utilities', () => {
 
             expect(stats.distribution).toEqual([
                 { label: 'High', color: '#1', count: 3 },
-                { label: 'Low', color: '#2', count: 1 }
+                { label: 'Low', color: '#2', count: 1 },
             ]);
         });
 
@@ -335,19 +391,37 @@ describe('gradeCalc utilities', () => {
     describe('calcEntryPoints — singlePointOutcome', () => {
         it('returns 0 for not-yet outcome', () => {
             const criterion: RubricCriterion = {
-                id: 'c1', title: '', description: '', weight: 100,
+                id: 'c1',
+                title: '',
+                description: '',
+                weight: 100,
                 levels: [{ id: 'l1', label: 'A', minPoints: 0, maxPoints: 10, description: '', subItems: [] }],
             };
-            const entry: ScoreEntry = { criterionId: 'c1', levelId: null, checkedSubItems: [], comment: '', singlePointOutcome: 'not-yet' };
+            const entry: ScoreEntry = {
+                criterionId: 'c1',
+                levelId: null,
+                checkedSubItems: [],
+                comment: '',
+                singlePointOutcome: 'not-yet',
+            };
             expect(calcEntryPoints(entry, criterion)).toBe(0);
         });
 
         it('returns maxPoints for meets outcome', () => {
             const criterion: RubricCriterion = {
-                id: 'c1', title: '', description: '', weight: 100,
+                id: 'c1',
+                title: '',
+                description: '',
+                weight: 100,
                 levels: [{ id: 'l1', label: 'A', minPoints: 0, maxPoints: 10, description: '', subItems: [] }],
             };
-            const entry: ScoreEntry = { criterionId: 'c1', levelId: null, checkedSubItems: [], comment: '', singlePointOutcome: 'meets' };
+            const entry: ScoreEntry = {
+                criterionId: 'c1',
+                levelId: null,
+                checkedSubItems: [],
+                comment: '',
+                singlePointOutcome: 'meets',
+            };
             expect(calcEntryPoints(entry, criterion)).toBe(10);
         });
     });
@@ -355,10 +429,17 @@ describe('gradeCalc utilities', () => {
     describe('calcEntryPoints — subItemScores', () => {
         it('uses subItemScores when present', () => {
             const criterion: RubricCriterion = {
-                id: 'c2', title: '', description: '', weight: 100,
+                id: 'c2',
+                title: '',
+                description: '',
+                weight: 100,
                 levels: [
                     {
-                        id: 'l1', label: 'A', minPoints: 5, maxPoints: 10, description: '',
+                        id: 'l1',
+                        label: 'A',
+                        minPoints: 5,
+                        maxPoints: 10,
+                        description: '',
                         subItems: [
                             { id: 's1', label: 'Sub 1', points: 2, maxPoints: 2 },
                             { id: 's2', label: 'Sub 2', points: 3, maxPoints: 3 },
@@ -367,8 +448,11 @@ describe('gradeCalc utilities', () => {
                 ],
             };
             const entry: ScoreEntry = {
-                criterionId: 'c2', levelId: 'l1', checkedSubItems: [],
-                comment: '', selectedPoints: 5,
+                criterionId: 'c2',
+                levelId: 'l1',
+                checkedSubItems: [],
+                comment: '',
+                selectedPoints: 5,
                 subItemScores: { s1: 2, s2: 1 },
             };
             // 5 (selectedPoints) + 2 + 1 = 8, capped at 10
@@ -386,11 +470,17 @@ describe('gradeCalc utilities', () => {
         it('skips criteria where all level maxPoints are 0', () => {
             const criteria: RubricCriterion[] = [
                 {
-                    id: 'c1', title: 'Normal', description: '', weight: 50,
+                    id: 'c1',
+                    title: 'Normal',
+                    description: '',
+                    weight: 50,
                     levels: [{ id: 'l1', label: 'A', minPoints: 0, maxPoints: 10, description: '', subItems: [] }],
                 },
                 {
-                    id: 'c2', title: 'Zero-max', description: '', weight: 50,
+                    id: 'c2',
+                    title: 'Zero-max',
+                    description: '',
+                    weight: 50,
                     // All levels have maxPoints: 0 — this criterion must be skipped
                     levels: [{ id: 'l2', label: 'B', minPoints: 0, maxPoints: 0, description: '', subItems: [] }],
                 },
@@ -408,18 +498,17 @@ describe('gradeCalc utilities', () => {
 
     describe('calcClassStats — additional branches', () => {
         const mockScale: GradeScale = {
-            id: 's1', type: 'letter', name: 'Scale',
+            id: 's1',
+            type: 'letter',
+            name: 'Scale',
             ranges: [
                 { min: 80, max: 100, label: 'High', color: '#1' },
-                { min: 0, max: 79, label: 'Low', color: '#2' }
-            ]
+                { min: 0, max: 79, label: 'Low', color: '#2' },
+            ],
         };
 
         it('returns empty distribution when scale is null', () => {
-            const summaries: any[] = [
-                { modifiedPercentage: 80 },
-                { modifiedPercentage: 90 },
-            ];
+            const summaries: any[] = [{ modifiedPercentage: 80 }, { modifiedPercentage: 90 }];
             const stats = calcClassStats(summaries, null);
             expect(stats.distribution).toEqual([]);
             expect(stats.average).toBe(85);
@@ -439,16 +528,20 @@ describe('gradeCalc utilities', () => {
 
     describe('calcGradeSummary — total-points mode with 0 max', () => {
         const mockScale: GradeScale = {
-            id: 's1', type: 'letter', name: 'Scale',
+            id: 's1',
+            type: 'letter',
+            name: 'Scale',
             ranges: [{ min: 0, max: 100, label: 'P', color: '#000' }],
         };
 
         it('falls back to calculatedMax when totalMaxPoints is 0', () => {
             const studentRubric: StudentRubric = {
-                id: 'sr1', rubricId: 'r1', studentId: 'stu1', isPeerReview: false, overallComment: '',
-                entries: [
-                    { criterionId: 'c1', levelId: 'l1a', checkedSubItems: [], comment: '', selectedPoints: 5 },
-                ],
+                id: 'sr1',
+                rubricId: 'r1',
+                studentId: 'stu1',
+                isPeerReview: false,
+                overallComment: '',
+                entries: [{ criterionId: 'c1', levelId: 'l1a', checkedSubItems: [], comment: '', selectedPoints: 5 }],
             };
             const rubric: Pick<Rubric, 'scoringMode' | 'totalMaxPoints'> = {
                 scoringMode: 'total-points',
@@ -461,11 +554,20 @@ describe('gradeCalc utilities', () => {
 
         it('returns 0 percentage when calculated max is also 0', () => {
             const zeroCriteria: RubricCriterion[] = [
-                { id: 'c1', title: '', description: '', weight: 0,
-                  levels: [{ id: 'l1', label: '', minPoints: 0, maxPoints: 0, description: '', subItems: [] }] },
+                {
+                    id: 'c1',
+                    title: '',
+                    description: '',
+                    weight: 0,
+                    levels: [{ id: 'l1', label: '', minPoints: 0, maxPoints: 0, description: '', subItems: [] }],
+                },
             ];
             const studentRubric: StudentRubric = {
-                id: 'sr1', rubricId: 'r1', studentId: 'stu1', isPeerReview: false, overallComment: '',
+                id: 'sr1',
+                rubricId: 'r1',
+                studentId: 'stu1',
+                isPeerReview: false,
+                overallComment: '',
                 entries: [],
             };
             const summary = calcGradeSummary(studentRubric, zeroCriteria, mockScale);
@@ -475,10 +577,7 @@ describe('gradeCalc utilities', () => {
 
     describe('calcClassStats — null scale', () => {
         it('returns empty distribution when scale is null', () => {
-            const summaries: any[] = [
-                { modifiedPercentage: 80 },
-                { modifiedPercentage: 60 },
-            ];
+            const summaries: any[] = [{ modifiedPercentage: 80 }, { modifiedPercentage: 60 }];
             const stats = calcClassStats(summaries, null);
             expect(stats.distribution).toEqual([]);
             expect(stats.average).toBe(70);

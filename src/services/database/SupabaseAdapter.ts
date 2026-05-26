@@ -1,9 +1,20 @@
 import { createClient, SupabaseClient, Session, AuthChangeEvent } from '@supabase/supabase-js';
 import type {
-    Rubric, Student, Class, StudentRubric, Attachment,
-    GradeScale, CommentSnippet, AppSettings, LinkedStandard,
-    CommentBankItem, ExportTemplate, SelfAssessment, SpeakingSession,
-    DocumentAnalysisResult, EssayAssignment
+    Rubric,
+    Student,
+    Class,
+    StudentRubric,
+    Attachment,
+    GradeScale,
+    CommentSnippet,
+    AppSettings,
+    LinkedStandard,
+    CommentBankItem,
+    ExportTemplate,
+    SelfAssessment,
+    SpeakingSession,
+    DocumentAnalysisResult,
+    EssayAssignment,
 } from '../../types';
 import type { DatabaseConfig, DbUser, SyncResult } from './types';
 
@@ -42,7 +53,11 @@ export class SupabaseAdapter {
     async initClient(config: DatabaseConfig): Promise<boolean> {
         try {
             if (!config.supabaseUrl || !config.supabaseAnonKey) return false;
-            try { new URL(config.supabaseUrl); } catch { return false; }
+            try {
+                new URL(config.supabaseUrl);
+            } catch {
+                return false;
+            }
 
             // Reuse existing client if config unchanged
             if (this.client && this.activeUrl === config.supabaseUrl && this.activeKey === config.supabaseAnonKey) {
@@ -50,14 +65,16 @@ export class SupabaseAdapter {
             }
 
             this.client = createClient(config.supabaseUrl, config.supabaseAnonKey, {
-                auth: { persistSession: true, autoRefreshToken: true }
+                auth: { persistSession: true, autoRefreshToken: true },
             });
             this.activeUrl = config.supabaseUrl;
             this.activeKey = config.supabaseAnonKey;
             this.authListenerRegistered = false;
 
             // Detect existing session (covers returning OAuth users and email-OTP users)
-            const { data: { session } } = await this.client.auth.getSession();
+            const {
+                data: { session },
+            } = await this.client.auth.getSession();
             if (session) this.userId = session.user.id;
 
             this.registerAuthListener();
@@ -75,16 +92,18 @@ export class SupabaseAdapter {
     async connect(config: DatabaseConfig): Promise<boolean> {
         try {
             if (!config.supabaseUrl || !config.supabaseAnonKey) return false;
-            try { new URL(config.supabaseUrl); } catch { return false; }
+            try {
+                new URL(config.supabaseUrl);
+            } catch {
+                return false;
+            }
             if (config.supabaseAnonKey.length < 20) return false;
 
             // Reuse existing client if config hasn't changed — avoids duplicate GoTrueClient warning
-            if (
-                this.client &&
-                this.activeUrl === config.supabaseUrl &&
-                this.activeKey === config.supabaseAnonKey
-            ) {
-                const { data: { session } } = await this.client.auth.getSession();
+            if (this.client && this.activeUrl === config.supabaseUrl && this.activeKey === config.supabaseAnonKey) {
+                const {
+                    data: { session },
+                } = await this.client.auth.getSession();
                 if (session) {
                     this.userId = session.user.id;
                     return true;
@@ -97,14 +116,16 @@ export class SupabaseAdapter {
             }
 
             this.client = createClient(config.supabaseUrl, config.supabaseAnonKey, {
-                auth: { persistSession: true, autoRefreshToken: true }
+                auth: { persistSession: true, autoRefreshToken: true },
             });
             this.activeUrl = config.supabaseUrl;
             this.activeKey = config.supabaseAnonKey;
             this.authListenerRegistered = false;
 
             // Restore existing session or create anonymous one
-            const { data: { session } } = await this.client.auth.getSession();
+            const {
+                data: { session },
+            } = await this.client.auth.getSession();
             if (session) {
                 this.userId = session.user.id;
             } else {
@@ -210,7 +231,7 @@ export class SupabaseAdapter {
             .select('id, email, display_name, role')
             .order('created_at', { ascending: true });
         if (error || !data) return [];
-        return data.map(p => ({
+        return data.map((p) => ({
             id: p.id,
             email: p.email ?? undefined,
             displayName: p.display_name ?? undefined,
@@ -220,10 +241,7 @@ export class SupabaseAdapter {
 
     async updateUserRole(userId: string, role: 'admin' | 'user' | 'student'): Promise<SyncResult> {
         if (!this.client) return { success: false, error: 'Not connected' };
-        const { error } = await this.client
-            .from('profiles')
-            .update({ role })
-            .eq('id', userId);
+        const { error } = await this.client.from('profiles').update({ role }).eq('id', userId);
         return error ? { success: false, error: error.message } : { success: true };
     }
 
@@ -285,19 +303,28 @@ export class SupabaseAdapter {
     // ── Rubrics ───────────────────────────────────────────────────────────────
 
     async fetchRubrics(): Promise<Rubric[]> {
-        const { data, error } = await this.db().from('rubrics').select('data').order('created_at', { ascending: false });
-        if (error) { console.error('fetchRubrics', error); return []; }
-        return (data ?? []).map(r => r.data as Rubric);
+        const { data, error } = await this.db()
+            .from('rubrics')
+            .select('data')
+            .order('created_at', { ascending: false });
+        if (error) {
+            console.error('fetchRubrics', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as Rubric);
     }
 
     async upsertRubric(r: Rubric): Promise<SyncResult> {
-        const { error } = await this.db().from('rubrics').upsert({
-            id: r.id,
-            owner_id: this.uid(),
-            created_at: r.createdAt,
-            updated_at: r.updatedAt,
-            data: r,
-        }, { onConflict: 'id' });
+        const { error } = await this.db().from('rubrics').upsert(
+            {
+                id: r.id,
+                owner_id: this.uid(),
+                created_at: r.createdAt,
+                updated_at: r.updatedAt,
+                data: r,
+            },
+            { onConflict: 'id' }
+        );
         return error ? { success: false, error: error.message } : { success: true };
     }
 
@@ -310,16 +337,22 @@ export class SupabaseAdapter {
 
     async fetchClasses(): Promise<Class[]> {
         const { data, error } = await this.db().from('classes').select('data');
-        if (error) { console.error('fetchClasses', error); return []; }
-        return (data ?? []).map(r => r.data as Class);
+        if (error) {
+            console.error('fetchClasses', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as Class);
     }
 
     async upsertClass(c: Class): Promise<SyncResult> {
-        const { error } = await this.db().from('classes').upsert({
-            id: c.id,
-            owner_id: this.uid(),
-            data: c,
-        }, { onConflict: 'id' });
+        const { error } = await this.db().from('classes').upsert(
+            {
+                id: c.id,
+                owner_id: this.uid(),
+                data: c,
+            },
+            { onConflict: 'id' }
+        );
         return error ? { success: false, error: error.message } : { success: true };
     }
 
@@ -332,17 +365,23 @@ export class SupabaseAdapter {
 
     async fetchStudents(): Promise<Student[]> {
         const { data, error } = await this.db().from('students').select('data');
-        if (error) { console.error('fetchStudents', error); return []; }
-        return (data ?? []).map(r => r.data as Student);
+        if (error) {
+            console.error('fetchStudents', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as Student);
     }
 
     async upsertStudent(s: Student): Promise<SyncResult> {
-        const { error } = await this.db().from('students').upsert({
-            id: s.id,
-            owner_id: this.uid(),
-            class_id: s.classId,
-            data: s,
-        }, { onConflict: 'id' });
+        const { error } = await this.db().from('students').upsert(
+            {
+                id: s.id,
+                owner_id: this.uid(),
+                class_id: s.classId,
+                data: s,
+            },
+            { onConflict: 'id' }
+        );
         return error ? { success: false, error: error.message } : { success: true };
     }
 
@@ -355,19 +394,25 @@ export class SupabaseAdapter {
 
     async fetchStudentRubrics(): Promise<StudentRubric[]> {
         const { data, error } = await this.db().from('student_rubrics').select('data').eq('is_peer_review', false);
-        if (error) { console.error('fetchStudentRubrics', error); return []; }
-        return (data ?? []).map(r => r.data as StudentRubric);
+        if (error) {
+            console.error('fetchStudentRubrics', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as StudentRubric);
     }
 
     async upsertStudentRubric(sr: StudentRubric): Promise<SyncResult> {
-        const { error } = await this.db().from('student_rubrics').upsert({
-            id: sr.id,
-            grader_id: this.uid(),
-            rubric_id: sr.rubricId,
-            student_id: sr.studentId,
-            is_peer_review: false,
-            data: sr,
-        }, { onConflict: 'id' });
+        const { error } = await this.db().from('student_rubrics').upsert(
+            {
+                id: sr.id,
+                grader_id: this.uid(),
+                rubric_id: sr.rubricId,
+                student_id: sr.studentId,
+                is_peer_review: false,
+                data: sr,
+            },
+            { onConflict: 'id' }
+        );
         return error ? { success: false, error: error.message } : { success: true };
     }
 
@@ -380,19 +425,25 @@ export class SupabaseAdapter {
 
     async fetchPeerReviews(): Promise<StudentRubric[]> {
         const { data, error } = await this.db().from('student_rubrics').select('data').eq('is_peer_review', true);
-        if (error) { console.error('fetchPeerReviews', error); return []; }
-        return (data ?? []).map(r => r.data as StudentRubric);
+        if (error) {
+            console.error('fetchPeerReviews', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as StudentRubric);
     }
 
     async upsertPeerReview(sr: StudentRubric): Promise<SyncResult> {
-        const { error } = await this.db().from('student_rubrics').upsert({
-            id: sr.id,
-            grader_id: this.uid(),
-            rubric_id: sr.rubricId,
-            student_id: sr.studentId,
-            is_peer_review: true,
-            data: sr,
-        }, { onConflict: 'id' });
+        const { error } = await this.db().from('student_rubrics').upsert(
+            {
+                id: sr.id,
+                grader_id: this.uid(),
+                rubric_id: sr.rubricId,
+                student_id: sr.studentId,
+                is_peer_review: true,
+                data: sr,
+            },
+            { onConflict: 'id' }
+        );
         return error ? { success: false, error: error.message } : { success: true };
     }
 
@@ -404,25 +455,37 @@ export class SupabaseAdapter {
 
     async fetchAttachments(): Promise<Array<Omit<Attachment, 'dataUrl'> & { storagePath?: string }>> {
         const { data, error } = await this.db().from('attachments').select('data, storage_path');
-        if (error) { console.error('fetchAttachments', error); return []; }
-        return (data ?? []).map(r => ({ ...(r.data as Omit<Attachment, 'dataUrl'>), storagePath: r.storage_path }));
+        if (error) {
+            console.error('fetchAttachments', error);
+            return [];
+        }
+        return (data ?? []).map((r) => ({ ...(r.data as Omit<Attachment, 'dataUrl'>), storagePath: r.storage_path }));
     }
 
     async upsertAttachment(a: Omit<Attachment, 'dataUrl'>, storagePath?: string): Promise<SyncResult> {
-        const { error } = await this.db().from('attachments').upsert({
-            id: a.id,
-            owner_id: this.uid(),
-            storage_path: storagePath ?? null,
-            data: a,
-        }, { onConflict: 'id' });
+        const { error } = await this.db()
+            .from('attachments')
+            .upsert(
+                {
+                    id: a.id,
+                    owner_id: this.uid(),
+                    storage_path: storagePath ?? null,
+                    data: a,
+                },
+                { onConflict: 'id' }
+            );
         return error ? { success: false, error: error.message } : { success: true };
     }
 
     async deleteAttachment(id: string): Promise<SyncResult> {
         // Remove from storage bucket first
         try {
-            await this.db().storage.from('attachments').remove([`${this.uid()}/${id}`]);
-        } catch { /* ignore storage error, still delete metadata */ }
+            await this.db()
+                .storage.from('attachments')
+                .remove([`${this.uid()}/${id}`]);
+        } catch {
+            /* ignore storage error, still delete metadata */
+        }
         const { error } = await this.db().from('attachments').delete().eq('id', id).eq('owner_id', this.uid());
         return error ? { success: false, error: error.message } : { success: true };
     }
@@ -445,16 +508,22 @@ export class SupabaseAdapter {
 
     async fetchGradeScales(): Promise<GradeScale[]> {
         const { data, error } = await this.db().from('grade_scales').select('data');
-        if (error) { console.error('fetchGradeScales', error); return []; }
-        return (data ?? []).map(r => r.data as GradeScale);
+        if (error) {
+            console.error('fetchGradeScales', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as GradeScale);
     }
 
     async upsertGradeScale(gs: GradeScale): Promise<SyncResult> {
-        const { error } = await this.db().from('grade_scales').upsert({
-            id: gs.id,
-            owner_id: this.uid(),
-            data: gs,
-        }, { onConflict: 'id' });
+        const { error } = await this.db().from('grade_scales').upsert(
+            {
+                id: gs.id,
+                owner_id: this.uid(),
+                data: gs,
+            },
+            { onConflict: 'id' }
+        );
         return error ? { success: false, error: error.message } : { success: true };
     }
 
@@ -467,16 +536,22 @@ export class SupabaseAdapter {
 
     async fetchCommentSnippets(): Promise<CommentSnippet[]> {
         const { data, error } = await this.db().from('comment_snippets').select('data');
-        if (error) { console.error('fetchCommentSnippets', error); return []; }
-        return (data ?? []).map(r => r.data as CommentSnippet);
+        if (error) {
+            console.error('fetchCommentSnippets', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as CommentSnippet);
     }
 
     async upsertCommentSnippet(cs: CommentSnippet): Promise<SyncResult> {
-        const { error } = await this.db().from('comment_snippets').upsert({
-            id: cs.id,
-            owner_id: this.uid(),
-            data: cs,
-        }, { onConflict: 'id' });
+        const { error } = await this.db().from('comment_snippets').upsert(
+            {
+                id: cs.id,
+                owner_id: this.uid(),
+                data: cs,
+            },
+            { onConflict: 'id' }
+        );
         return error ? { success: false, error: error.message } : { success: true };
     }
 
@@ -489,16 +564,22 @@ export class SupabaseAdapter {
 
     async fetchCommentBank(): Promise<CommentBankItem[]> {
         const { data, error } = await this.db().from('comment_bank').select('data');
-        if (error) { console.error('fetchCommentBank', error); return []; }
-        return (data ?? []).map(r => r.data as CommentBankItem);
+        if (error) {
+            console.error('fetchCommentBank', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as CommentBankItem);
     }
 
     async upsertCommentBankItem(item: CommentBankItem): Promise<SyncResult> {
-        const { error } = await this.db().from('comment_bank').upsert({
-            id: item.id,
-            owner_id: this.uid(),
-            data: item,
-        }, { onConflict: 'id' });
+        const { error } = await this.db().from('comment_bank').upsert(
+            {
+                id: item.id,
+                owner_id: this.uid(),
+                data: item,
+            },
+            { onConflict: 'id' }
+        );
         return error ? { success: false, error: error.message } : { success: true };
     }
 
@@ -511,17 +592,28 @@ export class SupabaseAdapter {
 
     async fetchExportTemplates(): Promise<Array<Omit<ExportTemplate, 'dataUrl'> & { storagePath?: string }>> {
         const { data, error } = await this.db().from('export_templates').select('data, storage_path');
-        if (error) { console.error('fetchExportTemplates', error); return []; }
-        return (data ?? []).map(r => ({ ...(r.data as Omit<ExportTemplate, 'dataUrl'>), storagePath: r.storage_path }));
+        if (error) {
+            console.error('fetchExportTemplates', error);
+            return [];
+        }
+        return (data ?? []).map((r) => ({
+            ...(r.data as Omit<ExportTemplate, 'dataUrl'>),
+            storagePath: r.storage_path,
+        }));
     }
 
     async upsertExportTemplate(t: Omit<ExportTemplate, 'dataUrl'>, storagePath?: string): Promise<SyncResult> {
-        const { error } = await this.db().from('export_templates').upsert({
-            id: t.id,
-            owner_id: this.uid(),
-            storage_path: storagePath ?? null,
-            data: t,
-        }, { onConflict: 'id' });
+        const { error } = await this.db()
+            .from('export_templates')
+            .upsert(
+                {
+                    id: t.id,
+                    owner_id: this.uid(),
+                    storage_path: storagePath ?? null,
+                    data: t,
+                },
+                { onConflict: 'id' }
+            );
         return error ? { success: false, error: error.message } : { success: true };
     }
 
@@ -541,8 +633,12 @@ export class SupabaseAdapter {
 
     async deleteExportTemplate(id: string): Promise<SyncResult> {
         try {
-            await this.db().storage.from('export-templates').remove([`${this.uid()}/${id}`]);
-        } catch { /* ignore */ }
+            await this.db()
+                .storage.from('export-templates')
+                .remove([`${this.uid()}/${id}`]);
+        } catch {
+            /* ignore */
+        }
         const { error } = await this.db().from('export_templates').delete().eq('id', id).eq('owner_id', this.uid());
         return error ? { success: false, error: error.message } : { success: true };
     }
@@ -551,21 +647,31 @@ export class SupabaseAdapter {
 
     async fetchFavoriteStandards(): Promise<LinkedStandard[]> {
         const { data, error } = await this.db().from('favorite_standards').select('data');
-        if (error) { console.error('fetchFavoriteStandards', error); return []; }
-        return (data ?? []).map(r => r.data as LinkedStandard);
+        if (error) {
+            console.error('fetchFavoriteStandards', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as LinkedStandard);
     }
 
     async upsertFavoriteStandard(s: LinkedStandard): Promise<SyncResult> {
-        const { error } = await this.db().from('favorite_standards').upsert({
-            guid: s.guid,
-            owner_id: this.uid(),
-            data: s,
-        }, { onConflict: 'owner_id,guid' });
+        const { error } = await this.db().from('favorite_standards').upsert(
+            {
+                guid: s.guid,
+                owner_id: this.uid(),
+                data: s,
+            },
+            { onConflict: 'owner_id,guid' }
+        );
         return error ? { success: false, error: error.message } : { success: true };
     }
 
     async removeFavoriteStandard(guid: string): Promise<SyncResult> {
-        const { error } = await this.db().from('favorite_standards').delete().eq('guid', guid).eq('owner_id', this.uid());
+        const { error } = await this.db()
+            .from('favorite_standards')
+            .delete()
+            .eq('guid', guid)
+            .eq('owner_id', this.uid());
         return error ? { success: false, error: error.message } : { success: true };
     }
 
@@ -573,18 +679,24 @@ export class SupabaseAdapter {
 
     async fetchSelfAssessments(): Promise<SelfAssessment[]> {
         const { data, error } = await this.db().from('self_assessments').select('data');
-        if (error) { console.error('fetchSelfAssessments', error); return []; }
-        return (data ?? []).map(r => r.data as SelfAssessment);
+        if (error) {
+            console.error('fetchSelfAssessments', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as SelfAssessment);
     }
 
     async upsertSelfAssessment(sa: SelfAssessment): Promise<SyncResult> {
-        const { error } = await this.db().from('self_assessments').upsert({
-            id: sa.id,
-            owner_id: this.uid(),
-            rubric_id: sa.rubricId,
-            student_id: sa.studentId,
-            data: sa,
-        }, { onConflict: 'id' });
+        const { error } = await this.db().from('self_assessments').upsert(
+            {
+                id: sa.id,
+                owner_id: this.uid(),
+                rubric_id: sa.rubricId,
+                student_id: sa.studentId,
+                data: sa,
+            },
+            { onConflict: 'id' }
+        );
         return error ? { success: false, error: error.message } : { success: true };
     }
 
@@ -597,18 +709,24 @@ export class SupabaseAdapter {
 
     async fetchSpeakingSessions(): Promise<SpeakingSession[]> {
         const { data, error } = await this.db().from('speaking_sessions').select('data');
-        if (error) { console.error('fetchSpeakingSessions', error); return []; }
-        return (data ?? []).map(r => r.data as SpeakingSession);
+        if (error) {
+            console.error('fetchSpeakingSessions', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as SpeakingSession);
     }
 
     async upsertSpeakingSession(s: SpeakingSession): Promise<SyncResult> {
-        const { error } = await this.db().from('speaking_sessions').upsert({
-            id: s.id,
-            owner_id: this.uid(),
-            rubric_id: s.rubricId,
-            student_id: s.studentId,
-            data: s,
-        }, { onConflict: 'id' });
+        const { error } = await this.db().from('speaking_sessions').upsert(
+            {
+                id: s.id,
+                owner_id: this.uid(),
+                rubric_id: s.rubricId,
+                student_id: s.studentId,
+                data: s,
+            },
+            { onConflict: 'id' }
+        );
         return error ? { success: false, error: error.message } : { success: true };
     }
 
@@ -621,18 +739,24 @@ export class SupabaseAdapter {
 
     async fetchAnalysisResults(): Promise<DocumentAnalysisResult[]> {
         const { data, error } = await this.db().from('analysis_results').select('data');
-        if (error) { console.error('fetchAnalysisResults', error); return []; }
-        return (data ?? []).map(r => r.data as DocumentAnalysisResult);
+        if (error) {
+            console.error('fetchAnalysisResults', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as DocumentAnalysisResult);
     }
 
     async upsertAnalysisResult(r: DocumentAnalysisResult): Promise<SyncResult> {
-        const { error } = await this.db().from('analysis_results').upsert({
-            id: r.id,
-            owner_id: this.uid(),
-            student_id: r.studentId,
-            rubric_id: r.rubricId,
-            data: r,
-        }, { onConflict: 'id' });
+        const { error } = await this.db().from('analysis_results').upsert(
+            {
+                id: r.id,
+                owner_id: this.uid(),
+                student_id: r.studentId,
+                rubric_id: r.rubricId,
+                data: r,
+            },
+            { onConflict: 'id' }
+        );
         return error ? { success: false, error: error.message } : { success: true };
     }
 
@@ -645,27 +769,35 @@ export class SupabaseAdapter {
 
     /** Persist the assignment to the DB so the student page can validate it */
     async saveEssayAssignment(a: EssayAssignment): Promise<SyncResult> {
-        const { error } = await this.db().from('essay_assignments').upsert({
-            id: a.teacherKey,
-            owner_id: this.uid(),
-            rubric_id: a.rubricId,
-            student_id: a.studentId,
-            title: a.title,
-            prompt: a.prompt ?? null,
-            min_words: a.minWords ?? null,
-            max_words: a.maxWords ?? null,
-            time_limit_minutes: a.timeLimitMinutes ?? null,
-            require_seb: a.requireSEB ?? false,
-            read_only_after_submit: a.readOnlyAfterSubmit,
-            created_at: a.createdAt,
-            expires_at: a.expiresAt ?? null,
-        }, { onConflict: 'id' });
+        const { error } = await this.db()
+            .from('essay_assignments')
+            .upsert(
+                {
+                    id: a.teacherKey,
+                    owner_id: this.uid(),
+                    rubric_id: a.rubricId,
+                    student_id: a.studentId,
+                    title: a.title,
+                    prompt: a.prompt ?? null,
+                    min_words: a.minWords ?? null,
+                    max_words: a.maxWords ?? null,
+                    time_limit_minutes: a.timeLimitMinutes ?? null,
+                    require_seb: a.requireSEB ?? false,
+                    read_only_after_submit: a.readOnlyAfterSubmit,
+                    created_at: a.createdAt,
+                    expires_at: a.expiresAt ?? null,
+                },
+                { onConflict: 'id' }
+            );
         return error ? { success: false, error: error.message } : { success: true };
     }
 
     async deleteEssayAssignment(teacherKey: string): Promise<SyncResult> {
-        const { error } = await this.db().from('essay_assignments').delete()
-            .eq('id', teacherKey).eq('owner_id', this.uid());
+        const { error } = await this.db()
+            .from('essay_assignments')
+            .delete()
+            .eq('id', teacherKey)
+            .eq('owner_id', this.uid());
         return error ? { success: false, error: error.message } : { success: true };
     }
 
@@ -673,20 +805,22 @@ export class SupabaseAdapter {
      * Fetch all submissions for a given assignment (by teacherKey / assignment id).
      * Returns raw DB rows; caller fetches signed URLs as needed.
      */
-    async fetchEssaySubmissions(teacherKey: string): Promise<Array<{
-        id: string;
-        studentEmail: string | null;
-        wordCount: number;
-        submittedAt: string;
-        storagePath: string;
-    }>> {
+    async fetchEssaySubmissions(teacherKey: string): Promise<
+        Array<{
+            id: string;
+            studentEmail: string | null;
+            wordCount: number;
+            submittedAt: string;
+            storagePath: string;
+        }>
+    > {
         const { data, error } = await this.db()
             .from('essay_submissions')
             .select('id, student_email, word_count, submitted_at, storage_path')
             .eq('assignment_id', teacherKey)
             .order('submitted_at', { ascending: false });
         if (error || !data) return [];
-        return data.map(r => ({
+        return data.map((r) => ({
             id: r.id,
             studentEmail: r.student_email ?? null,
             wordCount: r.word_count,
@@ -696,25 +830,33 @@ export class SupabaseAdapter {
     }
 
     /** Fetch all submissions across ALL of this teacher's assignments */
-    async fetchAllEssaySubmissions(): Promise<Array<{
-        id: string;
-        assignmentId: string;
-        rubricId: string;
-        studentId: string;
-        assignmentTitle: string;
-        studentEmail: string | null;
-        wordCount: number;
-        submittedAt: string;
-        storagePath: string;
-    }>> {
+    async fetchAllEssaySubmissions(): Promise<
+        Array<{
+            id: string;
+            assignmentId: string;
+            rubricId: string;
+            studentId: string;
+            assignmentTitle: string;
+            studentEmail: string | null;
+            wordCount: number;
+            submittedAt: string;
+            storagePath: string;
+        }>
+    > {
         const { data, error } = await this.db()
             .from('essay_submissions')
-            .select('id, assignment_id, word_count, submitted_at, storage_path, student_email, essay_assignments(rubric_id, student_id, title)')
+            .select(
+                'id, assignment_id, word_count, submitted_at, storage_path, student_email, essay_assignments(rubric_id, student_id, title)'
+            )
             .order('submitted_at', { ascending: false })
             .limit(500);
         if (error || !data) return [];
-        return data.map(r => {
-            const ea = r.essay_assignments as unknown as { rubric_id: string; student_id: string; title: string } | null;
+        return data.map((r) => {
+            const ea = r.essay_assignments as unknown as {
+                rubric_id: string;
+                student_id: string;
+                title: string;
+            } | null;
             return {
                 id: r.id,
                 assignmentId: r.assignment_id,
@@ -730,22 +872,29 @@ export class SupabaseAdapter {
     }
 
     /** Fetch submissions for a specific student + rubric (no teacherKey needed) */
-    async fetchEssaySubmissionsForStudent(rubricId: string, studentId: string): Promise<Array<{
-        id: string;
-        assignmentId: string;
-        studentEmail: string | null;
-        wordCount: number;
-        submittedAt: string;
-        storagePath: string;
-    }>> {
+    async fetchEssaySubmissionsForStudent(
+        rubricId: string,
+        studentId: string
+    ): Promise<
+        Array<{
+            id: string;
+            assignmentId: string;
+            studentEmail: string | null;
+            wordCount: number;
+            submittedAt: string;
+            storagePath: string;
+        }>
+    > {
         const { data, error } = await this.db()
             .from('essay_submissions')
-            .select('id, assignment_id, student_email, word_count, submitted_at, storage_path, essay_assignments!inner(rubric_id, student_id)')
+            .select(
+                'id, assignment_id, student_email, word_count, submitted_at, storage_path, essay_assignments!inner(rubric_id, student_id)'
+            )
             .eq('essay_assignments.rubric_id', rubricId)
             .eq('essay_assignments.student_id', studentId)
             .order('submitted_at', { ascending: false });
         if (error || !data) return [];
-        return data.map(r => ({
+        return data.map((r) => ({
             id: r.id,
             assignmentId: r.assignment_id,
             studentEmail: r.student_email ?? null,
@@ -757,74 +906,100 @@ export class SupabaseAdapter {
 
     async deleteEssaySubmission(submissionId: string, storagePath: string): Promise<SyncResult> {
         // Remove the file first (best-effort)
-        await this.db().storage.from('essays').remove([storagePath]).catch(() => {});
+        await this.db()
+            .storage.from('essays')
+            .remove([storagePath])
+            .catch(() => {});
         const { error } = await this.db().from('essay_submissions').delete().eq('id', submissionId);
         return error ? { success: false, error: error.message } : { success: true };
     }
 
     async getEssaySignedUrl(storagePath: string): Promise<string | null> {
-        const { data, error } = await this.db().storage
-            .from('essays')
-            .createSignedUrl(storagePath, 3600);
+        const { data, error } = await this.db().storage.from('essays').createSignedUrl(storagePath, 3600);
         return error ? null : (data?.signedUrl ?? null);
     }
 
     // ── Settings ──────────────────────────────────────────────────────────────
 
     async fetchSettings(): Promise<AppSettings | null> {
-        const { data, error } = await this.db().from('user_settings').select('settings').eq('user_id', this.uid()).single();
+        const { data, error } = await this.db()
+            .from('user_settings')
+            .select('settings')
+            .eq('user_id', this.uid())
+            .single();
         if (error) return null;
-        return data?.settings as AppSettings ?? null;
+        return (data?.settings as AppSettings) ?? null;
     }
 
     async saveSettings(s: AppSettings): Promise<SyncResult> {
-        const { error } = await this.db().from('user_settings').upsert({
-            user_id: this.uid(),
-            settings: s,
-        }, { onConflict: 'user_id' });
+        const { error } = await this.db().from('user_settings').upsert(
+            {
+                user_id: this.uid(),
+                settings: s,
+            },
+            { onConflict: 'user_id' }
+        );
         return error ? { success: false, error: error.message } : { success: true };
     }
 
     // ── Rubric Sharing ────────────────────────────────────────────────────────
 
     async shareRubric(rubricId: string, targetUserId: string, mode: 'read' | 'edit'): Promise<SyncResult> {
-        const { error } = await this.db().from('rubric_shares').upsert({
-            rubric_id: rubricId,
-            user_id: targetUserId,
-            mode,
-        }, { onConflict: 'rubric_id,user_id' });
+        const { error } = await this.db().from('rubric_shares').upsert(
+            {
+                rubric_id: rubricId,
+                user_id: targetUserId,
+                mode,
+            },
+            { onConflict: 'rubric_id,user_id' }
+        );
         return error ? { success: false, error: error.message } : { success: true };
     }
 
     async unshareRubric(rubricId: string, targetUserId: string): Promise<SyncResult> {
-        const { error } = await this.db().from('rubric_shares').delete().eq('rubric_id', rubricId).eq('user_id', targetUserId);
+        const { error } = await this.db()
+            .from('rubric_shares')
+            .delete()
+            .eq('rubric_id', rubricId)
+            .eq('user_id', targetUserId);
         return error ? { success: false, error: error.message } : { success: true };
     }
 
     async fetchSharedRubrics(): Promise<Rubric[]> {
-        const { data, error } = await this.db()
-            .from('rubric_shares')
-            .select('rubrics(data)')
-            .eq('user_id', this.uid());
-        if (error) { console.error('fetchSharedRubrics', error); return []; }
+        const { data, error } = await this.db().from('rubric_shares').select('rubrics(data)').eq('user_id', this.uid());
+        if (error) {
+            console.error('fetchSharedRubrics', error);
+            return [];
+        }
         return (data ?? [])
-            .map(r => (r as unknown as { rubrics: { data: unknown } }).rubrics?.data as Rubric)
+            .map((r) => (r as unknown as { rubrics: { data: unknown } }).rubrics?.data as Rubric)
             .filter(Boolean);
     }
 
     // ── Class Sharing ─────────────────────────────────────────────────────────
 
-    async addClassMember(classId: string, targetUserId: string, role: 'viewer' | 'editor' = 'viewer'): Promise<SyncResult> {
-        const { error } = await this.db().from('class_members').upsert({
-            class_id: classId,
-            user_id: targetUserId,
-            role,
-        }, { onConflict: 'class_id,user_id' });
+    async addClassMember(
+        classId: string,
+        targetUserId: string,
+        role: 'viewer' | 'editor' = 'viewer'
+    ): Promise<SyncResult> {
+        const { error } = await this.db().from('class_members').upsert(
+            {
+                class_id: classId,
+                user_id: targetUserId,
+                role,
+            },
+            { onConflict: 'class_id,user_id' }
+        );
         return error ? { success: false, error: error.message } : { success: true };
     }
 
     async removeClassMember(classId: string, targetUserId: string): Promise<SyncResult> {
-        const { error } = await this.db().from('class_members').delete().eq('class_id', classId).eq('user_id', targetUserId);
+        const { error } = await this.db()
+            .from('class_members')
+            .delete()
+            .eq('class_id', classId)
+            .eq('user_id', targetUserId);
         return error ? { success: false, error: error.message } : { success: true };
     }
 
@@ -834,22 +1009,33 @@ export class SupabaseAdapter {
         const uid = this.uid();
         const db = this.db();
         const tables = [
-            'rubrics', 'classes', 'students', 'student_rubrics', 'attachments',
-            'grade_scales', 'comment_snippets', 'comment_bank', 'export_templates',
-            'favorite_standards', 'self_assessments', 'speaking_sessions',
-            'analysis_results', 'user_settings', 'essay_assignments',
+            'rubrics',
+            'classes',
+            'students',
+            'student_rubrics',
+            'attachments',
+            'grade_scales',
+            'comment_snippets',
+            'comment_bank',
+            'export_templates',
+            'favorite_standards',
+            'self_assessments',
+            'speaking_sessions',
+            'analysis_results',
+            'user_settings',
+            'essay_assignments',
         ];
         for (const table of tables) {
-            const col = table === 'student_rubrics' ? 'grader_id' :
-                        table === 'user_settings' ? 'user_id' : 'owner_id';
+            const col = table === 'student_rubrics' ? 'grader_id' : table === 'user_settings' ? 'user_id' : 'owner_id';
             await db.from(table).delete().eq(col, uid);
         }
         // Remove storage objects
         try {
             const { data: attFiles } = await db.storage.from('attachments').list(uid);
-            if (attFiles?.length) await db.storage.from('attachments').remove(attFiles.map(f => `${uid}/${f.name}`));
+            if (attFiles?.length) await db.storage.from('attachments').remove(attFiles.map((f) => `${uid}/${f.name}`));
             const { data: tplFiles } = await db.storage.from('export-templates').list(uid);
-            if (tplFiles?.length) await db.storage.from('export-templates').remove(tplFiles.map(f => `${uid}/${f.name}`));
+            if (tplFiles?.length)
+                await db.storage.from('export-templates').remove(tplFiles.map((f) => `${uid}/${f.name}`));
             // essay_assignments cascade-deletes essay_submissions rows via FK;
             // remove the essay files from storage folder-per-assignment
             const { data: assignments } = await db.from('essay_assignments').select('id').eq('owner_id', uid);
@@ -857,11 +1043,13 @@ export class SupabaseAdapter {
                 for (const a of assignments) {
                     const { data: essayFiles } = await db.storage.from('essays').list(a.id);
                     if (essayFiles?.length) {
-                        await db.storage.from('essays').remove(essayFiles.map(f => `${a.id}/${f.name}`));
+                        await db.storage.from('essays').remove(essayFiles.map((f) => `${a.id}/${f.name}`));
                     }
                 }
             }
-        } catch { /* ignore */ }
+        } catch {
+            /* ignore */
+        }
         return { success: true };
     }
 }

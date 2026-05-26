@@ -58,7 +58,7 @@ export default function CriterionHeatmap({ students, criteria, scores }: Props) 
             >
                 {/* Header row */}
                 <div /> {/* empty corner */}
-                {criteria.map(c => (
+                {criteria.map((c) => (
                     <div
                         key={c.id}
                         title={c.title}
@@ -78,9 +78,8 @@ export default function CriterionHeatmap({ students, criteria, scores }: Props) 
                         {truncate(c.title)}
                     </div>
                 ))}
-
                 {/* Data rows */}
-                {students.map(s => (
+                {students.map((s) => (
                     <React.Fragment key={s.id}>
                         <div
                             style={{
@@ -97,7 +96,7 @@ export default function CriterionHeatmap({ students, criteria, scores }: Props) 
                         >
                             {s.name}
                         </div>
-                        {criteria.map(c => {
+                        {criteria.map((c) => {
                             const pct = scores[s.id]?.[c.id] ?? 0;
                             return (
                                 <div

@@ -14,11 +14,28 @@ import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import {
-    Bold, Italic, Underline as UnderlineIcon, Strikethrough,
-    Superscript as SuperscriptIcon, Subscript as SubscriptIcon,
-    AlignLeft, AlignCenter, AlignRight, AlignJustify,
-    List, ListOrdered, ListChecks, Quote, Minus, Link2, Table as TableIcon,
-    Highlighter, Undo2, Redo2, RemoveFormatting, Unlink
+    Bold,
+    Italic,
+    Underline as UnderlineIcon,
+    Strikethrough,
+    Superscript as SuperscriptIcon,
+    Subscript as SubscriptIcon,
+    AlignLeft,
+    AlignCenter,
+    AlignRight,
+    AlignJustify,
+    List,
+    ListOrdered,
+    ListChecks,
+    Quote,
+    Minus,
+    Link2,
+    Table as TableIcon,
+    Highlighter,
+    Undo2,
+    Redo2,
+    RemoveFormatting,
+    Unlink,
 } from 'lucide-react';
 
 // ── Custom: FontSize ────────────────────────────────────────────────────────
@@ -44,52 +61,94 @@ declare module '@tiptap/core' {
 
 const FontFamily = Extension.create({
     name: 'fontFamily',
-    addOptions() { return { types: ['textStyle'] }; },
+    addOptions() {
+        return { types: ['textStyle'] };
+    },
     addGlobalAttributes() {
-        return [{
-            types: this.options.types,
-            attributes: {
-                fontFamily: {
-                    default: null,
-                    parseHTML: (el: HTMLElement) => (el as HTMLElement).style.fontFamily || null,
-                    renderHTML: (attrs: Record<string, string | null>) =>
-                        attrs.fontFamily ? { style: `font-family: ${attrs.fontFamily}` } : {},
+        return [
+            {
+                types: this.options.types,
+                attributes: {
+                    fontFamily: {
+                        default: null,
+                        parseHTML: (el: HTMLElement) => (el as HTMLElement).style.fontFamily || null,
+                        renderHTML: (attrs: Record<string, string | null>) =>
+                            attrs.fontFamily ? { style: `font-family: ${attrs.fontFamily}` } : {},
+                    },
                 },
             },
-        }];
+        ];
     },
     addCommands() {
         return {
-            setFontFamily: (fontFamily: string) => ({ chain }: { chain: () => { setMark: (name: string, attrs: Record<string, string>) => { run: () => boolean } } }) =>
-                chain().setMark('textStyle', { fontFamily }).run(),
-            unsetFontFamily: () => ({ chain }: { chain: () => { setMark: (name: string, attrs: Record<string, string | null>) => { removeEmptyTextStyle: () => { run: () => boolean } } } }) =>
-                chain().setMark('textStyle', { fontFamily: null }).removeEmptyTextStyle().run(),
+            setFontFamily:
+                (fontFamily: string) =>
+                ({
+                    chain,
+                }: {
+                    chain: () => { setMark: (name: string, attrs: Record<string, string>) => { run: () => boolean } };
+                }) =>
+                    chain().setMark('textStyle', { fontFamily }).run(),
+            unsetFontFamily:
+                () =>
+                ({
+                    chain,
+                }: {
+                    chain: () => {
+                        setMark: (
+                            name: string,
+                            attrs: Record<string, string | null>
+                        ) => { removeEmptyTextStyle: () => { run: () => boolean } };
+                    };
+                }) =>
+                    chain().setMark('textStyle', { fontFamily: null }).removeEmptyTextStyle().run(),
         };
     },
 });
 
 const FontSize = Extension.create({
     name: 'fontSize',
-    addOptions() { return { types: ['textStyle'] }; },
+    addOptions() {
+        return { types: ['textStyle'] };
+    },
     addGlobalAttributes() {
-        return [{
-            types: this.options.types,
-            attributes: {
-                fontSize: {
-                    default: null,
-                    parseHTML: (el: HTMLElement) => (el as HTMLElement).style.fontSize || null,
-                    renderHTML: (attrs: Record<string, string | null>) =>
-                        attrs.fontSize ? { style: `font-size: ${attrs.fontSize}` } : {},
+        return [
+            {
+                types: this.options.types,
+                attributes: {
+                    fontSize: {
+                        default: null,
+                        parseHTML: (el: HTMLElement) => (el as HTMLElement).style.fontSize || null,
+                        renderHTML: (attrs: Record<string, string | null>) =>
+                            attrs.fontSize ? { style: `font-size: ${attrs.fontSize}` } : {},
+                    },
                 },
             },
-        }];
+        ];
     },
     addCommands() {
         return {
-            setFontSize: (fontSize: string) => ({ chain }: { chain: () => { setMark: (name: string, attrs: Record<string, string>) => { run: () => boolean } } }) =>
-                chain().setMark('textStyle', { fontSize }).run(),
-            unsetFontSize: () => ({ chain }: { chain: () => { setMark: (name: string, attrs: Record<string, string | null>) => { removeEmptyTextStyle: () => { run: () => boolean } } } }) =>
-                chain().setMark('textStyle', { fontSize: null }).removeEmptyTextStyle().run(),
+            setFontSize:
+                (fontSize: string) =>
+                ({
+                    chain,
+                }: {
+                    chain: () => { setMark: (name: string, attrs: Record<string, string>) => { run: () => boolean } };
+                }) =>
+                    chain().setMark('textStyle', { fontSize }).run(),
+            unsetFontSize:
+                () =>
+                ({
+                    chain,
+                }: {
+                    chain: () => {
+                        setMark: (
+                            name: string,
+                            attrs: Record<string, string | null>
+                        ) => { removeEmptyTextStyle: () => { run: () => boolean } };
+                    };
+                }) =>
+                    chain().setMark('textStyle', { fontSize: null }).removeEmptyTextStyle().run(),
         };
     },
 });
@@ -98,26 +157,38 @@ const FontSize = Extension.create({
 
 const LineHeight = Extension.create({
     name: 'lineHeight',
-    addOptions() { return { types: ['paragraph', 'heading'] }; },
+    addOptions() {
+        return { types: ['paragraph', 'heading'] };
+    },
     addGlobalAttributes() {
-        return [{
-            types: this.options.types,
-            attributes: {
-                lineHeight: {
-                    default: null,
-                    parseHTML: (el: HTMLElement) => (el as HTMLElement).style.lineHeight || null,
-                    renderHTML: (attrs: Record<string, string | null>) =>
-                        attrs.lineHeight ? { style: `line-height: ${attrs.lineHeight}` } : {},
+        return [
+            {
+                types: this.options.types,
+                attributes: {
+                    lineHeight: {
+                        default: null,
+                        parseHTML: (el: HTMLElement) => (el as HTMLElement).style.lineHeight || null,
+                        renderHTML: (attrs: Record<string, string | null>) =>
+                            attrs.lineHeight ? { style: `line-height: ${attrs.lineHeight}` } : {},
+                    },
                 },
             },
-        }];
+        ];
     },
     addCommands() {
         return {
-            setLineHeight: (lineHeight: string) => ({ commands }: { commands: { updateAttributes: (type: string, attrs: Record<string, string>) => boolean } }) =>
-                (this.options.types as string[]).every(type => commands.updateAttributes(type, { lineHeight })),
-            unsetLineHeight: () => ({ commands }: { commands: { resetAttributes: (type: string, attr: string) => boolean } }) =>
-                (this.options.types as string[]).every(type => commands.resetAttributes(type, 'lineHeight')),
+            setLineHeight:
+                (lineHeight: string) =>
+                ({
+                    commands,
+                }: {
+                    commands: { updateAttributes: (type: string, attrs: Record<string, string>) => boolean };
+                }) =>
+                    (this.options.types as string[]).every((type) => commands.updateAttributes(type, { lineHeight })),
+            unsetLineHeight:
+                () =>
+                ({ commands }: { commands: { resetAttributes: (type: string, attr: string) => boolean } }) =>
+                    (this.options.types as string[]).every((type) => commands.resetAttributes(type, 'lineHeight')),
         };
     },
 });
@@ -258,28 +329,45 @@ export default function EssayEditor({ content, onChange, editable = true, placeh
     const currentFontFamily = editor.getAttributes('textStyle').fontFamily ?? '';
     const currentFontSize = (editor.getAttributes('textStyle').fontSize as string | undefined)?.replace('pt', '') ?? '';
     const currentLineHeight =
-        editor.getAttributes('paragraph').lineHeight ??
-        editor.getAttributes('heading').lineHeight ?? '';
+        editor.getAttributes('paragraph').lineHeight ?? editor.getAttributes('heading').lineHeight ?? '';
 
     return (
-        <div style={{ border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden', background: '#fff', color: '#1e293b' }}>
+        <div
+            style={{
+                border: '1px solid #e2e8f0',
+                borderRadius: 10,
+                overflow: 'hidden',
+                background: '#fff',
+                color: '#1e293b',
+            }}
+        >
             {/* ── Toolbar ─────────────────────────────────────────────────── */}
             {editable && (
-                <div style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    alignItems: 'center',
-                    gap: 2,
-                    padding: '8px 10px',
-                    borderBottom: '1px solid #e2e8f0',
-                    background: '#f8fafc',
-                    rowGap: 6,
-                }}>
+                <div
+                    style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        alignItems: 'center',
+                        gap: 2,
+                        padding: '8px 10px',
+                        borderBottom: '1px solid #e2e8f0',
+                        background: '#f8fafc',
+                        rowGap: 6,
+                    }}
+                >
                     {/* ── History ── */}
-                    <ToolbarBtn onClick={() => editor.chain().focus().undo().run()} title="Undo (Ctrl+Z)" disabled={!editor.can().undo()}>
+                    <ToolbarBtn
+                        onClick={() => editor.chain().focus().undo().run()}
+                        title="Undo (Ctrl+Z)"
+                        disabled={!editor.can().undo()}
+                    >
                         <Undo2 size={15} />
                     </ToolbarBtn>
-                    <ToolbarBtn onClick={() => editor.chain().focus().redo().run()} title="Redo (Ctrl+Y)" disabled={!editor.can().redo()}>
+                    <ToolbarBtn
+                        onClick={() => editor.chain().focus().redo().run()}
+                        title="Redo (Ctrl+Y)"
+                        disabled={!editor.can().redo()}
+                    >
                         <Redo2 size={15} />
                     </ToolbarBtn>
 
@@ -288,15 +376,23 @@ export default function EssayEditor({ content, onChange, editable = true, placeh
                     {/* ── Paragraph / Heading ── */}
                     <select
                         value={
-                            editor.isActive('heading', { level: 1 }) ? 'h1'
-                            : editor.isActive('heading', { level: 2 }) ? 'h2'
-                            : editor.isActive('heading', { level: 3 }) ? 'h3'
-                            : 'p'
+                            editor.isActive('heading', { level: 1 })
+                                ? 'h1'
+                                : editor.isActive('heading', { level: 2 })
+                                  ? 'h2'
+                                  : editor.isActive('heading', { level: 3 })
+                                    ? 'h3'
+                                    : 'p'
                         }
-                        onChange={e => {
+                        onChange={(e) => {
                             const v = e.target.value;
                             if (v === 'p') editor.chain().focus().setParagraph().run();
-                            else editor.chain().focus().toggleHeading({ level: parseInt(v[1]) as 1 | 2 | 3 }).run();
+                            else
+                                editor
+                                    .chain()
+                                    .focus()
+                                    .toggleHeading({ level: parseInt(v[1]) as 1 | 2 | 3 })
+                                    .run();
                         }}
                         style={selectStyle}
                         title="Paragraph style"
@@ -310,7 +406,7 @@ export default function EssayEditor({ content, onChange, editable = true, placeh
                     {/* ── Font Family ── */}
                     <select
                         value={currentFontFamily}
-                        onChange={e => {
+                        onChange={(e) => {
                             const v = e.target.value;
                             if (v === '') editor.chain().focus().unsetFontFamily().run();
                             else editor.chain().focus().setFontFamily(v).run();
@@ -318,15 +414,17 @@ export default function EssayEditor({ content, onChange, editable = true, placeh
                         style={{ ...selectStyle, maxWidth: 140 }}
                         title="Font family"
                     >
-                        {FONT_FAMILIES.map(f => (
-                            <option key={f.value} value={f.value}>{f.label}</option>
+                        {FONT_FAMILIES.map((f) => (
+                            <option key={f.value} value={f.value}>
+                                {f.label}
+                            </option>
                         ))}
                     </select>
 
                     {/* ── Font Size ── */}
                     <select
                         value={currentFontSize}
-                        onChange={e => {
+                        onChange={(e) => {
                             const v = e.target.value;
                             if (v === '') editor.chain().focus().unsetFontSize().run();
                             else editor.chain().focus().setFontSize(`${v}pt`).run();
@@ -335,30 +433,56 @@ export default function EssayEditor({ content, onChange, editable = true, placeh
                         title="Font size"
                     >
                         <option value="">Size</option>
-                        {FONT_SIZES.filter(s => s !== '').map(s => (
-                            <option key={s} value={s}>{s}</option>
+                        {FONT_SIZES.filter((s) => s !== '').map((s) => (
+                            <option key={s} value={s}>
+                                {s}
+                            </option>
                         ))}
                     </select>
 
                     <Divider />
 
                     {/* ── Character formatting ── */}
-                    <ToolbarBtn active={editor.isActive('bold')} onClick={() => editor.chain().focus().toggleBold().run()} title="Bold (Ctrl+B)">
+                    <ToolbarBtn
+                        active={editor.isActive('bold')}
+                        onClick={() => editor.chain().focus().toggleBold().run()}
+                        title="Bold (Ctrl+B)"
+                    >
                         <Bold size={15} />
                     </ToolbarBtn>
-                    <ToolbarBtn active={editor.isActive('italic')} onClick={() => editor.chain().focus().toggleItalic().run()} title="Italic (Ctrl+I)">
+                    <ToolbarBtn
+                        active={editor.isActive('italic')}
+                        onClick={() => editor.chain().focus().toggleItalic().run()}
+                        title="Italic (Ctrl+I)"
+                    >
                         <Italic size={15} />
                     </ToolbarBtn>
-                    <ToolbarBtn active={editor.isActive('underline')} onClick={() => editor.chain().focus().toggleUnderline().run()} title="Underline (Ctrl+U)">
+                    <ToolbarBtn
+                        active={editor.isActive('underline')}
+                        onClick={() => editor.chain().focus().toggleUnderline().run()}
+                        title="Underline (Ctrl+U)"
+                    >
                         <UnderlineIcon size={15} />
                     </ToolbarBtn>
-                    <ToolbarBtn active={editor.isActive('strike')} onClick={() => editor.chain().focus().toggleStrike().run()} title="Strikethrough">
+                    <ToolbarBtn
+                        active={editor.isActive('strike')}
+                        onClick={() => editor.chain().focus().toggleStrike().run()}
+                        title="Strikethrough"
+                    >
                         <Strikethrough size={15} />
                     </ToolbarBtn>
-                    <ToolbarBtn active={editor.isActive('superscript')} onClick={() => editor.chain().focus().toggleSuperscript().run()} title="Superscript">
+                    <ToolbarBtn
+                        active={editor.isActive('superscript')}
+                        onClick={() => editor.chain().focus().toggleSuperscript().run()}
+                        title="Superscript"
+                    >
                         <SuperscriptIcon size={15} />
                     </ToolbarBtn>
-                    <ToolbarBtn active={editor.isActive('subscript')} onClick={() => editor.chain().focus().toggleSubscript().run()} title="Subscript">
+                    <ToolbarBtn
+                        active={editor.isActive('subscript')}
+                        onClick={() => editor.chain().focus().toggleSubscript().run()}
+                        title="Subscript"
+                    >
                         <SubscriptIcon size={15} />
                     </ToolbarBtn>
 
@@ -370,25 +494,43 @@ export default function EssayEditor({ content, onChange, editable = true, placeh
                             type="button"
                             onClick={() => colorInputRef.current?.click()}
                             style={{
-                                padding: '3px 6px', borderRadius: 5, border: 'none', cursor: 'pointer',
-                                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1,
-                                background: 'transparent', color: '#1e293b', flexShrink: 0,
+                                padding: '3px 6px',
+                                borderRadius: 5,
+                                border: 'none',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                gap: 1,
+                                background: 'transparent',
+                                color: '#1e293b',
+                                flexShrink: 0,
                             }}
                             title="Text colour"
                         >
                             <span style={{ fontSize: 12, fontWeight: 700, lineHeight: 1, fontFamily: 'serif' }}>A</span>
-                            <span style={{ width: 14, height: 3, borderRadius: 2, background: editor.getAttributes('textStyle').color ?? '#000' }} />
+                            <span
+                                style={{
+                                    width: 14,
+                                    height: 3,
+                                    borderRadius: 2,
+                                    background: editor.getAttributes('textStyle').color ?? '#000',
+                                }}
+                            />
                         </button>
                         <input
                             ref={colorInputRef}
                             type="color"
                             defaultValue="#000000"
                             style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'none' }}
-                            onChange={e => editor.chain().focus().setColor(e.target.value).run()}
+                            onChange={(e) => editor.chain().focus().setColor(e.target.value).run()}
                             title="Text colour"
                         />
                     </div>
-                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }} title="Highlight colour">
+                    <div
+                        style={{ position: 'relative', display: 'flex', alignItems: 'center' }}
+                        title="Highlight colour"
+                    >
                         <button
                             type="button"
                             onClick={() => {
@@ -399,10 +541,15 @@ export default function EssayEditor({ content, onChange, editable = true, placeh
                                 }
                             }}
                             style={{
-                                padding: '4px 6px', borderRadius: 5, border: 'none', cursor: 'pointer',
-                                display: 'flex', alignItems: 'center',
+                                padding: '4px 6px',
+                                borderRadius: 5,
+                                border: 'none',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
                                 background: editor.isActive('highlight') ? '#e0e7ff' : 'transparent',
-                                color: '#1e293b', flexShrink: 0,
+                                color: '#1e293b',
+                                flexShrink: 0,
                             }}
                             title="Highlight"
                         >
@@ -413,11 +560,14 @@ export default function EssayEditor({ content, onChange, editable = true, placeh
                             type="color"
                             defaultValue="#fde68a"
                             style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'none' }}
-                            onChange={e => editor.chain().focus().setHighlight({ color: e.target.value }).run()}
+                            onChange={(e) => editor.chain().focus().setHighlight({ color: e.target.value }).run()}
                             title="Highlight colour"
                         />
                     </div>
-                    <ToolbarBtn onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().run()} title="Clear formatting">
+                    <ToolbarBtn
+                        onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().run()}
+                        title="Clear formatting"
+                    >
                         <RemoveFormatting size={15} />
                     </ToolbarBtn>
 
@@ -426,7 +576,7 @@ export default function EssayEditor({ content, onChange, editable = true, placeh
                     {/* ── Line Height ── */}
                     <select
                         value={currentLineHeight}
-                        onChange={e => {
+                        onChange={(e) => {
                             const v = e.target.value;
                             if (v === '') editor.chain().focus().unsetLineHeight().run();
                             else editor.chain().focus().setLineHeight(v).run();
@@ -434,52 +584,93 @@ export default function EssayEditor({ content, onChange, editable = true, placeh
                         style={{ ...selectStyle, width: 100 }}
                         title="Line height"
                     >
-                        {LINE_HEIGHTS.map(lh => (
-                            <option key={lh.value} value={lh.value}>{lh.label}</option>
+                        {LINE_HEIGHTS.map((lh) => (
+                            <option key={lh.value} value={lh.value}>
+                                {lh.label}
+                            </option>
                         ))}
                     </select>
 
                     {/* ── Alignment ── */}
-                    <ToolbarBtn active={editor.isActive({ textAlign: 'left' })} onClick={() => editor.chain().focus().setTextAlign('left').run()} title="Align left">
+                    <ToolbarBtn
+                        active={editor.isActive({ textAlign: 'left' })}
+                        onClick={() => editor.chain().focus().setTextAlign('left').run()}
+                        title="Align left"
+                    >
                         <AlignLeft size={15} />
                     </ToolbarBtn>
-                    <ToolbarBtn active={editor.isActive({ textAlign: 'center' })} onClick={() => editor.chain().focus().setTextAlign('center').run()} title="Align centre">
+                    <ToolbarBtn
+                        active={editor.isActive({ textAlign: 'center' })}
+                        onClick={() => editor.chain().focus().setTextAlign('center').run()}
+                        title="Align centre"
+                    >
                         <AlignCenter size={15} />
                     </ToolbarBtn>
-                    <ToolbarBtn active={editor.isActive({ textAlign: 'right' })} onClick={() => editor.chain().focus().setTextAlign('right').run()} title="Align right">
+                    <ToolbarBtn
+                        active={editor.isActive({ textAlign: 'right' })}
+                        onClick={() => editor.chain().focus().setTextAlign('right').run()}
+                        title="Align right"
+                    >
                         <AlignRight size={15} />
                     </ToolbarBtn>
-                    <ToolbarBtn active={editor.isActive({ textAlign: 'justify' })} onClick={() => editor.chain().focus().setTextAlign('justify').run()} title="Justify">
+                    <ToolbarBtn
+                        active={editor.isActive({ textAlign: 'justify' })}
+                        onClick={() => editor.chain().focus().setTextAlign('justify').run()}
+                        title="Justify"
+                    >
                         <AlignJustify size={15} />
                     </ToolbarBtn>
 
                     <Divider />
 
                     {/* ── Lists ── */}
-                    <ToolbarBtn active={editor.isActive('bulletList')} onClick={() => editor.chain().focus().toggleBulletList().run()} title="Bullet list">
+                    <ToolbarBtn
+                        active={editor.isActive('bulletList')}
+                        onClick={() => editor.chain().focus().toggleBulletList().run()}
+                        title="Bullet list"
+                    >
                         <List size={15} />
                     </ToolbarBtn>
-                    <ToolbarBtn active={editor.isActive('orderedList')} onClick={() => editor.chain().focus().toggleOrderedList().run()} title="Numbered list">
+                    <ToolbarBtn
+                        active={editor.isActive('orderedList')}
+                        onClick={() => editor.chain().focus().toggleOrderedList().run()}
+                        title="Numbered list"
+                    >
                         <ListOrdered size={15} />
                     </ToolbarBtn>
-                    <ToolbarBtn active={editor.isActive('taskList')} onClick={() => editor.chain().focus().toggleTaskList().run()} title="Checklist">
+                    <ToolbarBtn
+                        active={editor.isActive('taskList')}
+                        onClick={() => editor.chain().focus().toggleTaskList().run()}
+                        title="Checklist"
+                    >
                         <ListChecks size={15} />
                     </ToolbarBtn>
 
                     <Divider />
 
                     {/* ── Block elements ── */}
-                    <ToolbarBtn active={editor.isActive('blockquote')} onClick={() => editor.chain().focus().toggleBlockquote().run()} title="Blockquote">
+                    <ToolbarBtn
+                        active={editor.isActive('blockquote')}
+                        onClick={() => editor.chain().focus().toggleBlockquote().run()}
+                        title="Blockquote"
+                    >
                         <Quote size={15} />
                     </ToolbarBtn>
-                    <ToolbarBtn onClick={() => editor.chain().focus().setHorizontalRule().run()} title="Horizontal line">
+                    <ToolbarBtn
+                        onClick={() => editor.chain().focus().setHorizontalRule().run()}
+                        title="Horizontal line"
+                    >
                         <Minus size={15} />
                     </ToolbarBtn>
 
                     <Divider />
 
                     {/* ── Link ── */}
-                    <ToolbarBtn active={editor.isActive('link')} onClick={handleInsertLink} title="Insert / edit link (Ctrl+K)">
+                    <ToolbarBtn
+                        active={editor.isActive('link')}
+                        onClick={handleInsertLink}
+                        title="Insert / edit link (Ctrl+K)"
+                    >
                         <Link2 size={15} />
                     </ToolbarBtn>
                     {editor.isActive('link') && (
@@ -498,7 +689,7 @@ export default function EssayEditor({ content, onChange, editable = true, placeh
                     {/* ── Show invisibles ── */}
                     <ToolbarBtn
                         active={showInvisibles}
-                        onClick={() => setShowInvisibles(v => !v)}
+                        onClick={() => setShowInvisibles((v) => !v)}
                         title="Show formatting marks"
                     >
                         <span style={{ fontSize: 14, lineHeight: 1, fontFamily: 'serif', fontWeight: 400 }}>¶</span>
@@ -513,17 +704,59 @@ export default function EssayEditor({ content, onChange, editable = true, placeh
 
             {/* ── Table context controls (shown when cursor is inside a table) ── */}
             {editable && editor.isActive('table') && (
-                <div style={{
-                    display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center',
-                    padding: '8px 12px', borderTop: '1px solid #e2e8f0',
-                    background: '#f8fafc', fontSize: '0.75rem',
-                }}>
+                <div
+                    style={{
+                        display: 'flex',
+                        gap: 6,
+                        flexWrap: 'wrap',
+                        alignItems: 'center',
+                        padding: '8px 12px',
+                        borderTop: '1px solid #e2e8f0',
+                        background: '#f8fafc',
+                        fontSize: '0.75rem',
+                    }}
+                >
                     <span style={{ color: '#64748b', fontWeight: 600, marginRight: 4 }}>Table:</span>
-                    <button type="button" className="btn btn-ghost btn-sm" style={{ fontSize: '0.72rem', padding: '2px 8px' }} onClick={() => editor.chain().focus().addColumnAfter().run()}>+ Column</button>
-                    <button type="button" className="btn btn-ghost btn-sm" style={{ fontSize: '0.72rem', padding: '2px 8px' }} onClick={() => editor.chain().focus().addRowAfter().run()}>+ Row</button>
-                    <button type="button" className="btn btn-ghost btn-sm" style={{ fontSize: '0.72rem', padding: '2px 8px' }} onClick={() => editor.chain().focus().deleteColumn().run()}>− Column</button>
-                    <button type="button" className="btn btn-ghost btn-sm" style={{ fontSize: '0.72rem', padding: '2px 8px' }} onClick={() => editor.chain().focus().deleteRow().run()}>− Row</button>
-                    <button type="button" className="btn btn-ghost btn-sm" style={{ fontSize: '0.72rem', padding: '2px 8px', color: '#ef4444' }} onClick={() => editor.chain().focus().deleteTable().run()}>Delete table</button>
+                    <button
+                        type="button"
+                        className="btn btn-ghost btn-sm"
+                        style={{ fontSize: '0.72rem', padding: '2px 8px' }}
+                        onClick={() => editor.chain().focus().addColumnAfter().run()}
+                    >
+                        + Column
+                    </button>
+                    <button
+                        type="button"
+                        className="btn btn-ghost btn-sm"
+                        style={{ fontSize: '0.72rem', padding: '2px 8px' }}
+                        onClick={() => editor.chain().focus().addRowAfter().run()}
+                    >
+                        + Row
+                    </button>
+                    <button
+                        type="button"
+                        className="btn btn-ghost btn-sm"
+                        style={{ fontSize: '0.72rem', padding: '2px 8px' }}
+                        onClick={() => editor.chain().focus().deleteColumn().run()}
+                    >
+                        − Column
+                    </button>
+                    <button
+                        type="button"
+                        className="btn btn-ghost btn-sm"
+                        style={{ fontSize: '0.72rem', padding: '2px 8px' }}
+                        onClick={() => editor.chain().focus().deleteRow().run()}
+                    >
+                        − Row
+                    </button>
+                    <button
+                        type="button"
+                        className="btn btn-ghost btn-sm"
+                        style={{ fontSize: '0.72rem', padding: '2px 8px', color: '#ef4444' }}
+                        onClick={() => editor.chain().focus().deleteTable().run()}
+                    >
+                        Delete table
+                    </button>
                 </div>
             )}
 
