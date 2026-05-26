@@ -105,6 +105,7 @@ export default function GradeStudent() {
     } | null>(null);
     const [saved, setSaved] = useState(false);
     const [isDirty, setIsDirty] = useState(false);
+    const [showStdDesc, setShowStdDesc] = useState(false);
 
     // Ensure that if we loaded this student, the global active class defaults to their class
     // This perfectly handles the user going back and expecting to see this student's class
@@ -485,6 +486,49 @@ export default function GradeStudent() {
                     </button>
                 </div>
 
+                {/* Standards display toggle */}
+                {rubric.criteria.some(
+                    (c) => c.linkedStandard || (c.linkedStandards && c.linkedStandards.length > 0)
+                ) && (
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+                        <div
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 4,
+                                fontSize: '0.75rem',
+                                color: 'var(--text-muted)',
+                            }}
+                        >
+                            Standards:
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    background: 'var(--bg-elevated)',
+                                    borderRadius: 6,
+                                    padding: 2,
+                                    marginLeft: 4,
+                                }}
+                            >
+                                <button
+                                    className={`btn btn-sm ${!showStdDesc ? 'btn-white shadow-sm' : 'btn-ghost'}`}
+                                    onClick={() => setShowStdDesc(false)}
+                                    style={{ fontSize: '0.72rem', padding: '2px 8px' }}
+                                >
+                                    Code
+                                </button>
+                                <button
+                                    className={`btn btn-sm ${showStdDesc ? 'btn-white shadow-sm' : 'btn-ghost'}`}
+                                    onClick={() => setShowStdDesc(true)}
+                                    style={{ fontSize: '0.72rem', padding: '2px 8px' }}
+                                >
+                                    Description
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Rubric — card per criterion */}
                 <div
                     style={{
@@ -520,13 +564,15 @@ export default function GradeStudent() {
                                                     fontSize: '0.72em',
                                                     color: 'var(--accent)',
                                                     display: 'flex',
-                                                    alignItems: 'center',
+                                                    alignItems: 'flex-start',
                                                     gap: 3,
                                                 }}
-                                                title={c.linkedStandard.description}
+                                                title={showStdDesc ? (c.linkedStandard.statementNotation ?? '') : c.linkedStandard.description}
                                             >
-                                                <Info size={10} />{' '}
-                                                {c.linkedStandard.statementNotation ?? t('gradeStudent.label_standard')}
+                                                <Info size={10} style={{ flexShrink: 0, marginTop: 2 }} />{' '}
+                                                {showStdDesc
+                                                    ? c.linkedStandard.description
+                                                    : (c.linkedStandard.statementNotation ?? t('gradeStudent.label_standard'))}
                                             </div>
                                         )}
                                         {(c.linkedStandards || []).map((std, idx) => (
@@ -537,13 +583,15 @@ export default function GradeStudent() {
                                                     fontSize: '0.72em',
                                                     color: 'var(--accent)',
                                                     display: 'flex',
-                                                    alignItems: 'center',
+                                                    alignItems: 'flex-start',
                                                     gap: 3,
                                                 }}
-                                                title={std.description}
+                                                title={showStdDesc ? (std.statementNotation ?? '') : std.description}
                                             >
-                                                <Info size={10} />{' '}
-                                                {std.statementNotation ?? t('gradeStudent.label_standard')}
+                                                <Info size={10} style={{ flexShrink: 0, marginTop: 2 }} />{' '}
+                                                {showStdDesc
+                                                    ? std.description
+                                                    : (std.statementNotation ?? t('gradeStudent.label_standard'))}
                                             </div>
                                         ))}
                                         {entry.overridePoints !== undefined && (
@@ -843,14 +891,11 @@ export default function GradeStudent() {
                                                                                             (std, idx) => (
                                                                                                 <span
                                                                                                     key={idx}
-                                                                                                    title={
-                                                                                                        std.description
-                                                                                                    }
+                                                                                                    title={showStdDesc ? (std.statementNotation ?? '') : std.description}
                                                                                                 >
-                                                                                                    [
-                                                                                                    {std.statementNotation ??
-                                                                                                        std.guid}
-                                                                                                    ]
+                                                                                                    {showStdDesc
+                                                                                                        ? std.description
+                                                                                                        : `[${std.statementNotation ?? std.guid}]`}
                                                                                                 </span>
                                                                                             )
                                                                                         )}
