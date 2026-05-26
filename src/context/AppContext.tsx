@@ -14,10 +14,6 @@ import {
 import { nanoid } from '../utils/nanoid';
 import { storageSync, loadSupabaseConfig, saveSupabaseConfig } from '../services/database';
 import type { DatabaseConfig, DbUser, SyncResult } from '../services/database';
-// Azure / MSAL integration disabled — not in use
-// import { msalInstance, loginRequest } from '../services/msalConfig';
-// import { graphService } from '../services/microsoftGraph';
-// import { useMsal, useIsAuthenticated } from '@azure/msal-react';
 
 // ─── Actions ───────────────────────────────────────────────────────────────────
 
@@ -839,13 +835,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     // ─── Microsoft Sync (disabled — Azure integration not in use) ───
     const microsoftUser: any | null = null;
-     
     const loginMicrosoft = useCallback(async () => {}, []);
-     
     const logoutMicrosoft = useCallback(async () => {}, []);
-     
     const syncToOneDrive = useCallback(async () => {}, []);
-     
     const restoreFromOneDrive = useCallback(async () => {}, []);
 
     const value: AppContextValue = {

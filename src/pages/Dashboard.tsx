@@ -216,13 +216,16 @@ export default function Dashboard() {
                                         </div>
                                         <div style={{ flex: 1, minWidth: 0 }}>
                                             {item.type === 'grading' ? (
-                                                <div style={{ fontSize: '0.85rem' }}
-                                                    dangerouslySetInnerHTML={{ __html: t('dashboard.activity_graded', { student: item.studentName, rubric: item.rubricName }) }}
-                                                />
+                                                <div style={{ fontSize: '0.85rem' }}>
+                                                    {t('dashboard.activity_graded_prefix', 'Graded')}{' '}
+                                                    <strong>{item.studentName}</strong>
+                                                    {' — '}{item.rubricName}
+                                                </div>
                                             ) : (
-                                                <div style={{ fontSize: '0.85rem' }}
-                                                    dangerouslySetInnerHTML={{ __html: t('dashboard.activity_updated', { rubric: item.rubricName }) }}
-                                                />
+                                                <div style={{ fontSize: '0.85rem' }}>
+                                                    {t('dashboard.activity_updated_prefix', 'Updated')}{' '}
+                                                    <strong>{item.rubricName}</strong>
+                                                </div>
                                             )}
                                         </div>
                                         <span className="text-muted text-xs" style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 }}>

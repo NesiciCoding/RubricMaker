@@ -49,33 +49,15 @@ vi.mock('../store/storage', () => ({
     importFullBackup: vi.fn(() => true),
 }));
 
-vi.mock('@azure/msal-react', () => ({
-    useMsal: vi.fn(() => ({
-        instance: {
-            loginPopup: vi.fn().mockResolvedValue({}),
-            logoutPopup: vi.fn().mockResolvedValue({}),
-        },
-        accounts: [],
-    })),
-    useIsAuthenticated: vi.fn(() => false),
-}));
-
-vi.mock('../services/msalConfig', () => ({
-    msalInstance: {
-        getActiveAccount: vi.fn().mockReturnValue({ homeAccountId: 'id' }),
-    },
-    loginRequest: {},
-}));
-
-vi.mock('../services/microsoftGraph', () => ({
+vi.mock('../services/microsoftGraph_deleted_placeholder', () => ({
     graphService: {
         getUserProfile: vi.fn().mockResolvedValue({ displayName: 'Test User' }),
         uploadFile: vi.fn().mockResolvedValue({}),
         downloadFile: vi.fn().mockResolvedValue(JSON.stringify({
             rubrics: [], students: [], classes: [], studentRubrics: [],
             attachments: [], gradeScales: [], commentSnippets: [],
-            settings: { 
-                theme: 'light', language: 'en', accentColor: '#3b82f6', 
+            settings: {
+                theme: 'light', language: 'en', accentColor: '#3b82f6',
                 defaultFormat: {
                     criterionColWidth: 200, levelColWidth: 160, fontSize: 14,
                     headerColor: '#1e3a5f', headerTextColor: '#ffffff', accentColor: '#3b82f6',
@@ -376,27 +358,4 @@ describe('AppContext', () => {
         expect(storage.saveSettings).toHaveBeenCalled();
     });
 
-    it('should sync to OneDrive (no-op — Azure disabled)', async () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
-        const { graphService } = await import('../services/microsoftGraph');
-
-        await act(async () => {
-            await result.current.syncToOneDrive();
-        });
-
-        // Azure integration is disabled; syncToOneDrive is a no-op
-        expect(graphService.uploadFile).not.toHaveBeenCalled();
-    });
-
-    it('should restore from OneDrive (no-op — Azure disabled)', async () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
-        const { graphService } = await import('../services/microsoftGraph');
-
-        await act(async () => {
-            await result.current.restoreFromOneDrive();
-        });
-
-        // Azure integration is disabled; restoreFromOneDrive is a no-op
-        expect(graphService.downloadFile).not.toHaveBeenCalled();
-    });
 });

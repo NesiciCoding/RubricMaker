@@ -17,6 +17,7 @@ import { useDbStatus } from '../hooks/useDbStatus';
 import type { GradeScale, GradeRange, UserRole } from '../types';
 import { exportFullBackup, importFullBackup } from '../store/storage';
 import { loadSupabaseConfig, storageSync } from '../services/database';
+import { hashPin, verifyPin, isHashed } from '../utils/pinHash';
 import LoginButtons from '../components/auth/LoginButtons';
 
 type Tab = 'general' | 'teaching' | 'administration';
@@ -50,7 +51,6 @@ export default function SettingsPage() {
     const {
         settings, updateSettings, gradeScales, addGradeScale, updateGradeScale, deleteGradeScale, commentBank,
         exportTemplates, addExportTemplate, deleteExportTemplate, rubrics,
-        loginMicrosoft, logoutMicrosoft, syncToOneDrive, restoreFromOneDrive, microsoftUser,
         connectDatabase, disconnectDatabase, pushAllToDatabase, pullFromDatabase,
         fetchAllUsers, updateUserRole, updateMyProfile,
         connectForOAuth, signOutFromDatabase,
@@ -155,8 +155,13 @@ export default function SettingsPage() {
         showToast(`Role changed to ${ROLE_META[newRole].label}`, 'success');
     }
 
-    function confirmPinAndSwitch() {
-        if (pinInput === settings.adminPin) {
+    async function confirmPinAndSwitch() {
+        const stored = settings.adminPin;
+        if (!stored) return;
+        const ok = await verifyPin(pinInput, stored);
+        if (ok) {
+            // Upgrade legacy plaintext PIN to hashed on first successful use
+            if (!isHashed(stored)) updateSettings({ adminPin: await hashPin(pinInput) });
             setShowPinDialog(false);
             applyRoleSwitch(pendingRole!);
             setPendingRole(null);
@@ -167,23 +172,21 @@ export default function SettingsPage() {
 
     // ─── Admin password helpers ──────────────────────────────────────────────────
 
-    function handleSaveNewPin() {
+    async function handleSaveNewPin() {
         if (!newPin) { setPinSetupError('Password cannot be empty.'); return; }
         if (newPin !== confirmPin) { setPinSetupError('Passwords do not match.'); return; }
-        if (pinSetupMode === 'changing' && currentPinVerify !== settings.adminPin) {
-            setPinSetupError('Current password is incorrect.');
-            return;
+        if (pinSetupMode === 'changing') {
+            const ok = await verifyPin(currentPinVerify, settings.adminPin ?? '');
+            if (!ok) { setPinSetupError('Current password is incorrect.'); return; }
         }
-        updateSettings({ adminPin: newPin });
+        updateSettings({ adminPin: await hashPin(newPin) });
         showToast('Admin password saved', 'success');
         resetPinSetup();
     }
 
-    function handleRemovePin() {
-        if (currentPinVerify !== settings.adminPin) {
-            setPinSetupError('Current password is incorrect.');
-            return;
-        }
+    async function handleRemovePin() {
+        const ok = await verifyPin(currentPinVerify, settings.adminPin ?? '');
+        if (!ok) { setPinSetupError('Current password is incorrect.'); return; }
         updateSettings({ adminPin: undefined });
         showToast('Admin password removed', 'info');
         resetPinSetup();
@@ -215,16 +218,6 @@ export default function SettingsPage() {
         };
         reader.readAsText(file);
         e.target.value = '';
-    }
-
-    async function handleSyncToOneDrive() {
-        try { await syncToOneDrive(); showToast(t('toast.sync_success'), 'success'); }
-        catch { showToast(t('toast.sync_error'), 'error'); }
-    }
-
-    async function handleRestoreFromOneDrive() {
-        try { await restoreFromOneDrive(); showToast(t('toast.restore_success'), 'success'); }
-        catch { showToast(t('toast.restore_error'), 'error'); }
     }
 
     function handleAccentChange(val: string) {

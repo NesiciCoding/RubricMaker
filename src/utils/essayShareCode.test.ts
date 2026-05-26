@@ -81,3 +81,13 @@ describe('decodeEssayAssignment', () => {
         expect(decodeEssayAssignment(padded)).not.toBeNull();
     });
 });
+
+describe('ownerUserId is never encoded into the URL', () => {
+    it('does not include ownerUserId in the encoded string', () => {
+        const a = makeAssignment({ supabaseUrl: 'https://x.supabase.co', supabaseAnonKey: 'anon-key' } as any);
+        (a as any).ownerUserId = 'secret-uid-1234';
+        const code = encodeEssayAssignment(a);
+        const decoded = JSON.parse(decodeURIComponent(atob(code)));
+        expect(decoded.ownerUserId).toBeUndefined();
+    });
+});

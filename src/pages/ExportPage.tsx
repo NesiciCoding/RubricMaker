@@ -256,7 +256,7 @@ export default function ExportPage() {
                         </div>
                         {exportTemplates.length === 0 ? (
                             <div className="text-muted text-xs" style={{ marginTop: 6, display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
-                                <span dangerouslySetInnerHTML={{ __html: t('exportPage.no_templates_help') }} />
+                                <span>{t('exportPage.no_templates_help_prefix', 'No templates saved. Upload one in')}{' '}<strong>{t('exportPage.no_templates_help_location', 'Settings → Export Templates')}</strong>.</span>
                                 <a href="sample-template.docx" download="sample-template.docx" className="btn btn-ghost btn-icon btn-sm" style={{ padding: '0 6px', height: 20, display: 'inline-flex', alignSelf: 'center', alignItems: 'center', gap: 4, textDecoration: 'none', color: 'var(--accent)' }}>
                                     <Download size={10} /> {t('exportPage.download_sample')}
                                 </a>

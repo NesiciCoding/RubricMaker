@@ -33,6 +33,7 @@ export default function EssayAssignmentModal({
     const [timeLimitMinutes, setTimeLimitMinutes] = useState('');
     const [requireSEB, setRequireSEB]         = useState(false);
     const [readOnlyAfterSubmit, setReadOnlyAfterSubmit] = useState(true);
+    const [expiresAt, setExpiresAt]           = useState('');
     const [embedDb, setEmbedDb]               = useState(dbStatus.isConnected); // on by default when connected
     const [copied, setCopied]                 = useState(false);
     const [saved, setSaved]                   = useState(false);
@@ -54,15 +55,15 @@ export default function EssayAssignmentModal({
             requireSEB,
             readOnlyAfterSubmit,
             createdAt: new Date().toISOString(),
+            expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
         };
         // Embed Supabase credentials so the student page can submit directly to the DB
-        if (embedDb && dbStatus.isConnected && config && dbStatus.userId) {
-            base.supabaseUrl   = config.supabaseUrl;
+        if (embedDb && dbStatus.isConnected && config) {
+            base.supabaseUrl     = config.supabaseUrl;
             base.supabaseAnonKey = config.supabaseAnonKey;
-            base.ownerUserId   = dbStatus.userId;
         }
         return base;
-    }, [rubricId, teacherKey, title, prompt, minWords, maxWords, timeLimitMinutes, requireSEB, readOnlyAfterSubmit, embedDb, dbStatus.isConnected, dbStatus.userId, config]);
+    }, [rubricId, teacherKey, title, prompt, minWords, maxWords, timeLimitMinutes, requireSEB, readOnlyAfterSubmit, expiresAt, embedDb, dbStatus.isConnected, dbStatus.userId, config]);
 
     const essayUrl = `${window.location.origin}${window.location.pathname}#/essay/${encodeEssayAssignment(buildAssignment(studentId))}`;
 
@@ -175,6 +176,12 @@ export default function EssayAssignmentModal({
                         <input type="checkbox" checked={readOnlyAfterSubmit} onChange={e => setReadOnlyAfterSubmit(e.target.checked)} style={{ accentColor: 'var(--accent)' }} />
                         Lock essay after submit
                     </label>
+                </div>
+
+                {/* Expiry */}
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label>Deadline <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional — students cannot submit after this date/time)</span></label>
+                    <input type="datetime-local" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} style={{ width: '100%' }} />
                 </div>
 
                 {/* DB integration toggle */}

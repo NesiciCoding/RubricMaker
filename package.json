@@ -19,8 +19,6 @@
     "postinstall": "node scripts/patch-rollup-native.cjs"
   },
   "dependencies": {
-    "@azure/msal-browser": "^3.2.0",
-    "@azure/msal-react": "^2.1.0",
     "@floating-ui/dom": "^1.7.6",
     "@hello-pangea/dnd": "^18.0.1",
     "@radix-ui/react-dialog": "^1.1.15",

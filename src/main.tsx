@@ -6,8 +6,6 @@ import { AppProvider } from './context/AppContext';
 import { ToastProvider } from './context/ToastContext';
 import './index.css';
 import './i18n';
-// import { MsalProvider } from '@azure/msal-react';
-// import { msalInstance } from './services/msalConfig';
 
 // Student-facing pages are outside AppProvider — they work from URL-encoded data only
 const StudentFeedbackPage = lazy(() => import('./pages/StudentFeedbackPage'));
@@ -16,7 +14,6 @@ const StudentEssayPage = lazy(() => import('./pages/StudentEssayPage'));
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
-        {/* MsalProvider disabled — Azure integration not in use */}
         <HashRouter>
             <Suspense fallback={null}>
                 <Routes>

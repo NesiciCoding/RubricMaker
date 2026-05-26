@@ -85,47 +85,46 @@ export class EssayAdapter {
     // ── Submission ───────────────────────────────────────────────────────────
 
     /**
-     * Upload the essay HTML to Storage and insert a submission row.
-     * Path: {assignmentId}/{submissionId}.html
+     * Submit the essay via the server-side Edge Function.
+     * The function validates expiry, word-count limits, and duplicate submissions
+     * before writing to Storage + essay_submissions, so these checks cannot be
+     * bypassed by a client-side patch.
      */
     async submitEssay(
         assignment: EssayAssignment,
         submissionId: string,
         html: string,
         studentEmail: string,
-        studentUserId: string,
+        _studentUserId: string,
         wordCount: number,
     ): Promise<SyncResult> {
-        const assignmentId = assignment.teacherKey;
-        const storagePath = `${assignmentId}/${submissionId}.html`;
+        const { data: { session } } = await this.client.auth.getSession();
+        if (!session) return { success: false, error: 'Not authenticated' };
 
-        // 1. Upload HTML to Storage
-        const blob = new Blob([html], { type: 'text/html' });
-        const { error: uploadError } = await this.client.storage
-            .from('essays')
-            .upload(storagePath, blob, { contentType: 'text/html', upsert: false });
-
-        if (uploadError) {
-            return { success: false, error: `Storage upload failed: ${uploadError.message}` };
+        let response: Response;
+        try {
+            response = await fetch(`${assignment.supabaseUrl}/functions/v1/submit-essay`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`,
+                    'apikey': assignment.supabaseAnonKey ?? '',
+                },
+                body: JSON.stringify({
+                    assignmentId: assignment.teacherKey,
+                    submissionId,
+                    htmlContent: html,
+                    studentEmail,
+                    wordCount,
+                }),
+            });
+        } catch (err) {
+            return { success: false, error: `Network error: ${String(err)}` };
         }
 
-        // 2. Insert submission metadata
-        const { error: insertError } = await this.client
-            .from('essay_submissions')
-            .insert({
-                id: submissionId,
-                assignment_id: assignmentId,
-                student_email: studentEmail,
-                student_user_id: studentUserId,
-                word_count: wordCount,
-                submitted_at: new Date().toISOString(),
-                storage_path: storagePath,
-            });
-
-        if (insertError) {
-            // Best-effort cleanup of the uploaded file
-            await this.client.storage.from('essays').remove([storagePath]).catch(() => {});
-            return { success: false, error: `Database insert failed: ${insertError.message}` };
+        if (!response.ok) {
+            const body = await response.json().catch(() => ({ error: `Server error ${response.status}` }));
+            return { success: false, error: body.error ?? `Server error ${response.status}` };
         }
 
         return { success: true };
