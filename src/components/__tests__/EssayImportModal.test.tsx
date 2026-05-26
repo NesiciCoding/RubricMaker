@@ -88,19 +88,25 @@ describe('EssayImportModal', () => {
     it('calls onImport with correct attachment on valid submission', () => {
         mockDecode.mockReturnValue(validSubmission);
         render(<EssayImportModal {...baseProps} />);
-        fireEvent.change(screen.getByPlaceholderText(/Paste the student's submission code/i), { target: { value: 'valid-code' } });
+        fireEvent.change(screen.getByPlaceholderText(/Paste the student's submission code/i), {
+            target: { value: 'valid-code' },
+        });
         fireEvent.click(screen.getByRole('button', { name: /import essay/i }));
-        expect(baseProps.onImport).toHaveBeenCalledWith(expect.objectContaining({
-            mimeType: 'text/html',
-            rubricId: 'r1',
-            studentId: 's1',
-        }));
+        expect(baseProps.onImport).toHaveBeenCalledWith(
+            expect.objectContaining({
+                mimeType: 'text/html',
+                rubricId: 'r1',
+                studentId: 's1',
+            })
+        );
     });
 
     it('shows success state after valid import', () => {
         mockDecode.mockReturnValue(validSubmission);
         render(<EssayImportModal {...baseProps} />);
-        fireEvent.change(screen.getByPlaceholderText(/Paste the student's submission code/i), { target: { value: 'valid-code' } });
+        fireEvent.change(screen.getByPlaceholderText(/Paste the student's submission code/i), {
+            target: { value: 'valid-code' },
+        });
         fireEvent.click(screen.getByRole('button', { name: /import essay/i }));
         expect(screen.getByText(/Essay imported successfully/i)).toBeInTheDocument();
         expect(screen.getByText(/2 words/i)).toBeInTheDocument();

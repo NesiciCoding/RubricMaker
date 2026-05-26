@@ -37,7 +37,9 @@ describe('useVoiceGrading', () => {
 
     it('toggleListening starts listening when not listening', () => {
         const { result } = renderHook(() => useVoiceGrading(vi.fn(), vi.fn(), 'en-US'));
-        act(() => { result.current.toggleListening(); });
+        act(() => {
+            result.current.toggleListening();
+        });
         expect(mockStartListening).toHaveBeenCalledWith({ continuous: true, language: 'en-US' });
     });
 
@@ -49,13 +51,17 @@ describe('useVoiceGrading', () => {
             browserSupportsSpeechRecognition: true,
         });
         const { result } = renderHook(() => useVoiceGrading(vi.fn(), vi.fn()));
-        act(() => { result.current.toggleListening(); });
+        act(() => {
+            result.current.toggleListening();
+        });
         expect(mockStopListening).toHaveBeenCalled();
     });
 
     it('uses default language nl-NL', () => {
         const { result } = renderHook(() => useVoiceGrading(vi.fn(), vi.fn()));
-        act(() => { result.current.toggleListening(); });
+        act(() => {
+            result.current.toggleListening();
+        });
         expect(mockStartListening).toHaveBeenCalledWith({ continuous: true, language: 'nl-NL' });
     });
 
@@ -73,9 +79,7 @@ describe('useVoiceGrading', () => {
 
     it('registers commands with useSpeechRecognition', () => {
         renderHook(() => useVoiceGrading(vi.fn(), vi.fn()));
-        expect(mockUseSpeechRecognition).toHaveBeenCalledWith(
-            expect.objectContaining({ commands: expect.any(Array) })
-        );
+        expect(mockUseSpeechRecognition).toHaveBeenCalledWith(expect.objectContaining({ commands: expect.any(Array) }));
         const { commands } = mockUseSpeechRecognition.mock.calls[0][0];
         expect(commands.length).toBe(3);
     });

@@ -33,27 +33,33 @@ export default function MigrationPrompt() {
                     </div>
                     <div>
                         <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: 1.6 }}>
-                            We found local data in your browser:{' '}
-                            <strong>{counts.join(', ')}</strong>.
+                            We found local data in your browser: <strong>{counts.join(', ')}</strong>.
                         </p>
                         <p style={{ margin: '8px 0 0', fontSize: '0.85rem', color: '#64748b', lineHeight: 1.5 }}>
-                            Would you like to upload it to your account so it's available
-                            across devices? This won't delete anything locally.
+                            Would you like to upload it to your account so it's available across devices? This won't
+                            delete anything locally.
                         </p>
                     </div>
                 </div>
 
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-                    <button className="btn btn-ghost btn-sm" disabled={uploading}
-                        onClick={() => dismissMigrationPrompt(false)}>
+                    <button
+                        className="btn btn-ghost btn-sm"
+                        disabled={uploading}
+                        onClick={() => dismissMigrationPrompt(false)}
+                    >
                         <X size={14} /> Skip for now
                     </button>
-                    <button className="btn btn-primary btn-sm" disabled={uploading}
-                        onClick={handleUpload}>
-                        {uploading
-                            ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Uploading…</>
-                            : <><Upload size={14} /> Upload to account</>
-                        }
+                    <button className="btn btn-primary btn-sm" disabled={uploading} onClick={handleUpload}>
+                        {uploading ? (
+                            <>
+                                <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Uploading…
+                            </>
+                        ) : (
+                            <>
+                                <Upload size={14} /> Upload to account
+                            </>
+                        )}
                     </button>
                 </div>
             </div>

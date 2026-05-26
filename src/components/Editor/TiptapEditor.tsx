@@ -11,9 +11,7 @@ interface TiptapEditorProps {
 
 export default function TiptapEditor({ content, onChange, placeholder }: TiptapEditorProps) {
     const editor = useEditor({
-        extensions: [
-            StarterKit,
-        ],
+        extensions: [StarterKit],
         content: content,
         onUpdate: ({ editor }) => {
             onChange(editor.getHTML());
