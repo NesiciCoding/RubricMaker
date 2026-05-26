@@ -14,5 +14,5 @@ export function countWords(html: string): number {
         .replace(/\s+/g, ' ')
         .trim();
     if (!text) return 0;
-    return text.split(' ').filter(w => w.length > 0).length;
+    return text.split(' ').filter((w) => w.length > 0).length;
 }

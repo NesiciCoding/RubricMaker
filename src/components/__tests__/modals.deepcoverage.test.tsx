@@ -31,7 +31,9 @@ class MockFileReader {
     onload: ((e: any) => void) | null = null;
     onerror: ((e: any) => void) | null = null;
     readAsDataURL(_file: File) {
-        setTimeout(() => { this.onload?.({ target: { result: 'data:application/octet-stream;base64,dGVzdA==' } }); }, 0);
+        setTimeout(() => {
+            this.onload?.({ target: { result: 'data:application/octet-stream;base64,dGVzdA==' } });
+        }, 0);
     }
 }
 // @ts-expect-error -- override global with mock in test environment
@@ -184,11 +186,13 @@ describe('ImportRubricModal', () => {
         simulateFileInput(input, makeFile('rubric.json', 'application/json'));
         await waitFor(() => screen.getByText(/Detection quality/i));
         fireEvent.click(screen.getByRole('button', { name: /Create Rubric/i }));
-        expect(onImport).toHaveBeenCalledWith(expect.objectContaining({
-            name: 'My Rubric',
-            subject: 'English',
-            criteria: parsedRubric.criteria,
-        }));
+        expect(onImport).toHaveBeenCalledWith(
+            expect.objectContaining({
+                name: 'My Rubric',
+                subject: 'English',
+                criteria: parsedRubric.criteria,
+            })
+        );
     });
 
     it('shows warnings from parsed rubric', async () => {
@@ -326,10 +330,12 @@ describe('TemplateUploadModal', () => {
         simulateFileInput(input, makeFile('template.docx'));
         await waitFor(() => screen.getByText(/Template parsed/i));
         fireEvent.click(screen.getByRole('button', { name: /Save Template/i }));
-        expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
-            levelHeaders: parsedTemplate.levelHeaders,
-            headerColor: parsedTemplate.headerColor,
-        }));
+        expect(onSave).toHaveBeenCalledWith(
+            expect.objectContaining({
+                levelHeaders: parsedTemplate.levelHeaders,
+                headerColor: parsedTemplate.headerColor,
+            })
+        );
     });
 
     it('shows parse error when parseTemplateHeaders throws', async () => {

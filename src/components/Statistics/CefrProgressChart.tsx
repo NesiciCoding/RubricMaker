@@ -1,7 +1,13 @@
 import React from 'react';
 import {
-    RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
-    Tooltip, Legend, ResponsiveContainer,
+    RadarChart,
+    Radar,
+    PolarGrid,
+    PolarAngleAxis,
+    PolarRadiusAxis,
+    Tooltip,
+    Legend,
+    ResponsiveContainer,
 } from 'recharts';
 import { useTranslation } from 'react-i18next';
 import { CEFR_LEVELS, CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../../data/cefrDescriptors';
@@ -31,18 +37,18 @@ export default function CefrProgressChart({ entries }: Props) {
     }
 
     // Build unique skill list from entries
-    const skills = Array.from(new Set(entries.map(e => e.skill)));
+    const skills = Array.from(new Set(entries.map((e) => e.skill)));
 
     // Build unique levels present in entries
-    const levelsPresent = CEFR_LEVELS.filter(lvl => entries.some(e => e.level === lvl));
+    const levelsPresent = CEFR_LEVELS.filter((lvl) => entries.some((e) => e.level === lvl));
 
     // Each data point = one skill axis; each series = one CEFR level
-    const data = skills.map(skill => {
+    const data = skills.map((skill) => {
         const point: Record<string, string | number> = {
             skill: CEFR_SKILL_LABELS[skill]?.[lang] ?? skill,
         };
-        levelsPresent.forEach(lvl => {
-            const entry = entries.find(e => e.skill === skill && e.level === lvl);
+        levelsPresent.forEach((lvl) => {
+            const entry = entries.find((e) => e.skill === skill && e.level === lvl);
             point[lvl] = entry ? parseFloat(entry.avgScore.toFixed(1)) : 0;
         });
         return point;
@@ -56,10 +62,7 @@ export default function CefrProgressChart({ entries }: Props) {
             <ResponsiveContainer width="100%" height={300}>
                 <RadarChart data={data} margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
                     <PolarGrid strokeOpacity={0.3} />
-                    <PolarAngleAxis
-                        dataKey="skill"
-                        tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
-                    />
+                    <PolarAngleAxis dataKey="skill" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} />
                     <PolarRadiusAxis
                         domain={[0, 100]}
                         tick={{ fill: 'var(--text-dim)', fontSize: 10 }}
@@ -74,8 +77,8 @@ export default function CefrProgressChart({ entries }: Props) {
                         }}
                         formatter={(value: number) => `${value}%`}
                     />
-                    {levelsPresent.map(lvl => {
-                        const hasAchieved = entries.some(e => e.level === lvl && e.achieved);
+                    {levelsPresent.map((lvl) => {
+                        const hasAchieved = entries.some((e) => e.level === lvl && e.achieved);
                         return (
                             <Radar
                                 key={lvl}

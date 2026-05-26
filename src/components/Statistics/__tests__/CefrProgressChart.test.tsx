@@ -36,21 +36,13 @@ describe('CefrProgressChart', () => {
     });
 
     it('renders chart when 3+ entries provided', () => {
-        const entries = [
-            makeEntry('A1', 'reading'),
-            makeEntry('A1', 'writing'),
-            makeEntry('A1', 'listening'),
-        ];
+        const entries = [makeEntry('A1', 'reading'), makeEntry('A1', 'writing'), makeEntry('A1', 'listening')];
         const { container } = render(<CefrProgressChart entries={entries} />);
         expect(container.querySelector('.recharts-wrapper') ?? container.firstChild).toBeTruthy();
     });
 
     it('shows chart title', () => {
-        const entries = [
-            makeEntry('B1', 'reading'),
-            makeEntry('B1', 'writing'),
-            makeEntry('B1', 'listening'),
-        ];
+        const entries = [makeEntry('B1', 'reading'), makeEntry('B1', 'writing'), makeEntry('B1', 'listening')];
         render(<CefrProgressChart entries={entries} />);
         expect(screen.getByText('cefr.progress_chart_title')).toBeInTheDocument();
     });

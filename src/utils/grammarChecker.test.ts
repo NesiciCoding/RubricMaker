@@ -72,14 +72,14 @@ describe('checkGrammar — LanguageTool path', () => {
             ok: true,
             status: 200,
             json: vi.fn().mockResolvedValue({
-                matches: [{
-                    message: 'test',
-                    offset: 0,
-                    length: 1,
-                    replacements: [
-                        { value: 'a' }, { value: 'b' }, { value: 'c' }, { value: 'd' },
-                    ],
-                }],
+                matches: [
+                    {
+                        message: 'test',
+                        offset: 0,
+                        length: 1,
+                        replacements: [{ value: 'a' }, { value: 'b' }, { value: 'c' }, { value: 'd' }],
+                    },
+                ],
             }),
         });
         const result = await checkGrammar('x');
@@ -125,7 +125,7 @@ describe('checkGrammar — compromise fallback', () => {
     it('detects repeated consecutive words', async () => {
         const result = await checkGrammar('the the cat sat on the mat.');
         expect(result.source).toBe('compromise');
-        const repeated = result.errors.find(e => e.ruleId === 'COMPROMISE_REPEATED_WORD');
+        const repeated = result.errors.find((e) => e.ruleId === 'COMPROMISE_REPEATED_WORD');
         expect(repeated).toBeDefined();
         expect(repeated!.suggestions).toEqual(['the']);
     });
@@ -133,7 +133,7 @@ describe('checkGrammar — compromise fallback', () => {
     it('returns empty errors array for clean text', async () => {
         const result = await checkGrammar('The cat sat on the mat.');
         expect(result.source).toBe('compromise');
-        expect(result.errors.filter(e => e.ruleId === 'COMPROMISE_REPEATED_WORD')).toHaveLength(0);
+        expect(result.errors.filter((e) => e.ruleId === 'COMPROMISE_REPEATED_WORD')).toHaveLength(0);
     });
 
     it('returns errors array (may be empty) without throwing', async () => {
