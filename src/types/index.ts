@@ -45,7 +45,6 @@ export interface LinkedCefrDescriptor {
     descriptionNl: string;
 }
 
-
 /** A single item inside a level — awarded via checkbox or scored via points */
 export interface SubItem {
     id: string;
@@ -58,16 +57,16 @@ export interface SubItem {
 
 export interface RubricLevel {
     id: string;
-    label: string;        // e.g. "Excellent", "4"
-    minPoints: number;    // minimum points for this level (can equal maxPoints)
-    maxPoints: number;    // maximum points for this level
-    description: string;  // descriptor text in the cell
-    subItems: SubItem[];  // optional fine-grain checklist (alongside range)
+    label: string; // e.g. "Excellent", "4"
+    minPoints: number; // minimum points for this level (can equal maxPoints)
+    maxPoints: number; // maximum points for this level
+    description: string; // descriptor text in the cell
+    subItems: SubItem[]; // optional fine-grain checklist (alongside range)
 }
 
 export interface LinkedStandard {
     guid: string;
-    statementNotation?: string;   // e.g. "CCSS.ELA-LITERACY.RH.6-8.1"
+    statementNotation?: string; // e.g. "CCSS.ELA-LITERACY.RH.6-8.1"
     description: string;
     standardSetTitle: string;
     jurisdictionTitle: string;
@@ -78,9 +77,9 @@ export interface LinkedStandard {
 export interface RubricCriterion {
     id: string;
     title: string;
-    description: string;    // optional sub-description shown under title
-    weight: number;         // 0–100, relative weight for weighted scoring
-    levels: RubricLevel[];  // ordered left (best) to right (worst), or vice-versa
+    description: string; // optional sub-description shown under title
+    weight: number; // 0–100, relative weight for weighted scoring
+    levels: RubricLevel[]; // ordered left (best) to right (worst), or vice-versa
     /** @deprecated Use linkedStandards instead */
     linkedStandard?: LinkedStandard;
     linkedStandards?: LinkedStandard[];
@@ -91,8 +90,8 @@ export interface RubricCriterion {
 export type GradeScaleType = 'letter' | 'percentage' | 'points' | 'pass-fail' | 'custom';
 
 export interface GradeRange {
-    min: number;   // inclusive %
-    max: number;   // inclusive %
+    min: number; // inclusive %
+    max: number; // inclusive %
     label: string; // "A", "Pass", "Excellent" etc.
     color: string; // hex
 }
@@ -108,7 +107,7 @@ export type ModifierType = 'percentage' | 'points' | 'level';
 
 export interface Modifier {
     type: ModifierType;
-    value: number;   // negative = worse, positive = better
+    value: number; // negative = worse, positive = better
     reason: string;
 }
 
@@ -116,11 +115,11 @@ export interface Attachment {
     id: string;
     name: string;
     mimeType: string;
-    dataUrl: string;   // base64 encoded file content
+    dataUrl: string; // base64 encoded file content
     rubricId?: string; // if attached to a rubric globally
     studentId?: string; // if attached to a specific student
-    size: number;      // bytes
-    addedAt: string;   // ISO date string
+    size: number; // bytes
+    addedAt: string; // ISO date string
 }
 
 /** A blank DOCX rubric template whose column headers & styling are used for export */
@@ -273,8 +272,8 @@ export interface Class {
 
 export interface ScoreEntry {
     criterionId: string;
-    levelId: string | null;        // null = not yet graded
-    overridePoints?: number;       // full manual override (bypasses level & sub-items)
+    levelId: string | null; // null = not yet graded
+    overridePoints?: number; // full manual override (bypasses level & sub-items)
     /** Points chosen within [minPoints, maxPoints] when no sub-items OR alongside them */
     selectedPoints?: number;
     /** Which SubItem ids are checked for this criterion */
@@ -282,7 +281,7 @@ export interface ScoreEntry {
     /** Granular scores chosen for specific sub-items */
     subItemScores?: Record<string, number>;
     comment: string;
-    attachmentId?: string;         // evidence file linked to this criterion
+    attachmentId?: string; // evidence file linked to this criterion
     /** Single-point rubric outcome — set instead of levelId when scoringMode is 'single-point' */
     singlePointOutcome?: SinglePointOutcome;
     /** Base64 audio recording for this criterion (data:audio/webm;base64,...) */

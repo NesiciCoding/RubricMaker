@@ -25,7 +25,9 @@ function setCachedUrl(id: string, url: string) {
     try {
         const entry: CachedUrl = { url, expiresAt: Date.now() + SIGNED_URL_TTL_MS };
         sessionStorage.setItem(SIGNED_URL_CACHE_PREFIX + id, JSON.stringify(entry));
-    } catch { /* ignore */ }
+    } catch {
+        /* ignore */
+    }
 }
 
 function base64ToBlob(dataUrl: string): Blob {

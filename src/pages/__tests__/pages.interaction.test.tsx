@@ -177,7 +177,8 @@ vi.mock('../../components/Editor/TiptapEditor', () => ({
 }));
 
 vi.mock('@hello-pangea/dnd', () => ({
-    DragDropContext: ({ children }: { children: React.ReactNode }) => React.createElement(React.Fragment, null, children),
+    DragDropContext: ({ children }: { children: React.ReactNode }) =>
+        React.createElement(React.Fragment, null, children),
     Droppable: ({ children }: { children: (provided: any) => React.ReactNode }) =>
         children({ innerRef: vi.fn(), droppableProps: {}, placeholder: null } as any),
     Draggable: ({ children }: { children: (provided: any) => React.ReactNode }) =>
@@ -236,28 +237,36 @@ vi.mock('../../utils/docxTemplateExport', () => ({
 
 vi.mock('../../components/Comments/CommentBankModal', () => ({
     default: ({ onClose }: { onClose: () => void }) =>
-        React.createElement('div', { 'data-testid': 'comment-bank-modal' },
+        React.createElement(
+            'div',
+            { 'data-testid': 'comment-bank-modal' },
             React.createElement('button', { onClick: onClose }, 'Close Modal')
         ),
 }));
 
 vi.mock('../../components/TemplateUploadModal', () => ({
     default: ({ onClose }: { onClose: () => void }) =>
-        React.createElement('div', { 'data-testid': 'template-upload-modal' },
+        React.createElement(
+            'div',
+            { 'data-testid': 'template-upload-modal' },
             React.createElement('button', { onClick: onClose }, 'Close Upload')
         ),
 }));
 
 vi.mock('../../components/ImportRubricModal', () => ({
     default: ({ onClose }: { onClose: () => void }) =>
-        React.createElement('div', { 'data-testid': 'import-rubric-modal' },
+        React.createElement(
+            'div',
+            { 'data-testid': 'import-rubric-modal' },
             React.createElement('button', { onClick: onClose }, 'Close Import')
         ),
 }));
 
 vi.mock('../../components/CsvImportModal', () => ({
     default: ({ onClose }: { onClose: () => void }) =>
-        React.createElement('div', { 'data-testid': 'csv-import-modal' },
+        React.createElement(
+            'div',
+            { 'data-testid': 'csv-import-modal' },
             React.createElement('button', { onClick: onClose }, 'Close CSV')
         ),
 }));
@@ -309,7 +318,9 @@ describe('RubricList interactions', () => {
     it('delete button shows confirmation dialog', () => {
         renderPage(<RubricList />);
         const deleteButtons = screen.getAllByRole('button');
-        const deleteBtn = deleteButtons.find(b => b.title?.match(/delete/i) || b.getAttribute('aria-label')?.match(/delete/i));
+        const deleteBtn = deleteButtons.find(
+            (b) => b.title?.match(/delete/i) || b.getAttribute('aria-label')?.match(/delete/i)
+        );
         if (deleteBtn) {
             fireEvent.click(deleteBtn);
             expect(screen.queryByText(/confirm/i) || screen.queryAllByRole('dialog').length >= 0).toBeTruthy();
@@ -319,7 +330,7 @@ describe('RubricList interactions', () => {
     it('shows import modal on click', () => {
         renderPage(<RubricList />);
         const buttons = screen.getAllByRole('button');
-        const importBtn = buttons.find(b => b.textContent?.match(/import/i) && !b.textContent?.match(/code/i));
+        const importBtn = buttons.find((b) => b.textContent?.match(/import/i) && !b.textContent?.match(/code/i));
         if (importBtn) {
             fireEvent.click(importBtn);
             expect(screen.getByTestId('import-rubric-modal')).toBeInTheDocument();
@@ -329,7 +340,7 @@ describe('RubricList interactions', () => {
     it('closing import modal hides it', () => {
         renderPage(<RubricList />);
         const buttons = screen.getAllByRole('button');
-        const importBtn = buttons.find(b => b.textContent?.match(/import/i) && !b.textContent?.match(/code/i));
+        const importBtn = buttons.find((b) => b.textContent?.match(/import/i) && !b.textContent?.match(/code/i));
         if (importBtn) {
             fireEvent.click(importBtn);
             fireEvent.click(screen.getByText('Close Import'));
@@ -362,7 +373,7 @@ describe('StudentsPage interactions', () => {
     it('shows CSV import modal when upload button clicked', () => {
         renderPage(<StudentsPage />);
         const uploadBtns = screen.getAllByRole('button');
-        const csvBtn = uploadBtns.find(b => b.textContent?.match(/csv|import/i));
+        const csvBtn = uploadBtns.find((b) => b.textContent?.match(/csv|import/i));
         if (csvBtn) {
             fireEvent.click(csvBtn);
         }
@@ -400,7 +411,7 @@ describe('SettingsPage interactions', () => {
     it('opens comment bank modal', () => {
         renderPage(<SettingsPage />);
         const btns = screen.getAllByRole('button');
-        const commentBtn = btns.find(b => b.textContent?.match(/comment.*bank|manage.*comment/i));
+        const commentBtn = btns.find((b) => b.textContent?.match(/comment.*bank|manage.*comment/i));
         if (commentBtn) {
             fireEvent.click(commentBtn);
             expect(screen.getByTestId('comment-bank-modal')).toBeInTheDocument();
@@ -410,7 +421,7 @@ describe('SettingsPage interactions', () => {
     it('closes comment bank modal', () => {
         renderPage(<SettingsPage />);
         const btns = screen.getAllByRole('button');
-        const commentBtn = btns.find(b => b.textContent?.match(/comment.*bank|manage.*comment/i));
+        const commentBtn = btns.find((b) => b.textContent?.match(/comment.*bank|manage.*comment/i));
         if (commentBtn) {
             fireEvent.click(commentBtn);
             fireEvent.click(screen.getByText('Close Modal'));
@@ -421,7 +432,7 @@ describe('SettingsPage interactions', () => {
     it('opens template upload modal', () => {
         renderPage(<SettingsPage />);
         const btns = screen.getAllByRole('button');
-        const templateBtn = btns.find(b => b.textContent?.match(/upload.*template|add.*template/i));
+        const templateBtn = btns.find((b) => b.textContent?.match(/upload.*template|add.*template/i));
         if (templateBtn) {
             fireEvent.click(templateBtn);
             expect(screen.getByTestId('template-upload-modal')).toBeInTheDocument();
@@ -431,7 +442,9 @@ describe('SettingsPage interactions', () => {
     it('language select changes language', () => {
         renderPage(<SettingsPage />);
         const selects = screen.getAllByRole('combobox');
-        const langSelect = selects.find(s => s.querySelector('option[value="en"]') || s.querySelector('option[value="nl"]'));
+        const langSelect = selects.find(
+            (s) => s.querySelector('option[value="en"]') || s.querySelector('option[value="nl"]')
+        );
         if (langSelect) {
             fireEvent.change(langSelect, { target: { value: 'nl' } });
             expect(mockUpdateSettings).toHaveBeenCalledWith(expect.objectContaining({ language: 'nl' }));
@@ -464,7 +477,7 @@ describe('ExportPage interactions', () => {
     it('bulk comment toggle button works', () => {
         renderPage(<ExportPage />);
         const btns = screen.getAllByRole('button');
-        const bulkBtn = btns.find(b => b.textContent?.match(/bulk|comment/i));
+        const bulkBtn = btns.find((b) => b.textContent?.match(/bulk|comment/i));
         if (bulkBtn) {
             fireEvent.click(bulkBtn);
             // Check bulk comment area appeared
@@ -524,7 +537,7 @@ describe('GradeStudent interactions', () => {
     it('clicking a level selects it', () => {
         renderPage(<GradeStudent />, '/grade/r1/s1', '/grade/:rubricId/:studentId');
         const levelBtns = screen.getAllByRole('button');
-        const excellentBtn = levelBtns.find(b => b.textContent?.includes('Excellent'));
+        const excellentBtn = levelBtns.find((b) => b.textContent?.includes('Excellent'));
         if (excellentBtn) {
             fireEvent.click(excellentBtn);
             // Should update state without error
@@ -582,7 +595,7 @@ describe('RubricList — code import', () => {
     it('shows code import dialog', () => {
         renderPage(<RubricList />);
         const btns = screen.getAllByRole('button');
-        const codeBtn = btns.find(b => b.textContent?.match(/paste.*code|share.*code|import.*code/i));
+        const codeBtn = btns.find((b) => b.textContent?.match(/paste.*code|share.*code|import.*code/i));
         if (codeBtn) {
             fireEvent.click(codeBtn);
             expect(screen.getByPlaceholderText(/code/i) || true).toBeTruthy();

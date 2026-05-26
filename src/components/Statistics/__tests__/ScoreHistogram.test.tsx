@@ -23,14 +23,14 @@ describe('buildHistogramData', () => {
     it('returns 10 buckets for an empty input', () => {
         const data = buildHistogramData([]);
         expect(data).toHaveLength(10);
-        expect(data.every(b => b.count === 0)).toBe(true);
+        expect(data.every((b) => b.count === 0)).toBe(true);
     });
 
     it('places score 55 into the 50–60 bucket (index 5)', () => {
         const data = buildHistogramData([55]);
         expect(data[5].range).toBe('50–60');
         expect(data[5].count).toBe(1);
-        expect(data.filter(b => b.count > 0)).toHaveLength(1);
+        expect(data.filter((b) => b.count > 0)).toHaveLength(1);
     });
 
     it('places score 0 into the 0–10 bucket', () => {
@@ -50,7 +50,7 @@ describe('buildHistogramData', () => {
 
     it('correctly counts multiple scores across different buckets', () => {
         const data = buildHistogramData([5, 15, 25, 35, 45, 55, 65, 75, 85, 95]);
-        expect(data.every(b => b.count === 1)).toBe(true);
+        expect(data.every((b) => b.count === 1)).toBe(true);
     });
 
     it('correctly counts multiple scores in the same bucket', () => {

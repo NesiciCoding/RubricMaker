@@ -1,12 +1,25 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
     loadStore,
-    saveRubrics, saveStudents, saveClasses, saveStudentRubrics,
-    saveAttachments, saveGradeScales, saveCommentSnippets,
-    saveSettings, saveFavoriteStandards, saveCommentBank,
-    saveExportTemplates, savePeerReviews, saveSelfAssessments,
-    saveSpeakingSessions, saveAnalysisResults,
-    exportStore, exportFullBackup, importFullBackup, updateDefaultFormat,
+    saveRubrics,
+    saveStudents,
+    saveClasses,
+    saveStudentRubrics,
+    saveAttachments,
+    saveGradeScales,
+    saveCommentSnippets,
+    saveSettings,
+    saveFavoriteStandards,
+    saveCommentBank,
+    saveExportTemplates,
+    savePeerReviews,
+    saveSelfAssessments,
+    saveSpeakingSessions,
+    saveAnalysisResults,
+    exportStore,
+    exportFullBackup,
+    importFullBackup,
+    updateDefaultFormat,
     DEFAULT_GRADE_SCALES,
 } from './storage';
 import type { Rubric, Student, Class, AppSettings, RubricFormat } from '../types';
@@ -90,18 +103,30 @@ describe('save functions', () => {
     });
 
     it('saveStudentRubrics persists', () => {
-        saveStudentRubrics([{
-            id: 'sr1', rubricId: 'r1', studentId: 's1',
-            entries: [], overallComment: '', isPeerReview: false,
-        }]);
+        saveStudentRubrics([
+            {
+                id: 'sr1',
+                rubricId: 'r1',
+                studentId: 's1',
+                entries: [],
+                overallComment: '',
+                isPeerReview: false,
+            },
+        ]);
         expect(loadStore().studentRubrics[0].id).toBe('sr1');
     });
 
     it('saveAttachments persists', () => {
-        saveAttachments([{
-            id: 'a1', name: 'file.pdf', mimeType: 'application/pdf',
-            dataUrl: 'data:...', size: 1000, addedAt: '2024-01-01',
-        }]);
+        saveAttachments([
+            {
+                id: 'a1',
+                name: 'file.pdf',
+                mimeType: 'application/pdf',
+                dataUrl: 'data:...',
+                size: 1000,
+                addedAt: '2024-01-01',
+            },
+        ]);
         expect(loadStore().attachments[0].id).toBe('a1');
     });
 
@@ -122,58 +147,98 @@ describe('save functions', () => {
     });
 
     it('saveFavoriteStandards persists', () => {
-        saveFavoriteStandards([{
-            guid: 'g1', description: 'Standard 1',
-            standardSetTitle: 'CCSS', jurisdictionTitle: 'US',
-        }]);
+        saveFavoriteStandards([
+            {
+                guid: 'g1',
+                description: 'Standard 1',
+                standardSetTitle: 'CCSS',
+                jurisdictionTitle: 'US',
+            },
+        ]);
         expect(loadStore().favoriteStandards[0].guid).toBe('g1');
     });
 
     it('saveCommentBank persists', () => {
-        saveCommentBank([{
-            id: 'cb1', text: 'Well done', tags: ['positive'], createdAt: '2024-01-01',
-        }]);
+        saveCommentBank([
+            {
+                id: 'cb1',
+                text: 'Well done',
+                tags: ['positive'],
+                createdAt: '2024-01-01',
+            },
+        ]);
         expect(loadStore().commentBank[0].id).toBe('cb1');
     });
 
     it('saveExportTemplates persists', () => {
-        saveExportTemplates([{
-            id: 'et1', name: 'Template A', dataUrl: 'data:...',
-            levelHeaders: [], size: 100, addedAt: '2024-01-01',
-        }]);
+        saveExportTemplates([
+            {
+                id: 'et1',
+                name: 'Template A',
+                dataUrl: 'data:...',
+                levelHeaders: [],
+                size: 100,
+                addedAt: '2024-01-01',
+            },
+        ]);
         expect(loadStore().exportTemplates[0].id).toBe('et1');
     });
 
     it('savePeerReviews persists', () => {
-        savePeerReviews([{
-            id: 'pr1', rubricId: 'r1', studentId: 's1',
-            entries: [], overallComment: '', isPeerReview: true,
-        }]);
+        savePeerReviews([
+            {
+                id: 'pr1',
+                rubricId: 'r1',
+                studentId: 's1',
+                entries: [],
+                overallComment: '',
+                isPeerReview: true,
+            },
+        ]);
         expect(loadStore().peerReviews[0].id).toBe('pr1');
     });
 
     it('saveSelfAssessments persists', () => {
-        saveSelfAssessments([{
-            id: 'sa1', rubricId: 'r1', studentId: 's1',
-            ratings: [], submittedAt: '2024-01-01',
-        }]);
+        saveSelfAssessments([
+            {
+                id: 'sa1',
+                rubricId: 'r1',
+                studentId: 's1',
+                ratings: [],
+                submittedAt: '2024-01-01',
+            },
+        ]);
         expect(loadStore().selfAssessments[0].id).toBe('sa1');
     });
 
     it('saveSpeakingSessions persists', () => {
-        saveSpeakingSessions([{
-            id: 'ss1', rubricId: 'r1', studentId: 's1',
-            criteria: [], overallComment: '', gradedAt: '2024-01-01',
-        } as any]);
+        saveSpeakingSessions([
+            {
+                id: 'ss1',
+                rubricId: 'r1',
+                studentId: 's1',
+                criteria: [],
+                overallComment: '',
+                gradedAt: '2024-01-01',
+            } as any,
+        ]);
         expect(loadStore().speakingSessions[0].id).toBe('ss1');
     });
 
     it('saveAnalysisResults persists', () => {
-        saveAnalysisResults([{
-            id: 'ar1', studentId: 's1', rubricId: 'r1', attachmentId: 'a1',
-            extractedText: 'text', analyzedAt: '2024-01-01',
-            detectedItems: [], grammarErrors: [], grammarCheckerUsed: 'none',
-        }]);
+        saveAnalysisResults([
+            {
+                id: 'ar1',
+                studentId: 's1',
+                rubricId: 'r1',
+                attachmentId: 'a1',
+                extractedText: 'text',
+                analyzedAt: '2024-01-01',
+                detectedItems: [],
+                grammarErrors: [],
+                grammarCheckerUsed: 'none',
+            },
+        ]);
         expect(loadStore().analysisResults[0].id).toBe('ar1');
     });
 });

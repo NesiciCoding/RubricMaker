@@ -16,7 +16,7 @@ function extractContext(text: string, matchIndex: number, matchLength: number): 
 }
 
 export function analyseVocabulary(text: string, items: VocabularyItem[]): DetectedItem[] {
-    return items.map(item => {
+    return items.map((item) => {
         const pattern = new RegExp(`\\b${escapeRegex(item.phrase)}\\b`, 'gi');
         const contexts: string[] = [];
         let match: RegExpExecArray | null;

@@ -22,7 +22,12 @@ interface Props {
  */
 export default function Modal({ titleId, onClose, children, maxWidth = 640, style, className }: Props) {
     return (
-        <Dialog.Root open onOpenChange={(open) => { if (!open) onClose(); }}>
+        <Dialog.Root
+            open
+            onOpenChange={(open) => {
+                if (!open) onClose();
+            }}
+        >
             <Dialog.Portal>
                 <Dialog.Overlay className="modal-overlay" />
                 <Dialog.Content
