@@ -61,7 +61,7 @@
     "react-speech-recognition": "^4.0.1",
     "recharts": "^2.12.7",
     "regenerator-runtime": "^0.14.1",
-    "tesseract.js": "^5.1.1"
+    "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
