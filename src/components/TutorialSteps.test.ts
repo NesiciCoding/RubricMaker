@@ -20,10 +20,10 @@ describe('getTutorialSteps', () => {
         }
     });
 
-    it('first step is centered with disableBeacon', () => {
+    it('first step is centered with skipBeacon', () => {
         const steps = getTutorialSteps(t as any);
         expect(steps[0].placement).toBe('center');
-        expect(steps[0].disableBeacon).toBe(true);
+        expect(steps[0].skipBeacon).toBe(true);
     });
 
     it('passes translation keys to t()', () => {

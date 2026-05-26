@@ -15,10 +15,10 @@
         "isolatedModules": true,
         "noEmit": true,
         "jsx": "react-jsx",
+        "ignoreDeprecations": "6.0",
         "baseUrl": ".",
         "paths": {
-          "@tiptap/pm/*": ["node_modules/prosemirror-*"],
-          "@tiptap/*": ["node_modules/@tiptap/*/src/index.ts"]
+          "@tiptap/pm/*": ["node_modules/prosemirror-*"]
         },
         "strict": true,
         "noUnusedLocals": false,
