@@ -1,7 +1,7 @@
 import React, { Suspense, lazy, useMemo, useState } from 'react';
 import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import Sidebar from './components/Layout/Sidebar';
-import Joyride, { CallBackProps, STATUS } from 'react-joyride';
+import { Joyride, EventData, STATUS } from 'react-joyride';
 import { useApp } from './context/AppContext';
 import { MobileMenuContext } from './context/MobileMenuContext';
 import { getTutorialSteps } from './components/TutorialSteps';
@@ -63,7 +63,7 @@ export default function App() {
 
     if (showLanding) return <LandingPage />;
 
-    const handleJoyrideCallback = (data: CallBackProps) => {
+    const handleJoyrideCallback = (data: EventData) => {
         const { status } = data;
         const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
         if (finishedStatuses.includes(status)) {
@@ -82,18 +82,17 @@ export default function App() {
                     steps={steps}
                     run={!settings.hasSeenTutorial}
                     continuous
-                    showSkipButton
-                    showProgress
-                    hideCloseButton
-                    callback={handleJoyrideCallback}
+                    onEvent={handleJoyrideCallback}
+                    options={{
+                        primaryColor: 'var(--accent)',
+                        backgroundColor: 'var(--bg-elevated)',
+                        textColor: 'var(--text)',
+                        arrowColor: 'var(--bg-elevated)',
+                        overlayColor: 'rgba(0, 0, 0, 0.6)',
+                        showProgress: true,
+                        buttons: ['back', 'skip', 'primary'],
+                    }}
                     styles={{
-                        options: {
-                            primaryColor: 'var(--accent)',
-                            backgroundColor: 'var(--bg-elevated)',
-                            textColor: 'var(--text)',
-                            arrowColor: 'var(--bg-elevated)',
-                            overlayColor: 'rgba(0, 0, 0, 0.6)',
-                        },
                         tooltipContainer: {
                             textAlign: 'left',
                         },
