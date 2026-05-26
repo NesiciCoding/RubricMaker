@@ -5,7 +5,7 @@ import {
     Save, Plus, Trash2, Download, Upload, Key, ExternalLink, AlertCircle,
     MessageSquare, Globe, Layout, Star, Cloud, LogIn, LogOut, RefreshCw,
     PlayCircle, Database, Wifi, WifiOff, Copy, Check, Shield, Lock,
-    User, GraduationCap, BookOpen, Settings, Eye, EyeOff,
+    User, GraduationCap, BookOpen, Settings, Eye, EyeOff, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import CommentBankModal from '../components/Comments/CommentBankModal';
 import TemplateUploadModal from '../components/TemplateUploadModal';
@@ -17,6 +17,7 @@ import { useDbStatus } from '../hooks/useDbStatus';
 import type { GradeScale, GradeRange, UserRole } from '../types';
 import { exportFullBackup, importFullBackup } from '../store/storage';
 import { loadSupabaseConfig, storageSync } from '../services/database';
+import LoginButtons from '../components/auth/LoginButtons';
 
 type Tab = 'general' | 'teaching' | 'administration';
 
@@ -52,6 +53,7 @@ export default function SettingsPage() {
         loginMicrosoft, logoutMicrosoft, syncToOneDrive, restoreFromOneDrive, microsoftUser,
         connectDatabase, disconnectDatabase, pushAllToDatabase, pullFromDatabase,
         fetchAllUsers, updateUserRole, updateMyProfile,
+        connectForOAuth, signOutFromDatabase,
     } = useApp();
     const { showToast } = useToast();
     const dbStatus = useDbStatus();
@@ -102,6 +104,8 @@ export default function SettingsPage() {
     const [dbOtp, setDbOtp] = useState('');
     const [otpSent, setOtpSent] = useState(false);
     const [userIdCopied, setUserIdCopied] = useState(false);
+    const [supabaseReady, setSupabaseReady] = useState(!!existingConfig);
+    const [showAdvancedConnect, setShowAdvancedConnect] = useState(!existingConfig);
     const [shareRubricId, setShareRubricId] = useState('');
     const [shareTargetUser, setShareTargetUser] = useState('');
     const [shareMode, setShareMode] = useState<'read' | 'edit'>('read');
@@ -818,8 +822,11 @@ export default function SettingsPage() {
                                                     <Download size={15} aria-hidden="true" /> Pull database → local
                                                 </button>
                                                 <button className="btn btn-ghost" style={{ marginLeft: 'auto' }}
-                                                    onClick={() => { disconnectDatabase(); showToast('Disconnected from database', 'info'); }}>
-                                                    <LogOut size={14} aria-hidden="true" /> Disconnect
+                                                    onClick={async () => {
+                                                        await signOutFromDatabase();
+                                                        showToast('Signed out from database', 'info');
+                                                    }}>
+                                                    <LogOut size={14} aria-hidden="true" /> Sign out
                                                 </button>
                                             </div>
 
@@ -937,32 +944,63 @@ export default function SettingsPage() {
                                             </div>
                                         </div>
                                     ) : (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                                             <p className="text-muted text-sm" style={{ margin: 0 }}>
-                                                Connect to a Supabase database to sync your data across devices and share with colleagues.
-                                                Run <code>supabase start</code> locally or create a free project at{' '}
-                                                <a href="https://supabase.com" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>supabase.com <ExternalLink size={10} /></a>.
+                                                Sign in to sync your data across devices and share with colleagues.
                                             </p>
-                                            <div className="form-group">
-                                                <label>Supabase URL</label>
-                                                <input type="text" value={dbUrl} onChange={e => setDbUrl(e.target.value)}
-                                                    placeholder="https://your-project.supabase.co" />
-                                            </div>
-                                            <div className="form-group">
-                                                <label>Anon key</label>
-                                                <input type="password" value={dbKey} onChange={e => setDbKey(e.target.value)}
-                                                    placeholder="eyJhbGciOi…" autoComplete="off" />
-                                            </div>
+
+                                            <LoginButtons
+                                                supabaseReady={supabaseReady}
+                                                onNeedConfig={() => setShowAdvancedConnect(true)}
+                                                onEmailSuccess={() => showToast('Signed in — reconnect to sync', 'success')}
+                                            />
+
+                                            {/* Advanced / self-hosted */}
                                             <div>
-                                                <button className="btn btn-primary" disabled={!dbUrl || !dbKey || dbConnecting}
-                                                    onClick={async () => {
-                                                        setDbConnecting(true);
-                                                        const ok = await connectDatabase({ supabaseUrl: dbUrl, supabaseAnonKey: dbKey });
-                                                        setDbConnecting(false);
-                                                        showToast(ok ? 'Connected to database' : 'Connection failed — check URL and key', ok ? 'success' : 'error');
-                                                    }}>
-                                                    {dbConnecting ? <><RefreshCw size={15} className="spin" aria-hidden="true" /> Connecting…</> : <><Database size={15} aria-hidden="true" /> Connect &amp; Sync</>}
+                                                <button style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.8rem', padding: '2px 0' }}
+                                                    onClick={() => setShowAdvancedConnect(o => !o)}>
+                                                    {showAdvancedConnect ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                                                    Self-hosted / advanced (manual connection)
                                                 </button>
+                                                {showAdvancedConnect && (
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
+                                                        <p className="text-muted text-sm" style={{ margin: 0 }}>
+                                                            Run <code>supabase start</code> locally or use a custom project at{' '}
+                                                            <a href="https://supabase.com" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>supabase.com <ExternalLink size={10} /></a>.
+                                                        </p>
+                                                        <div className="form-group">
+                                                            <label>Supabase URL</label>
+                                                            <input type="text" value={dbUrl} onChange={e => setDbUrl(e.target.value)}
+                                                                placeholder="https://your-project.supabase.co" />
+                                                        </div>
+                                                        <div className="form-group">
+                                                            <label>Anon key</label>
+                                                            <input type="password" value={dbKey} onChange={e => setDbKey(e.target.value)}
+                                                                placeholder="eyJhbGciOi…" autoComplete="off" />
+                                                        </div>
+                                                        <div style={{ display: 'flex', gap: 8 }}>
+                                                            <button className="btn btn-secondary btn-sm" disabled={!dbUrl || !dbKey || dbConnecting}
+                                                                onClick={async () => {
+                                                                    setDbConnecting(true);
+                                                                    const ok = await connectForOAuth({ supabaseUrl: dbUrl, supabaseAnonKey: dbKey });
+                                                                    setDbConnecting(false);
+                                                                    if (ok) { setSupabaseReady(true); setShowAdvancedConnect(false); showToast('Supabase configured — sign in above', 'success'); }
+                                                                    else showToast('Connection failed — check URL and key', 'error');
+                                                                }}>
+                                                                {dbConnecting ? <><RefreshCw size={13} className="spin" /> Connecting…</> : <><Database size={13} /> Set Supabase instance</>}
+                                                            </button>
+                                                            <button className="btn btn-primary btn-sm" disabled={!dbUrl || !dbKey || dbConnecting}
+                                                                onClick={async () => {
+                                                                    setDbConnecting(true);
+                                                                    const ok = await connectDatabase({ supabaseUrl: dbUrl, supabaseAnonKey: dbKey });
+                                                                    setDbConnecting(false);
+                                                                    showToast(ok ? 'Connected to database' : 'Connection failed — check URL and key', ok ? 'success' : 'error');
+                                                                }}>
+                                                                {dbConnecting ? <><RefreshCw size={13} className="spin" /> Connecting…</> : <><Database size={13} /> Connect &amp; Sync (anonymous)</>}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     )}
