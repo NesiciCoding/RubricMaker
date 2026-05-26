@@ -342,10 +342,6 @@ export interface AppSettings {
     statisticsCriterionChartType?: 'bar' | 'radar';
     /** Whether "Not handed in" students are excluded from class statistics */
     statisticsExcludeNotHandedIn?: boolean;
-    /** Microsoft 365 / OneDrive sync settings */
-    microsoftClientId?: string;
-    microsoftTenantId?: string;
-    microsoftLastSyncAt?: string;
     /**
      * Active role — determines which settings sections are visible/editable.
      * Defaults to 'admin' so existing installs are unaffected.
@@ -412,13 +408,13 @@ export interface EssayAssignment {
     requireSEB?: boolean;
     readOnlyAfterSubmit: boolean;
     createdAt: string;
+    /** ISO-8601 datetime after which students can no longer submit */
+    expiresAt?: string;
     // ── Supabase integration (optional) ────────────────────────────────────────
     /** Teacher's Supabase project URL — when present the student page uses DB submission */
     supabaseUrl?: string;
     /** Teacher's Supabase anon key — embedded so the student's browser can connect */
     supabaseAnonKey?: string;
-    /** Teacher's Supabase user ID — used as the storage folder prefix */
-    ownerUserId?: string;
 }
 
 /** A student's completed essay, encoded into a submission code for the teacher to import */

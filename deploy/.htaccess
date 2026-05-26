@@ -33,6 +33,9 @@
 
     # Permissions policy — disable APIs the app doesn't use
     Header always set Permissions-Policy "geolocation=(), camera=(), payment=()"
+
+    # Content Security Policy
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://*.supabase.co https://api.languagetool.org https://api.commonstandardsproject.com; worker-src 'self' blob: https://cdn.jsdelivr.net; frame-src 'none';"
 </IfModule>
 
 # ─── Caching ──────────────────────────────────────────────────────────────────

@@ -558,6 +558,7 @@ export class SupabaseAdapter {
             require_seb: a.requireSEB ?? false,
             read_only_after_submit: a.readOnlyAfterSubmit,
             created_at: a.createdAt,
+            expires_at: a.expiresAt ?? null,
         }, { onConflict: 'id' });
         return error ? { success: false, error: error.message } : { success: true };
     }
@@ -609,7 +610,8 @@ export class SupabaseAdapter {
         const { data, error } = await this.db()
             .from('essay_submissions')
             .select('id, assignment_id, word_count, submitted_at, storage_path, student_email, essay_assignments(rubric_id, student_id, title)')
-            .order('submitted_at', { ascending: false });
+            .order('submitted_at', { ascending: false })
+            .limit(500);
         if (error || !data) return [];
         return data.map(r => {
             const ea = r.essay_assignments as unknown as { rubric_id: string; student_id: string; title: string } | null;
@@ -735,7 +737,7 @@ export class SupabaseAdapter {
             'rubrics', 'classes', 'students', 'student_rubrics', 'attachments',
             'grade_scales', 'comment_snippets', 'comment_bank', 'export_templates',
             'favorite_standards', 'self_assessments', 'speaking_sessions',
-            'analysis_results', 'user_settings',
+            'analysis_results', 'user_settings', 'essay_assignments',
         ];
         for (const table of tables) {
             const col = table === 'student_rubrics' ? 'grader_id' :
@@ -748,6 +750,17 @@ export class SupabaseAdapter {
             if (attFiles?.length) await db.storage.from('attachments').remove(attFiles.map(f => `${uid}/${f.name}`));
             const { data: tplFiles } = await db.storage.from('export-templates').list(uid);
             if (tplFiles?.length) await db.storage.from('export-templates').remove(tplFiles.map(f => `${uid}/${f.name}`));
+            // essay_assignments cascade-deletes essay_submissions rows via FK;
+            // remove the essay files from storage folder-per-assignment
+            const { data: assignments } = await db.from('essay_assignments').select('id').eq('owner_id', uid);
+            if (assignments?.length) {
+                for (const a of assignments) {
+                    const { data: essayFiles } = await db.storage.from('essays').list(a.id);
+                    if (essayFiles?.length) {
+                        await db.storage.from('essays').remove(essayFiles.map(f => `${a.id}/${f.name}`));
+                    }
+                }
+            }
         } catch { /* ignore */ }
         return { success: true };
     }

@@ -2,7 +2,9 @@ import type { EssayAssignment } from '../types';
 
 export function encodeEssayAssignment(assignment: EssayAssignment): string {
     try {
-        return btoa(encodeURIComponent(JSON.stringify(assignment)));
+        // ownerUserId is never needed client-side and must not be exposed in URLs
+        const { ownerUserId: _stripped, ...safe } = assignment as EssayAssignment & { ownerUserId?: string };
+        return btoa(encodeURIComponent(JSON.stringify(safe)));
     } catch {
         return '';
     }

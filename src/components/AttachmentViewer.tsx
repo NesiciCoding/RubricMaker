@@ -103,7 +103,7 @@ export default function AttachmentViewer({ attachment }: Props) {
                 <div style={{ width: '100%', height: '400px', marginTop: 8 }}>
                     <iframe
                         src={attachment.dataUrl}
-                        sandbox="allow-same-origin"
+                        sandbox=""
                         style={{ width: '100%', height: '100%', borderRadius: 4, border: '1px solid var(--border)', background: '#fff', colorScheme: 'light' }}
                         title={attachment.name}
                     />

@@ -14,10 +14,6 @@ import {
 import { nanoid } from '../utils/nanoid';
 import { storageSync, loadSupabaseConfig, saveSupabaseConfig } from '../services/database';
 import type { DatabaseConfig, DbUser, SyncResult } from '../services/database';
-// Azure / MSAL integration disabled — not in use
-// import { msalInstance, loginRequest } from '../services/msalConfig';
-// import { graphService } from '../services/microsoftGraph';
-// import { useMsal, useIsAuthenticated } from '@azure/msal-react';
 
 // ─── Actions ───────────────────────────────────────────────────────────────────
 
@@ -414,12 +410,6 @@ interface AppContextValue extends StoreData {
     fetchAllEssaySubmissions: () => Promise<Awaited<ReturnType<typeof storageSync.fetchAllEssaySubmissions>>>;
     deleteEssaySubmission: (submissionId: string, storagePath: string) => Promise<SyncResult>;
     getEssaySignedUrl: (storagePath: string) => Promise<string | null>;
-    // Microsoft Sync
-    loginMicrosoft: () => Promise<void>;
-    logoutMicrosoft: () => Promise<void>;
-    syncToOneDrive: () => Promise<void>;
-    restoreFromOneDrive: () => Promise<void>;
-    microsoftUser: any | null;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -754,17 +744,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const deleteEssaySubmission = useCallback((id: string, path: string) => storageSync.deleteEssaySubmission(id, path), []);
     const getEssaySignedUrl = useCallback((path: string) => storageSync.getEssaySignedUrl(path), []);
 
-    // ─── Microsoft Sync (disabled — Azure integration not in use) ───
-    const microsoftUser: any | null = null;
-     
-    const loginMicrosoft = useCallback(async () => {}, []);
-     
-    const logoutMicrosoft = useCallback(async () => {}, []);
-     
-    const syncToOneDrive = useCallback(async () => {}, []);
-     
-    const restoreFromOneDrive = useCallback(async () => {}, []);
-
     const value: AppContextValue = {
         ...state,
         dispatch,
@@ -792,8 +771,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         saveEssayAssignment, deleteEssayAssignment,
         fetchEssaySubmissions, fetchEssaySubmissionsForStudent, fetchAllEssaySubmissions,
         deleteEssaySubmission, getEssaySignedUrl,
-        loginMicrosoft, logoutMicrosoft, syncToOneDrive, restoreFromOneDrive,
-        microsoftUser
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

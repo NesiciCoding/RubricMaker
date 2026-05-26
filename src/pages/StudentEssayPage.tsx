@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { Clock, CheckCircle, Copy, AlertTriangle, Mail, KeyRound, Loader2 } from 'lucide-react';
+import { Clock, CheckCircle, Copy, AlertTriangle, Mail, KeyRound, Loader2, Save } from 'lucide-react';
 import EssayEditor from '../components/Editor/EssayEditor';
 import { decodeEssayAssignment } from '../utils/essayShareCode';
 import { encodeEssaySubmission } from '../utils/essaySubmissionCode';
+import { countWords } from '../utils/essayUtils';
 import { nanoid } from '../utils/nanoid';
 import type { EssaySubmission } from '../types';
 import { EssayAdapter } from '../services/database/EssayAdapter';
@@ -26,11 +27,6 @@ function copyText(text: string): boolean {
     return false;
 }
 
-function countWords(html: string): number {
-    const text = html.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
-    return text ? text.split(' ').filter(w => w.length > 0).length : 0;
-}
-
 function formatTime(seconds: number): string {
     const m = Math.floor(seconds / 60).toString().padStart(2, '0');
     const s = (seconds % 60).toString().padStart(2, '0');
@@ -45,18 +41,28 @@ interface OtpGateProps {
 }
 
 function OtpGate({ adapter, onAuthenticated }: OtpGateProps) {
-    const [email, setEmail]       = useState('');
-    const [otp, setOtp]           = useState('');
-    const [step, setStep]         = useState<'email' | 'otp'>('email');
-    const [busy, setBusy]         = useState(false);
-    const [error, setError]       = useState('');
+    const [email, setEmail]           = useState('');
+    const [otp, setOtp]               = useState('');
+    const [step, setStep]             = useState<'email' | 'otp'>('email');
+    const [busy, setBusy]             = useState(false);
+    const [sessionChecking, setSessionChecking] = useState(true);
+    const [error, setError]           = useState('');
 
-    // Check if there's already a valid session (page reload)
+    // Check if there's already a valid session (page reload) before rendering the form
     useEffect(() => {
         adapter.getSession().then(({ userId, email: e }) => {
             if (userId && e) onAuthenticated(userId, e);
+            else setSessionChecking(false);
         });
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    if (sessionChecking) {
+        return (
+            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc' }}>
+                <Loader2 size={28} style={{ color: '#6366f1', animation: 'spin 1s linear infinite' }} />
+            </div>
+        );
+    }
 
     const handleSendOtp = async () => {
         if (!email.trim()) { setError('Enter your email address.'); return; }
@@ -73,7 +79,14 @@ function OtpGate({ adapter, onAuthenticated }: OtpGateProps) {
         const { userId, error: e } = await adapter.verifyOtp(email.trim(), otp.trim());
         setBusy(false);
         if (userId) { onAuthenticated(userId, email.trim()); }
-        else { setError(e ?? 'Invalid code. Check your email and try again.'); }
+        else {
+            const msg = e ?? '';
+            if (/expired|otp expired/i.test(msg)) {
+                setError('This code has expired. Click "Use a different email" and request a new code.');
+            } else {
+                setError('Invalid code. Please double-check the 6 digits from your email.');
+            }
+        }
     };
 
     return (
@@ -147,6 +160,8 @@ export default function StudentEssayPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []); // intentionally stable — assignment is decoded from the URL and never changes
 
+    // SEB detection is user-agent sniffing only — a tech-savvy student can spoof it.
+    // It is a deterrent, not a hard enforcement mechanism.
     const isInSEB = /SEB/i.test(navigator.userAgent);
     const sebQuitUrl = `${window.location.origin}/#/seb-done`;
     const draftKey = DRAFT_KEY_PREFIX + (code ?? '');
@@ -162,6 +177,7 @@ export default function StudentEssayPage() {
     const [copied, setCopied]               = useState(false);
     const [submitting, setSubmitting]       = useState(false);
     const [submitError, setSubmitError]     = useState('');
+    const [draftSavedAt, setDraftSavedAt]   = useState<Date | null>(null);
 
     // Timer
     const [secondsLeft, setSecondsLeft] = useState<number | null>(() => {
@@ -172,14 +188,25 @@ export default function StudentEssayPage() {
     });
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-    // Auto-save draft
+    // Set document title to assignment name
+    useEffect(() => {
+        if (!assignment) return;
+        const prev = document.title;
+        document.title = assignment.title;
+        return () => { document.title = prev; };
+    }, [assignment?.title]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Auto-save draft every 30 s and record timestamp for the indicator
     useEffect(() => {
         if (submitted) return;
-        const interval = setInterval(() => { sessionStorage.setItem(draftKey, html); }, 30_000);
+        const interval = setInterval(() => {
+            sessionStorage.setItem(draftKey, html);
+            setDraftSavedAt(new Date());
+        }, 30_000);
         return () => clearInterval(interval);
     }, [html, draftKey, submitted]);
 
-    // Countdown
+    // Countdown — auto-submit when time runs out
     useEffect(() => {
         if (secondsLeft === null || secondsLeft <= 0 || submitted) return;
         timerRef.current = setInterval(() => {
@@ -187,6 +214,11 @@ export default function StudentEssayPage() {
                 if (prev === null) return null;
                 const next = prev - 1;
                 sessionStorage.setItem(timerKey, String(next));
+                if (next <= 0) {
+                    // Auto-submit: stop interval first, then trigger submit asynchronously
+                    if (timerRef.current) clearInterval(timerRef.current);
+                    setTimeout(() => handleSubmit(), 0);
+                }
                 return next;
             });
         }, 1000);
@@ -267,6 +299,21 @@ export default function StudentEssayPage() {
         );
     }
 
+    // ── Guard: assignment expired ─────────────────────────────────────────────
+    if (assignment.expiresAt && new Date(assignment.expiresAt) < new Date()) {
+        return (
+            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', padding: 24 }}>
+                <div style={{ maxWidth: 480, textAlign: 'center' }}>
+                    <div style={{ fontSize: 48, marginBottom: 16 }}>⏰</div>
+                    <h2 style={{ marginBottom: 8 }}>Assignment deadline has passed</h2>
+                    <p style={{ color: '#64748b' }}>
+                        The deadline was {new Date(assignment.expiresAt).toLocaleString()}. Please contact your teacher.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
     // ── Guard: email auth (DB mode only) ─────────────────────────────────────
     if (hasDb && !studentUserId) {
         return (
@@ -281,16 +328,17 @@ export default function StudentEssayPage() {
     const isOverLimit = assignment.maxWords  ? wordCount > assignment.maxWords  : false;
     const isBelowMin  = assignment.minWords  ? wordCount < assignment.minWords  : false;
     const timedOut    = secondsLeft !== null && secondsLeft <= 0;
-    const canSubmit   = !isOverLimit && !timedOut && !submitted && !submitting;
+    const sebBlocked  = !!(assignment.requireSEB && !isInSEB);
+    const canSubmit   = !isOverLimit && !timedOut && !submitted && !submitting && !sebBlocked;
     const wordCountColor = isOverLimit ? '#ef4444' : isBelowMin ? '#f59e0b' : '#10b981';
 
     return (
         <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: 'Inter, system-ui, sans-serif', colorScheme: 'light', color: '#1e293b' }}>
-            {/* SEB warning */}
-            {assignment.requireSEB && !isInSEB && (
-                <div style={{ background: '#fef9c3', borderBottom: '1px solid #fde047', padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.875rem', color: '#854d0e' }}>
-                    <AlertTriangle size={16} />
-                    This exam should be opened in Safe Exam Browser.
+            {/* SEB blocking banner */}
+            {sebBlocked && (
+                <div style={{ background: '#fef2f2', borderBottom: '1px solid #fca5a5', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.875rem', color: '#991b1b', fontWeight: 600 }}>
+                    <AlertTriangle size={16} style={{ flexShrink: 0 }} />
+                    This exam must be opened in Safe Exam Browser. Submission is blocked until you reopen this link inside SEB.
                 </div>
             )}
 
@@ -303,6 +351,12 @@ export default function StudentEssayPage() {
                     )}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+                    {draftSavedAt && !submitted && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', color: '#64748b' }}>
+                            <Save size={12} />
+                            Saved {draftSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                    )}
                     {secondsLeft !== null && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: '1.05rem', fontVariantNumeric: 'tabular-nums', color: secondsLeft < 120 ? '#ef4444' : '#374151' }}>
                             <Clock size={17} />
@@ -356,8 +410,8 @@ export default function StudentEssayPage() {
                             </p>
                         )}
                         <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
-                            <textarea readOnly value={submissionCode} rows={3}
-                                style={{ flex: 1, fontFamily: 'monospace', fontSize: '0.72rem', resize: 'none', background: '#fff', border: '1px solid #86efac', borderRadius: 8, padding: 10, color: '#374151' }} />
+                            <textarea readOnly value={submissionCode} rows={6}
+                                style={{ flex: 1, fontFamily: 'monospace', fontSize: '0.72rem', resize: 'vertical', background: '#fff', border: '1px solid #86efac', borderRadius: 8, padding: 10, color: '#374151' }} />
                             <button onClick={handleCopy}
                                 style={{ padding: '0 16px', background: copied ? '#16a34a' : '#22c55e', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.875rem', flexShrink: 0 }}>
                                 <Copy size={14} />
@@ -378,7 +432,7 @@ export default function StudentEssayPage() {
                 {/* Submit row */}
                 {!submitted && (
                     <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12, marginTop: 16 }}>
-                        {timedOut && <span style={{ fontSize: '0.875rem', color: '#ef4444', fontWeight: 600 }}>Time is up — your essay was locked.</span>}
+                        {timedOut && <span style={{ fontSize: '0.875rem', color: '#ef4444', fontWeight: 600 }}>Time is up — your essay was submitted automatically.</span>}
                         {isOverLimit && <span style={{ fontSize: '0.875rem', color: '#ef4444' }}>Over limit by {wordCount - (assignment.maxWords ?? 0)} words.</span>}
                         <button onClick={handleSubmit} disabled={!canSubmit}
                             style={{ padding: '10px 32px', borderRadius: 8, border: 'none', fontWeight: 700, fontSize: '0.95rem', background: canSubmit ? '#6366f1' : '#e2e8f0', color: canSubmit ? '#fff' : '#94a3b8', cursor: canSubmit ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', gap: 8 }}>

@@ -17,7 +17,10 @@ function base64ToArrayBuffer(dataUrl: string): ArrayBuffer {
 
 async function extractFromPdf(dataUrl: string): Promise<string> {
     const pdfjsLib = await import('pdfjs-dist');
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+    // Use the worker bundled with the app to avoid an external CDN dependency.
+    // Vite resolves '?worker&url' to the hashed asset path at build time.
+    const workerUrl = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).href;
+    pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
 
     const buffer = base64ToArrayBuffer(dataUrl);
     const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
