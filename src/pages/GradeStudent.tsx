@@ -5,8 +5,6 @@ import {
     Save,
     MessageSquare,
     Paperclip,
-    CheckSquare,
-    Square,
     Info,
     BookOpen,
     FileDown,
