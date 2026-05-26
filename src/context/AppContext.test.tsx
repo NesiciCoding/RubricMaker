@@ -13,9 +13,7 @@ vi.mock('../store/storage', () => ({
         classes: [],
         studentRubrics: [],
         attachments: [],
-        gradeScales: [
-            { id: 'default-scale', name: 'Default', type: 'letter', ranges: [] }
-        ],
+        gradeScales: [{ id: 'default-scale', name: 'Default', type: 'letter', ranges: [] }],
         commentSnippets: [],
         settings: {
             defaultGradeScaleId: 'default-scale',
@@ -23,15 +21,22 @@ vi.mock('../store/storage', () => ({
             language: 'en',
             accentColor: '#3b82f6',
             defaultFormat: {
-                criterionColWidth: 200, levelColWidth: 160, fontSize: 14,
-                headerColor: '#1e3a5f', headerTextColor: '#ffffff', accentColor: '#3b82f6',
-                fontFamily: 'Inter', showWeights: true, showPoints: true, levelOrder: 'best-first'
-            }
+                criterionColWidth: 200,
+                levelColWidth: 160,
+                fontSize: 14,
+                headerColor: '#1e3a5f',
+                headerTextColor: '#ffffff',
+                accentColor: '#3b82f6',
+                fontFamily: 'Inter',
+                showWeights: true,
+                showPoints: true,
+                levelOrder: 'best-first',
+            },
         },
         favoriteStandards: [],
         commentBank: [],
         exportTemplates: [],
-        peerReviews: []
+        peerReviews: [],
     })),
     saveRubrics: vi.fn(),
     saveStudents: vi.fn(),
@@ -45,7 +50,7 @@ vi.mock('../store/storage', () => ({
     saveCommentBank: vi.fn(),
     saveExportTemplates: vi.fn(),
     savePeerReviews: vi.fn(),
-    exportStore: vi.fn(state => state),
+    exportStore: vi.fn((state) => state),
     importFullBackup: vi.fn(() => true),
 }));
 
@@ -53,32 +58,48 @@ vi.mock('../services/microsoftGraph_deleted_placeholder', () => ({
     graphService: {
         getUserProfile: vi.fn().mockResolvedValue({ displayName: 'Test User' }),
         uploadFile: vi.fn().mockResolvedValue({}),
-        downloadFile: vi.fn().mockResolvedValue(JSON.stringify({
-            rubrics: [], students: [], classes: [], studentRubrics: [],
-            attachments: [], gradeScales: [], commentSnippets: [],
-            settings: {
-                theme: 'light', language: 'en', accentColor: '#3b82f6',
-                defaultFormat: {
-                    criterionColWidth: 200, levelColWidth: 160, fontSize: 14,
-                    headerColor: '#1e3a5f', headerTextColor: '#ffffff', accentColor: '#3b82f6',
-                    fontFamily: 'Inter', showWeights: true, showPoints: true, levelOrder: 'best-first'
-                }, 
-                defaultGradeScaleId: 'default-scale' 
-            }, 
-            favoriteStandards: [], commentBank: [], exportTemplates: [], peerReviews: []
-        })),
+        downloadFile: vi.fn().mockResolvedValue(
+            JSON.stringify({
+                rubrics: [],
+                students: [],
+                classes: [],
+                studentRubrics: [],
+                attachments: [],
+                gradeScales: [],
+                commentSnippets: [],
+                settings: {
+                    theme: 'light',
+                    language: 'en',
+                    accentColor: '#3b82f6',
+                    defaultFormat: {
+                        criterionColWidth: 200,
+                        levelColWidth: 160,
+                        fontSize: 14,
+                        headerColor: '#1e3a5f',
+                        headerTextColor: '#ffffff',
+                        accentColor: '#3b82f6',
+                        fontFamily: 'Inter',
+                        showWeights: true,
+                        showPoints: true,
+                        levelOrder: 'best-first',
+                    },
+                    defaultGradeScaleId: 'default-scale',
+                },
+                favoriteStandards: [],
+                commentBank: [],
+                exportTemplates: [],
+                peerReviews: [],
+            })
+        ),
     },
 }));
 
 describe('AppContext', () => {
-
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
-    const wrapper = ({ children }: { children: ReactNode }) => (
-        <AppProvider>{children}</AppProvider>
-    );
+    const wrapper = ({ children }: { children: ReactNode }) => <AppProvider>{children}</AppProvider>;
 
     it('should initialize with default loaded state', () => {
         const { result } = renderHook(() => useApp(), { wrapper });
@@ -101,7 +122,7 @@ describe('AppContext', () => {
             format: result.current.settings.defaultFormat,
             attachmentIds: [],
             totalMaxPoints: 100,
-            scoringMode: 'weighted-percentage'
+            scoringMode: 'weighted-percentage',
         };
 
         act(() => {
@@ -120,9 +141,15 @@ describe('AppContext', () => {
 
         act(() => {
             result.current.addRubric({
-                name: 'Old Name', subject: '', description: '', criteria: [],
-                gradeScaleId: 'default-scale', format: result.current.settings.defaultFormat,
-                attachmentIds: [], totalMaxPoints: 100, scoringMode: 'weighted-percentage'
+                name: 'Old Name',
+                subject: '',
+                description: '',
+                criteria: [],
+                gradeScaleId: 'default-scale',
+                format: result.current.settings.defaultFormat,
+                attachmentIds: [],
+                totalMaxPoints: 100,
+                scoringMode: 'weighted-percentage',
             });
         });
 
@@ -134,8 +161,9 @@ describe('AppContext', () => {
 
         expect(result.current.rubrics[0].name).toBe('New Name');
         // UpdatedAt should be newer
-        expect(new Date(result.current.rubrics[0].updatedAt).getTime())
-            .toBeGreaterThanOrEqual(new Date(addedRubric.createdAt).getTime());
+        expect(new Date(result.current.rubrics[0].updatedAt).getTime()).toBeGreaterThanOrEqual(
+            new Date(addedRubric.createdAt).getTime()
+        );
         expect(storage.saveRubrics).toHaveBeenCalled();
     });
 
@@ -145,9 +173,15 @@ describe('AppContext', () => {
 
         act(() => {
             const added = result.current.addRubric({
-                name: 'Delete Me', subject: '', description: '', criteria: [],
-                gradeScaleId: 'default-scale', format: result.current.settings.defaultFormat,
-                attachmentIds: [], totalMaxPoints: 100, scoringMode: 'weighted-percentage'
+                name: 'Delete Me',
+                subject: '',
+                description: '',
+                criteria: [],
+                gradeScaleId: 'default-scale',
+                format: result.current.settings.defaultFormat,
+                attachmentIds: [],
+                totalMaxPoints: 100,
+                scoringMode: 'weighted-percentage',
             });
             addedId = added.id;
         });
@@ -182,9 +216,15 @@ describe('AppContext', () => {
         const { result } = renderHook(() => useApp(), { wrapper });
         act(() => {
             result.current.addRubric({
-                name: 'R1', subject: '', description: '', criteria: [{ id: 'c1', title: 'C1', description: '', weight: 100, levels: [] }],
-                gradeScaleId: 'default-scale', format: result.current.settings.defaultFormat,
-                attachmentIds: [], totalMaxPoints: 100, scoringMode: 'total-points'
+                name: 'R1',
+                subject: '',
+                description: '',
+                criteria: [{ id: 'c1', title: 'C1', description: '', weight: 100, levels: [] }],
+                gradeScaleId: 'default-scale',
+                format: result.current.settings.defaultFormat,
+                attachmentIds: [],
+                totalMaxPoints: 100,
+                scoringMode: 'total-points',
             });
         });
 
@@ -200,7 +240,8 @@ describe('AppContext', () => {
 
     it('should merge classes', () => {
         const { result } = renderHook(() => useApp(), { wrapper });
-        let c1 = '', c2 = '';
+        let c1 = '',
+            c2 = '';
 
         act(() => {
             c1 = result.current.addClass({ name: 'Class 1' }).id;
@@ -324,7 +365,15 @@ describe('AppContext', () => {
 
     it('should manage peer reviews', () => {
         const { result } = renderHook(() => useApp(), { wrapper });
-        const pr = { id: 'pr1', rubricId: 'r1', studentId: 's1', reviewerId: 's2', entries: [], overallComment: '', isPeerReview: true };
+        const pr = {
+            id: 'pr1',
+            rubricId: 'r1',
+            studentId: 's1',
+            reviewerId: 's2',
+            entries: [],
+            overallComment: '',
+            isPeerReview: true,
+        };
 
         act(() => {
             result.current.savePeerReview(pr);
@@ -357,5 +406,4 @@ describe('AppContext', () => {
         expect(result.current.settings.theme).toBe('dark');
         expect(storage.saveSettings).toHaveBeenCalled();
     });
-
 });

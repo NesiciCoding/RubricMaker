@@ -9,6 +9,8 @@ import { useTranslation } from 'react-i18next';
 import { Loader } from 'lucide-react';
 import LandingPage from './pages/LandingPage';
 import MigrationPrompt from './components/auth/MigrationPrompt';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import NotFoundPage from './pages/NotFoundPage';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const RubricList = lazy(() => import('./pages/RubricList'));
@@ -35,7 +37,11 @@ function GradeStudentRoute() {
 
 const Spinner = () => {
     return (
-        <div role="status" aria-label="Loading" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
+        <div
+            role="status"
+            aria-label="Loading"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}
+        >
             <Loader className="spin" size={24} aria-hidden="true" style={{ color: 'var(--text-muted)' }} />
         </div>
     );
@@ -67,56 +73,60 @@ export default function App() {
 
     return (
         <MobileMenuContext.Provider value={{ open: () => setMobileMenuOpen(true) }}>
-        <MigrationPrompt />
-        <div className="app-layout">
-            <a href="#main-content" className="skip-nav">Skip to main content</a>
-            <Joyride
-                steps={steps}
-                run={!settings.hasSeenTutorial}
-                continuous
-                showSkipButton
-                showProgress
-                hideCloseButton
-                callback={handleJoyrideCallback}
-                styles={{
-                    options: {
-                        primaryColor: 'var(--accent)',
-                        backgroundColor: 'var(--bg-elevated)',
-                        textColor: 'var(--text)',
-                        arrowColor: 'var(--bg-elevated)',
-                        overlayColor: 'rgba(0, 0, 0, 0.6)'
-                    },
-                    tooltipContainer: {
-                        textAlign: 'left'
-                    }
-                }}
-            />
-            <Sidebar mobileOpen={mobileMenuOpen} onMobileClose={() => setMobileMenuOpen(false)} />
-            <div className="main-area" id="main-content">
-                <Suspense fallback={<Spinner />}>
-                    <Routes>
-                        <Route path="/" element={<Dashboard />} />
-                        <Route path="/rubrics" element={<RubricList />} />
-                        <Route path="/rubrics/new" element={<RubricBuilder />} />
-                        <Route path="/rubrics/:id" element={<RubricBuilder />} />
-                        <Route path="/rubrics/:rubricId/grade/:studentId" element={<GradeStudentRoute />} />
-                        <Route path="/rubrics/:rubricId/peer-review/:studentId" element={<PeerReviewView />} />
-                        <Route path="/rubrics/:rubricId/self-assess/:studentId" element={<SelfAssessPage />} />
-                        <Route path="/speaking/:rubricId/:studentId" element={<SpeakingSession />} />
-                        <Route path="/grade-comparative/:classId/:rubricId" element={<ComparativeGrading />} />
-                        <Route path="/students" element={<StudentsPage />} />
-                        <Route path="/students/:id" element={<StudentProfilePage />} />
-                        <Route path="/attachments" element={<AttachmentsPage />} />
-                        <Route path="/export" element={<ExportPage />} />
-                        <Route path="/statistics" element={<StatisticsPage />} />
-                        <Route path="/comments" element={<CommentBankPage />} />
-                        <Route path="/settings" element={<SettingsPage />} />
-                        <Route path="/privacy" element={<PrivacyPage />} />
-                        <Route path="*" element={<Navigate to="/" replace />} />
-                    </Routes>
-                </Suspense>
+            <MigrationPrompt />
+            <div className="app-layout">
+                <a href="#main-content" className="skip-nav">
+                    Skip to main content
+                </a>
+                <Joyride
+                    steps={steps}
+                    run={!settings.hasSeenTutorial}
+                    continuous
+                    showSkipButton
+                    showProgress
+                    hideCloseButton
+                    callback={handleJoyrideCallback}
+                    styles={{
+                        options: {
+                            primaryColor: 'var(--accent)',
+                            backgroundColor: 'var(--bg-elevated)',
+                            textColor: 'var(--text)',
+                            arrowColor: 'var(--bg-elevated)',
+                            overlayColor: 'rgba(0, 0, 0, 0.6)',
+                        },
+                        tooltipContainer: {
+                            textAlign: 'left',
+                        },
+                    }}
+                />
+                <Sidebar mobileOpen={mobileMenuOpen} onMobileClose={() => setMobileMenuOpen(false)} />
+                <div className="main-area" id="main-content">
+                    <ErrorBoundary>
+                        <Suspense fallback={<Spinner />}>
+                            <Routes>
+                                <Route path="/" element={<Dashboard />} />
+                                <Route path="/rubrics" element={<RubricList />} />
+                                <Route path="/rubrics/new" element={<RubricBuilder />} />
+                                <Route path="/rubrics/:id" element={<RubricBuilder />} />
+                                <Route path="/rubrics/:rubricId/grade/:studentId" element={<GradeStudentRoute />} />
+                                <Route path="/rubrics/:rubricId/peer-review/:studentId" element={<PeerReviewView />} />
+                                <Route path="/rubrics/:rubricId/self-assess/:studentId" element={<SelfAssessPage />} />
+                                <Route path="/speaking/:rubricId/:studentId" element={<SpeakingSession />} />
+                                <Route path="/grade-comparative/:classId/:rubricId" element={<ComparativeGrading />} />
+                                <Route path="/students" element={<StudentsPage />} />
+                                <Route path="/students/:id" element={<StudentProfilePage />} />
+                                <Route path="/attachments" element={<AttachmentsPage />} />
+                                <Route path="/export" element={<ExportPage />} />
+                                <Route path="/statistics" element={<StatisticsPage />} />
+                                <Route path="/comments" element={<CommentBankPage />} />
+                                <Route path="/settings" element={<SettingsPage />} />
+                                <Route path="/privacy" element={<PrivacyPage />} />
+                                <Route path="*" element={<NotFoundPage />} />
+                            </Routes>
+                        </Suspense>
+                    </ErrorBoundary>
+                </div>
             </div>
-        </div>
         </MobileMenuContext.Provider>
     );
 }

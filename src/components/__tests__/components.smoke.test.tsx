@@ -25,9 +25,7 @@ vi.mock('react-i18next', () => ({
 
 vi.mock('../../context/AppContext', () => ({
     useApp: () => ({
-        commentBank: [
-            { id: 'cb1', text: 'Well done!', tags: ['positive'], createdAt: '2024-01-01' },
-        ],
+        commentBank: [{ id: 'cb1', text: 'Well done!', tags: ['positive'], createdAt: '2024-01-01' }],
         classes: [],
         addStudent: vi.fn(),
         addClass: vi.fn(),
@@ -79,7 +77,14 @@ vi.mock('../../data/cefrDescriptors', () => ({
         speaking_interaction: { en: 'Interaction', nl: 'Interactie' },
     },
     CEFR_LEVEL_COLORS: { A1: '#green', A2: '#teal', B1: '#blue', B2: '#purple', C1: '#orange', C2: '#red' },
-    CEFR_LEVEL_DESCRIPTORS: { A1: 'A1 desc', A2: 'A2 desc', B1: 'B1 desc', B2: 'B2 desc', C1: 'C1 desc', C2: 'C2 desc' },
+    CEFR_LEVEL_DESCRIPTORS: {
+        A1: 'A1 desc',
+        A2: 'A2 desc',
+        B1: 'B1 desc',
+        B2: 'B2 desc',
+        C1: 'C1 desc',
+        C2: 'C2 desc',
+    },
     CEFR_DESCRIPTORS: [],
     getCefrDescriptors: vi.fn(() => []),
 }));
@@ -108,7 +113,12 @@ describe('AttachmentViewer', () => {
 
     it('renders docx attachment container', () => {
         const { container } = render(
-            <AttachmentViewer attachment={makeAttachment('application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'doc.docx')} />
+            <AttachmentViewer
+                attachment={makeAttachment(
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'doc.docx'
+                )}
+            />
         );
         expect(container.firstChild).toBeTruthy();
     });
@@ -132,9 +142,14 @@ describe('AttachmentViewer', () => {
         // Make fetch throw so the catch block in the useEffect fires
         const origFetch = globalThis.fetch;
         globalThis.fetch = vi.fn().mockRejectedValue(new Error('fetch failed'));
-        render(<AttachmentViewer attachment={makeAttachment(
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'doc.docx'
-        )} />);
+        render(
+            <AttachmentViewer
+                attachment={makeAttachment(
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'doc.docx'
+                )}
+            />
+        );
         await waitFor(() => {
             expect(screen.getByText(/Failed to preview Word document/i)).toBeInTheDocument();
         });
@@ -156,7 +171,9 @@ describe('VocabularyListEditor', () => {
         onDeleteMultiple: noop,
     };
 
-    beforeEach(() => { vi.clearAllMocks(); });
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
 
     it('renders empty state', () => {
         render(<VocabularyListEditor {...baseProps} />);
@@ -185,9 +202,7 @@ describe('VocabularyListEditor', () => {
     });
 
     it('renders existing items', () => {
-        const items: VocabularyItem[] = [
-            { id: 'v1', phrase: 'good morning', category: 'vocabulary' },
-        ];
+        const items: VocabularyItem[] = [{ id: 'v1', phrase: 'good morning', category: 'vocabulary' }];
         render(<VocabularyListEditor {...baseProps} items={items} />);
         expect(screen.getByText('good morning')).toBeInTheDocument();
     });
@@ -257,9 +272,9 @@ describe('CommentBankModal', () => {
     it('clicking Edit button on an item shows form with item text', () => {
         render(<CommentBankModal onClose={vi.fn()} />);
         // Find edit button (no text, svg icon button)
-        const editBtn = screen.getAllByRole('button').find(b =>
-            b.querySelector('svg') && b.className?.includes('ghost') && b.className?.includes('xs')
-        );
+        const editBtn = screen
+            .getAllByRole('button')
+            .find((b) => b.querySelector('svg') && b.className?.includes('ghost') && b.className?.includes('xs'));
         if (editBtn) {
             fireEvent.click(editBtn);
             const textarea = screen.getByPlaceholderText(/write your comment/i);
@@ -272,9 +287,9 @@ describe('CommentBankModal', () => {
 
     it('clicking Trash button on an item triggers delete without crash', () => {
         render(<CommentBankModal onClose={vi.fn()} />);
-        const btns = screen.getAllByRole('button').filter(b =>
-            b.querySelector('svg') && b.className?.includes('ghost') && b.className?.includes('xs')
-        );
+        const btns = screen
+            .getAllByRole('button')
+            .filter((b) => b.querySelector('svg') && b.className?.includes('ghost') && b.className?.includes('xs'));
         // The second small icon button is the trash button (edit=0, delete=1)
         if (btns.length >= 2) {
             fireEvent.click(btns[1]);

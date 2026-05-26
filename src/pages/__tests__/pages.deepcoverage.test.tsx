@@ -6,7 +6,14 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import { DEFAULT_FORMAT, type Rubric, type Student, type GradeScale, type AppSettings, type StudentRubric } from '../../types';
+import {
+    DEFAULT_FORMAT,
+    type Rubric,
+    type Student,
+    type GradeScale,
+    type AppSettings,
+    type StudentRubric,
+} from '../../types';
 import { encodeFeedbackCode } from '../../utils/studentShareCode';
 import { encodeRubricShareCode } from '../../utils/rubricImport';
 
@@ -34,7 +41,14 @@ const mockRubric: Rubric = {
             description: 'C1 description',
             weight: 100,
             levels: [
-                { id: 'l1', label: 'Excellent', minPoints: 90, maxPoints: 100, description: 'Great work', subItems: [] },
+                {
+                    id: 'l1',
+                    label: 'Excellent',
+                    minPoints: 90,
+                    maxPoints: 100,
+                    description: 'Great work',
+                    subItems: [],
+                },
                 { id: 'l2', label: 'Good', minPoints: 70, maxPoints: 89, description: 'OK', subItems: [] },
             ],
         },
@@ -157,7 +171,8 @@ vi.mock('../../hooks/useVoiceGrading', () => ({
 }));
 
 vi.mock('@hello-pangea/dnd', () => ({
-    DragDropContext: ({ children }: { children: React.ReactNode }) => React.createElement(React.Fragment, null, children),
+    DragDropContext: ({ children }: { children: React.ReactNode }) =>
+        React.createElement(React.Fragment, null, children),
     Droppable: ({ children }: { children: (p: any) => React.ReactNode }) =>
         children({ innerRef: vi.fn(), droppableProps: {}, placeholder: null } as any),
     Draggable: ({ children }: { children: (p: any) => React.ReactNode }) =>
@@ -203,7 +218,9 @@ vi.mock('../../store/storage', () => ({
 function renderPage(el: React.ReactElement, route = '/', path = '/') {
     return render(
         <MemoryRouter initialEntries={[route]}>
-            <Routes><Route path={path} element={el} /></Routes>
+            <Routes>
+                <Route path={path} element={el} />
+            </Routes>
         </MemoryRouter>
     );
 }
@@ -307,7 +324,7 @@ describe('PeerReviewView — deeper', () => {
     it('clicking Excellent level updates selection', () => {
         renderPage(<PeerReviewView />, '/peer-review/r1/s1', '/peer-review/:rubricId/:studentId');
         const btns = screen.getAllByRole('button');
-        const excellentBtn = btns.find(b => b.textContent?.includes('Excellent'));
+        const excellentBtn = btns.find((b) => b.textContent?.includes('Excellent'));
         if (excellentBtn) {
             fireEvent.click(excellentBtn);
             expect(excellentBtn).toBeInTheDocument();
@@ -383,7 +400,7 @@ describe('GradeStudent — level selection', () => {
     it('clicking a level does not crash', () => {
         renderPage(<GradeStudent />, '/grade/r1/s1', '/grade/:rubricId/:studentId');
         const btns = screen.getAllByRole('button');
-        const excellentBtn = btns.find(b => b.textContent?.includes('Excellent'));
+        const excellentBtn = btns.find((b) => b.textContent?.includes('Excellent'));
         if (excellentBtn) {
             fireEvent.click(excellentBtn);
             expect(excellentBtn).toBeInTheDocument();
@@ -484,7 +501,7 @@ describe('ExportPage — more interactions', () => {
     it('bulk comment area opens', () => {
         renderPage(<ExportPage />);
         const btns = screen.getAllByRole('button');
-        const bulkBtn = btns.find(b => b.textContent?.match(/bulk|comment/i));
+        const bulkBtn = btns.find((b) => b.textContent?.match(/bulk|comment/i));
         if (bulkBtn) {
             fireEvent.click(bulkBtn);
         }
@@ -519,7 +536,7 @@ describe('SettingsPage — deeper', () => {
     it('backup export button exists', () => {
         renderPage(<SettingsPage />);
         const btns = screen.getAllByRole('button');
-        const backupBtn = btns.find(b => b.textContent?.match(/backup|export/i));
+        const backupBtn = btns.find((b) => b.textContent?.match(/backup|export/i));
         expect(backupBtn || btns.length > 0).toBeTruthy();
     });
 });
@@ -548,7 +565,7 @@ describe('StudentsPage — class navigation', () => {
     it('sort buttons work', () => {
         renderPage(<StudentsPage />);
         const btns = screen.getAllByRole('button');
-        const sortBtn = btns.find(b => b.textContent?.match(/sort|name|grade/i));
+        const sortBtn = btns.find((b) => b.textContent?.match(/sort|name|grade/i));
         if (sortBtn) fireEvent.click(sortBtn);
         expect(btns.length).toBeGreaterThan(0);
     });
@@ -578,7 +595,7 @@ describe('RubricList — delete confirmation', () => {
     it('create new rubric button exists', () => {
         renderPage(<RubricList />);
         const btns = screen.getAllByRole('button');
-        const createBtn = btns.find(b => b.textContent?.match(/new|create/i));
+        const createBtn = btns.find((b) => b.textContent?.match(/new|create/i));
         expect(createBtn || btns.length > 0).toBeTruthy();
     });
 });

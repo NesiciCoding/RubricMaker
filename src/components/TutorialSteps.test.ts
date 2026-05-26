@@ -28,14 +28,17 @@ describe('getTutorialSteps', () => {
 
     it('passes translation keys to t()', () => {
         const keys: string[] = [];
-        const recorder = (key: string) => { keys.push(key); return key; };
+        const recorder = (key: string) => {
+            keys.push(key);
+            return key;
+        };
         getTutorialSteps(recorder as any);
-        expect(keys.some(k => k.startsWith('tutorial.'))).toBe(true);
+        expect(keys.some((k) => k.startsWith('tutorial.'))).toBe(true);
     });
 
     it('step targets include expected data-tour selectors', () => {
         const steps = getTutorialSteps(t as any);
-        const targets = steps.map(s => s.target as string);
+        const targets = steps.map((s) => s.target as string);
         expect(targets).toContain('[data-tour="/rubrics"]');
         expect(targets).toContain('[data-tour="/students"]');
         expect(targets).toContain('[data-tour="/statistics"]');

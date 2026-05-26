@@ -43,11 +43,11 @@ async function checkWithLanguageTool(text: string, language: string): Promise<Gr
     if (!res.ok) throw new Error(`LanguageTool returned ${res.status}`);
 
     const json = await res.json();
-    return (json.matches as LtMatch[]).map(m => ({
+    return (json.matches as LtMatch[]).map((m) => ({
         message: m.message,
         offset: m.offset,
         length: m.length,
-        suggestions: m.replacements.slice(0, 3).map(r => r.value),
+        suggestions: m.replacements.slice(0, 3).map((r) => r.value),
         ruleId: m.rule?.id,
     }));
 }
