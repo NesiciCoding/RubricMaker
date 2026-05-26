@@ -6,7 +6,6 @@ import {
     ChevronUp,
     CheckCircle2,
     XCircle,
-    HelpCircle,
     AlertTriangle,
     ClipboardPaste,
     Check,
