@@ -145,11 +145,12 @@ export default function LearningGoalChart({ goals, className }: Props) {
                                 borderRadius: 8,
                                 boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                             }}
-                            formatter={(value: number, name: string) => {
-                                if (name === 'Percentage') return [`${value}%`, name];
-                                if (name === 'Points Earned') return [value, name];
-                                if (name === 'Max Points') return [value, name];
-                                return [value, name];
+                            formatter={(value: number | undefined, name: string) => {
+                                const v = value ?? 0;
+                                if (name === 'Percentage') return [`${v}%`, name];
+                                if (name === 'Points Earned') return [v, name];
+                                if (name === 'Max Points') return [v, name];
+                                return [v, name];
                             }}
                             labelFormatter={(label, payload) => {
                                 if (payload && payload.length > 0) {

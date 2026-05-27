@@ -39,10 +39,10 @@ export default function ScoreHistogram({ scores }: Props) {
                         border: '1px solid var(--border)',
                         borderRadius: 8,
                     }}
-                    formatter={(count: number) => [
-                        `${count} student${count !== 1 ? 's' : ''} (${total > 0 ? ((count / total) * 100).toFixed(0) : 0}%)`,
-                        'Count',
-                    ]}
+                    formatter={(count: number | undefined) => {
+                        const c = count ?? 0;
+                        return [`${c} student${c !== 1 ? 's' : ''} (${total > 0 ? ((c / total) * 100).toFixed(0) : 0}%)`, 'Count'];
+                    }}
                 />
                 <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                     {data.map((_, i) => (
