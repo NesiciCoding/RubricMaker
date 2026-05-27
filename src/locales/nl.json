@@ -114,7 +114,8 @@
         "comment_bank": "Opmerkingenbank",
         "export": "Exporteren",
         "attachments": "Bijlagen",
-        "localization": "Localisatie"
+        "localization": "Localisatie",
+        "cefr_overview": "CEFR Overzicht"
     },
     "dashboard": {
         "title": "Dashboard",

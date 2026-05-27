@@ -114,7 +114,8 @@
         "comment_bank": "Comment Bank",
         "export": "Export",
         "attachments": "Attachments",
-        "localization": "Localization"
+        "localization": "Localization",
+        "cefr_overview": "CEFR Overview"
     },
     "dashboard": {
         "title": "Dashboard",
