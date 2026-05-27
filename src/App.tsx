@@ -1,7 +1,7 @@
 import React, { Suspense, lazy, useMemo, useState } from 'react';
 import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import Sidebar from './components/Layout/Sidebar';
-import Joyride, { type CallBackProps, STATUS } from 'react-joyride';
+import { Joyride, STATUS } from 'react-joyride';
 import { useApp } from './context/AppContext';
 import { MobileMenuContext } from './context/MobileMenuContext';
 import { getTutorialSteps } from './components/TutorialSteps';
@@ -64,7 +64,7 @@ export default function App() {
 
     if (showLanding) return <LandingPage />;
 
-    const handleJoyrideCallback = (data: CallBackProps) => {
+    const handleJoyrideCallback = (data: { status: string }) => {
         const { status } = data;
         const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
         if (finishedStatuses.includes(status)) {
