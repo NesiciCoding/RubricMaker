@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { renderAsync } from 'docx-preview';
 import { Download, FileText, ImageIcon, Loader } from 'lucide-react';
-import { Attachment } from '../types';
+import { Attachment } from '../../types';
 
 interface Props {
     attachment: Attachment;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Search, ChevronRight, ChevronDown, Link2, AlertCircle, Loader, BookOpen, Star } from 'lucide-react';
-import Modal from '../Modal';
+import Modal from '../ui/Modal';
 import {
     fetchJurisdictions,
     fetchStandardSets,

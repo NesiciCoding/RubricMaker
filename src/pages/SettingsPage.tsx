@@ -36,8 +36,8 @@ import {
     ChevronUp,
 } from 'lucide-react';
 import CommentBankModal from '../components/Comments/CommentBankModal';
-import TemplateUploadModal from '../components/TemplateUploadModal';
-import Modal from '../components/Modal';
+import TemplateUploadModal from '../components/Rubric/TemplateUploadModal';
+import Modal from '../components/ui/Modal';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';

@@ -5,14 +5,14 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Attachment, VocabularyItem } from '../../types';
-import AttachmentViewer from '../AttachmentViewer';
-import VocabularyListEditor from '../VocabularyListEditor';
+import AttachmentViewer from '../Attachments/AttachmentViewer';
+import VocabularyListEditor from '../Vocabulary/VocabularyListEditor';
 import CommentBankModal from '../Comments/CommentBankModal';
-import ImportRubricModal from '../ImportRubricModal';
-import TemplateUploadModal from '../TemplateUploadModal';
+import ImportRubricModal from '../Rubric/ImportRubricModal';
+import TemplateUploadModal from '../Rubric/TemplateUploadModal';
 import CefrPickerModal from '../CEFR/CefrPickerModal';
 import StandardsPickerModal from '../Standards/StandardsPickerModal';
-import CsvImportModal from '../CsvImportModal';
+import CsvImportModal from '../Students/CsvImportModal';
 
 // ─── Shared mocks ────────────────────────────────────────────────────────────
 

@@ -4,12 +4,12 @@ import Sidebar from './components/Layout/Sidebar';
 import { Joyride, STATUS } from 'react-joyride';
 import { useApp } from './context/AppContext';
 import { MobileMenuContext } from './context/MobileMenuContext';
-import { getTutorialSteps } from './components/TutorialSteps';
+import { getTutorialSteps } from './data/TutorialSteps';
 import { useTranslation } from 'react-i18next';
 import { Loader } from 'lucide-react';
 import LandingPage from './pages/LandingPage';
 import MigrationPrompt from './components/auth/MigrationPrompt';
-import { ErrorBoundary } from './components/ErrorBoundary';
+import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import NotFoundPage from './pages/NotFoundPage';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));

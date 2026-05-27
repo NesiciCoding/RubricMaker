@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import EssayImportModal from '../EssayImportModal';
+import EssayImportModal from '../Essay/EssayImportModal';
 
 vi.mock('../../utils/essaySubmissionCode', () => ({
     decodeEssaySubmission: vi.fn(),

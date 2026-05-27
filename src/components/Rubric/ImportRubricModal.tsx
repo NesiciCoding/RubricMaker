@@ -1,9 +1,9 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Upload, FileText, AlertTriangle, CheckCircle, X, Loader, ChevronRight } from 'lucide-react';
-import type { ParsedRubric } from '../utils/rubricImport';
-import Modal from './Modal';
-import { parseDocxToRubric, parsePdfToRubric, parseJsonToRubric } from '../utils/rubricImport';
-import type { RubricCriterion, RubricLevel } from '../types';
+import type { ParsedRubric } from '../../utils/rubricImport';
+import Modal from '../ui/Modal';
+import { parseDocxToRubric, parsePdfToRubric, parseJsonToRubric } from '../../utils/rubricImport';
+import type { RubricCriterion, RubricLevel } from '../../types';
 
 interface Props {
     onClose: () => void;

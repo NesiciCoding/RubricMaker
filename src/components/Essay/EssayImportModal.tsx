@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { X, Upload, CheckCircle, Database, RefreshCw, FileText, Trash2 } from 'lucide-react';
-import { decodeEssaySubmission } from '../utils/essaySubmissionCode';
-import Modal from './Modal';
-import type { Attachment } from '../types';
-import { useDbStatus } from '../hooks/useDbStatus';
+import { decodeEssaySubmission } from '../../utils/essaySubmissionCode';
+import Modal from '../ui/Modal';
+import type { Attachment } from '../../types';
+import { useDbStatus } from '../../hooks/useDbStatus';
 
 type Tab = 'code' | 'database';
 

@@ -51,7 +51,7 @@ import { DEFAULT_FORMAT } from '../types';
 import { nanoid } from '../utils/nanoid';
 import StandardsPickerModal from '../components/Standards/StandardsPickerModal';
 import CefrPickerModal from '../components/CEFR/CefrPickerModal';
-import VocabularyListEditor from '../components/VocabularyListEditor';
+import VocabularyListEditor from '../components/Vocabulary/VocabularyListEditor';
 import { CEFR_LEVELS, CEFR_SKILLS, CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
 import { exportRubricGridPdf } from '../utils/pdfExport';
 import { exportRubricToDocx } from '../utils/docxExport';

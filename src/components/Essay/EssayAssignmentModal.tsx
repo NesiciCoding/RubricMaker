@@ -1,12 +1,12 @@
 import React, { useState, useCallback } from 'react';
 import { X, Copy, Download, Check, FileText, Database, AlertCircle } from 'lucide-react';
 import { saveAs } from 'file-saver';
-import { encodeEssayAssignment } from '../utils/essayShareCode';
-import { nanoid } from '../utils/nanoid';
-import Modal from './Modal';
-import type { EssayAssignment } from '../types';
-import { useDbStatus } from '../hooks/useDbStatus';
-import { loadSupabaseConfig } from '../services/database';
+import { encodeEssayAssignment } from '../../utils/essayShareCode';
+import { nanoid } from '../../utils/nanoid';
+import Modal from '../ui/Modal';
+import type { EssayAssignment } from '../../types';
+import { useDbStatus } from '../../hooks/useDbStatus';
+import { loadSupabaseConfig } from '../../services/database';
 
 interface Props {
     rubricId: string;

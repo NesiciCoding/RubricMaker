@@ -3,7 +3,7 @@ import { Upload, Paperclip, Trash2, Download, Link2, Users } from 'lucide-react'
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
-import { ConfirmDialog } from '../components/ConfirmDialog';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
 
 export default function AttachmentsPage() {

@@ -6,7 +6,7 @@ import { ArrowLeft, Check, Equal, ChevronRight, ChevronLeft, MessageSquare, Shuf
 import { nanoid } from '../utils/nanoid';
 import { useTranslation } from 'react-i18next';
 import { calcGradeSummary } from '../utils/gradeCalc';
-import AttachmentViewer from '../components/AttachmentViewer';
+import AttachmentViewer from '../components/Attachments/AttachmentViewer';
 import { ScoreEntry } from '../types';
 
 const COMBINED_ID = '__combined__';
