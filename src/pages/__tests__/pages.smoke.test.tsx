@@ -308,6 +308,26 @@ describe('Page smoke tests — render without crash', () => {
         expect(container.firstChild).toBeTruthy();
     });
 
+    it('StudentCefrOverviewPage renders with unknown studentId', async () => {
+        const { default: StudentCefrOverviewPage } = await import('../StudentCefrOverviewPage');
+        const { container } = renderPage(
+            <StudentCefrOverviewPage />,
+            '/students/unknown/cefr-overview',
+            '/students/:id/cefr-overview'
+        );
+        expect(container.firstChild).toBeTruthy();
+    });
+
+    it('StudentCefrOverviewPage renders with known studentId', async () => {
+        const { default: StudentCefrOverviewPage } = await import('../StudentCefrOverviewPage');
+        const { container } = renderPage(
+            <StudentCefrOverviewPage />,
+            '/students/s1/cefr-overview',
+            '/students/:id/cefr-overview'
+        );
+        expect(container.firstChild).toBeTruthy();
+    });
+
     it('SelfAssessPage renders with params', async () => {
         const { default: SelfAssessPage } = await import('../SelfAssessPage');
         const { container } = renderPage(<SelfAssessPage />, '/self-assess/r1/s1', '/self-assess/:rubricId/:studentId');
