@@ -368,7 +368,7 @@ export default function StatisticsPage() {
                         tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
                     />
                     <Tooltip
-                        formatter={(v: number) => `${v}%`}
+                        formatter={(v: number | undefined) => v != null ? `${v}%` : ''}
                         contentStyle={{
                             background: 'var(--bg-card)',
                             border: '1px solid var(--border)',
@@ -661,7 +661,7 @@ export default function StatisticsPage() {
                                                         }}
                                                         labelStyle={{ color: 'var(--text)', fontWeight: 600 }}
                                                         itemStyle={{ color: 'var(--text-muted)' }}
-                                                        formatter={(v: number) => [v, t('statistics.students')]}
+                                                        formatter={(v: number | undefined) => [v ?? 0, t('statistics.students')]}
                                                     />
                                                     <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={60}>
                                                         {stats.distribution.map((entry, i) => (

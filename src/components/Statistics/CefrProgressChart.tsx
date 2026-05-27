@@ -75,7 +75,7 @@ export default function CefrProgressChart({ entries }: Props) {
                             border: '1px solid var(--border)',
                             borderRadius: 8,
                         }}
-                        formatter={(value: number) => `${value}%`}
+                        formatter={(value: number | undefined) => value != null ? `${value}%` : ''}
                     />
                     {levelsPresent.map((lvl) => {
                         const hasAchieved = entries.some((e) => e.level === lvl && e.achieved);

@@ -64,7 +64,7 @@ export default function CriterionRadarChart({
                         border: '1px solid var(--border)',
                         borderRadius: 8,
                     }}
-                    formatter={(value: number) => `${value}%`}
+                    formatter={(value: number | undefined) => value != null ? `${value}%` : ''}
                 />
                 <Radar
                     name={classAverageLabel}

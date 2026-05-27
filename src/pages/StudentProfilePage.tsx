@@ -283,8 +283,8 @@ export default function StudentProfilePage() {
                                             }}
                                             labelStyle={{ color: 'var(--text)', fontWeight: 600, marginBottom: 4 }}
                                             itemStyle={{ color: 'var(--accent)', fontWeight: 600 }}
-                                            formatter={(val: number, name: string, props: any) => [
-                                                `${val}%`,
+                                            formatter={(val: number | undefined, name: string, props: any) => [
+                                                `${val ?? 0}%`,
                                                 props.payload.rubric.name,
                                             ]}
                                         />
