@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, BookOpen, Award, Users, CheckSquare, Copy, Check, ExternalLink } from 'lucide-react';
+import { ArrowLeft, BookOpen, Award, Users, Copy, Check, ExternalLink } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import CefrBadge from '../components/CEFR/CefrBadge';
