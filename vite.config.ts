@@ -41,8 +41,8 @@ export default defineConfig({
         'src/pages/StudentEssayPage.tsx',
         'src/components/Editor/TiptapEditor.tsx',
         'src/components/Editor/EssayEditor.tsx',
-        'src/components/EssayAssignmentModal.tsx',
-        'src/components/EssaySlipSheet.tsx',
+        'src/components/Essay/EssayAssignmentModal.tsx',
+        'src/components/Essay/EssaySlipSheet.tsx',
       ],
       all: true,
       thresholds: {
