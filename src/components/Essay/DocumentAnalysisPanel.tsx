@@ -11,11 +11,11 @@ import {
     Check,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { Attachment, VocabularyItem, DocumentAnalysisResult, DetectedItem, RubricCriterion } from '../types';
-import { extractText, UnsupportedFormatError } from '../utils/textExtraction';
-import { analyseVocabulary } from '../utils/vocabularyAnalyser';
-import { checkGrammar, LT_ATTRIBUTION_URL } from '../utils/grammarChecker';
-import { nanoid } from '../utils/nanoid';
+import type { Attachment, VocabularyItem, DocumentAnalysisResult, DetectedItem, RubricCriterion } from '../../types';
+import { extractText, UnsupportedFormatError } from '../../utils/textExtraction';
+import { analyseVocabulary } from '../../utils/vocabularyAnalyser';
+import { checkGrammar, LT_ATTRIBUTION_URL } from '../../utils/grammarChecker';
+import { nanoid } from '../../utils/nanoid';
 
 interface Props {
     studentId: string;

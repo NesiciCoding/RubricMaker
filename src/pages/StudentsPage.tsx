@@ -19,7 +19,7 @@ import {
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import Papa from 'papaparse';
-import CsvImportModal from '../components/CsvImportModal';
+import CsvImportModal from '../components/Students/CsvImportModal';
 import { useTranslation, Trans } from 'react-i18next';
 import { VO_TRACKS, VO_TRACK_LABELS, VO_TRACK_COLORS } from '../data/voTracks';
 import type { VoTrack, StudentRubric, Rubric, GradeScale } from '../types';

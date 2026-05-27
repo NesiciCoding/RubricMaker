@@ -25,10 +25,10 @@ import { VO_TRACKS, VO_TRACK_LABELS, VO_TRACK_COLORS, VO_TRACK_DEFAULT_CEFR } fr
 import { CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import { nanoid } from '../utils/nanoid';
-import ImportRubricModal from '../components/ImportRubricModal';
+import ImportRubricModal from '../components/Rubric/ImportRubricModal';
 import type { ParsedRubric } from '../utils/rubricImport';
 import { encodeRubricShareCode, decodeRubricShareCode } from '../utils/rubricImport';
-import { ConfirmDialog } from '../components/ConfirmDialog';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
 
 export default function RubricList() {

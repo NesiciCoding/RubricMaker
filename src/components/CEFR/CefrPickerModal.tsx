@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { X, Search, Plus, Check, BookOpen, ChevronDown, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import Modal from '../Modal';
+import Modal from '../ui/Modal';
 import {
     CEFR_LEVELS,
     CEFR_SKILLS,

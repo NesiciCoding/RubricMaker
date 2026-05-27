@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Papa from 'papaparse';
 import { Upload, ChevronRight, CheckCircle, X, AlertTriangle, Table } from 'lucide-react';
-import { useApp } from '../context/AppContext';
-import Modal from './Modal';
+import { useApp } from '../../context/AppContext';
+import Modal from '../ui/Modal';
 
 interface Props {
     file: File;

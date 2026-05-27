@@ -1,8 +1,8 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Upload, FileText, AlertTriangle, CheckCircle, X, Loader } from 'lucide-react';
-import { parseTemplateHeaders } from '../utils/docxTemplateExport';
-import type { ExportTemplate } from '../types';
-import Modal from './Modal';
+import { parseTemplateHeaders } from '../../utils/docxTemplateExport';
+import type { ExportTemplate } from '../../types';
+import Modal from '../ui/Modal';
 
 interface Props {
     onClose: () => void;

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Upload, X, Database, Loader2 } from 'lucide-react';
-import Modal from '../Modal';
+import Modal from '../ui/Modal';
 import { useApp } from '../../context/AppContext';
 
 export default function MigrationPrompt() {
