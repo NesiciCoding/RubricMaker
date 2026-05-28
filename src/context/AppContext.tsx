@@ -615,6 +615,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    // ── Handle in-page OTP login (no page reload, so startup effect won't re-run) ──
+    useEffect(() => {
+        return storageSync.onAuthChange(async (user) => {
+            if (!user || storageSync.isConnected()) return;
+            const config = loadSupabaseConfig();
+            if (!config) return;
+            setLandingState('checking');
+            const ok = await storageSync.configure(config);
+            if (!ok) { setLandingState('show'); return; }
+            const fresh = await storageSync.hydrate();
+            if (fresh) {
+                const merged = { ...initialStateRef.current, ...fresh } as StoreData;
+                dispatch({ type: 'SET_ALL', payload: merged });
+                flushToLocalStorage(merged);
+            }
+            setLandingState('hide');
+        });
+    }, []);
+
     // ── Supabase: delta-sync after each mutation ───────────────────────────────
     const prevStateRef = useRef(state);
     useEffect(() => {
