@@ -71,8 +71,8 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
     }
 
     async function handleVerifyOtp() {
-        if (otp.trim().length < 6) {
-            setError('Enter the 6-digit code.');
+        if (otp.trim().length < 8) {
+            setError('Enter the 8-digit code.');
             return;
         }
         setError('');
@@ -230,18 +230,18 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
                     ) : (
                         <>
                             <p style={{ margin: 0, fontSize: '0.82rem', color: '#64748b' }}>
-                                Check <strong>{email}</strong> for a 6-digit code.
+                                Check <strong>{email}</strong> for an 8-digit code.
                             </p>
                             <input
                                 type="text"
                                 value={otp}
-                                maxLength={6}
+                                maxLength={8}
                                 onChange={(e) => {
                                     setOtp(e.target.value.replace(/\D/g, ''));
                                     setError('');
                                 }}
                                 onKeyDown={(e) => e.key === 'Enter' && handleVerifyOtp()}
-                                placeholder="123456"
+                                placeholder="12345678"
                                 style={{
                                     padding: '9px 12px',
                                     borderRadius: 7,
@@ -265,7 +265,7 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
                                 </button>
                                 <button
                                     className="btn btn-primary btn-sm"
-                                    disabled={!!busy || otp.length < 6}
+                                    disabled={!!busy || otp.length < 8}
                                     onClick={handleVerifyOtp}
                                 >
                                     {busy === 'otp-verify' ? (
