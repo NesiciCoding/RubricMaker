@@ -824,7 +824,7 @@ export default function ExportPage() {
                                     <button
                                         key={s.id}
                                         className={`btn btn-sm ${reportStudentIds.has(s.id) ? 'btn-primary' : 'btn-secondary'}`}
-                                        onClick={() => setReportStudentIds((prev) => { const n = new Set(prev); n.has(s.id) ? n.delete(s.id) : n.add(s.id); return n; })}
+                                        onClick={() => setReportStudentIds((prev) => { const n = new Set(prev); if (n.has(s.id)) n.delete(s.id); else n.add(s.id); return n; })}
                                     >
                                         {s.name}
                                     </button>
