@@ -34,6 +34,8 @@ import {
     EyeOff,
     ChevronDown,
     ChevronUp,
+    UserMinus,
+    Share2,
 } from 'lucide-react';
 import CommentBankModal from '../components/Comments/CommentBankModal';
 import TemplateUploadModal from '../components/Rubric/TemplateUploadModal';
@@ -153,6 +155,13 @@ export default function SettingsPage() {
     const [shareRubricId, setShareRubricId] = useState('');
     const [shareTargetUser, setShareTargetUser] = useState('');
     const [shareMode, setShareMode] = useState<'read' | 'edit'>('read');
+    const [rubricShares, setRubricShares] = useState<{ userId: string; email?: string; displayName?: string; mode: 'read' | 'edit' }[]>([]);
+    const [loadingRubricShares, setLoadingRubricShares] = useState(false);
+    const [shareClassId, setShareClassId] = useState('');
+    const [shareClassTargetUser, setShareClassTargetUser] = useState('');
+    const [shareClassRole, setShareClassRole] = useState<'viewer' | 'editor'>('viewer');
+    const [classMembers, setClassMembers] = useState<{ userId: string; email?: string; displayName?: string; role: 'viewer' | 'editor' }[]>([]);
+    const [loadingClassMembers, setLoadingClassMembers] = useState(false);
 
     // ─── Profile / user management state ────────────────────────────────────────
     const [displayNameInput, setDisplayNameInput] = useState(dbStatus.currentUser?.displayName ?? '');
@@ -177,6 +186,22 @@ export default function SettingsPage() {
             .finally(() => setLoadingUsers(false));
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [dbStatus.isConnected, isAdmin]);
+
+    useEffect(() => {
+        if (!shareRubricId || !dbStatus.isConnected) { setRubricShares([]); return; }
+        setLoadingRubricShares(true);
+        storageSync.adapter.fetchRubricShares(shareRubricId)
+            .then(setRubricShares)
+            .finally(() => setLoadingRubricShares(false));
+    }, [shareRubricId, dbStatus.isConnected]);
+
+    useEffect(() => {
+        if (!shareClassId || !dbStatus.isConnected) { setClassMembers([]); return; }
+        setLoadingClassMembers(true);
+        storageSync.adapter.fetchClassMembers(shareClassId)
+            .then(setClassMembers)
+            .finally(() => setLoadingClassMembers(false));
+    }, [shareClassId, dbStatus.isConnected]);
 
     useEffect(() => {
         if (settings.language && i18n.language !== settings.language) {
@@ -1373,65 +1398,205 @@ export default function SettingsPage() {
                                             </div>
 
                                             {dbStatus.userId && (
-                                                <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
-                                                    <div
-                                                        style={{
-                                                            fontSize: '0.85rem',
-                                                            fontWeight: 600,
-                                                            marginBottom: 10,
-                                                        }}
-                                                    >
-                                                        Share a rubric
+                                                <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 20 }}>
+                                                    {/* ── Rubric sharing ── */}
+                                                    <div>
+                                                        <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                            <Share2 size={13} aria-hidden="true" />
+                                                            {t('settings.sharing_rubric_title')}
+                                                        </div>
+                                                        {allDbUsers.filter((u) => u.id !== dbStatus.userId).length === 0 ? (
+                                                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t('settings.sharing_no_users')}</p>
+                                                        ) : (
+                                                            <>
+                                                                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+                                                                    <select
+                                                                        value={shareRubricId}
+                                                                        onChange={(e) => { setShareRubricId(e.target.value); setShareTargetUser(''); }}
+                                                                        style={{ flex: 2, minWidth: 140 }}
+                                                                    >
+                                                                        <option value="">{t('settings.sharing_select_rubric')}</option>
+                                                                        {rubrics.map((r) => (
+                                                                            <option key={r.id} value={r.id}>{r.name}</option>
+                                                                        ))}
+                                                                    </select>
+                                                                    <select
+                                                                        value={shareTargetUser}
+                                                                        onChange={(e) => setShareTargetUser(e.target.value)}
+                                                                        style={{ flex: 3, minWidth: 160 }}
+                                                                        disabled={!shareRubricId}
+                                                                    >
+                                                                        <option value="">{t('settings.sharing_select_colleague')}</option>
+                                                                        {allDbUsers
+                                                                            .filter((u) => u.id !== dbStatus.userId && !rubricShares.some((s) => s.userId === u.id))
+                                                                            .map((u) => (
+                                                                                <option key={u.id} value={u.id}>
+                                                                                    {u.displayName ?? u.email ?? u.id}
+                                                                                </option>
+                                                                            ))}
+                                                                    </select>
+                                                                    <select
+                                                                        value={shareMode}
+                                                                        onChange={(e) => setShareMode(e.target.value as 'read' | 'edit')}
+                                                                        style={{ width: 110 }}
+                                                                        disabled={!shareRubricId}
+                                                                    >
+                                                                        <option value="read">{t('settings.sharing_mode_read')}</option>
+                                                                        <option value="edit">{t('settings.sharing_mode_edit')}</option>
+                                                                    </select>
+                                                                    <button
+                                                                        className="btn btn-primary btn-sm"
+                                                                        disabled={!shareRubricId || !shareTargetUser}
+                                                                        onClick={async () => {
+                                                                            const result = await storageSync.adapter.shareRubric(shareRubricId, shareTargetUser, shareMode);
+                                                                            if (result.success) {
+                                                                                showToast(t('settings.sharing_success'), 'success');
+                                                                                setShareTargetUser('');
+                                                                                const updated = await storageSync.adapter.fetchRubricShares(shareRubricId);
+                                                                                setRubricShares(updated);
+                                                                            } else {
+                                                                                showToast(t('settings.sharing_failed', { error: result.error }), 'error');
+                                                                            }
+                                                                        }}
+                                                                    >
+                                                                        {t('settings.sharing_btn_share')}
+                                                                    </button>
+                                                                </div>
+                                                                {shareRubricId && (
+                                                                    <div>
+                                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 6 }}>{t('settings.sharing_current')}</div>
+                                                                        {loadingRubricShares ? (
+                                                                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>…</p>
+                                                                        ) : rubricShares.length === 0 ? (
+                                                                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t('settings.sharing_no_shares')}</p>
+                                                                        ) : (
+                                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                                                                {rubricShares.map((s) => (
+                                                                                    <div key={s.userId} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', background: 'var(--bg-elevated)', borderRadius: 6, border: '1px solid var(--border)' }}>
+                                                                                        <User size={12} aria-hidden="true" style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                                                                                        <span style={{ flex: 1, fontSize: '0.82rem' }}>{s.displayName ?? s.email ?? s.userId}</span>
+                                                                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{s.mode === 'edit' ? t('settings.sharing_mode_edit') : t('settings.sharing_mode_read')}</span>
+                                                                                        <button
+                                                                                            className="btn btn-ghost btn-icon btn-sm"
+                                                                                            title={t('settings.sharing_btn_remove')}
+                                                                                            onClick={async () => {
+                                                                                                const result = await storageSync.adapter.unshareRubric(shareRubricId, s.userId);
+                                                                                                if (result.success) {
+                                                                                                    showToast(t('settings.sharing_removed'), 'success');
+                                                                                                    setRubricShares((prev) => prev.filter((x) => x.userId !== s.userId));
+                                                                                                }
+                                                                                            }}
+                                                                                        >
+                                                                                            <UserMinus size={13} aria-hidden="true" />
+                                                                                        </button>
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                            </>
+                                                        )}
                                                     </div>
-                                                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                                                        <select
-                                                            value={shareRubricId}
-                                                            onChange={(e) => setShareRubricId(e.target.value)}
-                                                            style={{ flex: 2, minWidth: 140 }}
-                                                        >
-                                                            <option value="">Select rubric…</option>
-                                                            {rubrics.map((r) => (
-                                                                <option key={r.id} value={r.id}>
-                                                                    {r.name}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                        <input
-                                                            type="text"
-                                                            placeholder="Target user ID"
-                                                            value={shareTargetUser}
-                                                            onChange={(e) => setShareTargetUser(e.target.value)}
-                                                            style={{ flex: 3, minWidth: 160 }}
-                                                        />
-                                                        <select
-                                                            value={shareMode}
-                                                            onChange={(e) =>
-                                                                setShareMode(e.target.value as 'read' | 'edit')
-                                                            }
-                                                            style={{ width: 90 }}
-                                                        >
-                                                            <option value="read">Read</option>
-                                                            <option value="edit">Edit</option>
-                                                        </select>
-                                                        <button
-                                                            className="btn btn-primary btn-sm"
-                                                            onClick={async () => {
-                                                                if (!shareRubricId || !shareTargetUser) return;
-                                                                const result = await storageSync.adapter.shareRubric(
-                                                                    shareRubricId,
-                                                                    shareTargetUser,
-                                                                    shareMode
-                                                                );
-                                                                showToast(
-                                                                    result.success
-                                                                        ? 'Rubric shared'
-                                                                        : `Share failed: ${result.error}`,
-                                                                    result.success ? 'success' : 'error'
-                                                                );
-                                                            }}
-                                                        >
-                                                            Share
-                                                        </button>
+
+                                                    {/* ── Class sharing ── */}
+                                                    <div>
+                                                        <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                            <Share2 size={13} aria-hidden="true" />
+                                                            {t('settings.sharing_class_title')}
+                                                        </div>
+                                                        {allDbUsers.filter((u) => u.id !== dbStatus.userId).length === 0 ? (
+                                                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t('settings.sharing_no_users')}</p>
+                                                        ) : (
+                                                            <>
+                                                                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+                                                                    <select
+                                                                        value={shareClassId}
+                                                                        onChange={(e) => { setShareClassId(e.target.value); setShareClassTargetUser(''); }}
+                                                                        style={{ flex: 2, minWidth: 140 }}
+                                                                    >
+                                                                        <option value="">{t('settings.sharing_select_class')}</option>
+                                                                        {classes.map((c) => (
+                                                                            <option key={c.id} value={c.id}>{c.name}</option>
+                                                                        ))}
+                                                                    </select>
+                                                                    <select
+                                                                        value={shareClassTargetUser}
+                                                                        onChange={(e) => setShareClassTargetUser(e.target.value)}
+                                                                        style={{ flex: 3, minWidth: 160 }}
+                                                                        disabled={!shareClassId}
+                                                                    >
+                                                                        <option value="">{t('settings.sharing_select_colleague')}</option>
+                                                                        {allDbUsers
+                                                                            .filter((u) => u.id !== dbStatus.userId && !classMembers.some((m) => m.userId === u.id))
+                                                                            .map((u) => (
+                                                                                <option key={u.id} value={u.id}>
+                                                                                    {u.displayName ?? u.email ?? u.id}
+                                                                                </option>
+                                                                            ))}
+                                                                    </select>
+                                                                    <select
+                                                                        value={shareClassRole}
+                                                                        onChange={(e) => setShareClassRole(e.target.value as 'viewer' | 'editor')}
+                                                                        style={{ width: 110 }}
+                                                                        disabled={!shareClassId}
+                                                                    >
+                                                                        <option value="viewer">{t('settings.sharing_role_viewer')}</option>
+                                                                        <option value="editor">{t('settings.sharing_role_editor')}</option>
+                                                                    </select>
+                                                                    <button
+                                                                        className="btn btn-primary btn-sm"
+                                                                        disabled={!shareClassId || !shareClassTargetUser}
+                                                                        onClick={async () => {
+                                                                            const result = await storageSync.adapter.addClassMember(shareClassId, shareClassTargetUser, shareClassRole);
+                                                                            if (result.success) {
+                                                                                showToast(t('settings.sharing_success'), 'success');
+                                                                                setShareClassTargetUser('');
+                                                                                const updated = await storageSync.adapter.fetchClassMembers(shareClassId);
+                                                                                setClassMembers(updated);
+                                                                            } else {
+                                                                                showToast(t('settings.sharing_failed', { error: result.error }), 'error');
+                                                                            }
+                                                                        }}
+                                                                    >
+                                                                        {t('settings.sharing_btn_share')}
+                                                                    </button>
+                                                                </div>
+                                                                {shareClassId && (
+                                                                    <div>
+                                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 6 }}>{t('settings.sharing_class_members')}</div>
+                                                                        {loadingClassMembers ? (
+                                                                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>…</p>
+                                                                        ) : classMembers.length === 0 ? (
+                                                                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t('settings.sharing_no_members')}</p>
+                                                                        ) : (
+                                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                                                                {classMembers.map((m) => (
+                                                                                    <div key={m.userId} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', background: 'var(--bg-elevated)', borderRadius: 6, border: '1px solid var(--border)' }}>
+                                                                                        <User size={12} aria-hidden="true" style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                                                                                        <span style={{ flex: 1, fontSize: '0.82rem' }}>{m.displayName ?? m.email ?? m.userId}</span>
+                                                                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{m.role === 'editor' ? t('settings.sharing_role_editor') : t('settings.sharing_role_viewer')}</span>
+                                                                                        <button
+                                                                                            className="btn btn-ghost btn-icon btn-sm"
+                                                                                            title={t('settings.sharing_btn_remove')}
+                                                                                            onClick={async () => {
+                                                                                                const result = await storageSync.adapter.removeClassMember(shareClassId, m.userId);
+                                                                                                if (result.success) {
+                                                                                                    showToast(t('settings.sharing_removed'), 'success');
+                                                                                                    setClassMembers((prev) => prev.filter((x) => x.userId !== m.userId));
+                                                                                                }
+                                                                                            }}
+                                                                                        >
+                                                                                            <UserMinus size={13} aria-hidden="true" />
+                                                                                        </button>
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                            </>
+                                                        )}
                                                     </div>
                                                 </div>
                                             )}

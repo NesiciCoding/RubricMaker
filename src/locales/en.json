@@ -104,7 +104,26 @@
         "comparisons_limit_help": "Maximum comparisons each student can appear in. The session stops when all students have reached this limit. 0 means no limit.",
         "scale_name_letter_10": "Letter Grades (10-point)",
         "scale_name_pass_fail": "Pass/Fail",
-        "scale_name_dutch_10": "Dutch Scale (1–10)"
+        "scale_name_dutch_10": "Dutch Scale (1–10)",
+        "sharing_rubric_title": "Share Rubric",
+        "sharing_class_title": "Share Class",
+        "sharing_select_rubric": "Select rubric…",
+        "sharing_select_class": "Select class…",
+        "sharing_select_colleague": "Select colleague…",
+        "sharing_mode_read": "View only",
+        "sharing_mode_edit": "Can edit",
+        "sharing_role_viewer": "Viewer",
+        "sharing_role_editor": "Editor",
+        "sharing_btn_share": "Share",
+        "sharing_btn_remove": "Remove",
+        "sharing_current": "Shared with",
+        "sharing_no_shares": "Not shared with anyone yet.",
+        "sharing_class_members": "Class members",
+        "sharing_no_members": "No members added yet.",
+        "sharing_success": "Shared successfully.",
+        "sharing_failed": "Share failed: {{error}}",
+        "sharing_removed": "Access removed.",
+        "sharing_no_users": "No other users found. Make sure colleagues have signed in at least once."
     },
     "navigation": {
         "dashboard": "Dashboard",
@@ -163,7 +182,9 @@
         "grade_students": "Grade Students",
         "delete_rubric_title": "Delete Rubric",
         "delete_rubric_warning": "This will permanently delete the rubric and all associated student scores. This cannot be undone.",
-        "action_compare": "Compare"
+        "action_compare": "Compare",
+        "shared_with_me": "Shared with me",
+        "shared_badge": "Shared"
     },
     "studentsPage": {
         "title": "Students & Classes",
@@ -356,7 +377,8 @@
         "no_versions_yet": "No saved versions yet.",
         "confirm_restore": "Restore this version? Current unsaved changes will be lost.",
         "version_n": "Version {{n}}",
-        "criteria_count": "criteria"
+        "criteria_count": "criteria",
+        "auto_save_badge": "auto"
     },
     "peerReview": {
         "round_label": "Round",
@@ -452,6 +474,20 @@
         "toggle_comments": "Toggle criterion notes",
         "comment_placeholder": "Note for this criterion…",
         "unsaved_warning": "You have unsaved comparison scores. Leave anyway?"
+    },
+    "studentPortal": {
+        "not_found": "Student not found.",
+        "copy_link": "Copy portal link",
+        "link_copied": "Copied!",
+        "view_portal_btn": "Student view",
+        "stat_rubrics": "Rubrics graded",
+        "stat_average": "Average score",
+        "stat_self_assessments": "Self-assessments",
+        "grade_history": "Grade history",
+        "cefr_progress": "CEFR progress",
+        "rubric_grades": "Grades & feedback",
+        "no_grades_yet": "No grades recorded yet.",
+        "score": "Score"
     },
     "selfAssess": {
         "title": "CEFR Self-Assessment",
@@ -575,7 +611,19 @@
         "bulk_add_comment": "Add comment to selected",
         "bulk_comment_placeholder": "Overall comment to append…",
         "bulk_comment_confirm": "Apply",
-        "batch_docx_export": "Export {{count}} as DOCX"
+        "batch_docx_export": "Export {{count}} as DOCX",
+        "period_select_class": "Select a class…",
+        "period_report_title": "Period Report / Report Card",
+        "period_report_help": "Generate a DOCX report per student summarising all grades and feedback within a date range.",
+        "period_class": "Class",
+        "period_from": "From",
+        "period_to": "To",
+        "period_label_field": "Period label",
+        "period_label_placeholder": "e.g. Term 1 / Semester A",
+        "period_no_students": "No students in this class.",
+        "period_generate_btn": "Generate {{count}} report(s)",
+        "period_report_success": "Generated {{count}} report(s).",
+        "selected": "selected"
     },
     "speaking": {
         "page_title": "Speaking Session",

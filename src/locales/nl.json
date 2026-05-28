@@ -104,7 +104,26 @@
         "comparisons_limit_help": "Maximum koppelronden waarbij elke leerling kan verschijnen. De sessie stopt als alle leerlingen dit maximum hebben bereikt. 0 betekent geen limiet.",
         "scale_name_letter_10": "Lettercijfers (10-punt)",
         "scale_name_pass_fail": "Geslaagd/Gezakt",
-        "scale_name_dutch_10": "Nederlandse schaal (1–10)"
+        "scale_name_dutch_10": "Nederlandse schaal (1–10)",
+        "sharing_rubric_title": "Rubriek delen",
+        "sharing_class_title": "Klas delen",
+        "sharing_select_rubric": "Selecteer rubriek…",
+        "sharing_select_class": "Selecteer klas…",
+        "sharing_select_colleague": "Selecteer collega…",
+        "sharing_mode_read": "Alleen lezen",
+        "sharing_mode_edit": "Kan bewerken",
+        "sharing_role_viewer": "Kijker",
+        "sharing_role_editor": "Bewerker",
+        "sharing_btn_share": "Delen",
+        "sharing_btn_remove": "Verwijderen",
+        "sharing_current": "Gedeeld met",
+        "sharing_no_shares": "Nog niet gedeeld met anderen.",
+        "sharing_class_members": "Klasleden",
+        "sharing_no_members": "Nog geen leden toegevoegd.",
+        "sharing_success": "Succesvol gedeeld.",
+        "sharing_failed": "Delen mislukt: {{error}}",
+        "sharing_removed": "Toegang verwijderd.",
+        "sharing_no_users": "Geen andere gebruikers gevonden. Zorg dat collega's zich minimaal één keer hebben aangemeld."
     },
     "navigation": {
         "dashboard": "Dashboard",
@@ -163,7 +182,9 @@
         "grade_students": "Leerlingen Beoordelen",
         "delete_rubric_title": "Rubriek Verwijderen",
         "delete_rubric_warning": "Dit zal de rubriek en alle bijbehorende leerlingscores permanent verwijderen. Dit kan niet ongedaan worden gemaakt.",
-        "action_compare": "Vergelijken"
+        "action_compare": "Vergelijken",
+        "shared_with_me": "Gedeeld met mij",
+        "shared_badge": "Gedeeld"
     },
     "studentsPage": {
         "title": "Leerlingen & Klassen",
@@ -356,7 +377,8 @@
         "no_versions_yet": "Nog geen versies opgeslagen.",
         "confirm_restore": "Deze versie herstellen? Niet-opgeslagen wijzigingen gaan verloren.",
         "version_n": "Versie {{n}}",
-        "criteria_count": "criteria"
+        "criteria_count": "criteria",
+        "auto_save_badge": "auto"
     },
     "peerReview": {
         "round_label": "Ronde",
@@ -452,6 +474,20 @@
         "toggle_comments": "Notities bij criterium aan/uit",
         "comment_placeholder": "Notitie bij dit criterium…",
         "unsaved_warning": "Je hebt niet-opgeslagen vergelijkingsscores. Toch verlaten?"
+    },
+    "studentPortal": {
+        "not_found": "Leerling niet gevonden.",
+        "copy_link": "Kopieer portaallink",
+        "link_copied": "Gekopieerd!",
+        "view_portal_btn": "Leerlingweergave",
+        "stat_rubrics": "Beoordeelde rubrieken",
+        "stat_average": "Gemiddelde score",
+        "stat_self_assessments": "Zelfbeoordelingen",
+        "grade_history": "Cijfergeschiedenis",
+        "cefr_progress": "ERK-voortgang",
+        "rubric_grades": "Cijfers & feedback",
+        "no_grades_yet": "Nog geen cijfers geregistreerd.",
+        "score": "Score"
     },
     "selfAssess": {
         "title": "ERK Zelfbeoordeling",
@@ -575,7 +611,19 @@
         "bulk_add_comment": "Opmerking toevoegen aan selectie",
         "bulk_comment_placeholder": "Toe te voegen algemene opmerking…",
         "bulk_comment_confirm": "Toepassen",
-        "batch_docx_export": "{{count}} exporteren als DOCX"
+        "batch_docx_export": "{{count}} exporteren als DOCX",
+        "period_select_class": "Selecteer een klas…",
+        "period_report_title": "Perioderapport / Rapportkaart",
+        "period_report_help": "Genereer een DOCX-rapport per leerling met alle cijfers en feedback binnen een datumbereik.",
+        "period_class": "Klas",
+        "period_from": "Van",
+        "period_to": "Tot",
+        "period_label_field": "Periodeomschrijving",
+        "period_label_placeholder": "bijv. Periode 1 / Semester A",
+        "period_no_students": "Geen leerlingen in deze klas.",
+        "period_generate_btn": "{{count}} rapport(en) genereren",
+        "period_report_success": "{{count}} rapport(en) gegenereerd.",
+        "selected": "geselecteerd"
     },
     "speaking": {
         "page_title": "Spreekopdracht",
