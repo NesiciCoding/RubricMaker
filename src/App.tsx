@@ -6,7 +6,7 @@ import { useApp } from './context/AppContext';
 import { MobileMenuContext } from './context/MobileMenuContext';
 import { getTutorialSteps } from './data/TutorialSteps';
 import { useTranslation } from 'react-i18next';
-import { Loader } from 'lucide-react';
+import { Loader, GraduationCap } from 'lucide-react';
 import LandingPage from './pages/LandingPage';
 import MigrationPrompt from './components/auth/MigrationPrompt';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
@@ -50,7 +50,7 @@ const Spinner = () => {
 };
 
 export default function App() {
-    const { settings, updateSettings, showLanding, isCheckingSession } = useApp();
+    const { settings, students, updateSettings, showLanding, isCheckingSession, signOutFromDatabase } = useApp();
     const { t, i18n } = useTranslation();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const steps = useMemo(() => getTutorialSteps(t), [t, i18n.language]);
@@ -64,6 +64,35 @@ export default function App() {
     }
 
     if (showLanding) return <LandingPage />;
+
+    if (settings.userRole === 'student') {
+        const linkedStudent = settings.userEmail
+            ? students.find((s) => s.email?.toLowerCase() === settings.userEmail!.toLowerCase())
+            : null;
+
+        if (!linkedStudent) {
+            return (
+                <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', flexDirection: 'column', gap: 16, padding: 24, textAlign: 'center' }}>
+                    <GraduationCap size={40} style={{ color: 'var(--text-muted)', opacity: 0.5 }} />
+                    <p style={{ margin: 0, fontWeight: 600, color: 'var(--text)' }}>{t('studentPortal.no_linked_account')}</p>
+                    <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)', maxWidth: 360 }}>{t('studentPortal.no_linked_account_detail')}</p>
+                    <button className="btn btn-secondary btn-sm" onClick={signOutFromDatabase}>{t('studentPortal.sign_out')}</button>
+                </div>
+            );
+        }
+
+        return (
+            <ErrorBoundary>
+                <Suspense fallback={<Spinner />}>
+                    <Routes>
+                        <Route path="/portal/:studentId" element={<StudentPortalPage />} />
+                        <Route path="/privacy" element={<PrivacyPage />} />
+                        <Route path="*" element={<Navigate to={`/portal/${linkedStudent.id}`} replace />} />
+                    </Routes>
+                </Suspense>
+            </ErrorBoundary>
+        );
+    }
 
     const handleJoyrideCallback = (data: { status: string }) => {
         const { status } = data;

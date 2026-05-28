@@ -477,6 +477,9 @@
     },
     "studentPortal": {
         "not_found": "Student not found.",
+        "no_linked_account": "No student account linked to this email.",
+        "no_linked_account_detail": "Ask your teacher to add your email address to your student profile so you can log in here.",
+        "sign_out": "Sign out",
         "copy_link": "Copy portal link",
         "link_copied": "Copied!",
         "view_portal_btn": "Student view",
