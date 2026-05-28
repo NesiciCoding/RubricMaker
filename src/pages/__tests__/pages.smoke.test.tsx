@@ -357,4 +357,16 @@ describe('Page smoke tests — render without crash', () => {
         const { container } = renderPage(<RubricBuilder />, '/rubrics/r1', '/rubrics/:rubricId');
         expect(container.firstChild).toBeTruthy();
     });
+
+    it('StudentPortalPage renders with unknown studentId (not found state)', async () => {
+        const { default: StudentPortalPage } = await import('../StudentPortalPage');
+        const { container } = renderPage(<StudentPortalPage />, '/portal/unknown', '/portal/:studentId');
+        expect(container.firstChild).toBeTruthy();
+    });
+
+    it('StudentPortalPage renders with known studentId', async () => {
+        const { default: StudentPortalPage } = await import('../StudentPortalPage');
+        const { container } = renderPage(<StudentPortalPage />, '/portal/s1', '/portal/:studentId');
+        expect(container.firstChild).toBeTruthy();
+    });
 });
