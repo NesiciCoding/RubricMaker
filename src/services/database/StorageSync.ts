@@ -247,7 +247,11 @@ class StorageSyncService {
             // The profile.role is authoritative; always override whatever userRole
             // is stored in user_settings so the DB is the single source of truth.
             const mergedSettings = profile?.role
-                ? { ...(settings ?? {}), userRole: profile.role }
+                ? {
+                      ...(settings ?? {}),
+                      userRole: profile.role,
+                      ...(profile.email ? { userEmail: profile.email } : {}),
+                  }
                 : (settings ?? undefined);
 
             const result: Partial<StoreData> = {

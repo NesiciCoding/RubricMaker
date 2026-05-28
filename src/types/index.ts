@@ -346,6 +346,8 @@ export interface AppSettings {
      * Defaults to 'admin' so existing installs are unaffected.
      */
     userRole?: UserRole;
+    /** Email of the currently authenticated user (populated from Supabase profile on login). */
+    userEmail?: string;
     /**
      * Password required to switch back to admin from a lower-privilege role.
      * Stored as plain text; this is UI access control, not cryptographic security.

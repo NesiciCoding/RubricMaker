@@ -477,6 +477,9 @@
     },
     "studentPortal": {
         "not_found": "Leerling niet gevonden.",
+        "no_linked_account": "Er is geen leerlingaccount gekoppeld aan dit e-mailadres.",
+        "no_linked_account_detail": "Vraag je docent om je e-mailadres toe te voegen aan je leerlingprofiel zodat je hier kunt inloggen.",
+        "sign_out": "Uitloggen",
         "copy_link": "Kopieer portaallink",
         "link_copied": "Gekopieerd!",
         "view_portal_btn": "Leerlingweergave",
