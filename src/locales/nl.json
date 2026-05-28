@@ -694,6 +694,7 @@
         "share_copied": "Link Gekopieerd!",
         "target_level_label": "Doelniveau",
         "empty_no_cefr": "Nog geen ERK-data. Beoordeel rubrieken met een ERK-doelniveau of laat de leerling een zelfbeoordeling invullen.",
-        "student_not_found": "Leerling niet gevonden."
+        "student_not_found": "Leerling niet gevonden.",
+        "select_student_prompt": "Selecteer een klas en leerling om het CEFR-overzicht te bekijken."
     }
 }

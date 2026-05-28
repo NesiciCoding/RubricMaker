@@ -694,6 +694,7 @@
         "share_copied": "Link Copied!",
         "target_level_label": "Target Level",
         "empty_no_cefr": "No CEFR data yet. Grade rubrics with a CEFR target level or have the student complete a self-assessment.",
-        "student_not_found": "Student not found."
+        "student_not_found": "Student not found.",
+        "select_student_prompt": "Select a class and student to view their CEFR overview."
     }
 }
