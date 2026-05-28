@@ -51,13 +51,9 @@
         "language_nl": "Nederlands",
         "language_help": "Choose your preferred language for the interface.",
         "standards_integration": "Standards Integration",
-        "standards_help_1": "To link standards (CCSS, NGSS, etc.) from the <strong>Common Standards Project</strong>, you need a free API key.",
         "standards_api_key": "CSP API Key",
         "standards_api_placeholder": "Paste your API key here...",
         "standards_setup_instructions": "Setup Instructions",
-        "standards_setup_1": "Register at",
-        "standards_setup_2": "Copy your API Key and paste it above.",
-        "standards_setup_3": "<strong>Important:</strong> Add this app's URL ({{origin}}) to the <strong>Allowed Origins</strong> list on their dashboard, or requests will be blocked by CORS.",
         "comment_bank": "Comment Bank",
         "comment_bank_help": "{{count}} saved comments. Manage your reusable feedback snippets.",
         "action_manage_comments": "Manage Comments",
@@ -104,7 +100,11 @@
         "comparisons_limit_help": "Maximum comparisons each student can appear in. The session stops when all students have reached this limit. 0 means no limit.",
         "scale_name_letter_10": "Letter Grades (10-point)",
         "scale_name_pass_fail": "Pass/Fail",
-        "scale_name_dutch_10": "Dutch Scale (1–10)"
+        "scale_name_dutch_10": "Dutch Scale (1–10)",
+        "standards_help": "To link standards (CCSS, NGSS, etc.) from the <strong>Common Standards Project</strong>, you need a free API key.",
+        "standards_help_plural": "To link standards (CCSS, NGSS, etc.) from the <strong>Common Standards Project</strong>, you need a free API key.",
+        "standards_setup": "Register at",
+        "standards_setup_plural": "Register at"
     },
     "navigation": {
         "dashboard": "Dashboard",
@@ -184,7 +184,6 @@
         "table_grades": "Grades",
         "table_actions": "Actions",
         "rubric_single": "rubric",
-        "rubric_plural": "rubrics",
         "not_graded": "Not graded",
         "grade_prefix": "Grade:",
         "view_profile": "View Profile",
@@ -210,7 +209,9 @@
         "merge_confirm_title": "Confirm Merge",
         "merge_confirm_description": "All students from <strong>{{source}}</strong> will be moved into <strong>{{target}}</strong>. The source class will be deleted. This cannot be undone.",
         "merge_confirm_action": "Merge",
-        "action_export_summaries": "Export Summaries"
+        "action_export_summaries": "Export Summaries",
+        "rubric": "rubrics",
+        "rubric_plural": "rubrics"
     },
     "gradeStudent": {
         "title_prefix": "Grading:",
