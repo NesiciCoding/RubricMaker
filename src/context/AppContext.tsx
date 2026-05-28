@@ -581,28 +581,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
             return;
         }
 
-        storageSync.initAuth(config).then(async () => {
-            if (!storageSync.hasSession()) {
-                setLandingState('show');
-                return;
-            }
+        // Guard: ensures configure+hydrate runs at most once (startup OR auth-change, not both)
+        let sessionHandled = false;
 
-            // Session found — auto-connect and hydrate
-            saveSupabaseConfig(config);
-            const ok = await storageSync.configure(config);
+        async function configureAndEnter(cfg: typeof config) {
+            if (sessionHandled) return;
+            sessionHandled = true;
+            saveSupabaseConfig(cfg);
+            const ok = await storageSync.configure(cfg);
             if (!ok) {
                 setLandingState('show');
                 return;
             }
-
             const fresh = await storageSync.hydrate();
             if (fresh) {
                 const merged = { ...initialStateRef.current, ...fresh } as StoreData;
                 dispatch({ type: 'SET_ALL', payload: merged });
                 flushToLocalStorage(merged);
             }
-
             setLandingState('hide');
+        }
+
+        storageSync.initAuth(config).then(async () => {
+            if (!storageSync.hasSession()) {
+                setLandingState('show');
+                return;
+            }
+
+            // Session already existed on startup — connect and hydrate immediately
+            await configureAndEnter(config);
 
             // Show migration prompt once if local data exists and hasn't been migrated
             if (localStorage.getItem(MIGRATION_DONE_KEY) !== 'true') {
@@ -612,6 +619,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 }
             }
         });
+
+        // Listen for sign-in that happens while the landing page is showing (e.g., OTP)
+        const unsubAuth = storageSync.onAuthChange(async (user) => {
+            if (!user) return;
+            const cfg = loadSupabaseConfig();
+            if (!cfg) return;
+            await configureAndEnter(cfg);
+        });
+
+        return () => unsubAuth();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
