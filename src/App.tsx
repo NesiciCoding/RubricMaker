@@ -1,7 +1,7 @@
 import React, { Suspense, lazy, useMemo, useState } from 'react';
 import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import Sidebar from './components/Layout/Sidebar';
-import Joyride, { STATUS } from 'react-joyride';
+import { Joyride, STATUS } from 'react-joyride';
 import { useApp } from './context/AppContext';
 import { MobileMenuContext } from './context/MobileMenuContext';
 import { getTutorialSteps } from './data/TutorialSteps';
