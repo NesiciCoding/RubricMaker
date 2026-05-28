@@ -39,8 +39,8 @@ export default function ScoreHistogram({ scores }: Props) {
                         border: '1px solid var(--border)',
                         borderRadius: 8,
                     }}
-                    formatter={(count: number | undefined) => {
-                        const c = count ?? 0;
+                    formatter={(count: unknown) => {
+                        const c = typeof count === 'number' ? count : 0;
                         return [`${c} student${c !== 1 ? 's' : ''} (${total > 0 ? ((c / total) * 100).toFixed(0) : 0}%)`, 'Count'];
                     }}
                 />
