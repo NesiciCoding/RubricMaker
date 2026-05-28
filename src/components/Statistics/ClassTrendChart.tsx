@@ -37,7 +37,7 @@ export default function ClassTrendChart({ data }: Props) {
                         border: '1px solid var(--border)',
                         borderRadius: 8,
                     }}
-                    formatter={(value: number | undefined, name: string) => [`${value ?? 0}%`, name]}
+                    formatter={(value: unknown, name: string) => [`${value ?? 0}%`, name]}
                 />
                 <Legend wrapperStyle={{ paddingTop: 8 }} />
                 <Line
