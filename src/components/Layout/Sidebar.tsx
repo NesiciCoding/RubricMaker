@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard,
     BookOpen,
@@ -12,7 +12,6 @@ import {
     Layers,
     ChevronLeft,
     ChevronRight,
-    ChevronDown,
     Shield,
     X,
     GraduationCap,
@@ -31,13 +30,8 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
     const { t } = useTranslation();
     const { rubrics, students } = useApp();
     const location = useLocation();
-    const navigate = useNavigate();
 
     const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === 'true');
-    const [cefrOpen, setCefrOpen] = useState(false);
-    const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, width: 0 });
-    const cefrBtnRef = useRef<HTMLButtonElement>(null);
-    const cefrDropdownRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const w = collapsed ? '64px' : '260px';
@@ -45,9 +39,8 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
         localStorage.setItem(COLLAPSE_KEY, String(collapsed));
     }, [collapsed]);
 
-    // Auto-close mobile drawer and CEFR dropdown on navigation
+    // Auto-close mobile drawer on navigation
     useEffect(() => {
-        setCefrOpen(false);
         if (mobileOpen && onMobileClose) {
             onMobileClose();
         }
@@ -55,42 +48,11 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [location]);
 
-    // Close CEFR dropdown on outside click
-    useEffect(() => {
-        if (!cefrOpen) return;
-        function handler(e: MouseEvent) {
-            if (
-                cefrDropdownRef.current &&
-                !cefrDropdownRef.current.contains(e.target as Node) &&
-                cefrBtnRef.current &&
-                !cefrBtnRef.current.contains(e.target as Node)
-            ) {
-                setCefrOpen(false);
-            }
-        }
-        document.addEventListener('mousedown', handler);
-        return () => document.removeEventListener('mousedown', handler);
-    }, [cefrOpen]);
-
-    function handleCefrClick() {
-        if (!cefrOpen && cefrBtnRef.current) {
-            const rect = cefrBtnRef.current.getBoundingClientRect();
-            if (collapsed) {
-                setDropdownPos({ top: rect.top, left: rect.right + 10, width: 220 });
-            } else {
-                setDropdownPos({ top: rect.bottom + 4, left: rect.left, width: rect.width });
-            }
-        }
-        setCefrOpen((o) => !o);
-    }
-
-    const isCefrActive = location.pathname.includes('/cefr-overview');
-    const sortedStudents = [...students].sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''));
-
     const navItemsTop = [
         { to: '/', icon: LayoutDashboard, label: t('navigation.dashboard'), end: true },
         { to: '/rubrics', icon: BookOpen, label: t('navigation.rubrics') },
         { to: '/students', icon: Users, label: t('navigation.students') },
+        { to: '/cefr-overview', icon: GraduationCap, label: t('navigation.cefr_overview') },
     ];
 
     const navItemsBottom = [
@@ -172,31 +134,6 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
 
                     {navItemsTop.map(renderNavLink)}
 
-                    {/* CEFR Overview — dropdown button */}
-                    <button
-                        ref={cefrBtnRef}
-                        className={`nav-item ${isCefrActive ? 'active' : ''}`}
-                        onClick={handleCefrClick}
-                        aria-label={collapsed ? t('navigation.cefr_overview') : undefined}
-                        data-tooltip={collapsed ? t('navigation.cefr_overview') : undefined}
-                        style={collapsed ? { justifyContent: 'center', padding: '10px 0' } : undefined}
-                    >
-                        <GraduationCap size={16} aria-hidden="true" />
-                        {!collapsed && (
-                            <>
-                                <span style={{ flex: 1 }}>{t('navigation.cefr_overview')}</span>
-                                <ChevronDown
-                                    size={12}
-                                    style={{
-                                        opacity: 0.5,
-                                        transform: cefrOpen ? 'rotate(180deg)' : 'none',
-                                        transition: 'transform 0.2s',
-                                    }}
-                                />
-                            </>
-                        )}
-                    </button>
-
                     {navItemsBottom.map(renderNavLink)}
 
                     {!collapsed && (
@@ -243,63 +180,6 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
                 </div>
             </aside>
 
-            {/* CEFR student picker — rendered outside <aside> so overflow:hidden doesn't clip it */}
-            {cefrOpen && (
-                <div
-                    ref={cefrDropdownRef}
-                    style={{
-                        position: 'fixed',
-                        top: dropdownPos.top,
-                        left: dropdownPos.left,
-                        width: dropdownPos.width || 220,
-                        zIndex: 600,
-                        background: 'var(--bg-elevated)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 8,
-                        maxHeight: 300,
-                        overflowY: 'auto',
-                        boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
-                    }}
-                >
-                    {sortedStudents.length === 0 ? (
-                        <div style={{ padding: '10px 14px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                            {t('students.no_students_yet', 'No students yet')}
-                        </div>
-                    ) : (
-                        sortedStudents.map((s) => (
-                            <button
-                                key={s.id}
-                                className="cefr-dropdown-item"
-                                onClick={() => {
-                                    navigate(`/students/${s.id}/cefr-overview`);
-                                    setCefrOpen(false);
-                                }}
-                            >
-                                <div
-                                    style={{
-                                        width: 26,
-                                        height: 26,
-                                        borderRadius: '50%',
-                                        background: 'var(--accent-soft)',
-                                        color: 'var(--accent)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        fontSize: '0.7rem',
-                                        fontWeight: 700,
-                                        flexShrink: 0,
-                                    }}
-                                >
-                                    {s.name?.charAt(0).toUpperCase() ?? '?'}
-                                </div>
-                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                    {s.name}
-                                </span>
-                            </button>
-                        ))
-                    )}
-                </div>
-            )}
         </>
     );
 }

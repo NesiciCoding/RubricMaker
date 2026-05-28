@@ -29,6 +29,7 @@ const SelfAssessPage = lazy(() => import('./pages/SelfAssessPage'));
 const SpeakingSession = lazy(() => import('./pages/SpeakingSession'));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 const StudentCefrOverviewPage = lazy(() => import('./pages/StudentCefrOverviewPage'));
+const CefrOverviewPage = lazy(() => import('./pages/CefrOverviewPage'));
 const StudentPortalPage = lazy(() => import('./pages/StudentPortalPage'));
 
 // Forces GradeStudent to remount when studentId changes so useState re-initialises.
@@ -146,6 +147,7 @@ export default function App() {
                                 <Route path="/students" element={<StudentsPage />} />
                                 <Route path="/students/:id" element={<StudentProfilePage />} />
                                 <Route path="/students/:id/cefr-overview" element={<StudentCefrOverviewPage />} />
+                                <Route path="/cefr-overview" element={<CefrOverviewPage />} />
                                 <Route path="/portal/:studentId" element={<StudentPortalPage />} />
                                 <Route path="/attachments" element={<AttachmentsPage />} />
                                 <Route path="/export" element={<ExportPage />} />
