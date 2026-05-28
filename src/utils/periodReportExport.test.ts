@@ -70,7 +70,7 @@ describe('periodReportExport', () => {
     it('generates and saves a docx file for a student', async () => {
         await exportPeriodReport(baseInput);
         expect(saveAs).toHaveBeenCalledOnce();
-        const [, filename] = (saveAs as ReturnType<typeof vi.fn>).mock.calls[0];
+        const [, filename] = vi.mocked(saveAs).mock.calls[0];
         expect(filename).toBe('Alice_period_report.docx');
     });
 
@@ -79,7 +79,7 @@ describe('periodReportExport', () => {
             ...baseInput,
             student: { id: 's2', name: 'Alice de Vries', classId: 'c1' },
         });
-        const [, filename] = (saveAs as ReturnType<typeof vi.fn>).mock.calls[0];
+        const [, filename] = vi.mocked(saveAs).mock.calls[0];
         expect(filename).toBe('Alice_de_Vries_period_report.docx');
     });
 
