@@ -1,7 +1,7 @@
 import React, { Suspense, lazy, useMemo, useState } from 'react';
 import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import Sidebar from './components/Layout/Sidebar';
-import { Joyride, STATUS } from 'react-joyride';
+import Joyride, { STATUS } from 'react-joyride';
 import { useApp } from './context/AppContext';
 import { MobileMenuContext } from './context/MobileMenuContext';
 import { getTutorialSteps } from './data/TutorialSteps';
@@ -29,6 +29,7 @@ const SelfAssessPage = lazy(() => import('./pages/SelfAssessPage'));
 const SpeakingSession = lazy(() => import('./pages/SpeakingSession'));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 const StudentCefrOverviewPage = lazy(() => import('./pages/StudentCefrOverviewPage'));
+const CefrOverviewPage = lazy(() => import('./pages/CefrOverviewPage'));
 const StudentPortalPage = lazy(() => import('./pages/StudentPortalPage'));
 
 // Forces GradeStudent to remount when studentId changes so useState re-initialises.
@@ -146,6 +147,7 @@ export default function App() {
                                 <Route path="/students" element={<StudentsPage />} />
                                 <Route path="/students/:id" element={<StudentProfilePage />} />
                                 <Route path="/students/:id/cefr-overview" element={<StudentCefrOverviewPage />} />
+                                <Route path="/cefr-overview" element={<CefrOverviewPage />} />
                                 <Route path="/portal/:studentId" element={<StudentPortalPage />} />
                                 <Route path="/attachments" element={<AttachmentsPage />} />
                                 <Route path="/export" element={<ExportPage />} />
