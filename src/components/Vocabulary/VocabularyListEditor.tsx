@@ -12,8 +12,7 @@ import {
     Tag,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { VocabularyItem, VocabularyCategory, RubricCriterion } from '../types';
-import { nanoid } from '../utils/nanoid';
+import type { VocabularyItem, VocabularyCategory, RubricCriterion } from '../../types';
 
 interface Props {
     rubricId: string;

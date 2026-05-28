@@ -13,6 +13,7 @@ import {
     CheckCircle,
     AlertTriangle,
     ClipboardCheck,
+    ExternalLink,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
@@ -415,6 +416,16 @@ export default function StudentProfilePage() {
                                             </div>
                                         );
                                     })}
+                                </div>
+                                <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end' }}>
+                                    <button
+                                        className="btn btn-primary btn-sm"
+                                        onClick={() => navigate(`/students/${student.id}/cefr-overview`)}
+                                        style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                                    >
+                                        <ExternalLink size={14} />
+                                        {t('cefrOverview.view_button')}
+                                    </button>
                                 </div>
                             </div>
                         )}

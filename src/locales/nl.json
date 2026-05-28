@@ -114,7 +114,8 @@
         "comment_bank": "Opmerkingenbank",
         "export": "Exporteren",
         "attachments": "Bijlagen",
-        "localization": "Localisatie"
+        "localization": "Localisatie",
+        "cefr_overview": "CEFR Overzicht"
     },
     "dashboard": {
         "title": "Dashboard",
@@ -613,5 +614,35 @@
         "auto_lock": "Automatisch vergrendelen als timer afloopt",
         "time_up": "Tijd is om!",
         "clear_marks": "Aantekeningen wissen"
+    },
+    "cefrOverview": {
+        "page_title": "ERK Overzicht",
+        "back_to_profile": "Terug naar Profiel",
+        "view_button": "ERK Overzicht Bekijken",
+        "grid_title": "ERK Kan-ik Raster",
+        "grid_subtitle": "Klik op een cel om de kan-ik uitspraken voor die vaardigheid en dat niveau te bekijken.",
+        "cell_achieved": "Behaald",
+        "cell_developing": "In ontwikkeling",
+        "cell_not_started": "Nog niet gestart",
+        "cell_rubric_score": "{{score}}% ({{count}} rubriek(en))",
+        "cell_confidence": "{{confident}}/{{total}} zeker",
+        "cell_no_data": "Geen data",
+        "descriptors_title": "Kan-ik Uitspraken",
+        "descriptor_confident": "Zeker",
+        "descriptor_not_confident": "Nog niet zeker",
+        "stat_skills_assessed": "Vaardigheden Beoordeeld",
+        "stat_skills_subtitle": "vaardigheid/niveau combinaties met rubrieksdata",
+        "stat_confidence_rate": "Kan-ik Zekerheid",
+        "stat_confidence_subtitle": "van beoordeelde uitspraken als zeker aangemerkt",
+        "stat_standards_covered": "Standaarden Gedekt",
+        "stat_standards_subtitle": "standaarden met rubrieksdata",
+        "standards_title": "Standaarden Dekking",
+        "standards_empty": "Geen standaarden gekoppeld aan rubrieken voor deze leerling.",
+        "standard_rubric_count": "{{count}} rubriek(en)",
+        "share_button": "Overzichtlink Kopiëren",
+        "share_copied": "Link Gekopieerd!",
+        "target_level_label": "Doelniveau",
+        "empty_no_cefr": "Nog geen ERK-data. Beoordeel rubrieken met een ERK-doelniveau of laat de leerling een zelfbeoordeling invullen.",
+        "student_not_found": "Leerling niet gevonden."
     }
 }

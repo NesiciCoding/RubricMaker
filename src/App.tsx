@@ -1,15 +1,15 @@
 import React, { Suspense, lazy, useMemo, useState } from 'react';
 import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import Sidebar from './components/Layout/Sidebar';
-import { Joyride, EventData, STATUS } from 'react-joyride';
+import { Joyride, STATUS } from 'react-joyride';
 import { useApp } from './context/AppContext';
 import { MobileMenuContext } from './context/MobileMenuContext';
-import { getTutorialSteps } from './components/TutorialSteps';
+import { getTutorialSteps } from './data/TutorialSteps';
 import { useTranslation } from 'react-i18next';
 import { Loader } from 'lucide-react';
 import LandingPage from './pages/LandingPage';
 import MigrationPrompt from './components/auth/MigrationPrompt';
-import { ErrorBoundary } from './components/ErrorBoundary';
+import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import NotFoundPage from './pages/NotFoundPage';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -28,6 +28,7 @@ const PeerReviewView = lazy(() => import('./pages/PeerReviewView'));
 const SelfAssessPage = lazy(() => import('./pages/SelfAssessPage'));
 const SpeakingSession = lazy(() => import('./pages/SpeakingSession'));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
+const StudentCefrOverviewPage = lazy(() => import('./pages/StudentCefrOverviewPage'));
 
 // Forces GradeStudent to remount when studentId changes so useState re-initialises.
 function GradeStudentRoute() {
@@ -63,7 +64,7 @@ export default function App() {
 
     if (showLanding) return <LandingPage />;
 
-    const handleJoyrideCallback = (data: EventData) => {
+    const handleJoyrideCallback = (data: { status: string }) => {
         const { status } = data;
         const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
         if (finishedStatuses.includes(status)) {
@@ -114,6 +115,7 @@ export default function App() {
                                 <Route path="/grade-comparative/:classId/:rubricId" element={<ComparativeGrading />} />
                                 <Route path="/students" element={<StudentsPage />} />
                                 <Route path="/students/:id" element={<StudentProfilePage />} />
+                                <Route path="/students/:id/cefr-overview" element={<StudentCefrOverviewPage />} />
                                 <Route path="/attachments" element={<AttachmentsPage />} />
                                 <Route path="/export" element={<ExportPage />} />
                                 <Route path="/statistics" element={<StatisticsPage />} />

@@ -244,7 +244,7 @@ vi.mock('../../components/Comments/CommentBankModal', () => ({
         ),
 }));
 
-vi.mock('../../components/TemplateUploadModal', () => ({
+vi.mock('../../components/Rubric/TemplateUploadModal', () => ({
     default: ({ onClose }: { onClose: () => void }) =>
         React.createElement(
             'div',
@@ -253,7 +253,7 @@ vi.mock('../../components/TemplateUploadModal', () => ({
         ),
 }));
 
-vi.mock('../../components/ImportRubricModal', () => ({
+vi.mock('../../components/Rubric/ImportRubricModal', () => ({
     default: ({ onClose }: { onClose: () => void }) =>
         React.createElement(
             'div',
@@ -262,7 +262,7 @@ vi.mock('../../components/ImportRubricModal', () => ({
         ),
 }));
 
-vi.mock('../../components/CsvImportModal', () => ({
+vi.mock('../../components/Students/CsvImportModal', () => ({
     default: ({ onClose }: { onClose: () => void }) =>
         React.createElement(
             'div',

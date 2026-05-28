@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { X, Plus, Search, Trash2, Edit2, Tag, Check, Save } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { CommentBankItem } from '../../types';
-import Modal from '../Modal';
+import Modal from '../ui/Modal';
 
 interface CommentBankModalProps {
     onClose: () => void;

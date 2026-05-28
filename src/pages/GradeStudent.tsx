@@ -19,11 +19,11 @@ import {
 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import CommentBankModal from '../components/Comments/CommentBankModal';
-import AttachmentViewer from '../components/AttachmentViewer';
-import DocumentAnalysisPanel from '../components/DocumentAnalysisPanel';
-import EssayAssignmentModal from '../components/EssayAssignmentModal';
-import EssayImportModal from '../components/EssayImportModal';
-import EssaySlipSheet from '../components/EssaySlipSheet';
+import AttachmentViewer from '../components/Attachments/AttachmentViewer';
+import DocumentAnalysisPanel from '../components/Essay/DocumentAnalysisPanel';
+import EssayAssignmentModal from '../components/Essay/EssayAssignmentModal';
+import EssayImportModal from '../components/Essay/EssayImportModal';
+import EssaySlipSheet from '../components/Essay/EssaySlipSheet';
 import { useApp } from '../context/AppContext';
 import { useTranslation } from 'react-i18next';
 import { useVoiceGrading } from '../hooks/useVoiceGrading';

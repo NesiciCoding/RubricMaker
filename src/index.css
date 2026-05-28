@@ -316,6 +316,25 @@ h3 {
     border-top: 1px solid var(--border);
 }
 
+.cefr-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    text-align: left;
+    padding: 8px 14px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: var(--text);
+    transition: background var(--transition);
+}
+
+.cefr-dropdown-item:hover {
+    background: var(--bg-card);
+}
+
 /* ─── Topbar ────────────────────────────────────────────────────────────────── */
 .topbar {
     height: var(--topbar-h);

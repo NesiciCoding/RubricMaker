@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { X, Printer } from 'lucide-react';
 import QRCode from 'qrcode';
-import { encodeEssayAssignment } from '../utils/essayShareCode';
-import type { EssayAssignment } from '../types';
+import { encodeEssayAssignment } from '../../utils/essayShareCode';
+import type { EssayAssignment } from '../../types';
 
 interface ClassStudent {
     id: string;

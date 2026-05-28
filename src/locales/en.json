@@ -114,7 +114,8 @@
         "comment_bank": "Comment Bank",
         "export": "Export",
         "attachments": "Attachments",
-        "localization": "Localization"
+        "localization": "Localization",
+        "cefr_overview": "CEFR Overview"
     },
     "dashboard": {
         "title": "Dashboard",
@@ -613,5 +614,35 @@
         "auto_lock": "Auto-lock when timer ends",
         "time_up": "Time's up!",
         "clear_marks": "Clear marks"
+    },
+    "cefrOverview": {
+        "page_title": "CEFR Overview",
+        "back_to_profile": "Back to Profile",
+        "view_button": "View CEFR Overview",
+        "grid_title": "CEFR Can-Do Grid",
+        "grid_subtitle": "Click any cell to expand the Can-Do statements for that skill and level.",
+        "cell_achieved": "Achieved",
+        "cell_developing": "Developing",
+        "cell_not_started": "Not started",
+        "cell_rubric_score": "{{score}}% ({{count}} rubric(s))",
+        "cell_confidence": "{{confident}}/{{total}} confident",
+        "cell_no_data": "No data",
+        "descriptors_title": "Can-Do Statements",
+        "descriptor_confident": "Confident",
+        "descriptor_not_confident": "Not yet confident",
+        "stat_skills_assessed": "Skills Assessed",
+        "stat_skills_subtitle": "skill/level combos with rubric data",
+        "stat_confidence_rate": "Can-Do Confidence",
+        "stat_confidence_subtitle": "of assessed statements marked confident",
+        "stat_standards_covered": "Standards Covered",
+        "stat_standards_subtitle": "standards with rubric data",
+        "standards_title": "Standards Coverage",
+        "standards_empty": "No standards linked to rubrics for this student.",
+        "standard_rubric_count": "{{count}} rubric(s)",
+        "share_button": "Copy Overview Link",
+        "share_copied": "Link Copied!",
+        "target_level_label": "Target Level",
+        "empty_no_cefr": "No CEFR data yet. Grade rubrics with a CEFR target level or have the student complete a self-assessment.",
+        "student_not_found": "Student not found."
     }
 }

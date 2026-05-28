@@ -5,8 +5,8 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import ImportRubricModal from '../ImportRubricModal';
-import TemplateUploadModal from '../TemplateUploadModal';
+import ImportRubricModal from '../Rubric/ImportRubricModal';
+import TemplateUploadModal from '../Rubric/TemplateUploadModal';
 
 // ─── Shared mocks ─────────────────────────────────────────────────────────────
 
