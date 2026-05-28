@@ -584,7 +584,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // Guard: ensures configure+hydrate runs at most once (startup OR auth-change, not both)
         let sessionHandled = false;
 
-        async function configureAndEnter(cfg: typeof config) {
+        async function configureAndEnter(cfg: DatabaseConfig) {
             if (sessionHandled) return;
             sessionHandled = true;
             saveSupabaseConfig(cfg);
