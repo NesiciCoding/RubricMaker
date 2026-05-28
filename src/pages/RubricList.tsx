@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Plus,
@@ -19,7 +19,10 @@ import {
 import Topbar from '../components/Layout/Topbar';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
+import { useDbStatus } from '../hooks/useDbStatus';
+import { storageSync } from '../services/database';
 import { DEFAULT_FORMAT } from '../types';
+import type { Rubric } from '../types';
 import type { VoTrack, CefrLevel } from '../types';
 import { VO_TRACKS, VO_TRACK_LABELS, VO_TRACK_COLORS, VO_TRACK_DEFAULT_CEFR } from '../data/voTracks';
 import { CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
@@ -46,6 +49,13 @@ export default function RubricList() {
     const [differentiateId, setDifferentiateId] = useState<string | null>(null);
     const [diffTrack, setDiffTrack] = useState<VoTrack>('havo');
     const [diffCefr, setDiffCefr] = useState<CefrLevel>('B1');
+    const [sharedWithMe, setSharedWithMe] = useState<Rubric[]>([]);
+    const dbStatus = useDbStatus();
+
+    useEffect(() => {
+        if (!dbStatus.isConnected) { setSharedWithMe([]); return; }
+        storageSync.adapter.fetchSharedRubrics().then(setSharedWithMe);
+    }, [dbStatus.isConnected]);
 
     function handleCopyShareCode(rubricId: string) {
         const rubric = rubrics.find((r) => r.id === rubricId);
@@ -404,6 +414,33 @@ export default function RubricList() {
                                 </div>
                             );
                         })}
+                    </div>
+                )}
+
+                {sharedWithMe.length > 0 && (
+                    <div style={{ marginTop: 32 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                            <Share2 size={15} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>{t('rubricList.shared_with_me')}</h3>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            {sharedWithMe.map((r) => (
+                                <div
+                                    key={r.id}
+                                    style={{ padding: '12px 14px', background: 'var(--bg-elevated)', borderRadius: 10, border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}
+                                    onClick={() => navigate(`/rubrics/${r.id}`)}
+                                >
+                                    <BookOpen size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} aria-hidden="true" />
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ fontWeight: 600, fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</div>
+                                        {r.subject && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{r.subject}</div>}
+                                    </div>
+                                    <span style={{ fontSize: '0.7rem', padding: '2px 7px', borderRadius: 4, background: 'var(--accent-soft)', color: 'var(--accent)', fontWeight: 500, flexShrink: 0 }}>
+                                        {t('rubricList.shared_badge')}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 )}
 

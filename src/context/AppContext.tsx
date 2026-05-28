@@ -111,7 +111,21 @@ function reducer(state: StoreData, action: Action): StoreData {
             return { ...state, rubrics: next };
         }
         case 'UPDATE_RUBRIC': {
-            const next = state.rubrics.map((r) => (r.id === action.payload.id ? action.payload : r));
+            const existing = state.rubrics.find((r) => r.id === action.payload.id);
+            let incoming = action.payload;
+            if (existing) {
+                const { versions: _v, ...snap } = existing;
+                const autoVersion: RubricVersion = {
+                    savedAt: new Date().toISOString(),
+                    label: 'auto:',
+                    snapshot: snap,
+                };
+                const prevVersions = existing.versions ?? [];
+                const manuals = prevVersions.filter((v) => !v.label?.startsWith('auto:'));
+                const autos = prevVersions.filter((v) => v.label?.startsWith('auto:')).slice(-19);
+                incoming = { ...incoming, versions: [...manuals, ...autos, autoVersion] };
+            }
+            const next = state.rubrics.map((r) => (r.id === action.payload.id ? incoming : r));
             saveRubrics(next);
             return { ...state, rubrics: next };
         }

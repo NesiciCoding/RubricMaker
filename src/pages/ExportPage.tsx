@@ -11,6 +11,7 @@ import {
     Share2,
     XCircle,
     MessageSquare,
+    ClipboardList,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
@@ -24,6 +25,7 @@ export default function ExportPage() {
     const {
         rubrics,
         students,
+        classes,
         studentRubrics,
         gradeScales,
         settings,
@@ -42,6 +44,14 @@ export default function ExportPage() {
     const [orientation, setOrientation] = useState<'portrait' | 'landscape' | undefined>(undefined);
     const [showBulkComment, setShowBulkComment] = useState(false);
     const [bulkCommentText, setBulkCommentText] = useState('');
+
+    // ── Period report state ────────────────────────────────────────────────────
+    const [reportClassId, setReportClassId] = useState('');
+    const [reportStudentIds, setReportStudentIds] = useState<Set<string>>(new Set());
+    const [reportDateFrom, setReportDateFrom] = useState('');
+    const [reportDateTo, setReportDateTo] = useState('');
+    const [reportPeriodLabel, setReportPeriodLabel] = useState('');
+    const [generatingReport, setGeneratingReport] = useState(false);
 
     const activeTemplateId = settings.exportTemplateId ?? '';
     const activeTemplate = exportTemplates.find((t) => t.id === activeTemplateId) ?? null;
@@ -232,6 +242,55 @@ export default function ExportPage() {
         showToast(`Added comment to ${selectedStudentIds.size} student(s)`, 'success');
         setBulkCommentText('');
         setShowBulkComment(false);
+    }
+
+    async function handleGeneratePeriodReports() {
+        if (reportStudentIds.size === 0) return;
+        setGeneratingReport(true);
+        try {
+            const { exportPeriodReportsBatch } = await import('../utils/periodReportExport');
+            const fromTs = reportDateFrom ? new Date(reportDateFrom).getTime() : 0;
+            const toTs = reportDateTo ? new Date(reportDateTo + 'T23:59:59').getTime() : Infinity;
+            const classStudents = students.filter((s) => s.classId === reportClassId && reportStudentIds.has(s.id));
+            const cls = classes.find((c) => c.id === reportClassId);
+
+            const inputs = classStudents.map((student) => {
+                const srs = studentRubrics.filter(
+                    (sr) =>
+                        sr.studentId === student.id &&
+                        sr.gradedAt &&
+                        !sr.isPeerReview &&
+                        !sr.notHandedIn &&
+                        new Date(sr.gradedAt).getTime() >= fromTs &&
+                        new Date(sr.gradedAt).getTime() <= toTs
+                );
+                const entries = srs
+                    .map((sr) => {
+                        const rubric = sr.rubricSnapshot ?? rubrics.find((r) => r.id === sr.rubricId);
+                        if (!rubric) return null;
+                        const scale =
+                            gradeScales.find((g) => g.id === (rubric.gradeScaleId ?? settings.defaultGradeScaleId)) ??
+                            gradeScales[0] ??
+                            null;
+                        return { sr, rubric, scale };
+                    })
+                    .filter(Boolean) as import('../utils/periodReportExport').PeriodReportEntry[];
+
+                return {
+                    student,
+                    className: cls?.name ?? '',
+                    entries,
+                    periodLabel: reportPeriodLabel || undefined,
+                };
+            });
+
+            await exportPeriodReportsBatch(inputs);
+            showToast(t('exportPage.period_report_success', { count: inputs.length }), 'success');
+        } catch {
+            showToast(t('toast.export_error'), 'error');
+        } finally {
+            setGeneratingReport(false);
+        }
     }
 
     return (
@@ -707,6 +766,84 @@ export default function ExportPage() {
                         </table>
                     </>
                 )}
+            </div>
+
+            {/* ── Period / Report Card Generator ─────────────────────────────── */}
+            <div className="card" style={{ marginTop: 24 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                    <ClipboardList size={16} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                    <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>{t('exportPage.period_report_title')}</h3>
+                </div>
+                <p style={{ margin: '0 0 16px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                    {t('exportPage.period_report_help')}
+                </p>
+
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
+                    <div className="form-group" style={{ flex: '1 1 160px', marginBottom: 0 }}>
+                        <label style={{ fontSize: '0.8rem' }}>{t('exportPage.period_class')}</label>
+                        <select value={reportClassId} onChange={(e) => { setReportClassId(e.target.value); setReportStudentIds(new Set()); }}>
+                            <option value="">{t('exportPage.period_select_class')}</option>
+                            {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        </select>
+                    </div>
+                    <div className="form-group" style={{ flex: '1 1 130px', marginBottom: 0 }}>
+                        <label style={{ fontSize: '0.8rem' }}>{t('exportPage.period_from')}</label>
+                        <input type="date" value={reportDateFrom} onChange={(e) => setReportDateFrom(e.target.value)} />
+                    </div>
+                    <div className="form-group" style={{ flex: '1 1 130px', marginBottom: 0 }}>
+                        <label style={{ fontSize: '0.8rem' }}>{t('exportPage.period_to')}</label>
+                        <input type="date" value={reportDateTo} onChange={(e) => setReportDateTo(e.target.value)} />
+                    </div>
+                    <div className="form-group" style={{ flex: '1 1 160px', marginBottom: 0 }}>
+                        <label style={{ fontSize: '0.8rem' }}>{t('exportPage.period_label_field')}</label>
+                        <input type="text" value={reportPeriodLabel} onChange={(e) => setReportPeriodLabel(e.target.value)} placeholder={t('exportPage.period_label_placeholder')} />
+                    </div>
+                </div>
+
+                {/* Student selector for this class */}
+                {reportClassId && (() => {
+                    const classStudents = students.filter((s) => s.classId === reportClassId);
+                    if (classStudents.length === 0) return <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{t('exportPage.period_no_students')}</p>;
+                    const allSelected = classStudents.every((s) => reportStudentIds.has(s.id));
+                    return (
+                        <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                                <button
+                                    className="btn btn-ghost btn-sm"
+                                    onClick={() => setReportStudentIds(allSelected ? new Set() : new Set(classStudents.map((s) => s.id)))}
+                                >
+                                    {allSelected ? <CheckSquare size={14} /> : <Square size={14} />}
+                                    {allSelected ? t('exportPage.deselect_all') : t('exportPage.select_all')}
+                                </button>
+                                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                    {reportStudentIds.size} / {classStudents.length} {t('exportPage.selected')}
+                                </span>
+                            </div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                {classStudents.map((s) => (
+                                    <button
+                                        key={s.id}
+                                        className={`btn btn-sm ${reportStudentIds.has(s.id) ? 'btn-primary' : 'btn-secondary'}`}
+                                        onClick={() => setReportStudentIds((prev) => { const n = new Set(prev); if (n.has(s.id)) n.delete(s.id); else n.add(s.id); return n; })}
+                                    >
+                                        {s.name}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    );
+                })()}
+
+                <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
+                    <button
+                        className="btn btn-primary"
+                        disabled={reportStudentIds.size === 0 || generatingReport}
+                        onClick={handleGeneratePeriodReports}
+                    >
+                        {generatingReport ? <Loader size={14} className="spin" /> : <Download size={14} />}
+                        {t('exportPage.period_generate_btn', { count: reportStudentIds.size })}
+                    </button>
+                </div>
             </div>
         </>
     );

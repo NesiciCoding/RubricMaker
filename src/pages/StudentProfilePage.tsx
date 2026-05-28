@@ -176,9 +176,14 @@ export default function StudentProfilePage() {
             <Topbar
                 title="Student Profile"
                 actions={
-                    <button className="btn btn-ghost btn-sm" onClick={() => navigate('/students')}>
-                        <ArrowLeft size={15} /> Back to Roster
-                    </button>
+                    <>
+                        <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/portal/${student.id}`)}>
+                            <ExternalLink size={14} /> {t('studentPortal.view_portal_btn')}
+                        </button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => navigate('/students')}>
+                            <ArrowLeft size={15} /> Back to Roster
+                        </button>
+                    </>
                 }
             />
             <div className="page-content fade-in">

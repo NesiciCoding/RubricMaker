@@ -2632,9 +2632,15 @@ export default function RubricBuilder() {
                                                 }}
                                             >
                                                 <div style={{ flex: 1 }}>
-                                                    <div style={{ fontWeight: 600, fontSize: '0.87rem' }}>
-                                                        {v.label ||
-                                                            t('rubricBuilder.version_n', { n: actualIndex + 1 })}
+                                                    <div style={{ fontWeight: 600, fontSize: '0.87rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                        {v.label?.startsWith('auto:')
+                                                            ? t('rubricBuilder.version_n', { n: actualIndex + 1 })
+                                                            : v.label || t('rubricBuilder.version_n', { n: actualIndex + 1 })}
+                                                        {v.label?.startsWith('auto:') && (
+                                                            <span style={{ fontSize: '0.65rem', padding: '1px 5px', borderRadius: 4, background: 'var(--bg-panel)', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 400 }}>
+                                                                {t('rubricBuilder.auto_save_badge')}
+                                                            </span>
+                                                        )}
                                                     </div>
                                                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                                                         {new Date(v.savedAt).toLocaleString()} ·{' '}

@@ -965,6 +965,26 @@ export class SupabaseAdapter {
         return error ? { success: false, error: error.message } : { success: true };
     }
 
+    async fetchRubricShares(rubricId: string): Promise<{ userId: string; email?: string; displayName?: string; mode: 'read' | 'edit' }[]> {
+        const { data, error } = await this.db()
+            .from('rubric_shares')
+            .select('user_id, mode, profiles(email, display_name)')
+            .eq('rubric_id', rubricId);
+        if (error) {
+            console.error('fetchRubricShares', error);
+            return [];
+        }
+        return (data ?? []).map((row) => {
+            const p = (row as unknown as { profiles: { email?: string; display_name?: string } | null }).profiles;
+            return {
+                userId: row.user_id as string,
+                email: p?.email ?? undefined,
+                displayName: p?.display_name ?? undefined,
+                mode: row.mode as 'read' | 'edit',
+            };
+        });
+    }
+
     async fetchSharedRubrics(): Promise<Rubric[]> {
         const { data, error } = await this.db().from('rubric_shares').select('rubrics(data)').eq('user_id', this.uid());
         if (error) {
@@ -1001,6 +1021,26 @@ export class SupabaseAdapter {
             .eq('class_id', classId)
             .eq('user_id', targetUserId);
         return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async fetchClassMembers(classId: string): Promise<{ userId: string; email?: string; displayName?: string; role: 'viewer' | 'editor' }[]> {
+        const { data, error } = await this.db()
+            .from('class_members')
+            .select('user_id, role, profiles(email, display_name)')
+            .eq('class_id', classId);
+        if (error) {
+            console.error('fetchClassMembers', error);
+            return [];
+        }
+        return (data ?? []).map((row) => {
+            const p = (row as unknown as { profiles: { email?: string; display_name?: string } | null }).profiles;
+            return {
+                userId: row.user_id as string,
+                email: p?.email ?? undefined,
+                displayName: p?.display_name ?? undefined,
+                role: row.role as 'viewer' | 'editor',
+            };
+        });
     }
 
     // ── Account deletion ──────────────────────────────────────────────────────
