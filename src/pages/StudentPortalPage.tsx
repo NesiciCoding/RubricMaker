@@ -54,7 +54,7 @@ export default function StudentPortalPage() {
                 dateStr: string;
                 score: number;
             }[];
-    }, [student, studentRubrics, rubrics, gradeScales, settings, lang]);
+    }, [student, studentRubrics, rubrics, gradeScales, settings]);
 
     interface CefrEntry {
         level: CefrLevel;

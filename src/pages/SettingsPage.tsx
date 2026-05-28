@@ -90,6 +90,7 @@ export default function SettingsPage() {
         addExportTemplate,
         deleteExportTemplate,
         rubrics,
+        classes,
         connectDatabase,
         disconnectDatabase,
         pushAllToDatabase,
