@@ -131,13 +131,6 @@ export default function StudentPortalPage() {
                 showSkipButton
                 callback={handleTourCallback}
                 styles={{
-                    options: {
-                        primaryColor: 'var(--accent)',
-                        backgroundColor: 'var(--bg-elevated)',
-                        textColor: 'var(--text)',
-                        arrowColor: 'var(--bg-elevated)',
-                        overlayColor: 'rgba(0, 0, 0, 0.6)',
-                    },
                     tooltipContainer: {
                         textAlign: 'left',
                     },
