@@ -1,7 +1,7 @@
 import React, { Suspense, lazy, useMemo, useState } from 'react';
 import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import Sidebar from './components/Layout/Sidebar';
-import { Joyride, STATUS } from 'react-joyride';
+import Joyride, { STATUS, type CallBackProps } from 'react-joyride';
 import { useApp } from './context/AppContext';
 import { MobileMenuContext } from './context/MobileMenuContext';
 import { getTutorialSteps } from './data/TutorialSteps';
@@ -95,10 +95,9 @@ export default function App() {
         );
     }
 
-    const handleJoyrideCallback = (data: { status: string }) => {
+    const handleJoyrideCallback = (data: CallBackProps) => {
         const { status } = data;
-        const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
-        if (finishedStatuses.includes(status)) {
+        if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
             updateSettings({ hasSeenTutorial: true });
         }
     };
@@ -114,17 +113,17 @@ export default function App() {
                     steps={steps}
                     run={!settings.hasSeenTutorial}
                     continuous
-                    onEvent={handleJoyrideCallback}
-                    options={{
-                        primaryColor: 'var(--accent)',
-                        backgroundColor: 'var(--bg-elevated)',
-                        textColor: 'var(--text)',
-                        arrowColor: 'var(--bg-elevated)',
-                        overlayColor: 'rgba(0, 0, 0, 0.6)',
-                        showProgress: true,
-                        buttons: ['back', 'skip', 'primary'],
-                    }}
+                    showProgress
+                    showSkipButton
+                    callback={handleJoyrideCallback}
                     styles={{
+                        options: {
+                            primaryColor: 'var(--accent)',
+                            backgroundColor: 'var(--bg-elevated)',
+                            textColor: 'var(--text)',
+                            arrowColor: 'var(--bg-elevated)',
+                            overlayColor: 'rgba(0, 0, 0, 0.6)',
+                        },
                         tooltipContainer: {
                             textAlign: 'left',
                         },
