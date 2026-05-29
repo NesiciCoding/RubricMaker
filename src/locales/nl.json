@@ -51,6 +51,8 @@
         "theme_light": "Licht",
         "language_en": "English",
         "language_nl": "Nederlands",
+        "language_fr": "Français",
+        "language_de": "Deutsch",
         "language_help": "Kies je voorkeurstaal voor de interface.",
         "standards_integration": "Standaarden Integratie",
         "standards_help_1": "Om standaarden (CCSS, NGSS, etc.) van het <strong>Common Standards Project</strong> te koppelen, heb je een gratis API key nodig.",
@@ -104,6 +106,9 @@
         "comparisons_limit_infinite": "Onbeperkt",
         "comparisons_limit_placeholder": "0 = onbeperkt (standaard)",
         "comparisons_limit_help": "Maximum koppelronden waarbij elke leerling kan verschijnen. De sessie stopt als alle leerlingen dit maximum hebben bereikt. 0 betekent geen limiet.",
+        "overdue_reminder": "Herinnering Achterstallig Nakijken",
+        "overdue_threshold_label": "Dagen sinds laatste nakijken",
+        "overdue_threshold_help": "Leerlingen die langer dan dit aantal dagen niet zijn nagekeken verschijnen in de meldingenbell.",
         "scale_name_letter_10": "Lettercijfers (10-punt)",
         "scale_name_pass_fail": "Geslaagd/Gezakt",
         "scale_name_dutch_10": "Nederlandse schaal (1–10)",
@@ -281,7 +286,14 @@
         "audio_remove": "Audio verwijderen",
         "mark_as_anchor": "Markeer als anker",
         "anchor_panel_title": "Ankerwerk",
-        "anchor_panel_hide": "Anker verbergen"
+        "anchor_panel_hide": "Anker verbergen",
+        "shortcuts_title": "Sneltoetsen",
+        "shortcut_level": "Selecteer niveau voor gefocust criterium",
+        "shortcut_tab": "Ga naar volgend / vorig criterium",
+        "shortcut_save": "Opslaan & ga naar volgende leerling",
+        "shortcut_help": "Toon dit overzicht",
+        "shortcut_esc": "Criterium-focus wissen",
+        "action_print": "Afdrukken"
     },
     "rubricBuilder": {
         "action_back": "Terug",
@@ -380,7 +392,8 @@
         "confirm_restore": "Deze versie herstellen? Niet-opgeslagen wijzigingen gaan verloren.",
         "version_n": "Versie {{n}}",
         "criteria_count": "criteria",
-        "auto_save_badge": "auto"
+        "auto_save_badge": "auto",
+        "action_print": "Rubriek afdrukken"
     },
     "peerReview": {
         "round_label": "Ronde",
@@ -429,6 +442,14 @@
         "achieve_threshold_help": "Een score op of boven dit percentage telt als 'Behaald' op het leerlingprofiel.",
         "progress_chart_title": "ERK Vaardigheden Radar",
         "no_chart_data": "Onvoldoende vaardigheidsdata voor een grafiek."
+    },
+    "framework": {
+        "picker_title": "Beoordelingskader Uitspraken",
+        "picker_subtitle": "Koppel CEFR-, IB- of Bloom-uitspraken aan dit criterium",
+        "ib_short": "IB-Leerprofiel",
+        "blooms_short": "Taxonomie van Bloom",
+        "action_link_descriptor": "Uitspraak Koppelen",
+        "selected_count": "{{count}} uitspraak/uitspraken gekoppeld"
     },
     "voTrack": {
         "section_label": "VO-Niveau",
@@ -706,5 +727,22 @@
         "empty_no_cefr": "Nog geen ERK-data. Beoordeel rubrieken met een ERK-doelniveau of laat de leerling een zelfbeoordeling invullen.",
         "student_not_found": "Leerling niet gevonden.",
         "select_student_prompt": "Selecteer een klas en leerling om het CEFR-overzicht te bekijken."
+    },
+    "analysis": {
+        "add_to_bank": "Voeg toe aan bank",
+        "added_to_bank": "Toegevoegd"
+    },
+    "notifications": {
+        "bell_title": "Meldingen ({{count}} achterstallig)",
+        "panel_title": "Achterstallige Leerlingen",
+        "all_up_to_date": "Alle leerlingen zijn de afgelopen {{threshold}} dagen nagekeken.",
+        "overdue_subtitle": "{{count}} leerling(en) al {{threshold}}+ dagen niet nagekeken",
+        "days_ago": "{{count}}d geleden",
+        "more_overdue": "+{{count}} meer",
+        "enable_push": "Browsernotificaties inschakelen",
+        "enable_btn": "Inschakelen",
+        "permission_denied": "Browsernotificaties geblokkeerd. Sta ze toe in de browserinstellingen.",
+        "browser_title": "RubricMaker — Achterstallige Leerlingen",
+        "browser_body": "{{count}} leerling(en) al {{threshold}}+ dagen niet nagekeken."
     }
 }

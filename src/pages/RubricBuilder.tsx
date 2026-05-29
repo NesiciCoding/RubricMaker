@@ -30,6 +30,7 @@ import {
     GripHorizontal,
     Clock,
     RotateCcw,
+    Printer,
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import Topbar from '../components/Layout/Topbar';
@@ -46,6 +47,7 @@ import type {
     CefrLevel,
     CefrSkill,
     LinkedCefrDescriptor,
+    LinkedFrameworkDescriptor,
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 import { nanoid } from '../utils/nanoid';
@@ -256,6 +258,15 @@ export default function RubricBuilder() {
             setTimeout(() => URL.revokeObjectURL(url), 100);
         }
     };
+
+    function handlePrint() {
+        const orientation = format.orientation || 'portrait';
+        const style = document.createElement('style');
+        style.textContent = `@page { size: A4 ${orientation}; }`;
+        document.head.appendChild(style);
+        window.print();
+        document.head.removeChild(style);
+    }
 
     const handleSave = useCallback(() => {
         if (!name.trim()) {
@@ -555,6 +566,30 @@ export default function RubricBuilder() {
         );
     }
 
+    function addFrameworkDescriptor(cid: string, descriptor: LinkedFrameworkDescriptor) {
+        setCriteria((c) =>
+            c.map((x) =>
+                x.id === cid
+                    ? { ...x, frameworkDescriptors: [...(x.frameworkDescriptors || []), descriptor] }
+                    : x
+            )
+        );
+    }
+    function removeFrameworkDescriptor(cid: string, descriptorId: string) {
+        setCriteria((c) =>
+            c.map((x) =>
+                x.id === cid
+                    ? {
+                          ...x,
+                          frameworkDescriptors: (x.frameworkDescriptors || []).filter(
+                              (d) => d.descriptorId !== descriptorId
+                          ),
+                      }
+                    : x
+            )
+        );
+    }
+
     return (
         <>
             <Topbar
@@ -644,6 +679,13 @@ export default function RubricBuilder() {
                                         >
                                             <FileText size={14} /> {t('rubricBuilder.action_download_json')}
                                         </button>
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            style={{ justifyContent: 'flex-start' }}
+                                            onClick={() => { setShowExportMenu(false); handlePrint(); }}
+                                        >
+                                            <Printer size={14} /> {t('rubricBuilder.action_print')}
+                                        </button>
                                     </div>
                                 </>
                             )}
@@ -666,6 +708,7 @@ export default function RubricBuilder() {
             />
             <div className="page-content fade-in">
                 <div
+                    className="rubric-builder-layout"
                     style={{
                         display: 'grid',
                         gridTemplateColumns: showFormat ? '1fr 300px' : '1fr',
@@ -1036,7 +1079,7 @@ export default function RubricBuilder() {
                                                     <div
                                                         ref={provided.innerRef}
                                                         {...provided.draggableProps}
-                                                        className="card"
+                                                        className="card print-criterion"
                                                         style={{
                                                             marginBottom: 16,
                                                             ...provided.draggableProps.style,
@@ -1284,8 +1327,9 @@ export default function RubricBuilder() {
                                                                         onClick={() => setPickingCefrFor(criterion.id)}
                                                                     >
                                                                         <BookOpen size={13} />{' '}
-                                                                        {t('cefr.action_link_descriptor')}
-                                                                        {(criterion.cefrDescriptors || []).length >
+                                                                        {t('framework.action_link_descriptor')}
+                                                                        {((criterion.cefrDescriptors || []).length +
+                                                                            (criterion.frameworkDescriptors || []).length) >
                                                                             0 && (
                                                                             <span
                                                                                 style={{
@@ -1298,7 +1342,8 @@ export default function RubricBuilder() {
                                                                                     marginLeft: 4,
                                                                                 }}
                                                                             >
-                                                                                {criterion.cefrDescriptors!.length}
+                                                                                {(criterion.cefrDescriptors || []).length +
+                                                                                    (criterion.frameworkDescriptors || []).length}
                                                                             </span>
                                                                         )}
                                                                     </button>
@@ -1363,6 +1408,78 @@ export default function RubricBuilder() {
                                                                                     }}
                                                                                     onClick={() =>
                                                                                         removeCefrDescriptor(
+                                                                                            criterion.id,
+                                                                                            d.descriptorId
+                                                                                        )
+                                                                                    }
+                                                                                >
+                                                                                    <X size={11} />
+                                                                                </button>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+
+                                                                {/* IB / Bloom's descriptors display */}
+                                                                {(criterion.frameworkDescriptors || []).length > 0 && (
+                                                                    <div
+                                                                        style={{
+                                                                            marginTop: 8,
+                                                                            display: 'flex',
+                                                                            flexWrap: 'wrap',
+                                                                            gap: 6,
+                                                                        }}
+                                                                    >
+                                                                        {criterion.frameworkDescriptors!.map((d) => (
+                                                                            <div
+                                                                                key={d.descriptorId}
+                                                                                style={{
+                                                                                    display: 'inline-flex',
+                                                                                    alignItems: 'center',
+                                                                                    gap: 6,
+                                                                                    background: `color-mix(in srgb, ${d.categoryColor} 8%, transparent)`,
+                                                                                    border: `1px solid color-mix(in srgb, ${d.categoryColor} 25%, transparent)`,
+                                                                                    borderRadius: 8,
+                                                                                    padding: '4px 10px',
+                                                                                    fontSize: '0.78rem',
+                                                                                }}
+                                                                            >
+                                                                                <span
+                                                                                    style={{
+                                                                                        background: d.categoryColor,
+                                                                                        color: '#fff',
+                                                                                        borderRadius: 4,
+                                                                                        padding: '1px 5px',
+                                                                                        fontSize: 10,
+                                                                                        fontWeight: 700,
+                                                                                        whiteSpace: 'nowrap',
+                                                                                    }}
+                                                                                >
+                                                                                    {i18n.language.startsWith('nl')
+                                                                                        ? d.categoryLabelNl
+                                                                                        : d.categoryLabelEn}
+                                                                                </span>
+                                                                                <span
+                                                                                    style={{
+                                                                                        color: 'var(--text)',
+                                                                                        maxWidth: 280,
+                                                                                        overflow: 'hidden',
+                                                                                        textOverflow: 'ellipsis',
+                                                                                        whiteSpace: 'nowrap',
+                                                                                    }}
+                                                                                >
+                                                                                    {i18n.language.startsWith('nl')
+                                                                                        ? d.descriptionNl
+                                                                                        : d.descriptionEn}
+                                                                                </span>
+                                                                                <button
+                                                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                                                    style={{
+                                                                                        color: 'var(--text-muted)',
+                                                                                        padding: 2,
+                                                                                    }}
+                                                                                    onClick={() =>
+                                                                                        removeFrameworkDescriptor(
                                                                                             criterion.id,
                                                                                             d.descriptorId
                                                                                         )
@@ -2187,7 +2304,7 @@ export default function RubricBuilder() {
 
                     {/* Format Panel */}
                     {showFormat && (
-                        <div className="card" style={{ height: 'fit-content', position: 'sticky', top: 0 }}>
+                        <div className="card no-print" style={{ height: 'fit-content', position: 'sticky', top: 0 }}>
                             <h3 style={{ marginBottom: 16 }}>{t('rubricBuilder.format_title')}</h3>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                                 {[
@@ -2527,7 +2644,7 @@ export default function RubricBuilder() {
                     </div>
                 ) : null}
 
-                {/* CEFR Picker Modal */}
+                {/* Framework Picker Modal */}
                 {pickingCefrFor &&
                     (() => {
                         const criterion = criteria.find((c) => c.id === pickingCefrFor);
@@ -2537,6 +2654,9 @@ export default function RubricBuilder() {
                                 linkedDescriptors={criterion.cefrDescriptors || []}
                                 onAdd={(d) => addCefrDescriptor(pickingCefrFor, d)}
                                 onRemove={(dId) => removeCefrDescriptor(pickingCefrFor, dId)}
+                                linkedFrameworkDescriptors={criterion.frameworkDescriptors || []}
+                                onAddFramework={(d) => addFrameworkDescriptor(pickingCefrFor, d)}
+                                onRemoveFramework={(dId) => removeFrameworkDescriptor(pickingCefrFor, dId)}
                                 onClose={() => setPickingCefrFor(null)}
                             />
                         );

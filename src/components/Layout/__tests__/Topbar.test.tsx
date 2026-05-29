@@ -9,11 +9,17 @@ vi.mock('../../../context/AppContext', () => ({
     useApp: () => ({
         settings: { theme: 'dark' },
         updateSettings: mockUpdateSettings,
+        students: [],
+        studentRubrics: [],
     }),
 }));
 
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({ t: (key: string) => key }),
+}));
+
+vi.mock('../NotificationBell', () => ({
+    default: () => <div data-testid="notification-bell" />,
 }));
 
 describe('Topbar', () => {

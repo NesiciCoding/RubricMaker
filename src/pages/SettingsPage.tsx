@@ -538,6 +538,8 @@ export default function SettingsPage() {
                                 >
                                     <option value="en">{t('settings.language_en')}</option>
                                     <option value="nl">{t('settings.language_nl')}</option>
+                                    <option value="fr">{t('settings.language_fr')}</option>
+                                    <option value="de">{t('settings.language_de')}</option>
                                 </select>
                             </div>
                             <p className="text-muted text-sm" style={{ marginTop: 12 }}>
@@ -608,6 +610,34 @@ export default function SettingsPage() {
                                     <div className="text-muted text-xs" style={{ marginTop: 4 }}>
                                         {t('settings.comparisons_limit_help')}
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Overdue Reminder Threshold */}
+                        <div className="card" style={{ marginBottom: 24 }}>
+                            <div className="card-header">
+                                <h3>{t('settings.overdue_reminder')}</h3>
+                            </div>
+                            <div className="form-group">
+                                <label htmlFor="setting-overdue-threshold">
+                                    {t('settings.overdue_threshold_label')}
+                                </label>
+                                <input
+                                    id="setting-overdue-threshold"
+                                    type="number"
+                                    min="1"
+                                    max="365"
+                                    value={settings.overdueReminderThreshold ?? 7}
+                                    onChange={(e) =>
+                                        updateSettings({
+                                            overdueReminderThreshold: Math.max(1, parseInt(e.target.value) || 7),
+                                        })
+                                    }
+                                    style={{ maxWidth: 120 }}
+                                />
+                                <div className="text-muted text-xs" style={{ marginTop: 4 }}>
+                                    {t('settings.overdue_threshold_help')}
                                 </div>
                             </div>
                         </div>

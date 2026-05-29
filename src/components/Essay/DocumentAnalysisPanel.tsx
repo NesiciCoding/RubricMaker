@@ -28,6 +28,7 @@ interface Props {
     onClose: () => void;
     onSaveResult: (result: DocumentAnalysisResult) => void;
     onApplyToEntry: (criterionId: string, subItemId: string) => void;
+    onAddToCommentBank?: (phrase: string) => void;
 }
 
 type Phase = 'select' | 'analysing' | 'done' | 'error';
@@ -50,6 +51,7 @@ export default function DocumentAnalysisPanel({
     onClose,
     onSaveResult,
     onApplyToEntry,
+    onAddToCommentBank,
 }: Props) {
     const { t } = useTranslation();
 
@@ -67,6 +69,7 @@ export default function DocumentAnalysisPanel({
     const [result, setResult] = useState<DocumentAnalysisResult | null>(existingResult ?? null);
     const [showText, setShowText] = useState(false);
     const [appliedSubItems, setAppliedSubItems] = useState<Set<string>>(new Set());
+    const [addedToBank, setAddedToBank] = useState<Set<string>>(new Set());
 
     const selectedAttachment = studentAttachments.find((a) => a.id === selectedAttachmentId);
     const isAudioVideo =
@@ -555,25 +558,48 @@ export default function DocumentAnalysisPanel({
                                                             </div>
                                                         )}
                                                     </div>
-                                                    {detected.found &&
-                                                        vocabItem.linkedSubItemId &&
-                                                        vocabItem.linkedCriterionId && (
-                                                            <button
-                                                                className={`btn btn-sm ${alreadyApplied ? 'btn-ghost' : 'btn-secondary'}`}
-                                                                style={{ flexShrink: 0, fontSize: 12 }}
-                                                                onClick={() => applySubItem(vocabItem, detected)}
-                                                                disabled={alreadyApplied}
-                                                            >
-                                                                {alreadyApplied ? (
-                                                                    <>
-                                                                        <Check size={13} />{' '}
-                                                                        {t('analysis.applied', 'Applied')}
-                                                                    </>
-                                                                ) : (
-                                                                    t('analysis.apply', 'Apply')
+                                                    {detected.found && (
+                                                        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                                                            {vocabItem.linkedSubItemId &&
+                                                                vocabItem.linkedCriterionId && (
+                                                                    <button
+                                                                        className={`btn btn-sm ${alreadyApplied ? 'btn-ghost' : 'btn-secondary'}`}
+                                                                        style={{ fontSize: 12 }}
+                                                                        onClick={() => applySubItem(vocabItem, detected)}
+                                                                        disabled={alreadyApplied}
+                                                                    >
+                                                                        {alreadyApplied ? (
+                                                                            <>
+                                                                                <Check size={13} />{' '}
+                                                                                {t('analysis.applied', 'Applied')}
+                                                                            </>
+                                                                        ) : (
+                                                                            t('analysis.apply', 'Apply')
+                                                                        )}
+                                                                    </button>
                                                                 )}
-                                                            </button>
-                                                        )}
+                                                            {onAddToCommentBank && (
+                                                                <button
+                                                                    className={`btn btn-sm ${addedToBank.has(vocabItem.id) ? 'btn-ghost' : 'btn-secondary'}`}
+                                                                    style={{ fontSize: 12 }}
+                                                                    onClick={() => {
+                                                                        onAddToCommentBank(vocabItem.phrase);
+                                                                        setAddedToBank((s) => new Set([...s, vocabItem.id]));
+                                                                    }}
+                                                                    disabled={addedToBank.has(vocabItem.id)}
+                                                                >
+                                                                    {addedToBank.has(vocabItem.id) ? (
+                                                                        <>
+                                                                            <Check size={13} />{' '}
+                                                                            {t('analysis.added_to_bank', 'Added')}
+                                                                        </>
+                                                                    ) : (
+                                                                        t('analysis.add_to_bank', 'Add to bank')
+                                                                    )}
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         );

@@ -45,6 +45,21 @@ export interface LinkedCefrDescriptor {
     descriptionNl: string;
 }
 
+/** Framework type for non-CEFR assessment frameworks */
+export type AssessmentFramework = 'ib' | 'blooms';
+
+/** A descriptor from IB Learner Profile or Bloom's Taxonomy linked to a rubric criterion */
+export interface LinkedFrameworkDescriptor {
+    descriptorId: string;
+    framework: AssessmentFramework;
+    categoryId: string;
+    categoryLabelEn: string;
+    categoryLabelNl: string;
+    categoryColor: string;
+    descriptionEn: string;
+    descriptionNl: string;
+}
+
 /** A single item inside a level — awarded via checkbox or scored via points */
 export interface SubItem {
     id: string;
@@ -85,6 +100,8 @@ export interface RubricCriterion {
     linkedStandards?: LinkedStandard[];
     /** CEFR Can-Do statements linked to this criterion */
     cefrDescriptors?: LinkedCefrDescriptor[];
+    /** IB Learner Profile or Bloom's Taxonomy descriptors linked to this criterion */
+    frameworkDescriptors?: LinkedFrameworkDescriptor[];
 }
 
 export type GradeScaleType = 'letter' | 'percentage' | 'points' | 'pass-fail' | 'custom';
@@ -348,6 +365,8 @@ export interface AppSettings {
     userRole?: UserRole;
     /** Email of the currently authenticated user (populated from Supabase profile on login). */
     userEmail?: string;
+    /** Days since last grading before a student is considered overdue (default 7). */
+    overdueReminderThreshold?: number;
     /**
      * Password required to switch back to admin from a lower-privilege role.
      * Stored as plain text; this is UI access control, not cryptographic security.
