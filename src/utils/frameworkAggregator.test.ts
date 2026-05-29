@@ -10,7 +10,7 @@ const level = (id: string, max: number) => ({
     minPoints: 0,
     maxPoints: max,
     description: '',
-    subItems: [] as const,
+    subItems: [],
 });
 
 const criterion = (id: string, categoryId: string, framework: 'blooms' | 'ib', max = 10): RubricCriterion => ({
