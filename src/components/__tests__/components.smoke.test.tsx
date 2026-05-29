@@ -361,6 +361,9 @@ describe('CefrPickerModal', () => {
         linkedDescriptors: [],
         onAdd: vi.fn(),
         onRemove: vi.fn(),
+        linkedFrameworkDescriptors: [],
+        onAddFramework: vi.fn(),
+        onRemoveFramework: vi.fn(),
         onClose: vi.fn(),
     };
 

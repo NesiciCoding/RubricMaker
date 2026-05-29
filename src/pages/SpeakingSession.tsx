@@ -257,15 +257,15 @@ export default function SpeakingSession() {
                         {!timerLocked ? (
                             <div style={{ display: 'flex', gap: 8 }}>
                                 {!timerRunning ? (
-                                    <button className="btn btn-primary btn-sm" onClick={() => setTimerRunning(true)}>
+                                    <button className="btn btn-primary btn-sm speaking-timer-btn" onClick={() => setTimerRunning(true)}>
                                         <Play size={14} /> {t('speaking.start')}
                                     </button>
                                 ) : (
-                                    <button className="btn btn-secondary btn-sm" onClick={() => stopTimer(false)}>
+                                    <button className="btn btn-secondary btn-sm speaking-timer-btn" onClick={() => stopTimer(false)}>
                                         <Pause size={14} /> {t('speaking.pause')}
                                     </button>
                                 )}
-                                <button className="btn btn-secondary btn-sm" onClick={() => stopTimer(true)}>
+                                <button className="btn btn-secondary btn-sm speaking-timer-btn" onClick={() => stopTimer(true)}>
                                     <Square size={14} /> {t('speaking.stop')}
                                 </button>
                             </div>
@@ -300,7 +300,7 @@ export default function SpeakingSession() {
                     <h3 style={{ marginBottom: 12 }}>{t('speaking.pronunciation_panel')}</h3>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
                         {ERROR_TYPES.map((type) => (
-                            <button key={type} className="btn btn-secondary btn-sm" onClick={() => addMark(type)}>
+                            <button key={type} className="btn btn-secondary btn-sm speaking-error-btn" onClick={() => addMark(type)}>
                                 {t(`speaking.error_types.${type}`)}
                             </button>
                         ))}

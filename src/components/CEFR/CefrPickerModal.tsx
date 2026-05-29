@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { X, Search, Plus, Check, BookOpen, ChevronDown, ChevronRight } from 'lucide-react';
+import { X, Search, Check, BookOpen, ChevronDown, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Modal from '../ui/Modal';
 import {
@@ -10,28 +10,50 @@ import {
     CEFR_LEVEL_COLORS,
     getCefrDescriptors,
 } from '../../data/cefrDescriptors';
-import type { CefrLevel, CefrSkill, LinkedCefrDescriptor } from '../../types';
+import { IB_ATTRIBUTES } from '../../data/ibLearnerProfile';
+import { BLOOM_LEVELS } from '../../data/bloomsTaxonomy';
+import type { CefrLevel, CefrSkill, LinkedCefrDescriptor, LinkedFrameworkDescriptor, AssessmentFramework } from '../../types';
+
+type ActiveFramework = 'cefr' | AssessmentFramework;
 
 interface Props {
-    /** Already-linked descriptors for this criterion (so we can show checkmarks) */
     linkedDescriptors: LinkedCefrDescriptor[];
     onAdd: (descriptor: LinkedCefrDescriptor) => void;
     onRemove: (descriptorId: string) => void;
+    linkedFrameworkDescriptors: LinkedFrameworkDescriptor[];
+    onAddFramework: (descriptor: LinkedFrameworkDescriptor) => void;
+    onRemoveFramework: (descriptorId: string) => void;
     onClose: () => void;
 }
 
-export default function CefrPickerModal({ linkedDescriptors, onAdd, onRemove, onClose }: Props) {
+export default function CefrPickerModal({
+    linkedDescriptors,
+    onAdd,
+    onRemove,
+    linkedFrameworkDescriptors,
+    onAddFramework,
+    onRemoveFramework,
+    onClose,
+}: Props) {
     const { t, i18n } = useTranslation();
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
 
+    const [activeFramework, setActiveFramework] = useState<ActiveFramework>('cefr');
+
+    // ── CEFR state ──────────────────────────────────────────────────────────────
     const [selectedSkill, setSelectedSkill] = useState<CefrSkill | null>(null);
     const [selectedLevel, setSelectedLevel] = useState<CefrLevel | null>(null);
     const [search, setSearch] = useState('');
-    const [expandedLevels, setExpandedLevels] = useState<Set<CefrLevel>>(new Set(['B1', 'B2']));
+    const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['B1', 'B2']));
 
-    const linkedIds = useMemo(() => new Set(linkedDescriptors.map((d) => d.descriptorId)), [linkedDescriptors]);
+    const linkedCefrIds = useMemo(() => new Set(linkedDescriptors.map((d) => d.descriptorId)), [linkedDescriptors]);
+    const linkedFrameworkIds = useMemo(
+        () => new Set(linkedFrameworkDescriptors.map((d) => d.descriptorId)),
+        [linkedFrameworkDescriptors]
+    );
 
-    const filtered = useMemo(() => {
+    // ── CEFR computed ────────────────────────────────────────────────────────────
+    const cefrFiltered = useMemo(() => {
         return getCefrDescriptors({
             skill: selectedSkill ?? undefined,
             level: selectedLevel ?? undefined,
@@ -42,30 +64,26 @@ export default function CefrPickerModal({ linkedDescriptors, onAdd, onRemove, on
         });
     }, [selectedSkill, selectedLevel, search, lang]);
 
-    // Group filtered descriptors by level
-    const byLevel = useMemo(() => {
-        const map = new Map<CefrLevel, typeof filtered>();
+    const cefrByLevel = useMemo(() => {
+        const map = new Map<CefrLevel, typeof cefrFiltered>();
         for (const level of CEFR_LEVELS) {
-            const items = filtered.filter((d) => d.level === level);
+            const items = cefrFiltered.filter((d) => d.level === level);
             if (items.length > 0) map.set(level, items);
         }
         return map;
-    }, [filtered]);
+    }, [cefrFiltered]);
 
-    function toggleLevel(level: CefrLevel) {
-        setExpandedLevels((prev) => {
+    function toggleSection(key: string) {
+        setExpandedSections((prev) => {
             const next = new Set(prev);
-            if (next.has(level)) {
-                next.delete(level);
-            } else {
-                next.add(level);
-            }
+            if (next.has(key)) next.delete(key);
+            else next.add(key);
             return next;
         });
     }
 
-    function toggleDescriptor(d: (typeof filtered)[number]) {
-        if (linkedIds.has(d.id)) {
+    function toggleCefr(d: ReturnType<typeof getCefrDescriptors>[number]) {
+        if (linkedCefrIds.has(d.id)) {
             onRemove(d.id);
         } else {
             onAdd({
@@ -77,6 +95,23 @@ export default function CefrPickerModal({ linkedDescriptors, onAdd, onRemove, on
             });
         }
     }
+
+    function toggleFramework(descriptor: LinkedFrameworkDescriptor) {
+        if (linkedFrameworkIds.has(descriptor.descriptorId)) {
+            onRemoveFramework(descriptor.descriptorId);
+        } else {
+            onAddFramework(descriptor);
+        }
+    }
+
+    // ── Total linked count for footer ────────────────────────────────────────────
+    const totalLinked = linkedDescriptors.length + linkedFrameworkDescriptors.length;
+
+    const FRAMEWORK_TABS: { id: ActiveFramework; label: string }[] = [
+        { id: 'cefr', label: 'CEFR / ERK' },
+        { id: 'ib', label: t('framework.ib_short') },
+        { id: 'blooms', label: t('framework.blooms_short') },
+    ];
 
     return (
         <Modal
@@ -94,9 +129,9 @@ export default function CefrPickerModal({ linkedDescriptors, onAdd, onRemove, on
                     <BookOpen size={18} style={{ color: 'var(--accent)' }} aria-hidden="true" />
                     <div>
                         <div id="cefr-picker-title" style={{ fontWeight: 600, fontSize: 15 }}>
-                            {t('cefr.picker_title')}
+                            {t('framework.picker_title')}
                         </div>
-                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('cefr.picker_subtitle')}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('framework.picker_subtitle')}</div>
                     </div>
                 </div>
                 <button className="btn btn-ghost btn-sm btn-icon" onClick={onClose} aria-label="Close">
@@ -104,55 +139,90 @@ export default function CefrPickerModal({ linkedDescriptors, onAdd, onRemove, on
                 </button>
             </div>
 
-            {/* Filters */}
+            {/* Framework tabs */}
             <div
                 style={{
-                    padding: '12px 20px',
-                    borderBottom: '1px solid var(--border)',
                     display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: 8,
+                    gap: 0,
+                    borderBottom: '1px solid var(--border)',
+                    padding: '0 20px',
                 }}
             >
-                {/* Skill filter */}
-                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                {FRAMEWORK_TABS.map((tab) => (
                     <button
-                        className={`btn btn-sm ${!selectedSkill ? 'btn-primary' : 'btn-ghost'}`}
-                        onClick={() => setSelectedSkill(null)}
+                        key={tab.id}
+                        onClick={() => {
+                            setActiveFramework(tab.id);
+                            setSearch('');
+                            setExpandedSections(
+                                tab.id === 'cefr' ? new Set(['B1', 'B2']) : new Set()
+                            );
+                        }}
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            borderBottom: activeFramework === tab.id ? '2px solid var(--accent)' : '2px solid transparent',
+                            color: activeFramework === tab.id ? 'var(--accent)' : 'var(--text-muted)',
+                            fontWeight: activeFramework === tab.id ? 600 : 400,
+                            fontSize: 13,
+                            padding: '10px 14px',
+                            cursor: 'pointer',
+                            marginBottom: -1,
+                        }}
                     >
-                        {t('cefr.all_skills')}
+                        {tab.label}
                     </button>
-                    {CEFR_SKILLS.map((skill) => (
-                        <button
-                            key={skill}
-                            className={`btn btn-sm ${selectedSkill === skill ? 'btn-primary' : 'btn-ghost'}`}
-                            onClick={() => setSelectedSkill((prev) => (prev === skill ? null : skill))}
-                        >
-                            {CEFR_SKILL_LABELS[skill][lang]}
-                        </button>
-                    ))}
-                </div>
-
-                {/* Level filter */}
-                <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
-                    {CEFR_LEVELS.map((level) => (
-                        <button
-                            key={level}
-                            className={`btn btn-sm ${selectedLevel === level ? 'btn-primary' : 'btn-ghost'}`}
-                            style={
-                                selectedLevel === level
-                                    ? {}
-                                    : { borderColor: CEFR_LEVEL_COLORS[level], color: CEFR_LEVEL_COLORS[level] }
-                            }
-                            onClick={() => setSelectedLevel((prev) => (prev === level ? null : level))}
-                        >
-                            {level}
-                        </button>
-                    ))}
-                </div>
+                ))}
             </div>
 
-            {/* Search */}
+            {/* CEFR: skill + level filters */}
+            {activeFramework === 'cefr' && (
+                <div
+                    style={{
+                        padding: '12px 20px',
+                        borderBottom: '1px solid var(--border)',
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: 8,
+                    }}
+                >
+                    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                        <button
+                            className={`btn btn-sm ${!selectedSkill ? 'btn-primary' : 'btn-ghost'}`}
+                            onClick={() => setSelectedSkill(null)}
+                        >
+                            {t('cefr.all_skills')}
+                        </button>
+                        {CEFR_SKILLS.map((skill) => (
+                            <button
+                                key={skill}
+                                className={`btn btn-sm ${selectedSkill === skill ? 'btn-primary' : 'btn-ghost'}`}
+                                onClick={() => setSelectedSkill((prev) => (prev === skill ? null : skill))}
+                            >
+                                {CEFR_SKILL_LABELS[skill][lang]}
+                            </button>
+                        ))}
+                    </div>
+                    <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
+                        {CEFR_LEVELS.map((level) => (
+                            <button
+                                key={level}
+                                className={`btn btn-sm ${selectedLevel === level ? 'btn-primary' : 'btn-ghost'}`}
+                                style={
+                                    selectedLevel === level
+                                        ? {}
+                                        : { borderColor: CEFR_LEVEL_COLORS[level], color: CEFR_LEVEL_COLORS[level] }
+                                }
+                                onClick={() => setSelectedLevel((prev) => (prev === level ? null : level))}
+                            >
+                                {level}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Search (all frameworks) */}
             <div style={{ padding: '10px 20px', borderBottom: '1px solid var(--border)' }}>
                 <div style={{ position: 'relative' }}>
                     <Search
@@ -178,118 +248,301 @@ export default function CefrPickerModal({ linkedDescriptors, onAdd, onRemove, on
 
             {/* Descriptor list */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
-                {byLevel.size === 0 && (
-                    <div className="empty-state" style={{ padding: 40 }}>
-                        {t('cefr.no_results')}
-                    </div>
-                )}
-                {Array.from(byLevel.entries()).map(([level, descriptors]) => {
-                    const expanded = expandedLevels.has(level);
-                    const levelDesc = CEFR_LEVEL_DESCRIPTORS[level][lang];
-                    const linkedCount = descriptors.filter((d) => linkedIds.has(d.id)).length;
+                {/* ── CEFR list ── */}
+                {activeFramework === 'cefr' && (
+                    <>
+                        {cefrByLevel.size === 0 && (
+                            <div className="empty-state" style={{ padding: 40 }}>
+                                {t('cefr.no_results')}
+                            </div>
+                        )}
+                        {Array.from(cefrByLevel.entries()).map(([level, descriptors]) => {
+                            const expanded = expandedSections.has(level);
+                            const levelDesc = CEFR_LEVEL_DESCRIPTORS[level][lang];
+                            const linkedCount = descriptors.filter((d) => linkedCefrIds.has(d.id)).length;
 
-                    return (
-                        <div key={level}>
-                            {/* Level header */}
-                            <button
-                                style={{
-                                    width: '100%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 10,
-                                    padding: '8px 20px',
-                                    background: 'var(--bg-elevated)',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    textAlign: 'left',
-                                    borderLeft: `4px solid ${CEFR_LEVEL_COLORS[level]}`,
-                                }}
-                                onClick={() => toggleLevel(level)}
-                            >
-                                <span
-                                    style={{
-                                        fontWeight: 700,
-                                        fontSize: 13,
-                                        color: CEFR_LEVEL_COLORS[level],
-                                        minWidth: 28,
-                                    }}
-                                >
-                                    {level}
-                                </span>
-                                <span style={{ fontSize: 12, color: 'var(--text-muted)', flex: 1 }}>{levelDesc}</span>
-                                {linkedCount > 0 && (
-                                    <span
+                            return (
+                                <div key={level}>
+                                    <button
                                         style={{
-                                            background: 'var(--accent)',
-                                            color: '#fff',
-                                            borderRadius: 10,
-                                            padding: '1px 7px',
-                                            fontSize: 11,
-                                            fontWeight: 600,
+                                            width: '100%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 10,
+                                            padding: '8px 20px',
+                                            background: 'var(--bg-elevated)',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            textAlign: 'left',
+                                            borderLeft: `4px solid ${CEFR_LEVEL_COLORS[level]}`,
                                         }}
+                                        onClick={() => toggleSection(level)}
                                     >
-                                        {linkedCount}
-                                    </span>
-                                )}
-                                {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                            </button>
-
-                            {/* Descriptors for this level */}
-                            {expanded &&
-                                descriptors.map((descriptor) => {
-                                    const isLinked = linkedIds.has(descriptor.id);
-                                    const text = lang === 'nl' ? descriptor.descriptionNl : descriptor.descriptionEn;
-                                    const skillLabel = CEFR_SKILL_LABELS[descriptor.skill][lang];
-
-                                    return (
-                                        <button
-                                            key={descriptor.id}
+                                        <span
                                             style={{
-                                                width: '100%',
-                                                display: 'flex',
-                                                alignItems: 'flex-start',
-                                                gap: 12,
-                                                padding: '10px 20px 10px 44px',
-                                                background: isLinked
-                                                    ? 'color-mix(in srgb, var(--accent) 8%, transparent)'
-                                                    : 'transparent',
-                                                border: 'none',
-                                                cursor: 'pointer',
-                                                textAlign: 'left',
-                                                borderBottom: '1px solid var(--border)',
+                                                fontWeight: 700,
+                                                fontSize: 13,
+                                                color: CEFR_LEVEL_COLORS[level],
+                                                minWidth: 28,
                                             }}
-                                            onClick={() => toggleDescriptor(descriptor)}
                                         >
-                                            <div
+                                            {level}
+                                        </span>
+                                        <span style={{ fontSize: 12, color: 'var(--text-muted)', flex: 1 }}>
+                                            {levelDesc}
+                                        </span>
+                                        {linkedCount > 0 && (
+                                            <span
                                                 style={{
-                                                    width: 20,
-                                                    height: 20,
-                                                    borderRadius: 4,
-                                                    border: `2px solid ${isLinked ? 'var(--accent)' : 'var(--border)'}`,
-                                                    background: isLinked ? 'var(--accent)' : 'transparent',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    flexShrink: 0,
-                                                    marginTop: 1,
+                                                    background: 'var(--accent)',
+                                                    color: '#fff',
+                                                    borderRadius: 10,
+                                                    padding: '1px 7px',
+                                                    fontSize: 11,
+                                                    fontWeight: 600,
                                                 }}
                                             >
-                                                {isLinked && <Check size={12} color="#fff" />}
-                                            </div>
-                                            <div style={{ flex: 1 }}>
-                                                <div style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--text)' }}>
-                                                    {text}
-                                                </div>
-                                                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
-                                                    {skillLabel}
-                                                </div>
-                                            </div>
-                                        </button>
-                                    );
-                                })}
-                        </div>
-                    );
-                })}
+                                                {linkedCount}
+                                            </span>
+                                        )}
+                                        {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                                    </button>
+                                    {expanded &&
+                                        descriptors.map((descriptor) => {
+                                            const isLinked = linkedCefrIds.has(descriptor.id);
+                                            const text =
+                                                lang === 'nl' ? descriptor.descriptionNl : descriptor.descriptionEn;
+                                            const skillLabel = CEFR_SKILL_LABELS[descriptor.skill][lang];
+
+                                            return (
+                                                <DescriptorRow
+                                                    key={descriptor.id}
+                                                    isLinked={isLinked}
+                                                    text={text}
+                                                    sublabel={skillLabel}
+                                                    onClick={() => toggleCefr(descriptor)}
+                                                />
+                                            );
+                                        })}
+                                </div>
+                            );
+                        })}
+                    </>
+                )}
+
+                {/* ── IB list ── */}
+                {activeFramework === 'ib' && (
+                    <>
+                        {IB_ATTRIBUTES.map((attr) => {
+                            const filtered = attr.descriptors.filter((d) => {
+                                if (!search) return true;
+                                const text = lang === 'nl' ? d.descriptionNl : d.descriptionEn;
+                                return text.toLowerCase().includes(search.toLowerCase());
+                            });
+                            if (filtered.length === 0) return null;
+                            const expanded = expandedSections.has(attr.id);
+                            const linkedCount = filtered.filter((d) => linkedFrameworkIds.has(d.id)).length;
+
+                            return (
+                                <div key={attr.id}>
+                                    <button
+                                        style={{
+                                            width: '100%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 10,
+                                            padding: '8px 20px',
+                                            background: 'var(--bg-elevated)',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            textAlign: 'left',
+                                            borderLeft: `4px solid ${attr.color}`,
+                                        }}
+                                        onClick={() => toggleSection(attr.id)}
+                                    >
+                                        <span
+                                            style={{
+                                                fontWeight: 700,
+                                                fontSize: 13,
+                                                color: attr.color,
+                                                flex: 1,
+                                            }}
+                                        >
+                                            {lang === 'nl' ? attr.labelNl : attr.labelEn}
+                                        </span>
+                                        {linkedCount > 0 && (
+                                            <span
+                                                style={{
+                                                    background: 'var(--accent)',
+                                                    color: '#fff',
+                                                    borderRadius: 10,
+                                                    padding: '1px 7px',
+                                                    fontSize: 11,
+                                                    fontWeight: 600,
+                                                }}
+                                            >
+                                                {linkedCount}
+                                            </span>
+                                        )}
+                                        {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                                    </button>
+                                    {expanded &&
+                                        filtered.map((descriptor) => {
+                                            const isLinked = linkedFrameworkIds.has(descriptor.id);
+                                            const text =
+                                                lang === 'nl' ? descriptor.descriptionNl : descriptor.descriptionEn;
+                                            return (
+                                                <DescriptorRow
+                                                    key={descriptor.id}
+                                                    isLinked={isLinked}
+                                                    text={text}
+                                                    sublabel={`IB — ${lang === 'nl' ? attr.labelNl : attr.labelEn}`}
+                                                    onClick={() =>
+                                                        toggleFramework({
+                                                            descriptorId: descriptor.id,
+                                                            framework: 'ib',
+                                                            categoryId: attr.id,
+                                                            categoryLabelEn: attr.labelEn,
+                                                            categoryLabelNl: attr.labelNl,
+                                                            categoryColor: attr.color,
+                                                            descriptionEn: descriptor.descriptionEn,
+                                                            descriptionNl: descriptor.descriptionNl,
+                                                        })
+                                                    }
+                                                />
+                                            );
+                                        })}
+                                </div>
+                            );
+                        })}
+                        {IB_ATTRIBUTES.every(
+                            (attr) =>
+                                !attr.descriptors.some((d) => {
+                                    if (!search) return true;
+                                    const text = lang === 'nl' ? d.descriptionNl : d.descriptionEn;
+                                    return text.toLowerCase().includes(search.toLowerCase());
+                                })
+                        ) && (
+                            <div className="empty-state" style={{ padding: 40 }}>
+                                {t('cefr.no_results')}
+                            </div>
+                        )}
+                    </>
+                )}
+
+                {/* ── Bloom's list ── */}
+                {activeFramework === 'blooms' && (
+                    <>
+                        {BLOOM_LEVELS.map((level) => {
+                            const filtered = level.descriptors.filter((d) => {
+                                if (!search) return true;
+                                const text = lang === 'nl' ? d.descriptionNl : d.descriptionEn;
+                                return text.toLowerCase().includes(search.toLowerCase());
+                            });
+                            if (filtered.length === 0) return null;
+                            const expanded = expandedSections.has(level.id);
+                            const linkedCount = filtered.filter((d) => linkedFrameworkIds.has(d.id)).length;
+                            const levelLabel = lang === 'nl' ? level.labelNl : level.labelEn;
+                            const verbs = lang === 'nl' ? level.verbsNl : level.verbsEn;
+
+                            return (
+                                <div key={level.id}>
+                                    <button
+                                        style={{
+                                            width: '100%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 10,
+                                            padding: '8px 20px',
+                                            background: 'var(--bg-elevated)',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            textAlign: 'left',
+                                            borderLeft: `4px solid ${level.color}`,
+                                        }}
+                                        onClick={() => toggleSection(level.id)}
+                                    >
+                                        <span
+                                            style={{
+                                                fontWeight: 700,
+                                                fontSize: 13,
+                                                color: level.color,
+                                                minWidth: 90,
+                                            }}
+                                        >
+                                            {level.order}. {levelLabel}
+                                        </span>
+                                        <span
+                                            style={{
+                                                fontSize: 11,
+                                                color: 'var(--text-muted)',
+                                                flex: 1,
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap',
+                                            }}
+                                        >
+                                            {verbs.slice(0, 4).join(', ')}…
+                                        </span>
+                                        {linkedCount > 0 && (
+                                            <span
+                                                style={{
+                                                    background: 'var(--accent)',
+                                                    color: '#fff',
+                                                    borderRadius: 10,
+                                                    padding: '1px 7px',
+                                                    fontSize: 11,
+                                                    fontWeight: 600,
+                                                }}
+                                            >
+                                                {linkedCount}
+                                            </span>
+                                        )}
+                                        {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                                    </button>
+                                    {expanded &&
+                                        filtered.map((descriptor) => {
+                                            const isLinked = linkedFrameworkIds.has(descriptor.id);
+                                            const text =
+                                                lang === 'nl' ? descriptor.descriptionNl : descriptor.descriptionEn;
+                                            return (
+                                                <DescriptorRow
+                                                    key={descriptor.id}
+                                                    isLinked={isLinked}
+                                                    text={text}
+                                                    sublabel={`Bloom's — ${levelLabel}`}
+                                                    onClick={() =>
+                                                        toggleFramework({
+                                                            descriptorId: descriptor.id,
+                                                            framework: 'blooms',
+                                                            categoryId: level.id,
+                                                            categoryLabelEn: level.labelEn,
+                                                            categoryLabelNl: level.labelNl,
+                                                            categoryColor: level.color,
+                                                            descriptionEn: descriptor.descriptionEn,
+                                                            descriptionNl: descriptor.descriptionNl,
+                                                        })
+                                                    }
+                                                />
+                                            );
+                                        })}
+                                </div>
+                            );
+                        })}
+                        {BLOOM_LEVELS.every(
+                            (level) =>
+                                !level.descriptors.some((d) => {
+                                    if (!search) return true;
+                                    const text = lang === 'nl' ? d.descriptionNl : d.descriptionEn;
+                                    return text.toLowerCase().includes(search.toLowerCase());
+                                })
+                        ) && (
+                            <div className="empty-state" style={{ padding: 40 }}>
+                                {t('cefr.no_results')}
+                            </div>
+                        )}
+                    </>
+                )}
             </div>
 
             {/* Footer */}
@@ -303,8 +556,8 @@ export default function CefrPickerModal({ linkedDescriptors, onAdd, onRemove, on
                 }}
             >
                 <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-                    {linkedDescriptors.length > 0
-                        ? t('cefr.selected_count', { count: linkedDescriptors.length })
+                    {totalLinked > 0
+                        ? t('framework.selected_count', { count: totalLinked })
                         : t('cefr.none_selected')}
                 </span>
                 <button className="btn btn-primary btn-sm" onClick={onClose}>
@@ -312,5 +565,53 @@ export default function CefrPickerModal({ linkedDescriptors, onAdd, onRemove, on
                 </button>
             </div>
         </Modal>
+    );
+}
+
+interface DescriptorRowProps {
+    isLinked: boolean;
+    text: string;
+    sublabel: string;
+    onClick: () => void;
+}
+
+function DescriptorRow({ isLinked, text, sublabel, onClick }: DescriptorRowProps) {
+    return (
+        <button
+            style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 12,
+                padding: '10px 20px 10px 44px',
+                background: isLinked ? 'color-mix(in srgb, var(--accent) 8%, transparent)' : 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                textAlign: 'left',
+                borderBottom: '1px solid var(--border)',
+            }}
+            onClick={onClick}
+        >
+            <div
+                style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: 4,
+                    border: `2px solid ${isLinked ? 'var(--accent)' : 'var(--border)'}`,
+                    background: isLinked ? 'var(--accent)' : 'transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    marginTop: 1,
+                }}
+            >
+                {isLinked && <Check size={12} color="#fff" />}
+            </div>
+            <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--text)' }}>{text}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{sublabel}</div>
+            </div>
+        </button>
     );
 }

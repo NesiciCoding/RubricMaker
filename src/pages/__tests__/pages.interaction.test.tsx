@@ -526,7 +526,7 @@ describe('GradeStudent interactions', () => {
 
     it('renders student name', () => {
         renderPage(<GradeStudent />, '/grade/r1/s1', '/grade/:rubricId/:studentId');
-        expect(screen.getByText(/Alice/) || true).toBeTruthy();
+        expect(screen.getAllByText(/Alice/).length).toBeGreaterThan(0);
     });
 
     it('renders criterion title', () => {

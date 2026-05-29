@@ -102,6 +102,9 @@
         "comparisons_limit_infinite": "Infinite",
         "comparisons_limit_placeholder": "0 = infinite (default)",
         "comparisons_limit_help": "Maximum comparisons each student can appear in. The session stops when all students have reached this limit. 0 means no limit.",
+        "overdue_reminder": "Overdue Reminders",
+        "overdue_threshold_label": "Days since last grading",
+        "overdue_threshold_help": "Students not graded in this many days appear in the notification bell.",
         "scale_name_letter_10": "Letter Grades (10-point)",
         "scale_name_pass_fail": "Pass/Fail",
         "scale_name_dutch_10": "Dutch Scale (1–10)",
@@ -279,7 +282,14 @@
         "audio_remove": "Remove audio",
         "mark_as_anchor": "Mark as anchor",
         "anchor_panel_title": "Anchor Paper",
-        "anchor_panel_hide": "Hide anchor"
+        "anchor_panel_hide": "Hide anchor",
+        "shortcuts_title": "Keyboard Shortcuts",
+        "shortcut_level": "Select level for focused criterion",
+        "shortcut_tab": "Move to next / previous criterion",
+        "shortcut_save": "Save & advance to next student",
+        "shortcut_help": "Show this overlay",
+        "shortcut_esc": "Clear criterion focus",
+        "action_print": "Print"
     },
     "rubricBuilder": {
         "action_back": "Back",
@@ -378,7 +388,8 @@
         "confirm_restore": "Restore this version? Current unsaved changes will be lost.",
         "version_n": "Version {{n}}",
         "criteria_count": "criteria",
-        "auto_save_badge": "auto"
+        "auto_save_badge": "auto",
+        "action_print": "Print Rubric"
     },
     "peerReview": {
         "round_label": "Round",
@@ -427,6 +438,14 @@
         "achieve_threshold_help": "Score at or above this percentage counts as 'Achieved' on the student profile.",
         "progress_chart_title": "CEFR Skills Radar",
         "no_chart_data": "Not enough skill data for a chart."
+    },
+    "framework": {
+        "picker_title": "Assessment Framework Descriptors",
+        "picker_subtitle": "Link CEFR, IB, or Bloom's statements to this criterion",
+        "ib_short": "IB Learner Profile",
+        "blooms_short": "Bloom's Taxonomy",
+        "action_link_descriptor": "Link Descriptor",
+        "selected_count": "{{count}} descriptor(s) linked"
     },
     "voTrack": {
         "section_label": "VO Track",
@@ -696,5 +715,22 @@
         "empty_no_cefr": "No CEFR data yet. Grade rubrics with a CEFR target level or have the student complete a self-assessment.",
         "student_not_found": "Student not found.",
         "select_student_prompt": "Select a class and student to view their CEFR overview."
+    },
+    "analysis": {
+        "add_to_bank": "Add to bank",
+        "added_to_bank": "Added"
+    },
+    "notifications": {
+        "bell_title": "Notifications ({{count}} overdue)",
+        "panel_title": "Overdue Students",
+        "all_up_to_date": "All students graded within the last {{threshold}} days.",
+        "overdue_subtitle": "{{count}} student(s) not graded in {{threshold}}+ days",
+        "days_ago": "{{count}}d ago",
+        "more_overdue": "+{{count}} more",
+        "enable_push": "Enable browser notifications",
+        "enable_btn": "Enable",
+        "permission_denied": "Browser notifications blocked. Allow them in browser settings.",
+        "browser_title": "RubricMaker — Overdue Students",
+        "browser_body": "{{count}} student(s) not graded in {{threshold}}+ days."
     }
 }

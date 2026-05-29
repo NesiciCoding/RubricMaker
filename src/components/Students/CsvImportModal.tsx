@@ -58,10 +58,11 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                     lowerHeaders.findIndex((h) => keywords.some((k) => h.includes(k)));
 
                 const fnIdx = findIndex('full name', 'fullname', 'name');
-                const firstIdx = findIndex('first name', 'firstname', 'first');
-                const lastIdx = findIndex('last name', 'lastname', 'last');
+                // Dutch (Magister): voornaam / roepnaam = first name, achternaam = last name, klas = class
+                const firstIdx = findIndex('first name', 'firstname', 'first', 'voornaam', 'roepnaam');
+                const lastIdx = findIndex('last name', 'lastname', 'last', 'achternaam');
                 const emailIdx = findIndex('email', 'e-mail');
-                const classIdx = findIndex('class', 'course', 'group');
+                const classIdx = findIndex('class', 'course', 'group', 'klas');
 
                 if (fnIdx !== -1) autoMap.fullName = detectedHeaders[fnIdx];
                 if (firstIdx !== -1) autoMap.firstName = detectedHeaders[firstIdx];
