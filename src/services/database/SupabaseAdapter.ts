@@ -36,7 +36,10 @@ export class SupabaseAdapter {
             if (this.onAuthChange) {
                 if (s) {
                     const profile = await this.fetchMyProfile();
-                    this.onAuthChange(profile ?? { id: s.user.id, email: s.user.email, role: 'user' });
+                    const resolved = profile
+                        ? { ...profile, email: profile.email ?? s.user.email ?? undefined }
+                        : { id: s.user.id, email: s.user.email, role: 'user' as const };
+                    this.onAuthChange(resolved);
                 } else {
                     this.onAuthChange(null);
                 }
