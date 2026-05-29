@@ -2,6 +2,7 @@ import React, { Suspense, lazy, useMemo, useState } from 'react';
 import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import Sidebar from './components/Layout/Sidebar';
 import { Joyride, STATUS } from 'react-joyride';
+import type { EventData } from 'react-joyride';
 import { useApp } from './context/AppContext';
 import { MobileMenuContext } from './context/MobileMenuContext';
 import { getTutorialSteps } from './data/TutorialSteps';
@@ -95,9 +96,8 @@ export default function App() {
         );
     }
 
-    const handleJoyrideCallback = (data: { status: string }) => {
-        const { status } = data;
-        if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
+    const handleJoyrideCallback = (data: EventData) => {
+        if (data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED) {
             updateSettings({ hasSeenTutorial: true });
         }
     };
@@ -113,9 +113,16 @@ export default function App() {
                     steps={steps}
                     run={!settings.hasSeenTutorial}
                     continuous
-                    showProgress
-                    showSkipButton
-                    callback={handleJoyrideCallback}
+                    onEvent={handleJoyrideCallback}
+                    options={{
+                        showProgress: true,
+                        buttons: ['back', 'skip', 'primary'],
+                        primaryColor: 'var(--accent)',
+                        backgroundColor: 'var(--bg-elevated)',
+                        textColor: 'var(--text)',
+                        arrowColor: 'var(--bg-elevated)',
+                        overlayColor: 'rgba(0, 0, 0, 0.6)',
+                    }}
                     styles={{
                         tooltipContainer: {
                             textAlign: 'left',

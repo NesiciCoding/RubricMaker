@@ -4,6 +4,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 import { BookOpen, Copy, Check, TrendingUp, MessageSquare, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Joyride, STATUS } from 'react-joyride';
+import type { EventData } from 'react-joyride';
 import { useApp } from '../context/AppContext';
 import { calcGradeSummary } from '../utils/gradeCalc';
 import CefrProgressChart from '../components/Statistics/CefrProgressChart';
@@ -21,7 +22,7 @@ export default function StudentPortalPage() {
     const [tourRun, setTourRun] = useState(() => localStorage.getItem(tourKey) !== 'true');
     const tourSteps = useMemo(() => getStudentPortalTutorialSteps(t), [t, i18n.language]);
 
-    const handleTourCallback = (data: { status: string }) => {
+    const handleTourCallback = (data: EventData) => {
         if (data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED) {
             localStorage.setItem(tourKey, 'true');
             setTourRun(false);
@@ -127,9 +128,16 @@ export default function StudentPortalPage() {
                 steps={tourSteps}
                 run={tourRun}
                 continuous
-                showProgress
-                showSkipButton
-                callback={handleTourCallback}
+                onEvent={handleTourCallback}
+                options={{
+                    showProgress: true,
+                    buttons: ['back', 'skip', 'primary'],
+                    primaryColor: 'var(--accent)',
+                    backgroundColor: 'var(--bg-elevated)',
+                    textColor: 'var(--text)',
+                    arrowColor: 'var(--bg-elevated)',
+                    overlayColor: 'rgba(0, 0, 0, 0.6)',
+                }}
                 styles={{
                     tooltipContainer: {
                         textAlign: 'left',
