@@ -8,6 +8,7 @@ vi.mock('../../../context/AppContext', () => ({
     useApp: () => ({
         rubrics: [{ id: 'r1' }, { id: 'r2' }],
         students: [{ id: 's1' }],
+        settings: { userRole: 'user' },
     }),
 }));
 
