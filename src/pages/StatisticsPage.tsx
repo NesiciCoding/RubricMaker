@@ -2,6 +2,11 @@ import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { TrendingUp, Users, BookOpen, Download, Maximize2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { BLOOM_LEVELS } from '../data/bloomsTaxonomy';
+import { IB_ATTRIBUTES } from '../data/ibLearnerProfile';
+import { aggregateFrameworkScores } from '../utils/frameworkAggregator';
+import BloomsPyramidChart from '../components/Statistics/BloomsPyramidChart';
+import FrameworkRoseChart from '../components/Statistics/FrameworkRoseChart';
 import Papa from 'papaparse';
 import { saveAs } from 'file-saver';
 import Topbar from '../components/Layout/Topbar';
@@ -43,7 +48,8 @@ function exportChartAsPng(containerRef: React.RefObject<HTMLDivElement | null>, 
 
 export default function StatisticsPage() {
     const { rubrics, students, classes, studentRubrics, gradeScales, settings, updateSettings } = useApp();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
 
     // ── View mode ────────────────────────────────────────────────────────────
     const [viewMode, setViewMode] = useState<'rubric' | 'student'>('rubric');
@@ -130,6 +136,27 @@ export default function StatisticsPage() {
             return { name: c.title, avg: parseFloat(((avg / max) * 100).toFixed(1)), max };
         });
     }, [rubric, studentRubrics, selectedClassId, students, excludeNHI]);
+
+    const filteredRubricStudentRubrics = useMemo(() => {
+        if (!rubric) return [];
+        return studentRubrics.filter((sr) => {
+            if (sr.rubricId !== rubric.id) return false;
+            if (excludeNHI && sr.notHandedIn) return false;
+            if (selectedClassId === 'all') return true;
+            const student = students.find((s) => s.id === sr.studentId);
+            return student?.classId === selectedClassId;
+        });
+    }, [rubric, studentRubrics, selectedClassId, students, excludeNHI]);
+
+    const bloomsData = useMemo(() => {
+        if (!rubric?.criteria.some((c) => c.frameworkDescriptors?.some((fd) => fd.framework === 'blooms'))) return null;
+        return aggregateFrameworkScores('blooms', filteredRubricStudentRubrics, rubric.criteria);
+    }, [rubric, filteredRubricStudentRubrics]);
+
+    const ibData = useMemo(() => {
+        if (!rubric?.criteria.some((c) => c.frameworkDescriptors?.some((fd) => fd.framework === 'ib'))) return null;
+        return aggregateFrameworkScores('ib', filteredRubricStudentRubrics, rubric.criteria);
+    }, [rubric, filteredRubricStudentRubrics]);
 
     const classGoals = useMemo(() => {
         if (selectedClassId === 'all') return [];
@@ -712,6 +739,47 @@ export default function StatisticsPage() {
                                     <div className="card" style={{ marginBottom: 20 }}>
                                         <h3 style={{ marginBottom: 16 }}>{t('statistics.score_distribution')}</h3>
                                         <ScoreHistogram scores={summaries.map((s) => s.modifiedPercentage)} />
+                                    </div>
+                                )}
+
+                                {/* Bloom's taxonomy pyramid */}
+                                {bloomsData && summaries.length > 0 && (
+                                    <div className="card" style={{ marginBottom: 20 }}>
+                                        <h3 style={{ marginBottom: 16 }}>{t('statistics.blooms_title')}</h3>
+                                        <BloomsPyramidChart
+                                            lang={lang}
+                                            levels={BLOOM_LEVELS.map((bl) => ({
+                                                id: bl.id,
+                                                order: bl.order,
+                                                labelEn: bl.labelEn,
+                                                labelNl: bl.labelNl,
+                                                color: bl.color,
+                                                value: bloomsData.find((b) => b.categoryId === bl.id)?.count
+                                                    ? bloomsData.find((b) => b.categoryId === bl.id)!.avgPercentage
+                                                    : null,
+                                            }))}
+                                        />
+                                    </div>
+                                )}
+
+                                {/* IB Learner Profile rose chart */}
+                                {ibData && summaries.length > 0 && (
+                                    <div className="card" style={{ marginBottom: 20 }}>
+                                        <h3 style={{ marginBottom: 16 }}>{t('statistics.ib_title')}</h3>
+                                        <div style={{ display: 'flex', justifyContent: 'center' }}>
+                                            <FrameworkRoseChart
+                                                sectors={IB_ATTRIBUTES.map((attr) => {
+                                                    const bucket = ibData.find((b) => b.categoryId === attr.id);
+                                                    return {
+                                                        id: attr.id,
+                                                        label: lang === 'nl' ? attr.labelNl : attr.labelEn,
+                                                        value: bucket?.count ? bucket.avgPercentage : 0,
+                                                        color: attr.color,
+                                                        count: bucket?.count ?? 0,
+                                                    };
+                                                })}
+                                            />
+                                        </div>
                                     </div>
                                 )}
 

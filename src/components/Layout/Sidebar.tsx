@@ -28,7 +28,8 @@ interface SidebarProps {
 
 export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
     const { t } = useTranslation();
-    const { rubrics, students } = useApp();
+    const { rubrics, students, settings } = useApp();
+    const isAdmin = settings.userRole === 'admin';
     const location = useLocation();
 
     const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === 'true');
@@ -167,6 +168,18 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
                         <Settings size={16} aria-hidden="true" />
                         {!collapsed && t('common.settings')}
                     </NavLink>
+                    {isAdmin && (
+                        <NavLink
+                            to="/admin"
+                            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                            aria-label={collapsed ? t('admin.title') : undefined}
+                            data-tooltip={collapsed ? t('admin.title') : undefined}
+                            style={collapsed ? { justifyContent: 'center', padding: '10px 0' } : undefined}
+                        >
+                            <Shield size={16} aria-hidden="true" />
+                            {!collapsed && t('admin.title')}
+                        </NavLink>
+                    )}
                     <NavLink
                         to="/privacy"
                         className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
