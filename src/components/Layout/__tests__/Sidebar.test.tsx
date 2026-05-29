@@ -31,6 +31,7 @@ function renderSidebar(initialRoute = '/') {
 describe('Sidebar', () => {
     beforeEach(() => {
         localStorage.clear();
+        mockUserRole = 'user';
     });
 
     it('renders the brand name when expanded', () => {

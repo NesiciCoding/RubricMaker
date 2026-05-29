@@ -306,7 +306,15 @@ export class SupabaseAdapter {
             .from('profiles')
             .update({ school_id: schoolId })
             .eq('id', this.userId);
-        return profileError ? { success: false, error: profileError.message } : { success: true };
+        if (profileError) {
+            await this.client
+                .from('school_members')
+                .delete()
+                .eq('school_id', schoolId)
+                .eq('profile_id', this.userId);
+            return { success: false, error: profileError.message };
+        }
+        return { success: true };
     }
 
     async updateSchool(schoolId: string, updates: { name?: string; retentionYears?: number }): Promise<SyncResult> {
@@ -351,7 +359,12 @@ export class SupabaseAdapter {
             .eq('school_id', schoolId)
             .eq('profile_id', profileId);
         if (error) return { success: false, error: error.message };
-        await this.client.from('profiles').update({ school_id: null }).eq('id', profileId);
+        const { error: profileError } = await this.client
+            .from('profiles')
+            .update({ school_id: null })
+            .eq('id', profileId)
+            .eq('school_id', schoolId);
+        if (profileError) return { success: false, error: profileError.message };
         return { success: true };
     }
 

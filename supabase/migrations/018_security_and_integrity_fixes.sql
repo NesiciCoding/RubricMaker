@@ -8,7 +8,7 @@
 -- ── 1. Positive-retention constraint ─────────────────────────────────────────
 
 ALTER TABLE public.schools
-  ADD CONSTRAINT schools_retention_positive CHECK (retention_years > 0);
+  ADD CONSTRAINT schools_retention_range CHECK (retention_years BETWEEN 1 AND 20);
 
 -- ── 2. One-school-per-user constraint ────────────────────────────────────────
 -- A profile may only belong to a single school at a time.
