@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { BookOpen, Copy, Check, TrendingUp, MessageSquare, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import Joyride, { STATUS, type CallBackProps } from 'react-joyride';
+import { Joyride, STATUS } from 'react-joyride';
 import { useApp } from '../context/AppContext';
 import { calcGradeSummary } from '../utils/gradeCalc';
 import CefrProgressChart from '../components/Statistics/CefrProgressChart';
@@ -21,7 +21,7 @@ export default function StudentPortalPage() {
     const [tourRun, setTourRun] = useState(() => localStorage.getItem(tourKey) !== 'true');
     const tourSteps = useMemo(() => getStudentPortalTutorialSteps(t), [t, i18n.language]);
 
-    const handleTourCallback = (data: CallBackProps) => {
+    const handleTourCallback = (data: { status: string }) => {
         if (data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED) {
             localStorage.setItem(tourKey, 'true');
             setTourRun(false);

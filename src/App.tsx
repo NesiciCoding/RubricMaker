@@ -1,7 +1,7 @@
 import React, { Suspense, lazy, useMemo, useState } from 'react';
 import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import Sidebar from './components/Layout/Sidebar';
-import Joyride, { STATUS, type CallBackProps } from 'react-joyride';
+import { Joyride, STATUS } from 'react-joyride';
 import { useApp } from './context/AppContext';
 import { MobileMenuContext } from './context/MobileMenuContext';
 import { getTutorialSteps } from './data/TutorialSteps';
@@ -95,7 +95,7 @@ export default function App() {
         );
     }
 
-    const handleJoyrideCallback = (data: CallBackProps) => {
+    const handleJoyrideCallback = (data: { status: string }) => {
         const { status } = data;
         if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
             updateSettings({ hasSeenTutorial: true });
