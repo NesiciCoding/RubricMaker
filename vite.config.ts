@@ -45,6 +45,15 @@ export default defineConfig({
         'src/components/Editor/EssayEditor.tsx',
         'src/components/Essay/EssayAssignmentModal.tsx',
         'src/components/Essay/EssaySlipSheet.tsx',
+        // Auth/onboarding flows — require full Supabase + router context to render meaningfully
+        'src/pages/OnboardingPage.tsx',
+        // Admin dashboard — depends on live Supabase data and full app context
+        'src/pages/AdminPage.tsx',
+        // Chart components — SVG/CSS render output; logic covered by frameworkAggregator.test.ts
+        'src/components/Statistics/BloomsPyramidChart.tsx',
+        'src/components/Statistics/FrameworkRoseChart.tsx',
+        // Student self-assessment panel — UI wrapper; aggregation logic tested separately
+        'src/components/Students/RubricSelfAssessPanel.tsx',
       ],
       all: true,
       thresholds: {

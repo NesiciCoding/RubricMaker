@@ -271,7 +271,10 @@ export interface Student {
     id: string;
     name: string;
     email?: string;
+    studentNumber?: string;
     classId: string;
+    /** ISO timestamp set when PII was anonymized; presence means the record is anonymized. */
+    anonymizedAt?: string;
 }
 
 export type VoTrack = 'vmbo-bb' | 'vmbo-kb' | 'vmbo-tl' | 'havo' | 'vwo';
@@ -324,6 +327,12 @@ export interface StudentRubric {
     isAnchor?: boolean;
     /** Peer review round number (1-based); undefined means single/legacy round */
     round?: number;
+    /** Student's own level selection per criterion (rubric-level self-assessment) */
+    selfAssessmentLevels?: Record<string, string | null>;
+    /** Free text student self-reflection for this rubric grade */
+    selfAssessmentReflection?: string;
+    /** ISO timestamp when student last submitted their self-assessment */
+    selfAssessedAt?: string;
     /** Snapshot of the rubric at the time of grading to ensure historical grades do not break */
     rubricSnapshot?: Rubric;
 }
@@ -336,6 +345,21 @@ export interface CommentSnippet {
 
 /** Role controlling which settings a user can access */
 export type UserRole = 'admin' | 'user' | 'student';
+
+export interface School {
+    id: string;
+    name: string;
+    createdBy?: string;
+    retentionYears: number;
+    createdAt: string;
+}
+
+export interface SchoolMember {
+    id: string;
+    schoolId: string;
+    profileId: string;
+    createdAt: string;
+}
 
 export interface AppSettings {
     defaultGradeScaleId: string;
@@ -373,6 +397,12 @@ export interface AppSettings {
      * If undefined, no password is required.
      */
     adminPin?: string;
+    /** Set by StorageSync when a Supabase-authenticated user has no school assigned yet. */
+    needsOnboarding?: boolean;
+    /** Supabase school ID of the user's school (populated on login). */
+    schoolId?: string;
+    /** Display name of the user's school (populated on login). */
+    schoolName?: string;
 }
 
 export interface CommentBankItem {
