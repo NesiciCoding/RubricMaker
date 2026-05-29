@@ -41,6 +41,13 @@ describe('getTutorialSteps', () => {
         const targets = steps.map((s) => s.target as string);
         expect(targets).toContain('[data-tour="/rubrics"]');
         expect(targets).toContain('[data-tour="/students"]');
+        expect(targets).toContain('[data-tour="/cefr-overview"]');
         expect(targets).toContain('[data-tour="/statistics"]');
+    });
+
+    it('no step targets a class that only exists on a sub-page', () => {
+        const steps = getTutorialSteps(t as any);
+        const targets = steps.map((s) => s.target as string);
+        expect(targets).not.toContain('.compare-btn-tutorial');
     });
 });

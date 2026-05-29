@@ -3,17 +3,31 @@ import { useParams } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { BookOpen, Copy, Check, TrendingUp, MessageSquare, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Joyride, STATUS } from 'react-joyride';
+import type { EventData } from 'react-joyride';
 import { useApp } from '../context/AppContext';
 import { calcGradeSummary } from '../utils/gradeCalc';
 import CefrProgressChart from '../components/Statistics/CefrProgressChart';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
+import { getStudentPortalTutorialSteps } from '../data/StudentPortalTutorialSteps';
 import type { CefrLevel, CefrSkill } from '../types';
 
 export default function StudentPortalPage() {
     const { studentId } = useParams<{ studentId: string }>();
     const { students, classes, rubrics, studentRubrics, gradeScales, settings, selfAssessments } = useApp();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [linkCopied, setLinkCopied] = useState(false);
+
+    const tourKey = `rm_portal_tour_seen_${studentId}`;
+    const [tourRun, setTourRun] = useState(() => localStorage.getItem(tourKey) !== 'true');
+    const tourSteps = useMemo(() => getStudentPortalTutorialSteps(t), [t, i18n.language]);
+
+    const handleTourCallback = (data: EventData) => {
+        if (data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED) {
+            localStorage.setItem(tourKey, 'true');
+            setTourRun(false);
+        }
+    };
 
     const student = students.find((s) => s.id === studentId);
     const cls = classes.find((c) => c.id === student?.classId);
@@ -110,6 +124,26 @@ export default function StudentPortalPage() {
 
     return (
         <div style={{ minHeight: '100vh', background: 'var(--bg)', paddingBottom: 60 }}>
+            <Joyride
+                steps={tourSteps}
+                run={tourRun}
+                continuous
+                onEvent={handleTourCallback}
+                options={{
+                    showProgress: true,
+                    buttons: ['back', 'skip', 'primary'],
+                    primaryColor: 'var(--accent)',
+                    backgroundColor: 'var(--bg-elevated)',
+                    textColor: 'var(--text)',
+                    arrowColor: 'var(--bg-elevated)',
+                    overlayColor: 'rgba(0, 0, 0, 0.6)',
+                }}
+                styles={{
+                    tooltipContainer: {
+                        textAlign: 'left',
+                    },
+                }}
+            />
             {/* Header */}
             <div style={{ background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border)', padding: '20px 24px' }}>
                 <div style={{ maxWidth: 820, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
@@ -117,17 +151,17 @@ export default function StudentPortalPage() {
                         <h1 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700 }}>{student.name}</h1>
                         {cls && <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: 2 }}>{cls.name}</div>}
                     </div>
-                    <button className="btn btn-ghost btn-sm" onClick={handleCopyLink} title={t('studentPortal.copy_link')}>
+                    <button className="btn btn-ghost btn-sm" data-tour="portal-copy-link" onClick={handleCopyLink} title={t('studentPortal.copy_link')}>
                         {linkCopied ? <Check size={14} /> : <Copy size={14} />}
                         {linkCopied ? t('studentPortal.link_copied') : t('studentPortal.copy_link')}
                     </button>
                 </div>
             </div>
 
-            <div style={{ maxWidth: 820, margin: '0 auto', padding: '24px 16px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <div data-tour="portal-content" style={{ maxWidth: 820, margin: '0 auto', padding: '24px 16px', display: 'flex', flexDirection: 'column', gap: 24 }}>
 
                 {/* Summary stats */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
+                <div data-tour="portal-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
                     <StatCard icon={<BookOpen size={16} />} label={t('studentPortal.stat_rubrics')} value={String(history.length)} />
                     {avgScore !== null && (
                         <StatCard icon={<TrendingUp size={16} />} label={t('studentPortal.stat_average')} value={`${avgScore.toFixed(1)}%`} />
