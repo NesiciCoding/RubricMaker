@@ -104,8 +104,10 @@ function SchoolsTab() {
 
     async function handleCreate() {
         if (!newName.trim()) return;
+        const retention = Math.round(newRetention);
+        if (!Number.isFinite(retention) || retention < 1 || retention > 20) return;
         setCreating(true);
-        const s = await createSchool(newName.trim(), newRetention);
+        const s = await createSchool(newName.trim(), retention);
         if (s) { setNewName(''); setNewRetention(3); await load(); }
         setCreating(false);
     }

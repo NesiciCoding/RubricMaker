@@ -123,7 +123,7 @@ describe('aggregateFrameworkScores', () => {
         const bloomId = BLOOM_LEVELS[0].id;
         const result = aggregateFrameworkScores('blooms', [], []);
         const bucket = result.find((b) => b.categoryId === bloomId)!;
-        expect(isNaN(bucket.avgPercentage)).toBe(true);
+        expect(bucket.avgPercentage).toBeNaN();
         expect(bucket.count).toBe(0);
     });
 
