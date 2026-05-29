@@ -359,6 +359,15 @@ export default function GradeStudent() {
         settings.language === 'nl' ? 'nl-NL' : 'en-US'
     );
 
+    const handlePrint = useCallback(() => {
+        const orientation = rubric?.format?.orientation ?? 'portrait';
+        const style = document.createElement('style');
+        style.textContent = `@page { size: A4 ${orientation}; }`;
+        document.head.appendChild(style);
+        window.print();
+        document.head.removeChild(style);
+    }, [rubric]);
+
     if (!rubric || !student || !sr)
         return (
             <div className="page-content">
@@ -371,15 +380,6 @@ export default function GradeStudent() {
         if (!sr || !rubric || !student) return;
         await exportSinglePdf(sr, rubric, student, scale, { orientation: rubric.format.orientation });
     };
-
-    const handlePrint = useCallback(() => {
-        const orientation = rubric?.format?.orientation ?? 'portrait';
-        const style = document.createElement('style');
-        style.textContent = `@page { size: A4 ${orientation}; }`;
-        document.head.appendChild(style);
-        window.print();
-        document.head.removeChild(style);
-    }, [rubric]);
 
     const fmt = rubric.format;
     const orderedLevels =
