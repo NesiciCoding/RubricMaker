@@ -35,6 +35,8 @@ export default defineConfig({
         'src/utils/pdfExport.ts',
         'src/utils/docxExport.ts',
         'src/utils/docxTemplateExport.ts',
+        // Browser Notification API + sessionStorage — not unit-testable in jsdom
+        'src/components/Layout/NotificationBell.tsx',
         // Static documentation page — no executable logic to unit-test
         'src/pages/PrivacyPage.tsx',
         // Essay feature — browser-API-heavy (TipTap canvas, sessionStorage, navigator, QR canvas, file-saver)

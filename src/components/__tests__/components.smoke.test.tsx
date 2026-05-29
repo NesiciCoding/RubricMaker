@@ -392,6 +392,43 @@ describe('CefrPickerModal', () => {
         render(<CefrPickerModal {...baseProps} />);
         expect(screen.getByText('A1')).toBeInTheDocument();
     });
+
+    it('switching to IB tab renders IB attributes', () => {
+        render(<CefrPickerModal {...baseProps} />);
+        fireEvent.click(screen.getByText('framework.ib_short'));
+        expect(screen.getByText('Inquirers')).toBeInTheDocument();
+    });
+
+    it('expanding an IB attribute shows descriptors', () => {
+        render(<CefrPickerModal {...baseProps} />);
+        fireEvent.click(screen.getByText('framework.ib_short'));
+        fireEvent.click(screen.getByText('Inquirers'));
+        expect(screen.getAllByRole('button').length).toBeGreaterThan(3);
+    });
+
+    it('switching to Blooms tab renders Bloom levels', () => {
+        render(<CefrPickerModal {...baseProps} />);
+        fireEvent.click(screen.getByText('framework.blooms_short'));
+        expect(screen.getByText(/Remember/)).toBeInTheDocument();
+    });
+
+    it('expanding a Bloom level shows descriptors', () => {
+        render(<CefrPickerModal {...baseProps} />);
+        fireEvent.click(screen.getByText('framework.blooms_short'));
+        fireEvent.click(screen.getByText(/Remember/));
+        expect(screen.getAllByRole('button').length).toBeGreaterThan(3);
+    });
+
+    it('toggling a framework descriptor calls onAddFramework', () => {
+        const onAddFramework = vi.fn();
+        render(<CefrPickerModal {...baseProps} onAddFramework={onAddFramework} />);
+        fireEvent.click(screen.getByText('framework.ib_short'));
+        fireEvent.click(screen.getByText('Inquirers'));
+        const rows = screen.getAllByRole('button');
+        const descriptorBtn = rows.find((b) => b.textContent && b.textContent.length > 30);
+        if (descriptorBtn) fireEvent.click(descriptorBtn);
+        expect(onAddFramework).toHaveBeenCalled();
+    });
 });
 
 // ─── StandardsPickerModal ─────────────────────────────────────────────────────
