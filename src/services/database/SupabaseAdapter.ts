@@ -364,7 +364,17 @@ export class SupabaseAdapter {
             .update({ school_id: null })
             .eq('id', profileId)
             .eq('school_id', schoolId);
-        if (profileError) return { success: false, error: profileError.message };
+        if (profileError) {
+            const { error: rollbackError } = await this.client
+                .from('school_members')
+                .insert({ school_id: schoolId, profile_id: profileId });
+            return {
+                success: false,
+                error: rollbackError
+                    ? `${profileError.message}; rollback failed: ${rollbackError.message}`
+                    : profileError.message,
+            };
+        }
         return { success: true };
     }
 
