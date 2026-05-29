@@ -545,6 +545,7 @@ interface AppContextValue extends StoreData {
     syncToOneDrive: () => Promise<void>;
     restoreFromOneDrive: () => Promise<void>;
     microsoftUser: any | null;
+    getCurrentDatabaseUserId: () => string | null;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -1102,6 +1103,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         []
     );
 
+    const getCurrentDatabaseUserId = useCallback(() => storageSync.getCurrentUserId(), []);
+
     // ─── Student anonymization ─────────────────────────────────────────────────
     const anonymizeStudent = useCallback((id: string) => {
         const original = state.students.find((s) => s.id === id);
@@ -1183,6 +1186,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         fetchSchoolMembers,
         removeSchoolMember,
         anonymizeStudent,
+        getCurrentDatabaseUserId,
         saveEssayAssignment,
         deleteEssayAssignment,
         fetchEssaySubmissions,

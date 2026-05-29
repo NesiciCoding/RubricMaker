@@ -13,11 +13,12 @@ type Tab = 'users' | 'schools' | 'data' | 'retention';
 
 function UsersTab() {
     const { t } = useTranslation();
-    const { fetchAllUsers, updateUserRole } = useApp();
+    const { fetchAllUsers, updateUserRole, getCurrentDatabaseUserId } = useApp();
     const { showToast } = useToast();
     const [users, setUsers] = useState<DbUser[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState<string | null>(null);
+    const [currentUserId] = useState<string | null>(() => getCurrentDatabaseUserId());
 
     useEffect(() => {
         fetchAllUsers().then((u) => { setUsers(u); setLoading(false); });
@@ -62,6 +63,7 @@ function UsersTab() {
                                         className="input"
                                         style={{ fontSize: '0.8rem', padding: '4px 8px' }}
                                         value={u.role}
+                                        disabled={u.id === currentUserId}
                                         onChange={(e) => handleRoleChange(u.id, e.target.value as 'admin' | 'user' | 'student')}
                                     >
                                         <option value="admin">{t('admin.role_admin')}</option>
@@ -110,8 +112,8 @@ function SchoolsTab() {
 
     async function handleUpdateRetention(schoolId: string) {
         const years = editRetention[schoolId];
-        if (!years) return;
-        await updateSchool(schoolId, { retentionYears: years });
+        if (!years || !Number.isFinite(years) || years < 1 || years > 20) return;
+        await updateSchool(schoolId, { retentionYears: Math.round(years) });
         await load();
     }
 
@@ -193,10 +195,18 @@ function SchoolsTab() {
                             <button className="btn btn-secondary btn-sm" onClick={() => handleUpdateRetention(s.id)}>
                                 {t('admin.btn_save')}
                             </button>
-                            <button className="btn btn-secondary btn-sm" onClick={() => handleExpand(s.id)}>
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => handleExpand(s.id)}
+                                aria-label={expandedSchool === s.id ? t('admin.btn_collapse_members') : t('admin.btn_expand_members')}
+                            >
                                 {expandedSchool === s.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                             </button>
-                            <button className="btn btn-secondary btn-sm" onClick={() => handleDelete(s.id)}>
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => handleDelete(s.id)}
+                                aria-label={t('admin.btn_delete')}
+                            >
                                 <Trash2 size={13} style={{ color: '#dc2626' }} />
                             </button>
                         </div>

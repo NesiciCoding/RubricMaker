@@ -58,7 +58,7 @@ export default function NotificationBell() {
     const visibleCount = visible.length;
 
     const handleToggle = () => {
-        if (open) setDismissedIds(new Set());
+        if (!open) setDismissedIds(new Set());
         setOpen((v) => !v);
     };
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation, Trans } from 'react-i18next';
 import {
     Save,
@@ -1091,9 +1091,9 @@ export default function SettingsPage() {
                                             {t('settings.admin_dashboard_desc', 'Manage users, schools, and student data retention.')}
                                         </p>
                                     </div>
-                                    <a href="/admin" className="btn btn-primary btn-sm" style={{ textDecoration: 'none', flexShrink: 0 }}>
+                                    <Link to="/admin" className="btn btn-primary btn-sm" style={{ textDecoration: 'none', flexShrink: 0 }}>
                                         {t('settings.open_admin_dashboard', 'Open')}
-                                    </a>
+                                    </Link>
                                 </div>
 
                                 {/* Standards Integration */}

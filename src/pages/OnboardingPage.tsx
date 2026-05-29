@@ -24,28 +24,34 @@ export default function OnboardingPage() {
         setError('');
         if (schoolAction === 'create') {
             if (!schoolName.trim()) { setError(t('onboarding.error_name_required')); return; }
+            const clampedYears = Math.min(20, Math.max(1, Number.isFinite(retentionYears) ? Math.round(retentionYears) : 3));
             setBusy(true);
-            // createSchool also inserts the creator into school_members and sets profile.school_id
-            const newSchool = await createSchool(schoolName.trim(), retentionYears);
-            if (!newSchool) {
-                setError(t('onboarding.error_create', { error: 'unknown' }));
+            try {
+                const newSchool = await createSchool(schoolName.trim(), clampedYears);
+                if (!newSchool) {
+                    setError(t('onboarding.error_create', { error: 'unknown' }));
+                    return;
+                }
+                updateSettings({ needsOnboarding: false, schoolId: newSchool.id, schoolName: newSchool.name });
+                setStep('done');
+            } finally {
                 setBusy(false);
-                return;
             }
-            updateSettings({ needsOnboarding: false, schoolId: newSchool.id, schoolName: newSchool.name, userRole: role });
         } else {
             if (!schoolId.trim()) { setError(t('onboarding.error_id_required')); return; }
             setBusy(true);
-            const result = await joinSchool(schoolId.trim());
-            if (!result.success) {
-                setError(t('onboarding.error_join', { error: result.error ?? 'unknown' }));
+            try {
+                const result = await joinSchool(schoolId.trim());
+                if (!result.success) {
+                    setError(t('onboarding.error_join', { error: result.error ?? 'unknown' }));
+                    return;
+                }
+                updateSettings({ needsOnboarding: false });
+                setStep('done');
+            } finally {
                 setBusy(false);
-                return;
             }
-            updateSettings({ needsOnboarding: false, userRole: role });
         }
-        setBusy(false);
-        setStep('done');
     }
 
     const cardStyle: React.CSSProperties = {

@@ -274,9 +274,25 @@ export class SupabaseAdapter {
             .select()
             .single();
         if (error || !data) return null;
-        // Add creator as a member and set their school_id
-        await this.client.from('school_members').insert({ school_id: data.id, profile_id: this.userId });
-        await this.client.from('profiles').update({ school_id: data.id }).eq('id', this.userId);
+
+        const { error: memberError } = await this.client
+            .from('school_members')
+            .insert({ school_id: data.id, profile_id: this.userId });
+        if (memberError) {
+            await this.client.from('schools').delete().eq('id', data.id);
+            return null;
+        }
+
+        const { error: profileError } = await this.client
+            .from('profiles')
+            .update({ school_id: data.id })
+            .eq('id', this.userId);
+        if (profileError) {
+            await this.client.from('school_members').delete().eq('school_id', data.id).eq('profile_id', this.userId);
+            await this.client.from('schools').delete().eq('id', data.id);
+            return null;
+        }
+
         return { id: data.id, name: data.name, createdBy: data.created_by, retentionYears: data.retention_years, createdAt: data.created_at };
     }
 
@@ -334,7 +350,9 @@ export class SupabaseAdapter {
             .delete()
             .eq('school_id', schoolId)
             .eq('profile_id', profileId);
-        return error ? { success: false, error: error.message } : { success: true };
+        if (error) return { success: false, error: error.message };
+        await this.client.from('profiles').update({ school_id: null }).eq('id', profileId);
+        return { success: true };
     }
 
     async fetchMyProfileWithSchool(): Promise<(import('./types').DbUser & { schoolId?: string }) | null> {

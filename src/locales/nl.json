@@ -815,6 +815,8 @@
         "btn_creating": "Aanmaken…",
         "btn_save": "Opslaan",
         "btn_delete": "Verwijderen",
+        "btn_expand_members": "Leden tonen",
+        "btn_collapse_members": "Leden verbergen",
         "btn_delete_confirm": "Weet u zeker dat u deze school wilt verwijderen? Dit kan niet ongedaan worden gemaakt.",
         "members_title": "Leden van {{school}}",
         "members_loading": "Leden laden…",
