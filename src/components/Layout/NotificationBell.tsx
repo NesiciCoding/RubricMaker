@@ -52,13 +52,21 @@ export default function NotificationBell() {
         setPermissionState(result);
     }, []);
 
+    const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
     const count = overdueStudents.length;
+    const visible = overdueStudents.filter((s) => !dismissedIds.has(s.studentId));
+    const visibleCount = visible.length;
+
+    const handleToggle = () => {
+        if (!open) setDismissedIds(new Set());
+        setOpen((v) => !v);
+    };
 
     return (
         <div style={{ position: 'relative' }} ref={panelRef}>
             <button
                 className="btn btn-ghost btn-icon"
-                onClick={() => setOpen((v) => !v)}
+                onClick={handleToggle}
                 title={t('notifications.bell_title', { count })}
                 aria-label={t('notifications.bell_title', { count })}
             >
@@ -113,14 +121,25 @@ export default function NotificationBell() {
                         }}
                     >
                         <span style={{ fontWeight: 600, fontSize: 14 }}>{t('notifications.panel_title')}</span>
-                        <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setOpen(false)}>
-                            <X size={14} />
-                        </button>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            {visibleCount > 0 && (
+                                <button
+                                    className="btn btn-ghost btn-sm"
+                                    style={{ fontSize: 12, padding: '2px 8px' }}
+                                    onClick={() => setDismissedIds(new Set(overdueStudents.map((s) => s.studentId)))}
+                                >
+                                    {t('notifications.clear_all')}
+                                </button>
+                            )}
+                            <button className="btn btn-ghost btn-icon btn-sm" onClick={() => { setDismissedIds(new Set()); setOpen(false); }}>
+                                <X size={14} />
+                            </button>
+                        </div>
                     </div>
 
                     {/* Overdue list */}
                     <div style={{ maxHeight: 240, overflowY: 'auto' }}>
-                        {count === 0 ? (
+                        {count === 0 || visibleCount === 0 ? (
                             <div
                                 style={{
                                     padding: '20px 16px',
@@ -155,9 +174,9 @@ export default function NotificationBell() {
                                         size={12}
                                         style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }}
                                     />
-                                    {t('notifications.overdue_subtitle', { count, threshold })}
+                                    {t('notifications.overdue_subtitle', { count: visibleCount, threshold })}
                                 </div>
-                                {overdueStudents.slice(0, 10).map((s) => (
+                                {visible.slice(0, 10).map((s) => (
                                     <button
                                         key={s.studentId}
                                         onClick={() => {
@@ -196,7 +215,7 @@ export default function NotificationBell() {
                                         </span>
                                     </button>
                                 ))}
-                                {count > 10 && (
+                                {visibleCount > 10 && (
                                     <div
                                         style={{
                                             padding: '8px 16px',
@@ -205,7 +224,7 @@ export default function NotificationBell() {
                                             textAlign: 'center',
                                         }}
                                     >
-                                        {t('notifications.more_overdue', { count: count - 10 })}
+                                        {t('notifications.more_overdue', { count: visibleCount - 10 })}
                                     </div>
                                 )}
                             </>

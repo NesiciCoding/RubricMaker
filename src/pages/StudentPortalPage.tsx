@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { BookOpen, Copy, Check, TrendingUp, MessageSquare, Star } from 'lucide-react';
+import { BookOpen, Copy, Check, TrendingUp, MessageSquare, Star, ClipboardCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
@@ -10,13 +10,15 @@ import { calcGradeSummary } from '../utils/gradeCalc';
 import CefrProgressChart from '../components/Statistics/CefrProgressChart';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
 import { getStudentPortalTutorialSteps } from '../data/StudentPortalTutorialSteps';
+import RubricSelfAssessPanel from '../components/Students/RubricSelfAssessPanel';
 import type { CefrLevel, CefrSkill } from '../types';
 
 export default function StudentPortalPage() {
     const { studentId } = useParams<{ studentId: string }>();
-    const { students, classes, rubrics, studentRubrics, gradeScales, settings, selfAssessments } = useApp();
+    const { students, classes, rubrics, studentRubrics, gradeScales, settings, selfAssessments, saveRubricSelfAssessment } = useApp();
     const { t, i18n } = useTranslation();
     const [linkCopied, setLinkCopied] = useState(false);
+    const [openSelfAssessId, setOpenSelfAssessId] = useState<string | null>(null);
 
     const tourKey = `rm_portal_tour_seen_${studentId}`;
     const [tourRun, setTourRun] = useState(() => localStorage.getItem(tourKey) !== 'true');
@@ -365,6 +367,42 @@ export default function StudentPortalPage() {
                                                         </div>
                                                     );
                                                 })}
+                                        </div>
+                                    )}
+
+                                    {/* Self-assessment */}
+                                    {!h.sr.notHandedIn && (
+                                        <div style={{ marginTop: 10 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                                <button
+                                                    className="btn btn-ghost btn-sm"
+                                                    style={{ fontSize: 12 }}
+                                                    onClick={() => setOpenSelfAssessId((id) => id === h.sr.id ? null : h.sr.id)}
+                                                >
+                                                    <ClipboardCheck size={13} />
+                                                    {openSelfAssessId === h.sr.id
+                                                        ? t('common.cancel')
+                                                        : h.sr.selfAssessedAt
+                                                            ? t('studentPortal.self_assess_edit_btn')
+                                                            : t('studentPortal.self_assess_btn')}
+                                                </button>
+                                                {h.sr.selfAssessedAt && openSelfAssessId !== h.sr.id && (
+                                                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                                                        {t('studentPortal.self_assessed_on', {
+                                                            date: new Date(h.sr.selfAssessedAt).toLocaleDateString(),
+                                                        })}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {openSelfAssessId === h.sr.id && (
+                                                <RubricSelfAssessPanel
+                                                    sr={h.sr}
+                                                    rubric={h.rubric}
+                                                    onSave={(levels, reflection) => {
+                                                        saveRubricSelfAssessment(h.sr.id, levels, reflection);
+                                                    }}
+                                                />
+                                            )}
                                         </div>
                                     )}
                                 </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation, Trans } from 'react-i18next';
 import {
     Save,
@@ -1094,6 +1094,20 @@ export default function SettingsPage() {
                             </div>
                         ) : (
                             <>
+                                {/* Admin Dashboard link */}
+                                <div className="card" style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 16 }}>
+                                    <Shield size={20} style={{ color: 'var(--accent)', flexShrink: 0 }} aria-hidden="true" />
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontWeight: 600, marginBottom: 2 }}>{t('admin.title')}</div>
+                                        <p className="text-muted text-sm" style={{ margin: 0 }}>
+                                            {t('settings.admin_dashboard_desc', 'Manage users, schools, and student data retention.')}
+                                        </p>
+                                    </div>
+                                    <Link to="/admin" className="btn btn-primary btn-sm" style={{ textDecoration: 'none', flexShrink: 0 }}>
+                                        {t('settings.open_admin_dashboard', 'Open')}
+                                    </Link>
+                                </div>
+
                                 {/* Standards Integration */}
                                 <div
                                     className="card"

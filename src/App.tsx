@@ -32,6 +32,8 @@ const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 const StudentCefrOverviewPage = lazy(() => import('./pages/StudentCefrOverviewPage'));
 const CefrOverviewPage = lazy(() => import('./pages/CefrOverviewPage'));
 const StudentPortalPage = lazy(() => import('./pages/StudentPortalPage'));
+const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
+const AdminPage = lazy(() => import('./pages/AdminPage'));
 
 // Forces GradeStudent to remount when studentId changes so useState re-initialises.
 function GradeStudentRoute() {
@@ -66,6 +68,14 @@ export default function App() {
     }
 
     if (showLanding) return <LandingPage />;
+
+    if (settings.needsOnboarding) {
+        return (
+            <Suspense fallback={<Spinner />}>
+                <OnboardingPage />
+            </Suspense>
+        );
+    }
 
     if (settings.userRole === 'student') {
         const linkedStudent = settings.userEmail
@@ -171,6 +181,11 @@ export default function App() {
                                 <Route path="/statistics" element={<StatisticsPage />} />
                                 <Route path="/comments" element={<CommentBankPage />} />
                                 <Route path="/settings" element={<SettingsPage />} />
+                                <Route path="/admin" element={
+                                    settings.userRole === 'admin'
+                                        ? <AdminPage />
+                                        : <Navigate to="/" replace />
+                                } />
                                 <Route path="/privacy" element={<PrivacyPage />} />
                                 <Route path="*" element={<NotFoundPage />} />
                             </Routes>

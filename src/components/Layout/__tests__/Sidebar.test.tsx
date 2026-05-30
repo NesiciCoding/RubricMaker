@@ -4,10 +4,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import Sidebar from '../Sidebar';
 
+let mockUserRole: string = 'user';
+
 vi.mock('../../../context/AppContext', () => ({
     useApp: () => ({
         rubrics: [{ id: 'r1' }, { id: 'r2' }],
         students: [{ id: 's1' }],
+        settings: { userRole: mockUserRole },
     }),
 }));
 
@@ -28,6 +31,7 @@ function renderSidebar(initialRoute = '/') {
 describe('Sidebar', () => {
     beforeEach(() => {
         localStorage.clear();
+        mockUserRole = 'user';
     });
 
     it('renders the brand name when expanded', () => {
@@ -74,5 +78,18 @@ describe('Sidebar', () => {
     it('renders settings nav link', () => {
         renderSidebar();
         expect(screen.getByText('common.settings')).toBeInTheDocument();
+    });
+
+    it('hides admin link for non-admin user', () => {
+        mockUserRole = 'user';
+        renderSidebar();
+        expect(screen.queryByText('admin.title')).toBeNull();
+    });
+
+    it('shows admin link for admin user', () => {
+        mockUserRole = 'admin';
+        renderSidebar();
+        expect(screen.getByText('admin.title')).toBeInTheDocument();
+        mockUserRole = 'user';
     });
 });
