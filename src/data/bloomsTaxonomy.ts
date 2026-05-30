@@ -36,7 +36,8 @@ export const BLOOM_LEVELS: BloomLevel[] = [
                 id: 'bl-rem-2',
                 levelId: 'remember',
                 descriptionEn: 'Can recognise and identify specific elements, steps, or features when presented.',
-                descriptionNl: 'Kan specifieke elementen, stappen of kenmerken herkennen en benoemen wanneer deze worden aangeboden.',
+                descriptionNl:
+                    'Kan specifieke elementen, stappen of kenmerken herkennen en benoemen wanneer deze worden aangeboden.',
             },
             {
                 id: 'bl-rem-3',
@@ -53,7 +54,15 @@ export const BLOOM_LEVELS: BloomLevel[] = [
         labelNl: 'Begrijpen',
         color: '#f97316',
         verbsEn: ['explain', 'summarise', 'classify', 'describe', 'interpret', 'compare', 'paraphrase'],
-        verbsNl: ['uitleggen', 'samenvatten', 'classificeren', 'beschrijven', 'interpreteren', 'vergelijken', 'parafraseren'],
+        verbsNl: [
+            'uitleggen',
+            'samenvatten',
+            'classificeren',
+            'beschrijven',
+            'interpreteren',
+            'vergelijken',
+            'parafraseren',
+        ],
         descriptors: [
             {
                 id: 'bl-und-1',
@@ -71,7 +80,8 @@ export const BLOOM_LEVELS: BloomLevel[] = [
                 id: 'bl-und-3',
                 levelId: 'understand',
                 descriptionEn: 'Can classify objects, events, or phenomena based on shared characteristics.',
-                descriptionNl: 'Kan objecten, gebeurtenissen of verschijnselen indelen op basis van gedeelde kenmerken.',
+                descriptionNl:
+                    'Kan objecten, gebeurtenissen of verschijnselen indelen op basis van gedeelde kenmerken.',
             },
         ],
     },
@@ -88,7 +98,8 @@ export const BLOOM_LEVELS: BloomLevel[] = [
                 id: 'bl-app-1',
                 levelId: 'apply',
                 descriptionEn: 'Can apply a learned procedure or rule to solve a familiar type of problem.',
-                descriptionNl: 'Kan een aangeleerde procedure of regel toepassen om een bekend type probleem op te lossen.',
+                descriptionNl:
+                    'Kan een aangeleerde procedure of regel toepassen om een bekend type probleem op te lossen.',
             },
             {
                 id: 'bl-app-2',
@@ -111,13 +122,23 @@ export const BLOOM_LEVELS: BloomLevel[] = [
         labelNl: 'Analyseren',
         color: '#22c55e',
         verbsEn: ['differentiate', 'organise', 'attribute', 'examine', 'compare', 'deconstruct', 'distinguish'],
-        verbsNl: ['onderscheiden', 'ordenen', 'toeschrijven', 'onderzoeken', 'vergelijken', 'deconstrueren', 'differentiëren'],
+        verbsNl: [
+            'onderscheiden',
+            'ordenen',
+            'toeschrijven',
+            'onderzoeken',
+            'vergelijken',
+            'deconstrueren',
+            'differentiëren',
+        ],
         descriptors: [
             {
                 id: 'bl-ana-1',
                 levelId: 'analyse',
-                descriptionEn: 'Can break complex information into its component parts and examine each systematically.',
-                descriptionNl: 'Kan complexe informatie opsplitsen in componenten en elk onderdeel systematisch onderzoeken.',
+                descriptionEn:
+                    'Can break complex information into its component parts and examine each systematically.',
+                descriptionNl:
+                    'Kan complexe informatie opsplitsen in componenten en elk onderdeel systematisch onderzoeken.',
             },
             {
                 id: 'bl-ana-2',
@@ -146,7 +167,8 @@ export const BLOOM_LEVELS: BloomLevel[] = [
                 id: 'bl-eva-1',
                 levelId: 'evaluate',
                 descriptionEn: 'Can assess the quality, credibility, or relevance of information using clear criteria.',
-                descriptionNl: 'Kan de kwaliteit, geloofwaardigheid of relevantie van informatie beoordelen aan de hand van duidelijke criteria.',
+                descriptionNl:
+                    'Kan de kwaliteit, geloofwaardigheid of relevantie van informatie beoordelen aan de hand van duidelijke criteria.',
             },
             {
                 id: 'bl-eva-2',
@@ -157,8 +179,10 @@ export const BLOOM_LEVELS: BloomLevel[] = [
             {
                 id: 'bl-eva-3',
                 levelId: 'evaluate',
-                descriptionEn: 'Can critique a work, approach, or solution by identifying both strengths and limitations.',
-                descriptionNl: 'Kan een werk, aanpak of oplossing beoordelen door zowel sterke punten als beperkingen te identificeren.',
+                descriptionEn:
+                    'Can critique a work, approach, or solution by identifying both strengths and limitations.',
+                descriptionNl:
+                    'Kan een werk, aanpak of oplossing beoordelen door zowel sterke punten als beperkingen te identificeren.',
             },
         ],
     },
@@ -181,7 +205,8 @@ export const BLOOM_LEVELS: BloomLevel[] = [
                 id: 'bl-cre-2',
                 levelId: 'create',
                 descriptionEn: 'Can combine ideas or elements in a novel way to generate a new, coherent whole.',
-                descriptionNl: 'Kan ideeën of elementen op een vernieuwende manier combineren om een nieuw, samenhangend geheel te creëren.',
+                descriptionNl:
+                    'Kan ideeën of elementen op een vernieuwende manier combineren om een nieuw, samenhangend geheel te creëren.',
             },
             {
                 id: 'bl-cre-3',

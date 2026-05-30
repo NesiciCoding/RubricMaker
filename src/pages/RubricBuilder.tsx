@@ -569,9 +569,7 @@ export default function RubricBuilder() {
     function addFrameworkDescriptor(cid: string, descriptor: LinkedFrameworkDescriptor) {
         setCriteria((c) =>
             c.map((x) =>
-                x.id === cid
-                    ? { ...x, frameworkDescriptors: [...(x.frameworkDescriptors || []), descriptor] }
-                    : x
+                x.id === cid ? { ...x, frameworkDescriptors: [...(x.frameworkDescriptors || []), descriptor] } : x
             )
         );
     }
@@ -682,7 +680,10 @@ export default function RubricBuilder() {
                                         <button
                                             className="btn btn-ghost btn-sm"
                                             style={{ justifyContent: 'flex-start' }}
-                                            onClick={() => { setShowExportMenu(false); handlePrint(); }}
+                                            onClick={() => {
+                                                setShowExportMenu(false);
+                                                handlePrint();
+                                            }}
                                         >
                                             <Printer size={14} /> {t('rubricBuilder.action_print')}
                                         </button>
@@ -1328,8 +1329,9 @@ export default function RubricBuilder() {
                                                                     >
                                                                         <BookOpen size={13} />{' '}
                                                                         {t('framework.action_link_descriptor')}
-                                                                        {((criterion.cefrDescriptors || []).length +
-                                                                            (criterion.frameworkDescriptors || []).length) >
+                                                                        {(criterion.cefrDescriptors || []).length +
+                                                                            (criterion.frameworkDescriptors || [])
+                                                                                .length >
                                                                             0 && (
                                                                             <span
                                                                                 style={{
@@ -1342,8 +1344,12 @@ export default function RubricBuilder() {
                                                                                     marginLeft: 4,
                                                                                 }}
                                                                             >
-                                                                                {(criterion.cefrDescriptors || []).length +
-                                                                                    (criterion.frameworkDescriptors || []).length}
+                                                                                {(criterion.cefrDescriptors || [])
+                                                                                    .length +
+                                                                                    (
+                                                                                        criterion.frameworkDescriptors ||
+                                                                                        []
+                                                                                    ).length}
                                                                             </span>
                                                                         )}
                                                                     </button>
@@ -2522,9 +2528,7 @@ export default function RubricBuilder() {
                                 <h3>{t('rubricBuilder.preview_title')}</h3>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                     {criteria.some(
-                                        (c) =>
-                                            c.linkedStandard ||
-                                            (c.linkedStandards && c.linkedStandards.length > 0)
+                                        (c) => c.linkedStandard || (c.linkedStandards && c.linkedStandards.length > 0)
                                     ) && (
                                         <div
                                             style={{
@@ -2752,12 +2756,31 @@ export default function RubricBuilder() {
                                                 }}
                                             >
                                                 <div style={{ flex: 1 }}>
-                                                    <div style={{ fontWeight: 600, fontSize: '0.87rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                    <div
+                                                        style={{
+                                                            fontWeight: 600,
+                                                            fontSize: '0.87rem',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: 6,
+                                                        }}
+                                                    >
                                                         {v.label?.startsWith('auto:')
                                                             ? t('rubricBuilder.version_n', { n: actualIndex + 1 })
-                                                            : v.label || t('rubricBuilder.version_n', { n: actualIndex + 1 })}
+                                                            : v.label ||
+                                                              t('rubricBuilder.version_n', { n: actualIndex + 1 })}
                                                         {v.label?.startsWith('auto:') && (
-                                                            <span style={{ fontSize: '0.65rem', padding: '1px 5px', borderRadius: 4, background: 'var(--bg-panel)', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 400 }}>
+                                                            <span
+                                                                style={{
+                                                                    fontSize: '0.65rem',
+                                                                    padding: '1px 5px',
+                                                                    borderRadius: 4,
+                                                                    background: 'var(--bg-panel)',
+                                                                    color: 'var(--text-muted)',
+                                                                    border: '1px solid var(--border)',
+                                                                    fontWeight: 400,
+                                                                }}
+                                                            >
                                                                 {t('rubricBuilder.auto_save_badge')}
                                                             </span>
                                                         )}
@@ -2904,14 +2927,24 @@ function RubricPreviewTable({
                                     </div>
                                 )}
                                 {c.linkedStandard && (
-                                    <div style={{ marginTop: 6, fontSize: '0.75em', color: 'var(--accent)' }}
-                                        title={showDescriptions ? (c.linkedStandard.statementNotation ?? '') : c.linkedStandard.description}
+                                    <div
+                                        style={{ marginTop: 6, fontSize: '0.75em', color: 'var(--accent)' }}
+                                        title={
+                                            showDescriptions
+                                                ? (c.linkedStandard.statementNotation ?? '')
+                                                : c.linkedStandard.description
+                                        }
                                     >
-                                        📌 {showDescriptions ? c.linkedStandard.description : (c.linkedStandard.statementNotation ?? c.linkedStandard.guid)}
+                                        📌{' '}
+                                        {showDescriptions
+                                            ? c.linkedStandard.description
+                                            : (c.linkedStandard.statementNotation ?? c.linkedStandard.guid)}
                                     </div>
                                 )}
                                 {(c.linkedStandards || []).map((std, idx) => (
-                                    <div key={idx} style={{ marginTop: 6, fontSize: '0.75em', color: 'var(--accent)' }}
+                                    <div
+                                        key={idx}
+                                        style={{ marginTop: 6, fontSize: '0.75em', color: 'var(--accent)' }}
                                         title={showDescriptions ? (std.statementNotation ?? '') : std.description}
                                     >
                                         📌 {showDescriptions ? std.description : (std.statementNotation ?? std.guid)}
@@ -2949,7 +2982,11 @@ function RubricPreviewTable({
                                                             }}
                                                         >
                                                             {si.linkedStandards
-                                                                .map((std) => showDescriptions ? std.description : `[${std.statementNotation ?? std.guid}]`)
+                                                                .map((std) =>
+                                                                    showDescriptions
+                                                                        ? std.description
+                                                                        : `[${std.statementNotation ?? std.guid}]`
+                                                                )
                                                                 .join(' ')}
                                                         </div>
                                                     )}
@@ -3219,9 +3256,7 @@ function RubricWysiwygEditor({
                 >
                     <BookOpen size={13} style={{ marginRight: 4 }} /> {t('rubricBuilder.action_formatting_help')}
                 </button>
-                {criteria.some(
-                    (c) => c.linkedStandard || (c.linkedStandards && c.linkedStandards.length > 0)
-                ) && (
+                {criteria.some((c) => c.linkedStandard || (c.linkedStandards && c.linkedStandards.length > 0)) && (
                     <div
                         style={{
                             display: 'flex',
@@ -3539,10 +3574,18 @@ function RubricWysiwygEditor({
                                         />
                                     )}
                                     {c.linkedStandard && (
-                                        <div style={{ marginTop: 6, fontSize: '0.75em', color: 'var(--accent)' }}
-                                            title={showStdDesc ? (c.linkedStandard.statementNotation ?? '') : c.linkedStandard.description}
+                                        <div
+                                            style={{ marginTop: 6, fontSize: '0.75em', color: 'var(--accent)' }}
+                                            title={
+                                                showStdDesc
+                                                    ? (c.linkedStandard.statementNotation ?? '')
+                                                    : c.linkedStandard.description
+                                            }
                                         >
-                                            📌 {showStdDesc ? c.linkedStandard.description : (c.linkedStandard.statementNotation ?? c.linkedStandard.guid)}
+                                            📌{' '}
+                                            {showStdDesc
+                                                ? c.linkedStandard.description
+                                                : (c.linkedStandard.statementNotation ?? c.linkedStandard.guid)}
                                         </div>
                                     )}
                                     {(c.linkedStandards || []).map((std, idx) => (
@@ -3608,9 +3651,10 @@ function RubricWysiwygEditor({
                                                                 }}
                                                             >
                                                                 {si.linkedStandards
-                                                                    .map(
-                                                                        (std) =>
-                                                                            showStdDesc ? std.description : `[${std.statementNotation ?? std.guid}]`
+                                                                    .map((std) =>
+                                                                        showStdDesc
+                                                                            ? std.description
+                                                                            : `[${std.statementNotation ?? std.guid}]`
                                                                     )
                                                                     .join(' ')}
                                                             </div>

@@ -24,10 +24,7 @@ export default function StudentCefrOverviewPage() {
     const targetLevel = cls?.voTrack ? VO_TRACK_DEFAULT_CEFR[cls.voTrack] : undefined;
 
     const overview = useMemo(
-        () =>
-            student
-                ? getCefrStudentOverview(student.id, studentRubrics, rubrics, selfAssessments)
-                : null,
+        () => (student ? getCefrStudentOverview(student.id, studentRubrics, rubrics, selfAssessments) : null),
         [student, studentRubrics, rubrics, selfAssessments]
     );
 
@@ -53,8 +50,7 @@ export default function StudentCefrOverviewPage() {
 
     const hasAnyData =
         overview &&
-        (overview.cells.some((c) => c.rubricCount > 0 || c.totalDescriptors > 0) ||
-            overview.standardSets.length > 0);
+        (overview.cells.some((c) => c.rubricCount > 0 || c.totalDescriptors > 0) || overview.standardSets.length > 0);
 
     if (!student) {
         return (
@@ -117,9 +113,7 @@ export default function StudentCefrOverviewPage() {
                     <div style={{ flex: 1, minWidth: 0 }}>
                         <h2 style={{ margin: '0 0 6px', fontSize: '1.4rem' }}>{student.name}</h2>
                         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-                            {cls && (
-                                <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{cls.name}</span>
-                            )}
+                            {cls && <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{cls.name}</span>}
                             {cls?.voTrack && (
                                 <span
                                     style={{

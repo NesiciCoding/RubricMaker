@@ -83,8 +83,8 @@ function renderBlocked() {
                 RubricMaker is already open
             </h1>
             <p style={{ margin: 0, maxWidth: '380px', lineHeight: '1.6', fontSize: '15px' }}>
-                To prevent data conflicts, only one tab can run RubricMaker at a time. Close the
-                other tab or window, then reload this page.
+                To prevent data conflicts, only one tab can run RubricMaker at a time. Close the other tab or window,
+                then reload this page.
             </p>
             <button
                 onClick={() => window.location.reload()}

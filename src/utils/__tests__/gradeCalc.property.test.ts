@@ -1,16 +1,9 @@
 import fc from 'fast-check';
 import { describe, it, expect } from 'vitest';
-import {
-    calcEntryPoints,
-    calcWeightedScore,
-    applyModifier,
-    calcLetterGrade,
-    calcGradeColor,
-} from '../gradeCalc';
+import { calcEntryPoints, calcWeightedScore, applyModifier, calcLetterGrade, calcGradeColor } from '../gradeCalc';
 import type { RubricCriterion, ScoreEntry, GradeScale, Modifier } from '../../types';
 
-const finiteFloat = (min = 0, max = 100) =>
-    fc.double({ min, max, noNaN: true, noDefaultInfinity: true });
+const finiteFloat = (min = 0, max = 100) => fc.double({ min, max, noNaN: true, noDefaultInfinity: true });
 
 const singleLevelCriterionArb = fc.tuple(finiteFloat(0, 50), finiteFloat(0, 50)).map(
     ([minPts, rangeDelta]): RubricCriterion => ({
@@ -133,29 +126,26 @@ const weightedItemArb = fc.record({
 describe('calcWeightedScore — property tests', () => {
     it('returns a value in [0, 100] when earned points are within each level maxPoints', () => {
         fc.assert(
-            fc.property(
-                fc.array(weightedItemArb, { minLength: 1, maxLength: 10 }),
-                (items) => {
-                    const criteria: RubricCriterion[] = items.map((item, i) => ({
-                        id: `c${i}`,
-                        title: '',
-                        description: '',
-                        weight: item.weight,
-                        levels: [
-                            { id: 'l1', label: '', minPoints: 0, maxPoints: item.maxPts, description: '', subItems: [] },
-                        ],
-                    }));
-                    const entries: ScoreEntry[] = items.map((item, i) => ({
-                        criterionId: `c${i}`,
-                        levelId: 'l1',
-                        checkedSubItems: [],
-                        comment: '',
-                        selectedPoints: Math.min(item.selectedPts, item.maxPts),
-                    }));
-                    const result = calcWeightedScore(entries, criteria);
-                    return Number.isFinite(result) && result >= 0 && result <= 100 + Number.EPSILON;
-                }
-            ),
+            fc.property(fc.array(weightedItemArb, { minLength: 1, maxLength: 10 }), (items) => {
+                const criteria: RubricCriterion[] = items.map((item, i) => ({
+                    id: `c${i}`,
+                    title: '',
+                    description: '',
+                    weight: item.weight,
+                    levels: [
+                        { id: 'l1', label: '', minPoints: 0, maxPoints: item.maxPts, description: '', subItems: [] },
+                    ],
+                }));
+                const entries: ScoreEntry[] = items.map((item, i) => ({
+                    criterionId: `c${i}`,
+                    levelId: 'l1',
+                    checkedSubItems: [],
+                    comment: '',
+                    selectedPoints: Math.min(item.selectedPts, item.maxPts),
+                }));
+                const result = calcWeightedScore(entries, criteria);
+                return Number.isFinite(result) && result >= 0 && result <= 100 + Number.EPSILON;
+            }),
             { numRuns: 300 }
         );
     });

@@ -53,7 +53,10 @@ export default function RubricList() {
     const dbStatus = useDbStatus();
 
     useEffect(() => {
-        if (!dbStatus.isConnected) { setSharedWithMe([]); return; }
+        if (!dbStatus.isConnected) {
+            setSharedWithMe([]);
+            return;
+        }
         storageSync.adapter.fetchSharedRubrics().then(setSharedWithMe);
     }, [dbStatus.isConnected]);
 
@@ -421,21 +424,60 @@ export default function RubricList() {
                     <div style={{ marginTop: 32 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                             <Share2 size={15} style={{ color: 'var(--accent)' }} aria-hidden="true" />
-                            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>{t('rubricList.shared_with_me')}</h3>
+                            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>
+                                {t('rubricList.shared_with_me')}
+                            </h3>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                             {sharedWithMe.map((r) => (
                                 <div
                                     key={r.id}
-                                    style={{ padding: '12px 14px', background: 'var(--bg-elevated)', borderRadius: 10, border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}
+                                    style={{
+                                        padding: '12px 14px',
+                                        background: 'var(--bg-elevated)',
+                                        borderRadius: 10,
+                                        border: '1px solid var(--border)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 12,
+                                        cursor: 'pointer',
+                                    }}
                                     onClick={() => navigate(`/rubrics/${r.id}`)}
                                 >
-                                    <BookOpen size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} aria-hidden="true" />
+                                    <BookOpen
+                                        size={16}
+                                        style={{ color: 'var(--text-muted)', flexShrink: 0 }}
+                                        aria-hidden="true"
+                                    />
                                     <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ fontWeight: 600, fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</div>
-                                        {r.subject && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{r.subject}</div>}
+                                        <div
+                                            style={{
+                                                fontWeight: 600,
+                                                fontSize: '0.9rem',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap',
+                                            }}
+                                        >
+                                            {r.name}
+                                        </div>
+                                        {r.subject && (
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                {r.subject}
+                                            </div>
+                                        )}
                                     </div>
-                                    <span style={{ fontSize: '0.7rem', padding: '2px 7px', borderRadius: 4, background: 'var(--accent-soft)', color: 'var(--accent)', fontWeight: 500, flexShrink: 0 }}>
+                                    <span
+                                        style={{
+                                            fontSize: '0.7rem',
+                                            padding: '2px 7px',
+                                            borderRadius: 4,
+                                            background: 'var(--accent-soft)',
+                                            color: 'var(--accent)',
+                                            fontWeight: 500,
+                                            flexShrink: 0,
+                                        }}
+                                    >
                                         {t('rubricList.shared_badge')}
                                     </span>
                                 </div>

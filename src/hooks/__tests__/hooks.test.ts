@@ -150,7 +150,14 @@ describe('useOverdueStudents', () => {
     it('ignores rubrics without a gradedAt date', () => {
         mockStudents = [{ id: 's1', name: 'Alice', classId: 'c1' }];
         mockStudentRubrics = [
-            { id: 'sr1', rubricId: 'r1', studentId: 's1', entries: [], overallComment: '', isPeerReview: false } as unknown as StudentRubric,
+            {
+                id: 'sr1',
+                rubricId: 'r1',
+                studentId: 's1',
+                entries: [],
+                overallComment: '',
+                isPeerReview: false,
+            } as unknown as StudentRubric,
         ];
         const { result } = renderHook(() => useOverdueStudents());
         expect(result.current.overdueStudents).toEqual([]);
@@ -159,7 +166,15 @@ describe('useOverdueStudents', () => {
     it('identifies an overdue student (graded more than threshold days ago)', () => {
         mockStudents = [{ id: 's1', name: 'Alice', classId: 'c1' }];
         mockStudentRubrics = [
-            { id: 'sr1', rubricId: 'r1', studentId: 's1', entries: [], overallComment: '', isPeerReview: false, gradedAt: daysAgo(10) } as StudentRubric,
+            {
+                id: 'sr1',
+                rubricId: 'r1',
+                studentId: 's1',
+                entries: [],
+                overallComment: '',
+                isPeerReview: false,
+                gradedAt: daysAgo(10),
+            } as StudentRubric,
         ];
         const { result } = renderHook(() => useOverdueStudents());
         expect(result.current.overdueStudents).toHaveLength(1);
@@ -170,7 +185,15 @@ describe('useOverdueStudents', () => {
     it('does not flag a student graded within the threshold window', () => {
         mockStudents = [{ id: 's1', name: 'Alice', classId: 'c1' }];
         mockStudentRubrics = [
-            { id: 'sr1', rubricId: 'r1', studentId: 's1', entries: [], overallComment: '', isPeerReview: false, gradedAt: daysAgo(3) } as StudentRubric,
+            {
+                id: 'sr1',
+                rubricId: 'r1',
+                studentId: 's1',
+                entries: [],
+                overallComment: '',
+                isPeerReview: false,
+                gradedAt: daysAgo(3),
+            } as StudentRubric,
         ];
         const { result } = renderHook(() => useOverdueStudents());
         expect(result.current.overdueStudents).toHaveLength(0);
@@ -179,8 +202,24 @@ describe('useOverdueStudents', () => {
     it('picks the most recent gradedAt when a student has multiple rubrics', () => {
         mockStudents = [{ id: 's1', name: 'Alice', classId: 'c1' }];
         mockStudentRubrics = [
-            { id: 'sr1', rubricId: 'r1', studentId: 's1', entries: [], overallComment: '', isPeerReview: false, gradedAt: daysAgo(20) } as StudentRubric,
-            { id: 'sr2', rubricId: 'r2', studentId: 's1', entries: [], overallComment: '', isPeerReview: false, gradedAt: daysAgo(2) } as StudentRubric,
+            {
+                id: 'sr1',
+                rubricId: 'r1',
+                studentId: 's1',
+                entries: [],
+                overallComment: '',
+                isPeerReview: false,
+                gradedAt: daysAgo(20),
+            } as StudentRubric,
+            {
+                id: 'sr2',
+                rubricId: 'r2',
+                studentId: 's1',
+                entries: [],
+                overallComment: '',
+                isPeerReview: false,
+                gradedAt: daysAgo(2),
+            } as StudentRubric,
         ];
         const { result } = renderHook(() => useOverdueStudents());
         // Most recent is 2 days ago — within threshold
@@ -193,8 +232,24 @@ describe('useOverdueStudents', () => {
             { id: 's2', name: 'Bob', classId: 'c1' },
         ];
         mockStudentRubrics = [
-            { id: 'sr1', rubricId: 'r1', studentId: 's1', entries: [], overallComment: '', isPeerReview: false, gradedAt: daysAgo(8) } as StudentRubric,
-            { id: 'sr2', rubricId: 'r2', studentId: 's2', entries: [], overallComment: '', isPeerReview: false, gradedAt: daysAgo(15) } as StudentRubric,
+            {
+                id: 'sr1',
+                rubricId: 'r1',
+                studentId: 's1',
+                entries: [],
+                overallComment: '',
+                isPeerReview: false,
+                gradedAt: daysAgo(8),
+            } as StudentRubric,
+            {
+                id: 'sr2',
+                rubricId: 'r2',
+                studentId: 's2',
+                entries: [],
+                overallComment: '',
+                isPeerReview: false,
+                gradedAt: daysAgo(15),
+            } as StudentRubric,
         ];
         const { result } = renderHook(() => useOverdueStudents());
         expect(result.current.overdueStudents[0].studentName).toBe('Bob');
@@ -204,7 +259,15 @@ describe('useOverdueStudents', () => {
     it('skips a studentId that has no matching student record', () => {
         mockStudents = [];
         mockStudentRubrics = [
-            { id: 'sr1', rubricId: 'r1', studentId: 'ghost', entries: [], overallComment: '', isPeerReview: false, gradedAt: daysAgo(20) } as StudentRubric,
+            {
+                id: 'sr1',
+                rubricId: 'r1',
+                studentId: 'ghost',
+                entries: [],
+                overallComment: '',
+                isPeerReview: false,
+                gradedAt: daysAgo(20),
+            } as StudentRubric,
         ];
         const { result } = renderHook(() => useOverdueStudents());
         expect(result.current.overdueStudents).toHaveLength(0);

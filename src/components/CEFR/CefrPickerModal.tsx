@@ -12,7 +12,13 @@ import {
 } from '../../data/cefrDescriptors';
 import { IB_ATTRIBUTES } from '../../data/ibLearnerProfile';
 import { BLOOM_LEVELS } from '../../data/bloomsTaxonomy';
-import type { CefrLevel, CefrSkill, LinkedCefrDescriptor, LinkedFrameworkDescriptor, AssessmentFramework } from '../../types';
+import type {
+    CefrLevel,
+    CefrSkill,
+    LinkedCefrDescriptor,
+    LinkedFrameworkDescriptor,
+    AssessmentFramework,
+} from '../../types';
 
 type ActiveFramework = 'cefr' | AssessmentFramework;
 
@@ -154,14 +160,13 @@ export default function CefrPickerModal({
                         onClick={() => {
                             setActiveFramework(tab.id);
                             setSearch('');
-                            setExpandedSections(
-                                tab.id === 'cefr' ? new Set(['B1', 'B2']) : new Set()
-                            );
+                            setExpandedSections(tab.id === 'cefr' ? new Set(['B1', 'B2']) : new Set());
                         }}
                         style={{
                             background: 'none',
                             border: 'none',
-                            borderBottom: activeFramework === tab.id ? '2px solid var(--accent)' : '2px solid transparent',
+                            borderBottom:
+                                activeFramework === tab.id ? '2px solid var(--accent)' : '2px solid transparent',
                             color: activeFramework === tab.id ? 'var(--accent)' : 'var(--text-muted)',
                             fontWeight: activeFramework === tab.id ? 600 : 400,
                             fontSize: 13,
@@ -556,9 +561,7 @@ export default function CefrPickerModal({
                 }}
             >
                 <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-                    {totalLinked > 0
-                        ? t('framework.selected_count', { count: totalLinked })
-                        : t('cefr.none_selected')}
+                    {totalLinked > 0 ? t('framework.selected_count', { count: totalLinked }) : t('cefr.none_selected')}
                 </span>
                 <button className="btn btn-primary btn-sm" onClick={onClose}>
                     {t('common.save')}

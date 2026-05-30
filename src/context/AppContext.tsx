@@ -640,7 +640,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
             if (!config) return;
             setLandingState('checking');
             const ok = await storageSync.configure(config);
-            if (!ok) { setLandingState('show'); return; }
+            if (!ok) {
+                setLandingState('show');
+                return;
+            }
             const fresh = await storageSync.hydrate();
             if (fresh) {
                 const merged = { ...initialStateRef.current, ...fresh } as StoreData;

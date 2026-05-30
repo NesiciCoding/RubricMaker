@@ -62,7 +62,17 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
         { to: '/comments', icon: MessageSquare, label: t('navigation.comment_bank') },
     ];
 
-    const renderNavLink = ({ to, icon: Icon, label, end }: { to: string; icon: React.ElementType; label: string; end?: boolean }) => (
+    const renderNavLink = ({
+        to,
+        icon: Icon,
+        label,
+        end,
+    }: {
+        to: string;
+        icon: React.ElementType;
+        label: string;
+        end?: boolean;
+    }) => (
         <NavLink
             key={to}
             to={to}
@@ -179,7 +189,6 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
                     </NavLink>
                 </div>
             </aside>
-
         </>
     );
 }

@@ -99,7 +99,15 @@ function makeStandardSet(overrides: Partial<StandardSetGroup> = {}): StandardSet
     return {
         setTitle: 'CCSS.ELA',
         standards: [
-            { guid: 'g1', statementNotation: 'RL.5.1', description: 'Quote accurately from a text', rubricCount: 2, avgScore: 75, standardSetTitle: 'CCSS.ELA', jurisdictionTitle: 'Common Core' },
+            {
+                guid: 'g1',
+                statementNotation: 'RL.5.1',
+                description: 'Quote accurately from a text',
+                rubricCount: 2,
+                avgScore: 75,
+                standardSetTitle: 'CCSS.ELA',
+                jurisdictionTitle: 'Common Core',
+            },
         ],
         ...overrides,
     };
@@ -210,7 +218,11 @@ describe('CefrOverviewGrid', () => {
             confidentCount: 1,
             descriptors: [
                 makeDescriptor({ descriptorId: 'd1', descriptionEn: 'Confident desc', confidentInSelfAssess: true }),
-                makeDescriptor({ descriptorId: 'd2', descriptionEn: 'Not confident desc', confidentInSelfAssess: false }),
+                makeDescriptor({
+                    descriptorId: 'd2',
+                    descriptionEn: 'Not confident desc',
+                    confidentInSelfAssess: false,
+                }),
             ],
         });
         render(<CefrOverviewGrid cells={[cell]} lang="en" />);
@@ -265,27 +277,89 @@ describe('StandardsCoveragePanel', () => {
     });
 
     it('applies badge-yellow class for medium scores (50–69)', () => {
-        const set = makeStandardSet({ standards: [{ guid: 'g1', statementNotation: 'S1', description: 'Desc', rubricCount: 1, avgScore: 55, standardSetTitle: 'S', jurisdictionTitle: 'J' }] });
+        const set = makeStandardSet({
+            standards: [
+                {
+                    guid: 'g1',
+                    statementNotation: 'S1',
+                    description: 'Desc',
+                    rubricCount: 1,
+                    avgScore: 55,
+                    standardSetTitle: 'S',
+                    jurisdictionTitle: 'J',
+                },
+            ],
+        });
         const { container } = render(<StandardsCoveragePanel standardSets={[set]} />);
         expect(container.querySelector('.badge-yellow')).toBeTruthy();
     });
 
     it('applies badge-red class for low scores (<50)', () => {
-        const set = makeStandardSet({ standards: [{ guid: 'g1', statementNotation: 'S1', description: 'Desc', rubricCount: 1, avgScore: 40, standardSetTitle: 'S', jurisdictionTitle: 'J' }] });
+        const set = makeStandardSet({
+            standards: [
+                {
+                    guid: 'g1',
+                    statementNotation: 'S1',
+                    description: 'Desc',
+                    rubricCount: 1,
+                    avgScore: 40,
+                    standardSetTitle: 'S',
+                    jurisdictionTitle: 'J',
+                },
+            ],
+        });
         const { container } = render(<StandardsCoveragePanel standardSets={[set]} />);
         expect(container.querySelector('.badge-red')).toBeTruthy();
     });
 
     it('shows the no-score label when rubricCount is 0', () => {
-        const set = makeStandardSet({ standards: [{ guid: 'g1', statementNotation: 'S1', description: 'Desc', rubricCount: 0, avgScore: 0, standardSetTitle: 'S', jurisdictionTitle: 'J' }] });
+        const set = makeStandardSet({
+            standards: [
+                {
+                    guid: 'g1',
+                    statementNotation: 'S1',
+                    description: 'Desc',
+                    rubricCount: 0,
+                    avgScore: 0,
+                    standardSetTitle: 'S',
+                    jurisdictionTitle: 'J',
+                },
+            ],
+        });
         render(<StandardsCoveragePanel standardSets={[set]} />);
         expect(screen.getByText('cefrOverview.standard_no_score')).toBeInTheDocument();
     });
 
     it('renders multiple standard sets', () => {
         const sets = [
-            makeStandardSet({ setTitle: 'Set A', standards: [{ guid: 'g1', statementNotation: 'A.1', description: 'Desc A', rubricCount: 1, avgScore: 80, standardSetTitle: 'Set A', jurisdictionTitle: 'J' }] }),
-            makeStandardSet({ setTitle: 'Set B', standards: [{ guid: 'g2', statementNotation: 'B.1', description: 'Desc B', rubricCount: 1, avgScore: 60, standardSetTitle: 'Set B', jurisdictionTitle: 'J' }] }),
+            makeStandardSet({
+                setTitle: 'Set A',
+                standards: [
+                    {
+                        guid: 'g1',
+                        statementNotation: 'A.1',
+                        description: 'Desc A',
+                        rubricCount: 1,
+                        avgScore: 80,
+                        standardSetTitle: 'Set A',
+                        jurisdictionTitle: 'J',
+                    },
+                ],
+            }),
+            makeStandardSet({
+                setTitle: 'Set B',
+                standards: [
+                    {
+                        guid: 'g2',
+                        statementNotation: 'B.1',
+                        description: 'Desc B',
+                        rubricCount: 1,
+                        avgScore: 60,
+                        standardSetTitle: 'Set B',
+                        jurisdictionTitle: 'J',
+                    },
+                ],
+            }),
         ];
         render(<StandardsCoveragePanel standardSets={sets} />);
         expect(screen.getByText('Set A')).toBeInTheDocument();

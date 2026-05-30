@@ -30,7 +30,8 @@ export const IB_ATTRIBUTES: IBAttribute[] = [
                 id: 'ib-inq-2',
                 attributeId: 'inquirers',
                 descriptionEn: 'Independently selects and uses appropriate research strategies to investigate topics.',
-                descriptionNl: 'Selecteert en gebruikt zelfstandig passende onderzoeksstrategieën om onderwerpen te onderzoeken.',
+                descriptionNl:
+                    'Selecteert en gebruikt zelfstandig passende onderzoeksstrategieën om onderwerpen te onderzoeken.',
             },
             {
                 id: 'ib-inq-3',
@@ -62,7 +63,8 @@ export const IB_ATTRIBUTES: IBAttribute[] = [
                 id: 'ib-kno-3',
                 attributeId: 'knowledgeable',
                 descriptionEn: 'Uses evidence and examples to support claims across multiple subject areas.',
-                descriptionNl: 'Gebruikt bewijzen en voorbeelden ter onderbouwing van standpunten in meerdere vakgebieden.',
+                descriptionNl:
+                    'Gebruikt bewijzen en voorbeelden ter onderbouwing van standpunten in meerdere vakgebieden.',
             },
         ],
     },
@@ -82,13 +84,15 @@ export const IB_ATTRIBUTES: IBAttribute[] = [
                 id: 'ib-thi-2',
                 attributeId: 'thinkers',
                 descriptionEn: 'Generates creative solutions and considers multiple perspectives before deciding.',
-                descriptionNl: 'Bedenkt creatieve oplossingen en beschouwt meerdere perspectieven voordat een beslissing wordt genomen.',
+                descriptionNl:
+                    'Bedenkt creatieve oplossingen en beschouwt meerdere perspectieven voordat een beslissing wordt genomen.',
             },
             {
                 id: 'ib-thi-3',
                 attributeId: 'thinkers',
                 descriptionEn: 'Makes reasoned and ethical decisions, considering consequences for others.',
-                descriptionNl: 'Neemt weloverwogen en ethische beslissingen, rekening houdend met gevolgen voor anderen.',
+                descriptionNl:
+                    'Neemt weloverwogen en ethische beslissingen, rekening houdend met gevolgen voor anderen.',
             },
         ],
     },
@@ -154,13 +158,15 @@ export const IB_ATTRIBUTES: IBAttribute[] = [
                 id: 'ib-opn-1',
                 attributeId: 'open_minded',
                 descriptionEn: 'Critically appreciates own culture and traditions while remaining open to others.',
-                descriptionNl: 'Waardeert kritisch de eigen cultuur en tradities terwijl openheid naar anderen behouden blijft.',
+                descriptionNl:
+                    'Waardeert kritisch de eigen cultuur en tradities terwijl openheid naar anderen behouden blijft.',
             },
             {
                 id: 'ib-opn-2',
                 attributeId: 'open_minded',
                 descriptionEn: 'Seeks out and evaluates diverse perspectives on issues or problems.',
-                descriptionNl: 'Zoekt actief naar uiteenlopende perspectieven op vraagstukken of problemen en evalueert deze.',
+                descriptionNl:
+                    'Zoekt actief naar uiteenlopende perspectieven op vraagstukken of problemen en evalueert deze.',
             },
             {
                 id: 'ib-opn-3',
@@ -180,7 +186,8 @@ export const IB_ATTRIBUTES: IBAttribute[] = [
                 id: 'ib-car-1',
                 attributeId: 'caring',
                 descriptionEn: 'Shows empathy and compassion towards peers, community, and the wider world.',
-                descriptionNl: 'Toont empathie en medeleven tegenover klasgenoten, de gemeenschap en de bredere wereld.',
+                descriptionNl:
+                    'Toont empathie en medeleven tegenover klasgenoten, de gemeenschap en de bredere wereld.',
             },
             {
                 id: 'ib-car-2',
@@ -244,7 +251,8 @@ export const IB_ATTRIBUTES: IBAttribute[] = [
                 id: 'ib-bal-3',
                 attributeId: 'balanced',
                 descriptionEn: 'Demonstrates awareness of own needs while supporting the well-being of others.',
-                descriptionNl: 'Toont bewustzijn van eigen behoeften terwijl het welzijn van anderen ondersteund wordt.',
+                descriptionNl:
+                    'Toont bewustzijn van eigen behoeften terwijl het welzijn van anderen ondersteund wordt.',
             },
         ],
     },

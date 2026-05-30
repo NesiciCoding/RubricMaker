@@ -565,7 +565,9 @@ export default function DocumentAnalysisPanel({
                                                                     <button
                                                                         className={`btn btn-sm ${alreadyApplied ? 'btn-ghost' : 'btn-secondary'}`}
                                                                         style={{ fontSize: 12 }}
-                                                                        onClick={() => applySubItem(vocabItem, detected)}
+                                                                        onClick={() =>
+                                                                            applySubItem(vocabItem, detected)
+                                                                        }
                                                                         disabled={alreadyApplied}
                                                                     >
                                                                         {alreadyApplied ? (
@@ -584,7 +586,9 @@ export default function DocumentAnalysisPanel({
                                                                     style={{ fontSize: 12 }}
                                                                     onClick={() => {
                                                                         onAddToCommentBank(vocabItem.phrase);
-                                                                        setAddedToBank((s) => new Set([...s, vocabItem.id]));
+                                                                        setAddedToBank(
+                                                                            (s) => new Set([...s, vocabItem.id])
+                                                                        );
                                                                     }}
                                                                     disabled={addedToBank.has(vocabItem.id)}
                                                                 >

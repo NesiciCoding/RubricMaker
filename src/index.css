@@ -893,12 +893,7 @@ select.input-error {
 }
 
 .skeleton {
-    background: linear-gradient(
-        90deg,
-        var(--bg-elevated) 25%,
-        var(--border-light) 50%,
-        var(--bg-elevated) 75%
-    );
+    background: linear-gradient(90deg, var(--bg-elevated) 25%, var(--border-light) 50%, var(--bg-elevated) 75%);
     background-size: 800px 100%;
     animation: shimmer 1.4s ease-in-out infinite;
     display: block;

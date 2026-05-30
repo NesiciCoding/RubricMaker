@@ -74,11 +74,29 @@ export default function App() {
 
         if (!linkedStudent) {
             return (
-                <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', flexDirection: 'column', gap: 16, padding: 24, textAlign: 'center' }}>
+                <div
+                    style={{
+                        minHeight: '100vh',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: 'var(--bg)',
+                        flexDirection: 'column',
+                        gap: 16,
+                        padding: 24,
+                        textAlign: 'center',
+                    }}
+                >
                     <GraduationCap size={40} style={{ color: 'var(--text-muted)', opacity: 0.5 }} />
-                    <p style={{ margin: 0, fontWeight: 600, color: 'var(--text)' }}>{t('studentPortal.no_linked_account')}</p>
-                    <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)', maxWidth: 360 }}>{t('studentPortal.no_linked_account_detail')}</p>
-                    <button className="btn btn-secondary btn-sm" onClick={signOutFromDatabase}>{t('studentPortal.sign_out')}</button>
+                    <p style={{ margin: 0, fontWeight: 600, color: 'var(--text)' }}>
+                        {t('studentPortal.no_linked_account')}
+                    </p>
+                    <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)', maxWidth: 360 }}>
+                        {t('studentPortal.no_linked_account_detail')}
+                    </p>
+                    <button className="btn btn-secondary btn-sm" onClick={signOutFromDatabase}>
+                        {t('studentPortal.sign_out')}
+                    </button>
                 </div>
             );
         }
