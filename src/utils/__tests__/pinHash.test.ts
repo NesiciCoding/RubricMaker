@@ -2,8 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { hashPin, verifyPin, isHashed } from '../pinHash';
 import { nanoid } from '../nanoid';
 
-// ─── pinHash ─────────────────────────────────────────────────────────────────
-
 describe('hashPin', () => {
     it('returns a string prefixed with rm-pin-v1:', async () => {
         const hash = await hashPin('1234');
@@ -59,8 +57,6 @@ describe('verifyPin', () => {
         expect(await verifyPin('wrong', 'plain')).toBe(false);
     });
 });
-
-// ─── nanoid ──────────────────────────────────────────────────────────────────
 
 describe('nanoid', () => {
     it('returns a non-empty string', () => {

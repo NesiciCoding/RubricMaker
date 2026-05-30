@@ -1,10 +1,3 @@
-/**
- * Property-based tests for gradeCalc using fast-check.
- *
- * These complement the hand-written unit tests by asserting mathematical
- * invariants across hundreds of arbitrary valid inputs — catching edge cases
- * (NaN, Infinity, negative overflow) that enumerated tests miss.
- */
 import fc from 'fast-check';
 import { describe, it, expect } from 'vitest';
 import {
@@ -16,12 +9,9 @@ import {
 } from '../gradeCalc';
 import type { RubricCriterion, ScoreEntry, GradeScale, Modifier } from '../../types';
 
-// ─── Arbitraries ─────────────────────────────────────────────────────────────
-
 const finiteFloat = (min = 0, max = 100) =>
     fc.double({ min, max, noNaN: true, noDefaultInfinity: true });
 
-/** A criterion with a single level and no sub-items, with valid point ranges */
 const singleLevelCriterionArb = fc.tuple(finiteFloat(0, 50), finiteFloat(0, 50)).map(
     ([minPts, rangeDelta]): RubricCriterion => ({
         id: 'c1',
@@ -41,7 +31,6 @@ const singleLevelCriterionArb = fc.tuple(finiteFloat(0, 50), finiteFloat(0, 50))
     })
 );
 
-/** An entry pointing at l1 with a random selectedPoints value */
 const entryForL1Arb = finiteFloat(0, 200).map(
     (selectedPoints): ScoreEntry => ({
         criterionId: 'c1',
@@ -65,8 +54,6 @@ const scaleWithFullCoverageArb: fc.Arbitrary<GradeScale> = fc.constant({
     ranges: [{ min: 0, max: 100, label: 'P', color: '#000' }],
 });
 
-// ─── applyModifier ────────────────────────────────────────────────────────────
-
 describe('applyModifier — property tests', () => {
     it('output is always within [0, 100] regardless of input score and modifier magnitude', () => {
         fc.assert(
@@ -87,8 +74,6 @@ describe('applyModifier — property tests', () => {
         );
     });
 });
-
-// ─── calcEntryPoints ──────────────────────────────────────────────────────────
 
 describe('calcEntryPoints — property tests', () => {
     it('result is always ≥ 0 for any valid level selection', () => {
@@ -139,8 +124,6 @@ describe('calcEntryPoints — property tests', () => {
     });
 });
 
-// ─── calcWeightedScore ────────────────────────────────────────────────────────
-
 const weightedItemArb = fc.record({
     maxPts: finiteFloat(1, 50),
     selectedPts: finiteFloat(0, 50),
@@ -177,8 +160,6 @@ describe('calcWeightedScore — property tests', () => {
         );
     });
 });
-
-// ─── calcLetterGrade / calcGradeColor ─────────────────────────────────────────
 
 describe('calcLetterGrade — property tests', () => {
     it('always returns a non-empty string when the scale covers the full [0, 100] range', () => {

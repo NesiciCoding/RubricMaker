@@ -8,12 +8,14 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
   ci:
     name: Type-check, Lint & Test
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # required by vitest-coverage-report-action to post PR comments
     steps:
       - uses: actions/checkout@v4
 

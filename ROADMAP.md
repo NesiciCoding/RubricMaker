@@ -136,6 +136,7 @@ The Dashboard already tracks feedback age (days since last grading per student).
 ## Tier 4 — Testing & Quality
 
 ### 13. Playwright End-to-End Smoke Tests
+
 **Status:** Planned  
 **Effort:** Medium (4–6 hours initial setup; low ongoing maintenance)
 
