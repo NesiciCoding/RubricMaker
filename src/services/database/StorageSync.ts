@@ -169,13 +169,27 @@ class StorageSyncService {
 
     // ── Schools ───────────────────────────────────────────────────────────────
 
-    async fetchSchools() { return this.adapter.fetchSchools(); }
-    async createSchool(name: string, retentionYears: number) { return this.adapter.createSchool(name, retentionYears); }
-    async joinSchool(schoolId: string) { return this.adapter.joinSchool(schoolId); }
-    async updateSchool(schoolId: string, updates: { name?: string; retentionYears?: number }) { return this.adapter.updateSchool(schoolId, updates); }
-    async deleteSchool(schoolId: string) { return this.adapter.deleteSchool(schoolId); }
-    async fetchSchoolMembers(schoolId: string) { return this.adapter.fetchSchoolMembers(schoolId); }
-    async removeSchoolMember(schoolId: string, profileId: string) { return this.adapter.removeSchoolMember(schoolId, profileId); }
+    async fetchSchools() {
+        return this.adapter.fetchSchools();
+    }
+    async createSchool(name: string, retentionYears: number) {
+        return this.adapter.createSchool(name, retentionYears);
+    }
+    async joinSchool(schoolId: string) {
+        return this.adapter.joinSchool(schoolId);
+    }
+    async updateSchool(schoolId: string, updates: { name?: string; retentionYears?: number }) {
+        return this.adapter.updateSchool(schoolId, updates);
+    }
+    async deleteSchool(schoolId: string) {
+        return this.adapter.deleteSchool(schoolId);
+    }
+    async fetchSchoolMembers(schoolId: string) {
+        return this.adapter.fetchSchoolMembers(schoolId);
+    }
+    async removeSchoolMember(schoolId: string, profileId: string) {
+        return this.adapter.removeSchoolMember(schoolId, profileId);
+    }
 
     // ── Essay management (pass-through to adapter) ───────────────────────────
 

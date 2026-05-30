@@ -238,8 +238,11 @@ export function getCefrStudentOverview(
         const confidentCount = descriptors.filter((d) => d.confidentInSelfAssess).length;
         const confidenceRate = totalDescriptors > 0 ? (confidentCount / totalDescriptors) * 100 : 0;
 
-        const state: CefrCellData['state'] =
-            rubricAchieved ? 'achieved' : rubricCount > 0 ? 'developing' : 'not-started';
+        const state: CefrCellData['state'] = rubricAchieved
+            ? 'achieved'
+            : rubricCount > 0
+              ? 'developing'
+              : 'not-started';
 
         return {
             skill: acc.skill,

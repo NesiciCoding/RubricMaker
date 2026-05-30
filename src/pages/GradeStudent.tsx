@@ -223,8 +223,7 @@ export default function GradeStudent() {
         if (!rubric || !sr) return;
         const handleKeyDown = (e: KeyboardEvent) => {
             const target = e.target as HTMLElement;
-            const inInput =
-                ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable;
+            const inInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable;
 
             if ((e.ctrlKey || e.metaKey) && e.key === 's') {
                 e.preventDefault();
@@ -252,9 +251,7 @@ export default function GradeStudent() {
                 e.preventDefault();
                 setFocusedCriterionIdx((prev) => {
                     if (prev === null) return e.shiftKey ? criteriaCount - 1 : 0;
-                    return e.shiftKey
-                        ? (prev - 1 + criteriaCount) % criteriaCount
-                        : (prev + 1) % criteriaCount;
+                    return e.shiftKey ? (prev - 1 + criteriaCount) % criteriaCount : (prev + 1) % criteriaCount;
                 });
                 return;
             }
@@ -263,9 +260,7 @@ export default function GradeStudent() {
                 const criterion = rubric.criteria[focusedCriterionIdx];
                 if (!criterion || rubric.scoringMode === 'single-point') return;
                 const levels =
-                    rubric.format.levelOrder === 'worst-first'
-                        ? [...criterion.levels].reverse()
-                        : criterion.levels;
+                    rubric.format.levelOrder === 'worst-first' ? [...criterion.levels].reverse() : criterion.levels;
                 const level = levels[parseInt(e.key) - 1];
                 if (!level) return;
                 const currentEntry = sr.entries.find((en) => en.criterionId === criterion.id);
@@ -659,7 +654,9 @@ export default function GradeStudent() {
                                     outline: isCriterionFocused ? '2px solid var(--accent)' : undefined,
                                     outlineOffset: 2,
                                 }}
-                                ref={(el) => { criterionCardsRef.current[criterionIndex] = el; }}
+                                ref={(el) => {
+                                    criterionCardsRef.current[criterionIndex] = el;
+                                }}
                             >
                                 {/* Criterion header */}
                                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12 }}>
@@ -682,12 +679,17 @@ export default function GradeStudent() {
                                                     alignItems: 'flex-start',
                                                     gap: 3,
                                                 }}
-                                                title={showStdDesc ? (c.linkedStandard.statementNotation ?? '') : c.linkedStandard.description}
+                                                title={
+                                                    showStdDesc
+                                                        ? (c.linkedStandard.statementNotation ?? '')
+                                                        : c.linkedStandard.description
+                                                }
                                             >
                                                 <Info size={10} style={{ flexShrink: 0, marginTop: 2 }} />{' '}
                                                 {showStdDesc
                                                     ? c.linkedStandard.description
-                                                    : (c.linkedStandard.statementNotation ?? t('gradeStudent.label_standard'))}
+                                                    : (c.linkedStandard.statementNotation ??
+                                                      t('gradeStudent.label_standard'))}
                                             </div>
                                         )}
                                         {(c.linkedStandards || []).map((std, idx) => (
@@ -716,7 +718,10 @@ export default function GradeStudent() {
                                             </div>
                                         )}
                                     </div>
-                                    <div className="no-print" style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+                                    <div
+                                        className="no-print"
+                                        style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}
+                                    >
                                         {fmt.showWeights && <span className="badge badge-blue">{c.weight}%</span>}
                                         <button
                                             className="btn btn-ghost btn-icon btn-sm"
@@ -844,7 +849,11 @@ export default function GradeStudent() {
                                                               }
                                                             : {}
                                                     }
-                                                    title={shortcutNum <= 5 ? `Press ${shortcutNum} to select (when criterion is focused)` : undefined}
+                                                    title={
+                                                        shortcutNum <= 5
+                                                            ? `Press ${shortcutNum} to select (when criterion is focused)`
+                                                            : undefined
+                                                    }
                                                     onClick={() =>
                                                         updateEntry(c.id, {
                                                             levelId: isSelected ? null : level.id,
@@ -876,8 +885,12 @@ export default function GradeStudent() {
                                                                         marginRight: 5,
                                                                         fontSize: '0.75em',
                                                                         fontWeight: 700,
-                                                                        background: isSelected ? fmt.accentColor : 'var(--bg)',
-                                                                        color: isSelected ? '#fff' : 'var(--text-muted)',
+                                                                        background: isSelected
+                                                                            ? fmt.accentColor
+                                                                            : 'var(--bg)',
+                                                                        color: isSelected
+                                                                            ? '#fff'
+                                                                            : 'var(--text-muted)',
                                                                         border: '1px solid var(--border)',
                                                                         borderRadius: 3,
                                                                         padding: '0 4px',
@@ -1026,7 +1039,12 @@ export default function GradeStudent() {
                                                                                             (std, idx) => (
                                                                                                 <span
                                                                                                     key={idx}
-                                                                                                    title={showStdDesc ? (std.statementNotation ?? '') : std.description}
+                                                                                                    title={
+                                                                                                        showStdDesc
+                                                                                                            ? (std.statementNotation ??
+                                                                                                              '')
+                                                                                                            : std.description
+                                                                                                    }
                                                                                                 >
                                                                                                     {showStdDesc
                                                                                                         ? std.description
@@ -1394,7 +1412,9 @@ export default function GradeStudent() {
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-                            <h3 style={{ margin: 0, flex: 1 }}>{t('gradeStudent.shortcuts_title', 'Keyboard Shortcuts')}</h3>
+                            <h3 style={{ margin: 0, flex: 1 }}>
+                                {t('gradeStudent.shortcuts_title', 'Keyboard Shortcuts')}
+                            </h3>
                             <button className="btn btn-ghost btn-icon" onClick={() => setShowShortcuts(false)}>
                                 <X size={18} />
                             </button>

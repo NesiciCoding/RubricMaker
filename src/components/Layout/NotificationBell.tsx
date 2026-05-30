@@ -131,7 +131,13 @@ export default function NotificationBell() {
                                     {t('notifications.clear_all')}
                                 </button>
                             )}
-                            <button className="btn btn-ghost btn-icon btn-sm" onClick={() => { setDismissedIds(new Set()); setOpen(false); }}>
+                            <button
+                                className="btn btn-ghost btn-icon btn-sm"
+                                onClick={() => {
+                                    setDismissedIds(new Set());
+                                    setOpen(false);
+                                }}
+                            >
                                 <X size={14} />
                             </button>
                         </div>
@@ -150,7 +156,12 @@ export default function NotificationBell() {
                             >
                                 <CheckCircle2
                                     size={28}
-                                    style={{ color: '#22c55e', marginBottom: 8, display: 'block', margin: '0 auto 8px' }}
+                                    style={{
+                                        color: '#22c55e',
+                                        marginBottom: 8,
+                                        display: 'block',
+                                        margin: '0 auto 8px',
+                                    }}
                                 />
                                 {t('notifications.all_up_to_date', { threshold })}
                             </div>

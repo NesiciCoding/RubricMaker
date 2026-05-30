@@ -71,7 +71,7 @@ describe('aggregateFrameworkScores', () => {
         const criteria = [criterion('c1', bloomId, 'blooms', 10)];
         const rubrics = [
             sr('sr1', 'c1', 'l-best', 10), // 100%
-            sr('sr2', 'c1', 'l-best', 0),  // 0%
+            sr('sr2', 'c1', 'l-best', 0), // 0%
         ];
 
         const result = aggregateFrameworkScores('blooms', rubrics, criteria);
@@ -82,7 +82,14 @@ describe('aggregateFrameworkScores', () => {
 
     it('ignores criteria with no frameworkDescriptors', () => {
         const criteria: RubricCriterion[] = [
-            { id: 'c1', title: 'c1', description: '', weight: 100, levels: [level('l1', 10)], frameworkDescriptors: [] },
+            {
+                id: 'c1',
+                title: 'c1',
+                description: '',
+                weight: 100,
+                levels: [level('l1', 10)],
+                frameworkDescriptors: [],
+            },
         ];
         const rubrics = [sr('sr1', 'c1', 'l1', 10)];
         const result = aggregateFrameworkScores('blooms', rubrics, criteria);
@@ -105,9 +112,17 @@ describe('aggregateFrameworkScores', () => {
         const rubricWithSnapshot: StudentRubric = {
             ...sr('sr1', 'c1', 'l-best', 8),
             rubricSnapshot: {
-                id: 'r1', name: '', subject: '', description: '', gradeScaleId: '',
-                format: {} as any, attachmentIds: [], createdAt: '', updatedAt: '',
-                totalMaxPoints: 10, scoringMode: 'total-points',
+                id: 'r1',
+                name: '',
+                subject: '',
+                description: '',
+                gradeScaleId: '',
+                format: {} as any,
+                attachmentIds: [],
+                createdAt: '',
+                updatedAt: '',
+                totalMaxPoints: 10,
+                scoringMode: 'total-points',
                 criteria: [snapshotCriterion],
             },
         };

@@ -1,3 +1,4 @@
+/// <reference types="vitest/globals" />
 import '@testing-library/jest-dom';
 
 // Recharts' ResponsiveContainer uses ResizeObserver which doesn't exist in jsdom

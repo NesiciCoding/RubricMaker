@@ -21,14 +21,17 @@ function UsersTab() {
     const [currentUserId] = useState<string | null>(() => getCurrentDatabaseUserId());
 
     useEffect(() => {
-        fetchAllUsers().then((u) => { setUsers(u); setLoading(false); });
+        fetchAllUsers().then((u) => {
+            setUsers(u);
+            setLoading(false);
+        });
     }, [fetchAllUsers]);
 
     async function handleRoleChange(userId: string, newRole: 'admin' | 'user' | 'student') {
         setSaving(userId);
         const result = await updateUserRole(userId, newRole);
         if (result.success) {
-            setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, role: newRole } : u));
+            setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u)));
         } else {
             showToast(result.error ?? 'Error', 'error');
         }
@@ -44,7 +47,18 @@ function UsersTab() {
                 <thead>
                     <tr style={{ borderBottom: '1px solid var(--border)' }}>
                         {['col_email', 'col_name', 'col_role'].map((k) => (
-                            <th key={k} style={{ padding: '8px 12px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                            <th
+                                key={k}
+                                style={{
+                                    padding: '8px 12px',
+                                    textAlign: 'left',
+                                    fontSize: '0.8rem',
+                                    fontWeight: 600,
+                                    color: 'var(--text-muted)',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.04em',
+                                }}
+                            >
                                 {t(`admin.${k}`)}
                             </th>
                         ))}
@@ -53,18 +67,26 @@ function UsersTab() {
                 <tbody>
                     {users.map((u) => (
                         <tr key={u.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                            <td style={{ padding: '10px 12px', fontSize: '0.875rem', color: 'var(--text)' }}>{u.email ?? '—'}</td>
-                            <td style={{ padding: '10px 12px', fontSize: '0.875rem', color: 'var(--text)' }}>{u.displayName ?? '—'}</td>
+                            <td style={{ padding: '10px 12px', fontSize: '0.875rem', color: 'var(--text)' }}>
+                                {u.email ?? '—'}
+                            </td>
+                            <td style={{ padding: '10px 12px', fontSize: '0.875rem', color: 'var(--text)' }}>
+                                {u.displayName ?? '—'}
+                            </td>
                             <td style={{ padding: '10px 12px' }}>
                                 {saving === u.id ? (
-                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t('admin.role_saving')}</span>
+                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                        {t('admin.role_saving')}
+                                    </span>
                                 ) : (
                                     <select
                                         className="input"
                                         style={{ fontSize: '0.8rem', padding: '4px 8px' }}
                                         value={u.role}
                                         disabled={u.id === currentUserId}
-                                        onChange={(e) => handleRoleChange(u.id, e.target.value as 'admin' | 'user' | 'student')}
+                                        onChange={(e) =>
+                                            handleRoleChange(u.id, e.target.value as 'admin' | 'user' | 'student')
+                                        }
                                     >
                                         <option value="admin">{t('admin.role_admin')}</option>
                                         <option value="user">{t('admin.role_user')}</option>
@@ -100,7 +122,9 @@ function SchoolsTab() {
         setLoading(false);
     }, [fetchSchools]);
 
-    useEffect(() => { load(); }, [load]);
+    useEffect(() => {
+        load();
+    }, [load]);
 
     async function handleCreate() {
         if (!newName.trim()) return;
@@ -108,7 +132,11 @@ function SchoolsTab() {
         if (!Number.isFinite(retention) || retention < 1 || retention > 20) return;
         setCreating(true);
         const s = await createSchool(newName.trim(), retention);
-        if (s) { setNewName(''); setNewRetention(3); await load(); }
+        if (s) {
+            setNewName('');
+            setNewRetention(3);
+            await load();
+        }
         setCreating(false);
     }
 
@@ -126,7 +154,10 @@ function SchoolsTab() {
     }
 
     async function handleExpand(schoolId: string) {
-        if (expandedSchool === schoolId) { setExpandedSchool(null); return; }
+        if (expandedSchool === schoolId) {
+            setExpandedSchool(null);
+            return;
+        }
         setExpandedSchool(schoolId);
         if (!members[schoolId]) {
             const m = await fetchSchoolMembers(schoolId);
@@ -145,18 +176,44 @@ function SchoolsTab() {
             {/* Create form */}
             <div className="card" style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
                 <div style={{ flex: '1 1 200px' }}>
-                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>
+                    <label
+                        style={{
+                            fontSize: '0.8rem',
+                            fontWeight: 600,
+                            color: 'var(--text-muted)',
+                            display: 'block',
+                            marginBottom: 4,
+                        }}
+                    >
                         {t('admin.school_name_label')}
                     </label>
-                    <input className="input" value={newName} onChange={(e) => setNewName(e.target.value)}
-                        placeholder={t('admin.school_name_placeholder')} />
+                    <input
+                        className="input"
+                        value={newName}
+                        onChange={(e) => setNewName(e.target.value)}
+                        placeholder={t('admin.school_name_placeholder')}
+                    />
                 </div>
                 <div style={{ flex: '0 0 120px' }}>
-                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>
+                    <label
+                        style={{
+                            fontSize: '0.8rem',
+                            fontWeight: 600,
+                            color: 'var(--text-muted)',
+                            display: 'block',
+                            marginBottom: 4,
+                        }}
+                    >
                         {t('admin.retention_label')}
                     </label>
-                    <input className="input" type="number" min={1} max={20} value={newRetention}
-                        onChange={(e) => setNewRetention(Number(e.target.value))} />
+                    <input
+                        className="input"
+                        type="number"
+                        min={1}
+                        max={20}
+                        value={newRetention}
+                        onChange={(e) => setNewRetention(Number(e.target.value))}
+                    />
                 </div>
                 <button
                     className="btn btn-primary btn-sm"
@@ -170,7 +227,9 @@ function SchoolsTab() {
             </div>
 
             {loading && <p style={{ color: 'var(--text-muted)' }}>{t('admin.schools_loading')}</p>}
-            {!loading && schools.length === 0 && <p style={{ color: 'var(--text-muted)' }}>{t('admin.schools_empty')}</p>}
+            {!loading && schools.length === 0 && (
+                <p style={{ color: 'var(--text-muted)' }}>{t('admin.schools_empty')}</p>
+            )}
 
             {schools.map((s) => (
                 <div key={s.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -190,17 +249,25 @@ function SchoolsTab() {
                                 max={20}
                                 style={{ width: 60, fontSize: '0.8rem', padding: '4px 8px' }}
                                 defaultValue={s.retentionYears}
-                                onChange={(e) => setEditRetention((prev) => ({ ...prev, [s.id]: Number(e.target.value) }))}
+                                onChange={(e) =>
+                                    setEditRetention((prev) => ({ ...prev, [s.id]: Number(e.target.value) }))
+                                }
                                 title={t('admin.retention_label')}
                             />
-                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('admin.retention_label').split(' ').pop()}</span>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                {t('admin.retention_label').split(' ').pop()}
+                            </span>
                             <button className="btn btn-secondary btn-sm" onClick={() => handleUpdateRetention(s.id)}>
                                 {t('admin.btn_save')}
                             </button>
                             <button
                                 className="btn btn-secondary btn-sm"
                                 onClick={() => handleExpand(s.id)}
-                                aria-label={expandedSchool === s.id ? t('admin.btn_collapse_members') : t('admin.btn_expand_members')}
+                                aria-label={
+                                    expandedSchool === s.id
+                                        ? t('admin.btn_collapse_members')
+                                        : t('admin.btn_expand_members')
+                                }
                             >
                                 {expandedSchool === s.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                             </button>
@@ -216,16 +283,45 @@ function SchoolsTab() {
 
                     {expandedSchool === s.id && (
                         <div style={{ padding: '0 16px 16px', borderTop: '1px solid var(--border)' }}>
-                            <p style={{ margin: '12px 0 8px', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                            <p
+                                style={{
+                                    margin: '12px 0 8px',
+                                    fontSize: '0.8rem',
+                                    fontWeight: 600,
+                                    color: 'var(--text-muted)',
+                                }}
+                            >
                                 {t('admin.members_title', { school: s.name })}
                             </p>
-                            {!members[s.id] && <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{t('admin.members_loading')}</p>}
-                            {members[s.id]?.length === 0 && <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{t('admin.members_empty')}</p>}
+                            {!members[s.id] && (
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                                    {t('admin.members_loading')}
+                                </p>
+                            )}
+                            {members[s.id]?.length === 0 && (
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                                    {t('admin.members_empty')}
+                                </p>
+                            )}
                             {members[s.id]?.map((m) => (
-                                <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
-                                    <span style={{ flex: 1, fontSize: '0.875rem', color: 'var(--text)' }}>{m.email ?? m.id}</span>
+                                <div
+                                    key={m.id}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 10,
+                                        padding: '6px 0',
+                                        borderBottom: '1px solid var(--border)',
+                                    }}
+                                >
+                                    <span style={{ flex: 1, fontSize: '0.875rem', color: 'var(--text)' }}>
+                                        {m.email ?? m.id}
+                                    </span>
                                     <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{m.role}</span>
-                                    <button className="btn btn-secondary btn-sm" onClick={() => handleRemoveMember(s.id, m.id)}>
+                                    <button
+                                        className="btn btn-secondary btn-sm"
+                                        onClick={() => handleRemoveMember(s.id, m.id)}
+                                    >
                                         {t('admin.btn_remove_member')}
                                     </button>
                                 </div>
@@ -254,17 +350,43 @@ function DataTab() {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {students.map((s) => (
-                <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
+                <div
+                    key={s.id}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        padding: '10px 0',
+                        borderBottom: '1px solid var(--border)',
+                    }}
+                >
                     <div style={{ flex: 1 }}>
                         <span style={{ fontWeight: 500, color: 'var(--text)', fontSize: '0.875rem' }}>{s.name}</span>
-                        {s.email && <span style={{ marginLeft: 8, fontSize: '0.8rem', color: 'var(--text-muted)' }}>{s.email}</span>}
+                        {s.email && (
+                            <span style={{ marginLeft: 8, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                {s.email}
+                            </span>
+                        )}
                     </div>
                     {s.anonymizedAt ? (
-                        <span style={{ fontSize: '0.75rem', color: '#64748b', background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: 4, padding: '2px 8px' }}>
+                        <span
+                            style={{
+                                fontSize: '0.75rem',
+                                color: '#64748b',
+                                background: 'var(--bg-panel)',
+                                border: '1px solid var(--border)',
+                                borderRadius: 4,
+                                padding: '2px 8px',
+                            }}
+                        >
                             {t('admin.anonymized_badge')}
                         </span>
                     ) : (
-                        <button className="btn btn-secondary btn-sm" style={{ color: '#dc2626' }} onClick={() => handleAnonymize(s.id)}>
+                        <button
+                            className="btn btn-secondary btn-sm"
+                            style={{ color: '#dc2626' }}
+                            onClick={() => handleAnonymize(s.id)}
+                        >
                             {t('admin.anonymize_btn')}
                         </button>
                     )}
@@ -281,7 +403,9 @@ function RetentionTab() {
     return (
         <div style={{ maxWidth: 560 }}>
             <p style={{ color: 'var(--text)', lineHeight: 1.6 }}>{t('admin.retention_desc')}</p>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: 8 }}>{t('admin.retention_per_school')}</p>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: 8 }}>
+                {t('admin.retention_per_school')}
+            </p>
         </div>
     );
 }
@@ -303,7 +427,15 @@ export default function AdminPage() {
         <div className="page-container">
             <Topbar title={t('admin.title')} />
 
-            <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid var(--border)', paddingBottom: 0 }}>
+            <div
+                style={{
+                    display: 'flex',
+                    gap: 4,
+                    marginBottom: 24,
+                    borderBottom: '1px solid var(--border)',
+                    paddingBottom: 0,
+                }}
+            >
                 {tabs.map(({ id, label, Icon }) => (
                     <button
                         key={id}

@@ -31,10 +31,7 @@ export default function CefrOverviewPage() {
     const targetLevel = cls?.voTrack ? VO_TRACK_DEFAULT_CEFR[cls.voTrack] : undefined;
 
     const overview = useMemo(
-        () =>
-            student
-                ? getCefrStudentOverview(student.id, studentRubrics, rubrics, selfAssessments)
-                : null,
+        () => (student ? getCefrStudentOverview(student.id, studentRubrics, rubrics, selfAssessments) : null),
         [student, studentRubrics, rubrics, selfAssessments]
     );
 
@@ -53,8 +50,7 @@ export default function CefrOverviewPage() {
 
     const hasAnyData =
         overview &&
-        (overview.cells.some((c) => c.rubricCount > 0 || c.totalDescriptors > 0) ||
-            overview.standardSets.length > 0);
+        (overview.cells.some((c) => c.rubricCount > 0 || c.totalDescriptors > 0) || overview.standardSets.length > 0);
 
     return (
         <>
@@ -63,8 +59,9 @@ export default function CefrOverviewPage() {
                 {/* Filter row */}
                 <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap', alignItems: 'flex-end' }}>
                     <div className="form-group" style={{ flex: 1, maxWidth: 240, marginBottom: 0 }}>
-                        <label>{t('statistics.label_class_filter')}</label>
+                        <label htmlFor="cefr-class-filter">{t('statistics.label_class_filter')}</label>
                         <select
+                            id="cefr-class-filter"
                             value={selectedClassId}
                             onChange={(e) => {
                                 setSelectedClassId(e.target.value);
@@ -80,8 +77,9 @@ export default function CefrOverviewPage() {
                         </select>
                     </div>
                     <div className="form-group" style={{ flex: 1, maxWidth: 320, marginBottom: 0 }}>
-                        <label>{t('statistics.label_student')}</label>
+                        <label htmlFor="cefr-student-filter">{t('statistics.label_student')}</label>
                         <select
+                            id="cefr-student-filter"
                             value={selectedStudentId}
                             onChange={(e) => setSelectedStudentId(e.target.value)}
                         >
@@ -129,9 +127,7 @@ export default function CefrOverviewPage() {
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                     <h2 style={{ margin: '0 0 4px', fontSize: '1.2rem' }}>{student.name}</h2>
-                                    <div
-                                        style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}
-                                    >
+                                    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
                                         {cls && (
                                             <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
                                                 {cls.name}
@@ -174,9 +170,7 @@ export default function CefrOverviewPage() {
                         {overview && (
                             <div className="grid-3" style={{ marginBottom: 24 }}>
                                 <div className="card" style={{ borderTop: '3px solid var(--accent)' }}>
-                                    <div
-                                        style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--accent)' }}
-                                    >
+                                    <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--accent)' }}>
                                         {overview.skillsWithRubricData}
                                     </div>
                                     <div style={{ fontWeight: 600, fontSize: '0.9rem', marginTop: 4 }}>
@@ -253,11 +247,7 @@ export default function CefrOverviewPage() {
                                         <p>{t('cefrOverview.empty_no_cefr')}</p>
                                     </div>
                                 ) : (
-                                    <CefrOverviewGrid
-                                        cells={overview.cells}
-                                        targetLevel={targetLevel}
-                                        lang={lang}
-                                    />
+                                    <CefrOverviewGrid cells={overview.cells} targetLevel={targetLevel} lang={lang} />
                                 )}
                             </div>
                         )}

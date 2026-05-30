@@ -149,7 +149,9 @@ export default function StatisticsPage() {
     }, [rubric, studentRubrics, selectedClassId, students, excludeNHI]);
 
     const bloomsData = useMemo(() => {
-        const inCriteria = rubric?.criteria.some((c) => c.frameworkDescriptors?.some((fd) => fd.framework === 'blooms'));
+        const inCriteria = rubric?.criteria.some((c) =>
+            c.frameworkDescriptors?.some((fd) => fd.framework === 'blooms')
+        );
         const inSnapshots = filteredRubricStudentRubrics.some((sr) =>
             sr.rubricSnapshot?.criteria.some((c) => c.frameworkDescriptors?.some((fd) => fd.framework === 'blooms'))
         );
@@ -696,7 +698,10 @@ export default function StatisticsPage() {
                                                         }}
                                                         labelStyle={{ color: 'var(--text)', fontWeight: 600 }}
                                                         itemStyle={{ color: 'var(--text-muted)' }}
-                                                        formatter={(v: unknown) => [typeof v === 'number' ? v : 0, t('statistics.students')]}
+                                                        formatter={(v: unknown) => [
+                                                            typeof v === 'number' ? v : 0,
+                                                            t('statistics.students'),
+                                                        ]}
                                                     />
                                                     <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={60}>
                                                         {stats.distribution.map((entry, i) => (

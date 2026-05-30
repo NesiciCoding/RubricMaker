@@ -184,9 +184,7 @@ describe('getCefrStudentOverview', () => {
                             jurisdictionTitle: 'US',
                         },
                     ],
-                    levels: [
-                        { id: 'l1', label: 'Good', minPoints: 80, maxPoints: 100, description: '', subItems: [] },
-                    ],
+                    levels: [{ id: 'l1', label: 'Good', minPoints: 80, maxPoints: 100, description: '', subItems: [] }],
                 },
             ],
         });

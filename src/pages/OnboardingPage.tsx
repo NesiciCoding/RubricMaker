@@ -23,8 +23,14 @@ export default function OnboardingPage() {
     async function handleSchoolStep() {
         setError('');
         if (schoolAction === 'create') {
-            if (!schoolName.trim()) { setError(t('onboarding.error_name_required')); return; }
-            const clampedYears = Math.min(20, Math.max(1, Number.isFinite(retentionYears) ? Math.round(retentionYears) : 3));
+            if (!schoolName.trim()) {
+                setError(t('onboarding.error_name_required'));
+                return;
+            }
+            const clampedYears = Math.min(
+                20,
+                Math.max(1, Number.isFinite(retentionYears) ? Math.round(retentionYears) : 3)
+            );
             setBusy(true);
             try {
                 const newSchool = await createSchool(schoolName.trim(), clampedYears);
@@ -38,7 +44,10 @@ export default function OnboardingPage() {
                 setBusy(false);
             }
         } else {
-            if (!schoolId.trim()) { setError(t('onboarding.error_id_required')); return; }
+            if (!schoolId.trim()) {
+                setError(t('onboarding.error_id_required'));
+                return;
+            }
             setBusy(true);
             try {
                 const result = await joinSchool(schoolId.trim());
@@ -141,7 +150,9 @@ export default function OnboardingPage() {
                                 {(['create', 'join'] as SchoolAction[]).map((a) => (
                                     <button
                                         key={a}
-                                        className={schoolAction === a ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'}
+                                        className={
+                                            schoolAction === a ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'
+                                        }
                                         onClick={() => setSchoolAction(a)}
                                     >
                                         {t(`onboarding.school_${a}`)}
@@ -152,7 +163,15 @@ export default function OnboardingPage() {
                             {schoolAction === 'create' ? (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                                     <div>
-                                        <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>
+                                        <label
+                                            style={{
+                                                fontSize: '0.875rem',
+                                                fontWeight: 600,
+                                                color: '#374151',
+                                                display: 'block',
+                                                marginBottom: 4,
+                                            }}
+                                        >
                                             {t('onboarding.school_name_label')}
                                         </label>
                                         <input
@@ -164,7 +183,15 @@ export default function OnboardingPage() {
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>
+                                        <label
+                                            style={{
+                                                fontSize: '0.875rem',
+                                                fontWeight: 600,
+                                                color: '#374151',
+                                                display: 'block',
+                                                marginBottom: 4,
+                                            }}
+                                        >
                                             {t('onboarding.retention_label')}
                                         </label>
                                         <input
@@ -180,12 +207,25 @@ export default function OnboardingPage() {
                                 </div>
                             ) : (
                                 <div>
-                                    <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>
+                                    <label
+                                        style={{
+                                            fontSize: '0.875rem',
+                                            fontWeight: 600,
+                                            color: '#374151',
+                                            display: 'block',
+                                            marginBottom: 4,
+                                        }}
+                                    >
                                         {t('onboarding.school_id_label')}
                                     </label>
                                     <input
                                         className="input"
-                                        style={{ width: '100%', boxSizing: 'border-box', fontFamily: 'monospace', fontSize: '0.875rem' }}
+                                        style={{
+                                            width: '100%',
+                                            boxSizing: 'border-box',
+                                            fontFamily: 'monospace',
+                                            fontSize: '0.875rem',
+                                        }}
                                         value={schoolId}
                                         onChange={(e) => setSchoolId(e.target.value)}
                                         placeholder={t('onboarding.school_id_placeholder')}
@@ -208,13 +248,23 @@ export default function OnboardingPage() {
                                 </button>
                                 <button
                                     className="btn btn-primary"
-                                    style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                                    style={{
+                                        flex: 2,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: 6,
+                                    }}
                                     onClick={handleSchoolStep}
                                     disabled={busy}
                                 >
                                     {busy && <Loader size={14} className="spin" />}
                                     {busy
-                                        ? t(schoolAction === 'create' ? 'onboarding.btn_creating' : 'onboarding.btn_joining')
+                                        ? t(
+                                              schoolAction === 'create'
+                                                  ? 'onboarding.btn_creating'
+                                                  : 'onboarding.btn_joining'
+                                          )
                                         : t('onboarding.btn_finish')}
                                 </button>
                             </div>
@@ -236,7 +286,13 @@ export default function OnboardingPage() {
 
                 <div style={{ textAlign: 'center', marginTop: 16 }}>
                     <button
-                        style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '0.8rem', cursor: 'pointer' }}
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#94a3b8',
+                            fontSize: '0.8rem',
+                            cursor: 'pointer',
+                        }}
                         onClick={signOutFromDatabase}
                     >
                         {t('studentPortal.sign_out')}
