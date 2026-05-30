@@ -74,7 +74,7 @@ jobs:
 
       - name: Check bundle size
         run: |
-          TOTAL=$(find dist/assets -name '*.js' -exec wc -c {} + | tail -1 | awk '{print $1}')
+          TOTAL=$(find dist/assets -name '*.js' -type f -printf '%s\n' | awk '{s+=$1} END {print s+0}')
           echo "Total JS bundle size: ${TOTAL} bytes ($(( TOTAL / 1024 )) KB)"
           if [ "$TOTAL" -gt 6000000 ]; then
             echo "::warning::Bundle exceeds 6 MB — review heavy imports"
