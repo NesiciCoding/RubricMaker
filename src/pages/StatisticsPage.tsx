@@ -149,7 +149,9 @@ export default function StatisticsPage() {
     }, [rubric, studentRubrics, selectedClassId, students, excludeNHI]);
 
     const bloomsData = useMemo(() => {
-        const inCriteria = rubric?.criteria.some((c) => c.frameworkDescriptors?.some((fd) => fd.framework === 'blooms'));
+        const inCriteria = rubric?.criteria.some((c) =>
+            c.frameworkDescriptors?.some((fd) => fd.framework === 'blooms')
+        );
         const inSnapshots = filteredRubricStudentRubrics.some((sr) =>
             sr.rubricSnapshot?.criteria.some((c) => c.frameworkDescriptors?.some((fd) => fd.framework === 'blooms'))
         );

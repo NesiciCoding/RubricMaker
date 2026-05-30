@@ -131,7 +131,13 @@ export default function NotificationBell() {
                                     {t('notifications.clear_all')}
                                 </button>
                             )}
-                            <button className="btn btn-ghost btn-icon btn-sm" onClick={() => { setDismissedIds(new Set()); setOpen(false); }}>
+                            <button
+                                className="btn btn-ghost btn-icon btn-sm"
+                                onClick={() => {
+                                    setDismissedIds(new Set());
+                                    setOpen(false);
+                                }}
+                            >
                                 <X size={14} />
                             </button>
                         </div>

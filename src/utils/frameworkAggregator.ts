@@ -15,7 +15,7 @@ export interface FrameworkBucket {
 export function aggregateFrameworkScores(
     framework: AssessmentFramework,
     studentRubrics: StudentRubric[],
-    criteria: RubricCriterion[],
+    criteria: RubricCriterion[]
 ): FrameworkBucket[] {
     const buckets = new Map<string, { scores: number[]; labelEn: string; labelNl: string; color: string }>();
 
@@ -48,17 +48,12 @@ export function aggregateFrameworkScores(
         }
     }
 
-    const canonicalIds =
-        framework === 'blooms'
-            ? BLOOM_LEVELS.map((l) => l.id)
-            : IB_ATTRIBUTES.map((a) => a.id);
+    const canonicalIds = framework === 'blooms' ? BLOOM_LEVELS.map((l) => l.id) : IB_ATTRIBUTES.map((a) => a.id);
 
     return canonicalIds.map((id) => {
         const bucket = buckets.get(id);
         const meta =
-            framework === 'blooms'
-                ? BLOOM_LEVELS.find((l) => l.id === id)
-                : IB_ATTRIBUTES.find((a) => a.id === id);
+            framework === 'blooms' ? BLOOM_LEVELS.find((l) => l.id === id) : IB_ATTRIBUTES.find((a) => a.id === id);
 
         if (!bucket) {
             return {

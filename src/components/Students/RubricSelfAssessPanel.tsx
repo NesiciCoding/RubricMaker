@@ -46,9 +46,7 @@ export default function RubricSelfAssessPanel({ sr, rubric, onSave }: Props) {
 
                     return (
                         <div key={criterion.id}>
-                            <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6 }}>
-                                {criterion.title}
-                            </div>
+                            <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6 }}>{criterion.title}</div>
                             {!sr.feedbackOnly && teacherLevel && (
                                 <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>
                                     {t('studentPortal.self_assess_teacher_grade', { level: teacherLevel.label })}

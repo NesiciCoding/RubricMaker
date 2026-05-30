@@ -505,12 +505,21 @@ interface AppContextValue extends StoreData {
     updateMyProfile: (updates: { displayName?: string }) => Promise<SyncResult>;
     // Schools (cloud-only — no-op in offline mode)
     fetchSchools: () => Promise<Awaited<ReturnType<typeof storageSync.fetchSchools>>>;
-    createSchool: (name: string, retentionYears: number) => Promise<Awaited<ReturnType<typeof storageSync.createSchool>>>;
+    createSchool: (
+        name: string,
+        retentionYears: number
+    ) => Promise<Awaited<ReturnType<typeof storageSync.createSchool>>>;
     joinSchool: (schoolId: string) => Promise<Awaited<ReturnType<typeof storageSync.joinSchool>>>;
-    updateSchool: (schoolId: string, updates: { name?: string; retentionYears?: number }) => Promise<Awaited<ReturnType<typeof storageSync.updateSchool>>>;
+    updateSchool: (
+        schoolId: string,
+        updates: { name?: string; retentionYears?: number }
+    ) => Promise<Awaited<ReturnType<typeof storageSync.updateSchool>>>;
     deleteSchool: (schoolId: string) => Promise<Awaited<ReturnType<typeof storageSync.deleteSchool>>>;
     fetchSchoolMembers: (schoolId: string) => Promise<Awaited<ReturnType<typeof storageSync.fetchSchoolMembers>>>;
-    removeSchoolMember: (schoolId: string, profileId: string) => Promise<Awaited<ReturnType<typeof storageSync.removeSchoolMember>>>;
+    removeSchoolMember: (
+        schoolId: string,
+        profileId: string
+    ) => Promise<Awaited<ReturnType<typeof storageSync.removeSchoolMember>>>;
     // Student anonymization
     anonymizeStudent: (id: string) => void;
     // Essay assignments (teacher side)
@@ -801,7 +810,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         (id: string, levels: Record<string, string | null>, reflection: string) => {
             dispatch({ type: 'SAVE_RUBRIC_SELF_ASSESSMENT', id, levels, reflection });
         },
-        [],
+        []
     );
 
     const createStudentRubric = useCallback(
@@ -1097,10 +1106,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         []
     );
     const deleteSchool = useCallback((schoolId: string) => storageSync.deleteSchool(schoolId), []);
-    const fetchSchoolMembers = useCallback(
-        (schoolId: string) => storageSync.fetchSchoolMembers(schoolId),
-        []
-    );
+    const fetchSchoolMembers = useCallback((schoolId: string) => storageSync.fetchSchoolMembers(schoolId), []);
     const removeSchoolMember = useCallback(
         (schoolId: string, profileId: string) => storageSync.removeSchoolMember(schoolId, profileId),
         []
@@ -1109,20 +1115,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const getCurrentDatabaseUserId = useCallback(() => storageSync.getCurrentUserId(), []);
 
     // ─── Student anonymization ─────────────────────────────────────────────────
-    const anonymizeStudent = useCallback((id: string) => {
-        const original = state.students.find((s) => s.id === id);
-        dispatch({ type: 'ANONYMIZE_STUDENT', id });
-        if (original) {
-            const anonymized = {
-                ...original,
-                name: `Student-${original.id.slice(0, 8)}`,
-                email: undefined,
-                studentNumber: undefined,
-                anonymizedAt: new Date().toISOString(),
-            };
-            storageSync.pushOne('student', 'upsert', anonymized);
-        }
-    }, [state.students]);
+    const anonymizeStudent = useCallback(
+        (id: string) => {
+            const original = state.students.find((s) => s.id === id);
+            dispatch({ type: 'ANONYMIZE_STUDENT', id });
+            if (original) {
+                const anonymized = {
+                    ...original,
+                    name: `Student-${original.id.slice(0, 8)}`,
+                    email: undefined,
+                    studentNumber: undefined,
+                    anonymizedAt: new Date().toISOString(),
+                };
+                storageSync.pushOne('student', 'upsert', anonymized);
+            }
+        },
+        [state.students]
+    );
 
     const value: AppContextValue = {
         ...state,

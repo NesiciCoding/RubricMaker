@@ -15,7 +15,16 @@ import type { CefrLevel, CefrSkill } from '../types';
 
 export default function StudentPortalPage() {
     const { studentId } = useParams<{ studentId: string }>();
-    const { students, classes, rubrics, studentRubrics, gradeScales, settings, selfAssessments, saveRubricSelfAssessment } = useApp();
+    const {
+        students,
+        classes,
+        rubrics,
+        studentRubrics,
+        gradeScales,
+        settings,
+        selfAssessments,
+        saveRubricSelfAssessment,
+    } = useApp();
     const { t, i18n } = useTranslation();
     const [linkCopied, setLinkCopied] = useState(false);
     const [openSelfAssessId, setOpenSelfAssessId] = useState<string | null>(null);
@@ -373,18 +382,27 @@ export default function StudentPortalPage() {
                                     {/* Self-assessment */}
                                     {!h.sr.notHandedIn && (
                                         <div style={{ marginTop: 10 }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 8,
+                                                    flexWrap: 'wrap',
+                                                }}
+                                            >
                                                 <button
                                                     className="btn btn-ghost btn-sm"
                                                     style={{ fontSize: 12 }}
-                                                    onClick={() => setOpenSelfAssessId((id) => id === h.sr.id ? null : h.sr.id)}
+                                                    onClick={() =>
+                                                        setOpenSelfAssessId((id) => (id === h.sr.id ? null : h.sr.id))
+                                                    }
                                                 >
                                                     <ClipboardCheck size={13} />
                                                     {openSelfAssessId === h.sr.id
                                                         ? t('common.cancel')
                                                         : h.sr.selfAssessedAt
-                                                            ? t('studentPortal.self_assess_edit_btn')
-                                                            : t('studentPortal.self_assess_btn')}
+                                                          ? t('studentPortal.self_assess_edit_btn')
+                                                          : t('studentPortal.self_assess_btn')}
                                                 </button>
                                                 {h.sr.selfAssessedAt && openSelfAssessId !== h.sr.id && (
                                                     <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>

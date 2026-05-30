@@ -181,11 +181,12 @@ export default function App() {
                                 <Route path="/statistics" element={<StatisticsPage />} />
                                 <Route path="/comments" element={<CommentBankPage />} />
                                 <Route path="/settings" element={<SettingsPage />} />
-                                <Route path="/admin" element={
-                                    settings.userRole === 'admin'
-                                        ? <AdminPage />
-                                        : <Navigate to="/" replace />
-                                } />
+                                <Route
+                                    path="/admin"
+                                    element={
+                                        settings.userRole === 'admin' ? <AdminPage /> : <Navigate to="/" replace />
+                                    }
+                                />
                                 <Route path="/privacy" element={<PrivacyPage />} />
                                 <Route path="*" element={<NotFoundPage />} />
                             </Routes>

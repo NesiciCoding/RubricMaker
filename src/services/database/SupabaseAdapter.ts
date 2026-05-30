@@ -293,7 +293,13 @@ export class SupabaseAdapter {
             return null;
         }
 
-        return { id: data.id, name: data.name, createdBy: data.created_by, retentionYears: data.retention_years, createdAt: data.created_at };
+        return {
+            id: data.id,
+            name: data.name,
+            createdBy: data.created_by,
+            retentionYears: data.retention_years,
+            createdAt: data.created_at,
+        };
     }
 
     async joinSchool(schoolId: string): Promise<SyncResult> {
@@ -307,11 +313,7 @@ export class SupabaseAdapter {
             .update({ school_id: schoolId })
             .eq('id', this.userId);
         if (profileError) {
-            await this.client
-                .from('school_members')
-                .delete()
-                .eq('school_id', schoolId)
-                .eq('profile_id', this.userId);
+            await this.client.from('school_members').delete().eq('school_id', schoolId).eq('profile_id', this.userId);
             return { success: false, error: profileError.message };
         }
         return { success: true };
@@ -340,7 +342,12 @@ export class SupabaseAdapter {
             .eq('school_id', schoolId);
         if (error || !data) return [];
         return data.map((m) => {
-            const p = m.profiles as unknown as { id: string; email?: string; display_name?: string; role: string } | null;
+            const p = m.profiles as unknown as {
+                id: string;
+                email?: string;
+                display_name?: string;
+                role: string;
+            } | null;
             return {
                 id: p?.id ?? m.profile_id,
                 email: p?.email ?? undefined,
