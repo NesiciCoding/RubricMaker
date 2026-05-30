@@ -133,6 +133,31 @@ The Dashboard already tracks feedback age (days since last grading per student).
 
 ---
 
+## Tier 4 — Testing & Quality
+
+### 13. Playwright End-to-End Smoke Tests
+**Status:** Planned  
+**Effort:** Medium (4–6 hours initial setup; low ongoing maintenance)
+
+The app is offline-first with no required auth for the core teacher workflow, which makes E2E testing unusually tractable — no DB seeding, no network stubs, no login flow needed for the basic path.
+
+**What to build:**
+- Install `@playwright/test` and add `playwright.config.ts`
+- 3–5 smoke tests covering the highest-risk regression paths:
+  1. Landing page → "Continue without account" → Dashboard renders with correct heading
+  2. Create a rubric (fill name + subject → save) → rubric appears in the rubric list
+  3. Open rubric → add a criterion → save → criterion persists on reload
+  4. Grade a student (select a level → save) → grade appears on the student profile
+  5. Export page loads and the export-to-PDF button is visible
+- Run on `push to main` only (not every PR) to keep PR CI fast
+- Add a `npm run e2e` script; do not include in the coverage run
+
+**Files to create:** `playwright.config.ts`, `e2e/smoke.spec.ts`
+
+**Why deferred:** Setup cost is real. Prioritise once the unit/integration layer is stable and coverage thresholds are comfortably above minimums.
+
+---
+
 ## Completed
 
 | # | Feature | Commit |

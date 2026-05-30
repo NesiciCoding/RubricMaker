@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   ci:
@@ -30,8 +31,17 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Format check
+        run: npm run format:check
+
       - name: Test with coverage
         run: npm run coverage
+
+      - name: Coverage comment
+        if: always()
+        uses: davelosert/vitest-coverage-report-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload coverage report
         if: always()
@@ -39,4 +49,38 @@ jobs:
         with:
           name: coverage-report
           path: coverage/
+          retention-days: 14
+
+  bundle:
+    name: Bundle Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build with bundle stats
+        run: npm run build
+        env:
+          VITE_ANALYZE: 'true'
+
+      - name: Check bundle size
+        run: |
+          TOTAL=$(find dist/assets -name '*.js' -exec wc -c {} + | tail -1 | awk '{print $1}')
+          echo "Total JS bundle size: ${TOTAL} bytes ($(( TOTAL / 1024 )) KB)"
+          if [ "$TOTAL" -gt 6000000 ]; then
+            echo "::warning::Bundle exceeds 6 MB — review heavy imports"
+          fi
+
+      - name: Upload bundle stats
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-stats
+          path: dist/stats.html
           retention-days: 14

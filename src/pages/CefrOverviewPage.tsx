@@ -63,8 +63,9 @@ export default function CefrOverviewPage() {
                 {/* Filter row */}
                 <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap', alignItems: 'flex-end' }}>
                     <div className="form-group" style={{ flex: 1, maxWidth: 240, marginBottom: 0 }}>
-                        <label>{t('statistics.label_class_filter')}</label>
+                        <label htmlFor="cefr-class-filter">{t('statistics.label_class_filter')}</label>
                         <select
+                            id="cefr-class-filter"
                             value={selectedClassId}
                             onChange={(e) => {
                                 setSelectedClassId(e.target.value);
@@ -80,8 +81,9 @@ export default function CefrOverviewPage() {
                         </select>
                     </div>
                     <div className="form-group" style={{ flex: 1, maxWidth: 320, marginBottom: 0 }}>
-                        <label>{t('statistics.label_student')}</label>
+                        <label htmlFor="cefr-student-filter">{t('statistics.label_student')}</label>
                         <select
+                            id="cefr-student-filter"
                             value={selectedStudentId}
                             onChange={(e) => setSelectedStudentId(e.target.value)}
                         >

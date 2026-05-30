@@ -1,9 +1,17 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { visualizer } from 'rollup-plugin-visualizer'
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    visualizer({
+      filename: 'dist/stats.html',
+      gzipSize: true,
+      brotliSize: true,
+    }),
+  ],
   base: './',
   test: {
     environment: 'jsdom',
@@ -48,10 +56,10 @@ export default defineConfig({
       ],
       all: true,
       thresholds: {
-        lines: 50,
-        statements: 47,
-        functions: 37,
-        branches: 37,
+        lines: 52,
+        statements: 51,
+        functions: 42,
+        branches: 43,
       },
     },
   }
