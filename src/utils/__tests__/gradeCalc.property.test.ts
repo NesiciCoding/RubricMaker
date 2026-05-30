@@ -1,5 +1,5 @@
 import fc from 'fast-check';
-import { describe, it, expect } from 'vitest';
+import { describe, it } from 'vitest';
 import { calcEntryPoints, calcWeightedScore, applyModifier, calcLetterGrade, calcGradeColor } from '../gradeCalc';
 import type { RubricCriterion, ScoreEntry, GradeScale, Modifier } from '../../types';
 
