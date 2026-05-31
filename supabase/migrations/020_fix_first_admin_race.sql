@@ -1,8 +1,11 @@
 -- Migration 020: Serialize first-admin assignment with an advisory lock.
 --
--- Two concurrent first sign-ups could both see an empty profiles table and
--- both get role='admin'.  pg_advisory_xact_lock serializes the EXISTS check
--- within a transaction so only one session wins the admin slot.
+-- Two concurrent sign-ups could both see an empty profiles table and both get
+-- role='admin'.  The lock is acquired before ANY role check so student and
+-- non-student races are also serialized.
+--
+-- The admin existence test excludes student profiles so a student being the
+-- very first signup does not prevent a teacher/admin from ever being created.
 
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger
@@ -20,6 +23,9 @@ BEGIN
     new.email
   );
 
+  -- Serialize all concurrent sign-ups so student and non-student paths don't race.
+  PERFORM pg_advisory_xact_lock(hashtext('public.handle_new_user.first_admin')::bigint);
+
   -- Auto-detect students: email present and matches a teacher-imported student record.
   IF new.email IS NOT NULL AND EXISTS (
     SELECT 1 FROM public.students
@@ -28,10 +34,10 @@ BEGIN
   ) THEN
     v_role := 'student';
   ELSE
-    -- Serialize first-admin assignment: only one session evaluates this at a time.
-    PERFORM pg_advisory_xact_lock(hashtext('public.handle_new_user.first_admin')::bigint);
-    -- First user ever becomes admin; every subsequent user starts as 'user'.
-    SELECT CASE WHEN EXISTS (SELECT 1 FROM public.profiles LIMIT 1) THEN 'user' ELSE 'admin' END
+    -- First non-student ever becomes admin; ignore student rows when checking.
+    SELECT CASE WHEN EXISTS (
+      SELECT 1 FROM public.profiles WHERE role <> 'student' LIMIT 1
+    ) THEN 'user' ELSE 'admin' END
       INTO v_role;
   END IF;
 
