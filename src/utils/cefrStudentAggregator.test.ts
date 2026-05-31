@@ -514,7 +514,21 @@ describe('getCefrStudentOverview — summary statistics', () => {
     });
 
     it('default threshold is 70 when rubric cefrAchieveThreshold is not set', () => {
-        const rubric = makeRubric({ cefrTargetLevel: 'B1', cefrSkill: 'writing', cefrAchieveThreshold: undefined });
+        // Use a level with minPoints:0 so selectedPoints:65 is not clamped up — yields 65% score
+        const rubric = makeRubric({
+            cefrTargetLevel: 'B1',
+            cefrSkill: 'writing',
+            cefrAchieveThreshold: undefined,
+            criteria: [
+                {
+                    id: 'c1',
+                    title: 'Writing Quality',
+                    description: '',
+                    weight: 100,
+                    levels: [{ id: 'l1', label: 'Partial', minPoints: 0, maxPoints: 100, description: '', subItems: [] }],
+                },
+            ],
+        });
         const sr = makeSr({
             entries: [{ criterionId: 'c1', levelId: 'l1', selectedPoints: 65, checkedSubItems: [], comment: '' }],
         });
