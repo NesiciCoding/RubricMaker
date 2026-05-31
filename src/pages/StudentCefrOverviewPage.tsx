@@ -24,7 +24,10 @@ export default function StudentCefrOverviewPage() {
     const targetLevel = cls?.voTrack ? VO_TRACK_DEFAULT_CEFR[cls.voTrack] : undefined;
 
     const overview = useMemo(
-        () => (student ? getCefrStudentOverview(student.id, studentRubrics, rubrics, selfAssessments, analysisResults) : null),
+        () =>
+            student
+                ? getCefrStudentOverview(student.id, studentRubrics, rubrics, selfAssessments, analysisResults)
+                : null,
         [student, studentRubrics, rubrics, selfAssessments, analysisResults]
     );
 

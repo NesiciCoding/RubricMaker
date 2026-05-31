@@ -50,9 +50,7 @@ describe('profileGrammar', () => {
             'She has written a report. It was written by experts. If he had done it, they would have passed.'
         );
         if (result.detectedStructures.length > 0) {
-            const maxDetectedIdx = Math.max(
-                ...result.detectedStructures.map((s) => LEVEL_ORDER.indexOf(s.level))
-            );
+            const maxDetectedIdx = Math.max(...result.detectedStructures.map((s) => LEVEL_ORDER.indexOf(s.level)));
             expect(LEVEL_ORDER.indexOf(result.estimatedLevel)).toBe(maxDetectedIdx);
         }
     });
