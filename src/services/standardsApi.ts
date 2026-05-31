@@ -47,7 +47,6 @@ export interface CspStandardSetDetail {
 
 // ─── API functions ────────────────────────────────────────────────────────────
 
-/** Fetches all available jurisdictions (states, organizations, districts) from the CSP API. */
 export async function fetchJurisdictions(apiKey: string): Promise<CspJurisdiction[]> {
     const res = await fetch(`${BASE}/jurisdictions`, { headers: headers(apiKey) });
     if (!res.ok) throw new Error(`CSP API error ${res.status}: ${res.statusText}`);
@@ -55,7 +54,6 @@ export async function fetchJurisdictions(apiKey: string): Promise<CspJurisdictio
     return json.data ?? [];
 }
 
-/** Fetches all standard sets available under a given jurisdiction. */
 export async function fetchStandardSets(apiKey: string, jurisdictionId: string): Promise<CspStandardSet[]> {
     const res = await fetch(`${BASE}/jurisdictions/${encodeURIComponent(jurisdictionId)}`, {
         headers: headers(apiKey),
@@ -65,7 +63,6 @@ export async function fetchStandardSets(apiKey: string, jurisdictionId: string):
     return json.data.standardSets ?? [];
 }
 
-/** Fetches the full detail (all standards) for a single standard set. */
 export async function fetchStandardSetDetail(apiKey: string, standardSetId: string): Promise<CspStandardSetDetail> {
     const res = await fetch(`${BASE}/standard_sets/${encodeURIComponent(standardSetId)}`, { headers: headers(apiKey) });
     if (!res.ok) throw new Error(`CSP API error ${res.status}: ${res.statusText}`);

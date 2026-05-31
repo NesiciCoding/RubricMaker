@@ -7,7 +7,6 @@ export interface SharedFeedback {
     scale: GradeScale | null;
 }
 
-/** Encodes a student feedback payload (rubric + grades + student) into a URL-safe base64 share code. */
 export function encodeFeedbackCode(data: SharedFeedback): string {
     try {
         const payload: SharedFeedback = {
@@ -21,7 +20,6 @@ export function encodeFeedbackCode(data: SharedFeedback): string {
     }
 }
 
-/** Decodes a feedback share code, returning null if the code is malformed or missing required fields. */
 export function decodeFeedbackCode(code: string): SharedFeedback | null {
     try {
         const json = decodeURIComponent(atob(code.trim()));

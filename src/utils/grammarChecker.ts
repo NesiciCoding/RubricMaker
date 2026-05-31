@@ -90,10 +90,7 @@ async function checkWithCompromise(text: string): Promise<GrammarError[]> {
     return errors;
 }
 
-/**
- * Checks grammar using the LanguageTool public API; falls back to the local
- * compromise NLP library if the API is unavailable or rate-limited.
- */
+/** Falls back to compromise NLP when LanguageTool is unavailable or rate-limited (public API, no SLA). */
 export async function checkGrammar(
     text: string,
     language = 'en-US'
