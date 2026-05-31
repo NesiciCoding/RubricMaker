@@ -10,8 +10,8 @@ coverage
 .env.production
 
 # Deploy script contains personal credentials (domain, host, SSH key path)
-# Copy deploy.example.sh → deploy.sh and fill in your values
-deploy.sh
+# Copy scripts/deploy.example.sh → scripts/deploy.sh and fill in your values
+scripts/deploy.sh
 
 # Backup output
 backups/
