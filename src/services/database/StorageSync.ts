@@ -1,3 +1,4 @@
+import i18n from 'i18next';
 import { SupabaseAdapter } from './SupabaseAdapter';
 import { AttachmentSync } from './AttachmentSync';
 import type { DatabaseConfig, SyncStatus, SyncResult, DbUser } from './types';
@@ -447,7 +448,7 @@ class StorageSyncService {
             console.warn(`[sync] pushOne(${entity}, ${action}) failed`, e);
             this.pushOneFailCount++;
             if (this.pushOneFailCount === 3 && this.toastFn) {
-                this.toastFn('Changes may not be synced — check your connection.', 'warning');
+                this.toastFn(i18n.t('toast.sync_push_failed'), 'warning');
             }
         }
     }

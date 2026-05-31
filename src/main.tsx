@@ -12,9 +12,11 @@ const StudentFeedbackPage = lazy(() => import('./pages/StudentFeedbackPage'));
 const RubricPreviewPage = lazy(() => import('./pages/RubricPreviewPage'));
 const StudentEssayPage = lazy(() => import('./pages/StudentEssayPage'));
 
-window.addEventListener('unhandledrejection', (event) => {
+function handleUnhandledRejection(event: PromiseRejectionEvent) {
     console.error('[unhandled rejection]', event.reason);
-});
+}
+window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+window.addEventListener('unhandledrejection', handleUnhandledRejection);
 
 const root = ReactDOM.createRoot(document.getElementById('root')!);
 
