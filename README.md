@@ -37,6 +37,15 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 
 ---
 
+## 📚 Documentation
+
+- [Wiki](https://github.com/NesiciCoding/RubricMaker/wiki) — architecture, features, deployment guides, contributing
+- [HestiaCP setup](docs/HESTIACP_SETUP.md) — shared hosting / cPanel-style VPS
+- [Virtualmin setup](docs/VIRTUALMIN_SETUP.md) — Virtualmin VPS deployment
+- [Magister integration](docs/MAGISTER_INTEGRATION.md) — importing students from Magister SIS
+
+---
+
 ## 🚀 Development
 
 To run the project locally:
