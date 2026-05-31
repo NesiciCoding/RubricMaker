@@ -410,7 +410,10 @@
         "import_success": "Data imported successfully.",
         "import_error": "Import failed — invalid backup file.",
         "share_code_error": "Invalid share code. Please check and try again.",
-        "csv_import_error": "CSV import failed. Please check the file format."
+        "csv_import_error": "CSV import failed. Please check the file format.",
+        "storage_full": "Storage is full — your changes may not have been saved.",
+        "sync_load_failed": "Could not load your cloud data. Showing local data instead.",
+        "copy_paste_failed": "Copy/paste failed. Please try again."
     },
     "cefr": {
         "rubric_section_title": "CEFR / ERK Level",

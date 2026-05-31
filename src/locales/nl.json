@@ -412,7 +412,10 @@
         "import_success": "Data succesvol geïmporteerd.",
         "import_error": "Importeren mislukt — ongeldig back-upbestand.",
         "share_code_error": "Ongeldige deelcode. Controleer de code en probeer het opnieuw.",
-        "csv_import_error": "CSV-import mislukt. Controleer de bestandsindeling."
+        "csv_import_error": "CSV-import mislukt. Controleer de bestandsindeling.",
+        "storage_full": "Opslag is vol — je wijzigingen zijn mogelijk niet opgeslagen.",
+        "sync_load_failed": "Clouddata kon niet worden geladen. Lokale data wordt weergegeven.",
+        "copy_paste_failed": "Kopiëren/plakken mislukt. Probeer het opnieuw."
     },
     "cefr": {
         "rubric_section_title": "CEFR / ERK Niveau",

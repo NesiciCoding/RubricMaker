@@ -26,8 +26,8 @@ function SlipItem({ student, assignment }: { student: ClassStudent; assignment: 
 
     useEffect(() => {
         if (!canvasRef.current) return;
-        QRCode.toCanvas(canvasRef.current, url, { width: 80, margin: 0 }).catch(() => {
-            /* ignore */
+        QRCode.toCanvas(canvasRef.current, url, { width: 80, margin: 0 }).catch((e) => {
+            console.error('[qr] canvas generation failed', e);
         });
     }, [url]);
 

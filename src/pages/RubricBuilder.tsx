@@ -58,6 +58,7 @@ import { CEFR_LEVELS, CEFR_SKILLS, CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '
 import { exportRubricGridPdf } from '../utils/pdfExport';
 import { exportRubricToDocx } from '../utils/docxExport';
 import { getSpeakingDimensions } from '../data/speakingDimensions';
+import { useToast } from '../hooks/useToast';
 
 function newLevel(min = 0, max = 0, label = ''): RubricLevel {
     return {
@@ -138,6 +139,7 @@ export default function RubricBuilder() {
     const [pickingStandardFor, setPickingStandardFor] = useState<StandardTarget | null>(null);
     const [showExportMenu, setShowExportMenu] = useState(false);
     const { t, i18n } = useTranslation();
+    const { showToast } = useToast();
 
     // ── CEFR state ──────────────────────────────────────────────────────────────
     const [cefrTargetLevel, setCefrTargetLevel] = useState<CefrLevel | ''>(existing?.cefrTargetLevel ?? '');
@@ -360,7 +362,8 @@ export default function RubricBuilder() {
         try {
             localStorage.setItem('rubric_criterion_clipboard', JSON.stringify(criterion));
         } catch (e) {
-            console.error('Failed to copy criterion', e);
+            console.error('[rubric] copy criterion failed', e);
+            showToast(t('toast.copy_paste_failed'), 'warning');
         }
     }
 
@@ -380,7 +383,8 @@ export default function RubricBuilder() {
             };
             setCriteria((c) => [...c, clone]);
         } catch (e) {
-            console.error('Failed to paste criterion', e);
+            console.error('[rubric] paste criterion failed', e);
+            showToast(t('toast.copy_paste_failed'), 'warning');
         }
     }
     function updateCriterion(cid: string, patch: Partial<RubricCriterion>) {
