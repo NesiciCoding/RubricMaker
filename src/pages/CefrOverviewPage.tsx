@@ -11,7 +11,7 @@ import { getCefrStudentOverview } from '../utils/cefrStudentAggregator';
 import { VO_TRACK_LABELS, VO_TRACK_COLORS, VO_TRACK_DEFAULT_CEFR } from '../data/voTracks';
 
 export default function CefrOverviewPage() {
-    const { students, classes, rubrics, studentRubrics, selfAssessments } = useApp();
+    const { students, classes, rubrics, studentRubrics, selfAssessments, analysisResults } = useApp();
     const { t, i18n } = useTranslation();
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
 
@@ -31,8 +31,11 @@ export default function CefrOverviewPage() {
     const targetLevel = cls?.voTrack ? VO_TRACK_DEFAULT_CEFR[cls.voTrack] : undefined;
 
     const overview = useMemo(
-        () => (student ? getCefrStudentOverview(student.id, studentRubrics, rubrics, selfAssessments) : null),
-        [student, studentRubrics, rubrics, selfAssessments]
+        () =>
+            student
+                ? getCefrStudentOverview(student.id, studentRubrics, rubrics, selfAssessments, analysisResults)
+                : null,
+        [student, studentRubrics, rubrics, selfAssessments, analysisResults]
     );
 
     const radarEntries = useMemo(

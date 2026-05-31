@@ -1,6 +1,22 @@
-import type { CefrLevel, CefrSkill, Rubric, StudentRubric, SelfAssessment, LinkedStandard } from '../types';
+import type {
+    CefrLevel,
+    CefrSkill,
+    CefrVocabProfile,
+    CefrGrammarProfile,
+    DocumentAnalysisResult,
+    Rubric,
+    StudentRubric,
+    SelfAssessment,
+    LinkedStandard,
+} from '../types';
 import { CEFR_DESCRIPTORS } from '../data/cefrDescriptors';
 import { calcGradeSummary } from './gradeCalc';
+import { profileText } from './cefrVocabularyProfiler';
+import { profileGrammar } from './grammarChecker';
+
+// Module-level cache so repeated getCefrStudentOverview calls (e.g. on navigation)
+// don't re-run NLP on the same extracted text
+const profileCache = new Map<string, { vocab: CefrVocabProfile; grammar: CefrGrammarProfile }>();
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -26,6 +42,9 @@ export interface CefrCellData {
     // Combined
     state: 'achieved' | 'developing' | 'not-started';
     descriptors: CefrCellDescriptor[];
+    // Text profile (from document analysis, when available)
+    textVocabEstimate?: CefrLevel;
+    textGrammarEstimate?: CefrLevel;
 }
 
 export interface StandardCellScore {
@@ -80,7 +99,8 @@ export function getCefrStudentOverview(
     studentId: string,
     studentRubrics: StudentRubric[],
     rubrics: Rubric[],
-    selfAssessments: SelfAssessment[]
+    selfAssessments: SelfAssessment[],
+    analysisResults?: DocumentAnalysisResult[]
 ): CefrStudentOverview {
     const cellAccMap = new Map<string, CellAccumulator>();
     const standardAccMap = new Map<string, StandardAccumulator>();
@@ -213,6 +233,39 @@ export function getCefrStudentOverview(
         }
     }
 
+    // ── Step 2b: text profiling from document analysis results ────────────────
+
+    // Maps cell key → highest estimated levels from any analysis result for that cell
+    const textVocabMap = new Map<string, CefrLevel>();
+    const textGrammarMap = new Map<string, CefrLevel>();
+    const LEVEL_ORDER: CefrLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+
+    if (analysisResults?.length) {
+        const studentAnalyses = analysisResults.filter((ar) => ar.studentId === studentId && ar.extractedText);
+        for (const ar of studentAnalyses) {
+            const sr = graded.find((r) => r.rubricId === ar.rubricId);
+            if (!sr) continue;
+            const rubric = sr.rubricSnapshot ?? rubrics.find((r) => r.id === sr.rubricId);
+            if (!rubric?.cefrTargetLevel) continue;
+            const key = `${rubric.cefrSkill ?? 'writing'}__${rubric.cefrTargetLevel}`;
+            let cached = profileCache.get(ar.extractedText);
+            if (!cached) {
+                cached = { vocab: profileText(ar.extractedText), grammar: profileGrammar(ar.extractedText) };
+                profileCache.set(ar.extractedText, cached);
+            }
+            const vocabProfile = cached.vocab;
+            const grammarProfile = cached.grammar;
+            const prevVocab = textVocabMap.get(key);
+            if (!prevVocab || LEVEL_ORDER.indexOf(vocabProfile.estimatedLevel) > LEVEL_ORDER.indexOf(prevVocab)) {
+                textVocabMap.set(key, vocabProfile.estimatedLevel);
+            }
+            const prevGrammar = textGrammarMap.get(key);
+            if (!prevGrammar || LEVEL_ORDER.indexOf(grammarProfile.estimatedLevel) > LEVEL_ORDER.indexOf(prevGrammar)) {
+                textGrammarMap.set(key, grammarProfile.estimatedLevel);
+            }
+        }
+    }
+
     // ── Step 3: build CefrCellData from accumulators ──────────────────────────
 
     const cells: CefrCellData[] = Array.from(cellAccMap.values()).map((acc) => {
@@ -244,6 +297,7 @@ export function getCefrStudentOverview(
               ? 'developing'
               : 'not-started';
 
+        const cellKey = `${acc.skill}__${acc.level}`;
         return {
             skill: acc.skill,
             level: acc.level,
@@ -256,6 +310,8 @@ export function getCefrStudentOverview(
             confidenceRate,
             state,
             descriptors,
+            textVocabEstimate: textVocabMap.get(cellKey),
+            textGrammarEstimate: textGrammarMap.get(cellKey),
         };
     });
 

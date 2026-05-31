@@ -247,6 +247,51 @@ export default function PrivacyPage() {
                     </p>
                 </div>
 
+                <div className="card" style={{ marginBottom: 20 }}>
+                    <h3 style={{ marginBottom: 12 }}>Open-source attributions</h3>
+                    <p className="text-sm text-muted" style={{ marginBottom: 12 }}>
+                        Rubric Maker uses the following third-party datasets and services for CEFR text profiling:
+                    </p>
+                    <ul className="text-sm" style={{ paddingLeft: 20, margin: 0, lineHeight: 1.8 }}>
+                        <li>
+                            <strong>CEFR-J Vocabulary & Grammar Profiles</strong> — Tono Laboratory, Tokyo University of
+                            Foreign Studies (TUFS). Used for offline CEFR-level word and grammar analysis.{' '}
+                            <a
+                                href="https://github.com/openlanguageprofiles/olp-en-cefrj"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ color: 'var(--accent)' }}
+                            >
+                                github.com/openlanguageprofiles/olp-en-cefrj <ExternalLink size={10} />
+                            </a>
+                        </li>
+                        <li>
+                            <strong>LanguageTool</strong> — Grammar checking (when document analysis is used, text is
+                            sent to api.languagetool.org).{' '}
+                            <a
+                                href="https://languagetool.org/legal/privacy"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ color: 'var(--accent)' }}
+                            >
+                                LanguageTool Privacy Policy <ExternalLink size={10} />
+                            </a>
+                        </li>
+                        <li>
+                            <strong>Cambridge Dictionary API</strong> — Optional online CEFR word-level enrichment (only
+                            when a key is configured in Settings). Data sent to dictionary.cambridge.org.{' '}
+                            <a
+                                href="https://dictionary-api.cambridge.org/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ color: 'var(--accent)' }}
+                            >
+                                dictionary-api.cambridge.org <ExternalLink size={10} />
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
                 <p className="text-muted text-xs" style={{ textAlign: 'center', marginTop: 16 }}>
                     Last updated: May 2026 · Rubric Maker is open-source software provided as-is. Compliance with
                     AVG/GDPR remains the responsibility of the deploying institution.

@@ -1197,6 +1197,65 @@ export default function SettingsPage() {
                                     </div>
                                 </div>
 
+                                {/* Cambridge Dictionary API */}
+                                <div
+                                    className="card"
+                                    style={{ marginBottom: 24, borderLeft: '4px solid var(--accent)' }}
+                                >
+                                    <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
+                                        <Key size={20} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                                        <h3 style={{ margin: 0 }}>{t('settings.cambridge_api_title')}</h3>
+                                        <span
+                                            style={{
+                                                marginLeft: 'auto',
+                                                fontSize: '0.75rem',
+                                                color: 'var(--text-muted)',
+                                                fontStyle: 'italic',
+                                            }}
+                                        >
+                                            {t('settings.optional')}
+                                        </span>
+                                    </div>
+                                    <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
+                                        {t('settings.cambridge_api_help')}
+                                    </p>
+                                    <div className="form-group">
+                                        <label htmlFor="setting-cambridge-key">{t('settings.cambridge_api_key')}</label>
+                                        <input
+                                            id="setting-cambridge-key"
+                                            type="password"
+                                            value={settings.cambridgeApiKey ?? ''}
+                                            onChange={(e) =>
+                                                updateSettings({ cambridgeApiKey: e.target.value || undefined })
+                                            }
+                                            placeholder={t('settings.cambridge_api_placeholder')}
+                                            autoComplete="off"
+                                        />
+                                    </div>
+                                    <div
+                                        style={{
+                                            marginTop: 12,
+                                            fontSize: '0.82rem',
+                                            color: 'var(--text-muted)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 6,
+                                        }}
+                                    >
+                                        <ExternalLink size={13} aria-hidden="true" />
+                                        <span>
+                                            {t('settings.cambridge_api_register')}{' '}
+                                            <a
+                                                href="https://dictionary-api.cambridge.org/"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                            >
+                                                dictionary-api.cambridge.org
+                                            </a>
+                                        </span>
+                                    </div>
+                                </div>
+
                                 {/* Database (Supabase) */}
                                 <div
                                     className="card"
