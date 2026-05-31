@@ -115,6 +115,7 @@ function lookupLevel(word: string): CefrLevel | null {
 
 function tokenise(text: string): string[] {
     return text
+        .replace(/[‘’]/g, "'")
         .replace(/[–—]/g, ' ')
         .split(/[^a-zA-Z'-]+/)
         .map((w) => w.toLowerCase().replace(/^'+|'+$/g, ''))
