@@ -1,70 +1,134 @@
 # Rubric Maker
 
-A comprehensive, offline-first rubric creation and grading tool built with React and TypeScript. This application allows educators to design complex rubrics, grade students efficiently, and analyze performance statistics.
+A comprehensive, offline-first rubric creation and grading tool built with React and TypeScript. Designed for educators who need to design complex rubrics, grade students efficiently, and analyse performance — including language proficiency tracking aligned to the Common European Framework of Reference (CEFR).
 
-## ✨ Features
+## Features
 
 ### 1. Rubric Builder
-*   **Flexible Structure**: Create rubrics with custom criteria and performance levels.
-*   **Scoring Modes**: diverse scoring options including **Total Points** (raw score) and **Weighted Scored** (percentage-based).
-*   **Advanced Level Options**:
-    *   **Sub-items**: Checklists within a level for granular scoring.
-    *   **Point Ranges**: Define min/max points for a level to allow fine-tuning.
+- **Flexible structure**: Create rubrics with custom criteria and performance levels.
+- **Scoring modes**: Total Points (raw score), Weighted Percentage, and Single-Point Rubric.
+- **Advanced level options**: sub-item checklists within a level, point ranges (min/max), and score modifiers.
+- **Standards integration**: Link criteria to CCSS, NGSS, and other state/national standards via the Common Standards Project API.
+- **CEFR descriptors**: Attach CEFR Can-Do statements to individual criteria.
+- **Framework descriptors**: Link criteria to IB Learner Profile attributes or Bloom's Taxonomy levels.
+- **Rubric versioning**: Automatic snapshots on save; restore any previous version.
 
 ### 2. Grading Interface
-*   **Student Management**: Manage students and organize them into classes.
-*   **Interactive Grading**: Click to select levels, toggle sub-items, or use the slider for point ranges.
-*   **Comment Bank**: Create and tag reusable feedback snippets for quick insertion.
-*   **Overall Feedback**: Add general comments and attachments to graded rubrics.
+- **Student management**: Manage students and organise them into classes, with Dutch VO track (VMBO/HAVO/VWO) support.
+- **Interactive grading**: Click levels, toggle sub-items, or use the slider for point ranges.
+- **Score modifiers**: Apply percentage, point, or level adjustments with a reason.
+- **Comment Bank**: Tag and insert reusable feedback snippets while grading.
+- **Voice grading**: Dictate comments hands-free using speech recognition.
+- **Overall feedback**: Add general comments and file attachments per graded rubric.
+- **Comparative grading**: Grade two students side-by-side for consistency.
+- **Peer review**: Students review each other's work against the same rubric.
+- **Self-assessment**: Students self-assess against CEFR Can-Do statements.
 
-### 3. Analytics & Reporting
-*   **Statistics Dashboard**: View class performance including Average, Median, Highest, and Lowest scores.
-*   **Visualization**: Charts for grade distribution and per-criterion performance.
-*   **Comparative Grading**: Simultaneously grade two students side-by-side to ensure rubric consistency.
-*   **Universal Attachment Viewer**: Rich inline rendering of `.docx` Word Documents, PDFs, and images within the grading flow.
-*   **Export**:
-    *   **PDF**: Generate individual student reports or bulk export for the whole class.
-    *   **Word (.docx)**: Export raw data or use custom Word templates with mail-merge fields.
-    *   **CSV**: Export raw data for use in Excel or other gradebooks.
+### 3. CEFR & Language Assessment
+- **Speaking sessions**: Structured speaking assessments with six pre-built dimensions aligned to Dutch VO CEFR targets (VMBO-BB through VWO).
+- **CEFR overview**: Per-student and whole-class proficiency dashboards showing progress across Reading, Writing, Speaking, and Listening.
+- **Student self-assessment**: Students rate themselves against Can-Do descriptors; reflection text is stored alongside teacher scores.
 
-### 4. Standards Integration
-*   **Common Standards Project**: Link rubric criteria to state and national standards (CCSS, NGSS, etc.) via the CSP API.
-*   **Favorites**: Save frequently used standards for quick access.
+### 4. Essay Writing
+- **Essay assignments**: Teachers create prompts with optional CEFR-linked rubrics.
+- **Rich text editor**: TipTap (ProseMirror) editor with formatting toolbar.
+- **Submission codes**: Anonymous essay access via shareable codes — students submit without logging in.
+- **Document analysis**: OCR via Tesseract.js and DOCX parsing via Mammoth; vocabulary and grammar checking on uploaded documents.
+- **Essay import**: Import student essay text from uploaded DOCX or PDF files.
+- **Peer review**: Classmates leave structured feedback on submissions.
 
-### 5. Data Management
-*   **Local Storage**: All data is saved locally in your browser. No account required.
-*   **Backup & Restore**: Export your entire dataset to a JSON file for backup or transferring to another device.
+### 5. Analytics & Reporting
+- **Statistics dashboard**: Class performance with Average, Median, Highest, and Lowest scores; grade distribution charts; per-criterion performance breakdown.
+- **Student profiles**: Individual progress view across all rubrics, CEFR levels, and essays.
+- **Overdue tracking**: Highlights students with assignments past due dates.
+- **Export options**:
+  - **PDF**: Individual student reports or bulk class export.
+  - **Word (.docx)**: Raw export or mail-merge templates with field substitution.
+  - **CSV**: Raw data for Excel or other gradebooks.
+  - **Period report**: Aggregated CEFR progress report for a class over a date range.
+
+### 6. Student Portal
+- **Shareable links**: Each student gets a unique portal link; no login required.
+- **View feedback**: Students see their grades, teacher comments, and attached files.
+- **Submit essays**: Anonymous essay submission via submission codes.
+- **Self-assessment**: Students complete CEFR self-assessments from their portal.
+
+### 7. Data Management
+- **Offline-first**: All data lives in the browser's `localStorage`. No account required.
+- **Cloud sync** (optional): Supabase backend for multi-device access and multi-teacher collaboration.
+- **Backup & restore**: Export the entire dataset to JSON; restore from any prior backup.
+- **Admin panel**: School-level management — user roles, onboarding, student anonymisation, data-retention policies.
 
 ---
 
-## 📚 Documentation
+## Documentation
 
-- [Wiki](https://github.com/NesiciCoding/RubricMaker/wiki) — architecture, features, deployment guides, contributing
 - [HestiaCP setup](docs/HESTIACP_SETUP.md) — shared hosting / cPanel-style VPS
 - [Virtualmin setup](docs/VIRTUALMIN_SETUP.md) — Virtualmin VPS deployment
 - [Magister integration](docs/MAGISTER_INTEGRATION.md) — importing students from Magister SIS
 
 ---
 
-## 🚀 Development
+## Development
 
 To run the project locally:
 
-1.  **Install dependencies**:
-    ```bash
-    npm install
-    ```
+1. **Install dependencies**:
+   ```bash
+   npm install
+   ```
 
-2.  **Start the development server**:
-    ```bash
-    npm run dev
-    ```
+2. **Start the development server**:
+   ```bash
+   npm run dev
+   ```
 
-3.  Open [http://localhost:5173](http://localhost:5173) in your browser.
+3. Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+**Other useful commands:**
+
+```bash
+npm run typecheck    # TypeScript check (run before commits)
+npm run lint         # ESLint
+npm run test         # Vitest unit tests
+npm run coverage     # Coverage report
+
+# Supabase local dev (optional)
+npm run db:start     # Start local Supabase stack
+npm run db:reset     # Reset and re-apply all migrations
+```
 
 ---
 
-## 📦 Deployment
+## Routes
+
+| Path | Page |
+|---|---|
+| `/` | Dashboard |
+| `/rubrics` | Rubric list |
+| `/rubrics/new` | New rubric |
+| `/rubrics/:id` | Rubric builder |
+| `/rubrics/:rubricId/grade/:studentId` | Grade a student |
+| `/rubrics/:rubricId/peer-review/:studentId` | Peer review view |
+| `/rubrics/:rubricId/self-assess/:studentId` | Student self-assessment |
+| `/speaking/:rubricId/:studentId` | Speaking session |
+| `/grade-comparative/:classId/:rubricId` | Comparative grading |
+| `/students` | Students list |
+| `/students/:id` | Student profile |
+| `/students/:id/cefr-overview` | Per-student CEFR overview |
+| `/cefr-overview` | Whole-class CEFR overview |
+| `/portal/:studentId` | Student portal (public) |
+| `/attachments` | Attachment manager |
+| `/comments` | Comment bank |
+| `/statistics` | Statistics dashboard |
+| `/export` | Export page |
+| `/settings` | Settings |
+| `/admin` | Admin panel (admin role only) |
+| `/privacy` | Privacy statement |
+
+---
+
+## Deployment
 
 RubricMaker works in two modes:
 
@@ -73,7 +137,7 @@ RubricMaker works in two modes:
 
 ---
 
-### 🐳 Docker (recommended — includes database sync)
+### Docker (recommended — includes database sync)
 
 The easiest way to run the full stack. Requires [Docker](https://docs.docker.com/get-docker/).
 
@@ -102,7 +166,7 @@ Caddy obtains a free Let's Encrypt certificate automatically. Open ports 80 and 
 
 **Enabling email login (OTP):**
 
-Without SMTP, teachers log in anonymously. To allow email-linked accounts (needed for sharing rubrics across devices):
+Without SMTP, teachers log in anonymously. To allow email-linked accounts:
 
 ```bash
 # In .env:
@@ -131,7 +195,7 @@ docker-compose up -d --build    # rebuilds the app image, restarts services
 
 ---
 
-### 🌐 Static hosting (offline mode only)
+### Static hosting (offline mode only)
 
 No database sync — all data stays in the browser. Works on any static host.
 

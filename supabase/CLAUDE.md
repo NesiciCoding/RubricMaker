@@ -33,9 +33,17 @@ migrations/
   011_oauth_profile.sql
   012_site_config.sql
   013_fix_rls_recursion.sql
+  014_student_email_access.sql
+  015_auto_student_role.sql
+  016_schools_onboarding.sql
+  017_student_anonymization.sql
+  018_security_and_integrity_fixes.sql
+  019_retention_range_constraint.sql
+  020_fix_first_admin_race.sql
+  021_index_students_email.sql
 ```
 
-When creating a new migration, use `014_` as the next prefix.
+When creating a new migration, use `022_` as the next prefix.
 
 ### Rules
 
@@ -56,7 +64,7 @@ When adding a table, always:
 2. Add ownership policies for SELECT, INSERT, UPDATE, DELETE.
 3. Do not rely on application-level auth checks alone.
 
-The RLS recursion bug (fixed in `011_fix_rls_recursion.sql`) was caused by policies that referenced the same table in a subquery. Avoid circular policy references.
+The RLS recursion bug (fixed in `013_fix_rls_recursion.sql`) was caused by policies that referenced the same table in a subquery. Avoid circular policy references.
 
 ## Storage buckets
 
@@ -86,16 +94,21 @@ Current functions:
 |---|---|
 | `profiles` | User profile, created automatically on signup via trigger |
 | `rubrics` | Rubric templates owned by a user |
-| `students` | Student records |
+| `students` | Student records (with optional email for portal access) |
 | `classes` | Class/group records |
 | `student_rubrics` | Grade records (student + rubric + scores) |
 | `attachments` | File attachment metadata |
 | `comment_snippets` | Reusable comment bank entries |
 | `essay_assignments` | Essay prompts created by teachers |
-| `essay_submissions` | Student essay submissions |
+| `essay_submissions` | Student essay submissions (anonymous via submission codes) |
+| `peer_reviews` | Peer review entries on essay submissions |
+| `self_assessments` | Student CEFR self-assessment records |
+| `speaking_sessions` | Speaking assessment session records |
 | `site_config` | Per-user app configuration |
+| `schools` | School/organisation records for multi-user deployments |
+| `school_members` | User–school role mappings (admin / user / student) |
 
-The full schema is in `001_initial_schema.sql` and `008_essay_tables.sql`.
+The full schema is in `001_initial_schema.sql`, `008_essay_tables.sql`, and `016_schools_onboarding.sql`.
 
 ## Offline-first constraint
 
