@@ -418,3 +418,126 @@ describe('getCefrStudentOverview — text profiling from analysisResults', () =>
         expect(cell!.skill).toBe('writing');
     });
 });
+
+// ─── Additional edge-case and regression tests ────────────────────────────────
+
+describe('getCefrStudentOverview — summary statistics', () => {
+    it('overallConfidenceRate is 100 when all descriptors are confident', () => {
+        const sa: SelfAssessment = {
+            id: 'sa1',
+            rubricId: 'r1',
+            studentId: 's1',
+            submittedAt: '2024-01-10',
+            ratings: [
+                { descriptorId: 'w-b1-1', level: 'B1', skill: 'writing', confident: true },
+                { descriptorId: 'w-b1-2', level: 'B1', skill: 'writing', confident: true },
+                { descriptorId: 'w-b1-3', level: 'B1', skill: 'writing', confident: true },
+            ],
+        };
+        const result = getCefrStudentOverview('s1', [], [], [sa]);
+        expect(result.overallConfidenceRate).toBeCloseTo(100, 0);
+    });
+
+    it('overallConfidenceRate is 0 when no descriptors are confident', () => {
+        const sa: SelfAssessment = {
+            id: 'sa1',
+            rubricId: 'r1',
+            studentId: 's1',
+            submittedAt: '2024-01-10',
+            ratings: [
+                { descriptorId: 'w-b1-1', level: 'B1', skill: 'writing', confident: false },
+                { descriptorId: 'w-b1-2', level: 'B1', skill: 'writing', confident: false },
+            ],
+        };
+        const result = getCefrStudentOverview('s1', [], [], [sa]);
+        expect(result.overallConfidenceRate).toBeCloseTo(0, 0);
+    });
+
+    it('skillsWithRubricData counts cells that have rubric data across different skills', () => {
+        const rubricWriting = makeRubric({ id: 'r1', cefrTargetLevel: 'B1', cefrSkill: 'writing' });
+        const rubricReading = makeRubric({ id: 'r2', cefrTargetLevel: 'B1', cefrSkill: 'reading' });
+        const srWriting = makeSr({ id: 'sr1', rubricId: 'r1' });
+        const srReading = makeSr({ id: 'sr2', rubricId: 'r2' });
+
+        const result = getCefrStudentOverview('s1', [srWriting, srReading], [rubricWriting, rubricReading], []);
+        expect(result.skillsWithRubricData).toBe(2);
+    });
+
+    it('skillsWithRubricData is 0 when there are only self-assessments', () => {
+        const sa: SelfAssessment = {
+            id: 'sa1',
+            rubricId: 'r1',
+            studentId: 's1',
+            submittedAt: '2024-01-10',
+            ratings: [{ descriptorId: 'w-b1-1', level: 'B1', skill: 'writing', confident: true }],
+        };
+        const result = getCefrStudentOverview('s1', [], [], [sa]);
+        expect(result.skillsWithRubricData).toBe(0);
+    });
+
+    it('standardsCovered is 0 when criteria have no linked standards', () => {
+        const rubric = makeRubric({ cefrTargetLevel: 'B1', cefrSkill: 'writing' });
+        const sr = makeSr();
+        const result = getCefrStudentOverview('s1', [sr], [rubric], []);
+        expect(result.standardsCovered).toBe(0);
+    });
+
+    it('filters out StudentRubric entries for other students', () => {
+        const rubric = makeRubric({ cefrTargetLevel: 'B1', cefrSkill: 'writing' });
+        const srOther = makeSr({ studentId: 'other-student' });
+        const result = getCefrStudentOverview('s1', [srOther], [rubric], []);
+        expect(result.cells).toHaveLength(0);
+    });
+
+    it('filters out self-assessments for other students', () => {
+        const sa: SelfAssessment = {
+            id: 'sa1',
+            rubricId: 'r1',
+            studentId: 'other-student',
+            submittedAt: '2024-01-10',
+            ratings: [{ descriptorId: 'w-b1-1', level: 'B1', skill: 'writing', confident: true }],
+        };
+        const result = getCefrStudentOverview('s1', [], [], [sa]);
+        expect(result.cells).toHaveLength(0);
+    });
+
+    it('uses rubricSnapshot over live rubric lookup when snapshot is present', () => {
+        const liveRubric = makeRubric({ id: 'r1', cefrTargetLevel: 'B1', cefrSkill: 'writing' });
+        const snapshotRubric = makeRubric({ id: 'r1', cefrTargetLevel: 'C1', cefrSkill: 'reading' });
+        // sr has a snapshot that differs from the live rubric
+        const sr = makeSr({ rubricSnapshot: snapshotRubric });
+
+        const result = getCefrStudentOverview('s1', [sr], [liveRubric], []);
+        // Should use snapshot (C1/reading), not live rubric (B1/writing)
+        expect(result.cellMap.get('reading__C1')).toBeDefined();
+        expect(result.cellMap.get('writing__B1')).toBeUndefined();
+    });
+
+    it('default threshold is 70 when rubric cefrAchieveThreshold is not set', () => {
+        const rubric = makeRubric({ cefrTargetLevel: 'B1', cefrSkill: 'writing', cefrAchieveThreshold: undefined });
+        const sr = makeSr({
+            entries: [{ criterionId: 'c1', levelId: 'l1', selectedPoints: 65, checkedSubItems: [], comment: '' }],
+        });
+        const result = getCefrStudentOverview('s1', [sr], [rubric], []);
+        const cell = result.cellMap.get('writing__B1');
+        expect(cell).toBeDefined();
+        // 65% < 70 (default threshold) → developing
+        expect(cell!.state).toBe('developing');
+        expect(cell!.threshold).toBe(70);
+    });
+
+    it('cell state is not-started when only self-assessment data exists (no rubric)', () => {
+        const sa: SelfAssessment = {
+            id: 'sa1',
+            rubricId: 'r1',
+            studentId: 's1',
+            submittedAt: '2024-01-10',
+            ratings: [{ descriptorId: 'r-a2-1', level: 'A2', skill: 'reading', confident: true }],
+        };
+        const result = getCefrStudentOverview('s1', [], [], [sa]);
+        const cell = result.cellMap.get('reading__A2');
+        expect(cell).toBeDefined();
+        expect(cell!.state).toBe('not-started');
+        expect(cell!.rubricCount).toBe(0);
+    });
+});
