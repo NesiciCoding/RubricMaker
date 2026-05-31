@@ -7,6 +7,13 @@ type RoleChoice = 'user' | 'admin';
 type SchoolAction = 'create' | 'join';
 type Step = 'role' | 'school' | 'done';
 
+/**
+ * Renders the multi-step onboarding UI for selecting a role, creating or joining a school, and completing onboarding.
+ *
+ * Manages local form state, validation, busy/error states, and advances through the role → school → done steps.
+ *
+ * @returns The onboarding page React element.
+ */
 export default function OnboardingPage() {
     const { t } = useTranslation();
     const { createSchool, joinSchool, updateSettings, signOutFromDatabase } = useApp();

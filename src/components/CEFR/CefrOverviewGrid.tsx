@@ -12,6 +12,16 @@ interface Props {
     lang: 'en' | 'nl';
 }
 
+/**
+ * Render an interactive, horizontally scrollable CEFR overview grid showing skills by level with per-cell summaries and an expandable descriptor panel.
+ *
+ * Only one cell's descriptor panel can be expanded at a time; cells display rubric scores, self-assessment counts, optional text-profile estimates, or a no-data placeholder, and a highlighted outline is applied to an optional target level.
+ *
+ * @param cells - Aggregated data for each skill and level used to populate grid cells
+ * @param targetLevel - Optional CEFR level to visually mark as the learner's target
+ * @param lang - Language for descriptor text, either `'en'` or `'nl'`
+ * @returns The React element that renders the CEFR overview grid
+ */
 export default function CefrOverviewGrid({ cells, targetLevel, lang }: Props) {
     const { t } = useTranslation();
     const [expandedKey, setExpandedKey] = useState<string | null>(null);

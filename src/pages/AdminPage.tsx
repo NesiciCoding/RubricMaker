@@ -410,7 +410,14 @@ function RetentionTab() {
     );
 }
 
-// ─── Page shell ───────────────────────────────────────────────────────────────
+/**
+ * Render the admin interface with a top bar and tabbed navigation for Users, Schools, Data, and Retention.
+ *
+ * Renders a top-level page that includes the translated page title, a horizontal tab strip that highlights
+ * the active tab, and the content panel for the selected tab.
+ *
+ * @returns The React element representing the admin page layout with tab controls and the currently selected tab's content.
+ */
 
 export default function AdminPage() {
     const { t } = useTranslation();

@@ -53,6 +53,25 @@ const CATEGORY_COLORS: Record<string, string> = {
     other: 'var(--purple)',
 };
 
+/**
+ * Modal panel that extracts or accepts text, analyses vocabulary and grammar, and presents results with actions.
+ *
+ * Displays a source selector (attachment or pasted transcript), runs extraction, vocabulary matching, and grammar checking,
+ * then shows detected vocabulary items, a CEFR-J text profile (when available), grammar issues, and the extracted text.
+ *
+ * @param studentId - ID of the student whose attachments are analysed
+ * @param rubricId - ID of the rubric used to match vocabulary items
+ * @param rubricName - Human-readable rubric title shown in the panel header
+ * @param vocabularyItems - Vocabulary items from the rubric used for phrase detection
+ * @param criteria - Rubric criteria list used to resolve linked criterion titles
+ * @param studentAttachments - Attachments available for the student (used for text extraction)
+ * @param existingResult - Optional prior DocumentAnalysisResult to initialise the panel in "done" state
+ * @param onClose - Callback invoked when the modal is closed
+ * @param onSaveResult - Callback invoked with the new DocumentAnalysisResult after a successful analysis
+ * @param onApplyToEntry - Callback invoked to apply a linked rubric sub-item (signature: (criterionId, subItemId) => void)
+ * @param onAddToCommentBank - Optional callback invoked with a phrase to add it to a comment bank
+ * @returns A React element rendering the document analysis modal
+ */
 export default function DocumentAnalysisPanel({
     studentId,
     rubricId,
@@ -730,6 +749,14 @@ export default function DocumentAnalysisPanel({
 
 // ─── CEFR Profile sub-panel ───────────────────────────────────────────────────
 
+/**
+ * Render a compact, styled badge for a CEFR level.
+ *
+ * The badge text and accent color reflect the provided CEFR level.
+ *
+ * @param level - CEFR level identifier (for example, `"A1"`, `"B2"`, `"C1"`)
+ * @returns A styled inline element showing the given CEFR level as a colored badge
+ */
 function CefrLevelBadge({ level }: { level: CefrLevel }) {
     return (
         <span
@@ -749,6 +776,12 @@ function CefrLevelBadge({ level }: { level: CefrLevel }) {
     );
 }
 
+/**
+ * Displays a collapsible CEFR-J text profile panel showing vocabulary distribution, notable words, and detected grammar structures.
+ *
+ * @param profile - CEFR text profile containing vocabulary and grammar profiling data used to render distributions, highlights, and estimated levels.
+ * @returns A React element rendering the CEFR profile panel.
+ */
 function CefrProfilePanel({ profile }: { profile: CefrTextProfile }) {
     const { t } = useTranslation();
     const [open, setOpen] = useState(true);

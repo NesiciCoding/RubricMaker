@@ -88,6 +88,17 @@ const SKIP_WORDS = new Set([
     'also',
 ]);
 
+/**
+ * Produce candidate root forms of a word for vocabulary lookup.
+ *
+ * Returns an array of candidate root-like forms derived from `word`. The first
+ * element is the cleaned, lowercased form (with apostrophes normalized and a
+ * trailing possessive removed); subsequent elements are heuristic stem variants
+ * (e.g., common `-ing`, `-ed`, `-s`/`-es`, and `-ly` reductions) intended for
+ * dictionary lookup and matching.
+ *
+ * @returns An array of candidate word forms, ordered with the primary normalized form first.
+ */
 function normalise(word: string): string[] {
     const w = word.toLowerCase().replace(/[‘’]/g, "'").replace(/'s$/, '');
     const candidates: string[] = [w];
@@ -105,6 +116,12 @@ function normalise(word: string): string[] {
     return candidates;
 }
 
+/**
+ * Finds the CEFR level for a given word by checking candidate normalized forms.
+ *
+ * @param word - The input token to look up
+ * @returns The CEFR level corresponding to the first matching form, or `null` if no match is found
+ */
 function lookupLevel(word: string): CefrLevel | null {
     for (const form of normalise(word)) {
         const level = CEFRJ_VOCABULARY[form];
@@ -113,6 +130,14 @@ function lookupLevel(word: string): CefrLevel | null {
     return null;
 }
 
+/**
+ * Convert input text into a cleaned list of lowercase word tokens.
+ *
+ * Normalizes em/en dashes to spaces, splits on any characters that are not letters, apostrophes, or hyphens, trims leading and trailing apostrophes from each token, and filters out short tokens and common skip words.
+ *
+ * @param text - The input string to tokenize
+ * @returns An array of cleaned lowercase word tokens (length > 2) with common skip words removed
+ */
 function tokenise(text: string): string[] {
     return text
         .replace(/[‘’]/g, "'")
@@ -122,6 +147,15 @@ function tokenise(text: string): string[] {
         .filter((w) => w.length > 2 && !SKIP_WORDS.has(w));
 }
 
+/**
+ * Profile CEFR vocabulary in the provided text and produce counts, an estimated level, and highlight words.
+ *
+ * @param text - The input text to analyze.
+ * @returns An object containing:
+ *  - `levelCounts`: a record mapping each CEFR level (`A1`..`C2`) to the number of matched content-word occurrences,
+ *  - `estimatedLevel`: the highest CEFR level whose matched-word share is at least 5% of all matches (defaults to `A1` if there are no matches),
+ *  - `highlightWords`: up to 30 unique words observed at or above the estimated level (excluding `A1`), sorted from higher to lower CEFR level; each entry is `{ word, level }`.
+ */
 export function profileText(text: string): CefrVocabProfile {
     const levelCounts: Record<CefrLevel, number> = { A1: 0, A2: 0, B1: 0, B2: 0, C1: 0, C2: 0 };
     const tokens = tokenise(text);

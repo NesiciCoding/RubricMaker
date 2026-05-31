@@ -75,6 +75,13 @@ const ROLE_META: Record<UserRole, { label: string; icon: React.ReactNode; badgeC
     },
 };
 
+/**
+ * Render the settings page with tabs for General, Teaching, and Administration, including role-based access,
+ * admin PIN gating, grade scale and template management, localization, database connection and sync controls,
+ * rubric/class sharing, user role management, and backup export/import.
+ *
+ * @returns The settings page UI as a JSX element
+ */
 export default function SettingsPage() {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
