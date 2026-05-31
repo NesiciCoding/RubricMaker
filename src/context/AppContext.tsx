@@ -662,26 +662,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
             setLandingState('hide');
         }
 
-        storageSync.initAuth(config).then(async () => {
-            if (!storageSync.hasSession()) {
-                setLandingState('show');
-                return;
-            }
-
-            // Session already existed on startup — connect and hydrate immediately
-            await configureAndEnter(config);
-
-            // Show migration prompt once if local data exists and hasn't been migrated
-            if (localStorage.getItem(MIGRATION_DONE_KEY) !== 'true') {
-                const s = initialStateRef.current;
-                if (s.rubrics.length > 0 || s.students.length > 0 || s.classes.length > 0) {
-                    setShowMigrationPrompt(true);
+        storageSync
+            .initAuth(config)
+            .then(async () => {
+                if (!storageSync.hasSession()) {
+                    setLandingState('show');
+                    return;
                 }
-            }
-        }).catch((e) => {
-            console.error('[auth] initAuth failed', e);
-            setLandingState('show');
-        });
+
+                // Session already existed on startup — connect and hydrate immediately
+                await configureAndEnter(config);
+
+                // Show migration prompt once if local data exists and hasn't been migrated
+                if (localStorage.getItem(MIGRATION_DONE_KEY) !== 'true') {
+                    const s = initialStateRef.current;
+                    if (s.rubrics.length > 0 || s.students.length > 0 || s.classes.length > 0) {
+                        setShowMigrationPrompt(true);
+                    }
+                }
+            })
+            .catch((e) => {
+                console.error('[auth] initAuth failed', e);
+                setLandingState('show');
+            });
 
         // Listen for sign-in that happens while the landing page is showing (e.g., OTP)
         const unsubAuth = storageSync.onAuthChange(async (user) => {
@@ -1030,7 +1033,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const merged = { ...state, ...fresh } as StoreData;
             dispatch({ type: 'SET_ALL', payload: merged });
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [state]);
 
     const fetchAllUsers = useCallback((): Promise<DbUser[]> => {
