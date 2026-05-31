@@ -525,7 +525,9 @@ describe('getCefrStudentOverview — summary statistics', () => {
                     title: 'Writing Quality',
                     description: '',
                     weight: 100,
-                    levels: [{ id: 'l1', label: 'Partial', minPoints: 0, maxPoints: 100, description: '', subItems: [] }],
+                    levels: [
+                        { id: 'l1', label: 'Partial', minPoints: 0, maxPoints: 100, description: '', subItems: [] },
+                    ],
                 },
             ],
         });
