@@ -424,47 +424,49 @@ export default function AdminPage() {
     ];
 
     return (
-        <div className="page-container">
+        <>
             <Topbar title={t('admin.title')} />
 
-            <div
-                style={{
-                    display: 'flex',
-                    gap: 4,
-                    marginBottom: 24,
-                    borderBottom: '1px solid var(--border)',
-                    paddingBottom: 0,
-                }}
-            >
-                {tabs.map(({ id, label, Icon }) => (
-                    <button
-                        key={id}
-                        onClick={() => setTab(id)}
-                        style={{
-                            background: 'none',
-                            border: 'none',
-                            borderBottom: tab === id ? '2px solid var(--accent)' : '2px solid transparent',
-                            padding: '8px 16px',
-                            cursor: 'pointer',
-                            fontWeight: tab === id ? 600 : 400,
-                            color: tab === id ? 'var(--accent)' : 'var(--text-muted)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 6,
-                            fontSize: '0.9rem',
-                            transition: 'color 0.15s',
-                        }}
-                    >
-                        <Icon size={15} />
-                        {label}
-                    </button>
-                ))}
-            </div>
+            <div className="page-content fade-in">
+                <div
+                    style={{
+                        display: 'flex',
+                        gap: 4,
+                        marginBottom: 24,
+                        borderBottom: '1px solid var(--border)',
+                        paddingBottom: 0,
+                    }}
+                >
+                    {tabs.map(({ id, label, Icon }) => (
+                        <button
+                            key={id}
+                            onClick={() => setTab(id)}
+                            style={{
+                                background: 'none',
+                                border: 'none',
+                                borderBottom: tab === id ? '2px solid var(--accent)' : '2px solid transparent',
+                                padding: '8px 16px',
+                                cursor: 'pointer',
+                                fontWeight: tab === id ? 600 : 400,
+                                color: tab === id ? 'var(--accent)' : 'var(--text-muted)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                fontSize: '0.9rem',
+                                transition: 'color 0.15s',
+                            }}
+                        >
+                            <Icon size={15} />
+                            {label}
+                        </button>
+                    ))}
+                </div>
 
-            {tab === 'users' && <UsersTab />}
-            {tab === 'schools' && <SchoolsTab />}
-            {tab === 'data' && <DataTab />}
-            {tab === 'retention' && <RetentionTab />}
-        </div>
+                {tab === 'users' && <UsersTab />}
+                {tab === 'schools' && <SchoolsTab />}
+                {tab === 'data' && <DataTab />}
+                {tab === 'retention' && <RetentionTab />}
+            </div>
+        </>
     );
 }
