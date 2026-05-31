@@ -447,7 +447,7 @@ RubricMaker works entirely offline (localStorage) without Supabase. Enable it on
 
 ### 10.2 Run migrations
 
-Apply the four migration files in order using the Supabase CLI or the dashboard SQL editor:
+Apply all migrations using the Supabase CLI:
 
 ```bash
 npx supabase login
@@ -455,12 +455,9 @@ npx supabase link --project-ref YOUR_PROJECT_REF
 npx supabase db push
 ```
 
-Or paste each file manually in the **SQL Editor**:
+This applies every file in `supabase/migrations/` in order. The schema includes tables for rubrics, students, classes, grades, attachments, comment snippets, essays, speaking sessions, site configuration, and school/admin management.
 
-1. `supabase/migrations/001_initial_schema.sql`
-2. `supabase/migrations/002_rls_policies.sql`
-3. `supabase/migrations/003_storage_buckets.sql`
-4. `supabase/migrations/004_profile_trigger.sql`
+If you prefer to apply migrations manually via the **SQL Editor**, open each file in `supabase/migrations/` in order (001 through the highest number) and run them sequentially.
 
 ### 10.3 Configure auth
 
