@@ -95,122 +95,120 @@ async function checkWithCompromise(text: string): Promise<GrammarError[]> {
 const LEVEL_ORDER: CefrLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 
 interface GrammarPattern {
-  shorthand: string;
-  label: string;
-  level: CefrLevel;
-  detect: (text: string, doc: ReturnType<typeof nlp>) => number;
+    shorthand: string;
+    label: string;
+    level: CefrLevel;
+    detect: (text: string, doc: ReturnType<typeof nlp>) => number;
 }
 
-// Regex helpers
 const countMatches = (text: string, re: RegExp) => {
-  const m = text.match(new RegExp(re.source, 'gi'));
-  return m ? m.length : 0;
+    const m = text.match(new RegExp(re.source, 'gi'));
+    return m ? m.length : 0;
 };
 
-// Curated set of structures detectable via regex + Compromise, mapped to CEFR-J levels
 const GRAMMAR_PATTERNS: GrammarPattern[] = [
-  {
-    shorthand: 'TA.PRPF',
-    label: 'Present perfect (have/has + past participle)',
-    level: 'B1',
-    detect: (t) => countMatches(t, /\b(have|has|haven'?t|hasn'?t)\s+\w+(ed|en|oken|tten|one|awn|rown|wn)\b/),
-  },
-  {
-    shorthand: 'TA.PRPFPRG',
-    label: 'Present perfect progressive (have/has been + -ing)',
-    level: 'B1',
-    detect: (t) => countMatches(t, /\b(have|has)\s+been\s+\w+ing\b/),
-  },
-  {
-    shorthand: 'TA.PASTPRG',
-    label: 'Past progressive (was/were + -ing)',
-    level: 'A2',
-    detect: (t) => countMatches(t, /\b(was|were)\s+\w+ing\b/),
-  },
-  {
-    shorthand: 'TA.PASTPF',
-    label: 'Past perfect (had + past participle)',
-    level: 'B1',
-    detect: (t) => countMatches(t, /\bhad\s+\w+(ed|en|oken|tten|one|awn|rown|wn)\b/),
-  },
-  {
-    shorthand: 'TA.PASTPFPRG',
-    label: 'Past perfect progressive (had been + -ing)',
-    level: 'B2',
-    detect: (t) => countMatches(t, /\bhad\s+been\s+\w+ing\b/),
-  },
-  {
-    shorthand: 'PASS',
-    label: 'Passive voice (be + past participle)',
-    level: 'B1',
-    detect: (_, doc) => doc.match('#Passive').length,
-  },
-  {
-    shorthand: 'MOD.CAN',
-    label: 'Modal: can/could',
-    level: 'A2',
-    detect: (t) => countMatches(t, /\b(can|cannot|can'?t|could|couldn'?t)\b/),
-  },
-  {
-    shorthand: 'MOD.SHOULD',
-    label: 'Modal: should/would/must/might',
-    level: 'B1',
-    detect: (t) => countMatches(t, /\b(should|shouldn'?t|would|wouldn'?t|must|mustn'?t|might)\b/),
-  },
-  {
-    shorthand: 'REL.CLAUSE',
-    label: 'Relative clause (who/which/that/whom)',
-    level: 'B1',
-    detect: (t) => countMatches(t, /\b(who|which|that|whom|whose)\s+\w+/),
-  },
-  {
-    shorthand: 'COND.ZERO_FIRST',
-    label: 'Zero/first conditional (if + present/future)',
-    level: 'B1',
-    detect: (t) => countMatches(t, /\bif\s+\w+\s+(is|are|will|do|does)\b/),
-  },
-  {
-    shorthand: 'COND.SECOND',
-    label: 'Second conditional (if + past + would)',
-    level: 'B1',
-    detect: (t) => countMatches(t, /\bif\s+\w+\s+(were|was|had|did|could)\b.*\bwould\b/),
-  },
-  {
-    shorthand: 'COND.THIRD',
-    label: 'Third conditional (if + past perfect + would have)',
-    level: 'B2',
-    detect: (t) => countMatches(t, /\bif\s+\w+\s+had\s+\w+(ed|en)\b.*\bwould\s+have\b/),
-  },
-  {
-    shorthand: 'REP.SPEECH',
-    label: 'Reported speech (said/told that)',
-    level: 'B1',
-    detect: (t) => countMatches(t, /\b(said|told|explained|mentioned|stated|argued|claimed)\s+(that\s+)?\w+/),
-  },
-  {
-    shorthand: 'INF.CLAUSE',
-    label: 'Infinitive clause (verb + to + infinitive)',
-    level: 'B1',
-    detect: (_, doc) => doc.match('#Verb to #Verb').length,
-  },
-  {
-    shorthand: 'CLEFT',
-    label: 'Cleft sentence (it is/was ... that/who)',
-    level: 'B2',
-    detect: (t) => countMatches(t, /\bit\s+(is|was)\s+\w+\s+(that|who)\b/),
-  },
-  {
-    shorthand: 'CONC.CLAUSE',
-    label: 'Concession clause (although/even though/despite)',
-    level: 'B2',
-    detect: (t) => countMatches(t, /\b(although|even though|despite|whereas|nevertheless|nonetheless)\b/),
-  },
-  {
-    shorthand: 'CAUS.CLAUSE',
-    label: 'Cause/result clause (because/therefore/consequently)',
-    level: 'B1',
-    detect: (t) => countMatches(t, /\b(because|therefore|consequently|as a result|due to|owing to)\b/),
-  },
+    {
+        shorthand: 'TA.PRPF',
+        label: 'Present perfect (have/has + past participle)',
+        level: 'B1',
+        detect: (t) => countMatches(t, /\b(have|has|haven'?t|hasn'?t)\s+\w+(ed|en|oken|tten|one|awn|rown|wn)\b/),
+    },
+    {
+        shorthand: 'TA.PRPFPRG',
+        label: 'Present perfect progressive (have/has been + -ing)',
+        level: 'B1',
+        detect: (t) => countMatches(t, /\b(have|has)\s+been\s+\w+ing\b/),
+    },
+    {
+        shorthand: 'TA.PASTPRG',
+        label: 'Past progressive (was/were + -ing)',
+        level: 'A2',
+        detect: (t) => countMatches(t, /\b(was|were)\s+\w+ing\b/),
+    },
+    {
+        shorthand: 'TA.PASTPF',
+        label: 'Past perfect (had + past participle)',
+        level: 'B1',
+        detect: (t) => countMatches(t, /\bhad\s+\w+(ed|en|oken|tten|one|awn|rown|wn)\b/),
+    },
+    {
+        shorthand: 'TA.PASTPFPRG',
+        label: 'Past perfect progressive (had been + -ing)',
+        level: 'B2',
+        detect: (t) => countMatches(t, /\bhad\s+been\s+\w+ing\b/),
+    },
+    {
+        shorthand: 'PASS',
+        label: 'Passive voice (be + past participle)',
+        level: 'B1',
+        detect: (_, doc) => doc.match('#Passive').length,
+    },
+    {
+        shorthand: 'MOD.CAN',
+        label: 'Modal: can/could',
+        level: 'A2',
+        detect: (t) => countMatches(t, /\b(can|cannot|can'?t|could|couldn'?t)\b/),
+    },
+    {
+        shorthand: 'MOD.SHOULD',
+        label: 'Modal: should/would/must/might',
+        level: 'B1',
+        detect: (t) => countMatches(t, /\b(should|shouldn'?t|would|wouldn'?t|must|mustn'?t|might)\b/),
+    },
+    {
+        shorthand: 'REL.CLAUSE',
+        label: 'Relative clause (who/which/that/whom)',
+        level: 'B1',
+        detect: (t) => countMatches(t, /\b(who|which|that|whom|whose)\s+\w+/),
+    },
+    {
+        shorthand: 'COND.ZERO_FIRST',
+        label: 'Zero/first conditional (if + present/future)',
+        level: 'B1',
+        detect: (t) => countMatches(t, /\bif\s+\w+\s+(is|are|will|do|does)\b/),
+    },
+    {
+        shorthand: 'COND.SECOND',
+        label: 'Second conditional (if + past + would)',
+        level: 'B1',
+        detect: (t) => countMatches(t, /\bif\s+\w+\s+(were|was|had|did|could)\b.*\bwould\b/),
+    },
+    {
+        shorthand: 'COND.THIRD',
+        label: 'Third conditional (if + past perfect + would have)',
+        level: 'B2',
+        detect: (t) => countMatches(t, /\bif\s+\w+\s+had\s+\w+(ed|en)\b.*\bwould\s+have\b/),
+    },
+    {
+        shorthand: 'REP.SPEECH',
+        label: 'Reported speech (said/told that)',
+        level: 'B1',
+        detect: (t) => countMatches(t, /\b(said|told|explained|mentioned|stated|argued|claimed)\s+(that\s+)?\w+/),
+    },
+    {
+        shorthand: 'INF.CLAUSE',
+        label: 'Infinitive clause (verb + to + infinitive)',
+        level: 'B1',
+        detect: (_, doc) => doc.match('#Verb to #Verb').length,
+    },
+    {
+        shorthand: 'CLEFT',
+        label: 'Cleft sentence (it is/was ... that/who)',
+        level: 'B2',
+        detect: (t) => countMatches(t, /\bit\s+(is|was)\s+\w+\s+(that|who)\b/),
+    },
+    {
+        shorthand: 'CONC.CLAUSE',
+        label: 'Concession clause (although/even though/despite)',
+        level: 'B2',
+        detect: (t) => countMatches(t, /\b(although|even though|despite|whereas|nevertheless|nonetheless)\b/),
+    },
+    {
+        shorthand: 'CAUS.CLAUSE',
+        label: 'Cause/result clause (because/therefore/consequently)',
+        level: 'B1',
+        detect: (t) => countMatches(t, /\b(because|therefore|consequently|as a result|due to|owing to)\b/),
+    },
 ];
 
 /**
@@ -218,25 +216,25 @@ const GRAMMAR_PATTERNS: GrammarPattern[] = [
  * Uses CEFR-J grammar profile data as the level reference.
  */
 export function profileGrammar(text: string): CefrGrammarProfile {
-  const doc = nlp(text);
-  const detected: CefrGrammarHit[] = [];
+    const doc = nlp(text);
+    const detected: CefrGrammarHit[] = [];
 
-  for (const pattern of GRAMMAR_PATTERNS) {
-    const count = pattern.detect(text, doc);
-    if (count > 0) {
-      detected.push({ label: pattern.label, level: pattern.level, count, shorthand: pattern.shorthand });
+    for (const pattern of GRAMMAR_PATTERNS) {
+        const count = pattern.detect(text, doc);
+        if (count > 0) {
+            detected.push({ label: pattern.label, level: pattern.level, count, shorthand: pattern.shorthand });
+        }
     }
-  }
 
-  // Estimated level: highest level among detected structures
-  let estimatedLevel: CefrLevel = 'A1';
-  for (const hit of detected) {
-    if (LEVEL_ORDER.indexOf(hit.level) > LEVEL_ORDER.indexOf(estimatedLevel)) {
-      estimatedLevel = hit.level;
+    // Estimated level: highest level among detected structures
+    let estimatedLevel: CefrLevel = 'A1';
+    for (const hit of detected) {
+        if (LEVEL_ORDER.indexOf(hit.level) > LEVEL_ORDER.indexOf(estimatedLevel)) {
+            estimatedLevel = hit.level;
+        }
     }
-  }
 
-  return { detectedStructures: detected, estimatedLevel };
+    return { detectedStructures: detected, estimatedLevel };
 }
 
 export async function checkGrammar(

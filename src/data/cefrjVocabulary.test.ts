@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { CEFRJ_VOCABULARY } from './cefrjVocabulary';
+import type { CefrLevel } from '../types';
 
-const VALID_CEFR_LEVELS = new Set(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']);
+const VALID_CEFR_LEVELS: CefrLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 
 describe('CEFRJ_VOCABULARY data integrity', () => {
     it('is a non-empty object', () => {
@@ -30,7 +31,7 @@ describe('CEFRJ_VOCABULARY data integrity', () => {
     it('contains all six CEFR levels as values', () => {
         const levels = new Set(Object.values(CEFRJ_VOCABULARY));
         for (const level of VALID_CEFR_LEVELS) {
-            expect(levels.has(level as string)).toBe(true);
+            expect(levels.has(level)).toBe(true);
         }
     });
 
@@ -43,8 +44,8 @@ describe('CEFRJ_VOCABULARY data integrity', () => {
 
     it('advanced academic words are at higher levels', () => {
         // Academic vocabulary should be at B1 or above
-        const advancedWords = Object.entries(CEFRJ_VOCABULARY).filter(([, level]) =>
-            level === 'B2' || level === 'C1' || level === 'C2'
+        const advancedWords = Object.entries(CEFRJ_VOCABULARY).filter(
+            ([, level]) => level === 'B2' || level === 'C1' || level === 'C2'
         );
         expect(advancedWords.length).toBeGreaterThan(0);
     });

@@ -12,13 +12,23 @@ import {
     BookOpen,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { Attachment, CefrLevel, CefrTextProfile, VocabularyItem, DocumentAnalysisResult, DetectedItem, RubricCriterion } from '../../types';
+import type {
+    Attachment,
+    CefrLevel,
+    CefrTextProfile,
+    VocabularyItem,
+    DocumentAnalysisResult,
+    DetectedItem,
+    RubricCriterion,
+} from '../../types';
 import { extractText, UnsupportedFormatError } from '../../utils/textExtraction';
 import { analyseVocabulary } from '../../utils/vocabularyAnalyser';
 import { checkGrammar, profileGrammar, LT_ATTRIBUTION_URL } from '../../utils/grammarChecker';
 import { profileText } from '../../utils/cefrVocabularyProfiler';
 import { CEFR_LEVEL_COLORS } from '../../data/cefrDescriptors';
 import { nanoid } from '../../utils/nanoid';
+
+const LEVEL_ORDER: CefrLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 
 interface Props {
     studentId: string;
@@ -79,7 +89,6 @@ export default function DocumentAnalysisPanel({
         if (!extractedText) return null;
         const vocabulary = profileText(extractedText);
         const grammar = profileGrammar(extractedText);
-        const LEVEL_ORDER: CefrLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
         const vocabIdx = LEVEL_ORDER.indexOf(vocabulary.estimatedLevel);
         const grammarIdx = LEVEL_ORDER.indexOf(grammar.estimatedLevel);
         const overallEstimatedLevel = LEVEL_ORDER[Math.max(vocabIdx, grammarIdx)];
@@ -181,7 +190,13 @@ export default function DocumentAnalysisPanel({
     const totalCount = result?.detectedItems.length ?? 0;
 
     return (
-        <div className="modal-overlay" role="dialog" aria-modal="true" onClick={onClose}>
+        <div
+            className="modal-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="analysis-dialog-title"
+            onClick={onClose}
+        >
             <div
                 className="modal"
                 style={{ maxWidth: 720, width: '95vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
@@ -191,7 +206,9 @@ export default function DocumentAnalysisPanel({
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
                     <ScanSearch size={20} style={{ color: 'var(--accent)' }} />
                     <div style={{ flex: 1 }}>
-                        <h3 style={{ margin: 0 }}>{t('analysis.title', 'Document Analysis')}</h3>
+                        <h3 id="analysis-dialog-title" style={{ margin: 0 }}>
+                            {t('analysis.title', 'Document Analysis')}
+                        </h3>
                         <p className="text-xs text-muted" style={{ margin: 0 }}>
                             {rubricName}
                         </p>
@@ -713,8 +730,6 @@ export default function DocumentAnalysisPanel({
 
 // ─── CEFR Profile sub-panel ───────────────────────────────────────────────────
 
-const LEVEL_ORDER: CefrLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
-
 function CefrLevelBadge({ level }: { level: CefrLevel }) {
     return (
         <span
@@ -761,7 +776,14 @@ function CefrProfilePanel({ profile }: { profile: CefrTextProfile }) {
                 <div className="card" style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 14 }}>
                     {/* Vocabulary distribution */}
                     <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <div
+                            style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                marginBottom: 8,
+                            }}
+                        >
                             <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>
                                 {t('analysis.vocab_distribution', 'Vocabulary level distribution')}
                             </span>
@@ -770,7 +792,15 @@ function CefrProfilePanel({ profile }: { profile: CefrTextProfile }) {
                         {total > 0 ? (
                             <>
                                 {/* Stacked bar */}
-                                <div style={{ display: 'flex', height: 12, borderRadius: 6, overflow: 'hidden', marginBottom: 6 }}>
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        height: 12,
+                                        borderRadius: 6,
+                                        overflow: 'hidden',
+                                        marginBottom: 6,
+                                    }}
+                                >
                                     {LEVEL_ORDER.map((lvl) => {
                                         const pct = total > 0 ? (vocabulary.levelCounts[lvl] / total) * 100 : 0;
                                         return pct > 0 ? (
@@ -785,15 +815,33 @@ function CefrProfilePanel({ profile }: { profile: CefrTextProfile }) {
                                 {/* Legend */}
                                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                                     {LEVEL_ORDER.filter((lvl) => vocabulary.levelCounts[lvl] > 0).map((lvl) => (
-                                        <span key={lvl} style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: 4 }}>
-                                            <span style={{ width: 10, height: 10, borderRadius: 2, background: CEFR_LEVEL_COLORS[lvl], display: 'inline-block' }} />
+                                        <span
+                                            key={lvl}
+                                            style={{
+                                                fontSize: '0.75rem',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 4,
+                                            }}
+                                        >
+                                            <span
+                                                style={{
+                                                    width: 10,
+                                                    height: 10,
+                                                    borderRadius: 2,
+                                                    background: CEFR_LEVEL_COLORS[lvl],
+                                                    display: 'inline-block',
+                                                }}
+                                            />
                                             {lvl}: {vocabulary.levelCounts[lvl]}
                                         </span>
                                     ))}
                                 </div>
                             </>
                         ) : (
-                            <p className="text-xs text-muted">{t('analysis.no_vocab_matched', 'No vocabulary matched the CEFR-J wordlist.')}</p>
+                            <p className="text-xs text-muted">
+                                {t('analysis.no_vocab_matched', 'No vocabulary matched the CEFR-J wordlist.')}
+                            </p>
                         )}
 
                         {/* Highlight words */}
@@ -817,7 +865,16 @@ function CefrProfilePanel({ profile }: { profile: CefrTextProfile }) {
                                             }}
                                         >
                                             {word}
-                                            <span style={{ marginLeft: 4, fontSize: '0.68rem', color: CEFR_LEVEL_COLORS[level], fontWeight: 700 }}>{level}</span>
+                                            <span
+                                                style={{
+                                                    marginLeft: 4,
+                                                    fontSize: '0.68rem',
+                                                    color: CEFR_LEVEL_COLORS[level],
+                                                    fontWeight: 700,
+                                                }}
+                                            >
+                                                {level}
+                                            </span>
                                         </span>
                                     ))}
                                 </div>
@@ -827,7 +884,14 @@ function CefrProfilePanel({ profile }: { profile: CefrTextProfile }) {
 
                     {/* Grammar structures */}
                     <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <div
+                            style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                marginBottom: 8,
+                            }}
+                        >
                             <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>
                                 {t('analysis.grammar_structures', 'Grammar structures')}
                             </span>
@@ -835,7 +899,7 @@ function CefrProfilePanel({ profile }: { profile: CefrTextProfile }) {
                         </div>
                         {grammar.detectedStructures.length > 0 ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                {grammar.detectedStructures
+                                {[...grammar.detectedStructures]
                                     .sort((a, b) => LEVEL_ORDER.indexOf(b.level) - LEVEL_ORDER.indexOf(a.level))
                                     .map((s) => (
                                         <div

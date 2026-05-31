@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { CEFRJ_GRAMMAR } from './cefrjGrammar';
-import type { CefrjGrammarItem } from './cefrjGrammar';
+import type { CefrjGrammarItem } from '../types';
 
 const VALID_CEFR_LEVELS = new Set(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']);
 

@@ -19,14 +19,9 @@ function parseLevel(raw: string | null): CefrLevel | null {
 }
 
 function extractFromXml(xml: string): { level: CefrLevel | null; definition: string | null } {
-    // Extract first <lvl> tag value
-    const lvlMatch = xml.match(/<lvl[^>]*>([^<]+)<\/lvl>/);
-    const level = parseLevel(lvlMatch?.[1] ?? null);
-
-    // Extract first <def> tag value as a plain-text definition
-    const defMatch = xml.match(/<def[^>]*>([^<]+)<\/def>/);
-    const definition = defMatch?.[1]?.trim() ?? null;
-
+    const doc = new DOMParser().parseFromString(xml, 'application/xml');
+    const level = parseLevel(doc.querySelector('lvl')?.textContent ?? null);
+    const definition = doc.querySelector('def')?.textContent?.trim() ?? null;
     return { level, definition };
 }
 
@@ -35,16 +30,7 @@ export interface CambridgeLookupResult {
     definition: string | null;
 }
 
-/**
- * Look up a single word in the Cambridge Dictionary API to retrieve its CEFR level
- * and definition. Returns null if the request fails, times out, or the word is not found.
- *
- * Falls back silently — callers should always have a CEFR-J-based fallback ready.
- */
-export async function lookupWord(
-    word: string,
-    apiKey: string
-): Promise<CambridgeLookupResult | null> {
+export async function lookupWord(word: string, apiKey: string): Promise<CambridgeLookupResult | null> {
     if (!word || !apiKey) return null;
 
     const url = `${BASE}/dictionaries/english/entries/${encodeURIComponent(word.toLowerCase())}?accessKey=${encodeURIComponent(apiKey)}`;

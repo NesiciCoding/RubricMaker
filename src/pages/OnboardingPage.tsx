@@ -64,8 +64,8 @@ export default function OnboardingPage() {
     }
 
     const cardStyle: React.CSSProperties = {
-        background: '#f8fafc',
-        border: '2px solid #e2e8f0',
+        background: 'var(--bg-elevated)',
+        border: '2px solid var(--border)',
         borderRadius: 12,
         padding: '20px 24px',
         cursor: 'pointer',
@@ -76,8 +76,8 @@ export default function OnboardingPage() {
 
     const selectedCardStyle: React.CSSProperties = {
         ...cardStyle,
-        background: '#eef2ff',
-        border: '2px solid var(--accent, #6366f1)',
+        background: 'var(--accent-soft)',
+        border: '2px solid var(--accent)',
     };
 
     return (
