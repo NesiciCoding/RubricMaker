@@ -26,7 +26,6 @@ BEGIN
   -- Serialize all concurrent sign-ups so student and non-student paths don't race.
   PERFORM pg_advisory_xact_lock(hashtext('public.handle_new_user.first_admin')::bigint);
 
-
   -- Auto-detect students: email present and matches a teacher-imported student record.
   IF new.email IS NOT NULL AND EXISTS (
     SELECT 1 FROM public.students
