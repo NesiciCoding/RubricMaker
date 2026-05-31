@@ -69,6 +69,8 @@ type Action =
     | { type: 'DELETE_CLASS'; id: string }
     | { type: 'SAVE_STUDENT_RUBRIC'; payload: StudentRubric }
     | { type: 'DELETE_STUDENT_RUBRIC'; id: string }
+    | { type: 'SAVE_RUBRIC_SELF_ASSESSMENT'; id: string; levels: Record<string, string | null>; reflection: string }
+    | { type: 'ANONYMIZE_STUDENT'; id: string }
     | { type: 'ADD_ATTACHMENT'; payload: Attachment }
     | { type: 'DELETE_ATTACHMENT'; id: string }
     | { type: 'ADD_GRADE_SCALE'; payload: GradeScale }
@@ -149,6 +151,20 @@ function reducer(state: StoreData, action: Action): StoreData {
             saveStudents(next);
             return { ...state, students: next };
         }
+        case 'ANONYMIZE_STUDENT': {
+            const next = state.students.map((s) => {
+                if (s.id !== action.id) return s;
+                return {
+                    ...s,
+                    name: `Student-${s.id.slice(0, 8)}`,
+                    email: undefined,
+                    studentNumber: undefined,
+                    anonymizedAt: new Date().toISOString(),
+                };
+            });
+            saveStudents(next);
+            return { ...state, students: next };
+        }
         case 'ADD_CLASS': {
             const next = [...state.classes, action.payload];
             saveClasses(next);
@@ -175,6 +191,19 @@ function reducer(state: StoreData, action: Action): StoreData {
         }
         case 'DELETE_STUDENT_RUBRIC': {
             const next = state.studentRubrics.filter((sr) => sr.id !== action.id);
+            saveStudentRubrics(next);
+            return { ...state, studentRubrics: next };
+        }
+        case 'SAVE_RUBRIC_SELF_ASSESSMENT': {
+            const existing = state.studentRubrics.find((sr) => sr.id === action.id);
+            if (!existing) return state;
+            const updated = {
+                ...existing,
+                selfAssessmentLevels: action.levels,
+                selfAssessmentReflection: action.reflection,
+                selfAssessedAt: new Date().toISOString(),
+            };
+            const next = state.studentRubrics.map((sr) => (sr.id === action.id ? updated : sr));
             saveStudentRubrics(next);
             return { ...state, studentRubrics: next };
         }
@@ -422,6 +451,7 @@ interface AppContextValue extends StoreData {
     deleteClass: (id: string, deleteStudents?: boolean) => void;
     mergeClasses: (sourceClassId: string, targetClassId: string) => void;
     saveStudentRubric: (sr: StudentRubric) => void;
+    saveRubricSelfAssessment: (id: string, levels: Record<string, string | null>, reflection: string) => void;
     createStudentRubric: (rubricId: string, studentId: string) => StudentRubric;
     deleteStudentRubric: (id: string) => void;
     addAttachment: (a: Omit<Attachment, 'id' | 'addedAt'>) => Attachment;
@@ -473,6 +503,25 @@ interface AppContextValue extends StoreData {
     fetchAllUsers: () => Promise<DbUser[]>;
     updateUserRole: (userId: string, role: 'admin' | 'user' | 'student') => Promise<SyncResult>;
     updateMyProfile: (updates: { displayName?: string }) => Promise<SyncResult>;
+    // Schools (cloud-only — no-op in offline mode)
+    fetchSchools: () => Promise<Awaited<ReturnType<typeof storageSync.fetchSchools>>>;
+    createSchool: (
+        name: string,
+        retentionYears: number
+    ) => Promise<Awaited<ReturnType<typeof storageSync.createSchool>>>;
+    joinSchool: (schoolId: string) => Promise<Awaited<ReturnType<typeof storageSync.joinSchool>>>;
+    updateSchool: (
+        schoolId: string,
+        updates: { name?: string; retentionYears?: number }
+    ) => Promise<Awaited<ReturnType<typeof storageSync.updateSchool>>>;
+    deleteSchool: (schoolId: string) => Promise<Awaited<ReturnType<typeof storageSync.deleteSchool>>>;
+    fetchSchoolMembers: (schoolId: string) => Promise<Awaited<ReturnType<typeof storageSync.fetchSchoolMembers>>>;
+    removeSchoolMember: (
+        schoolId: string,
+        profileId: string
+    ) => Promise<Awaited<ReturnType<typeof storageSync.removeSchoolMember>>>;
+    // Student anonymization
+    anonymizeStudent: (id: string) => void;
     // Essay assignments (teacher side)
     saveEssayAssignment: (a: EssayAssignment) => Promise<SyncResult>;
     deleteEssayAssignment: (teacherKey: string) => Promise<SyncResult>;
@@ -505,6 +554,7 @@ interface AppContextValue extends StoreData {
     syncToOneDrive: () => Promise<void>;
     restoreFromOneDrive: () => Promise<void>;
     microsoftUser: any | null;
+    getCurrentDatabaseUserId: () => string | null;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -581,28 +631,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
             return;
         }
 
-        storageSync.initAuth(config).then(async () => {
-            if (!storageSync.hasSession()) {
-                setLandingState('show');
-                return;
-            }
+        // Guard: ensures configure+hydrate runs at most once (startup OR auth-change, not both)
+        let sessionHandled = false;
 
-            // Session found — auto-connect and hydrate
-            saveSupabaseConfig(config);
-            const ok = await storageSync.configure(config);
+        async function configureAndEnter(cfg: DatabaseConfig) {
+            if (sessionHandled) return;
+            sessionHandled = true;
+            saveSupabaseConfig(cfg);
+            const ok = await storageSync.configure(cfg);
             if (!ok) {
                 setLandingState('show');
                 return;
             }
-
             const fresh = await storageSync.hydrate();
             if (fresh) {
                 const merged = { ...initialStateRef.current, ...fresh } as StoreData;
                 dispatch({ type: 'SET_ALL', payload: merged });
                 flushToLocalStorage(merged);
             }
-
             setLandingState('hide');
+        }
+
+        storageSync.initAuth(config).then(async () => {
+            if (!storageSync.hasSession()) {
+                setLandingState('show');
+                return;
+            }
+
+            // Session already existed on startup — connect and hydrate immediately
+            await configureAndEnter(config);
 
             // Show migration prompt once if local data exists and hasn't been migrated
             if (localStorage.getItem(MIGRATION_DONE_KEY) !== 'true') {
@@ -612,6 +669,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 }
             }
         });
+
+        // Listen for sign-in that happens while the landing page is showing (e.g., OTP)
+        const unsubAuth = storageSync.onAuthChange(async (user) => {
+            if (!user) return;
+            const cfg = loadSupabaseConfig();
+            if (!cfg) return;
+            await configureAndEnter(cfg);
+        });
+
+        return () => unsubAuth();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -623,7 +690,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
             if (!config) return;
             setLandingState('checking');
             const ok = await storageSync.configure(config);
-            if (!ok) { setLandingState('show'); return; }
+            if (!ok) {
+                setLandingState('show');
+                return;
+            }
             const fresh = await storageSync.hydrate();
             if (fresh) {
                 const merged = { ...initialStateRef.current, ...fresh } as StoreData;
@@ -735,6 +805,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const saveStudentRubricFn = useCallback((sr: StudentRubric) => {
         dispatch({ type: 'SAVE_STUDENT_RUBRIC', payload: sr });
     }, []);
+
+    const saveRubricSelfAssessment = useCallback(
+        (id: string, levels: Record<string, string | null>, reflection: string) => {
+            dispatch({ type: 'SAVE_RUBRIC_SELF_ASSESSMENT', id, levels, reflection });
+        },
+        []
+    );
 
     const createStudentRubric = useCallback(
         (rubricId: string, studentId: string): StudentRubric => {
@@ -1016,6 +1093,46 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const syncToOneDrive = useCallback(async () => {}, []);
     const restoreFromOneDrive = useCallback(async () => {}, []);
 
+    // ─── Schools (cloud-only) ──────────────────────────────────────────────────
+    const fetchSchools = useCallback(() => storageSync.fetchSchools(), []);
+    const createSchool = useCallback(
+        (name: string, retentionYears: number) => storageSync.createSchool(name, retentionYears),
+        []
+    );
+    const joinSchool = useCallback((schoolId: string) => storageSync.joinSchool(schoolId), []);
+    const updateSchool = useCallback(
+        (schoolId: string, updates: { name?: string; retentionYears?: number }) =>
+            storageSync.updateSchool(schoolId, updates),
+        []
+    );
+    const deleteSchool = useCallback((schoolId: string) => storageSync.deleteSchool(schoolId), []);
+    const fetchSchoolMembers = useCallback((schoolId: string) => storageSync.fetchSchoolMembers(schoolId), []);
+    const removeSchoolMember = useCallback(
+        (schoolId: string, profileId: string) => storageSync.removeSchoolMember(schoolId, profileId),
+        []
+    );
+
+    const getCurrentDatabaseUserId = useCallback(() => storageSync.getCurrentUserId(), []);
+
+    // ─── Student anonymization ─────────────────────────────────────────────────
+    const anonymizeStudent = useCallback(
+        (id: string) => {
+            const original = state.students.find((s) => s.id === id);
+            dispatch({ type: 'ANONYMIZE_STUDENT', id });
+            if (original) {
+                const anonymized = {
+                    ...original,
+                    name: `Student-${original.id.slice(0, 8)}`,
+                    email: undefined,
+                    studentNumber: undefined,
+                    anonymizedAt: new Date().toISOString(),
+                };
+                storageSync.pushOne('student', 'upsert', anonymized);
+            }
+        },
+        [state.students]
+    );
+
     const value: AppContextValue = {
         ...state,
         dispatch,
@@ -1030,6 +1147,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         deleteClass,
         mergeClasses,
         saveStudentRubric: saveStudentRubricFn,
+        saveRubricSelfAssessment,
         createStudentRubric,
         deleteStudentRubric,
         addAttachment,
@@ -1072,6 +1190,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         fetchAllUsers,
         updateUserRole,
         updateMyProfile,
+        fetchSchools,
+        createSchool,
+        joinSchool,
+        updateSchool,
+        deleteSchool,
+        fetchSchoolMembers,
+        removeSchoolMember,
+        anonymizeStudent,
+        getCurrentDatabaseUserId,
         saveEssayAssignment,
         deleteEssayAssignment,
         fetchEssaySubmissions,

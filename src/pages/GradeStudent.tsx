@@ -12,10 +12,12 @@ import {
     MicOff,
     ChevronRight,
     Users,
+    X,
     XCircle,
     ScanSearch,
     PenLine,
     Upload,
+    Printer,
 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import CommentBankModal from '../components/Comments/CommentBankModal';
@@ -48,6 +50,7 @@ export default function GradeStudent() {
         saveStudentRubric,
         updateSettings,
         saveAnalysisResult,
+        addCommentBankItem,
         addAttachment,
         saveEssayAssignment,
         fetchEssaySubmissionsForStudent,
@@ -106,6 +109,10 @@ export default function GradeStudent() {
     const [saved, setSaved] = useState(false);
     const [isDirty, setIsDirty] = useState(false);
     const [showStdDesc, setShowStdDesc] = useState(false);
+    const [focusedCriterionIdx, setFocusedCriterionIdx] = useState<number | null>(null);
+    const [showShortcuts, setShowShortcuts] = useState(false);
+    const criterionCardsRef = useRef<(HTMLDivElement | null)[]>([]);
+    const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
     // Ensure that if we loaded this student, the global active class defaults to their class
     // This perfectly handles the user going back and expecting to see this student's class
@@ -204,17 +211,68 @@ export default function GradeStudent() {
         }
     }, [sr, rubric, saveStudentRubric, nextStudent, navigate, rubricId, t]);
 
-    // Keyboard shortcut to save
+    // Scroll focused criterion into view
     React.useEffect(() => {
+        if (focusedCriterionIdx !== null) {
+            criterionCardsRef.current[focusedCriterionIdx]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }, [focusedCriterionIdx]);
+
+    // Keyboard shortcuts
+    React.useEffect(() => {
+        if (!rubric || !sr) return;
         const handleKeyDown = (e: KeyboardEvent) => {
+            const target = e.target as HTMLElement;
+            const inInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable;
+
             if ((e.ctrlKey || e.metaKey) && e.key === 's') {
                 e.preventDefault();
-                handleSave();
+                if (nextStudent) handleSaveAndNext();
+                else handleSave();
+                return;
+            }
+
+            if (inInput) return;
+
+            if (e.key === '?') {
+                setShowShortcuts(true);
+                return;
+            }
+
+            if (e.key === 'Escape') {
+                setShowShortcuts(false);
+                setFocusedCriterionIdx(null);
+                return;
+            }
+
+            const criteriaCount = rubric.criteria.length;
+
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                setFocusedCriterionIdx((prev) => {
+                    if (prev === null) return e.shiftKey ? criteriaCount - 1 : 0;
+                    return e.shiftKey ? (prev - 1 + criteriaCount) % criteriaCount : (prev + 1) % criteriaCount;
+                });
+                return;
+            }
+
+            if (focusedCriterionIdx !== null && /^[1-5]$/.test(e.key)) {
+                const criterion = rubric.criteria[focusedCriterionIdx];
+                if (!criterion || rubric.scoringMode === 'single-point') return;
+                const levels =
+                    rubric.format.levelOrder === 'worst-first' ? [...criterion.levels].reverse() : criterion.levels;
+                const level = levels[parseInt(e.key) - 1];
+                if (!level) return;
+                const currentEntry = sr.entries.find((en) => en.criterionId === criterion.id);
+                updateEntry(criterion.id, {
+                    levelId: currentEntry?.levelId === level.id ? null : level.id,
+                    overridePoints: undefined,
+                });
             }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [handleSave]);
+    }, [handleSave, handleSaveAndNext, nextStudent, rubric, sr, focusedCriterionIdx, updateEntry]);
 
     // Warn on unsaved changes
     React.useEffect(() => {
@@ -227,6 +285,23 @@ export default function GradeStudent() {
         window.addEventListener('beforeunload', handleBeforeUnload);
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, [isDirty]);
+
+    const handleTouchStart = useCallback((e: React.TouchEvent) => {
+        const touch = e.touches[0];
+        touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+    }, []);
+
+    const handleTouchEnd = useCallback(
+        (e: React.TouchEvent) => {
+            if (!touchStartRef.current || !nextStudent) return;
+            const touch = e.changedTouches[0];
+            const dx = touchStartRef.current.x - touch.clientX;
+            const dy = Math.abs(touchStartRef.current.y - touch.clientY);
+            touchStartRef.current = null;
+            if (dx > 80 && dy < 60) handleSaveAndNext();
+        },
+        [nextStudent, handleSaveAndNext]
+    );
 
     const anchorSR = useMemo(() => {
         if (!rubricId) return null;
@@ -278,6 +353,15 @@ export default function GradeStudent() {
         },
         settings.language === 'nl' ? 'nl-NL' : 'en-US'
     );
+
+    const handlePrint = useCallback(() => {
+        const orientation = rubric?.format?.orientation ?? 'portrait';
+        const style = document.createElement('style');
+        style.textContent = `@page { size: A4 ${orientation}; }`;
+        document.head.appendChild(style);
+        window.print();
+        document.head.removeChild(style);
+    }, [rubric]);
 
     if (!rubric || !student || !sr)
         return (
@@ -352,7 +436,7 @@ export default function GradeStudent() {
                         <button className="btn btn-secondary btn-sm" onClick={() => setShowAttachPanel((p) => !p)}>
                             <Paperclip size={15} /> {t('gradeStudent.action_attachments')}
                         </button>
-                        {liveRubric?.vocabularyItems && liveRubric.vocabularyItems.length > 0 && (
+                        {studentAttachments.length > 0 && (
                             <button
                                 className="btn btn-secondary btn-sm"
                                 onClick={() => setShowAnalysisPanel(true)}
@@ -382,6 +466,9 @@ export default function GradeStudent() {
                         >
                             <XCircle size={15} /> {t('gradeStudent.action_not_handed_in')}
                         </button>
+                        <button className="btn btn-secondary btn-sm no-print" onClick={handlePrint}>
+                            <Printer size={15} /> {t('gradeStudent.action_print')}
+                        </button>
                         <button className="btn btn-primary btn-sm" onClick={handleSave}>
                             <Save size={15} /> {saved ? t('gradeStudent.action_saved') : t('gradeStudent.action_save')}
                         </button>
@@ -399,10 +486,23 @@ export default function GradeStudent() {
                     </>
                 }
             />
-            <div className="page-content fade-in" style={summary ? { paddingBottom: 80 } : undefined}>
+            <div
+                className="page-content fade-in"
+                style={summary ? { paddingBottom: 80 } : undefined}
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
+            >
+                {/* Print-only header */}
+                <div className="print-only" style={{ marginBottom: 16 }}>
+                    <h2 style={{ margin: 0 }}>{rubric.name}</h2>
+                    <p style={{ margin: '4px 0 0', color: '#555', fontSize: '0.9rem' }}>
+                        {student.name} &middot; {new Date().toLocaleDateString()}
+                    </p>
+                </div>
+
                 {/* Modifier + export panel */}
                 <div
-                    className="card"
+                    className="card no-print"
                     style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}
                 >
                     <span
@@ -490,7 +590,7 @@ export default function GradeStudent() {
                 {rubric.criteria.some(
                     (c) => c.linkedStandard || (c.linkedStandards && c.linkedStandards.length > 0)
                 ) && (
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+                    <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
                         <div
                             style={{
                                 display: 'flex',
@@ -540,12 +640,24 @@ export default function GradeStudent() {
                         fontSize: fmt.fontSize,
                     }}
                 >
-                    {rubric.criteria.map((c) => {
+                    {rubric.criteria.map((c, criterionIndex) => {
                         const entry = sr.entries.find((e) => e.criterionId === c.id)!;
                         const levels = orderedLevels(c);
+                        const isCriterionFocused = focusedCriterionIdx === criterionIndex;
 
                         return (
-                            <div key={c.id} className="card" style={{ padding: 16 }}>
+                            <div
+                                key={c.id}
+                                className="card print-criterion"
+                                style={{
+                                    padding: 16,
+                                    outline: isCriterionFocused ? '2px solid var(--accent)' : undefined,
+                                    outlineOffset: 2,
+                                }}
+                                ref={(el) => {
+                                    criterionCardsRef.current[criterionIndex] = el;
+                                }}
+                            >
                                 {/* Criterion header */}
                                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12 }}>
                                     <div style={{ flex: 1 }}>
@@ -567,12 +679,17 @@ export default function GradeStudent() {
                                                     alignItems: 'flex-start',
                                                     gap: 3,
                                                 }}
-                                                title={showStdDesc ? (c.linkedStandard.statementNotation ?? '') : c.linkedStandard.description}
+                                                title={
+                                                    showStdDesc
+                                                        ? (c.linkedStandard.statementNotation ?? '')
+                                                        : c.linkedStandard.description
+                                                }
                                             >
                                                 <Info size={10} style={{ flexShrink: 0, marginTop: 2 }} />{' '}
                                                 {showStdDesc
                                                     ? c.linkedStandard.description
-                                                    : (c.linkedStandard.statementNotation ?? t('gradeStudent.label_standard'))}
+                                                    : (c.linkedStandard.statementNotation ??
+                                                      t('gradeStudent.label_standard'))}
                                             </div>
                                         )}
                                         {(c.linkedStandards || []).map((std, idx) => (
@@ -601,7 +718,10 @@ export default function GradeStudent() {
                                             </div>
                                         )}
                                     </div>
-                                    <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+                                    <div
+                                        className="no-print"
+                                        style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}
+                                    >
                                         {fmt.showWeights && <span className="badge badge-blue">{c.weight}%</span>}
                                         <button
                                             className="btn btn-ghost btn-icon btn-sm"
@@ -714,8 +834,9 @@ export default function GradeStudent() {
                                 {/* Level cards (standard mode) */}
                                 {rubric.scoringMode !== 'single-point' && (
                                     <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                                        {levels.map((level) => {
+                                        {levels.map((level, levelIndex) => {
                                             const isSelected = entry.levelId === level.id;
+                                            const shortcutNum = levelIndex + 1;
                                             return (
                                                 <button
                                                     key={level.id}
@@ -727,6 +848,11 @@ export default function GradeStudent() {
                                                                   background: `${fmt.accentColor}1a`,
                                                               }
                                                             : {}
+                                                    }
+                                                    title={
+                                                        shortcutNum <= 5
+                                                            ? `Press ${shortcutNum} to select (when criterion is focused)`
+                                                            : undefined
                                                     }
                                                     onClick={() =>
                                                         updateEntry(c.id, {
@@ -752,6 +878,28 @@ export default function GradeStudent() {
                                                                 color: isSelected ? fmt.accentColor : 'var(--text)',
                                                             }}
                                                         >
+                                                            {isCriterionFocused && shortcutNum <= 5 && (
+                                                                <span
+                                                                    style={{
+                                                                        display: 'inline-block',
+                                                                        marginRight: 5,
+                                                                        fontSize: '0.75em',
+                                                                        fontWeight: 700,
+                                                                        background: isSelected
+                                                                            ? fmt.accentColor
+                                                                            : 'var(--bg)',
+                                                                        color: isSelected
+                                                                            ? '#fff'
+                                                                            : 'var(--text-muted)',
+                                                                        border: '1px solid var(--border)',
+                                                                        borderRadius: 3,
+                                                                        padding: '0 4px',
+                                                                        verticalAlign: 'middle',
+                                                                    }}
+                                                                >
+                                                                    {shortcutNum}
+                                                                </span>
+                                                            )}
                                                             {level.label}
                                                         </span>
                                                         {fmt.showPoints && (
@@ -891,7 +1039,12 @@ export default function GradeStudent() {
                                                                                             (std, idx) => (
                                                                                                 <span
                                                                                                     key={idx}
-                                                                                                    title={showStdDesc ? (std.statementNotation ?? '') : std.description}
+                                                                                                    title={
+                                                                                                        showStdDesc
+                                                                                                            ? (std.statementNotation ??
+                                                                                                              '')
+                                                                                                            : std.description
+                                                                                                    }
                                                                                                 >
                                                                                                     {showStdDesc
                                                                                                         ? std.description
@@ -1184,6 +1337,7 @@ export default function GradeStudent() {
                     existingResult={existingAnalysisResult}
                     onClose={() => setShowAnalysisPanel(false)}
                     onSaveResult={saveAnalysisResult}
+                    onAddToCommentBank={(phrase) => addCommentBankItem(phrase, ['vocabulary'])}
                     onApplyToEntry={(criterionId, subItemId) => {
                         const entry = sr?.entries.find((e) => e.criterionId === criterionId);
                         if (!entry) return;
@@ -1248,6 +1402,62 @@ export default function GradeStudent() {
                     students={slipSheetData.students}
                     onClose={() => setSlipSheetData(null)}
                 />
+            )}
+
+            {showShortcuts && (
+                <div className="modal-overlay" onClick={() => setShowShortcuts(false)}>
+                    <div
+                        className="modal"
+                        style={{ maxWidth: 440, width: '95vw' }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+                            <h3 style={{ margin: 0, flex: 1 }}>
+                                {t('gradeStudent.shortcuts_title', 'Keyboard Shortcuts')}
+                            </h3>
+                            <button className="btn btn-ghost btn-icon" onClick={() => setShowShortcuts(false)}>
+                                <X size={18} />
+                            </button>
+                        </div>
+                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                            <tbody>
+                                {[
+                                    { key: '1 – 5', desc: t('gradeStudent.shortcut_level') },
+                                    { key: 'Tab / Shift+Tab', desc: t('gradeStudent.shortcut_tab') },
+                                    { key: 'Ctrl+S', desc: t('gradeStudent.shortcut_save') },
+                                    { key: '?', desc: t('gradeStudent.shortcut_help') },
+                                    { key: 'Esc', desc: t('gradeStudent.shortcut_esc') },
+                                ].map(({ key, desc }) => (
+                                    <tr key={key} style={{ borderBottom: '1px solid var(--border)' }}>
+                                        <td style={{ padding: '10px 16px 10px 0', whiteSpace: 'nowrap' }}>
+                                            <kbd
+                                                style={{
+                                                    background: 'var(--bg-elevated)',
+                                                    border: '1px solid var(--border)',
+                                                    borderRadius: 5,
+                                                    padding: '2px 8px',
+                                                    fontSize: '0.8rem',
+                                                    fontFamily: 'monospace',
+                                                }}
+                                            >
+                                                {key}
+                                            </kbd>
+                                        </td>
+                                        <td
+                                            style={{
+                                                padding: '10px 0',
+                                                color: 'var(--text-muted)',
+                                                fontSize: '0.875rem',
+                                            }}
+                                        >
+                                            {desc}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             )}
 
             {/* Sticky grade footer */}

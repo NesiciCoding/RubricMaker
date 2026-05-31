@@ -7,7 +7,7 @@ Tier 1 items have been implemented (commit `f601f6a`). This file tracks the rema
 ## Tier 2 — Medium Impact, New Capabilities
 
 ### 5. Magister LMS — Feasibility Research
-**Status:** Not started  
+**Status:** Done — see MAGISTER_INTEGRATION.md  
 **Effort:** Very low (research spike, no code)
 
 The school uses Magister (Dutch LMS). The current CSV import/export works well, but deeper integration may be possible.
@@ -22,7 +22,7 @@ The school uses Magister (Dutch LMS). The current CSV import/export works well, 
 ---
 
 ### 6. Document Analysis UI Polish
-**Status:** Not started  
+**Status:** Done  
 **Effort:** Low (infrastructure already exists)
 
 `vocabularyAnalyser.ts`, `grammarChecker.ts`, `textExtraction.ts`, `DocumentAnalysisPanel` component, and all AppContext actions (`saveAnalysisResult`, `addVocabularyItem`, etc.) are implemented. The entry point from the grading workflow is missing.
@@ -38,7 +38,7 @@ The school uses Magister (Dutch LMS). The current CSV import/export works well, 
 ---
 
 ### 7. Tablet / iPad Optimisation for Grading
-**Status:** Not started  
+**Status:** Done  
 **Effort:** Medium
 
 The grading interface (`src/pages/GradeStudent.tsx`, 1,352 lines) is desktop-optimised. Teachers frequently grade on tablets in the classroom.
@@ -55,7 +55,7 @@ The grading interface (`src/pages/GradeStudent.tsx`, 1,352 lines) is desktop-opt
 ---
 
 ### 8. Keyboard Shortcuts for Power Grading
-**Status:** Not started  
+**Status:** Done  
 **Effort:** Low
 
 Teachers grading 30+ submissions in sequence want to stay on the keyboard.
@@ -74,7 +74,7 @@ Teachers grading 30+ submissions in sequence want to stay on the keyboard.
 ## Tier 3 — Expansion & Polish
 
 ### 9. Additional Assessment Frameworks (Beyond CEFR)
-**Status:** Not started  
+**Status:** Done  
 **Effort:** Low (data files + picker update)
 
 CEFR is dominant in European language education, but Math, Science, and PE teachers also use this app. Adding IB Learner Profile or Bloom's Taxonomy descriptors would let non-language teachers use the same criterion-linking workflow.
@@ -88,7 +88,7 @@ CEFR is dominant in European language education, but Math, Science, and PE teach
 ---
 
 ### 10. Additional Language Support (French, German)
-**Status:** Not started  
+**Status:** Done  
 **Effort:** Low (locale files only)
 
 CEFR is pan-European; the app ships EN + NL. Adding FR and DE would make it viable for French/Belgian and German-speaking schools without any code changes — only `src/locales/` additions.
@@ -102,7 +102,7 @@ CEFR is pan-European; the app ships EN + NL. Adding FR and DE would make it viab
 ---
 
 ### 11. Print-Optimised CSS (In-Browser Printing)
-**Status:** Not started  
+**Status:** Done  
 **Effort:** Very low
 
 Many teachers print rubrics directly from the browser. The current layout includes sidebar, topbar, and action buttons on the printed page. A `@media print` stylesheet would eliminate the need to export PDF just to print.
@@ -118,7 +118,7 @@ Many teachers print rubrics directly from the browser. The current layout includ
 ---
 
 ### 12. In-App Notification / Reminder System
-**Status:** Not started  
+**Status:** Done  
 **Effort:** Low
 
 The Dashboard already tracks feedback age (days since last grading per student). Teachers lose track of classes they haven't graded recently.
@@ -133,6 +133,32 @@ The Dashboard already tracks feedback age (days since last grading per student).
 
 ---
 
+## Tier 4 — Testing & Quality
+
+### 13. Playwright End-to-End Smoke Tests
+
+**Status:** Planned  
+**Effort:** Medium (4–6 hours initial setup; low ongoing maintenance)
+
+The app is offline-first with no required auth for the core teacher workflow, which makes E2E testing unusually tractable — no DB seeding, no network stubs, no login flow needed for the basic path.
+
+**What to build:**
+- Install `@playwright/test` and add `playwright.config.ts`
+- 3–5 smoke tests covering the highest-risk regression paths:
+  1. Landing page → "Continue without account" → Dashboard renders with correct heading
+  2. Create a rubric (fill name + subject → save) → rubric appears in the rubric list
+  3. Open rubric → add a criterion → save → criterion persists on reload
+  4. Grade a student (select a level → save) → grade appears on the student profile
+  5. Export page loads and the export-to-PDF button is visible
+- Run on `push to main` only (not every PR) to keep PR CI fast
+- Add a `npm run e2e` script; do not include in the coverage run
+
+**Files to create:** `playwright.config.ts`, `e2e/smoke.spec.ts`
+
+**Why deferred:** Setup cost is real. Prioritise once the unit/integration layer is stable and coverage thresholds are comfortably above minimums.
+
+---
+
 ## Completed
 
 | # | Feature | Commit |
@@ -141,3 +167,11 @@ The Dashboard already tracks feedback age (days since last grading per student).
 | 2 | Student progress portal | f601f6a |
 | 3 | Period / report card generation | f601f6a |
 | 4 | Auto-snapshot on rubric save | f601f6a |
+| 6 | Document Analysis UI Polish | — |
+| 5 | Magister LMS — Feasibility Research | — |
+| 11 | Print-Optimised CSS | — |
+| 7 | Tablet / iPad Optimisation for Grading | — |
+| 8 | Keyboard Shortcuts for Power Grading | — |
+| 9 | Additional Assessment Frameworks (IB + Bloom's) | — |
+| 12 | In-App Notification / Reminder System | — |
+| 10 | Additional Language Support (FR + DE) | — |

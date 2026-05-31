@@ -36,7 +36,10 @@ export class SupabaseAdapter {
             if (this.onAuthChange) {
                 if (s) {
                     const profile = await this.fetchMyProfile();
-                    this.onAuthChange(profile ?? { id: s.user.id, email: s.user.email, role: 'user' });
+                    const resolved = profile
+                        ? { ...profile, email: profile.email ?? s.user.email ?? undefined }
+                        : { id: s.user.id, email: s.user.email, role: 'user' as const };
+                    this.onAuthChange(resolved);
                 } else {
                     this.onAuthChange(null);
                 }
@@ -243,6 +246,160 @@ export class SupabaseAdapter {
         if (!this.client) return { success: false, error: 'Not connected' };
         const { error } = await this.client.from('profiles').update({ role }).eq('id', userId);
         return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    // ── Schools ───────────────────────────────────────────────────────────────
+
+    async fetchSchools(): Promise<import('../../types').School[]> {
+        if (!this.client || !this.userId) return [];
+        const { data, error } = await this.client
+            .from('schools')
+            .select('id, name, created_by, retention_years, created_at')
+            .order('name');
+        if (error || !data) return [];
+        return data.map((s) => ({
+            id: s.id,
+            name: s.name,
+            createdBy: s.created_by ?? undefined,
+            retentionYears: s.retention_years ?? 3,
+            createdAt: s.created_at,
+        }));
+    }
+
+    async createSchool(name: string, retentionYears: number): Promise<import('../../types').School | null> {
+        if (!this.client || !this.userId) return null;
+        const { data, error } = await this.client
+            .from('schools')
+            .insert({ name, created_by: this.userId, retention_years: retentionYears })
+            .select()
+            .single();
+        if (error || !data) return null;
+
+        const { error: memberError } = await this.client
+            .from('school_members')
+            .insert({ school_id: data.id, profile_id: this.userId });
+        if (memberError) {
+            await this.client.from('schools').delete().eq('id', data.id);
+            return null;
+        }
+
+        const { error: profileError } = await this.client
+            .from('profiles')
+            .update({ school_id: data.id })
+            .eq('id', this.userId);
+        if (profileError) {
+            await this.client.from('school_members').delete().eq('school_id', data.id).eq('profile_id', this.userId);
+            await this.client.from('schools').delete().eq('id', data.id);
+            return null;
+        }
+
+        return {
+            id: data.id,
+            name: data.name,
+            createdBy: data.created_by,
+            retentionYears: data.retention_years,
+            createdAt: data.created_at,
+        };
+    }
+
+    async joinSchool(schoolId: string): Promise<SyncResult> {
+        if (!this.client || !this.userId) return { success: false, error: 'Not connected' };
+        const { error: memberError } = await this.client
+            .from('school_members')
+            .insert({ school_id: schoolId, profile_id: this.userId });
+        if (memberError) return { success: false, error: memberError.message };
+        const { error: profileError } = await this.client
+            .from('profiles')
+            .update({ school_id: schoolId })
+            .eq('id', this.userId);
+        if (profileError) {
+            await this.client.from('school_members').delete().eq('school_id', schoolId).eq('profile_id', this.userId);
+            return { success: false, error: profileError.message };
+        }
+        return { success: true };
+    }
+
+    async updateSchool(schoolId: string, updates: { name?: string; retentionYears?: number }): Promise<SyncResult> {
+        if (!this.client) return { success: false, error: 'Not connected' };
+        const patch: Record<string, unknown> = {};
+        if (updates.name !== undefined) patch.name = updates.name;
+        if (updates.retentionYears !== undefined) patch.retention_years = updates.retentionYears;
+        const { error } = await this.client.from('schools').update(patch).eq('id', schoolId);
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteSchool(schoolId: string): Promise<SyncResult> {
+        if (!this.client) return { success: false, error: 'Not connected' };
+        const { error } = await this.client.from('schools').delete().eq('id', schoolId);
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async fetchSchoolMembers(schoolId: string): Promise<(import('./types').DbUser & { joinedAt: string })[]> {
+        if (!this.client) return [];
+        const { data, error } = await this.client
+            .from('school_members')
+            .select('profile_id, created_at, profiles(id, email, display_name, role)')
+            .eq('school_id', schoolId);
+        if (error || !data) return [];
+        return data.map((m) => {
+            const p = m.profiles as unknown as {
+                id: string;
+                email?: string;
+                display_name?: string;
+                role: string;
+            } | null;
+            return {
+                id: p?.id ?? m.profile_id,
+                email: p?.email ?? undefined,
+                displayName: p?.display_name ?? undefined,
+                role: (p?.role ?? 'user') as 'admin' | 'user' | 'student',
+                joinedAt: m.created_at,
+            };
+        });
+    }
+
+    async removeSchoolMember(schoolId: string, profileId: string): Promise<SyncResult> {
+        if (!this.client) return { success: false, error: 'Not connected' };
+        const { error } = await this.client
+            .from('school_members')
+            .delete()
+            .eq('school_id', schoolId)
+            .eq('profile_id', profileId);
+        if (error) return { success: false, error: error.message };
+        const { error: profileError } = await this.client
+            .from('profiles')
+            .update({ school_id: null })
+            .eq('id', profileId)
+            .eq('school_id', schoolId);
+        if (profileError) {
+            const { error: rollbackError } = await this.client
+                .from('school_members')
+                .insert({ school_id: schoolId, profile_id: profileId });
+            return {
+                success: false,
+                error: rollbackError
+                    ? `${profileError.message}; rollback failed: ${rollbackError.message}`
+                    : profileError.message,
+            };
+        }
+        return { success: true };
+    }
+
+    async fetchMyProfileWithSchool(): Promise<(import('./types').DbUser & { schoolId?: string }) | null> {
+        if (!this.client || !this.userId) return null;
+        const { data, error } = await this.client
+            .from('profiles')
+            .select('id, email, display_name, role, school_id')
+            .eq('id', this.userId)
+            .single();
+        if (error || !data) return null;
+        return {
+            id: data.id,
+            email: data.email ?? undefined,
+            displayName: data.display_name ?? undefined,
+            role: (data.role as 'admin' | 'user' | 'student') ?? 'user',
+            schoolId: data.school_id ?? undefined,
+        };
     }
 
     disconnect() {
@@ -965,7 +1122,9 @@ export class SupabaseAdapter {
         return error ? { success: false, error: error.message } : { success: true };
     }
 
-    async fetchRubricShares(rubricId: string): Promise<{ userId: string; email?: string; displayName?: string; mode: 'read' | 'edit' }[]> {
+    async fetchRubricShares(
+        rubricId: string
+    ): Promise<{ userId: string; email?: string; displayName?: string; mode: 'read' | 'edit' }[]> {
         const { data, error } = await this.db()
             .from('rubric_shares')
             .select('user_id, mode, profiles(email, display_name)')
@@ -1023,7 +1182,9 @@ export class SupabaseAdapter {
         return error ? { success: false, error: error.message } : { success: true };
     }
 
-    async fetchClassMembers(classId: string): Promise<{ userId: string; email?: string; displayName?: string; role: 'viewer' | 'editor' }[]> {
+    async fetchClassMembers(
+        classId: string
+    ): Promise<{ userId: string; email?: string; displayName?: string; role: 'viewer' | 'editor' }[]> {
         const { data, error } = await this.db()
             .from('class_members')
             .select('user_id, role, profiles(email, display_name)')

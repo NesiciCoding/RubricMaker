@@ -213,134 +213,135 @@ export default function CefrOverviewGrid({ cells, targetLevel, lang }: Props) {
                         })}
 
                         {/* Expanded descriptor panel — spans full row */}
-                        {CEFR_LEVELS.some((level) => expandedKey === `${skill}__${level}`) && (() => {
-                            const activeLevel = CEFR_LEVELS.find((l) => expandedKey === `${skill}__${l}`)!;
-                            const cell = cellMap.get(`${skill}__${activeLevel}`)!;
-                            return (
-                                <div
-                                    style={{
-                                        gridColumn: '1 / -1',
-                                        background: 'var(--bg-card)',
-                                        border: '1px solid var(--border)',
-                                        borderRadius: 8,
-                                        padding: '12px 16px',
-                                        marginTop: 2,
-                                        marginBottom: 4,
-                                    }}
-                                >
+                        {CEFR_LEVELS.some((level) => expandedKey === `${skill}__${level}`) &&
+                            (() => {
+                                const activeLevel = CEFR_LEVELS.find((l) => expandedKey === `${skill}__${l}`)!;
+                                const cell = cellMap.get(`${skill}__${activeLevel}`)!;
+                                return (
                                     <div
                                         style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between',
-                                            marginBottom: 10,
+                                            gridColumn: '1 / -1',
+                                            background: 'var(--bg-card)',
+                                            border: '1px solid var(--border)',
+                                            borderRadius: 8,
+                                            padding: '12px 16px',
+                                            marginTop: 2,
+                                            marginBottom: 4,
                                         }}
                                     >
                                         <div
                                             style={{
                                                 display: 'flex',
                                                 alignItems: 'center',
-                                                gap: 8,
-                                                fontWeight: 600,
-                                                fontSize: '0.85rem',
+                                                justifyContent: 'space-between',
+                                                marginBottom: 10,
                                             }}
                                         >
-                                            <CefrBadge level={activeLevel} size="sm" />
-                                            <span>{CEFR_SKILL_LABELS[skill][lang]}</span>
-                                            <span
+                                            <div
                                                 style={{
-                                                    fontSize: '0.75rem',
-                                                    color: 'var(--text-muted)',
-                                                    fontWeight: 400,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 8,
+                                                    fontWeight: 600,
+                                                    fontSize: '0.85rem',
                                                 }}
                                             >
-                                                {t('cefrOverview.descriptors_title')}
-                                            </span>
-                                        </div>
-                                        <button
-                                            className="btn btn-ghost btn-sm btn-icon"
-                                            onClick={() => setExpandedKey(null)}
-                                            aria-label="Close"
-                                        >
-                                            <X size={14} />
-                                        </button>
-                                    </div>
-
-                                    {cell.descriptors.length === 0 ? (
-                                        <p
-                                            className="text-muted text-sm"
-                                            style={{ textAlign: 'center', padding: '8px 0' }}
-                                        >
-                                            {t('cefrOverview.cell_no_data')}
-                                        </p>
-                                    ) : (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                                            {cell.descriptors.map((d) => (
-                                                <div
-                                                    key={d.descriptorId}
+                                                <CefrBadge level={activeLevel} size="sm" />
+                                                <span>{CEFR_SKILL_LABELS[skill][lang]}</span>
+                                                <span
                                                     style={{
-                                                        display: 'flex',
-                                                        alignItems: 'flex-start',
-                                                        gap: 8,
-                                                        padding: '6px 8px',
-                                                        borderRadius: 6,
-                                                        background: d.confidentInSelfAssess
-                                                            ? `${CEFR_LEVEL_COLORS[activeLevel]}15`
-                                                            : 'var(--bg-elevated)',
+                                                        fontSize: '0.75rem',
+                                                        color: 'var(--text-muted)',
+                                                        fontWeight: 400,
                                                     }}
                                                 >
-                                                    {d.confidentInSelfAssess ? (
-                                                        <CheckCircle
-                                                            size={14}
-                                                            style={{
-                                                                color: CEFR_LEVEL_COLORS[activeLevel],
-                                                                flexShrink: 0,
-                                                                marginTop: 1,
-                                                            }}
-                                                        />
-                                                    ) : (
-                                                        <Circle
-                                                            size={14}
-                                                            style={{
-                                                                color: 'var(--text-muted)',
-                                                                flexShrink: 0,
-                                                                marginTop: 1,
-                                                                opacity: 0.5,
-                                                            }}
-                                                        />
-                                                    )}
-                                                    <div style={{ flex: 1 }}>
-                                                        <p
-                                                            style={{
-                                                                fontSize: '0.82rem',
-                                                                margin: 0,
-                                                                color: 'var(--text)',
-                                                                lineHeight: 1.5,
-                                                            }}
-                                                        >
-                                                            {lang === 'nl' ? d.descriptionNl : d.descriptionEn}
-                                                        </p>
-                                                        <span
-                                                            style={{
-                                                                fontSize: '0.72rem',
-                                                                color: d.confidentInSelfAssess
-                                                                    ? CEFR_LEVEL_COLORS[activeLevel]
-                                                                    : 'var(--text-muted)',
-                                                                fontWeight: 600,
-                                                            }}
-                                                        >
-                                                            {d.confidentInSelfAssess
-                                                                ? t('cefrOverview.descriptor_confident')
-                                                                : t('cefrOverview.descriptor_not_confident')}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            ))}
+                                                    {t('cefrOverview.descriptors_title')}
+                                                </span>
+                                            </div>
+                                            <button
+                                                className="btn btn-ghost btn-sm btn-icon"
+                                                onClick={() => setExpandedKey(null)}
+                                                aria-label="Close"
+                                            >
+                                                <X size={14} />
+                                            </button>
                                         </div>
-                                    )}
-                                </div>
-                            );
-                        })()}
+
+                                        {cell.descriptors.length === 0 ? (
+                                            <p
+                                                className="text-muted text-sm"
+                                                style={{ textAlign: 'center', padding: '8px 0' }}
+                                            >
+                                                {t('cefrOverview.cell_no_data')}
+                                            </p>
+                                        ) : (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                                {cell.descriptors.map((d) => (
+                                                    <div
+                                                        key={d.descriptorId}
+                                                        style={{
+                                                            display: 'flex',
+                                                            alignItems: 'flex-start',
+                                                            gap: 8,
+                                                            padding: '6px 8px',
+                                                            borderRadius: 6,
+                                                            background: d.confidentInSelfAssess
+                                                                ? `${CEFR_LEVEL_COLORS[activeLevel]}15`
+                                                                : 'var(--bg-elevated)',
+                                                        }}
+                                                    >
+                                                        {d.confidentInSelfAssess ? (
+                                                            <CheckCircle
+                                                                size={14}
+                                                                style={{
+                                                                    color: CEFR_LEVEL_COLORS[activeLevel],
+                                                                    flexShrink: 0,
+                                                                    marginTop: 1,
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            <Circle
+                                                                size={14}
+                                                                style={{
+                                                                    color: 'var(--text-muted)',
+                                                                    flexShrink: 0,
+                                                                    marginTop: 1,
+                                                                    opacity: 0.5,
+                                                                }}
+                                                            />
+                                                        )}
+                                                        <div style={{ flex: 1 }}>
+                                                            <p
+                                                                style={{
+                                                                    fontSize: '0.82rem',
+                                                                    margin: 0,
+                                                                    color: 'var(--text)',
+                                                                    lineHeight: 1.5,
+                                                                }}
+                                                            >
+                                                                {lang === 'nl' ? d.descriptionNl : d.descriptionEn}
+                                                            </p>
+                                                            <span
+                                                                style={{
+                                                                    fontSize: '0.72rem',
+                                                                    color: d.confidentInSelfAssess
+                                                                        ? CEFR_LEVEL_COLORS[activeLevel]
+                                                                        : 'var(--text-muted)',
+                                                                    fontWeight: 600,
+                                                                }}
+                                                            >
+                                                                {d.confidentInSelfAssess
+                                                                    ? t('cefrOverview.descriptor_confident')
+                                                                    : t('cefrOverview.descriptor_not_confident')}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })()}
                     </React.Fragment>
                 ))}
             </div>
@@ -400,7 +401,14 @@ export default function CefrOverviewGrid({ cells, targetLevel, lang }: Props) {
                 <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <span style={{ fontSize: '0.7rem' }}>✦</span>
                     {t('cefrOverview.target_level_label')}:{' '}
-                    <span style={{ outline: '2px solid var(--accent)', outlineOffset: 1, borderRadius: 3, padding: '0 3px' }}>
+                    <span
+                        style={{
+                            outline: '2px solid var(--accent)',
+                            outlineOffset: 1,
+                            borderRadius: 3,
+                            padding: '0 3px',
+                        }}
+                    >
                         B1
                     </span>
                 </span>

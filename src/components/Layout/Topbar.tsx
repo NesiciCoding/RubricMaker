@@ -3,6 +3,7 @@ import { Moon, Sun, Menu } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
 import { useMobileMenu } from '../../context/MobileMenuContext';
+import NotificationBell from './NotificationBell';
 
 interface TopbarProps {
     title: string;
@@ -26,6 +27,7 @@ export default function Topbar({ title, actions }: TopbarProps) {
             <span className="topbar-title">{title}</span>
             <div className="topbar-actions">
                 {actions}
+                <NotificationBell />
                 <button
                     className="btn btn-ghost btn-icon"
                     onClick={() => updateSettings({ theme: settings.theme === 'dark' ? 'light' : 'dark' })}

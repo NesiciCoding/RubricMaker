@@ -167,6 +167,30 @@ class StorageSyncService {
         return this.adapter.updateUserRole(userId, role);
     }
 
+    // ── Schools ───────────────────────────────────────────────────────────────
+
+    async fetchSchools() {
+        return this.adapter.fetchSchools();
+    }
+    async createSchool(name: string, retentionYears: number) {
+        return this.adapter.createSchool(name, retentionYears);
+    }
+    async joinSchool(schoolId: string) {
+        return this.adapter.joinSchool(schoolId);
+    }
+    async updateSchool(schoolId: string, updates: { name?: string; retentionYears?: number }) {
+        return this.adapter.updateSchool(schoolId, updates);
+    }
+    async deleteSchool(schoolId: string) {
+        return this.adapter.deleteSchool(schoolId);
+    }
+    async fetchSchoolMembers(schoolId: string) {
+        return this.adapter.fetchSchoolMembers(schoolId);
+    }
+    async removeSchoolMember(schoolId: string, profileId: string) {
+        return this.adapter.removeSchoolMember(schoolId, profileId);
+    }
+
     // ── Essay management (pass-through to adapter) ───────────────────────────
 
     async saveEssayAssignment(a: EssayAssignment): Promise<SyncResult> {
@@ -246,13 +270,31 @@ class StorageSyncService {
 
             // The profile.role is authoritative; always override whatever userRole
             // is stored in user_settings so the DB is the single source of truth.
-            const mergedSettings = profile?.role
+            // If the profile has no school_id the user needs to complete onboarding.
+            const profileFull = await this.adapter.fetchMyProfileWithSchool();
+            let mergedSettings = profile?.role
                 ? {
                       ...(settings ?? {}),
                       userRole: profile.role,
                       ...(profile.email ? { userEmail: profile.email } : {}),
                   }
                 : (settings ?? undefined);
+
+            if (mergedSettings && profileFull) {
+                if (!profileFull.schoolId) {
+                    mergedSettings = { ...mergedSettings, needsOnboarding: true };
+                } else {
+                    // Fetch school name to store alongside the id
+                    const schools = await this.adapter.fetchSchools();
+                    const school = schools.find((s) => s.id === profileFull.schoolId);
+                    mergedSettings = {
+                        ...mergedSettings,
+                        needsOnboarding: false,
+                        schoolId: profileFull.schoolId,
+                        schoolName: school?.name,
+                    };
+                }
+            }
 
             const result: Partial<StoreData> = {
                 rubrics,

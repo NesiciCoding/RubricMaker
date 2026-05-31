@@ -8,13 +8,7 @@ interface SkeletonProps {
 }
 
 export function Skeleton({ width = '100%', height = '1rem', borderRadius = 'var(--radius)', style }: SkeletonProps) {
-    return (
-        <div
-            className="skeleton"
-            style={{ width, height: height, borderRadius, ...style }}
-            aria-hidden="true"
-        />
-    );
+    return <div className="skeleton" style={{ width, height: height, borderRadius, ...style }} aria-hidden="true" />;
 }
 
 export function SkeletonText({ lines = 3, gap = '0.5rem' }: { lines?: number; gap?: string }) {

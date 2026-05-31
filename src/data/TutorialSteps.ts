@@ -32,10 +32,11 @@ export function getTutorialSteps(t: TFunction): Step[] {
             skipBeacon: true,
         },
         {
-            target: '.compare-btn-tutorial',
-            title: t('tutorial.step_comparative_title'),
-            content: t('tutorial.step_comparative_content'),
-            placement: 'bottom',
+            target: '[data-tour="/cefr-overview"]',
+            title: t('tutorial.step_cefr_title'),
+            content: t('tutorial.step_cefr_content'),
+            placement: 'right',
+            skipBeacon: true,
         },
         {
             target: '[data-tour="/attachments"]',

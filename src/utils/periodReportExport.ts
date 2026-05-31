@@ -33,7 +33,9 @@ const NO_BORDER = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
 
 function headerCell(text: string): TableCell {
     return new TableCell({
-        children: [new Paragraph({ children: [new TextRun({ text, bold: true, size: 20 })], alignment: AlignmentType.LEFT })],
+        children: [
+            new Paragraph({ children: [new TextRun({ text, bold: true, size: 20 })], alignment: AlignmentType.LEFT }),
+        ],
         width: { size: 25, type: WidthType.PERCENTAGE },
         borders: { top: BORDER, bottom: BORDER, left: NO_BORDER, right: NO_BORDER },
         shading: { fill: 'F3F4F6' },
@@ -108,12 +110,7 @@ export async function exportPeriodReport(input: PeriodReportInput): Promise<void
 
     const tableRows: TableRow[] = [
         new TableRow({
-            children: [
-                headerCell('Assignment'),
-                headerCell('Date'),
-                headerCell('Score'),
-                headerCell('Grade'),
-            ],
+            children: [headerCell('Assignment'), headerCell('Date'), headerCell('Score'), headerCell('Grade')],
         }),
         ...summaries.map(
             (s) =>

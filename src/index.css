@@ -893,12 +893,7 @@ select.input-error {
 }
 
 .skeleton {
-    background: linear-gradient(
-        90deg,
-        var(--bg-elevated) 25%,
-        var(--border-light) 50%,
-        var(--bg-elevated) 75%
-    );
+    background: linear-gradient(90deg, var(--bg-elevated) 25%, var(--border-light) 50%, var(--bg-elevated) 75%);
     background-size: 800px 100%;
     animation: shimmer 1.4s ease-in-out infinite;
     display: block;
@@ -944,27 +939,75 @@ select.input-error {
     animation: fadeIn 0.25s ease;
 }
 
+/* ─── Print-only elements (hidden on screen) ────────────────────────────────── */
+.print-only {
+    display: none;
+}
+
 /* ─── Print styles ───────────────────────────────────────────────────────────── */
 @media print {
     .sidebar,
     .topbar,
+    .grade-footer,
     .no-print {
         display: none !important;
     }
 
-    .page-content {
-        padding: 0;
-        overflow: visible;
+    .print-only {
+        display: block !important;
     }
 
+    /* Full-width layout — sidebar is off-screen */
+    .app-layout {
+        display: block !important;
+    }
+    .main-area {
+        margin-left: 0 !important;
+        width: 100% !important;
+    }
+    .page-content {
+        padding: 8px !important;
+        overflow: visible !important;
+        max-width: 100% !important;
+    }
+
+    /* Flat cards for print */
+    .card {
+        box-shadow: none !important;
+        border: 1px solid #ddd !important;
+    }
+
+    /* Avoid splitting a criterion across pages */
+    .print-criterion {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    /* Level buttons: compact + highlight selection */
+    .level-btn {
+        min-height: unset !important;
+        padding: 8px 10px !important;
+    }
+    .level-btn.selected {
+        background: #dbeafe !important;
+        border-color: #3b82f6 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* Rubric grid (designer view) */
     .rubric-grid {
         font-size: 11px;
     }
-
     .rubric-grid .level-cell.selected {
         background: #dbeafe !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
+    }
+
+    /* RubricBuilder: hide format-panel column */
+    .rubric-builder-layout {
+        grid-template-columns: 1fr !important;
     }
 }
 
@@ -1043,6 +1086,34 @@ select.input-error {
 
     .page-content {
         padding: 16px;
+    }
+
+    /* Grade footer spans full width when sidebar is an overlay */
+    .grade-footer {
+        left: 0;
+        padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    }
+}
+
+/* ─── Tablet / iPad optimisation (≤ 1024 px) ─────────────────────────────────── */
+@media (max-width: 1024px) {
+    /* Larger level-selection tap targets */
+    .level-btn {
+        min-height: 64px;
+        padding: 16px;
+    }
+
+    /* Speaking session: larger tap targets for timer and pronunciation buttons */
+    .speaking-timer-btn {
+        min-height: 48px;
+        padding: 10px 20px;
+        font-size: 0.9rem;
+    }
+
+    .speaking-error-btn {
+        min-height: 48px;
+        padding: 10px 16px;
+        font-size: 0.875rem;
     }
 }
 

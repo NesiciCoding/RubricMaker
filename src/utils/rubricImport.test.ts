@@ -9,11 +9,9 @@ import {
 
 // Mock dynamic imports
 vi.mock('mammoth', () => ({
-    convertToHtml: vi
-        .fn()
-        .mockResolvedValue({
-            value: '<table><tr><td>Crit</td><td>Good</td></tr><tr><td>C1</td><td>L1</td></tr></table>',
-        }),
+    convertToHtml: vi.fn().mockResolvedValue({
+        value: '<table><tr><td>Crit</td><td>Good</td></tr><tr><td>C1</td><td>L1</td></tr></table>',
+    }),
 }));
 
 vi.mock('pdfjs-dist', () => ({

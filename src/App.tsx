@@ -2,6 +2,7 @@ import React, { Suspense, lazy, useMemo, useState } from 'react';
 import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import Sidebar from './components/Layout/Sidebar';
 import { Joyride, STATUS } from 'react-joyride';
+import type { EventData } from 'react-joyride';
 import { useApp } from './context/AppContext';
 import { MobileMenuContext } from './context/MobileMenuContext';
 import { getTutorialSteps } from './data/TutorialSteps';
@@ -29,7 +30,10 @@ const SelfAssessPage = lazy(() => import('./pages/SelfAssessPage'));
 const SpeakingSession = lazy(() => import('./pages/SpeakingSession'));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 const StudentCefrOverviewPage = lazy(() => import('./pages/StudentCefrOverviewPage'));
+const CefrOverviewPage = lazy(() => import('./pages/CefrOverviewPage'));
 const StudentPortalPage = lazy(() => import('./pages/StudentPortalPage'));
+const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
+const AdminPage = lazy(() => import('./pages/AdminPage'));
 
 // Forces GradeStudent to remount when studentId changes so useState re-initialises.
 function GradeStudentRoute() {
@@ -65,6 +69,14 @@ export default function App() {
 
     if (showLanding) return <LandingPage />;
 
+    if (settings.needsOnboarding) {
+        return (
+            <Suspense fallback={<Spinner />}>
+                <OnboardingPage />
+            </Suspense>
+        );
+    }
+
     // Resolve student link regardless of role so new sign-ups (default role='user')
     // are auto-detected without requiring a manual admin role change.
     const linkedStudent = settings.userEmail
@@ -76,11 +88,29 @@ export default function App() {
     if (settings.userRole === 'student' || (linkedStudent !== null && settings.userRole !== 'admin')) {
         if (!linkedStudent) {
             return (
-                <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', flexDirection: 'column', gap: 16, padding: 24, textAlign: 'center' }}>
+                <div
+                    style={{
+                        minHeight: '100vh',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: 'var(--bg)',
+                        flexDirection: 'column',
+                        gap: 16,
+                        padding: 24,
+                        textAlign: 'center',
+                    }}
+                >
                     <GraduationCap size={40} style={{ color: 'var(--text-muted)', opacity: 0.5 }} />
-                    <p style={{ margin: 0, fontWeight: 600, color: 'var(--text)' }}>{t('studentPortal.no_linked_account')}</p>
-                    <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)', maxWidth: 360 }}>{t('studentPortal.no_linked_account_detail')}</p>
-                    <button className="btn btn-secondary btn-sm" onClick={signOutFromDatabase}>{t('studentPortal.sign_out')}</button>
+                    <p style={{ margin: 0, fontWeight: 600, color: 'var(--text)' }}>
+                        {t('studentPortal.no_linked_account')}
+                    </p>
+                    <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)', maxWidth: 360 }}>
+                        {t('studentPortal.no_linked_account_detail')}
+                    </p>
+                    <button className="btn btn-secondary btn-sm" onClick={signOutFromDatabase}>
+                        {t('studentPortal.sign_out')}
+                    </button>
                 </div>
             );
         }
@@ -98,10 +128,8 @@ export default function App() {
         );
     }
 
-    const handleJoyrideCallback = (data: { status: string }) => {
-        const { status } = data;
-        const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
-        if (finishedStatuses.includes(status)) {
+    const handleJoyrideCallback = (data: EventData) => {
+        if (data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED) {
             updateSettings({ hasSeenTutorial: true });
         }
     };
@@ -119,13 +147,13 @@ export default function App() {
                     continuous
                     onEvent={handleJoyrideCallback}
                     options={{
+                        showProgress: true,
+                        buttons: ['back', 'skip', 'primary'],
                         primaryColor: 'var(--accent)',
                         backgroundColor: 'var(--bg-elevated)',
                         textColor: 'var(--text)',
                         arrowColor: 'var(--bg-elevated)',
                         overlayColor: 'rgba(0, 0, 0, 0.6)',
-                        showProgress: true,
-                        buttons: ['back', 'skip', 'primary'],
                     }}
                     styles={{
                         tooltipContainer: {
@@ -150,12 +178,19 @@ export default function App() {
                                 <Route path="/students" element={<StudentsPage />} />
                                 <Route path="/students/:id" element={<StudentProfilePage />} />
                                 <Route path="/students/:id/cefr-overview" element={<StudentCefrOverviewPage />} />
+                                <Route path="/cefr-overview" element={<CefrOverviewPage />} />
                                 <Route path="/portal/:studentId" element={<StudentPortalPage />} />
                                 <Route path="/attachments" element={<AttachmentsPage />} />
                                 <Route path="/export" element={<ExportPage />} />
                                 <Route path="/statistics" element={<StatisticsPage />} />
                                 <Route path="/comments" element={<CommentBankPage />} />
                                 <Route path="/settings" element={<SettingsPage />} />
+                                <Route
+                                    path="/admin"
+                                    element={
+                                        settings.userRole === 'admin' ? <AdminPage /> : <Navigate to="/" replace />
+                                    }
+                                />
                                 <Route path="/privacy" element={<PrivacyPage />} />
                                 <Route path="*" element={<NotFoundPage />} />
                             </Routes>

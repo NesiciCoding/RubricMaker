@@ -45,6 +45,21 @@ export interface LinkedCefrDescriptor {
     descriptionNl: string;
 }
 
+/** Framework type for non-CEFR assessment frameworks */
+export type AssessmentFramework = 'ib' | 'blooms';
+
+/** A descriptor from IB Learner Profile or Bloom's Taxonomy linked to a rubric criterion */
+export interface LinkedFrameworkDescriptor {
+    descriptorId: string;
+    framework: AssessmentFramework;
+    categoryId: string;
+    categoryLabelEn: string;
+    categoryLabelNl: string;
+    categoryColor: string;
+    descriptionEn: string;
+    descriptionNl: string;
+}
+
 /** A single item inside a level — awarded via checkbox or scored via points */
 export interface SubItem {
     id: string;
@@ -85,6 +100,8 @@ export interface RubricCriterion {
     linkedStandards?: LinkedStandard[];
     /** CEFR Can-Do statements linked to this criterion */
     cefrDescriptors?: LinkedCefrDescriptor[];
+    /** IB Learner Profile or Bloom's Taxonomy descriptors linked to this criterion */
+    frameworkDescriptors?: LinkedFrameworkDescriptor[];
 }
 
 export type GradeScaleType = 'letter' | 'percentage' | 'points' | 'pass-fail' | 'custom';
@@ -254,7 +271,10 @@ export interface Student {
     id: string;
     name: string;
     email?: string;
+    studentNumber?: string;
     classId: string;
+    /** ISO timestamp set when PII was anonymized; presence means the record is anonymized. */
+    anonymizedAt?: string;
 }
 
 export type VoTrack = 'vmbo-bb' | 'vmbo-kb' | 'vmbo-tl' | 'havo' | 'vwo';
@@ -307,6 +327,12 @@ export interface StudentRubric {
     isAnchor?: boolean;
     /** Peer review round number (1-based); undefined means single/legacy round */
     round?: number;
+    /** Student's own level selection per criterion (rubric-level self-assessment) */
+    selfAssessmentLevels?: Record<string, string | null>;
+    /** Free text student self-reflection for this rubric grade */
+    selfAssessmentReflection?: string;
+    /** ISO timestamp when student last submitted their self-assessment */
+    selfAssessedAt?: string;
     /** Snapshot of the rubric at the time of grading to ensure historical grades do not break */
     rubricSnapshot?: Rubric;
 }
@@ -319,6 +345,21 @@ export interface CommentSnippet {
 
 /** Role controlling which settings a user can access */
 export type UserRole = 'admin' | 'user' | 'student';
+
+export interface School {
+    id: string;
+    name: string;
+    createdBy?: string;
+    retentionYears: number;
+    createdAt: string;
+}
+
+export interface SchoolMember {
+    id: string;
+    schoolId: string;
+    profileId: string;
+    createdAt: string;
+}
 
 export interface AppSettings {
     defaultGradeScaleId: string;
@@ -348,12 +389,20 @@ export interface AppSettings {
     userRole?: UserRole;
     /** Email of the currently authenticated user (populated from Supabase profile on login). */
     userEmail?: string;
+    /** Days since last grading before a student is considered overdue (default 7). */
+    overdueReminderThreshold?: number;
     /**
      * Password required to switch back to admin from a lower-privilege role.
      * Stored as plain text; this is UI access control, not cryptographic security.
      * If undefined, no password is required.
      */
     adminPin?: string;
+    /** Set by StorageSync when a Supabase-authenticated user has no school assigned yet. */
+    needsOnboarding?: boolean;
+    /** Supabase school ID of the user's school (populated on login). */
+    schoolId?: string;
+    /** Display name of the user's school (populated on login). */
+    schoolName?: string;
 }
 
 export interface CommentBankItem {

@@ -76,7 +76,9 @@ export default function StandardsCoveragePanel({ standardSets }: Props) {
                                     className={scoreBadgeClass(std.avgScore, std.rubricCount)}
                                     style={{ flexShrink: 0, alignSelf: 'center' }}
                                 >
-                                    {std.rubricCount > 0 ? `${Math.round(std.avgScore)}%` : t('cefrOverview.standard_no_score')}
+                                    {std.rubricCount > 0
+                                        ? `${Math.round(std.avgScore)}%`
+                                        : t('cefrOverview.standard_no_score')}
                                 </span>
                             </div>
                         ))}
