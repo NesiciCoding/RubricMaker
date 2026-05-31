@@ -15,6 +15,7 @@ function extractContext(text: string, matchIndex: number, matchLength: number): 
     return snippet;
 }
 
+/** Scans text for whole-word occurrences of each vocabulary item, returning match counts and surrounding context snippets. */
 export function analyseVocabulary(text: string, items: VocabularyItem[]): DetectedItem[] {
     return items.map((item) => {
         const pattern = new RegExp(`\\b${escapeRegex(item.phrase)}\\b`, 'gi');

@@ -110,6 +110,10 @@ const DESCRIPTOR_MAP = new Map(CEFR_DESCRIPTORS.map((d) => [d.id, d]));
  *  - `standardsCovered`: number of distinct linked standards found
  */
 
+/**
+ * Aggregates graded rubrics and self-assessments for one student into a full CEFR
+ * skill/level grid, including confidence rates and linked standards breakdown.
+ */
 export function getCefrStudentOverview(
     studentId: string,
     studentRubrics: StudentRubric[],
