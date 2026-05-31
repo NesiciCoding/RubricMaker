@@ -74,16 +74,17 @@ export default function DocumentAnalysisPanel({
     const [appliedSubItems, setAppliedSubItems] = useState<Set<string>>(new Set());
     const [addedToBank, setAddedToBank] = useState<Set<string>>(new Set());
 
+    const extractedText = result?.extractedText ?? null;
     const cefrProfile = useMemo<CefrTextProfile | null>(() => {
-        if (!result?.extractedText) return null;
-        const vocabulary = profileText(result.extractedText);
-        const grammar = profileGrammar(result.extractedText);
+        if (!extractedText) return null;
+        const vocabulary = profileText(extractedText);
+        const grammar = profileGrammar(extractedText);
         const LEVEL_ORDER: CefrLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
         const vocabIdx = LEVEL_ORDER.indexOf(vocabulary.estimatedLevel);
         const grammarIdx = LEVEL_ORDER.indexOf(grammar.estimatedLevel);
         const overallEstimatedLevel = LEVEL_ORDER[Math.max(vocabIdx, grammarIdx)];
         return { vocabulary, grammar, overallEstimatedLevel };
-    }, [result?.extractedText]);
+    }, [extractedText]);
 
     const selectedAttachment = studentAttachments.find((a) => a.id === selectedAttachmentId);
     const isAudioVideo =
