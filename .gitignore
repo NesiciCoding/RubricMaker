@@ -13,6 +13,11 @@ coverage
 # Copy scripts/deploy.example.sh → scripts/deploy.sh and fill in your values
 scripts/deploy.sh
 
+# Playwright output
+playwright-report/
+playwright-results/
+test-results/
+
 # Backup output
 backups/
 
