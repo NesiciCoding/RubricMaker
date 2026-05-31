@@ -225,7 +225,12 @@ function load<T>(key: string, fallback: T): T {
 }
 
 function save<T>(key: string, value: T): void {
-    localStorage.setItem(key, JSON.stringify(value));
+    try {
+        localStorage.setItem(key, JSON.stringify(value));
+    } catch (e) {
+        console.error(`[storage] write failed for "${key}" (quota exceeded?)`, e);
+        throw e;
+    }
 }
 
 // ─── Store ─────────────────────────────────────────────────────────────────────

@@ -50,9 +50,11 @@ import {
     saveAnalysisResults,
     importFullBackup,
 } from '../store/storage';
+import { useTranslation } from 'react-i18next';
 import { nanoid } from '../utils/nanoid';
 import { storageSync, loadSupabaseConfig, saveSupabaseConfig } from '../services/database';
 import type { DatabaseConfig, DbUser, SyncResult } from '../services/database';
+import { useToast } from '../hooks/useToast';
 
 // ─── Actions ───────────────────────────────────────────────────────────────────
 
@@ -600,6 +602,8 @@ async function flushToLocalStorage(merged: StoreData) {
 export function AppProvider({ children }: { children: ReactNode }) {
     const [state, dispatch] = useReducer(reducer, null, loadStore);
     const initialStateRef = useRef(state);
+    const { showToast } = useToast();
+    const { t } = useTranslation();
 
     // 'checking' while we detect session; 'show' = show landing; 'hide' = in app
     const [landingState, setLandingState] = useState<'checking' | 'show' | 'hide'>('checking');
@@ -643,39 +647,56 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 setLandingState('show');
                 return;
             }
-            const fresh = await storageSync.hydrate();
+            storageSync.setToastFn(showToast);
+            const { data: fresh, error: hydrateError } = await storageSync.hydrate();
+            if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
             if (fresh) {
                 const merged = { ...initialStateRef.current, ...fresh } as StoreData;
                 dispatch({ type: 'SET_ALL', payload: merged });
-                flushToLocalStorage(merged);
+                try {
+                    await flushToLocalStorage(merged);
+                } catch {
+                    showToast(t('toast.storage_full'), 'error');
+                }
             }
             setLandingState('hide');
         }
 
-        storageSync.initAuth(config).then(async () => {
-            if (!storageSync.hasSession()) {
-                setLandingState('show');
-                return;
-            }
-
-            // Session already existed on startup — connect and hydrate immediately
-            await configureAndEnter(config);
-
-            // Show migration prompt once if local data exists and hasn't been migrated
-            if (localStorage.getItem(MIGRATION_DONE_KEY) !== 'true') {
-                const s = initialStateRef.current;
-                if (s.rubrics.length > 0 || s.students.length > 0 || s.classes.length > 0) {
-                    setShowMigrationPrompt(true);
+        storageSync
+            .initAuth(config)
+            .then(async () => {
+                if (!storageSync.hasSession()) {
+                    setLandingState('show');
+                    return;
                 }
-            }
-        });
+
+                // Session already existed on startup — connect and hydrate immediately
+                await configureAndEnter(config);
+
+                // Show migration prompt once if local data exists and hasn't been migrated
+                if (localStorage.getItem(MIGRATION_DONE_KEY) !== 'true') {
+                    const s = initialStateRef.current;
+                    if (s.rubrics.length > 0 || s.students.length > 0 || s.classes.length > 0) {
+                        setShowMigrationPrompt(true);
+                    }
+                }
+            })
+            .catch((e) => {
+                console.error('[auth] initAuth failed', e);
+                setLandingState('show');
+            });
 
         // Listen for sign-in that happens while the landing page is showing (e.g., OTP)
         const unsubAuth = storageSync.onAuthChange(async (user) => {
             if (!user) return;
             const cfg = loadSupabaseConfig();
             if (!cfg) return;
-            await configureAndEnter(cfg);
+            try {
+                await configureAndEnter(cfg);
+            } catch (e) {
+                console.error('[auth] onAuthChange configure failed', e);
+                setLandingState('show');
+            }
         });
 
         return () => unsubAuth();
@@ -689,18 +710,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const config = loadSupabaseConfig();
             if (!config) return;
             setLandingState('checking');
-            const ok = await storageSync.configure(config);
-            if (!ok) {
+            try {
+                const ok = await storageSync.configure(config);
+                if (!ok) {
+                    setLandingState('show');
+                    return;
+                }
+                storageSync.setToastFn(showToast);
+                const { data: fresh, error: hydrateError } = await storageSync.hydrate();
+                if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
+                if (fresh) {
+                    const merged = { ...initialStateRef.current, ...fresh } as StoreData;
+                    dispatch({ type: 'SET_ALL', payload: merged });
+                    try {
+                        await flushToLocalStorage(merged);
+                    } catch {
+                        showToast(t('toast.storage_full'), 'error');
+                    }
+                }
+                setLandingState('hide');
+            } catch (e) {
+                console.error('[auth] OTP login flow failed', e);
                 setLandingState('show');
-                return;
             }
-            const fresh = await storageSync.hydrate();
-            if (fresh) {
-                const merged = { ...initialStateRef.current, ...fresh } as StoreData;
-                dispatch({ type: 'SET_ALL', payload: merged });
-                flushToLocalStorage(merged);
-            }
-            setLandingState('hide');
         });
     }, []);
 
@@ -967,14 +999,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const ok = await storageSync.configure(config);
             if (ok) {
                 saveSupabaseConfig(config);
-                const fresh = await storageSync.hydrate();
+                storageSync.setToastFn(showToast);
+                const { data: fresh, error: hydrateError } = await storageSync.hydrate();
+                if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
                 if (fresh) {
                     const merged = { ...state, ...fresh } as StoreData;
                     dispatch({ type: 'SET_ALL', payload: merged });
+                    try {
+                        await flushToLocalStorage(merged);
+                    } catch {
+                        showToast(t('toast.storage_full'), 'error');
+                    }
                 }
             }
             return ok;
         },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [state]
     );
 
@@ -987,11 +1027,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }, [state]);
 
     const pullFromDatabase = useCallback(async () => {
-        const fresh = await storageSync.hydrate();
+        const { data: fresh, error: hydrateError } = await storageSync.hydrate();
+        if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
         if (fresh) {
             const merged = { ...state, ...fresh } as StoreData;
             dispatch({ type: 'SET_ALL', payload: merged });
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [state]);
 
     const fetchAllUsers = useCallback((): Promise<DbUser[]> => {

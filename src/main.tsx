@@ -12,6 +12,10 @@ const StudentFeedbackPage = lazy(() => import('./pages/StudentFeedbackPage'));
 const RubricPreviewPage = lazy(() => import('./pages/RubricPreviewPage'));
 const StudentEssayPage = lazy(() => import('./pages/StudentEssayPage'));
 
+window.addEventListener('unhandledrejection', (event) => {
+    console.error('[unhandled rejection]', event.reason);
+});
+
 const root = ReactDOM.createRoot(document.getElementById('root')!);
 
 const STUDENT_ROUTES = ['/feedback/', '/preview/', '/essay/'];
@@ -34,11 +38,11 @@ function renderApp() {
                         <Route
                             path="*"
                             element={
-                                <AppProvider>
-                                    <ToastProvider>
+                                <ToastProvider>
+                                    <AppProvider>
                                         <App />
-                                    </ToastProvider>
-                                </AppProvider>
+                                    </AppProvider>
+                                </ToastProvider>
                             }
                         />
                     </Routes>

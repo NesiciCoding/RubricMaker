@@ -50,6 +50,8 @@ class StorageSyncService {
     private lastSyncAt: string | null = localStorage.getItem(LAST_SYNC_KEY);
     private listeners: Set<() => void> = new Set();
     private authListeners: Set<(user: DbUser | null) => void> = new Set();
+    private pushOneFailCount = 0;
+    private toastFn: ((msg: string, type?: 'success' | 'error' | 'info' | 'warning') => void) | null = null;
 
     // ── Status ────────────────────────────────────────────────────────────────
 
@@ -79,6 +81,10 @@ class StorageSyncService {
     onAuthChange(cb: (user: DbUser | null) => void): () => void {
         this.authListeners.add(cb);
         return () => this.authListeners.delete(cb);
+    }
+
+    setToastFn(fn: (msg: string, type?: 'success' | 'error' | 'info' | 'warning') => void) {
+        this.toastFn = fn;
     }
 
     private notifyListeners() {
@@ -223,8 +229,8 @@ class StorageSyncService {
 
     // ── Hydration (DB → app state) ────────────────────────────────────────────
 
-    async hydrate(): Promise<Partial<StoreData> | null> {
-        if (!this.adapter.isConnected()) return null;
+    async hydrate(): Promise<{ data: Partial<StoreData> | null; error?: string }> {
+        if (!this.adapter.isConnected()) return { data: null };
         this.setStatus('syncing');
         try {
             const [
@@ -319,11 +325,11 @@ class StorageSyncService {
                 if (result[k as keyof StoreData] === undefined) delete result[k as keyof StoreData];
             });
 
-            return result;
+            return { data: result };
         } catch (e) {
-            console.error('StorageSync.hydrate failed', e);
+            console.error('[sync] hydrate failed', e);
             this.setStatus('error');
-            return null;
+            return { data: null, error: String(e) };
         }
     }
 
@@ -436,8 +442,13 @@ class StorageSyncService {
                         await this.adapter.saveSettings(payload as import('../../types').AppSettings);
                     break;
             }
+            this.pushOneFailCount = 0;
         } catch (e) {
-            console.warn(`StorageSync.pushOne(${entity}, ${action}) failed`, e);
+            console.warn(`[sync] pushOne(${entity}, ${action}) failed`, e);
+            this.pushOneFailCount++;
+            if (this.pushOneFailCount === 3 && this.toastFn) {
+                this.toastFn('Changes may not be synced — check your connection.', 'warning');
+            }
         }
     }
 }
