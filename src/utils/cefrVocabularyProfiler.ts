@@ -17,7 +17,7 @@ const SKIP_WORDS = new Set([
 
 // Strip possessives and common suffixes to reach root form (lightweight lemmatiser)
 function normalise(word: string): string[] {
-  const w = word.toLowerCase().replace(/['']/g, "'").replace(/'s$/, '');
+  const w = word.toLowerCase().replace(/[\u2018\u2019]/g, "'").replace(/'s$/, '');
   const candidates: string[] = [w];
   // -ing → base (running → run, making → make)
   if (w.endsWith('ing') && w.length > 5) {
