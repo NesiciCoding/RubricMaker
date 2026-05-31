@@ -23,6 +23,7 @@ export interface LearningGoalAggregate {
 
 import { Rubric, StudentRubric, LinkedStandard } from '../types';
 
+/** Aggregates per-standard scores across all graded rubrics for a single student, sorted chronologically. */
 export function getStudentGoalScores(
     studentId: string,
     studentRubrics: StudentRubric[],
@@ -200,6 +201,7 @@ export function getStudentGoalScores(
     return Array.from(goalMap.values());
 }
 
+/** Merges per-standard scores across all students in a class into class-level aggregates. */
 export function getClassGoalScores(
     classId: string,
     students: { id: string; classId: string }[],

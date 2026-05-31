@@ -92,6 +92,7 @@ export function calcPercentage(entries: ScoreEntry[], criteria: RubricCriterion[
 
 // ─── Modifier ─────────────────────────────────────────────────────────────────
 
+/** Adjusts a 0–100 score by a modifier (percentage offset, flat points, or level steps). */
 export function applyModifier(score: number, modifier?: Modifier): number {
     if (!modifier) return score;
     switch (modifier.type) {
@@ -116,10 +117,12 @@ function matchRange(percentage: number, scale: GradeScale): GradeRange | undefin
     return sorted.find((r) => percentage >= r.min);
 }
 
+/** Returns the letter/label for a percentage score on the given grade scale. */
 export function calcLetterGrade(percentage: number, scale: GradeScale): string {
     return matchRange(percentage, scale)?.label ?? '—';
 }
 
+/** Returns the hex color for a percentage score on the given grade scale. */
 export function calcGradeColor(percentage: number, scale: GradeScale): string {
     return matchRange(percentage, scale)?.color ?? '#6b7280';
 }
@@ -138,6 +141,7 @@ export interface GradeSummary {
     totalCriteria: number;
 }
 
+/** Computes the full grade summary (raw score, percentage, letter grade, counts) for a single student rubric. */
 export function calcGradeSummary(
     sr: StudentRubric,
     criteria: RubricCriterion[],
@@ -186,6 +190,7 @@ export interface ClassStats {
     distribution: { label: string; count: number; color: string }[];
 }
 
+/** Derives class-level statistics (average, median, hi/lo, grade distribution) from an array of grade summaries. */
 export function calcClassStats(summaries: GradeSummary[], scale: GradeScale | null): ClassStats {
     if (summaries.length === 0) {
         return { average: 0, median: 0, highest: 0, lowest: 0, distribution: [] };

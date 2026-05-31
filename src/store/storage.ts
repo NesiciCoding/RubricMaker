@@ -248,6 +248,7 @@ export interface StoreData {
     analysisResults: DocumentAnalysisResult[];
 }
 
+/** Loads all app data from localStorage, returning defaults for any key that is absent or unparseable. */
 export function loadStore(): StoreData {
     return {
         rubrics: load<Rubric[]>(KEYS.rubrics, []),

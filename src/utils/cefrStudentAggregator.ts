@@ -76,6 +76,10 @@ const DESCRIPTOR_MAP = new Map(CEFR_DESCRIPTORS.map((d) => [d.id, d]));
 
 // ─── Main function ────────────────────────────────────────────────────────────
 
+/**
+ * Aggregates graded rubrics and self-assessments for one student into a full CEFR
+ * skill/level grid, including confidence rates and linked standards breakdown.
+ */
 export function getCefrStudentOverview(
     studentId: string,
     studentRubrics: StudentRubric[],
