@@ -52,6 +52,13 @@ async function checkWithLanguageTool(text: string, language: string): Promise<Gr
     }));
 }
 
+/**
+ * Detects likely sentence fragments and repeated consecutive words in the input text.
+ *
+ * Detects sentences that appear to lack a verb (possible fragments) and occurrences of repeated consecutive words (e.g., "the the"), returning one GrammarError entry per finding.
+ *
+ * @returns An array of GrammarError objects describing each detected issue.
+ */
 async function checkWithCompromise(text: string): Promise<GrammarError[]> {
     const errors: GrammarError[] = [];
     const doc = nlp(text);
@@ -214,8 +221,13 @@ const GRAMMAR_PATTERNS: GrammarPattern[] = [
 ];
 
 /**
- * Detect grammatical structures in text and map them to CEFR levels.
- * Uses CEFR-J grammar profile data as the level reference.
+ * Analyze text for CEFR-graded grammatical structures and produce a CEFR profile.
+ *
+ * Scans the input for a curated set of grammar patterns and reports each detected
+ * structure with its CEFR level and occurrence count. The overall `estimatedLevel`
+ * is the highest CEFR level found among detected structures.
+ *
+ * @returns An object containing `detectedStructures` (an array of detected grammar hits with `label`, `level`, `count`, and `shorthand`) and `estimatedLevel` (the highest CEFR level detected, one of `A1` through `C2`)
  */
 export function profileGrammar(text: string): CefrGrammarProfile {
   const doc = nlp(text);
@@ -239,6 +251,12 @@ export function profileGrammar(text: string): CefrGrammarProfile {
   return { detectedStructures: detected, estimatedLevel };
 }
 
+/**
+ * Checks the given text for grammatical issues, preferring LanguageTool and falling back to a local compromise-based detector.
+ *
+ * @param language - BCP 47 language tag to request from LanguageTool (default: 'en-US')
+ * @returns An object with `errors` (detected grammar issues), `source` (which detector produced the results: `'languagetool'` or `'compromise'`), and `textWasTruncated` (`true` if the submitted text was truncated to meet the service byte limit)
+ */
 export async function checkGrammar(
     text: string,
     language = 'en-US'

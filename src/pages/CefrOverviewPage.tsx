@@ -10,6 +10,19 @@ import { useApp } from '../context/AppContext';
 import { getCefrStudentOverview } from '../utils/cefrStudentAggregator';
 import { VO_TRACK_LABELS, VO_TRACK_COLORS, VO_TRACK_DEFAULT_CEFR } from '../data/voTracks';
 
+/**
+ * Render the CEFR overview page with class and student filters, showing student-specific CEFR statistics, charts, can-do grid, and standards coverage.
+ *
+ * The component reads application data (students, classes, rubrics, studentRubrics, selfAssessments, analysisResults) and localization, and conditionally displays:
+ * - a class and student selector,
+ * - an empty prompt when no student is selected,
+ * - a student header and summary stat cards,
+ * - a radar chart when sufficient data exists,
+ * - a CEFR can-do grid or an empty message when no CEFR data is available,
+ * - and a standards coverage panel when standards are present.
+ *
+ * @returns A React element containing the CEFR overview user interface.
+ */
 export default function CefrOverviewPage() {
     const { students, classes, rubrics, studentRubrics, selfAssessments, analysisResults } = useApp();
     const { t, i18n } = useTranslation();

@@ -2,6 +2,15 @@ import React from 'react';
 import { Shield, ExternalLink } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 
+/**
+ * Renders the Privacy & AVG/GDPR informational page for Rubric Maker.
+ *
+ * The page explains data controller responsibilities, categories of personal data, storage modes
+ * (local and optional Supabase), legal bases, retention and erasure procedures, data portability,
+ * handling of audio data, supervisory authority contact, and open-source attributions.
+ *
+ * @returns A React element containing the privacy and data-protection content for display in the app.
+ */
 export default function PrivacyPage() {
     return (
         <>

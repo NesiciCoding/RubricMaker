@@ -79,7 +79,22 @@ interface StandardAccumulator {
 
 const DESCRIPTOR_MAP = new Map(CEFR_DESCRIPTORS.map((d) => [d.id, d]));
 
-// ─── Main function ────────────────────────────────────────────────────────────
+/**
+ * Aggregates a student's CEFR rubric results, self-assessments, linked standards, and optional document-based text profiles into a consolidated overview.
+ *
+ * @param studentId - The student identifier to aggregate data for
+ * @param studentRubrics - All student rubric snapshots/records (graded entries are used)
+ * @param rubrics - Canonical rubric definitions used to resolve snapshots or rubric references
+ * @param selfAssessments - Self-assessment records used to compute descriptor-level confidence (last-write wins for duplicate ratings)
+ * @param analysisResults - Optional document analysis results used to derive per-cell vocabulary and grammar CEFR estimates; the highest estimated level per cell is kept
+ * @returns A `CefrStudentOverview` containing:
+ *  - `cells`: array of per-CEFR-cell data (scores, thresholds, descriptor confidence, optional text estimates),
+ *  - `cellMap`: mapping of `"skill__level"` → corresponding cell,
+ *  - `standardSets`: grouped standard aggregate scores,
+ *  - `skillsWithRubricData`: count of cells with rubric data,
+ *  - `overallConfidenceRate`: percentage of descriptors the student marked confident,
+ *  - `standardsCovered`: number of distinct linked standards found
+ */
 
 export function getCefrStudentOverview(
     studentId: string,

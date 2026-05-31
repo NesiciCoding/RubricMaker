@@ -11,6 +11,14 @@ import { useApp } from '../context/AppContext';
 import { getCefrStudentOverview } from '../utils/cefrStudentAggregator';
 import { VO_TRACK_LABELS, VO_TRACK_COLORS, VO_TRACK_DEFAULT_CEFR } from '../data/voTracks';
 
+/**
+ * Renders the CEFR overview page for the student identified by the current route `id`.
+ *
+ * Shows a header with navigation, a student summary card, summary statistics, an optional radar chart,
+ * a CEFR can-do grid or empty state, standards coverage when available, and share/copy actions.
+ *
+ * @returns The React element representing the student's CEFR overview page, or an empty-state view if the student cannot be found.
+ */
 export default function StudentCefrOverviewPage() {
     const { id } = useParams();
     const navigate = useNavigate();
