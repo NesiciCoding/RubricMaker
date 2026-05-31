@@ -749,8 +749,6 @@ export default function DocumentAnalysisPanel({
 
 // ─── CEFR Profile sub-panel ───────────────────────────────────────────────────
 
-const LEVEL_ORDER: CefrLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
-
 /**
  * Render a compact, styled badge for a CEFR level.
  *
