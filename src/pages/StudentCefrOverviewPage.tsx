@@ -14,7 +14,7 @@ import { VO_TRACK_LABELS, VO_TRACK_COLORS, VO_TRACK_DEFAULT_CEFR } from '../data
 export default function StudentCefrOverviewPage() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { students, classes, rubrics, studentRubrics, selfAssessments } = useApp();
+    const { students, classes, rubrics, studentRubrics, selfAssessments, analysisResults } = useApp();
     const { t, i18n } = useTranslation();
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
     const [copiedLink, setCopiedLink] = useState(false);
@@ -24,8 +24,8 @@ export default function StudentCefrOverviewPage() {
     const targetLevel = cls?.voTrack ? VO_TRACK_DEFAULT_CEFR[cls.voTrack] : undefined;
 
     const overview = useMemo(
-        () => (student ? getCefrStudentOverview(student.id, studentRubrics, rubrics, selfAssessments) : null),
-        [student, studentRubrics, rubrics, selfAssessments]
+        () => (student ? getCefrStudentOverview(student.id, studentRubrics, rubrics, selfAssessments, analysisResults) : null),
+        [student, studentRubrics, rubrics, selfAssessments, analysisResults]
     );
 
     // Build CefrEntry[] for the radar (only cells with rubric data)

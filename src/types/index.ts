@@ -198,6 +198,42 @@ export interface RubricVersion {
     snapshot: Omit<Rubric, 'versions'>;
 }
 
+// ─── CEFR Text Profiling Types ────────────────────────────────────────────────
+
+export interface CefrWordHit {
+    word: string;
+    level: CefrLevel;
+}
+
+export interface CefrVocabProfile {
+    /** Word count bucketed by CEFR level */
+    levelCounts: Record<CefrLevel, number>;
+    /** Notable words whose level is at or above the estimated level */
+    highlightWords: CefrWordHit[];
+    /** Highest level with ≥5% of content-word share */
+    estimatedLevel: CefrLevel;
+}
+
+export interface CefrGrammarHit {
+    label: string;
+    level: CefrLevel;
+    count: number;
+    shorthand: string;
+}
+
+export interface CefrGrammarProfile {
+    detectedStructures: CefrGrammarHit[];
+    /** Highest level with at least one detected structure */
+    estimatedLevel: CefrLevel;
+}
+
+export interface CefrTextProfile {
+    vocabulary: CefrVocabProfile;
+    grammar: CefrGrammarProfile;
+    /** Combined estimate: higher of vocab and grammar estimated levels */
+    overallEstimatedLevel: CefrLevel;
+}
+
 // ─── Vocabulary & Document Analysis Types ─────────────────────────────────────
 
 export type VocabularyCategory = 'vocabulary' | 'grammar' | 'discourse' | 'other';
@@ -401,6 +437,8 @@ export interface AppSettings {
     needsOnboarding?: boolean;
     /** Supabase school ID of the user's school (populated on login). */
     schoolId?: string;
+    /** Optional Cambridge Dictionary API key for online CEFR word-level enrichment */
+    cambridgeApiKey?: string;
     /** Display name of the user's school (populated on login). */
     schoolName?: string;
 }

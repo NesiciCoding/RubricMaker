@@ -180,6 +180,52 @@ export default function CefrOverviewGrid({ cells, targetLevel, lang }: Props) {
                                         </div>
                                     )}
 
+                                    {/* Text profile estimates */}
+                                    {cell && (cell.textVocabEstimate || cell.textGrammarEstimate) && (
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                gap: 3,
+                                                marginTop: 2,
+                                                flexWrap: 'wrap',
+                                            }}
+                                            title="CEFR-J text profile estimate (vocabulary / grammar)"
+                                        >
+                                            {cell.textVocabEstimate && (
+                                                <span
+                                                    style={{
+                                                        fontSize: '0.58rem',
+                                                        fontWeight: 700,
+                                                        padding: '1px 4px',
+                                                        borderRadius: 3,
+                                                        background: CEFR_LEVEL_COLORS[cell.textVocabEstimate] + '22',
+                                                        color: CEFR_LEVEL_COLORS[cell.textVocabEstimate],
+                                                        border: `1px solid ${CEFR_LEVEL_COLORS[cell.textVocabEstimate]}44`,
+                                                    }}
+                                                    title={`Vocabulary estimate: ${cell.textVocabEstimate}`}
+                                                >
+                                                    V{cell.textVocabEstimate}
+                                                </span>
+                                            )}
+                                            {cell.textGrammarEstimate && (
+                                                <span
+                                                    style={{
+                                                        fontSize: '0.58rem',
+                                                        fontWeight: 700,
+                                                        padding: '1px 4px',
+                                                        borderRadius: 3,
+                                                        background: CEFR_LEVEL_COLORS[cell.textGrammarEstimate] + '22',
+                                                        color: CEFR_LEVEL_COLORS[cell.textGrammarEstimate],
+                                                        border: `1px solid ${CEFR_LEVEL_COLORS[cell.textGrammarEstimate]}44`,
+                                                    }}
+                                                    title={`Grammar estimate: ${cell.textGrammarEstimate}`}
+                                                >
+                                                    G{cell.textGrammarEstimate}
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
+
                                     {/* No data placeholder */}
                                     {(!cell || (cell.rubricCount === 0 && cell.totalDescriptors === 0)) && (
                                         <span

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
     X,
     ScanSearch,
@@ -9,12 +9,15 @@ import {
     AlertTriangle,
     ClipboardPaste,
     Check,
+    BookOpen,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { Attachment, VocabularyItem, DocumentAnalysisResult, DetectedItem, RubricCriterion } from '../../types';
+import type { Attachment, CefrLevel, CefrTextProfile, VocabularyItem, DocumentAnalysisResult, DetectedItem, RubricCriterion } from '../../types';
 import { extractText, UnsupportedFormatError } from '../../utils/textExtraction';
 import { analyseVocabulary } from '../../utils/vocabularyAnalyser';
-import { checkGrammar, LT_ATTRIBUTION_URL } from '../../utils/grammarChecker';
+import { checkGrammar, profileGrammar, LT_ATTRIBUTION_URL } from '../../utils/grammarChecker';
+import { profileText } from '../../utils/cefrVocabularyProfiler';
+import { CEFR_LEVEL_COLORS } from '../../data/cefrDescriptors';
 import { nanoid } from '../../utils/nanoid';
 
 interface Props {
@@ -70,6 +73,17 @@ export default function DocumentAnalysisPanel({
     const [showText, setShowText] = useState(false);
     const [appliedSubItems, setAppliedSubItems] = useState<Set<string>>(new Set());
     const [addedToBank, setAddedToBank] = useState<Set<string>>(new Set());
+
+    const cefrProfile = useMemo<CefrTextProfile | null>(() => {
+        if (!result?.extractedText) return null;
+        const vocabulary = profileText(result.extractedText);
+        const grammar = profileGrammar(result.extractedText);
+        const LEVEL_ORDER: CefrLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+        const vocabIdx = LEVEL_ORDER.indexOf(vocabulary.estimatedLevel);
+        const grammarIdx = LEVEL_ORDER.indexOf(grammar.estimatedLevel);
+        const overallEstimatedLevel = LEVEL_ORDER[Math.max(vocabIdx, grammarIdx)];
+        return { vocabulary, grammar, overallEstimatedLevel };
+    }, [result?.extractedText]);
 
     const selectedAttachment = studentAttachments.find((a) => a.id === selectedAttachmentId);
     const isAudioVideo =
@@ -166,7 +180,7 @@ export default function DocumentAnalysisPanel({
     const totalCount = result?.detectedItems.length ?? 0;
 
     return (
-        <div className="modal-overlay" onClick={onClose}>
+        <div className="modal-overlay" role="dialog" aria-modal="true" onClick={onClose}>
             <div
                 className="modal"
                 style={{ maxWidth: 720, width: '95vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
@@ -328,8 +342,7 @@ export default function DocumentAnalysisPanel({
                                 onClick={handleAnalyse}
                                 disabled={
                                     (!useTranscriptMode && (!selectedAttachment || isAudioVideo)) ||
-                                    (useTranscriptMode && !transcript.trim()) ||
-                                    vocabularyItems.length === 0
+                                    (useTranscriptMode && !transcript.trim())
                                 }
                             >
                                 <ScanSearch size={16} />
@@ -611,6 +624,9 @@ export default function DocumentAnalysisPanel({
                                 </div>
                             </div>
 
+                            {/* CEFR Text Profile */}
+                            {cefrProfile && <CefrProfilePanel profile={cefrProfile} />}
+
                             {/* Grammar errors */}
                             {result.grammarErrors.length > 0 && (
                                 <div>
@@ -690,6 +706,166 @@ export default function DocumentAnalysisPanel({
                     )}
                 </div>
             </div>
+        </div>
+    );
+}
+
+// ─── CEFR Profile sub-panel ───────────────────────────────────────────────────
+
+const LEVEL_ORDER: CefrLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+
+function CefrLevelBadge({ level }: { level: CefrLevel }) {
+    return (
+        <span
+            style={{
+                display: 'inline-block',
+                padding: '1px 7px',
+                borderRadius: 4,
+                fontWeight: 700,
+                fontSize: '0.75rem',
+                background: CEFR_LEVEL_COLORS[level] + '22',
+                color: CEFR_LEVEL_COLORS[level],
+                border: `1px solid ${CEFR_LEVEL_COLORS[level]}44`,
+            }}
+        >
+            {level}
+        </span>
+    );
+}
+
+function CefrProfilePanel({ profile }: { profile: CefrTextProfile }) {
+    const { t } = useTranslation();
+    const [open, setOpen] = useState(true);
+
+    const { vocabulary, grammar } = profile;
+    const total = Object.values(vocabulary.levelCounts).reduce((s, c) => s + c, 0);
+
+    return (
+        <div>
+            <button
+                className="btn btn-ghost btn-sm"
+                style={{ width: '100%', justifyContent: 'space-between', marginBottom: open ? 10 : 0 }}
+                onClick={() => setOpen((v) => !v)}
+                aria-expanded={open}
+            >
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <BookOpen size={14} />
+                    <strong>{t('analysis.cefr_profile', 'CEFR Text Profile')}</strong>
+                    <CefrLevelBadge level={profile.overallEstimatedLevel} />
+                </span>
+                {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
+
+            {open && (
+                <div className="card" style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    {/* Vocabulary distribution */}
+                    <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>
+                                {t('analysis.vocab_distribution', 'Vocabulary level distribution')}
+                            </span>
+                            <CefrLevelBadge level={vocabulary.estimatedLevel} />
+                        </div>
+                        {total > 0 ? (
+                            <>
+                                {/* Stacked bar */}
+                                <div style={{ display: 'flex', height: 12, borderRadius: 6, overflow: 'hidden', marginBottom: 6 }}>
+                                    {LEVEL_ORDER.map((lvl) => {
+                                        const pct = total > 0 ? (vocabulary.levelCounts[lvl] / total) * 100 : 0;
+                                        return pct > 0 ? (
+                                            <div
+                                                key={lvl}
+                                                title={`${lvl}: ${vocabulary.levelCounts[lvl]} words (${pct.toFixed(1)}%)`}
+                                                style={{ width: `${pct}%`, background: CEFR_LEVEL_COLORS[lvl] }}
+                                            />
+                                        ) : null;
+                                    })}
+                                </div>
+                                {/* Legend */}
+                                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                                    {LEVEL_ORDER.filter((lvl) => vocabulary.levelCounts[lvl] > 0).map((lvl) => (
+                                        <span key={lvl} style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                            <span style={{ width: 10, height: 10, borderRadius: 2, background: CEFR_LEVEL_COLORS[lvl], display: 'inline-block' }} />
+                                            {lvl}: {vocabulary.levelCounts[lvl]}
+                                        </span>
+                                    ))}
+                                </div>
+                            </>
+                        ) : (
+                            <p className="text-xs text-muted">{t('analysis.no_vocab_matched', 'No vocabulary matched the CEFR-J wordlist.')}</p>
+                        )}
+
+                        {/* Highlight words */}
+                        {vocabulary.highlightWords.length > 0 && (
+                            <div style={{ marginTop: 10 }}>
+                                <p className="text-xs text-muted" style={{ marginBottom: 6 }}>
+                                    {t('analysis.notable_words', 'Notable words:')}
+                                </p>
+                                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                    {vocabulary.highlightWords.map(({ word, level }) => (
+                                        <span
+                                            key={word}
+                                            title={level}
+                                            style={{
+                                                fontSize: '0.78rem',
+                                                padding: '2px 7px',
+                                                borderRadius: 4,
+                                                background: CEFR_LEVEL_COLORS[level] + '18',
+                                                border: `1px solid ${CEFR_LEVEL_COLORS[level]}44`,
+                                                color: 'var(--text)',
+                                            }}
+                                        >
+                                            {word}
+                                            <span style={{ marginLeft: 4, fontSize: '0.68rem', color: CEFR_LEVEL_COLORS[level], fontWeight: 700 }}>{level}</span>
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Grammar structures */}
+                    <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>
+                                {t('analysis.grammar_structures', 'Grammar structures')}
+                            </span>
+                            <CefrLevelBadge level={grammar.estimatedLevel} />
+                        </div>
+                        {grammar.detectedStructures.length > 0 ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                {grammar.detectedStructures
+                                    .sort((a, b) => LEVEL_ORDER.indexOf(b.level) - LEVEL_ORDER.indexOf(a.level))
+                                    .map((s) => (
+                                        <div
+                                            key={s.shorthand}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 8,
+                                                fontSize: '0.82rem',
+                                                padding: '4px 0',
+                                                borderBottom: '1px solid var(--border)',
+                                            }}
+                                        >
+                                            <CefrLevelBadge level={s.level} />
+                                            <span style={{ flex: 1 }}>{s.label}</span>
+                                            <span className="text-muted text-xs">×{s.count}</span>
+                                        </div>
+                                    ))}
+                            </div>
+                        ) : (
+                            <p className="text-xs text-muted">
+                                {t('analysis.no_grammar_detected', 'No advanced grammar structures detected.')}
+                            </p>
+                        )}
+                    </div>
+
+                    <p className="text-xs text-muted" style={{ marginTop: 4 }}>
+                        {t('analysis.cefrj_attribution', 'Vocabulary levels based on CEFR-J (Tono Laboratory, TUFS).')}
+                    </p>
+                </div>
+            )}
         </div>
     );
 }
