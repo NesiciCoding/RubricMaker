@@ -77,11 +77,15 @@ export default function App() {
         );
     }
 
-    if (settings.userRole === 'student') {
-        const linkedStudent = settings.userEmail
-            ? students.find((s) => s.email?.toLowerCase() === settings.userEmail!.toLowerCase())
-            : null;
+    // Resolve student link regardless of role so new sign-ups (default role='user')
+    // are auto-detected without requiring a manual admin role change.
+    const linkedStudent = settings.userEmail
+        ? students.find((s) => s.email?.toLowerCase() === settings.userEmail!.toLowerCase())
+        : null;
 
+    // Student portal: explicit 'student' role OR email matches a student record for any
+    // non-admin user (handles first-time sign-ins before the DB trigger can assign the role).
+    if (settings.userRole === 'student' || (linkedStudent !== null && settings.userRole !== 'admin')) {
         if (!linkedStudent) {
             return (
                 <div
