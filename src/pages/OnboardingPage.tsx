@@ -83,8 +83,8 @@ export default function OnboardingPage() {
 
     const selectedCardStyle: React.CSSProperties = {
         ...cardStyle,
-        background: '#eef2ff',
-        border: '2px solid var(--accent, #6366f1)',
+        background: 'var(--accent-soft)',
+        border: '2px solid var(--accent)',
     };
 
     return (

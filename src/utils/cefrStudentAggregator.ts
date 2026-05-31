@@ -1,8 +1,22 @@
-import type { CefrLevel, CefrSkill, DocumentAnalysisResult, Rubric, StudentRubric, SelfAssessment, LinkedStandard } from '../types';
+import type {
+    CefrLevel,
+    CefrSkill,
+    CefrVocabProfile,
+    CefrGrammarProfile,
+    DocumentAnalysisResult,
+    Rubric,
+    StudentRubric,
+    SelfAssessment,
+    LinkedStandard,
+} from '../types';
 import { CEFR_DESCRIPTORS } from '../data/cefrDescriptors';
 import { calcGradeSummary } from './gradeCalc';
 import { profileText } from './cefrVocabularyProfiler';
 import { profileGrammar } from './grammarChecker';
+
+// Module-level cache so repeated getCefrStudentOverview calls (e.g. on navigation)
+// don't re-run NLP on the same extracted text
+const profileCache = new Map<string, { vocab: CefrVocabProfile; grammar: CefrGrammarProfile }>();
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -249,8 +263,13 @@ export function getCefrStudentOverview(
             const rubric = sr.rubricSnapshot ?? rubrics.find((r) => r.id === sr.rubricId);
             if (!rubric?.cefrTargetLevel) continue;
             const key = `${rubric.cefrSkill ?? 'writing'}__${rubric.cefrTargetLevel}`;
-            const vocabProfile = profileText(ar.extractedText);
-            const grammarProfile = profileGrammar(ar.extractedText);
+            let cached = profileCache.get(ar.extractedText);
+            if (!cached) {
+                cached = { vocab: profileText(ar.extractedText), grammar: profileGrammar(ar.extractedText) };
+                profileCache.set(ar.extractedText, cached);
+            }
+            const vocabProfile = cached.vocab;
+            const grammarProfile = cached.grammar;
             const prevVocab = textVocabMap.get(key);
             if (!prevVocab || LEVEL_ORDER.indexOf(vocabProfile.estimatedLevel) > LEVEL_ORDER.indexOf(prevVocab)) {
                 textVocabMap.set(key, vocabProfile.estimatedLevel);

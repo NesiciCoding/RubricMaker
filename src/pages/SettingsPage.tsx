@@ -1232,7 +1232,9 @@ export default function SettingsPage() {
                                             id="setting-cambridge-key"
                                             type="password"
                                             value={settings.cambridgeApiKey ?? ''}
-                                            onChange={(e) => updateSettings({ cambridgeApiKey: e.target.value || undefined })}
+                                            onChange={(e) =>
+                                                updateSettings({ cambridgeApiKey: e.target.value || undefined })
+                                            }
                                             placeholder={t('settings.cambridge_api_placeholder')}
                                             autoComplete="off"
                                         />

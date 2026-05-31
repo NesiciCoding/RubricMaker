@@ -198,6 +198,14 @@ export interface RubricVersion {
     snapshot: Omit<Rubric, 'versions'>;
 }
 
+// ─── CEFR-J Grammar Data Types ────────────────────────────────────────────────
+
+export interface CefrjGrammarItem {
+    label: string;
+    level: CefrLevel;
+    shorthand: string;
+}
+
 // ─── CEFR Text Profiling Types ────────────────────────────────────────────────
 
 export interface CefrWordHit {

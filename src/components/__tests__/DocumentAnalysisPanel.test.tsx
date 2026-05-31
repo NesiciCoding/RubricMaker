@@ -21,6 +21,7 @@ vi.mock('../../utils/vocabularyAnalyser', () => ({
 
 vi.mock('../../utils/grammarChecker', () => ({
     checkGrammar: vi.fn(async () => ({ errors: [], checkerUsed: 'none' as const })),
+    profileGrammar: vi.fn(() => ({ detectedStructures: [], estimatedLevel: 'A1' })),
     LT_ATTRIBUTION_URL: 'https://languagetool.org',
 }));
 

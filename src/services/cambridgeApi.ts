@@ -31,14 +31,9 @@ function parseLevel(raw: string | null): CefrLevel | null {
  * @returns An object with `level` set to the normalized CEFR level or `null`, and `definition` set to the trimmed first `<def>` text or `null`
  */
 function extractFromXml(xml: string): { level: CefrLevel | null; definition: string | null } {
-    // Extract first <lvl> tag value
-    const lvlMatch = xml.match(/<lvl[^>]*>([^<]+)<\/lvl>/);
-    const level = parseLevel(lvlMatch?.[1] ?? null);
-
-    // Extract first <def> tag value as a plain-text definition
-    const defMatch = xml.match(/<def[^>]*>([^<]+)<\/def>/);
-    const definition = defMatch?.[1]?.trim() ?? null;
-
+    const doc = new DOMParser().parseFromString(xml, 'application/xml');
+    const level = parseLevel(doc.querySelector('lvl')?.textContent ?? null);
+    const definition = doc.querySelector('def')?.textContent?.trim() ?? null;
     return { level, definition };
 }
 
@@ -56,10 +51,7 @@ export interface CambridgeLookupResult {
  * @param apiKey - Cambridge Dictionary API access key
  * @returns An object containing `level` and `definition`, or `null` if the lookup did not produce a valid result
  */
-export async function lookupWord(
-    word: string,
-    apiKey: string
-): Promise<CambridgeLookupResult | null> {
+export async function lookupWord(word: string, apiKey: string): Promise<CambridgeLookupResult | null> {
     if (!word || !apiKey) return null;
 
     const url = `${BASE}/dictionaries/english/entries/${encodeURIComponent(word.toLowerCase())}?accessKey=${encodeURIComponent(apiKey)}`;

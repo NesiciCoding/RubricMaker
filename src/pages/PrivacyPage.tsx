@@ -256,7 +256,6 @@ export default function PrivacyPage() {
                     </p>
                 </div>
 
-                {/* Open-source attributions */}
                 <div className="card" style={{ marginBottom: 20 }}>
                     <h3 style={{ marginBottom: 12 }}>Open-source attributions</h3>
                     <p className="text-sm text-muted" style={{ marginBottom: 12 }}>
@@ -288,8 +287,8 @@ export default function PrivacyPage() {
                             </a>
                         </li>
                         <li>
-                            <strong>Cambridge Dictionary API</strong> — Optional online CEFR word-level enrichment
-                            (only when a key is configured in Settings). Data sent to dictionary.cambridge.org.{' '}
+                            <strong>Cambridge Dictionary API</strong> — Optional online CEFR word-level enrichment (only
+                            when a key is configured in Settings). Data sent to dictionary.cambridge.org.{' '}
                             <a
                                 href="https://dictionary-api.cambridge.org/"
                                 target="_blank"
