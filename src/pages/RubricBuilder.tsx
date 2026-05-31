@@ -50,6 +50,7 @@ import type {
     LinkedFrameworkDescriptor,
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
+import { saveCriterionClipboard, loadCriterionClipboard } from '../store/storage';
 import { nanoid } from '../utils/nanoid';
 import StandardsPickerModal from '../components/Standards/StandardsPickerModal';
 import CefrPickerModal from '../components/CEFR/CefrPickerModal';
@@ -360,7 +361,7 @@ export default function RubricBuilder() {
 
     function copyToClipboard(criterion: RubricCriterion) {
         try {
-            localStorage.setItem('rubric_criterion_clipboard', JSON.stringify(criterion));
+            saveCriterionClipboard(criterion);
         } catch (e) {
             console.error('[rubric] copy criterion failed', e);
             showToast(t('toast.copy_paste_failed'), 'warning');
@@ -369,9 +370,8 @@ export default function RubricBuilder() {
 
     function pasteFromClipboard() {
         try {
-            const raw = localStorage.getItem('rubric_criterion_clipboard');
-            if (!raw) return;
-            const source = JSON.parse(raw) as RubricCriterion;
+            const source = loadCriterionClipboard();
+            if (!source) return;
             const clone: RubricCriterion = {
                 ...source,
                 id: nanoid(),

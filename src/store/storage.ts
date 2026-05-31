@@ -14,6 +14,7 @@ import type {
     SelfAssessment,
     SpeakingSession,
     DocumentAnalysisResult,
+    RubricCriterion,
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 
@@ -357,4 +358,14 @@ export function importFullBackup(json: string): boolean {
 export function updateDefaultFormat(f: RubricFormat) {
     const s = load<AppSettings>(KEYS.settings, DEFAULT_SETTINGS);
     saveSettings({ ...s, defaultFormat: f });
+}
+
+const CLIPBOARD_KEY = 'rubric_criterion_clipboard';
+
+export function saveCriterionClipboard(criterion: RubricCriterion): void {
+    save(CLIPBOARD_KEY, criterion);
+}
+
+export function loadCriterionClipboard(): RubricCriterion | null {
+    return load<RubricCriterion | null>(CLIPBOARD_KEY, null);
 }

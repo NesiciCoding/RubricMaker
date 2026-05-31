@@ -421,6 +421,7 @@
         "csv_import_error": "CSV-import mislukt. Controleer de bestandsindeling.",
         "storage_full": "Opslag is vol — je wijzigingen zijn mogelijk niet opgeslagen.",
         "sync_load_failed": "Clouddata kon niet worden geladen. Lokale data wordt weergegeven.",
+        "sync_push_failed": "Wijzigingen zijn mogelijk niet gesynchroniseerd — controleer je verbinding.",
         "copy_paste_failed": "Kopiëren/plakken mislukt. Probeer het opnieuw."
     },
     "cefr": {

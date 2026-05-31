@@ -419,6 +419,7 @@
         "csv_import_error": "CSV import failed. Please check the file format.",
         "storage_full": "Storage is full — your changes may not have been saved.",
         "sync_load_failed": "Could not load your cloud data. Showing local data instead.",
+        "sync_push_failed": "Changes may not be synced — check your connection.",
         "copy_paste_failed": "Copy/paste failed. Please try again."
     },
     "cefr": {
