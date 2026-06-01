@@ -31,8 +31,13 @@ export const test = base.extend<AppFixtures>({
         // re-reads localStorage, so the seeded data would be invisible to the app.
         const seed = async (data: Record<string, unknown>) => {
             await appPage.addInitScript((d) => {
+                // Only write keys that aren't already present.  This lets the app
+                // save state (e.g. an edited rubric name) that survives a subsequent
+                // reload() without the seed overwriting those app-written values.
                 Object.entries(d as Record<string, unknown>).forEach(([k, v]) => {
-                    localStorage.setItem(k, JSON.stringify(v));
+                    if (!localStorage.getItem(k)) {
+                        localStorage.setItem(k, JSON.stringify(v));
+                    }
                 });
             }, data);
         };
