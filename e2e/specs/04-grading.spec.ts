@@ -38,8 +38,8 @@ test.describe('Grading workflow', () => {
         await page.save();
         await page.waitForSaved();
 
-        await appPage.goto('about:blank');
         await appPage.goto('/#/rubrics');
+        await appPage.reload();
         await page.goto('rubric-grade-test', 'student-grade-test');
 
         await expect(page.getLevelBtn('Excellent', 0)).toHaveClass(/selected/, { timeout: 10_000 });

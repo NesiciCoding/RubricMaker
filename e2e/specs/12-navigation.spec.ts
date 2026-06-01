@@ -41,8 +41,8 @@ test.describe('Sidebar navigation', () => {
     });
 
     test('unknown route shows 404 page', async ({ appPage }) => {
-        await appPage.goto('about:blank');
         await appPage.goto('/#/this-route-does-not-exist-xyz');
+        await appPage.reload();
         await appPage.waitForSelector('.main-area', { timeout: 10_000 });
         await expect(appPage.getByText(/not found|404/i)).toBeVisible({ timeout: 10_000 });
     });

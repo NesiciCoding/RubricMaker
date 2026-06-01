@@ -6,8 +6,8 @@ test.describe('ConfirmDialog — delete flows', () => {
         const rubric = buildRubric({ name: 'Confirm Delete Rubric' });
         await seedStorage({ rm_rubrics: [rubric] });
 
-        await appPage.goto('about:blank');
         await appPage.goto('/#/rubrics');
+        await appPage.reload();
         await appPage.waitForSelector('.main-area');
         await expect(appPage.getByText('Confirm Delete Rubric')).toBeVisible();
 
@@ -27,8 +27,8 @@ test.describe('ConfirmDialog — delete flows', () => {
         const rubric = buildRubric({ name: 'Cancel Delete Rubric' });
         await seedStorage({ rm_rubrics: [rubric] });
 
-        await appPage.goto('about:blank');
         await appPage.goto('/#/rubrics');
+        await appPage.reload();
         await appPage.waitForSelector('.main-area');
         const card = appPage.locator('.rubric-card, .card').filter({ has: appPage.getByText('Cancel Delete Rubric', { exact: true }) }).first();
         await card.getByRole('button', { name: /delete/i }).click();
@@ -45,8 +45,8 @@ test.describe('ConfirmDialog — delete flows', () => {
         const rubric = buildRubric({ name: 'Escape Test Rubric' });
         await seedStorage({ rm_rubrics: [rubric] });
 
-        await appPage.goto('about:blank');
         await appPage.goto('/#/rubrics');
+        await appPage.reload();
         await appPage.waitForSelector('.main-area');
         const card = appPage.locator('.rubric-card, .card').filter({ has: appPage.getByText('Escape Test Rubric', { exact: true }) }).first();
         await card.getByRole('button', { name: /delete/i }).click();
@@ -62,8 +62,8 @@ test.describe('ConfirmDialog — delete flows', () => {
         const student = buildStudent(cls.id, { name: 'Student To Delete' });
         await seedStorage({ rm_classes: [cls], rm_students: [student] });
 
-        await appPage.goto('about:blank');
         await appPage.goto('/#/students');
+        await appPage.reload();
         await appPage.waitForSelector('.main-area');
         await expect(appPage.getByText('Student To Delete')).toBeVisible();
 

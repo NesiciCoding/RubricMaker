@@ -4,12 +4,13 @@ export class BasePage {
     constructor(protected page: Page) {}
 
     async navigate(path: string): Promise<void> {
-        // Go via about:blank to guarantee a full page reload on the target URL.
-        // Navigating between hash routes on the same origin is treated as a
-        // fragment-change (no reload) — React keeps its stale state and ignores
-        // any localStorage written by seedStorage since the last navigation.
-        await this.page.goto('about:blank');
+        // Navigate to the target hash route, then force a hard reload.
+        // Navigating between same-origin hash routes does NOT reload the page,
+        // so React keeps its stale in-memory state and ignores anything written
+        // to localStorage via seedStorage.evaluate(). reload() guarantees a
+        // fresh React mount that reads the updated localStorage.
         await this.page.goto(`/#${path}`);
+        await this.page.reload();
         await this.page.waitForSelector('.main-area', { timeout: 10_000 });
     }
 
