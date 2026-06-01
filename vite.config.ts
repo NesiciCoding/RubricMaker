@@ -21,6 +21,7 @@ export default defineConfig({
       '**/node_modules/**',
       '**/dist/**',
       '**/.claude/worktrees/**',
+      'e2e/**',
     ],
     coverage: {
       provider: 'v8',
