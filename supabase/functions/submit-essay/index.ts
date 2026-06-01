@@ -55,6 +55,10 @@ serve(async (req) => {
         return json({ error: 'Missing required fields: assignmentId, submissionId, htmlContent, wordCount' }, 400);
     }
 
+    if (!studentEmail) {
+        return json({ error: 'Missing required field: studentEmail' }, 400);
+    }
+
     // Fetch assignment for server-side validation
     const { data: assignment, error: assignErr } = await admin
         .from('essay_assignments')

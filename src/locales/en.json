@@ -541,7 +541,20 @@
         "self_assess_reflection_placeholder": "What went well? What would you do differently?",
         "self_assess_save": "Save",
         "self_assess_saved": "Saved!",
-        "self_assessed_on": "Self-assessed {{date}}"
+        "self_assessed_on": "Self-assessed {{date}}",
+        "essays_pending": "Essays to complete",
+        "essays_completed": "Submitted essays",
+        "essays_empty": "No essay assignments yet.",
+        "essay_open": "Open essay",
+        "essay_due": "Due {{date}}",
+        "essay_due_soon": "Due soon",
+        "essay_expired": "Expired",
+        "essay_submitted": "Submitted {{date}}",
+        "essay_words": "{{min}}–{{max}} words",
+        "essay_words_min": "Min {{min}} words",
+        "essay_words_max": "Max {{max}} words",
+        "essay_time": "{{n}} min",
+        "essay_seb_required": "Safe Exam Browser required"
     },
     "selfAssess": {
         "title": "CEFR Self-Assessment",

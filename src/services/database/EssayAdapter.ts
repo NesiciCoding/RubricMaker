@@ -4,6 +4,11 @@
  * Created from the credentials embedded in the EssayAssignment URL, so it runs
  * entirely outside AppProvider and the teacher's StorageSync session.
  * One instance per essay page load; not a singleton.
+ *
+ * Session strategy (checked in order):
+ *  1. rm_student_auth  — set by the anonymous/email-gate flow on this page
+ *  2. Default key      — set by the student portal login (Option A flow)
+ * The first client that has a session with a real email wins.
  */
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
@@ -21,14 +26,50 @@ export interface EssaySubmissionPayload {
 }
 
 export class EssayAdapter {
+    /** Isolated client used for anonymous/email-gate auth (storageKey: rm_student_auth) */
     private client: SupabaseClient;
+    /**
+     * Second client using the default Supabase storage key.
+     * Reads the portal session if the student logged in via the student portal before
+     * entering SEB. No custom storageKey so it shares the token with the portal app.
+     */
+    private portalClient: SupabaseClient;
+    private supabaseUrl: string;
+    private supabaseAnonKey: string;
 
     constructor(supabaseUrl: string, supabaseAnonKey: string) {
+        this.supabaseUrl = supabaseUrl;
+        this.supabaseAnonKey = supabaseAnonKey;
         this.client = createClient(supabaseUrl, supabaseAnonKey, {
             // Persist session so OAuth callbacks survive the page redirect.
             // Uses an isolated storageKey to avoid conflicting with the teacher's session.
             auth: { persistSession: true, autoRefreshToken: true, storageKey: 'rm_student_auth' },
         });
+        // No custom storageKey → reads the default Supabase token written by the portal login.
+        this.portalClient = createClient(supabaseUrl, supabaseAnonKey, {
+            auth: { persistSession: true, autoRefreshToken: true },
+        });
+    }
+
+    /**
+     * Returns the active session from whichever client has one.
+     * rm_student_auth is preferred; the portal session (default key) is the fallback.
+     * Anonymous sessions (no email) are skipped so they don't suppress the email gate.
+     */
+    private async getActiveSession() {
+        const { data: { session: isolated } } = await this.client.auth.getSession();
+        // Accept any session from rm_student_auth — this includes the anonymous session
+        // written by signInAnonymously() after the email gate. We don't require an email
+        // here because the student-provided email is passed separately to submitEssay().
+        if (isolated) return { session: isolated, source: 'isolated' as const };
+
+        // Only accept a portal session if it carries a real verified email.
+        // This gates the "portal login bypasses the gate" path without leaking
+        // anonymous portal sessions into the essay page.
+        const { data: { session: portal } } = await this.portalClient.auth.getSession();
+        if (portal && portal.user.email) return { session: portal, source: 'portal' as const };
+
+        return null;
     }
 
     // ── Auth ─────────────────────────────────────────────────────────────────
@@ -81,14 +122,27 @@ export class EssayAdapter {
         return error ? { error: error.message } : {};
     }
 
-    /** Get the current session (in case the student refreshes or returns after OAuth). */
+    /**
+     * Sign in anonymously so the student gets a valid JWT without any OTP or OAuth flow.
+     * The student-provided email is not verified — it is stored in the submission row only.
+     * Requires "Allow anonymous sign-ins" to be enabled in the Supabase project settings.
+     */
+    async signInAnonymously(): Promise<{ userId: string | null; error?: string }> {
+        const { data, error } = await this.client.auth.signInAnonymously();
+        if (error || !data.session) return { userId: null, error: error?.message ?? 'Anonymous sign-in failed' };
+        return { userId: data.session.user.id };
+    }
+
+    /**
+     * Get the current session. Checks rm_student_auth first, then the portal session.
+     * Returns email only for real (non-anonymous) accounts so the EmailGate can
+     * auto-bypass when the student has already logged in via the portal.
+     */
     async getSession(): Promise<{ userId: string | null; email: string | null }> {
-        const {
-            data: { session },
-        } = await this.client.auth.getSession();
+        const active = await this.getActiveSession();
         return {
-            userId: session?.user.id ?? null,
-            email: session?.user.email ?? null,
+            userId: active?.session.user.id ?? null,
+            email: active?.session.user.email ?? null,
         };
     }
 
@@ -108,10 +162,9 @@ export class EssayAdapter {
         _studentUserId: string,
         wordCount: number
     ): Promise<SyncResult> {
-        const {
-            data: { session },
-        } = await this.client.auth.getSession();
-        if (!session) return { success: false, error: 'Not authenticated' };
+        const active = await this.getActiveSession();
+        if (!active) return { success: false, error: 'Not authenticated' };
+        const session = active.session;
 
         let response: Response;
         try {

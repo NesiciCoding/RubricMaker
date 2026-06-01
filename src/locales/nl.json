@@ -543,7 +543,20 @@
         "self_assess_reflection_placeholder": "Wat ging goed? Wat zou je anders doen?",
         "self_assess_save": "Opslaan",
         "self_assess_saved": "Opgeslagen!",
-        "self_assessed_on": "Zelfbeoordeeld op {{date}}"
+        "self_assessed_on": "Zelfbeoordeeld op {{date}}",
+        "essays_pending": "Nog te maken essays",
+        "essays_completed": "Ingediende essays",
+        "essays_empty": "Nog geen essayopdrachten.",
+        "essay_open": "Essay openen",
+        "essay_due": "Inleveren voor {{date}}",
+        "essay_due_soon": "Bijna verlopen",
+        "essay_expired": "Verlopen",
+        "essay_submitted": "Ingediend op {{date}}",
+        "essay_words": "{{min}}–{{max}} woorden",
+        "essay_words_min": "Min. {{min}} woorden",
+        "essay_words_max": "Max. {{max}} woorden",
+        "essay_time": "{{n}} min",
+        "essay_seb_required": "Safe Exam Browser vereist"
     },
     "selfAssess": {
         "title": "ERK Zelfbeoordeling",
