@@ -12,7 +12,7 @@ test.describe('Student CRUD', () => {
         await page.openAddStudentModal();
         await page.fillStudentName('Bob Smith');
         await page.fillStudentEmail('bob@school.edu');
-        await page.selectClass('Year 3B');
+        // Class is auto-assigned to the currently active class (the only seeded class)
         await page.submitStudentForm();
 
         await expect(appPage.getByText('Bob Smith')).toBeVisible({ timeout: 5_000 });
@@ -27,7 +27,7 @@ test.describe('Student CRUD', () => {
         await page.goto();
         await expect(appPage.getByText('Delete Me Student')).toBeVisible();
 
-        const studentRow = appPage.getByRole('row').filter({
+        const studentRow = appPage.locator('table tbody tr').filter({
             has: appPage.getByText('Delete Me Student', { exact: true }),
         });
         await studentRow.getByRole('button', { name: /delete/i }).click();

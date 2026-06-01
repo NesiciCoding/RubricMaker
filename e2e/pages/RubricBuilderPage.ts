@@ -43,11 +43,11 @@ export class RubricBuilderPage extends BasePage {
     }
 
     async save(): Promise<void> {
-        await this.page.getByRole('button').filter({ hasText: /^save$/i }).click();
+        await this.page.locator('.topbar button.btn-primary').click();
     }
 
     async waitForSaved(): Promise<void> {
-        await this.page.getByRole('button').filter({ hasText: /saved!/i }).waitFor({ timeout: 5_000 });
+        await this.page.locator('.topbar button.btn-primary').filter({ hasText: /saved/i }).waitFor({ timeout: 5_000 });
     }
 
     async openVersionHistory(): Promise<void> {

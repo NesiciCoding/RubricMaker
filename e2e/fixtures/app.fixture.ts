@@ -10,6 +10,7 @@ export type AppFixtures = {
 export const test = base.extend<AppFixtures>({
     appPage: async ({ page }, use) => {
         const settings = buildSettings();
+        // Register init script so local mode + settings survive every navigation/reload
         await page.addInitScript((s) => {
             localStorage.setItem('rm_local_mode', 'true');
             // Only seed settings if not already present, so persistence tests survive reload
@@ -17,13 +18,17 @@ export const test = base.extend<AppFixtures>({
                 localStorage.setItem('rm_settings', JSON.stringify(s));
             }
         }, settings);
+        // Navigate once so the page has a DOM context — required for seedStorage.evaluate()
+        await page.goto('/#/');
+        await page.waitForSelector('.main-area', { timeout: 15_000 });
         await use(page);
     },
 
     seedStorage: async ({ page }, use) => {
+        // page.evaluate() works reliably once the page has a DOM context (appPage navigates first)
         const seed = async (data: Record<string, unknown>) => {
-            await page.addInitScript((d) => {
-                Object.entries(d).forEach(([k, v]) => {
+            await page.evaluate((d) => {
+                Object.entries(d as Record<string, unknown>).forEach(([k, v]) => {
                     localStorage.setItem(k, JSON.stringify(v));
                 });
             }, data);

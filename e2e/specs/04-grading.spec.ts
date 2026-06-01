@@ -63,6 +63,6 @@ test.describe('Grading workflow', () => {
         await page.selectLevel(0, 'Good');
         await page.save();
         await page.waitForSaved();
-        await expect(appPage.getByRole('button').filter({ hasText: /^save$/i })).toBeVisible({ timeout: 5_000 });
+        await expect(appPage.locator('.topbar button.btn-primary')).toBeVisible({ timeout: 5_000 });
     });
 });

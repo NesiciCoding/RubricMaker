@@ -12,6 +12,7 @@ export class StudentsPage extends BasePage {
 
     async openAddStudentModal(): Promise<void> {
         await this.page.getByRole('button', { name: /add student/i }).first().click();
+        await this.page.locator('#student-name').waitFor({ timeout: 5_000 });
     }
 
     async fillStudentName(name: string): Promise<void> {
