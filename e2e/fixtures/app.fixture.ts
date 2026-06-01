@@ -25,10 +25,12 @@ export const test = base.extend<AppFixtures>({
     },
 
     seedStorage: async ({ appPage }, use) => {
-        // Depend on appPage (not raw page) so the initial navigation to /#/ has already run
-        // before evaluate() is called. page.evaluate() throws if no page context yet.
+        // Depend on appPage so appPage's initial navigation has already run (avoids
+        // SecurityError on about:blank). Use addInitScript so the seed data is written
+        // BEFORE React's loadStore() runs — evaluate() writes after mount and React never
+        // re-reads localStorage, so the seeded data would be invisible to the app.
         const seed = async (data: Record<string, unknown>) => {
-            await appPage.evaluate((d) => {
+            await appPage.addInitScript((d) => {
                 Object.entries(d as Record<string, unknown>).forEach(([k, v]) => {
                     localStorage.setItem(k, JSON.stringify(v));
                 });
