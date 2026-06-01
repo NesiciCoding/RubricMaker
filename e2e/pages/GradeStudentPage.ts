@@ -26,9 +26,12 @@ export class GradeStudentPage extends BasePage {
     }
 
     async fillCriterionComment(criterionIndex: number, text: string): Promise<void> {
-        // TipTap renders as .ProseMirror contenteditable div, not a standard textarea
-        const editors = this.page.locator('.ProseMirror[contenteditable="true"]');
-        await editors.nth(criterionIndex).fill(text);
+        // TipTap renders as .ProseMirror contenteditable div — use click+type
+        // instead of fill() to avoid continuous re-renders that make the save
+        // button unstable.
+        const editor = this.page.locator('.ProseMirror[contenteditable="true"]').nth(criterionIndex);
+        await editor.click();
+        await this.page.keyboard.type(text);
     }
 
     async save(): Promise<void> {

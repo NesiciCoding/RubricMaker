@@ -32,8 +32,9 @@ test.describe('Student CRUD', () => {
         });
         // Delete button is icon-only (Trash2, no accessible name) — pick last icon btn in row
         await studentRow.locator('button.btn-ghost.btn-icon').last().click();
-        await expect(appPage.getByRole('dialog')).toBeVisible();
-        await appPage.getByRole('dialog').getByRole('button', { name: /delete/i }).click();
+        // Student delete confirm uses <div class="modal"> without role="dialog"
+        await expect(appPage.locator('.modal-overlay')).toBeVisible();
+        await appPage.locator('.modal').locator('button.btn-primary').click();
 
         await expect(appPage.getByText('Delete Me Student')).not.toBeVisible({ timeout: 5_000 });
     });

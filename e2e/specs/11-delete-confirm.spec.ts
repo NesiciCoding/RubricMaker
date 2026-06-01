@@ -70,8 +70,9 @@ test.describe('ConfirmDialog — delete flows', () => {
         const row = appPage.locator('table tbody tr').filter({ has: appPage.getByText('Student To Delete', { exact: true }) });
         await row.locator('button.btn-ghost.btn-icon').last().click();
 
-        await expect(appPage.getByRole('dialog')).toBeVisible();
-        await appPage.getByRole('dialog').getByRole('button', { name: /delete/i }).click();
+        // Student delete confirm uses <div class="modal"> without role="dialog"
+        await expect(appPage.locator('.modal-overlay')).toBeVisible();
+        await appPage.locator('.modal').locator('button.btn-primary').click();
         await expect(appPage.getByText('Student To Delete')).not.toBeVisible({ timeout: 5_000 });
     });
 });

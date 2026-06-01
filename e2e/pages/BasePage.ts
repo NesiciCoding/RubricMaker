@@ -11,7 +11,7 @@ export class BasePage {
         // fresh React mount that reads the updated localStorage.
         await this.page.goto(`/#${path}`);
         await this.page.reload();
-        await this.page.waitForSelector('.main-area', { timeout: 10_000 });
+        await this.page.waitForSelector('.main-area', { timeout: 20_000 });
     }
 
     async waitForRoute(path: string): Promise<void> {

@@ -39,6 +39,9 @@ test.describe('Rubric version history', () => {
         await builder.save();
         await builder.waitForSaved();
 
+        // Reopen version history — saving closes the panel
+        await builder.openVersionHistory();
+
         // Restore the snapshot — dialog.accept() is wired in restoreVersion
         await builder.restoreVersion(0);
 
