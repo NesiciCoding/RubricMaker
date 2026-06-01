@@ -44,7 +44,7 @@ test.describe('Sidebar navigation', () => {
         await appPage.goto('/#/this-route-does-not-exist-xyz');
         await appPage.reload();
         await appPage.waitForSelector('.main-area', { timeout: 10_000 });
-        await expect(appPage.getByText(/not found|404/i)).toBeVisible({ timeout: 10_000 });
+        await expect(appPage.getByRole('heading', { name: /404/i })).toBeVisible({ timeout: 10_000 });
     });
 });
 

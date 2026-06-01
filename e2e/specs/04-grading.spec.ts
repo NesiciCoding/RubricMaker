@@ -17,16 +17,10 @@ test.describe('Grading workflow', () => {
     test('grade page loads with rubric name visible', async ({ appPage }) => {
         const page = new GradeStudentPage(appPage);
         await page.goto('rubric-grade-test', 'student-grade-test');
-        // Debug: verify all three seeded keys are present in localStorage
-        const [rmRubrics, rmStudents, rmClasses] = await appPage.evaluate(() => [
-            localStorage.getItem('rm_rubrics'),
-            localStorage.getItem('rm_students'),
-            localStorage.getItem('rm_classes'),
-        ]);
-        expect(rmRubrics, `rm_rubrics=${rmRubrics?.slice(0, 80)}`).toContain('rubric-grade-test');
-        expect(rmStudents, `rm_students=${rmStudents?.slice(0, 80)}`).toContain('student-grade-test');
-        expect(rmClasses, `rm_classes=${rmClasses?.slice(0, 80)}`).not.toBeNull();
-        await expect(appPage.getByText('Grade Test Rubric')).toBeVisible({ timeout: 10_000 });
+        // The rubric name h2 is print-only (hidden on screen); check the topbar
+        // student name and the criterion title (both are visible on screen).
+        await expect(appPage.getByText(/grading.*grade test student/i)).toBeVisible({ timeout: 10_000 });
+        await expect(appPage.getByText('Writing Quality')).toBeVisible({ timeout: 5_000 });
     });
 
     test('select a level and it appears highlighted', async ({ appPage }) => {
