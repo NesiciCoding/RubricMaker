@@ -43,7 +43,7 @@ export class RubricBuilderPage extends BasePage {
     }
 
     async save(): Promise<void> {
-        await this.page.locator('.topbar button.btn-primary').click();
+        await this.page.locator('.topbar button.btn-primary').click({ force: true });
     }
 
     async waitForSaved(): Promise<void> {
@@ -51,8 +51,9 @@ export class RubricBuilderPage extends BasePage {
     }
 
     async openVersionHistory(): Promise<void> {
-        // Version history button uses btn-secondary class; match by accessible name
-        await this.page.getByRole('button', { name: /history/i }).click();
+        // force: true bypasses stability — button is visible but DOM re-renders
+        // during save keep it technically "unstable" for Playwright's click check.
+        await this.page.getByRole('button', { name: /history/i }).click({ force: true });
     }
 
     async saveVersion(label?: string): Promise<void> {

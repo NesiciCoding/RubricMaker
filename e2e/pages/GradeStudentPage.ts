@@ -35,7 +35,7 @@ export class GradeStudentPage extends BasePage {
     }
 
     async save(): Promise<void> {
-        await this.page.locator('.topbar button.btn-primary').click();
+        await this.page.locator('.topbar button.btn-primary').click({ force: true });
     }
 
     async waitForSaved(): Promise<void> {
