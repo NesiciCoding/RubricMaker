@@ -17,9 +17,15 @@ test.describe('Grading workflow', () => {
     test('grade page loads with rubric name visible', async ({ appPage }) => {
         const page = new GradeStudentPage(appPage);
         await page.goto('rubric-grade-test', 'student-grade-test');
-        // Debug: assert localStorage has the seeded rubric (shows content on failure)
-        const rmRubrics = await appPage.evaluate(() => localStorage.getItem('rm_rubrics'));
-        expect(rmRubrics, `rm_rubrics in localStorage: ${rmRubrics}`).toContain('rubric-grade-test');
+        // Debug: verify all three seeded keys are present in localStorage
+        const [rmRubrics, rmStudents, rmClasses] = await appPage.evaluate(() => [
+            localStorage.getItem('rm_rubrics'),
+            localStorage.getItem('rm_students'),
+            localStorage.getItem('rm_classes'),
+        ]);
+        expect(rmRubrics, `rm_rubrics=${rmRubrics?.slice(0, 80)}`).toContain('rubric-grade-test');
+        expect(rmStudents, `rm_students=${rmStudents?.slice(0, 80)}`).toContain('student-grade-test');
+        expect(rmClasses, `rm_classes=${rmClasses?.slice(0, 80)}`).not.toBeNull();
         await expect(appPage.getByText('Grade Test Rubric')).toBeVisible({ timeout: 10_000 });
     });
 
