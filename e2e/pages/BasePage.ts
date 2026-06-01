@@ -4,6 +4,11 @@ export class BasePage {
     constructor(protected page: Page) {}
 
     async navigate(path: string): Promise<void> {
+        // Go via about:blank to guarantee a full page reload on the target URL.
+        // Navigating between hash routes on the same origin is treated as a
+        // fragment-change (no reload) — React keeps its stale state and ignores
+        // any localStorage written by seedStorage since the last navigation.
+        await this.page.goto('about:blank');
         await this.page.goto(`/#${path}`);
         await this.page.waitForSelector('.main-area', { timeout: 10_000 });
     }

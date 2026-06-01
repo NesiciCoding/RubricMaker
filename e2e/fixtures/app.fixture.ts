@@ -24,10 +24,11 @@ export const test = base.extend<AppFixtures>({
         await use(page);
     },
 
-    seedStorage: async ({ page }, use) => {
-        // page.evaluate() works reliably once the page has a DOM context (appPage navigates first)
+    seedStorage: async ({ appPage }, use) => {
+        // Depend on appPage (not raw page) so the initial navigation to /#/ has already run
+        // before evaluate() is called. page.evaluate() throws if no page context yet.
         const seed = async (data: Record<string, unknown>) => {
-            await page.evaluate((d) => {
+            await appPage.evaluate((d) => {
                 Object.entries(d as Record<string, unknown>).forEach(([k, v]) => {
                     localStorage.setItem(k, JSON.stringify(v));
                 });

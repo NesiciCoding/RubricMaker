@@ -38,6 +38,7 @@ test.describe('Grading workflow', () => {
         await page.save();
         await page.waitForSaved();
 
+        await appPage.goto('about:blank');
         await appPage.goto('/#/rubrics');
         await page.goto('rubric-grade-test', 'student-grade-test');
 
