@@ -12,7 +12,10 @@ export const test = base.extend<AppFixtures>({
         const settings = buildSettings();
         await page.addInitScript((s) => {
             localStorage.setItem('rm_local_mode', 'true');
-            localStorage.setItem('rm_settings', JSON.stringify(s));
+            // Only seed settings if not already present, so persistence tests survive reload
+            if (!localStorage.getItem('rm_settings')) {
+                localStorage.setItem('rm_settings', JSON.stringify(s));
+            }
         }, settings);
         await use(page);
     },

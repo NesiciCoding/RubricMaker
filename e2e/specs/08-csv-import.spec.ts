@@ -7,7 +7,7 @@ const CSV_FIXTURE = path.join(__dirname, '../fixtures/students.csv');
 
 test.describe('CSV student import', () => {
     test('uploading CSV opens the import modal', async ({ appPage }) => {
-        await appPage.goto('/students');
+        await appPage.goto('/#/students');
 
         const [fileChooser] = await Promise.all([
             appPage.waitForEvent('filechooser'),
@@ -20,7 +20,7 @@ test.describe('CSV student import', () => {
     });
 
     test('CSV modal shows parsed rows and import button', async ({ appPage }) => {
-        await appPage.goto('/students');
+        await appPage.goto('/#/students');
 
         const [fileChooser] = await Promise.all([
             appPage.waitForEvent('filechooser'),
@@ -36,7 +36,7 @@ test.describe('CSV student import', () => {
     });
 
     test('importing CSV adds students to the list', async ({ appPage }) => {
-        await appPage.goto('/students');
+        await appPage.goto('/#/students');
 
         const [fileChooser] = await Promise.all([
             appPage.waitForEvent('filechooser'),

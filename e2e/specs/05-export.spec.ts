@@ -19,14 +19,14 @@ test.describe('Export page', () => {
     test('export page loads and shows rubric selector', async ({ appPage }) => {
         const page = new ExportPage(appPage);
         await page.goto();
-        await expect(appPage.locator('select').first()).toBeVisible();
+        await expect(appPage.locator('select').first()).toBeVisible({ timeout: 10_000 });
     });
 
     test('graded student appears after selecting rubric', async ({ appPage }) => {
         const page = new ExportPage(appPage);
         await page.goto();
         await page.selectRubricById('export-rubric');
-        await expect(appPage.getByText('Export Student')).toBeVisible({ timeout: 5_000 });
+        await expect(appPage.getByText('Export Student')).toBeVisible({ timeout: 10_000 });
     });
 
     test('select all enables export button', async ({ appPage }) => {

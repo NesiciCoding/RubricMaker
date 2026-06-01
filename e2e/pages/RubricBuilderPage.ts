@@ -27,7 +27,9 @@ export class RubricBuilderPage extends BasePage {
     }
 
     async addFirstCriterion(): Promise<void> {
-        await this.page.getByRole('button', { name: /add first criterion/i }).click();
+        // New rubrics always start with one criterion; only click if truly empty
+        const btn = this.page.getByRole('button', { name: /add first criterion/i });
+        if (await btn.isVisible()) await btn.click();
     }
 
     async addCriterionRow(): Promise<void> {
@@ -41,15 +43,15 @@ export class RubricBuilderPage extends BasePage {
     }
 
     async save(): Promise<void> {
-        await this.page.getByRole('button', { name: /^save$/i }).click();
+        await this.page.getByRole('button').filter({ hasText: /^save$/i }).click();
     }
 
     async waitForSaved(): Promise<void> {
-        await this.page.getByRole('button', { name: /saved!/i }).waitFor({ timeout: 5_000 });
+        await this.page.getByRole('button').filter({ hasText: /saved!/i }).waitFor({ timeout: 5_000 });
     }
 
     async openVersionHistory(): Promise<void> {
-        await this.page.click('button.btn-ghost[title*="ersion"], button[aria-label*="ersion"]');
+        await this.page.locator('button.btn-ghost.btn-sm').filter({ hasText: /history/i }).click();
     }
 
     async saveVersion(label?: string): Promise<void> {

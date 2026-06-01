@@ -27,7 +27,9 @@ test.describe('Student CRUD', () => {
         await page.goto();
         await expect(appPage.getByText('Delete Me Student')).toBeVisible();
 
-        const studentRow = appPage.getByText('Delete Me Student').locator('..').locator('..');
+        const studentRow = appPage.getByRole('row').filter({
+            has: appPage.getByText('Delete Me Student', { exact: true }),
+        });
         await studentRow.getByRole('button', { name: /delete/i }).click();
         await expect(appPage.getByRole('dialog')).toBeVisible();
         await appPage.getByRole('dialog').getByRole('button', { name: /delete/i }).click();

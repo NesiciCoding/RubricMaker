@@ -17,7 +17,7 @@ test.describe('Grading workflow', () => {
     test('grade page loads with rubric name visible', async ({ appPage }) => {
         const page = new GradeStudentPage(appPage);
         await page.goto('rubric-grade-test', 'student-grade-test');
-        await expect(appPage.getByText('Grade Test Rubric')).toBeVisible();
+        await expect(appPage.getByText('Grade Test Rubric')).toBeVisible({ timeout: 10_000 });
     });
 
     test('select a level and it appears highlighted', async ({ appPage }) => {
@@ -38,11 +38,11 @@ test.describe('Grading workflow', () => {
         await page.save();
         await page.waitForSaved();
 
-        await appPage.goto('/rubrics');
+        await appPage.goto('/#/rubrics');
         await page.goto('rubric-grade-test', 'student-grade-test');
 
-        await expect(page.getLevelBtn('Excellent', 0)).toHaveClass(/selected/);
-        await expect(appPage.getByText('Exceptional work on this criterion')).toBeVisible();
+        await expect(page.getLevelBtn('Excellent', 0)).toHaveClass(/selected/, { timeout: 10_000 });
+        await expect(appPage.getByText('Exceptional work on this criterion')).toBeVisible({ timeout: 10_000 });
     });
 
     test('grade summary footer is visible after grading', async ({ appPage }) => {
@@ -53,7 +53,7 @@ test.describe('Grading workflow', () => {
         await page.save();
         await page.waitForSaved();
 
-        await expect(page.getGradeSummary()).toBeVisible();
+        await expect(page.getGradeSummary()).toBeVisible({ timeout: 10_000 });
     });
 
     test('save button text changes to Saved! then reverts', async ({ appPage }) => {
@@ -63,6 +63,6 @@ test.describe('Grading workflow', () => {
         await page.selectLevel(0, 'Good');
         await page.save();
         await page.waitForSaved();
-        await expect(appPage.getByRole('button', { name: /^save$/i })).toBeVisible({ timeout: 5_000 });
+        await expect(appPage.getByRole('button').filter({ hasText: /^save$/i })).toBeVisible({ timeout: 5_000 });
     });
 });

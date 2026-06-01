@@ -31,11 +31,11 @@ export class GradeStudentPage extends BasePage {
     }
 
     async save(): Promise<void> {
-        await this.page.getByRole('button', { name: /^save$/i }).click();
+        await this.page.getByRole('button').filter({ hasText: /^save$/i }).click();
     }
 
     async waitForSaved(): Promise<void> {
-        await this.page.getByRole('button', { name: /saved!/i }).waitFor({ timeout: 5_000 });
+        await this.page.getByRole('button').filter({ hasText: /saved!/i }).waitFor({ timeout: 5_000 });
     }
 
     getGradeSummary() {

@@ -12,7 +12,7 @@ const navItems = [
 
 test.describe('Sidebar navigation', () => {
     test.beforeEach(async ({ appPage }) => {
-        await appPage.goto('/');
+        await appPage.goto('/#/');
     });
 
     for (const { tour, url } of navItems) {
@@ -41,7 +41,7 @@ test.describe('Sidebar navigation', () => {
     });
 
     test('unknown route shows 404 page', async ({ appPage }) => {
-        await appPage.goto('/this-route-does-not-exist-xyz');
+        await appPage.goto('/#/this-route-does-not-exist-xyz');
         await expect(appPage.getByText(/not found|404|page.*not.*found/i)).toBeVisible({ timeout: 10_000 });
     });
 });
@@ -49,7 +49,7 @@ test.describe('Sidebar navigation', () => {
 test.describe('Mobile navigation', () => {
     test('mobile menu button is visible on small viewport', async ({ appPage }) => {
         await appPage.setViewportSize({ width: 390, height: 844 });
-        await appPage.goto('/');
+        await appPage.goto('/#/');
         const mobileMenuBtn = appPage.locator('button[aria-label*="menu" i], .mobile-menu-btn, button:has-text("Menu")');
         await expect(mobileMenuBtn.first()).toBeVisible({ timeout: 5_000 });
     });

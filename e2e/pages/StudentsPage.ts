@@ -11,7 +11,7 @@ export class StudentsPage extends BasePage {
     }
 
     async openAddStudentModal(): Promise<void> {
-        await this.page.getByRole('button', { name: /add student/i }).click();
+        await this.page.getByRole('button', { name: /add student/i }).first().click();
     }
 
     async fillStudentName(name: string): Promise<void> {
