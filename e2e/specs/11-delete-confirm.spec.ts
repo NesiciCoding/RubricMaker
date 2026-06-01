@@ -14,7 +14,6 @@ test.describe('ConfirmDialog — delete flows', () => {
 
         const dialog = appPage.getByRole('dialog');
         await expect(dialog).toBeVisible();
-        // Confirm button has btn-danger class
         const confirmBtn = dialog.getByRole('button', { name: /delete/i });
         await expect(confirmBtn).toHaveClass(/btn-danger/);
         await confirmBtn.click();

@@ -21,8 +21,8 @@ export class ExportPage extends BasePage {
     }
 
     async toggleStudent(studentName: string): Promise<void> {
-        const row = this.page.getByText(studentName).locator('..').locator('input[type="checkbox"]');
-        await row.click();
+        const row = this.page.getByRole('row', { name: new RegExp(`\\b${studentName}\\b`) });
+        await row.getByRole('checkbox').first().click();
     }
 
     async selectAllStudents(): Promise<void> {

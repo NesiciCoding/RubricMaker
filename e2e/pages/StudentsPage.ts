@@ -38,11 +38,11 @@ export class StudentsPage extends BasePage {
     }
 
     getStudentRow(name: string) {
-        return this.page.getByText(name, { exact: false }).first();
+        return this.page.getByText(name, { exact: true }).first();
     }
 
     isStudentVisible(name: string) {
-        return this.page.getByText(name).isVisible();
+        return this.page.getByText(name, { exact: true }).isVisible();
     }
 
     async uploadCsv(filePath: string): Promise<void> {

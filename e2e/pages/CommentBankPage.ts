@@ -32,6 +32,6 @@ export class CommentBankPage extends BasePage {
     }
 
     isSnippetVisible(text: string) {
-        return this.page.getByText(text).isVisible();
+        return this.page.getByText(text, { exact: true }).isVisible();
     }
 }

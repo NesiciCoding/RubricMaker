@@ -60,7 +60,7 @@ export class RubricBuilderPage extends BasePage {
     }
 
     async restoreVersion(index: number): Promise<void> {
-        this.page.on('dialog', (dialog) => dialog.accept());
+        this.page.once('dialog', (dialog) => dialog.accept());
         const restoreButtons = this.page.getByRole('button', { name: /restore/i });
         await restoreButtons.nth(index).click();
     }

@@ -3,9 +3,7 @@ import type { Page } from '@playwright/test';
 import { buildSettings } from './data.factory';
 
 export type AppFixtures = {
-    /** Page with local mode + tutorial dismissed injected before React mounts */
     appPage: Page;
-    /** Seed additional rm_* keys into localStorage before page navigation */
     seedStorage: (data: Record<string, unknown>) => Promise<void>;
 };
 

@@ -21,7 +21,10 @@ export class RubricListPage extends BasePage {
     }
 
     getRubricCard(name: string) {
-        return this.page.locator('.rubric-card, [data-rubric-id], .card').filter({ hasText: name }).first();
+        return this.page
+            .locator('.rubric-card, [data-rubric-id], .card')
+            .filter({ has: this.page.getByText(name, { exact: true }) })
+            .first();
     }
 
     async clickEditRubric(name: string): Promise<void> {

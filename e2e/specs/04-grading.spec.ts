@@ -38,7 +38,6 @@ test.describe('Grading workflow', () => {
         await page.save();
         await page.waitForSaved();
 
-        // Navigate away and back
         await appPage.goto('/rubrics');
         await page.goto('rubric-grade-test', 'student-grade-test');
 
@@ -64,7 +63,6 @@ test.describe('Grading workflow', () => {
         await page.selectLevel(0, 'Good');
         await page.save();
         await page.waitForSaved();
-        // After ~2s it reverts to "Save"
         await expect(appPage.getByRole('button', { name: /^save$/i })).toBeVisible({ timeout: 5_000 });
     });
 });

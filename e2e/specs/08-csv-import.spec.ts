@@ -16,7 +16,6 @@ test.describe('CSV student import', () => {
         await fileChooser.setFiles(CSV_FIXTURE);
 
         await expect(appPage.getByRole('dialog')).toBeVisible({ timeout: 5_000 });
-        // Modal title contains "CSV" or "Import"
         await expect(appPage.locator('#csv-import-title')).toBeVisible();
     });
 
