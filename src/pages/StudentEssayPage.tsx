@@ -1,14 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import {
-    Clock,
-    CheckCircle,
-    Copy,
-    AlertTriangle,
-    Mail,
-    Loader2,
-    Save,
-} from 'lucide-react';
+import { Clock, CheckCircle, Copy, AlertTriangle, Mail, Loader2, Save } from 'lucide-react';
 import EssayEditor from '../components/Editor/EssayEditor';
 import { decodeEssayAssignment } from '../utils/essayShareCode';
 import { encodeEssaySubmission } from '../utils/essaySubmissionCode';

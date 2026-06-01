@@ -1,7 +1,19 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { BookOpen, Copy, Check, TrendingUp, MessageSquare, Star, ClipboardCheck, FileText, Clock, AlertTriangle, ExternalLink } from 'lucide-react';
+import {
+    BookOpen,
+    Copy,
+    Check,
+    TrendingUp,
+    MessageSquare,
+    Star,
+    ClipboardCheck,
+    FileText,
+    Clock,
+    AlertTriangle,
+    ExternalLink,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
@@ -36,7 +48,9 @@ export default function StudentPortalPage() {
     const [essayRows, setEssayRows] = useState<PortalEssayRow[]>([]);
 
     useEffect(() => {
-        fetchMyEssayAssignments().then(setEssayRows).catch(() => {});
+        fetchMyEssayAssignments()
+            .then(setEssayRows)
+            .catch(() => {});
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     const tourKey = `rm_portal_tour_seen_${studentId}`;
@@ -177,7 +191,9 @@ export default function StudentPortalPage() {
         return `#/essay/${encodeEssayAssignment(assignment)}`;
     }
 
-    const pendingEssays = essayRows.filter((r) => !r.submission && (!r.expiresAt || new Date(r.expiresAt) > new Date()));
+    const pendingEssays = essayRows.filter(
+        (r) => !r.submission && (!r.expiresAt || new Date(r.expiresAt) > new Date())
+    );
     const completedEssays = essayRows.filter((r) => !!r.submission);
     const expiredEssays = essayRows.filter((r) => !r.submission && r.expiresAt && new Date(r.expiresAt) <= new Date());
 
@@ -532,9 +548,7 @@ function EssayCard({
     const now = new Date();
     const expired = !!row.expiresAt && new Date(row.expiresAt) <= now;
     const dueSoon =
-        !expired &&
-        !!row.expiresAt &&
-        new Date(row.expiresAt).getTime() - now.getTime() < 24 * 60 * 60 * 1000;
+        !expired && !!row.expiresAt && new Date(row.expiresAt).getTime() - now.getTime() < 24 * 60 * 60 * 1000;
 
     const chips: React.ReactNode[] = [];
     if (row.minWords && row.maxWords) {

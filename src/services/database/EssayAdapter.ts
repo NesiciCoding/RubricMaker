@@ -57,7 +57,9 @@ export class EssayAdapter {
      * Anonymous sessions (no email) are skipped so they don't suppress the email gate.
      */
     private async getActiveSession() {
-        const { data: { session: isolated } } = await this.client.auth.getSession();
+        const {
+            data: { session: isolated },
+        } = await this.client.auth.getSession();
         // Accept any session from rm_student_auth — this includes the anonymous session
         // written by signInAnonymously() after the email gate. We don't require an email
         // here because the student-provided email is passed separately to submitEssay().
@@ -66,7 +68,9 @@ export class EssayAdapter {
         // Only accept a portal session if it carries a real verified email.
         // This gates the "portal login bypasses the gate" path without leaking
         // anonymous portal sessions into the essay page.
-        const { data: { session: portal } } = await this.portalClient.auth.getSession();
+        const {
+            data: { session: portal },
+        } = await this.portalClient.auth.getSession();
         if (portal && portal.user.email) return { session: portal, source: 'portal' as const };
 
         return null;
