@@ -30,7 +30,8 @@ test.describe('Student CRUD', () => {
         const studentRow = appPage.locator('table tbody tr').filter({
             has: appPage.getByText('Delete Me Student', { exact: true }),
         });
-        await studentRow.getByRole('button', { name: /delete/i }).click();
+        // Delete button is icon-only (Trash2, no accessible name) — pick last icon btn in row
+        await studentRow.locator('button.btn-ghost.btn-icon').last().click();
         await expect(appPage.getByRole('dialog')).toBeVisible();
         await appPage.getByRole('dialog').getByRole('button', { name: /delete/i }).click();
 

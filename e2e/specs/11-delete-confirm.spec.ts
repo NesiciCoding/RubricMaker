@@ -68,7 +68,7 @@ test.describe('ConfirmDialog — delete flows', () => {
         await expect(appPage.getByText('Student To Delete')).toBeVisible();
 
         const row = appPage.locator('table tbody tr').filter({ has: appPage.getByText('Student To Delete', { exact: true }) });
-        await row.getByRole('button', { name: /delete/i }).click();
+        await row.locator('button.btn-ghost.btn-icon').last().click();
 
         await expect(appPage.getByRole('dialog')).toBeVisible();
         await appPage.getByRole('dialog').getByRole('button', { name: /delete/i }).click();

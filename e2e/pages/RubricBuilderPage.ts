@@ -51,7 +51,8 @@ export class RubricBuilderPage extends BasePage {
     }
 
     async openVersionHistory(): Promise<void> {
-        await this.page.locator('button.btn-ghost.btn-sm').filter({ hasText: /history/i }).click();
+        // Version history button uses btn-secondary class; match by accessible name
+        await this.page.getByRole('button', { name: /history/i }).click();
     }
 
     async saveVersion(label?: string): Promise<void> {
