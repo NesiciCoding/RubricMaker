@@ -27,6 +27,15 @@ import { encodeEssayAssignment } from '../utils/essayShareCode';
 import { loadSupabaseConfig } from '../services/database';
 import type { CefrLevel, CefrSkill, EssayAssignment } from '../types';
 
+/**
+ * Render the student portal page for the student identified by the current route.
+ *
+ * Shows grade history, CEFR progress, rubric grades with feedback, self-assessments (with edit/save),
+ * and essay assignments grouped as pending, completed, or expired. Provides a copy-link header action
+ * and an optional one-time guided tutorial stored per student in localStorage.
+ *
+ * @returns A JSX element representing the student portal page.
+ */
 export default function StudentPortalPage() {
     const { studentId } = useParams<{ studentId: string }>();
     const {
@@ -527,6 +536,21 @@ export default function StudentPortalPage() {
 
 type TFunc = (key: string, opts?: Record<string, string | number>) => string;
 
+/**
+ * Render a single essay assignment card showing title, prompt, requirement chips, submission/expiry status, and an "Open" link when applicable.
+ *
+ * @param row - Essay assignment data:
+ *   - `title`: assignment title
+ *   - `prompt`: optional prompt text
+ *   - `minWords` / `maxWords`: optional word-count constraints
+ *   - `timeLimitMinutes`: optional time limit in minutes
+ *   - `requireSEB`: whether Secure Exam Browser is required
+ *   - `expiresAt`: optional ISO timestamp string for expiry or `null`
+ *   - `submission`: `null` or `{ submittedAt: string; wordCount: number }` representing a completed submission
+ * @param href - URL to open the essay assignment
+ * @param t - translation function for localized strings
+ * @returns A JSX element representing the essay card UI
+ */
 function EssayCard({
     row,
     href,
@@ -675,6 +699,13 @@ function EssayCard({
     );
 }
 
+/**
+ * Creates a consistent inline style object for a compact metadata "chip".
+ *
+ * @param bg - CSS background color for the chip (any valid CSS color value)
+ * @param color - CSS text color for the chip (any valid CSS color value)
+ * @returns A `React.CSSProperties` object configured for a small inline chip (alignment, padding, font sizing, border radius) using the provided colors
+ */
 function chipStyle(bg: string, color: string): React.CSSProperties {
     return {
         display: 'inline-flex',
@@ -688,6 +719,14 @@ function chipStyle(bg: string, color: string): React.CSSProperties {
     };
 }
 
+/**
+ * Render a compact statistic card with an icon, a prominent value, and a secondary label.
+ *
+ * @param icon - Leading icon or visual indicator rendered at the left of the card
+ * @param label - Secondary, smaller text describing the metric
+ * @param value - Primary, emphasized metric text shown prominently
+ * @returns A styled JSX element containing the icon, the value, and the label
+ */
 function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
     return (
         <div
