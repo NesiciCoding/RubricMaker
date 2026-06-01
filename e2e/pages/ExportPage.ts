@@ -21,7 +21,8 @@ export class ExportPage extends BasePage {
     }
 
     async toggleStudent(studentName: string): Promise<void> {
-        const row = this.page.getByRole('row', { name: new RegExp(`\\b${studentName}\\b`) });
+        const escaped = studentName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const row = this.page.getByRole('row', { name: new RegExp(`\\b${escaped}\\b`) });
         await row.getByRole('checkbox').first().click();
     }
 
