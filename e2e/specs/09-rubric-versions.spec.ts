@@ -34,12 +34,13 @@ test.describe('Rubric version history', () => {
         await builder.saveVersion('snapshot-v1');
         await expect(appPage.getByText('snapshot-v1')).toBeVisible({ timeout: 5_000 });
 
-        // Change the name
+        // Close the panel first so the DOM is stable before the second save
+        await builder.openVersionHistory(); // toggles off
         await builder.fillName('Name After Change');
         await builder.save();
         await builder.waitForSaved();
 
-        // Reopen version history — saving closes the panel
+        // Reopen version history to access restore buttons
         await builder.openVersionHistory();
 
         // Restore the snapshot — dialog.accept() is wired in restoreVersion
