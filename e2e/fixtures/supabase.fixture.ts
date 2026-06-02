@@ -126,8 +126,12 @@ async function createUserAndGetMagicLink(email: string): Promise<string> {
 }
 
 /**
- * Navigate to the magic link, wait for Supabase to redirect to the app with
- * auth tokens in the hash, then wait for the app to finish hydrating.
+ * Navigate to the magic link, wait for Supabase to redirect to the app and
+ * store the session in localStorage, then navigate to `/#/` explicitly.
+ *
+ * Without the explicit second navigation the redirect URL may land on a
+ * student-portal path (when the hash is interpreted as a route) rather than
+ * the teacher app, causing .main-area to never appear.
  *
  * The `rm_supabase_config` key is injected via addInitScript so the app
  * connects to the local Supabase stack on every navigation.
@@ -141,12 +145,22 @@ async function signInViaMagicLink(page: Page, actionLink: string): Promise<void>
         { url: SUPABASE_URL, key: SUPABASE_ANON_KEY }
     );
 
-    // Navigate to the Supabase verify URL; it redirects to APP_URL#access_token=...
+    // Navigate to the Supabase verify URL; it redirects to APP_URL with auth tokens
     await page.goto(actionLink, { waitUntil: 'commit' });
-    // Wait for the redirect to land on the app
     await page.waitForURL(`${APP_URL}/**`, { timeout: 15_000 });
-    // supabase-js detects the #access_token hash, establishes session,
-    // fires onAuthChange → AppContext connects + hydrates → shows .main-area
+
+    // Wait for supabase-js to process the auth tokens and persist the session
+    // (works regardless of whether the flow is implicit or PKCE code-exchange)
+    await page.waitForFunction(
+        () => Object.keys(localStorage).some((k) => k.startsWith('sb-') && k.endsWith('-auth-token')),
+        { timeout: 10_000, polling: 250 }
+    );
+
+    // Navigate explicitly to the teacher app root so we are never stuck on a
+    // student-portal or other route that the auth hash may have landed on
+    await page.goto(`${APP_URL}/#/`);
+    // addInitScript runs again here, re-injecting rm_supabase_config for this origin
+
     await page.waitForSelector('.main-area', { timeout: 30_000 });
 }
 
