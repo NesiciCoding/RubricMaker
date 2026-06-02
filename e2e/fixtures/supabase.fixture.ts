@@ -101,6 +101,16 @@ async function createUserAndGetMagicLink(email: string): Promise<string> {
     }
     // Non-fatal: if school setup fails the test may see the onboarding page
 
+    // Seed user settings so the tutorial doesn't overlay the rubric builder.
+    // user_settings(user_id pk, settings jsonb) — fetched by hydrate() and
+    // merged into app state; hasSeenTutorial:true prevents the tutorial modal.
+    await fetch(`${SUPABASE_URL}/rest/v1/user_settings`, {
+        method: 'POST',
+        headers: restHeaders,
+        body: JSON.stringify({ user_id: user.id, settings: { hasSeenTutorial: true } }),
+    });
+    // Non-fatal if this fails; the tutorial can be dismissed via the UI
+
     // Generate magic link directly — Supabase returns the verify URL without sending email
     const linkRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/generate_link`, {
         method: 'POST',
