@@ -13,6 +13,21 @@ import type { Page } from '@playwright/test';
 import { RubricBuilderPage } from '../pages/RubricBuilderPage';
 import { RubricListPage } from '../pages/RubricListPage';
 
+// ── Save helpers ──────────────────────────────────────────────────────────────
+
+/**
+ * Save a rubric and wait for the Supabase push to settle.
+ *
+ * `builder.waitForSaved()` confirms the local save (via "Saved" button text or
+ * URL navigation away from /new).  `waitForLoadState('networkidle')` then waits
+ * for the async Supabase push to complete so subsequent DB queries find the row.
+ */
+async function saveAndSync(page: Page, builder: RubricBuilderPage): Promise<void> {
+    await builder.save();
+    await builder.waitForSaved();
+    await page.waitForLoadState('networkidle', { timeout: 15_000 });
+}
+
 // ── Navigation helpers ────────────────────────────────────────────────────────
 
 /**
@@ -84,8 +99,7 @@ test.describe('Cloud persistence (Supabase-first hydration)', () => {
         await builder.fillSubject('English');
         await builder.addFirstCriterion();
         await builder.fillCriterionTitle(0, 'Accuracy');
-        await builder.save();
-        await builder.waitForSaved();
+        await saveAndSync(supabasePage, builder);
 
         // Verify it exists in the Supabase DB
         const dbRubrics = await fetchRubricsFromDb(testUserEmail);
@@ -115,16 +129,14 @@ test.describe('Cloud persistence (Supabase-first hydration)', () => {
         await builder.fillSubject('English');
         await builder.addFirstCriterion();
         await builder.fillCriterionTitle(0, 'Clarity');
-        await builder.save();
-        await builder.waitForSaved();
+        await saveAndSync(supabasePage, builder);
 
         await gotoNewRubric(supabasePage);
         await builder.fillName('Delete This One');
         await builder.fillSubject('Dutch');
         await builder.addFirstCriterion();
         await builder.fillCriterionTitle(0, 'Fluency');
-        await builder.save();
-        await builder.waitForSaved();
+        await saveAndSync(supabasePage, builder);
 
         // Delete the second rubric via the list page
         await gotoRubricList(supabasePage);
@@ -152,8 +164,7 @@ test.describe('Offline write queue and reconnect flush', () => {
         await builder.fillSubject('English');
         await builder.addFirstCriterion();
         await builder.fillCriterionTitle(0, 'Content');
-        await builder.save();
-        await builder.waitForSaved();
+        await saveAndSync(supabasePage, builder);
 
         // Go offline
         await supabasePage.context().setOffline(true);
@@ -166,6 +177,7 @@ test.describe('Offline write queue and reconnect flush', () => {
         await builder.fillCriterionTitle(0, 'Vocabulary');
         await builder.save();
         await builder.waitForSaved();
+        // No networkidle wait here — we are offline, Supabase push is intentionally queued
 
         // Pending queue must have items
         const pendingQueue = await supabasePage.evaluate(() => {
@@ -200,8 +212,7 @@ test.describe('Offline write queue and reconnect flush', () => {
         await builder.fillSubject('English');
         await builder.addFirstCriterion();
         await builder.fillCriterionTitle(0, 'Grammar');
-        await builder.save();
-        await builder.waitForSaved();
+        await saveAndSync(supabasePage, builder);
 
         // Allow async Supabase push to complete
         await supabasePage.waitForTimeout(2_000);
