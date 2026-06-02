@@ -384,10 +384,7 @@ export interface PendingWrite {
 }
 
 function pendingKey(op: Pick<PendingWrite, 'entity' | 'action' | 'payload' | 'entityId'>): string {
-    const eid =
-        op.action === 'delete'
-            ? op.entityId
-            : (op.payload as Record<string, unknown> | null)?.id;
+    const eid = op.action === 'delete' ? op.entityId : (op.payload as Record<string, unknown> | null)?.id;
     return `${op.entity}:${eid ?? 'singleton'}`;
 }
 

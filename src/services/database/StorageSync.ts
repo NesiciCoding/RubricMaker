@@ -114,7 +114,9 @@ class StorageSyncService {
         this.networkListenerActive = true;
         window.addEventListener('online', () => {
             this.setStatus('idle');
-            this.flushPendingQueue().then(() => this.notifyReconnect()).catch(console.warn);
+            this.flushPendingQueue()
+                .then(() => this.notifyReconnect())
+                .catch(console.warn);
         });
         window.addEventListener('offline', () => {
             this.setStatus('offline');
