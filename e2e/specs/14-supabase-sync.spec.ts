@@ -9,15 +9,33 @@
  * the default `npm run e2e` run stays fast and dependency-free.
  */
 import { test, expect, SUPABASE_URL, SUPABASE_SERVICE_KEY } from '../fixtures/supabase.fixture';
+import type { Page } from '@playwright/test';
 import { RubricBuilderPage } from '../pages/RubricBuilderPage';
 import { RubricListPage } from '../pages/RubricListPage';
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Navigation helpers ────────────────────────────────────────────────────────
 
 /**
- * Resolve a test user's UUID from their email via the admin API.
- * Throws if the user is not found or the request fails.
+ * Navigate to the new-rubric form without a page reload.
+ *
+ * BasePage.navigate() performs a hard reload which re-initialises the
+ * Supabase auth flow and triggers a SET_ALL dispatch mid-interaction,
+ * wiping the partially-filled form.  In Supabase tests the app is already
+ * connected; a simple hash navigation keeps the session alive.
  */
+async function gotoNewRubric(page: Page): Promise<void> {
+    await page.goto('/#/rubrics/new');
+    await page.waitForSelector('input[placeholder="Rubric Name..."]', { timeout: 15_000 });
+}
+
+/** Navigate to the rubric list without a page reload. */
+async function gotoRubricList(page: Page): Promise<void> {
+    await page.goto('/#/rubrics');
+    await page.waitForSelector('.main-area', { timeout: 15_000 });
+}
+
+// ── DB helpers ────────────────────────────────────────────────────────────────
+
 async function resolveUserId(userEmail: string): Promise<string> {
     const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users?per_page=1000`, {
         headers: {
@@ -32,26 +50,15 @@ async function resolveUserId(userEmail: string): Promise<string> {
     return user.id;
 }
 
-/**
- * Fetch rubrics scoped to one test user via service role.
- * Throws on non-OK responses so the test fails instead of silently passing.
- */
-async function fetchRubricsFromDb(
-    userEmail: string
-): Promise<{ id: string; data: { name: string } }[]> {
+async function fetchRubricsFromDb(userEmail: string): Promise<{ id: string; data: { name: string } }[]> {
     const userId = await resolveUserId(userEmail);
-    const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/rubrics?select=id,data&owner_id=eq.${userId}`,
-        {
-            headers: {
-                apikey: SUPABASE_SERVICE_KEY,
-                Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
-            },
-        }
-    );
-    if (!res.ok) {
-        throw new Error(`Failed to fetch rubrics: ${res.status} ${await res.text()}`);
-    }
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rubrics?select=id,data&owner_id=eq.${userId}`, {
+        headers: {
+            apikey: SUPABASE_SERVICE_KEY,
+            Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+        },
+    });
+    if (!res.ok) throw new Error(`Failed to fetch rubrics: ${res.status} ${await res.text()}`);
     return (await res.json()) as { id: string; data: { name: string } }[];
 }
 
@@ -59,29 +66,20 @@ async function fetchRubricsFromDb(
 
 test.describe('Supabase sign-in', () => {
     test('magic-link flow lands in the app with Supabase connected', async ({ supabasePage }) => {
-        // The supabasePage fixture already completed the sign-in flow.
-        // Verify the app is running and Supabase status is not offline.
         await expect(supabasePage.locator('.main-area')).toBeVisible();
 
-        // Confirm Supabase config is present in localStorage (app is connected).
-        const config = await supabasePage.evaluate(() =>
-            localStorage.getItem('rm_supabase_config')
-        );
+        const config = await supabasePage.evaluate(() => localStorage.getItem('rm_supabase_config'));
         expect(config).not.toBeNull();
         expect(JSON.parse(config!)).toMatchObject({ supabaseUrl: expect.any(String) });
     });
 });
 
 test.describe('Cloud persistence (Supabase-first hydration)', () => {
-    test('rubric created online survives localStorage entity removal', async ({
-        supabasePage,
-        testUserEmail,
-    }) => {
+    test('rubric created online survives localStorage entity removal', async ({ supabasePage, testUserEmail }) => {
         const builder = new RubricBuilderPage(supabasePage);
-        const list = new RubricListPage(supabasePage);
 
-        // Create a rubric while connected
-        await builder.gotoNew();
+        // Create a rubric via in-session navigation (no reload = no hydration race)
+        await gotoNewRubric(supabasePage);
         await builder.fillName('Cloud-Persisted Rubric');
         await builder.fillSubject('English');
         await builder.addFirstCriterion();
@@ -89,32 +87,30 @@ test.describe('Cloud persistence (Supabase-first hydration)', () => {
         await builder.save();
         await builder.waitForSaved();
 
-        // Verify it exists in the Supabase DB (scoped to this test user)
+        // Verify it exists in the Supabase DB
         const dbRubrics = await fetchRubricsFromDb(testUserEmail);
         expect(dbRubrics.some((r) => r.data.name === 'Cloud-Persisted Rubric')).toBe(true);
 
-        // Simulate localStorage rubric data loss (e.g. switching devices / cache cleared)
+        // Simulate localStorage rubric data loss (switching devices / cache cleared)
         await supabasePage.evaluate(() => localStorage.removeItem('rm_rubrics'));
 
         // Reload — the app should re-hydrate rubrics from Supabase
         await supabasePage.reload();
         await supabasePage.waitForSelector('.main-area', { timeout: 20_000 });
+        await supabasePage.waitForLoadState('networkidle', { timeout: 15_000 });
 
-        await list.goto();
+        await gotoRubricList(supabasePage);
         await expect(supabasePage.getByText('Cloud-Persisted Rubric')).toBeVisible({
             timeout: 10_000,
         });
     });
 
-    test('rubric deleted on device is absent after re-hydration', async ({
-        supabasePage,
-        testUserEmail,
-    }) => {
+    test('rubric deleted on device is absent after re-hydration', async ({ supabasePage, testUserEmail }) => {
         const builder = new RubricBuilderPage(supabasePage);
         const list = new RubricListPage(supabasePage);
 
-        // Create two rubrics
-        await builder.gotoNew();
+        // Create two rubrics via in-session navigation
+        await gotoNewRubric(supabasePage);
         await builder.fillName('Keep This One');
         await builder.fillSubject('English');
         await builder.addFirstCriterion();
@@ -122,7 +118,7 @@ test.describe('Cloud persistence (Supabase-first hydration)', () => {
         await builder.save();
         await builder.waitForSaved();
 
-        await builder.gotoNew();
+        await gotoNewRubric(supabasePage);
         await builder.fillName('Delete This One');
         await builder.fillSubject('Dutch');
         await builder.addFirstCriterion();
@@ -130,8 +126,8 @@ test.describe('Cloud persistence (Supabase-first hydration)', () => {
         await builder.save();
         await builder.waitForSaved();
 
-        // Delete the second rubric via the app
-        await list.goto();
+        // Delete the second rubric via the list page
+        await gotoRubricList(supabasePage);
         await list.clickDeleteRubric('Delete This One');
         await expect(supabasePage.getByRole('dialog')).toBeVisible();
         await list.confirmDelete();
@@ -139,7 +135,7 @@ test.describe('Cloud persistence (Supabase-first hydration)', () => {
             timeout: 5_000,
         });
 
-        // Verify the DB reflects the deletion (scoped to this test user)
+        // Verify the DB reflects the deletion
         const dbRubrics = await fetchRubricsFromDb(testUserEmail);
         expect(dbRubrics.some((r) => r.data.name === 'Delete This One')).toBe(false);
         expect(dbRubrics.some((r) => r.data.name === 'Keep This One')).toBe(true);
@@ -147,14 +143,11 @@ test.describe('Cloud persistence (Supabase-first hydration)', () => {
 });
 
 test.describe('Offline write queue and reconnect flush', () => {
-    test('writes made while offline are queued and flushed on reconnect', async ({
-        supabasePage,
-        testUserEmail,
-    }) => {
+    test('writes made while offline are queued and flushed on reconnect', async ({ supabasePage, testUserEmail }) => {
         const builder = new RubricBuilderPage(supabasePage);
 
-        // Create a rubric while online to confirm baseline sync works
-        await builder.gotoNew();
+        // Create a rubric while online (in-session navigation)
+        await gotoNewRubric(supabasePage);
         await builder.fillName('Online Rubric');
         await builder.fillSubject('English');
         await builder.addFirstCriterion();
@@ -165,8 +158,8 @@ test.describe('Offline write queue and reconnect flush', () => {
         // Go offline
         await supabasePage.context().setOffline(true);
 
-        // Create a rubric while offline — should succeed locally, queue for Supabase
-        await builder.gotoNew();
+        // Create a rubric while offline — succeeds locally, queued for Supabase
+        await gotoNewRubric(supabasePage);
         await builder.fillName('Offline Rubric');
         await builder.fillSubject('Dutch');
         await builder.addFirstCriterion();
@@ -174,7 +167,7 @@ test.describe('Offline write queue and reconnect flush', () => {
         await builder.save();
         await builder.waitForSaved();
 
-        // Confirm the pending queue has items
+        // Pending queue must have items
         const pendingQueue = await supabasePage.evaluate(() => {
             const raw = localStorage.getItem('rm_pending_sync');
             return raw ? JSON.parse(raw) : [];
@@ -184,7 +177,7 @@ test.describe('Offline write queue and reconnect flush', () => {
         // Reconnect
         await supabasePage.context().setOffline(false);
 
-        // Wait for the pending queue to be flushed
+        // Wait for queue to flush
         await supabasePage.waitForFunction(
             () => {
                 const raw = localStorage.getItem('rm_pending_sync');
@@ -194,7 +187,7 @@ test.describe('Offline write queue and reconnect flush', () => {
             { timeout: 10_000, polling: 500 }
         );
 
-        // Verify the offline rubric is now in Supabase (scoped to this test user)
+        // Verify offline rubric reached Supabase
         const dbAfterReconnect = await fetchRubricsFromDb(testUserEmail);
         expect(dbAfterReconnect.some((r) => r.data.name === 'Offline Rubric')).toBe(true);
     });
@@ -202,7 +195,7 @@ test.describe('Offline write queue and reconnect flush', () => {
     test('pending queue is empty while online', async ({ supabasePage }) => {
         const builder = new RubricBuilderPage(supabasePage);
 
-        await builder.gotoNew();
+        await gotoNewRubric(supabasePage);
         await builder.fillName('Sync Check Rubric');
         await builder.fillSubject('English');
         await builder.addFirstCriterion();
@@ -210,14 +203,13 @@ test.describe('Offline write queue and reconnect flush', () => {
         await builder.save();
         await builder.waitForSaved();
 
-        // Allow async sync to complete
+        // Allow async Supabase push to complete
         await supabasePage.waitForTimeout(2_000);
 
         const pendingQueue = await supabasePage.evaluate(() => {
             const raw = localStorage.getItem('rm_pending_sync');
             return raw ? JSON.parse(raw) : [];
         });
-        // When online and pushOne succeeds, nothing should remain in the queue
         expect(pendingQueue).toHaveLength(0);
     });
 });
