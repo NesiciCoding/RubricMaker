@@ -70,11 +70,14 @@ async function createUserAndGetMagicLink(email: string): Promise<string> {
     }
     const user = (await createRes.json()) as { id: string };
 
-    // Create a school so needsOnboarding is false after hydration
+    // Create a school so needsOnboarding is false after hydration.
+    // Schema: schools(id, name, created_by, retention_years)
+    //         school_members(id, school_id, profile_id)  — no role column
+    //         profiles.school_id — only field checked for needsOnboarding
     const schoolRes = await fetch(`${SUPABASE_URL}/rest/v1/schools`, {
         method: 'POST',
         headers: restHeaders,
-        body: JSON.stringify({ name: 'E2E Test School', retention_years: 7, owner_id: user.id }),
+        body: JSON.stringify({ name: 'E2E Test School', retention_years: 3, created_by: user.id }),
     });
     if (schoolRes.ok) {
         const schools = (await schoolRes.json()) as { id: string }[];
@@ -84,17 +87,19 @@ async function createUserAndGetMagicLink(email: string): Promise<string> {
                 fetch(`${SUPABASE_URL}/rest/v1/school_members`, {
                     method: 'POST',
                     headers: restHeaders,
-                    body: JSON.stringify({ school_id: schoolId, profile_id: user.id, role: 'admin' }),
+                    body: JSON.stringify({ school_id: schoolId, profile_id: user.id }),
                 }),
+                // Only set school_id — do not update role to avoid the
+                // protect_role_changes trigger which rejects non-admin callers
                 fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`, {
                     method: 'PATCH',
                     headers: restHeaders,
-                    body: JSON.stringify({ school_id: schoolId, role: 'admin' }),
+                    body: JSON.stringify({ school_id: schoolId }),
                 }),
             ]);
         }
     }
-    // Non-fatal: if school setup fails the test may see the onboarding page instead of main-area
+    // Non-fatal: if school setup fails the test may see the onboarding page
 
     // Generate magic link directly — Supabase returns the verify URL without sending email
     const linkRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/generate_link`, {
