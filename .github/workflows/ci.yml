@@ -128,8 +128,17 @@ jobs:
       - name: Export Supabase credentials
         run: |
           STATUS=$(supabase status)
-          ANON_KEY=$(echo "$STATUS" | awk '/anon key:/{print $NF}')
-          SVC_KEY=$(echo "$STATUS" | awk '/service_role key:/{print $NF}')
+          # Supabase CLI v2 uses sb_publishable_* / sb_secret_* keys in a table.
+          # Older CLI versions used "anon key:" / "service_role key:" with JWTs.
+          ANON_KEY=$(echo "$STATUS" | grep -oE 'sb_publishable_[A-Za-z0-9_-]+')
+          SVC_KEY=$(echo "$STATUS" | grep -oE 'sb_secret_[A-Za-z0-9_-]+')
+          # Legacy JWT fallback
+          if [ -z "$ANON_KEY" ]; then
+            ANON_KEY=$(echo "$STATUS" | awk '/anon key:/{print $NF}')
+          fi
+          if [ -z "$SVC_KEY" ]; then
+            SVC_KEY=$(echo "$STATUS" | awk '/service_role key:/{print $NF}')
+          fi
           if [ -z "$ANON_KEY" ] || [ -z "$SVC_KEY" ]; then
             echo "::error::Failed to extract Supabase credentials from supabase status"
             echo "$STATUS"
