@@ -4,9 +4,10 @@
  * Provides `supabasePage` — a page that is signed in as a freshly-created test
  * user against a local Supabase stack.  The test user is deleted after the test.
  *
- * Sign-in uses email+password via the admin API so no inbucket/email flow is
- * needed — this keeps the tests reliable in CI where inbucket may not be
- * reachable via its HTTP API.
+ * Sign-in uses the admin `generate_link` API to obtain a magic link URL
+ * without sending any email.  Playwright navigates to that URL; Supabase
+ * verifies the token and redirects to the app with auth tokens in the hash,
+ * which supabase-js detects natively.  No inbucket or session injection needed.
  *
  * Prerequisites: `npm run db:start` (local Supabase stack must be running).
  *
@@ -29,9 +30,7 @@ export const SUPABASE_SERVICE_KEY =
     process.env.SUPABASE_TEST_SERVICE_KEY ??
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hj04zWl196z2-SBc0';
 
-// Password used when creating test accounts via the admin API.
-// Not sensitive — only valid against a throwaway local-dev stack.
-const TEST_PASSWORD = 'RubricMaker-E2E-Pwd-9!Xk';
+const APP_URL = 'http://localhost:5173';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -40,97 +39,88 @@ export function makeTestEmail(): string {
     return `rm-e2e-${Date.now()}-${Math.random().toString(36).slice(2, 6)}@example.com`;
 }
 
-interface SupabaseSession {
-    access_token: string;
-    token_type: string;
-    expires_in: number;
-    expires_at: number;
-    refresh_token: string;
-    user: Record<string, unknown>;
-}
+const adminHeaders = {
+    'Content-Type': 'application/json',
+    apikey: SUPABASE_SERVICE_KEY,
+    Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+};
 
 /**
- * Create a test user with a known password via the service-role admin API,
- * then sign in to obtain a session object — no email flow required.
+ * Create a confirmed test user and return the Supabase magic-link URL using
+ * the admin generate_link API — no email or inbucket required.
  */
-async function createSessionForUser(email: string): Promise<SupabaseSession> {
-    // Create the user (email_confirm: true skips the confirmation step)
+async function createUserAndGetMagicLink(email: string): Promise<string> {
+    // Create confirmed user
     const createRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            apikey: SUPABASE_SERVICE_KEY,
-            Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
-        },
-        body: JSON.stringify({ email, password: TEST_PASSWORD, email_confirm: true }),
+        headers: adminHeaders,
+        body: JSON.stringify({ email, email_confirm: true }),
     });
     if (!createRes.ok) {
         throw new Error(`Failed to create test user: ${createRes.status} ${await createRes.text()}`);
     }
 
-    // Sign in with password to get a real session
-    const signInRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+    // Generate magic link directly — Supabase returns the verify URL without sending email
+    const linkRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/generate_link`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY },
-        body: JSON.stringify({ email, password: TEST_PASSWORD }),
+        headers: adminHeaders,
+        body: JSON.stringify({
+            type: 'magiclink',
+            email,
+            redirect_to: APP_URL,
+        }),
     });
-    if (!signInRes.ok) {
-        throw new Error(`Failed to sign in test user: ${signInRes.status} ${await signInRes.text()}`);
+    if (!linkRes.ok) {
+        throw new Error(`Failed to generate magic link: ${linkRes.status} ${await linkRes.text()}`);
     }
-    return signInRes.json() as Promise<SupabaseSession>;
+    const linkData = (await linkRes.json()) as {
+        action_link?: string;
+        properties?: { action_link?: string };
+    };
+    const actionLink = linkData.action_link ?? linkData.properties?.action_link;
+    if (!actionLink) {
+        throw new Error(`No action_link in generate_link response: ${JSON.stringify(linkData)}`);
+    }
+    return actionLink;
 }
 
 /**
- * Inject the Supabase config and session into the page's localStorage before
- * React mounts.  The app will detect the existing session on startup and hydrate
- * from the DB without requiring any UI interaction.
+ * Navigate to the magic link, wait for Supabase to redirect to the app with
+ * auth tokens in the hash, then wait for the app to finish hydrating.
  *
- * supabase-js v2 stores sessions at `sb-{hostname}-auth-token`.
+ * The `rm_supabase_config` key is injected via addInitScript so the app
+ * connects to the local Supabase stack on every navigation.
  */
-async function injectSession(page: Page, session: SupabaseSession): Promise<void> {
+async function signInViaMagicLink(page: Page, actionLink: string): Promise<void> {
+    // Inject Supabase config before React mounts on any origin this page visits
     await page.addInitScript(
-        ({
-            url,
-            anonKey,
-            storageKey,
-            sessionJson,
-        }: {
-            url: string;
-            anonKey: string;
-            storageKey: string;
-            sessionJson: string;
-        }) => {
-            localStorage.setItem('rm_supabase_config', JSON.stringify({ supabaseUrl: url, supabaseAnonKey: anonKey }));
-            localStorage.setItem(storageKey, sessionJson);
+        ({ url, key }: { url: string; key: string }) => {
+            localStorage.setItem('rm_supabase_config', JSON.stringify({ supabaseUrl: url, supabaseAnonKey: key }));
         },
-        {
-            url: SUPABASE_URL,
-            anonKey: SUPABASE_ANON_KEY,
-            // supabase-js derives the key from the URL hostname
-            storageKey: `sb-${new URL(SUPABASE_URL).hostname}-auth-token`,
-            sessionJson: JSON.stringify(session),
-        }
+        { url: SUPABASE_URL, key: SUPABASE_ANON_KEY }
     );
+
+    // Navigate to the Supabase verify URL; it redirects to APP_URL#access_token=...
+    await page.goto(actionLink, { waitUntil: 'commit' });
+    // Wait for the redirect to land on the app
+    await page.waitForURL(`${APP_URL}/**`, { timeout: 15_000 });
+    // supabase-js detects the #access_token hash, establishes session,
+    // fires onAuthChange → AppContext connects + hydrates → shows .main-area
+    await page.waitForSelector('.main-area', { timeout: 30_000 });
 }
 
 /** Delete a test user by email using the service-role admin API. */
 async function deleteTestUser(email: string): Promise<void> {
     try {
         const listRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users?per_page=1000`, {
-            headers: {
-                apikey: SUPABASE_SERVICE_KEY,
-                Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
-            },
+            headers: adminHeaders,
         });
         const { users } = (await listRes.json()) as { users: { id: string; email: string }[] };
         const user = users?.find((u) => u.email === email);
         if (!user) return;
         await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${user.id}`, {
             method: 'DELETE',
-            headers: {
-                apikey: SUPABASE_SERVICE_KEY,
-                Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
-            },
+            headers: adminHeaders,
         });
     } catch {
         // non-fatal: stale test users are harmless in a local stack
@@ -159,11 +149,8 @@ export const test = base.extend<SupabaseFixtures>({
 
     supabasePage: [
         async ({ page, testUserEmail }, use) => {
-            const session = await createSessionForUser(testUserEmail);
-            await injectSession(page, session);
-
-            await page.goto('/#/');
-            await page.waitForSelector('.main-area', { timeout: 20_000 });
+            const magicLink = await createUserAndGetMagicLink(testUserEmail);
+            await signInViaMagicLink(page, magicLink);
 
             await use(page);
 
