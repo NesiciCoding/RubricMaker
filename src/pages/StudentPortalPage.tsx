@@ -1,7 +1,19 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { BookOpen, Copy, Check, TrendingUp, MessageSquare, Star, ClipboardCheck } from 'lucide-react';
+import {
+    BookOpen,
+    Copy,
+    Check,
+    TrendingUp,
+    MessageSquare,
+    Star,
+    ClipboardCheck,
+    FileText,
+    Clock,
+    AlertTriangle,
+    ExternalLink,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
@@ -11,7 +23,9 @@ import CefrProgressChart from '../components/Statistics/CefrProgressChart';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
 import { getStudentPortalTutorialSteps } from '../data/StudentPortalTutorialSteps';
 import RubricSelfAssessPanel from '../components/Students/RubricSelfAssessPanel';
-import type { CefrLevel, CefrSkill } from '../types';
+import { encodeEssayAssignment } from '../utils/essayShareCode';
+import { loadSupabaseConfig } from '../services/database';
+import type { CefrLevel, CefrSkill, EssayAssignment, StudentEssayAssignmentSummary } from '../types';
 
 export default function StudentPortalPage() {
     const { studentId } = useParams<{ studentId: string }>();
@@ -24,10 +38,20 @@ export default function StudentPortalPage() {
         settings,
         selfAssessments,
         saveRubricSelfAssessment,
+        fetchMyEssayAssignments,
     } = useApp();
     const { t, i18n } = useTranslation();
     const [linkCopied, setLinkCopied] = useState(false);
     const [openSelfAssessId, setOpenSelfAssessId] = useState<string | null>(null);
+
+    const [essayRows, setEssayRows] = useState<StudentEssayAssignmentSummary[]>([]);
+    const [essayLoadError, setEssayLoadError] = useState<string | null>(null);
+
+    useEffect(() => {
+        fetchMyEssayAssignments()
+            .then(setEssayRows)
+            .catch((err: unknown) => setEssayLoadError(err instanceof Error ? err.message : 'Failed to load essays'));
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     const tourKey = `rm_portal_tour_seen_${studentId}`;
     const [tourRun, setTourRun] = useState(() => localStorage.getItem(tourKey) !== 'true');
@@ -144,6 +168,34 @@ export default function StudentPortalPage() {
 
     const avgScore = history.length > 0 ? history.reduce((acc, h) => acc + h.score, 0) / history.length : null;
     const portalUrl = `${window.location.origin}${window.location.pathname}#/portal/${student.id}`;
+
+    const dbConfig = loadSupabaseConfig();
+
+    function buildEssayUrl(row: StudentEssayAssignmentSummary): string {
+        const assignment: EssayAssignment = {
+            teacherKey: row.teacherKey,
+            rubricId: row.rubricId,
+            studentId: row.studentId,
+            title: row.title,
+            prompt: row.prompt ?? undefined,
+            minWords: row.minWords ?? undefined,
+            maxWords: row.maxWords ?? undefined,
+            timeLimitMinutes: row.timeLimitMinutes ?? undefined,
+            requireSEB: row.requireSEB,
+            readOnlyAfterSubmit: row.readOnlyAfterSubmit,
+            createdAt: row.createdAt,
+            expiresAt: row.expiresAt ?? undefined,
+            supabaseUrl: dbConfig?.supabaseUrl,
+            supabaseAnonKey: dbConfig?.supabaseAnonKey,
+        };
+        return `#/essay/${encodeEssayAssignment(assignment)}`;
+    }
+
+    const pendingEssays = essayRows.filter(
+        (r) => !r.submission && (!r.expiresAt || new Date(r.expiresAt) > new Date())
+    );
+    const completedEssays = essayRows.filter((r) => !!r.submission);
+    const expiredEssays = essayRows.filter((r) => !r.submission && r.expiresAt && new Date(r.expiresAt) <= new Date());
 
     function handleCopyLink() {
         navigator.clipboard.writeText(portalUrl);
@@ -288,6 +340,57 @@ export default function StudentPortalPage() {
                         <CefrProgressChart entries={cefrProgress} />
                     </Section>
                 )}
+
+                {/* ── Essay assignments ────────────────────────────────────── */}
+                {essayLoadError && (
+                    <div
+                        style={{
+                            background: 'var(--bg-raised)',
+                            border: '1px solid var(--border)',
+                            borderRadius: 10,
+                            padding: '12px 16px',
+                            fontSize: '0.875rem',
+                            color: 'var(--red)',
+                            display: 'flex',
+                            gap: 8,
+                            alignItems: 'center',
+                        }}
+                    >
+                        <AlertTriangle size={15} style={{ flexShrink: 0 }} />
+                        {t('studentPortal.essays_load_error')}
+                    </div>
+                )}
+                {essayRows.length > 0 ? (
+                    <>
+                        {pendingEssays.length > 0 && (
+                            <Section title={t('studentPortal.essays_pending')}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                    {pendingEssays.map((row) => (
+                                        <EssayCard key={row.teacherKey} row={row} href={buildEssayUrl(row)} t={t} />
+                                    ))}
+                                </div>
+                            </Section>
+                        )}
+                        {completedEssays.length > 0 && (
+                            <Section title={t('studentPortal.essays_completed')}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                    {completedEssays.map((row) => (
+                                        <EssayCard key={row.teacherKey} row={row} href={buildEssayUrl(row)} t={t} />
+                                    ))}
+                                </div>
+                            </Section>
+                        )}
+                        {expiredEssays.length > 0 && (
+                            <Section title={t('studentPortal.essay_expired')}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                    {expiredEssays.map((row) => (
+                                        <EssayCard key={row.teacherKey} row={row} href={buildEssayUrl(row)} t={t} />
+                                    ))}
+                                </div>
+                            </Section>
+                        )}
+                    </>
+                ) : null}
 
                 {/* Rubric grades list */}
                 {history.length > 0 && (
@@ -438,6 +541,151 @@ export default function StudentPortalPage() {
             </div>
         </div>
     );
+}
+
+type TFunc = (key: string, opts?: Record<string, string | number>) => string;
+
+function EssayCard({ row, href, t }: { row: StudentEssayAssignmentSummary; href: string; t: TFunc }) {
+    const now = new Date();
+    const expired = !!row.expiresAt && new Date(row.expiresAt) <= now;
+    const dueSoon =
+        !expired && !!row.expiresAt && new Date(row.expiresAt).getTime() - now.getTime() < 24 * 60 * 60 * 1000;
+
+    const chips: React.ReactNode[] = [];
+    if (row.minWords && row.maxWords) {
+        chips.push(
+            <span key="words" style={chipStyle('var(--accent-soft)', 'var(--accent)')}>
+                {t('studentPortal.essay_words', { min: row.minWords, max: row.maxWords })}
+            </span>
+        );
+    } else if (row.minWords) {
+        chips.push(
+            <span key="words" style={chipStyle('var(--accent-soft)', 'var(--accent)')}>
+                {t('studentPortal.essay_words_min', { min: row.minWords })}
+            </span>
+        );
+    } else if (row.maxWords) {
+        chips.push(
+            <span key="words" style={chipStyle('var(--accent-soft)', 'var(--accent)')}>
+                {t('studentPortal.essay_words_max', { max: row.maxWords })}
+            </span>
+        );
+    }
+    if (row.timeLimitMinutes) {
+        chips.push(
+            <span key="time" style={chipStyle('var(--bg-raised)', 'var(--yellow)')}>
+                <Clock size={11} style={{ verticalAlign: 'middle', marginRight: 3 }} />
+                {t('studentPortal.essay_time', { n: row.timeLimitMinutes })}
+            </span>
+        );
+    }
+    if (row.requireSEB) {
+        chips.push(
+            <span key="seb" style={chipStyle('var(--bg-raised)', 'var(--red)')}>
+                <AlertTriangle size={11} style={{ verticalAlign: 'middle', marginRight: 3 }} />
+                {t('studentPortal.essay_seb_required')}
+            </span>
+        );
+    }
+
+    return (
+        <div
+            style={{
+                background: 'var(--bg)',
+                border: '1px solid var(--border)',
+                borderRadius: 10,
+                padding: '14px 16px',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 14,
+            }}
+        >
+            <FileText
+                size={18}
+                style={{ color: row.submission ? 'var(--green)' : 'var(--accent)', flexShrink: 0, marginTop: 2 }}
+            />
+            <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: 4 }}>{row.title}</div>
+                {row.prompt && (
+                    <div
+                        style={{
+                            fontSize: '0.82rem',
+                            color: 'var(--text-muted)',
+                            marginBottom: 6,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                        }}
+                    >
+                        {row.prompt}
+                    </div>
+                )}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: chips.length ? 8 : 0 }}>
+                    {chips}
+                </div>
+                {row.submission && (
+                    <div style={{ fontSize: '0.8rem', color: 'var(--green)', fontWeight: 500 }}>
+                        {t('studentPortal.essay_submitted_words', {
+                            date: new Date(row.submission.submittedAt).toLocaleDateString(),
+                            wordCount: row.submission.wordCount,
+                        })}
+                    </div>
+                )}
+                {!row.submission && row.expiresAt && (
+                    <div
+                        style={{
+                            fontSize: '0.8rem',
+                            color: expired ? 'var(--red)' : dueSoon ? 'var(--yellow)' : 'var(--text-muted)',
+                            fontWeight: dueSoon || expired ? 600 : 400,
+                        }}
+                    >
+                        {expired
+                            ? t('studentPortal.essay_expired')
+                            : dueSoon
+                              ? t('studentPortal.essay_due_soon')
+                              : t('studentPortal.essay_due', {
+                                    date: new Date(row.expiresAt).toLocaleDateString(),
+                                })}
+                    </div>
+                )}
+            </div>
+            {!expired && !row.submission && (
+                <a
+                    href={href}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '7px 14px',
+                        borderRadius: 7,
+                        background: 'var(--accent)',
+                        color: 'var(--bg)',
+                        fontWeight: 600,
+                        fontSize: '0.85rem',
+                        textDecoration: 'none',
+                        flexShrink: 0,
+                        whiteSpace: 'nowrap',
+                    }}
+                >
+                    <ExternalLink size={13} />
+                    {t('studentPortal.essay_open')}
+                </a>
+            )}
+        </div>
+    );
+}
+
+function chipStyle(bgVar: string, colorVar: string): React.CSSProperties {
+    return {
+        display: 'inline-flex',
+        alignItems: 'center',
+        background: bgVar,
+        color: colorVar,
+        borderRadius: 4,
+        padding: '2px 7px',
+        fontSize: '0.75rem',
+        fontWeight: 500,
+    };
 }
 
 function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {

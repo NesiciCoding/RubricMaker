@@ -135,6 +135,14 @@ const mockUseApp = {
     syncToOneDrive: vi.fn(),
     restoreFromOneDrive: vi.fn(),
     microsoftUser: null,
+    saveEssayAssignment: vi.fn(),
+    deleteEssayAssignment: vi.fn(),
+    fetchEssaySubmissions: vi.fn(() => Promise.resolve([])),
+    fetchEssaySubmissionsForStudent: vi.fn(() => Promise.resolve([])),
+    fetchAllEssaySubmissions: vi.fn(() => Promise.resolve([])),
+    fetchMyEssayAssignments: vi.fn(() => Promise.resolve([])),
+    deleteEssaySubmission: vi.fn(),
+    getEssaySignedUrl: vi.fn(() => Promise.resolve(null)),
 };
 
 // ─── Module mocks ──────────────────────────────────────────────────────────────

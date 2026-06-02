@@ -15,6 +15,7 @@ import type {
     SpeakingSession,
     DocumentAnalysisResult,
     EssayAssignment,
+    StudentEssayAssignmentSummary,
 } from '../../types';
 import type { DatabaseConfig, DbUser, SyncResult } from './types';
 
@@ -1059,6 +1060,41 @@ export class SupabaseAdapter {
             submittedAt: r.submitted_at,
             storagePath: r.storage_path,
         }));
+    }
+
+    /**
+     * Fetch essay assignments belonging to the currently logged-in student.
+     * Scoped by RLS via get_my_essay_assignment_ids() — students only see their own rows.
+     * Also returns whether the student has already submitted each assignment so the portal
+     * can distinguish pending from completed.
+     */
+    async fetchMyEssayAssignments(): Promise<StudentEssayAssignmentSummary[]> {
+        const { data, error } = await this.db()
+            .from('essay_assignments')
+            .select(
+                'id, rubric_id, student_id, title, prompt, min_words, max_words, time_limit_minutes, require_seb, read_only_after_submit, created_at, expires_at, essay_submissions(submitted_at, word_count)'
+            )
+            .order('created_at', { ascending: false });
+        if (error || !data) return [];
+        return data.map((r) => {
+            const subs = r.essay_submissions as unknown as Array<{ submitted_at: string; word_count: number }> | null;
+            const latest = subs?.[0] ?? null;
+            return {
+                teacherKey: r.id,
+                rubricId: r.rubric_id,
+                studentId: r.student_id,
+                title: r.title,
+                prompt: r.prompt ?? null,
+                minWords: r.min_words ?? null,
+                maxWords: r.max_words ?? null,
+                timeLimitMinutes: r.time_limit_minutes ?? null,
+                requireSEB: r.require_seb,
+                readOnlyAfterSubmit: r.read_only_after_submit,
+                createdAt: r.created_at,
+                expiresAt: r.expires_at ?? null,
+                submission: latest ? { submittedAt: latest.submitted_at, wordCount: latest.word_count } : null,
+            };
+        });
     }
 
     async deleteEssaySubmission(submissionId: string, storagePath: string): Promise<SyncResult> {

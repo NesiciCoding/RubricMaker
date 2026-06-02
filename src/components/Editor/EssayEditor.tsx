@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import { Extension } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
@@ -275,8 +275,6 @@ const selectStyle: React.CSSProperties = {
     height: 28,
 };
 
-// ── Editor ──────────────────────────────────────────────────────────────────
-
 export default function EssayEditor({ content, onChange, editable = true, placeholder }: EssayEditorProps) {
     const colorInputRef = useRef<HTMLInputElement>(null);
     const highlightInputRef = useRef<HTMLInputElement>(null);
@@ -308,6 +306,13 @@ export default function EssayEditor({ content, onChange, editable = true, placeh
         onUpdate: ({ editor }) => onChange(editor.getHTML()),
         editorProps: { attributes: { class: 'essay-editor-content' } },
     });
+
+    // Sync the editable prop dynamically — TipTap only reads it at init time.
+    useEffect(() => {
+        if (editor && editor.isEditable !== editable) {
+            editor.setEditable(editable ?? true);
+        }
+    }, [editor, editable]);
 
     if (!editor) return null;
 

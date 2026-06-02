@@ -513,6 +513,22 @@ export interface EssayAssignment {
     supabaseAnonKey?: string;
 }
 
+export interface StudentEssayAssignmentSummary {
+    teacherKey: string;
+    rubricId: string;
+    studentId: string;
+    title: string;
+    prompt: string | null;
+    minWords: number | null;
+    maxWords: number | null;
+    timeLimitMinutes: number | null;
+    requireSEB: boolean;
+    readOnlyAfterSubmit: boolean;
+    createdAt: string;
+    expiresAt: string | null;
+    submission: { submittedAt: string; wordCount: number } | null;
+}
+
 /** A student's completed essay, encoded into a submission code for the teacher to import */
 export interface EssaySubmission {
     id: string;

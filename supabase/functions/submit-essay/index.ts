@@ -49,20 +49,52 @@ serve(async (req) => {
         return json({ error: 'Invalid request body' }, 400);
     }
 
-    const { assignmentId, submissionId, htmlContent, studentEmail, wordCount } = body;
+    const { assignmentId, submissionId, htmlContent, studentEmail: bodyEmail, wordCount } = body;
 
     if (!assignmentId || !submissionId || !htmlContent || typeof wordCount !== 'number') {
         return json({ error: 'Missing required fields: assignmentId, submissionId, htmlContent, wordCount' }, 400);
     }
 
-    // Fetch assignment for server-side validation
+    // Derive the authoritative email from the verified auth record when present
+    // (portal login sessions carry a verified email). Anonymous users have no email
+    // in their JWT, so fall back to the client-supplied value for those cases.
+    // If the auth record has an email and the client sent a different one, reject the
+    // request to prevent one student from claiming another's submission slot.
+    const authEmail = user.email ?? null;
+    if (authEmail && bodyEmail && authEmail.toLowerCase() !== bodyEmail.toLowerCase()) {
+        return json({ error: 'Email mismatch: submitted email does not match your account' }, 403);
+    }
+    const studentEmail = authEmail ?? bodyEmail ?? null;
+
+    if (!studentEmail) {
+        return json({ error: 'Missing required field: studentEmail' }, 400);
+    }
+
+    // Fetch assignment for server-side validation (include student_id for roster check below)
     const { data: assignment, error: assignErr } = await admin
         .from('essay_assignments')
-        .select('id, max_words, min_words, expires_at')
+        .select('id, student_id, max_words, min_words, expires_at')
         .eq('id', assignmentId)
         .single();
 
     if (assignErr || !assignment) return json({ error: 'Assignment not found' }, 404);
+
+    // For anonymous sessions (no verified email in JWT) verify the submitted email
+    // matches the email stored on the teacher's student record for this assignment.
+    // This prevents one student from grabbing another's submission slot by typing a
+    // different email. If the student has no email in the roster we allow the
+    // submission — the teacher may have set up the assignment without importing emails.
+    if (!authEmail && studentEmail && assignment.student_id) {
+        const { data: studentRow } = await admin
+            .from('students')
+            .select('data')
+            .eq('id', assignment.student_id)
+            .single();
+        const rosterEmail: string | null = (studentRow?.data as Record<string, unknown> | null)?.email as string ?? null;
+        if (rosterEmail && rosterEmail.toLowerCase() !== studentEmail.toLowerCase()) {
+            return json({ error: 'Email does not match the student record for this assignment' }, 403);
+        }
+    }
 
     // Expiry check
     if (assignment.expires_at && new Date(assignment.expires_at) < new Date()) {

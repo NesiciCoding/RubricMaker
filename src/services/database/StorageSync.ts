@@ -220,6 +220,10 @@ class StorageSyncService {
         return this.adapter.fetchAllEssaySubmissions();
     }
 
+    async fetchMyEssayAssignments() {
+        return this.adapter.fetchMyEssayAssignments();
+    }
+
     async deleteEssaySubmission(submissionId: string, storagePath: string): Promise<SyncResult> {
         return this.adapter.deleteEssaySubmission(submissionId, storagePath);
     }

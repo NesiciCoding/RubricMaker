@@ -1,17 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import {
-    Clock,
-    CheckCircle,
-    Copy,
-    AlertTriangle,
-    Mail,
-    KeyRound,
-    Loader2,
-    Save,
-    ChevronDown,
-    ChevronUp,
-} from 'lucide-react';
+import { Clock, CheckCircle, Copy, AlertTriangle, Mail, Loader2, Save } from 'lucide-react';
 import EssayEditor from '../components/Editor/EssayEditor';
 import { decodeEssayAssignment } from '../utils/essayShareCode';
 import { encodeEssaySubmission } from '../utils/essaySubmissionCode';
@@ -48,28 +37,31 @@ function formatTime(seconds: number): string {
     return `${m}:${s}`;
 }
 
-// ── Email OTP gate ────────────────────────────────────────────────────────────
+// ── Email gate (SEB-compatible) ───────────────────────────────────────────────
 
-interface OtpGateProps {
+interface EmailGateProps {
     adapter: EssayAdapter;
     onAuthenticated: (userId: string, email: string) => void;
 }
 
-function OtpGate({ adapter, onAuthenticated }: OtpGateProps) {
+function EmailGate({ adapter, onAuthenticated }: EmailGateProps) {
     const [email, setEmail] = useState('');
-    const [otp, setOtp] = useState('');
-    const [step, setStep] = useState<'email' | 'otp'>('email');
     const [busy, setBusy] = useState(false);
     const [sessionChecking, setSessionChecking] = useState(true);
-    const [oauthBusy, setOauthBusy] = useState<string | null>(null);
     const [error, setError] = useState('');
-    const [showEmail, setShowEmail] = useState(false);
 
-    // Check if there's already a valid session (page reload after OAuth)
+    // Auto-bypass the gate when a verified session already exists.
+    // This covers two cases:
+    //  1. Student logged in via the portal before entering SEB (portal session on default key)
+    //  2. Student reloads the essay page mid-session after the email gate already ran
+    // Anonymous sessions have no email, so they correctly fall through to the gate.
     useEffect(() => {
-        adapter.getSession().then(({ userId, email: e }) => {
-            if (userId && e) onAuthenticated(userId, e);
-            else setSessionChecking(false);
+        adapter.getSession().then(({ userId, email }) => {
+            if (userId && email) {
+                onAuthenticated(userId, email);
+            } else {
+                setSessionChecking(false);
+            }
         });
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -81,78 +73,29 @@ function OtpGate({ adapter, onAuthenticated }: OtpGateProps) {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    background: '#f8fafc',
+                    background: 'var(--bg)',
                 }}
             >
-                <Loader2 size={28} style={{ color: '#6366f1', animation: 'spin 1s linear infinite' }} />
+                <Loader2 size={28} style={{ color: 'var(--accent)', animation: 'spin 1s linear infinite' }} />
             </div>
         );
     }
 
-    const handleOAuth = async (provider: 'google' | 'ms-personal' | 'azure-ad') => {
-        setError('');
-        setOauthBusy(provider);
-        let result: { error?: string };
-        if (provider === 'google') result = await adapter.signInWithGoogle();
-        else if (provider === 'ms-personal') result = await adapter.signInWithMicrosoftPersonal();
-        else result = await adapter.signInWithAzureAD();
-        if (result.error) {
-            setError(result.error);
-            setOauthBusy(null);
-        }
-        // On success browser redirects — no further action needed
-    };
-
-    const handleSendOtp = async () => {
-        if (!email.trim()) {
-            setError('Enter your email address.');
+    const handleStart = async () => {
+        const trimmed = email.trim();
+        if (!trimmed || !trimmed.includes('@')) {
+            setError('Enter a valid school email address.');
             return;
         }
         setBusy(true);
         setError('');
-        const result = await adapter.sendOtp(email.trim());
-        setBusy(false);
-        if (result.success) {
-            setStep('otp');
-        } else {
-            setError(result.error ?? 'Failed to send code. Try again.');
-        }
-    };
-
-    const handleVerify = async () => {
-        if (!otp.trim()) {
-            setError('Enter the 6-digit code from your email.');
-            return;
-        }
-        setBusy(true);
-        setError('');
-        const { userId, error: e } = await adapter.verifyOtp(email.trim(), otp.trim());
+        const { userId, error: e } = await adapter.signInAnonymously();
         setBusy(false);
         if (userId) {
-            onAuthenticated(userId, email.trim());
+            onAuthenticated(userId, trimmed);
         } else {
-            const msg = e ?? '';
-            if (/expired|otp expired/i.test(msg)) {
-                setError('This code has expired. Click "Use a different email" and request a new code.');
-            } else {
-                setError('Invalid code. Please double-check the 6 digits from your email.');
-            }
+            setError(e ?? 'Could not start session. Ask your teacher to enable anonymous sign-ins in Supabase.');
         }
-    };
-
-    const btnBase: React.CSSProperties = {
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        padding: '10px 16px',
-        borderRadius: 8,
-        border: '1px solid #e2e8f0',
-        background: '#fff',
-        fontSize: '0.9rem',
-        fontWeight: 600,
-        cursor: 'pointer',
-        width: '100%',
-        transition: 'background 0.15s',
     };
 
     return (
@@ -162,13 +105,13 @@ function OtpGate({ adapter, onAuthenticated }: OtpGateProps) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: '#f8fafc',
+                background: 'var(--bg)',
                 padding: 24,
             }}
         >
             <div
                 style={{
-                    background: '#fff',
+                    background: 'var(--bg-elevated)',
                     borderRadius: 14,
                     boxShadow: '0 4px 24px rgba(0,0,0,0.10)',
                     padding: 36,
@@ -180,252 +123,63 @@ function OtpGate({ adapter, onAuthenticated }: OtpGateProps) {
                 }}
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <KeyRound size={22} style={{ color: '#6366f1' }} />
-                    <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>Sign in to start</h2>
+                    <Mail size={22} style={{ color: 'var(--accent)' }} />
+                    <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>Enter your school email</h2>
                 </div>
-                <p style={{ margin: 0, fontSize: '0.88rem', color: '#64748b', lineHeight: 1.5 }}>
-                    Sign in with your school account before you can start writing.
+                <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                    Your email is used to link your essay to your account. No password or code needed.
                 </p>
-
-                {/* OAuth buttons */}
-                <button
-                    style={btnBase}
-                    disabled={!!oauthBusy}
-                    onClick={() => handleOAuth('google')}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = '#fff')}
-                >
-                    {oauthBusy === 'google' ? (
-                        <Loader2 size={18} style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }} />
-                    ) : (
-                        <GoogleIcon />
-                    )}
-                    Sign in with Google
-                </button>
-
-                <button
-                    style={{ ...btnBase, borderColor: '#bfdbfe', background: '#eff6ff' }}
-                    disabled={!!oauthBusy}
-                    onClick={() => handleOAuth('ms-personal')}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = '#dbeafe')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = '#eff6ff')}
-                >
-                    {oauthBusy === 'ms-personal' ? (
-                        <Loader2 size={18} style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }} />
-                    ) : (
-                        <MicrosoftIcon />
-                    )}
-                    Sign in with Microsoft
-                </button>
-
-                <button
-                    style={{ ...btnBase, borderColor: '#c7d2fe', background: '#eef2ff' }}
-                    disabled={!!oauthBusy}
-                    onClick={() => handleOAuth('azure-ad')}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = '#e0e7ff')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = '#eef2ff')}
-                >
-                    {oauthBusy === 'azure-ad' ? (
-                        <Loader2 size={18} style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }} />
-                    ) : (
-                        <MicrosoftIcon />
-                    )}
-                    <span>
-                        Sign in with Microsoft{' '}
-                        <span style={{ fontSize: '0.75rem', fontWeight: 400 }}>(school / work)</span>
-                    </span>
-                </button>
-
-                {/* Email OTP toggle */}
-                <button
+                <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => {
+                        setEmail(e.target.value);
+                        setError('');
+                    }}
+                    onKeyDown={(e) => e.key === 'Enter' && handleStart()}
+                    placeholder="student@school.nl"
                     style={{
+                        padding: '10px 14px',
+                        borderRadius: 8,
+                        border: '1px solid var(--border)',
+                        fontSize: '0.95rem',
+                        outline: 'none',
+                        background: 'var(--bg)',
+                        color: 'var(--text)',
+                    }}
+                    autoFocus
+                />
+                {error && <p style={{ margin: 0, color: 'var(--red)', fontSize: '0.825rem' }}>{error}</p>}
+                <button
+                    onClick={handleStart}
+                    disabled={busy}
+                    style={{
+                        padding: '11px 0',
+                        borderRadius: 8,
+                        border: 'none',
+                        background: 'var(--accent)',
+                        color: '#fff',
+                        fontWeight: 700,
+                        fontSize: '0.95rem',
+                        cursor: busy ? 'not-allowed' : 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 6,
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: '#64748b',
-                        fontSize: '0.83rem',
-                        padding: '2px 0',
+                        justifyContent: 'center',
+                        gap: 8,
                     }}
-                    onClick={() => setShowEmail((o) => !o)}
                 >
-                    <Mail size={14} />
-                    Use email instead
-                    {showEmail ? (
-                        <ChevronUp size={13} style={{ marginLeft: 'auto' }} />
+                    {busy ? (
+                        <>
+                            <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Starting…
+                        </>
                     ) : (
-                        <ChevronDown size={13} style={{ marginLeft: 'auto' }} />
+                        'Start essay'
                     )}
                 </button>
-
-                {showEmail && step === 'email' && (
-                    <>
-                        <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => {
-                                setEmail(e.target.value);
-                                setError('');
-                            }}
-                            onKeyDown={(e) => e.key === 'Enter' && handleSendOtp()}
-                            placeholder="student@school.nl"
-                            style={{
-                                padding: '10px 14px',
-                                borderRadius: 8,
-                                border: '1px solid #e2e8f0',
-                                fontSize: '0.95rem',
-                                outline: 'none',
-                            }}
-                            autoFocus
-                        />
-                        {error && <p style={{ margin: 0, color: '#ef4444', fontSize: '0.825rem' }}>{error}</p>}
-                        <button
-                            onClick={handleSendOtp}
-                            disabled={busy}
-                            style={{
-                                padding: '11px 0',
-                                borderRadius: 8,
-                                border: 'none',
-                                background: '#6366f1',
-                                color: '#fff',
-                                fontWeight: 700,
-                                fontSize: '0.95rem',
-                                cursor: busy ? 'not-allowed' : 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: 8,
-                            }}
-                        >
-                            {busy ? (
-                                <>
-                                    <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Sending…
-                                </>
-                            ) : (
-                                'Send login code'
-                            )}
-                        </button>
-                    </>
-                )}
-
-                {!showEmail && error && <p style={{ margin: 0, color: '#ef4444', fontSize: '0.825rem' }}>{error}</p>}
-
-                {showEmail && step === 'otp' && (
-                    <>
-                        <input
-                            type="text"
-                            value={otp}
-                            maxLength={6}
-                            onChange={(e) => {
-                                setOtp(e.target.value.replace(/\D/g, ''));
-                                setError('');
-                            }}
-                            onKeyDown={(e) => e.key === 'Enter' && handleVerify()}
-                            placeholder="123456"
-                            style={{
-                                padding: '10px 14px',
-                                borderRadius: 8,
-                                border: '1px solid #e2e8f0',
-                                fontSize: '1.2rem',
-                                letterSpacing: '0.3em',
-                                textAlign: 'center',
-                                fontFamily: 'monospace',
-                                outline: 'none',
-                            }}
-                            autoFocus
-                        />
-                        {error && <p style={{ margin: 0, color: '#ef4444', fontSize: '0.825rem' }}>{error}</p>}
-                        <button
-                            onClick={handleVerify}
-                            disabled={busy || otp.length < 6}
-                            style={{
-                                padding: '11px 0',
-                                borderRadius: 8,
-                                border: 'none',
-                                background: otp.length === 6 ? '#6366f1' : '#e2e8f0',
-                                color: otp.length === 6 ? '#fff' : '#94a3b8',
-                                fontWeight: 700,
-                                fontSize: '0.95rem',
-                                cursor: otp.length < 6 || busy ? 'not-allowed' : 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: 8,
-                            }}
-                        >
-                            {busy ? (
-                                <>
-                                    <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Verifying…
-                                </>
-                            ) : (
-                                <>
-                                    <KeyRound size={15} /> Verify &amp; start essay
-                                </>
-                            )}
-                        </button>
-                        <button
-                            onClick={() => {
-                                setStep('email');
-                                setOtp('');
-                                setError('');
-                            }}
-                            style={{
-                                background: 'none',
-                                border: 'none',
-                                color: '#6366f1',
-                                fontSize: '0.825rem',
-                                cursor: 'pointer',
-                                textDecoration: 'underline',
-                            }}
-                        >
-                            Use a different email
-                        </button>
-                    </>
-                )}
             </div>
         </div>
     );
 }
-
-// ── Brand icons ──────────────────────────────────────────────────────────────
-
-function GoogleIcon() {
-    return (
-        <svg width="18" height="18" viewBox="0 0 18 18" style={{ flexShrink: 0 }}>
-            <path
-                fill="#4285F4"
-                d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"
-            />
-            <path
-                fill="#34A853"
-                d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"
-            />
-            <path
-                fill="#FBBC05"
-                d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"
-            />
-            <path
-                fill="#EA4335"
-                d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"
-            />
-        </svg>
-    );
-}
-
-function MicrosoftIcon() {
-    return (
-        <svg width="18" height="18" viewBox="0 0 21 21" style={{ flexShrink: 0 }}>
-            <rect x="1" y="1" width="9" height="9" fill="#f25022" />
-            <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
-            <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
-            <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
-        </svg>
-    );
-}
-
-// ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function StudentEssayPage() {
     const { code } = useParams<{ code: string }>();
@@ -539,6 +293,13 @@ export default function StudentEssayPage() {
         }
     }, [assignment, html, draftKey, hasDb, adapter, studentUserId, studentEmail, isInSEB, sebQuitUrl]);
 
+    // Keep a stable ref to handleSubmit so the timer interval always calls the latest version,
+    // avoiding the stale-closure bug where the interval would capture an early draft of the callback.
+    const handleSubmitRef = useRef(handleSubmit);
+    useEffect(() => {
+        handleSubmitRef.current = handleSubmit;
+    }, [handleSubmit]);
+
     // Countdown — auto-submit when time runs out
     useEffect(() => {
         if (secondsLeft === null || secondsLeft <= 0 || submitted) return;
@@ -548,9 +309,8 @@ export default function StudentEssayPage() {
                 const next = prev - 1;
                 sessionStorage.setItem(timerKey, String(next));
                 if (next <= 0) {
-                    // Auto-submit: stop interval first, then trigger submit asynchronously
                     if (timerRef.current) clearInterval(timerRef.current);
-                    setTimeout(() => handleSubmit(), 0);
+                    void handleSubmitRef.current();
                 }
                 return next;
             });
@@ -628,10 +388,10 @@ export default function StudentEssayPage() {
         );
     }
 
-    // ── Guard: email auth (DB mode only) ─────────────────────────────────────
+    // ── Guard: email gate (DB mode only) ─────────────────────────────────────
     if (hasDb && !studentUserId) {
         return (
-            <OtpGate
+            <EmailGate
                 adapter={adapter!}
                 onAuthenticated={(uid, email) => {
                     setStudentUserId(uid);

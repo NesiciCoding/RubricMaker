@@ -535,6 +535,7 @@ interface AppContextValue extends StoreData {
         studentId: string
     ) => Promise<Awaited<ReturnType<typeof storageSync.fetchEssaySubmissionsForStudent>>>;
     fetchAllEssaySubmissions: () => Promise<Awaited<ReturnType<typeof storageSync.fetchAllEssaySubmissions>>>;
+    fetchMyEssayAssignments: () => Promise<Awaited<ReturnType<typeof storageSync.fetchMyEssayAssignments>>>;
     deleteEssaySubmission: (submissionId: string, storagePath: string) => Promise<SyncResult>;
     getEssaySignedUrl: (storagePath: string) => Promise<string | null>;
     // Backup / restore
@@ -1070,6 +1071,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         []
     );
     const fetchAllEssaySubmissions = useCallback(() => storageSync.fetchAllEssaySubmissions(), []);
+    const fetchMyEssayAssignments = useCallback(() => storageSync.fetchMyEssayAssignments(), []);
     const deleteEssaySubmission = useCallback(
         (id: string, path: string) => storageSync.deleteEssaySubmission(id, path),
         []
@@ -1246,6 +1248,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         fetchEssaySubmissions,
         fetchEssaySubmissionsForStudent,
         fetchAllEssaySubmissions,
+        fetchMyEssayAssignments,
         deleteEssaySubmission,
         getEssaySignedUrl,
         importBackup,
