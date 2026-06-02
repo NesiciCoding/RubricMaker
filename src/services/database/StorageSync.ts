@@ -130,12 +130,13 @@ class StorageSyncService {
         this.setStatus('syncing');
         const succeeded: string[] = [];
         for (const op of queue) {
-            try {
-                await this.pushOne(op.entity, op.action, op.payload, op.entityId);
-                succeeded.push(op.id);
-            } catch {
-                // leave in queue; next reconnect will retry
-            }
+            if (!this.adapter.isConnected()) break;
+            await this.pushOne(op.entity, op.action, op.payload, op.entityId);
+            // pushOne catches errors internally and returns void — only mark as
+            // succeeded when still connected, because a disconnect during the call
+            // causes pushOne to return early without syncing or re-queuing.
+            if (!this.adapter.isConnected()) break;
+            succeeded.push(op.id);
         }
         if (succeeded.length > 0) removePendingWrites(succeeded);
         this.setStatus('idle');
