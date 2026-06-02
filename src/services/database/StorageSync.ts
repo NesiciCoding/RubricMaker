@@ -56,6 +56,7 @@ class StorageSyncService {
     private toastFn: ((msg: string, type?: 'success' | 'error' | 'info' | 'warning') => void) | null = null;
     private reconnectListeners: Set<() => void> = new Set();
     private networkListenerActive = false;
+    private flushInProgress = false;
 
     // ── Status ────────────────────────────────────────────────────────────────
 
@@ -125,21 +126,27 @@ class StorageSyncService {
 
     /** Retry all queued writes that failed while offline. */
     async flushPendingQueue(): Promise<void> {
+        if (this.flushInProgress) return;
         const queue = loadPendingQueue();
         if (queue.length === 0 || !this.adapter.isConnected()) return;
+        this.flushInProgress = true;
         this.setStatus('syncing');
         const succeeded: string[] = [];
-        for (const op of queue) {
-            if (!this.adapter.isConnected()) break;
-            await this.pushOne(op.entity, op.action, op.payload, op.entityId);
-            // pushOne catches errors internally and returns void — only mark as
-            // succeeded when still connected, because a disconnect during the call
-            // causes pushOne to return early without syncing or re-queuing.
-            if (!this.adapter.isConnected()) break;
-            succeeded.push(op.id);
+        try {
+            for (const op of queue) {
+                if (!this.adapter.isConnected()) break;
+                await this.pushOne(op.entity, op.action, op.payload, op.entityId);
+                // pushOne catches errors internally and returns void — only mark as
+                // succeeded when still connected, because a disconnect during the call
+                // causes pushOne to return early without syncing or re-queuing.
+                if (!this.adapter.isConnected()) break;
+                succeeded.push(op.id);
+            }
+            if (succeeded.length > 0) removePendingWrites(succeeded);
+        } finally {
+            this.flushInProgress = false;
+            this.setStatus('idle');
         }
-        if (succeeded.length > 0) removePendingWrites(succeeded);
-        this.setStatus('idle');
     }
 
     // ── Connection ────────────────────────────────────────────────────────────

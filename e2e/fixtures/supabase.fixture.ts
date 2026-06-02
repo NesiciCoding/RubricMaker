@@ -4,13 +4,16 @@
  * Provides `supabasePage` — a page that is signed in as a freshly-created test
  * user against a local Supabase stack.  The test user is deleted after the test.
  *
+ * Sign-in uses email+password via the admin API so no inbucket/email flow is
+ * needed — this keeps the tests reliable in CI where inbucket may not be
+ * reachable via its HTTP API.
+ *
  * Prerequisites: `npm run db:start` (local Supabase stack must be running).
  *
  * Override any default URL/key via environment variables:
- *   SUPABASE_TEST_URL            (default: http://localhost:54321)
- *   SUPABASE_TEST_ANON_KEY       (default: local-dev anon key)
- *   SUPABASE_TEST_SERVICE_KEY    (default: local-dev service role key)
- *   SUPABASE_TEST_INBUCKET_URL   (default: http://localhost:54324)
+ *   SUPABASE_TEST_URL          (default: http://localhost:54321)
+ *   SUPABASE_TEST_ANON_KEY     (default: local-dev anon key)
+ *   SUPABASE_TEST_SERVICE_KEY  (default: local-dev service role key)
  */
 import { test as base, type Page } from '@playwright/test';
 
@@ -26,7 +29,9 @@ export const SUPABASE_SERVICE_KEY =
     process.env.SUPABASE_TEST_SERVICE_KEY ??
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hj04zWl196z2-SBc0';
 
-const INBUCKET_URL = process.env.SUPABASE_TEST_INBUCKET_URL ?? 'http://localhost:54324';
+// Password used when creating test accounts via the admin API.
+// Not sensitive — only valid against a throwaway local-dev stack.
+const TEST_PASSWORD = 'RubricMaker-E2E-Pwd-9!Xk';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -35,53 +40,77 @@ export function makeTestEmail(): string {
     return `rm-e2e-${Date.now()}-${Math.random().toString(36).slice(2, 6)}@example.com`;
 }
 
+interface SupabaseSession {
+    access_token: string;
+    token_type: string;
+    expires_in: number;
+    expires_at: number;
+    refresh_token: string;
+    user: Record<string, unknown>;
+}
+
 /**
- * Request an OTP magic link, fetch it from inbucket, then navigate to it.
- * After the redirect the app lands on /#/ with an active Supabase session.
+ * Create a test user with a known password via the service-role admin API,
+ * then sign in to obtain a session object — no email flow required.
  */
-async function signInViaMagicLink(page: Page, email: string): Promise<void> {
-    // Request OTP (creates the user on first use with enable_confirmations=false)
-    const otpRes = await fetch(`${SUPABASE_URL}/auth/v1/otp`, {
+async function createSessionForUser(email: string): Promise<SupabaseSession> {
+    // Create the user (email_confirm: true skips the confirmation step)
+    const createRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            apikey: SUPABASE_SERVICE_KEY,
+            Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+        },
+        body: JSON.stringify({ email, password: TEST_PASSWORD, email_confirm: true }),
+    });
+    if (!createRes.ok) {
+        throw new Error(`Failed to create test user: ${createRes.status} ${await createRes.text()}`);
+    }
+
+    // Sign in with password to get a real session
+    const signInRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY },
-        body: JSON.stringify({ email, create_user: true }),
+        body: JSON.stringify({ email, password: TEST_PASSWORD }),
     });
-    if (!otpRes.ok) {
-        throw new Error(`OTP request failed ${otpRes.status}: ${await otpRes.text()}`);
+    if (!signInRes.ok) {
+        throw new Error(`Failed to sign in test user: ${signInRes.status} ${await signInRes.text()}`);
     }
+    return signInRes.json() as Promise<SupabaseSession>;
+}
 
-    // Give inbucket a moment to receive the email
-    await page.waitForTimeout(1_000);
-
-    // Fetch the email from inbucket
-    const mailbox = email.split('@')[0];
-    let messages: { id: string }[] = [];
-    for (let attempt = 0; attempt < 5; attempt++) {
-        const res = await fetch(`${INBUCKET_URL}/api/v1/mailbox/${mailbox}`);
-        if (res.ok) {
-            messages = (await res.json()) as { id: string }[];
-            if (messages.length > 0) break;
+/**
+ * Inject the Supabase config and session into the page's localStorage before
+ * React mounts.  The app will detect the existing session on startup and hydrate
+ * from the DB without requiring any UI interaction.
+ *
+ * supabase-js v2 stores sessions at `sb-{hostname}-auth-token`.
+ */
+async function injectSession(page: Page, session: SupabaseSession): Promise<void> {
+    await page.addInitScript(
+        ({
+            url,
+            anonKey,
+            storageKey,
+            sessionJson,
+        }: {
+            url: string;
+            anonKey: string;
+            storageKey: string;
+            sessionJson: string;
+        }) => {
+            localStorage.setItem('rm_supabase_config', JSON.stringify({ supabaseUrl: url, supabaseAnonKey: anonKey }));
+            localStorage.setItem(storageKey, sessionJson);
+        },
+        {
+            url: SUPABASE_URL,
+            anonKey: SUPABASE_ANON_KEY,
+            // supabase-js derives the key from the URL hostname
+            storageKey: `sb-${new URL(SUPABASE_URL).hostname}-auth-token`,
+            sessionJson: JSON.stringify(session),
         }
-        await page.waitForTimeout(500);
-    }
-    if (messages.length === 0) {
-        throw new Error(`No email received for ${email} in inbucket at ${INBUCKET_URL}`);
-    }
-
-    const msg = (await fetch(`${INBUCKET_URL}/api/v1/message/${messages[0].id}`).then((r) =>
-        r.json()
-    )) as { body: { text: string } };
-
-    // Extract the magic link (verify URL) from the email body
-    const match = msg.body.text.match(/http:\/\/[^\s\n"<>]+\/auth\/v1\/verify[^\s\n"<>]+/);
-    if (!match) throw new Error('Magic link not found in email body');
-    const magicLink = match[0].trim();
-
-    // Navigate to the magic link; Supabase verifies the token and redirects to the app
-    // with access_token + refresh_token in the URL hash, which supabase-js picks up.
-    await page.goto(magicLink);
-    await page.waitForURL(/\/#/, { timeout: 15_000 });
-    await page.waitForSelector('.main-area', { timeout: 20_000 });
+    );
 }
 
 /** Delete a test user by email using the service-role admin API. */
@@ -130,19 +159,11 @@ export const test = base.extend<SupabaseFixtures>({
 
     supabasePage: [
         async ({ page, testUserEmail }, use) => {
-            // Inject Supabase config before React mounts so the app can
-            // pick it up on startup (addInitScript runs before every navigation).
-            await page.addInitScript(
-                ({ url, key }: { url: string; key: string }) => {
-                    localStorage.setItem(
-                        'rm_supabase_config',
-                        JSON.stringify({ supabaseUrl: url, supabaseAnonKey: key })
-                    );
-                },
-                { url: SUPABASE_URL, key: SUPABASE_ANON_KEY }
-            );
+            const session = await createSessionForUser(testUserEmail);
+            await injectSession(page, session);
 
-            await signInViaMagicLink(page, testUserEmail);
+            await page.goto('/#/');
+            await page.waitForSelector('.main-area', { timeout: 20_000 });
 
             await use(page);
 
