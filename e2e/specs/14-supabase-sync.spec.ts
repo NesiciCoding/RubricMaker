@@ -23,6 +23,17 @@ import { RubricListPage } from '../pages/RubricListPage';
  * for the async Supabase push to complete so subsequent DB queries find the row.
  */
 async function saveAndSync(page: Page, builder: RubricBuilderPage): Promise<void> {
+    // Pre-save diagnostic: if name is empty handleSave() returns early and
+    // the URL never changes, producing a cryptic AggregateError.  Assert
+    // explicitly so CI produces a useful failure message instead.
+    const nameInput = page.getByPlaceholder('Rubric Name...');
+    const nameValue = await nameInput.inputValue();
+    expect(
+        nameValue.trim(),
+        `Name input empty before save — URL: ${page.url()}, ` +
+            `body classes: ${await page.evaluate(() => document.body.className)}`,
+    ).not.toBe('');
+
     await builder.save();
     await builder.waitForSaved();
     // Wait for the async Supabase push (fire-and-forget from the reducer) to
