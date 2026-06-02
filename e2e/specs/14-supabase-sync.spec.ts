@@ -41,6 +41,9 @@ async function saveAndSync(page: Page, builder: RubricBuilderPage): Promise<void
 async function gotoNewRubric(page: Page): Promise<void> {
     await page.goto('/#/rubrics/new');
     await page.waitForSelector('input[placeholder="Rubric Name..."]', { timeout: 15_000 });
+    // Belt-and-suspenders: ensure any residual Supabase requests from the
+    // initial page load settle before we start filling the form.
+    await page.waitForLoadState('networkidle', { timeout: 15_000 });
 }
 
 /** Navigate to the rubric list without a page reload. */

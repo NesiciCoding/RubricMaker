@@ -200,6 +200,10 @@ async function signInViaMagicLink(page: Page, actionLink: string): Promise<void>
     // addInitScript runs again here, re-injecting rm_supabase_config for this origin
 
     await page.waitForSelector('.main-area', { timeout: 30_000 });
+    // Wait for Supabase hydration (initAuth → hydrate → SET_ALL) to fully settle.
+    // Without this, in-flight REST calls race against test form fills: SET_ALL
+    // fires mid-interaction and can wipe form state via a React re-render.
+    await page.waitForLoadState('networkidle', { timeout: 20_000 });
 }
 
 /** Delete a test user by email using the service-role admin API. */
