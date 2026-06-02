@@ -369,3 +369,64 @@ export function saveCriterionClipboard(criterion: RubricCriterion): void {
 export function loadCriterionClipboard(): RubricCriterion | null {
     return load<RubricCriterion | null>(CLIPBOARD_KEY, null);
 }
+
+// ─── Pending Sync Queue ────────────────────────────────────────────────────────
+
+const PENDING_SYNC_KEY = 'rm_pending_sync';
+
+export interface PendingWrite {
+    id: string;
+    entity: string;
+    action: 'upsert' | 'delete';
+    payload: unknown;
+    entityId?: string;
+    queuedAt: string;
+}
+
+function pendingKey(op: Pick<PendingWrite, 'entity' | 'action' | 'payload' | 'entityId'>): string {
+    const eid =
+        op.action === 'delete'
+            ? op.entityId
+            : (op.payload as Record<string, unknown> | null)?.id;
+    return `${op.entity}:${eid ?? 'singleton'}`;
+}
+
+export function loadPendingQueue(): PendingWrite[] {
+    try {
+        const raw = localStorage.getItem(PENDING_SYNC_KEY);
+        return raw ? (JSON.parse(raw) as PendingWrite[]) : [];
+    } catch {
+        return [];
+    }
+}
+
+export function addToPendingQueue(op: Omit<PendingWrite, 'id' | 'queuedAt'>): void {
+    try {
+        const queue = loadPendingQueue();
+        const key = pendingKey(op);
+        const idx = queue.findIndex((q) => pendingKey(q) === key);
+        const entry: PendingWrite = {
+            ...op,
+            id: Math.random().toString(36).slice(2, 10),
+            queuedAt: new Date().toISOString(),
+        };
+        if (idx >= 0) {
+            queue[idx] = entry;
+        } else {
+            queue.push(entry);
+        }
+        localStorage.setItem(PENDING_SYNC_KEY, JSON.stringify(queue));
+    } catch {
+        // quota errors are non-fatal
+    }
+}
+
+export function removePendingWrites(ids: string[]): void {
+    try {
+        const idSet = new Set(ids);
+        const queue = loadPendingQueue().filter((q) => !idSet.has(q.id));
+        localStorage.setItem(PENDING_SYNC_KEY, JSON.stringify(queue));
+    } catch {
+        // ignore
+    }
+}

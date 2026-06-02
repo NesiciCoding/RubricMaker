@@ -407,7 +407,13 @@
         "import_success": "Daten erfolgreich importiert.",
         "import_error": "Import fehlgeschlagen — ungültige Sicherungsdatei.",
         "share_code_error": "Ungültiger Freigabecode. Bitte überprüfen und erneut versuchen.",
-        "csv_import_error": "CSV-Import fehlgeschlagen. Bitte das Dateiformat prüfen."
+        "csv_import_error": "CSV-Import fehlgeschlagen. Bitte das Dateiformat prüfen.",
+        "storage_full": "Speicher ist voll — Ihre Änderungen wurden möglicherweise nicht gespeichert.",
+        "sync_load_failed": "Cloud-Daten konnten nicht geladen werden. Lokale Daten werden angezeigt.",
+        "sync_push_failed": "Änderungen wurden möglicherweise nicht synchronisiert — Verbindung prüfen.",
+        "sync_queued": "Offline — Änderungen werden bei Wiederverbindung synchronisiert.",
+        "sync_flushed": "Wieder online — alle Änderungen synchronisiert.",
+        "copy_paste_failed": "Kopieren/Einfügen fehlgeschlagen. Bitte versuchen Sie es erneut."
     },
     "cefr": {
         "rubric_section_title": "GER / ERK-Niveau",

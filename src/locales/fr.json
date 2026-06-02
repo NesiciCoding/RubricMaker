@@ -407,7 +407,13 @@
         "import_success": "Données importées avec succès.",
         "import_error": "Import échoué — fichier de sauvegarde invalide.",
         "share_code_error": "Code de partage invalide. Veuillez vérifier et réessayer.",
-        "csv_import_error": "Import CSV échoué. Vérifiez le format du fichier."
+        "csv_import_error": "Import CSV échoué. Vérifiez le format du fichier.",
+        "storage_full": "Le stockage est plein — vos modifications n'ont peut-être pas été enregistrées.",
+        "sync_load_failed": "Impossible de charger les données cloud. Données locales affichées.",
+        "sync_push_failed": "Les modifications peuvent ne pas être synchronisées — vérifiez votre connexion.",
+        "sync_queued": "Hors ligne — les modifications seront synchronisées à la reconnexion.",
+        "sync_flushed": "De retour en ligne — toutes les modifications synchronisées.",
+        "copy_paste_failed": "Copier/coller échoué. Veuillez réessayer."
     },
     "cefr": {
         "rubric_section_title": "Niveau CECR / ERK",
