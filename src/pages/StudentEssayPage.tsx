@@ -88,10 +88,10 @@ function EmailGate({ adapter, onAuthenticated }: EmailGateProps) {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    background: '#f8fafc',
+                    background: 'var(--bg)',
                 }}
             >
-                <Loader2 size={28} style={{ color: '#6366f1', animation: 'spin 1s linear infinite' }} />
+                <Loader2 size={28} style={{ color: 'var(--accent)', animation: 'spin 1s linear infinite' }} />
             </div>
         );
     }
@@ -120,13 +120,13 @@ function EmailGate({ adapter, onAuthenticated }: EmailGateProps) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: '#f8fafc',
+                background: 'var(--bg)',
                 padding: 24,
             }}
         >
             <div
                 style={{
-                    background: '#fff',
+                    background: 'var(--bg-elevated)',
                     borderRadius: 14,
                     boxShadow: '0 4px 24px rgba(0,0,0,0.10)',
                     padding: 36,
@@ -138,10 +138,10 @@ function EmailGate({ adapter, onAuthenticated }: EmailGateProps) {
                 }}
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <Mail size={22} style={{ color: '#6366f1' }} />
+                    <Mail size={22} style={{ color: 'var(--accent)' }} />
                     <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>Enter your school email</h2>
                 </div>
-                <p style={{ margin: 0, fontSize: '0.88rem', color: '#64748b', lineHeight: 1.5 }}>
+                <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
                     Your email is used to link your essay to your account. No password or code needed.
                 </p>
                 <input
@@ -156,13 +156,15 @@ function EmailGate({ adapter, onAuthenticated }: EmailGateProps) {
                     style={{
                         padding: '10px 14px',
                         borderRadius: 8,
-                        border: '1px solid #e2e8f0',
+                        border: '1px solid var(--border)',
                         fontSize: '0.95rem',
                         outline: 'none',
+                        background: 'var(--bg)',
+                        color: 'var(--text)',
                     }}
                     autoFocus
                 />
-                {error && <p style={{ margin: 0, color: '#ef4444', fontSize: '0.825rem' }}>{error}</p>}
+                {error && <p style={{ margin: 0, color: 'var(--red)', fontSize: '0.825rem' }}>{error}</p>}
                 <button
                     onClick={handleStart}
                     disabled={busy}
@@ -170,7 +172,7 @@ function EmailGate({ adapter, onAuthenticated }: EmailGateProps) {
                         padding: '11px 0',
                         borderRadius: 8,
                         border: 'none',
-                        background: '#6366f1',
+                        background: 'var(--accent)',
                         color: '#fff',
                         fontWeight: 700,
                         fontSize: '0.95rem',
@@ -320,6 +322,13 @@ export default function StudentEssayPage() {
         }
     }, [assignment, html, draftKey, hasDb, adapter, studentUserId, studentEmail, isInSEB, sebQuitUrl]);
 
+    // Keep a stable ref to handleSubmit so the timer interval always calls the latest version,
+    // avoiding the stale-closure bug where the interval would capture an early draft of the callback.
+    const handleSubmitRef = useRef(handleSubmit);
+    useEffect(() => {
+        handleSubmitRef.current = handleSubmit;
+    }, [handleSubmit]);
+
     // Countdown — auto-submit when time runs out
     useEffect(() => {
         if (secondsLeft === null || secondsLeft <= 0 || submitted) return;
@@ -329,9 +338,8 @@ export default function StudentEssayPage() {
                 const next = prev - 1;
                 sessionStorage.setItem(timerKey, String(next));
                 if (next <= 0) {
-                    // Auto-submit: stop interval first, then trigger submit asynchronously
                     if (timerRef.current) clearInterval(timerRef.current);
-                    setTimeout(() => handleSubmit(), 0);
+                    void handleSubmitRef.current();
                 }
                 return next;
             });

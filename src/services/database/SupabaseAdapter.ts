@@ -15,6 +15,7 @@ import type {
     SpeakingSession,
     DocumentAnalysisResult,
     EssayAssignment,
+    StudentEssayAssignmentSummary,
 } from '../../types';
 import type { DatabaseConfig, DbUser, SyncResult } from './types';
 
@@ -1067,23 +1068,7 @@ export class SupabaseAdapter {
      * Also returns whether the student has already submitted each assignment so the portal
      * can distinguish pending from completed.
      */
-    async fetchMyEssayAssignments(): Promise<
-        Array<{
-            teacherKey: string;
-            rubricId: string;
-            studentId: string;
-            title: string;
-            prompt: string | null;
-            minWords: number | null;
-            maxWords: number | null;
-            timeLimitMinutes: number | null;
-            requireSEB: boolean;
-            readOnlyAfterSubmit: boolean;
-            createdAt: string;
-            expiresAt: string | null;
-            submission: { submittedAt: string; wordCount: number } | null;
-        }>
-    > {
+    async fetchMyEssayAssignments(): Promise<StudentEssayAssignmentSummary[]> {
         const { data, error } = await this.db()
             .from('essay_assignments')
             .select(

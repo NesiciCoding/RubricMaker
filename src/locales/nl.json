@@ -556,7 +556,9 @@
         "essay_words_min": "Min. {{min}} woorden",
         "essay_words_max": "Max. {{max}} woorden",
         "essay_time": "{{n}} min",
-        "essay_seb_required": "Safe Exam Browser vereist"
+        "essay_seb_required": "Safe Exam Browser vereist",
+        "essay_submitted_words": "Ingediend op {{date}} · {{wordCount}} woorden",
+        "essays_load_error": "Essayopdrachten konden niet worden geladen. Probeer de pagina te vernieuwen."
     },
     "selfAssess": {
         "title": "ERK Zelfbeoordeling",

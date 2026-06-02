@@ -25,7 +25,7 @@ import { getStudentPortalTutorialSteps } from '../data/StudentPortalTutorialStep
 import RubricSelfAssessPanel from '../components/Students/RubricSelfAssessPanel';
 import { encodeEssayAssignment } from '../utils/essayShareCode';
 import { loadSupabaseConfig } from '../services/database';
-import type { CefrLevel, CefrSkill, EssayAssignment } from '../types';
+import type { CefrLevel, CefrSkill, EssayAssignment, StudentEssayAssignmentSummary } from '../types';
 
 /**
  * Render the student portal page for the student identified by the current route.
@@ -53,13 +53,13 @@ export default function StudentPortalPage() {
     const [linkCopied, setLinkCopied] = useState(false);
     const [openSelfAssessId, setOpenSelfAssessId] = useState<string | null>(null);
 
-    type PortalEssayRow = Awaited<ReturnType<typeof fetchMyEssayAssignments>>[number];
-    const [essayRows, setEssayRows] = useState<PortalEssayRow[]>([]);
+    const [essayRows, setEssayRows] = useState<StudentEssayAssignmentSummary[]>([]);
+    const [essayLoadError, setEssayLoadError] = useState<string | null>(null);
 
     useEffect(() => {
         fetchMyEssayAssignments()
             .then(setEssayRows)
-            .catch(() => {});
+            .catch((err: unknown) => setEssayLoadError(err instanceof Error ? err.message : 'Failed to load essays'));
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     const tourKey = `rm_portal_tour_seen_${studentId}`;
@@ -180,7 +180,7 @@ export default function StudentPortalPage() {
 
     const dbConfig = loadSupabaseConfig();
 
-    function buildEssayUrl(row: PortalEssayRow): string {
+    function buildEssayUrl(row: StudentEssayAssignmentSummary): string {
         const assignment: EssayAssignment = {
             teacherKey: row.teacherKey,
             rubricId: row.rubricId,
@@ -351,6 +351,24 @@ export default function StudentPortalPage() {
                 )}
 
                 {/* ── Essay assignments ────────────────────────────────────── */}
+                {essayLoadError && (
+                    <div
+                        style={{
+                            background: 'var(--bg-raised)',
+                            border: '1px solid var(--border)',
+                            borderRadius: 10,
+                            padding: '12px 16px',
+                            fontSize: '0.875rem',
+                            color: 'var(--red)',
+                            display: 'flex',
+                            gap: 8,
+                            alignItems: 'center',
+                        }}
+                    >
+                        <AlertTriangle size={15} style={{ flexShrink: 0 }} />
+                        {t('studentPortal.essays_load_error')}
+                    </div>
+                )}
                 {essayRows.length > 0 ? (
                     <>
                         {pendingEssays.length > 0 && (
@@ -536,39 +554,7 @@ export default function StudentPortalPage() {
 
 type TFunc = (key: string, opts?: Record<string, string | number>) => string;
 
-/**
- * Render a single essay assignment card showing title, prompt, requirement chips, submission/expiry status, and an "Open" link when applicable.
- *
- * @param row - Essay assignment data:
- *   - `title`: assignment title
- *   - `prompt`: optional prompt text
- *   - `minWords` / `maxWords`: optional word-count constraints
- *   - `timeLimitMinutes`: optional time limit in minutes
- *   - `requireSEB`: whether Secure Exam Browser is required
- *   - `expiresAt`: optional ISO timestamp string for expiry or `null`
- *   - `submission`: `null` or `{ submittedAt: string; wordCount: number }` representing a completed submission
- * @param href - URL to open the essay assignment
- * @param t - translation function for localized strings
- * @returns A JSX element representing the essay card UI
- */
-function EssayCard({
-    row,
-    href,
-    t,
-}: {
-    row: {
-        title: string;
-        prompt: string | null;
-        minWords: number | null;
-        maxWords: number | null;
-        timeLimitMinutes: number | null;
-        requireSEB: boolean;
-        expiresAt: string | null;
-        submission: { submittedAt: string; wordCount: number } | null;
-    };
-    href: string;
-    t: TFunc;
-}) {
+function EssayCard({ row, href, t }: { row: StudentEssayAssignmentSummary; href: string; t: TFunc }) {
     const now = new Date();
     const expired = !!row.expiresAt && new Date(row.expiresAt) <= now;
     const dueSoon =
@@ -577,26 +563,26 @@ function EssayCard({
     const chips: React.ReactNode[] = [];
     if (row.minWords && row.maxWords) {
         chips.push(
-            <span key="words" style={chipStyle('#f0f9ff', '#0369a1')}>
+            <span key="words" style={chipStyle('var(--accent-soft)', 'var(--accent)')}>
                 {t('studentPortal.essay_words', { min: row.minWords, max: row.maxWords })}
             </span>
         );
     } else if (row.minWords) {
         chips.push(
-            <span key="words" style={chipStyle('#f0f9ff', '#0369a1')}>
+            <span key="words" style={chipStyle('var(--accent-soft)', 'var(--accent)')}>
                 {t('studentPortal.essay_words_min', { min: row.minWords })}
             </span>
         );
     } else if (row.maxWords) {
         chips.push(
-            <span key="words" style={chipStyle('#f0f9ff', '#0369a1')}>
+            <span key="words" style={chipStyle('var(--accent-soft)', 'var(--accent)')}>
                 {t('studentPortal.essay_words_max', { max: row.maxWords })}
             </span>
         );
     }
     if (row.timeLimitMinutes) {
         chips.push(
-            <span key="time" style={chipStyle('#fefce8', '#92400e')}>
+            <span key="time" style={chipStyle('var(--bg-raised)', 'var(--yellow)')}>
                 <Clock size={11} style={{ verticalAlign: 'middle', marginRight: 3 }} />
                 {t('studentPortal.essay_time', { n: row.timeLimitMinutes })}
             </span>
@@ -604,7 +590,7 @@ function EssayCard({
     }
     if (row.requireSEB) {
         chips.push(
-            <span key="seb" style={chipStyle('#fef2f2', '#991b1b')}>
+            <span key="seb" style={chipStyle('var(--bg-raised)', 'var(--red)')}>
                 <AlertTriangle size={11} style={{ verticalAlign: 'middle', marginRight: 3 }} />
                 {t('studentPortal.essay_seb_required')}
             </span>
@@ -625,7 +611,7 @@ function EssayCard({
         >
             <FileText
                 size={18}
-                style={{ color: row.submission ? '#16a34a' : 'var(--accent)', flexShrink: 0, marginTop: 2 }}
+                style={{ color: row.submission ? 'var(--green)' : 'var(--accent)', flexShrink: 0, marginTop: 2 }}
             />
             <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: 4 }}>{row.title}</div>
@@ -647,19 +633,18 @@ function EssayCard({
                     {chips}
                 </div>
                 {row.submission && (
-                    <div style={{ fontSize: '0.8rem', color: '#16a34a', fontWeight: 500 }}>
-                        {t('studentPortal.essay_submitted', {
+                    <div style={{ fontSize: '0.8rem', color: 'var(--green)', fontWeight: 500 }}>
+                        {t('studentPortal.essay_submitted_words', {
                             date: new Date(row.submission.submittedAt).toLocaleDateString(),
+                            wordCount: row.submission.wordCount,
                         })}
-                        {' · '}
-                        {row.submission.wordCount} words
                     </div>
                 )}
                 {!row.submission && row.expiresAt && (
                     <div
                         style={{
                             fontSize: '0.8rem',
-                            color: expired ? '#ef4444' : dueSoon ? '#f59e0b' : 'var(--text-muted)',
+                            color: expired ? 'var(--red)' : dueSoon ? 'var(--yellow)' : 'var(--text-muted)',
                             fontWeight: dueSoon || expired ? 600 : 400,
                         }}
                     >
@@ -699,19 +684,12 @@ function EssayCard({
     );
 }
 
-/**
- * Creates a consistent inline style object for a compact metadata "chip".
- *
- * @param bg - CSS background color for the chip (any valid CSS color value)
- * @param color - CSS text color for the chip (any valid CSS color value)
- * @returns A `React.CSSProperties` object configured for a small inline chip (alignment, padding, font sizing, border radius) using the provided colors
- */
-function chipStyle(bg: string, color: string): React.CSSProperties {
+function chipStyle(bgVar: string, colorVar: string): React.CSSProperties {
     return {
         display: 'inline-flex',
         alignItems: 'center',
-        background: bg,
-        color,
+        background: bgVar,
+        color: colorVar,
         borderRadius: 4,
         padding: '2px 7px',
         fontSize: '0.75rem',

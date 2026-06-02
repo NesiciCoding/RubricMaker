@@ -197,7 +197,7 @@ test.describe('Essay page — no-DB (offline) mode', () => {
         await essay.goto(code);
         await expect(essay.editor()).toBeVisible({ timeout: 10_000 });
         // Timer should show MM:SS format — starts at 45:00
-        await expect(essay.timerDisplay()).toContainText('45:0', { timeout: 5_000 });
+        await expect(essay.timerDisplay()).toContainText('45:00', { timeout: 5_000 });
     });
 });
 

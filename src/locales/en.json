@@ -554,7 +554,9 @@
         "essay_words_min": "Min {{min}} words",
         "essay_words_max": "Max {{max}} words",
         "essay_time": "{{n}} min",
-        "essay_seb_required": "Safe Exam Browser required"
+        "essay_seb_required": "Safe Exam Browser required",
+        "essay_submitted_words": "Submitted {{date}} · {{wordCount}} words",
+        "essays_load_error": "Could not load your essay assignments. Please try refreshing the page."
     },
     "selfAssess": {
         "title": "CEFR Self-Assessment",
