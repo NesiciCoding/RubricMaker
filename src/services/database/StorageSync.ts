@@ -127,9 +127,12 @@ class StorageSyncService {
     /** Retry all queued writes that failed while offline. */
     async flushPendingQueue(): Promise<void> {
         if (this.flushInProgress) return;
-        const queue = loadPendingQueue();
-        if (queue.length === 0 || !this.adapter.isConnected()) return;
         this.flushInProgress = true;
+        const queue = loadPendingQueue();
+        if (queue.length === 0 || !this.adapter.isConnected()) {
+            this.flushInProgress = false;
+            return;
+        }
         this.setStatus('syncing');
         const succeeded: string[] = [];
         try {

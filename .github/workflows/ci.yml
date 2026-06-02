@@ -125,6 +125,15 @@ jobs:
         run: supabase start
         timeout-minutes: 5
 
+      - name: Export Supabase credentials
+        run: |
+          STATUS=$(supabase status 2>/dev/null)
+          ANON_KEY=$(echo "$STATUS" | awk '/anon key:/{print $NF}')
+          SVC_KEY=$(echo "$STATUS" | awk '/service_role key:/{print $NF}')
+          echo "SUPABASE_TEST_URL=http://localhost:54321" >> $GITHUB_ENV
+          echo "SUPABASE_TEST_ANON_KEY=$ANON_KEY" >> $GITHUB_ENV
+          echo "SUPABASE_TEST_SERVICE_KEY=$SVC_KEY" >> $GITHUB_ENV
+
       - name: Run Supabase E2E tests
         run: npm run e2e:supabase
         env:
