@@ -199,7 +199,18 @@ test.describe('Offline write queue and reconnect flush', () => {
         await builder.fillCriterionTitle(0, 'Vocabulary');
         await builder.save();
         await builder.waitForSaved();
-        // No networkidle wait here — we are offline, Supabase push is intentionally queued
+        // The delta-sync useEffect calls pushOne() fire-and-forget.  The offline
+        // push fails asynchronously (Playwright rejects the fetch immediately), then
+        // the catch block writes to rm_pending_sync.  Poll until the queue appears
+        // rather than reading localStorage synchronously (which races the async write).
+        await supabasePage.waitForFunction(
+            () => {
+                const raw = localStorage.getItem('rm_pending_sync');
+                const q: unknown[] = raw ? JSON.parse(raw) : [];
+                return q.length > 0;
+            },
+            { timeout: 8_000, polling: 200 }
+        );
 
         // Pending queue must have items
         const pendingQueue = await supabasePage.evaluate(() => {
