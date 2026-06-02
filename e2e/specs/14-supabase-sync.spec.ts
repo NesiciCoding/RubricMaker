@@ -188,10 +188,25 @@ test.describe('Offline write queue and reconnect flush', () => {
         await builder.fillCriterionTitle(0, 'Content');
         await saveAndSync(supabasePage, builder);
 
-        // Go offline
+        // Simulate Supabase being unreachable.
+        // context().setOffline() does NOT block loopback (127.0.0.1) in Chromium, so
+        // pushes to the local Supabase stack succeed even when "offline" — nothing
+        // lands in the pending queue.  Use Playwright route interception to abort
+        // REST write requests, causing pushOne() to catch and queue them.
+        // setOffline(true) is still called so the app fires window.offline/online
+        // events; setOffline(false) later triggers the reconnect flush handler.
+        const supabaseWritePattern = `${SUPABASE_URL}/rest/v1/**`;
+        await supabasePage.context().route(supabaseWritePattern, async (route) => {
+            const method = route.request().method();
+            if (['POST', 'PATCH', 'PUT', 'DELETE'].includes(method)) {
+                await route.abort('failed');
+            } else {
+                await route.continue();
+            }
+        });
         await supabasePage.context().setOffline(true);
 
-        // Create a rubric while offline — succeeds locally, queued for Supabase
+        // Create a rubric while Supabase is unreachable — saves locally, push queued
         await gotoNewRubric(supabasePage);
         await builder.fillName('Offline Rubric');
         await builder.fillSubject('Dutch');
@@ -199,10 +214,8 @@ test.describe('Offline write queue and reconnect flush', () => {
         await builder.fillCriterionTitle(0, 'Vocabulary');
         await builder.save();
         await builder.waitForSaved();
-        // The delta-sync useEffect calls pushOne() fire-and-forget.  The offline
-        // push fails asynchronously (Playwright rejects the fetch immediately), then
-        // the catch block writes to rm_pending_sync.  Poll until the queue appears
-        // rather than reading localStorage synchronously (which races the async write).
+        // The delta-sync useEffect calls pushOne() fire-and-forget.  Poll until the
+        // aborted push writes the item to rm_pending_sync.
         await supabasePage.waitForFunction(
             () => {
                 const raw = localStorage.getItem('rm_pending_sync');
@@ -219,7 +232,10 @@ test.describe('Offline write queue and reconnect flush', () => {
         });
         expect(pendingQueue.length).toBeGreaterThan(0);
 
-        // Reconnect
+        // Reconnect: remove route interception first so retry pushes can reach
+        // Supabase, then call setOffline(false) to fire window.online which
+        // triggers storageSync.flushPendingQueue().
+        await supabasePage.context().unroute(supabaseWritePattern);
         await supabasePage.context().setOffline(false);
 
         // Wait for queue to flush
