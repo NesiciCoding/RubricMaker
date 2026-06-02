@@ -46,10 +46,19 @@ const adminHeaders = {
 };
 
 /**
- * Create a confirmed test user and return the Supabase magic-link URL using
- * the admin generate_link API — no email or inbucket required.
+ * Create a confirmed test user, set up a school so the app skips the
+ * onboarding flow, and return the Supabase magic-link URL using the admin
+ * generate_link API — no email or inbucket required.
+ *
+ * Without a school, hydrate() sets needsOnboarding:true and the app renders
+ * the onboarding page (no .main-area), causing fixture timeouts.
  */
 async function createUserAndGetMagicLink(email: string): Promise<string> {
+    const restHeaders = {
+        ...adminHeaders,
+        Prefer: 'return=representation',
+    };
+
     // Create confirmed user
     const createRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
         method: 'POST',
@@ -59,6 +68,33 @@ async function createUserAndGetMagicLink(email: string): Promise<string> {
     if (!createRes.ok) {
         throw new Error(`Failed to create test user: ${createRes.status} ${await createRes.text()}`);
     }
+    const user = (await createRes.json()) as { id: string };
+
+    // Create a school so needsOnboarding is false after hydration
+    const schoolRes = await fetch(`${SUPABASE_URL}/rest/v1/schools`, {
+        method: 'POST',
+        headers: restHeaders,
+        body: JSON.stringify({ name: 'E2E Test School', retention_years: 7, owner_id: user.id }),
+    });
+    if (schoolRes.ok) {
+        const schools = (await schoolRes.json()) as { id: string }[];
+        const schoolId = schools[0]?.id;
+        if (schoolId) {
+            await Promise.all([
+                fetch(`${SUPABASE_URL}/rest/v1/school_members`, {
+                    method: 'POST',
+                    headers: restHeaders,
+                    body: JSON.stringify({ school_id: schoolId, profile_id: user.id, role: 'admin' }),
+                }),
+                fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`, {
+                    method: 'PATCH',
+                    headers: restHeaders,
+                    body: JSON.stringify({ school_id: schoolId, role: 'admin' }),
+                }),
+            ]);
+        }
+    }
+    // Non-fatal: if school setup fails the test may see the onboarding page instead of main-area
 
     // Generate magic link directly — Supabase returns the verify URL without sending email
     const linkRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/generate_link`, {

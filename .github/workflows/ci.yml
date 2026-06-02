@@ -144,7 +144,7 @@ jobs:
             echo "$STATUS"
             exit 1
           fi
-          echo "SUPABASE_TEST_URL=http://localhost:54321" >> $GITHUB_ENV
+          echo "SUPABASE_TEST_URL=http://127.0.0.1:54321" >> $GITHUB_ENV
           echo "SUPABASE_TEST_ANON_KEY=$ANON_KEY" >> $GITHUB_ENV
           echo "SUPABASE_TEST_SERVICE_KEY=$SVC_KEY" >> $GITHUB_ENV
 
