@@ -21,7 +21,7 @@
     "e2e:chromium": "playwright test --project=chromium",
     "e2e:report": "playwright show-report playwright-report",
     "e2e:codegen": "playwright codegen http://localhost:5173",
-    "e2e:supabase": "playwright test --project=supabase",
+    "e2e:supabase": "playwright test --project=supabase --workers=1",
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
