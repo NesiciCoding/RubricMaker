@@ -127,9 +127,14 @@ jobs:
 
       - name: Export Supabase credentials
         run: |
-          STATUS=$(supabase status 2>/dev/null)
+          STATUS=$(supabase status)
           ANON_KEY=$(echo "$STATUS" | awk '/anon key:/{print $NF}')
           SVC_KEY=$(echo "$STATUS" | awk '/service_role key:/{print $NF}')
+          if [ -z "$ANON_KEY" ] || [ -z "$SVC_KEY" ]; then
+            echo "::error::Failed to extract Supabase credentials from supabase status"
+            echo "$STATUS"
+            exit 1
+          fi
           echo "SUPABASE_TEST_URL=http://localhost:54321" >> $GITHUB_ENV
           echo "SUPABASE_TEST_ANON_KEY=$ANON_KEY" >> $GITHUB_ENV
           echo "SUPABASE_TEST_SERVICE_KEY=$SVC_KEY" >> $GITHUB_ENV
