@@ -21,6 +21,9 @@ import {
     importFullBackup,
     updateDefaultFormat,
     DEFAULT_GRADE_SCALES,
+    loadPendingQueue,
+    addToPendingQueue,
+    removePendingWrites,
 } from './storage';
 import type { Rubric, Student, Class, AppSettings, RubricFormat } from '../types';
 import { DEFAULT_FORMAT } from '../types';
@@ -301,5 +304,84 @@ describe('updateDefaultFormat', () => {
         const newFormat: RubricFormat = { ...DEFAULT_FORMAT, theme: 'light' } as any;
         updateDefaultFormat(newFormat);
         expect(loadStore().settings.defaultFormat).toMatchObject({ fontSize: newFormat.fontSize });
+    });
+});
+
+describe('pending sync queue', () => {
+    it('loadPendingQueue returns empty array when nothing queued', () => {
+        expect(loadPendingQueue()).toEqual([]);
+    });
+
+    it('loadPendingQueue returns empty array on corrupted data', () => {
+        localStorage.setItem('rm_pending_sync', 'not-json{{{');
+        expect(loadPendingQueue()).toEqual([]);
+    });
+
+    it('addToPendingQueue persists an upsert op', () => {
+        addToPendingQueue({ entity: 'rubric', action: 'upsert', payload: { id: 'r1', name: 'Test' } });
+        const queue = loadPendingQueue();
+        expect(queue).toHaveLength(1);
+        expect(queue[0]).toMatchObject({ entity: 'rubric', action: 'upsert' });
+        expect(queue[0].id).toBeTruthy();
+        expect(queue[0].queuedAt).toBeTruthy();
+    });
+
+    it('addToPendingQueue persists a delete op', () => {
+        addToPendingQueue({ entity: 'student', action: 'delete', payload: null, entityId: 's1' });
+        const queue = loadPendingQueue();
+        expect(queue).toHaveLength(1);
+        expect(queue[0]).toMatchObject({ entity: 'student', action: 'delete', entityId: 's1' });
+    });
+
+    it('addToPendingQueue deduplicates by entity+id (last write wins)', () => {
+        addToPendingQueue({ entity: 'rubric', action: 'upsert', payload: { id: 'r1', name: 'First' } });
+        addToPendingQueue({ entity: 'rubric', action: 'upsert', payload: { id: 'r1', name: 'Second' } });
+        const queue = loadPendingQueue();
+        expect(queue).toHaveLength(1);
+        expect((queue[0].payload as { name: string }).name).toBe('Second');
+    });
+
+    it('addToPendingQueue keeps distinct entities separate', () => {
+        addToPendingQueue({ entity: 'rubric', action: 'upsert', payload: { id: 'r1' } });
+        addToPendingQueue({ entity: 'student', action: 'upsert', payload: { id: 's1' } });
+        expect(loadPendingQueue()).toHaveLength(2);
+    });
+
+    it('addToPendingQueue replaces upsert with delete for same entity+id', () => {
+        addToPendingQueue({ entity: 'rubric', action: 'upsert', payload: { id: 'r1' } });
+        addToPendingQueue({ entity: 'rubric', action: 'delete', payload: null, entityId: 'r1' });
+        const queue = loadPendingQueue();
+        expect(queue).toHaveLength(1);
+        expect(queue[0].action).toBe('delete');
+    });
+
+    it('removePendingWrites removes entries by id', () => {
+        addToPendingQueue({ entity: 'rubric', action: 'upsert', payload: { id: 'r1' } });
+        addToPendingQueue({ entity: 'student', action: 'upsert', payload: { id: 's1' } });
+        const [first, second] = loadPendingQueue();
+        removePendingWrites([first.id]);
+        const remaining = loadPendingQueue();
+        expect(remaining).toHaveLength(1);
+        expect(remaining[0].id).toBe(second.id);
+    });
+
+    it('removePendingWrites with unknown id is a no-op', () => {
+        addToPendingQueue({ entity: 'rubric', action: 'upsert', payload: { id: 'r1' } });
+        removePendingWrites(['nonexistent-id']);
+        expect(loadPendingQueue()).toHaveLength(1);
+    });
+
+    it('removePendingWrites with empty array leaves queue unchanged', () => {
+        addToPendingQueue({ entity: 'rubric', action: 'upsert', payload: { id: 'r1' } });
+        removePendingWrites([]);
+        expect(loadPendingQueue()).toHaveLength(1);
+    });
+
+    it('settings singleton op is deduplicated correctly', () => {
+        addToPendingQueue({ entity: 'settings', action: 'upsert', payload: { theme: 'dark' } });
+        addToPendingQueue({ entity: 'settings', action: 'upsert', payload: { theme: 'light' } });
+        const queue = loadPendingQueue();
+        expect(queue).toHaveLength(1);
+        expect((queue[0].payload as { theme: string }).theme).toBe('light');
     });
 });
