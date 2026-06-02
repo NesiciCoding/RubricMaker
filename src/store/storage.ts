@@ -17,6 +17,7 @@ import type {
     RubricCriterion,
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
+import { nanoid } from '../utils/nanoid';
 
 // ─── Default Grade Scales ──────────────────────────────────────────────────────
 
@@ -404,7 +405,7 @@ export function addToPendingQueue(op: Omit<PendingWrite, 'id' | 'queuedAt'>): vo
         const idx = queue.findIndex((q) => pendingKey(q) === key);
         const entry: PendingWrite = {
             ...op,
-            id: Math.random().toString(36).slice(2, 10),
+            id: nanoid(),
             queuedAt: new Date().toISOString(),
         };
         if (idx >= 0) {

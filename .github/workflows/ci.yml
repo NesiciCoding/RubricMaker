@@ -117,9 +117,9 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Install Supabase CLI
-        uses: supabase/setup-cli@v1
+        uses: supabase/setup-cli@ab058987d8d6c725971f6cf9d0b5c98467e30bd1 # v1.7.1
         with:
-          version: latest
+          version: 2.104.0
 
       - name: Start local Supabase stack
         run: supabase start
