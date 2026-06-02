@@ -27,15 +27,6 @@ import { encodeEssayAssignment } from '../utils/essayShareCode';
 import { loadSupabaseConfig } from '../services/database';
 import type { CefrLevel, CefrSkill, EssayAssignment, StudentEssayAssignmentSummary } from '../types';
 
-/**
- * Render the student portal page for the student identified by the current route.
- *
- * Shows grade history, CEFR progress, rubric grades with feedback, self-assessments (with edit/save),
- * and essay assignments grouped as pending, completed, or expired. Provides a copy-link header action
- * and an optional one-time guided tutorial stored per student in localStorage.
- *
- * @returns A JSX element representing the student portal page.
- */
 export default function StudentPortalPage() {
     const { studentId } = useParams<{ studentId: string }>();
     const {
@@ -668,7 +659,7 @@ function EssayCard({ row, href, t }: { row: StudentEssayAssignmentSummary; href:
                         padding: '7px 14px',
                         borderRadius: 7,
                         background: 'var(--accent)',
-                        color: '#fff',
+                        color: 'var(--bg)',
                         fontWeight: 600,
                         fontSize: '0.85rem',
                         textDecoration: 'none',
@@ -697,14 +688,6 @@ function chipStyle(bgVar: string, colorVar: string): React.CSSProperties {
     };
 }
 
-/**
- * Render a compact statistic card with an icon, a prominent value, and a secondary label.
- *
- * @param icon - Leading icon or visual indicator rendered at the left of the card
- * @param label - Secondary, smaller text describing the metric
- * @param value - Primary, emphasized metric text shown prominently
- * @returns A styled JSX element containing the icon, the value, and the label
- */
 function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
     return (
         <div

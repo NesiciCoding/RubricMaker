@@ -513,11 +513,6 @@ export interface EssayAssignment {
     supabaseAnonKey?: string;
 }
 
-/**
- * One row returned by SupabaseAdapter.fetchMyEssayAssignments() and rendered
- * in the student portal essay section. Named here so the adapter and portal
- * share a single contract that cannot drift.
- */
 export interface StudentEssayAssignmentSummary {
     teacherKey: string;
     rubricId: string;
