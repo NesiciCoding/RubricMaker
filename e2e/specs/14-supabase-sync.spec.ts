@@ -188,13 +188,17 @@ test.describe('Offline write queue and reconnect flush', () => {
         await builder.fillCriterionTitle(0, 'Content');
         await saveAndSync(supabasePage, builder);
 
-        // Simulate Supabase being unreachable.
-        // context().setOffline() does NOT block loopback (127.0.0.1) in Chromium, so
-        // pushes to the local Supabase stack succeed even when "offline" — nothing
-        // lands in the pending queue.  Use Playwright route interception to abort
-        // REST write requests, causing pushOne() to catch and queue them.
-        // setOffline(true) is still called so the app fires window.offline/online
-        // events; setOffline(false) later triggers the reconnect flush handler.
+        // Simulate Supabase writes being unreachable via route interception.
+        //
+        // Why not setOffline()?  In CI (Chrome), setOffline(true) blocks ALL
+        // connections including loopback.  This causes supabase-js's background
+        // auth token refresh to fail → after retries it fires SIGNED_OUT →
+        // adapter.userId becomes null → isConnected() returns false → pushOne()
+        // hits the early-return guard and never queues anything.
+        //
+        // Route interception aborts only Supabase REST write requests.  Auth
+        // requests (/auth/v1/**) and read requests (GET) continue normally, so
+        // the session stays alive and isConnected() remains true.
         const supabaseWritePattern = `${SUPABASE_URL}/rest/v1/**`;
         await supabasePage.context().route(supabaseWritePattern, async (route) => {
             const method = route.request().method();
@@ -204,9 +208,8 @@ test.describe('Offline write queue and reconnect flush', () => {
                 await route.continue();
             }
         });
-        await supabasePage.context().setOffline(true);
 
-        // Create a rubric while Supabase is unreachable — saves locally, push queued
+        // Create a rubric while Supabase writes are blocked — saves locally, push queued
         await gotoNewRubric(supabasePage);
         await builder.fillName('Offline Rubric');
         await builder.fillSubject('Dutch');
@@ -214,8 +217,9 @@ test.describe('Offline write queue and reconnect flush', () => {
         await builder.fillCriterionTitle(0, 'Vocabulary');
         await builder.save();
         await builder.waitForSaved();
-        // The delta-sync useEffect calls pushOne() fire-and-forget.  Poll until the
-        // aborted push writes the item to rm_pending_sync.
+        // The delta-sync useEffect calls pushOne() fire-and-forget.  The aborted
+        // POST throws inside postgrest-js (non-retryable method) → caught in
+        // pushOne → addToPendingQueue.  Poll until the item appears.
         await supabasePage.waitForFunction(
             () => {
                 const raw = localStorage.getItem('rm_pending_sync');
@@ -232,11 +236,10 @@ test.describe('Offline write queue and reconnect flush', () => {
         });
         expect(pendingQueue.length).toBeGreaterThan(0);
 
-        // Reconnect: remove route interception first so retry pushes can reach
-        // Supabase, then call setOffline(false) to fire window.online which
-        // triggers storageSync.flushPendingQueue().
+        // Restore connectivity: remove route interception so retries can reach
+        // Supabase, then dispatch window.online to trigger flushPendingQueue().
         await supabasePage.context().unroute(supabaseWritePattern);
-        await supabasePage.context().setOffline(false);
+        await supabasePage.evaluate(() => window.dispatchEvent(new Event('online')));
 
         // Wait for queue to flush
         await supabasePage.waitForFunction(
