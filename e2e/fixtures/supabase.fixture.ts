@@ -175,10 +175,15 @@ async function createUserAndGetMagicLink(email: string): Promise<string> {
  * connects to the local Supabase stack on every navigation.
  */
 async function signInViaMagicLink(page: Page, actionLink: string): Promise<void> {
-    // Inject Supabase config before React mounts on any origin this page visits
+    // Inject Supabase config before React mounts on any origin this page visits.
+    // Also mark migration as done so the "Upload local data?" modal never appears:
+    // the magic-link redirect briefly loads the app which hydrates Supabase data
+    // to localStorage; on the subsequent page.goto(APP_URL/#/) that data triggers
+    // the migration prompt and blocks all form interaction.
     await page.addInitScript(
         ({ url, key }: { url: string; key: string }) => {
             localStorage.setItem('rm_supabase_config', JSON.stringify({ supabaseUrl: url, supabaseAnonKey: key }));
+            localStorage.setItem('rm_migration_done', 'true');
         },
         { url: SUPABASE_URL, key: SUPABASE_ANON_KEY }
     );
