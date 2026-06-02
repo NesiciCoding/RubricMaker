@@ -29,12 +29,6 @@ function copyText(text: string): boolean {
     return false;
 }
 
-/**
- * Format a duration given in seconds as a zero-padded `MM:SS` string.
- *
- * @param seconds - Total number of seconds to format
- * @returns A string in the format `MM:SS` with minutes and seconds zero-padded to two digits
- */
 function formatTime(seconds: number): string {
     const m = Math.floor(seconds / 60)
         .toString()
@@ -50,15 +44,6 @@ interface EmailGateProps {
     onAuthenticated: (userId: string, email: string) => void;
 }
 
-/**
- * Renders an email-entry gate that links an anonymous session to the provided school email and notifies the caller when authentication is available.
- *
- * The component checks for an existing verified session on mount and bypasses the form if a session with both `userId` and `email` is present. When shown, it validates the entered email, initiates an anonymous sign-in via the adapter, and calls `onAuthenticated(userId, email)` on success; otherwise it surfaces a user-facing error.
- *
- * @param adapter - An object providing `getSession()` and `signInAnonymously()` methods used to inspect and create anonymous sessions.
- * @param onAuthenticated - Callback invoked with `(userId, email)` when a verified or newly-created anonymous session is available for the trimmed email.
- * @returns A React element that displays either a full-page loading state while checking the session or an email input UI that starts an anonymous session.
- */
 function EmailGate({ adapter, onAuthenticated }: EmailGateProps) {
     const [email, setEmail] = useState('');
     const [busy, setBusy] = useState(false);
@@ -195,20 +180,6 @@ function EmailGate({ adapter, onAuthenticated }: EmailGateProps) {
         </div>
     );
 }
-
-/**
- * Render the student essay page that decodes an assignment from the URL and manages drafting, timing, SEB constraints, and optional Supabase-backed submission.
- *
- * The component:
- * - Decodes the assignment from the route `code`.
- * - Auto-saves drafts to sessionStorage and restores them on load.
- * - Runs a countdown timer when the assignment has a time limit and auto-submits when time expires.
- * - Enforces word count limits and an optional Safe Exam Browser (SEB) requirement.
- * - In DB mode, gates access behind an email-based anonymous sign-in and attempts server submission via an `EssayAdapter`.
- * - Always generates a legacy submission code as a backup and exposes copy/redirect behavior for SEB flows.
- *
- * @returns The JSX element for the student essay writing and submission interface.
- */
 
 export default function StudentEssayPage() {
     const { code } = useParams<{ code: string }>();

@@ -131,12 +131,6 @@ export interface TestEssayAssignment {
     supabaseAnonKey?: string;
 }
 
-/**
- * Create the assignment payload encoded for use in an /essay/:code URL.
- *
- * @param overrides - Optional fields to override the default test assignment properties
- * @returns The assignment payload serialized, URI-encoded, and base64-encoded as a string suitable for embedding in the essay URL
- */
 export function buildEssayCode(overrides: TestEssayAssignment = {}): string {
     const assignment = {
         rubricId: 'test-rubric-id',
@@ -150,15 +144,6 @@ export function buildEssayCode(overrides: TestEssayAssignment = {}): string {
     return btoa(encodeURIComponent(JSON.stringify(assignment)));
 }
 
-/**
- * Constructs a fake Supabase v2 session object in the same shape the SDK stores in localStorage.
- *
- * Used to simulate a student who logged in via the portal before entering SEB.
- *
- * @param email - Email address to include in the session's `user` object
- * @param userId - User id to include in the session's `user` object (defaults to `'portal-user-id'`)
- * @returns A session-like object matching the Supabase v2 auth token structure: `access_token`, `refresh_token`, `expires_in`, `expires_at`, `token_type`, and `user` metadata
- */
 export function buildPortalSession(email: string, userId = 'portal-user-id') {
     const fakeJwt =
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9' +

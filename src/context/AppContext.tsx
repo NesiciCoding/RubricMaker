@@ -600,12 +600,6 @@ async function flushToLocalStorage(merged: StoreData) {
     saveAnalysisResults(merged.analysisResults);
 }
 
-/**
- * Provides the application context, manages global store and side effects (persistence, sync, auth flows), and supplies the AppContextValue to descendant components.
- *
- * @param children - Child React nodes that will be rendered inside the provider
- * @returns The AppContext provider element supplying the application state and helper methods to its descendants
- */
 export function AppProvider({ children }: { children: ReactNode }) {
     const [state, dispatch] = useReducer(reducer, null, loadStore);
     const initialStateRef = useRef(state);

@@ -275,18 +275,6 @@ const selectStyle: React.CSSProperties = {
     height: 28,
 };
 
-/**
- * A rich-text editor component with a formatting toolbar, table controls, and customizable text styles.
- *
- * The editor initializes from `content` and calls `onChange` with the editor's HTML whenever the document updates.
- *
- * @param content - Initial editor content as HTML.
- * @param onChange - Called with the editor's current HTML whenever the document is updated.
- * @param editable - When `true` the toolbar and editing features are enabled; when `false` the editor is read-only. Defaults to `true`.
- * @param placeholder - Placeholder text shown when the editor is empty.
- * @returns The EssayEditor React element.
- */
-
 export default function EssayEditor({ content, onChange, editable = true, placeholder }: EssayEditorProps) {
     const colorInputRef = useRef<HTMLInputElement>(null);
     const highlightInputRef = useRef<HTMLInputElement>(null);
