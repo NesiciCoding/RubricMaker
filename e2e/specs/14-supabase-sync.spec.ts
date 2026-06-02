@@ -25,6 +25,8 @@ import { RubricListPage } from '../pages/RubricListPage';
 async function saveAndSync(page: Page, builder: RubricBuilderPage): Promise<void> {
     await builder.save();
     await builder.waitForSaved();
+    // Wait for the async Supabase push (fire-and-forget from the reducer) to
+    // complete so that subsequent DB queries via the admin API find the row.
     await page.waitForLoadState('networkidle', { timeout: 15_000 });
 }
 
@@ -39,13 +41,22 @@ async function saveAndSync(page: Page, builder: RubricBuilderPage): Promise<void
  * connected; a simple hash navigation keeps the session alive.
  */
 async function gotoNewRubric(page: Page): Promise<void> {
-    await page.goto('/#/rubrics/new');
+    // Use direct hash assignment rather than page.goto() so we guarantee a
+    // same-document navigation with zero Playwright navigation overhead.
+    // This keeps the Supabase session intact and avoids any potential reload.
+    await page.evaluate(() => {
+        window.location.hash = '/rubrics/new';
+    });
     await page.waitForSelector('input[placeholder="Rubric Name..."]', { timeout: 15_000 });
+    // Settle any residual in-flight Supabase requests before filling the form.
+    await page.waitForLoadState('networkidle', { timeout: 15_000 });
 }
 
 /** Navigate to the rubric list without a page reload. */
 async function gotoRubricList(page: Page): Promise<void> {
-    await page.goto('/#/rubrics');
+    await page.evaluate(() => {
+        window.location.hash = '/rubrics';
+    });
     await page.waitForSelector('.main-area', { timeout: 15_000 });
 }
 

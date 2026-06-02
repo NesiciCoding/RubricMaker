@@ -200,6 +200,11 @@ async function signInViaMagicLink(page: Page, actionLink: string): Promise<void>
     // addInitScript runs again here, re-injecting rm_supabase_config for this origin
 
     await page.waitForSelector('.main-area', { timeout: 30_000 });
+    // Wait for Supabase hydration (configure → hydrate → SET_ALL → setLandingState('hide'))
+    // to fully settle before handing off.  .main-area appears as soon as landingState
+    // becomes 'hide', which happens right after hydrate() resolves — but any parallel
+    // network requests (e.g. profile fetch, school fetch) may still be in-flight.
+    await page.waitForLoadState('networkidle', { timeout: 20_000 });
 }
 
 /** Delete a test user by email using the service-role admin API. */
