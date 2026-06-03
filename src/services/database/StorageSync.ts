@@ -293,7 +293,35 @@ class StorageSyncService {
 
     // ── Hydration (DB → app state) ────────────────────────────────────────────
 
+    private static readonly HYDRATE_TIMEOUT_MS = 8000;
+    private hydrationGeneration = 0;
+
     async hydrate(): Promise<{ data: Partial<StoreData> | null; error?: string }> {
+        const gen = ++this.hydrationGeneration;
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const timeout = new Promise<{ data: null; error?: string }>((resolve) => {
+            timer = setTimeout(() => {
+                // Only act if this is still the active generation; a newer hydrate()
+                // call could have started between when this timer was set and when it fires.
+                if (gen !== this.hydrationGeneration) {
+                    resolve({ data: null });
+                    return;
+                }
+                // Supersede the in-flight impl so its late completion is discarded,
+                // then settle the status to match the warning toast that AppContext shows.
+                this.hydrationGeneration++;
+                this.setStatus('error');
+                resolve({ data: null, error: 'timeout' });
+            }, StorageSyncService.HYDRATE_TIMEOUT_MS);
+        });
+        try {
+            return await Promise.race([this._hydrateImpl(gen), timeout]);
+        } finally {
+            clearTimeout(timer);
+        }
+    }
+
+    private async _hydrateImpl(gen: number): Promise<{ data: Partial<StoreData> | null; error?: string }> {
         if (!this.adapter.isConnected()) return { data: null };
         this.setStatus('syncing');
         try {
@@ -332,11 +360,6 @@ class StorageSyncService {
                 this.adapter.fetchSettings(),
                 this.adapter.fetchMyProfile(),
             ]);
-
-            const now = new Date().toISOString();
-            this.lastSyncAt = now;
-            localStorage.setItem(LAST_SYNC_KEY, now);
-            this.setStatus('idle');
 
             // The profile.role is authoritative; always override whatever userRole
             // is stored in user_settings so the DB is the single source of truth.
@@ -389,10 +412,18 @@ class StorageSyncService {
                 if (result[k as keyof StoreData] === undefined) delete result[k as keyof StoreData];
             });
 
+            // Final generation check: all async work (including post-profile fetches)
+            // is complete. Only write side effects if this hydration is still active.
+            if (gen !== this.hydrationGeneration) return { data: null };
+            const now = new Date().toISOString();
+            this.lastSyncAt = now;
+            localStorage.setItem(LAST_SYNC_KEY, now);
+            this.setStatus('idle');
+
             return { data: result };
         } catch (e) {
             console.error('[sync] hydrate failed', e);
-            this.setStatus('error');
+            if (gen === this.hydrationGeneration) this.setStatus('error');
             return { data: null, error: String(e) };
         }
     }
