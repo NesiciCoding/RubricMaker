@@ -361,15 +361,6 @@ class StorageSyncService {
                 this.adapter.fetchMyProfile(),
             ]);
 
-            // Discard results if a newer hydration has superseded this one (e.g. this
-            // call timed out and the caller already fell back to cached state).
-            if (gen !== this.hydrationGeneration) return { data: null };
-
-            const now = new Date().toISOString();
-            this.lastSyncAt = now;
-            localStorage.setItem(LAST_SYNC_KEY, now);
-            this.setStatus('idle');
-
             // The profile.role is authoritative; always override whatever userRole
             // is stored in user_settings so the DB is the single source of truth.
             // If the profile has no school_id the user needs to complete onboarding.
@@ -420,6 +411,14 @@ class StorageSyncService {
             Object.keys(result).forEach((k) => {
                 if (result[k as keyof StoreData] === undefined) delete result[k as keyof StoreData];
             });
+
+            // Final generation check: all async work (including post-profile fetches)
+            // is complete. Only write side effects if this hydration is still active.
+            if (gen !== this.hydrationGeneration) return { data: null };
+            const now = new Date().toISOString();
+            this.lastSyncAt = now;
+            localStorage.setItem(LAST_SYNC_KEY, now);
+            this.setStatus('idle');
 
             return { data: result };
         } catch (e) {
