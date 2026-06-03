@@ -603,11 +603,23 @@ async function flushToLocalStorage(merged: StoreData) {
 export function AppProvider({ children }: { children: ReactNode }) {
     const [state, dispatch] = useReducer(reducer, null, loadStore);
     const initialStateRef = useRef(state);
+    const currentStateRef = useRef(state);
     const { showToast } = useToast();
     const { t } = useTranslation();
 
+    // Keep currentStateRef in sync so the reconnect handler always sees fresh state
+    useEffect(() => {
+        currentStateRef.current = state;
+    }, [state]);
+
     // 'checking' while we detect session; 'show' = show landing; 'hide' = in app
     const [landingState, setLandingState] = useState<'checking' | 'show' | 'hide'>('checking');
+    // Ref so the OTP handler ([] deps effect) can read current state without
+    // re-subscribing on every landingState change.
+    const landingStateRef = useRef<'checking' | 'show' | 'hide'>('checking');
+    useEffect(() => {
+        landingStateRef.current = landingState;
+    }, [landingState]);
     const [showMigrationPrompt, setShowMigrationPrompt] = useState(false);
 
     useEffect(() => {
@@ -704,10 +716,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    // ── Re-hydrate from Supabase when the network comes back online ──────────────
+    useEffect(() => {
+        return storageSync.onNetworkReconnect(async () => {
+            if (!storageSync.isConnected()) return;
+            const { data: fresh } = await storageSync.hydrate();
+            if (fresh) {
+                const merged = { ...currentStateRef.current, ...fresh } as StoreData;
+                dispatch({ type: 'SET_ALL', payload: merged });
+                try {
+                    await flushToLocalStorage(merged);
+                } catch {
+                    // quota error — non-fatal on reconnect
+                }
+            }
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     // ── Handle in-page OTP login (no page reload, so startup effect won't re-run) ──
     useEffect(() => {
         return storageSync.onAuthChange(async (user) => {
-            if (!user || storageSync.isConnected()) return;
+            // Only run when the landing page is genuinely visible.
+            // During startup landingStateRef.current === 'checking', which prevents
+            // this handler from racing with the startup configureAndEnter flow and
+            // calling setLandingState('checking') mid-interaction (which unmounts
+            // all routes, destroying any mounted component's local state).
+            if (!user || storageSync.isConnected() || landingStateRef.current !== 'show') return;
             const config = loadSupabaseConfig();
             if (!config) return;
             setLandingState('checking');

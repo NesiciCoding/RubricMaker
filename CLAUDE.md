@@ -43,7 +43,7 @@ npm run db:reset     # Reset and re-apply all migrations
 | Charts | Recharts |
 | Export | `docx`, `pdfjs-dist`, `file-saver` |
 | OCR | Tesseract.js |
-| i18n | i18next (EN + NL) |
+| i18n | i18next (EN, NL, FR, DE, ES) |
 | Auth | Supabase Auth (email OTP) — optional |
 | Tests | Vitest + Testing Library |
 
@@ -95,7 +95,7 @@ Strict mode is on. All domain types live in `src/types/index.ts`. Do not create 
 
 ### i18n
 
-All user-visible strings must use the `useTranslation` hook and a key from `src/locales/en.json` (and matching `nl.json`). Never hardcode English text in JSX. When adding features, add translation keys to both locale files.
+All user-visible strings must use the `useTranslation` hook and a key from `src/locales/en.json`. Never hardcode English text in JSX. When adding features, add translation keys to **all** locale files (en, nl, fr, de, es).
 
 ### Styling
 
@@ -129,7 +129,7 @@ src/
   pages/          Route-level page components
   data/           Static reference data (CEFR descriptors, templates)
   types/          Domain model types
-  locales/        i18n JSON files (en, nl)
+  locales/        i18n JSON files (en, nl, fr, de, es)
 supabase/
   migrations/     SQL migrations (numbered, sequential)
   functions/      Edge functions (Deno)

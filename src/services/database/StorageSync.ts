@@ -3,6 +3,7 @@ import { SupabaseAdapter } from './SupabaseAdapter';
 import { AttachmentSync } from './AttachmentSync';
 import type { DatabaseConfig, SyncStatus, SyncResult, DbUser } from './types';
 import type { StoreData } from '../../store/storage';
+import { addToPendingQueue, loadPendingQueue, removePendingWrites } from '../../store/storage';
 import type {
     Rubric,
     Student,
@@ -53,6 +54,9 @@ class StorageSyncService {
     private authListeners: Set<(user: DbUser | null) => void> = new Set();
     private pushOneFailCount = 0;
     private toastFn: ((msg: string, type?: 'success' | 'error' | 'info' | 'warning') => void) | null = null;
+    private reconnectListeners: Set<() => void> = new Set();
+    private networkListenerActive = false;
+    private flushInProgress = false;
 
     // ── Status ────────────────────────────────────────────────────────────────
 
@@ -96,6 +100,58 @@ class StorageSyncService {
         this.authListeners.forEach((cb) => cb(user));
     }
 
+    onNetworkReconnect(cb: () => void): () => void {
+        this.reconnectListeners.add(cb);
+        return () => this.reconnectListeners.delete(cb);
+    }
+
+    private notifyReconnect() {
+        this.reconnectListeners.forEach((cb) => cb());
+    }
+
+    /** Start listening for browser online/offline events. Idempotent. */
+    startNetworkListener(): void {
+        if (this.networkListenerActive) return;
+        this.networkListenerActive = true;
+        window.addEventListener('online', () => {
+            this.setStatus('idle');
+            this.flushPendingQueue()
+                .finally(() => this.notifyReconnect())
+                .catch(console.warn);
+        });
+        window.addEventListener('offline', () => {
+            this.setStatus('offline');
+        });
+    }
+
+    /** Retry all queued writes that failed while offline. */
+    async flushPendingQueue(): Promise<void> {
+        if (this.flushInProgress) return;
+        this.flushInProgress = true;
+        const queue = loadPendingQueue();
+        if (queue.length === 0 || !this.adapter.isConnected()) {
+            this.flushInProgress = false;
+            return;
+        }
+        this.setStatus('syncing');
+        const succeeded: string[] = [];
+        try {
+            for (const op of queue) {
+                if (!this.adapter.isConnected()) break;
+                await this.pushOne(op.entity, op.action, op.payload, op.entityId);
+                // pushOne catches errors internally and returns void — only mark as
+                // succeeded when still connected, because a disconnect during the call
+                // causes pushOne to return early without syncing or re-queuing.
+                if (!this.adapter.isConnected()) break;
+                succeeded.push(op.id);
+            }
+            if (succeeded.length > 0) removePendingWrites(succeeded);
+        } finally {
+            this.flushInProgress = false;
+            this.setStatus('idle');
+        }
+    }
+
     // ── Connection ────────────────────────────────────────────────────────────
 
     /**
@@ -126,6 +182,9 @@ class StorageSyncService {
                 this.notifyAuthChange(user);
                 this.notifyListeners();
             });
+            this.startNetworkListener();
+            // Flush any writes that failed in a previous session
+            this.flushPendingQueue().catch(console.warn);
         } else {
             this.setStatus('error');
         }
@@ -450,6 +509,7 @@ class StorageSyncService {
             this.pushOneFailCount = 0;
         } catch (e) {
             console.warn(`[sync] pushOne(${entity}, ${action}) failed`, e);
+            addToPendingQueue({ entity, action, payload, entityId: id });
             this.pushOneFailCount++;
             if (this.pushOneFailCount === 3 && this.toastFn) {
                 this.toastFn(i18n.t('toast.sync_push_failed'), 'warning');

@@ -47,7 +47,18 @@ export class RubricBuilderPage extends BasePage {
     }
 
     async waitForSaved(): Promise<void> {
-        await this.page.locator('.topbar button.btn-primary').filter({ hasText: /saved/i }).waitFor({ timeout: 5_000 });
+        // For NEW rubrics handleSave() calls navigate('/rubrics/:id') before the
+        // component re-renders with saved=true, so a fresh RubricBuilder instance
+        // mounts with saved=false and the "Saved" text is never visible on the /new
+        // page.  Accept either signal: the button text (edit flows) OR the URL
+        // leaving /rubrics/new (create flows).
+        await Promise.any([
+            this.page
+                .locator('.topbar button.btn-primary')
+                .filter({ hasText: /saved/i })
+                .waitFor({ timeout: 8_000 }),
+            this.page.waitForURL(/\/#\/rubrics\/(?!new)[^/]*$/, { timeout: 8_000 }),
+        ]);
     }
 
     async openVersionHistory(): Promise<void> {

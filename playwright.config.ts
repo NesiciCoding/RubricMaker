@@ -23,19 +23,29 @@ export default defineConfig({
         {
             name: 'chromium',
             use: { ...devices['Desktop Chrome'] },
+            testIgnore: ['**/14-supabase-sync.spec.ts'],
         },
         {
             name: 'firefox',
             use: { ...devices['Desktop Firefox'] },
+            testIgnore: ['**/14-supabase-sync.spec.ts'],
         },
         {
             name: 'webkit',
             use: { ...devices['Desktop Safari'] },
+            testIgnore: ['**/14-supabase-sync.spec.ts'],
         },
         {
             name: 'mobile-chrome',
             use: { ...devices['Pixel 5'] },
             testMatch: ['**/01-local-mode.spec.ts', '**/12-navigation.spec.ts'],
+        },
+        // Supabase integration tests — require `npm run db:start` before running.
+        // Run with: npm run e2e:supabase
+        {
+            name: 'supabase',
+            use: { ...devices['Desktop Chrome'] },
+            testMatch: ['**/14-supabase-sync.spec.ts'],
         },
     ],
     webServer: {

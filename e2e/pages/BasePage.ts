@@ -12,6 +12,10 @@ export class BasePage {
         await this.page.goto(`/#${path}`);
         await this.page.reload();
         await this.page.waitForSelector('.main-area', { timeout: 20_000 });
+        // Wait for any in-flight network requests (e.g. Supabase hydration) to
+        // finish before the test interacts with the page. In offline/local mode
+        // this resolves immediately since there are no network requests.
+        await this.page.waitForLoadState('networkidle', { timeout: 15_000 });
     }
 
     async waitForRoute(path: string): Promise<void> {
