@@ -57,15 +57,15 @@ describe('Sidebar', () => {
 
     it('collapses when toggle button clicked', () => {
         renderSidebar();
-        const toggleBtn = screen.getByTitle('Collapse sidebar');
+        const toggleBtn = screen.getByRole('button', { name: 'sidebar.collapse' });
         fireEvent.click(toggleBtn);
         expect(screen.queryByText('Rubric Maker')).toBeNull();
     });
 
     it('expands again after collapse', () => {
         renderSidebar();
-        fireEvent.click(screen.getByTitle('Collapse sidebar'));
-        fireEvent.click(screen.getByTitle('Expand sidebar'));
+        fireEvent.click(screen.getByRole('button', { name: 'sidebar.collapse' }));
+        fireEvent.click(screen.getByRole('button', { name: 'sidebar.expand' }));
         expect(screen.getByText('Rubric Maker')).toBeInTheDocument();
     });
 

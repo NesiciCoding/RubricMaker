@@ -189,8 +189,9 @@ export default function EssayAssignmentModal({
             >
                 {/* Title */}
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label>Assignment title</label>
+                    <label htmlFor="ea-title">Assignment title</label>
                     <input
+                        id="ea-title"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder="e.g. Essay writing — Chapter 3"
@@ -199,11 +200,12 @@ export default function EssayAssignmentModal({
 
                 {/* Prompt */}
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label>
+                    <label htmlFor="ea-prompt">
                         Prompt / instructions{' '}
                         <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span>
                     </label>
                     <textarea
+                        id="ea-prompt"
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
                         rows={3}
@@ -215,10 +217,11 @@ export default function EssayAssignmentModal({
                 {/* Word limits + time */}
                 <div style={{ display: 'flex', gap: 12 }}>
                     <div className="form-group" style={{ marginBottom: 0, flex: 1 }}>
-                        <label>
+                        <label htmlFor="ea-min-words">
                             Min words <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opt.)</span>
                         </label>
                         <input
+                            id="ea-min-words"
                             type="number"
                             min={0}
                             value={minWords}
@@ -227,10 +230,11 @@ export default function EssayAssignmentModal({
                         />
                     </div>
                     <div className="form-group" style={{ marginBottom: 0, flex: 1 }}>
-                        <label>
+                        <label htmlFor="ea-max-words">
                             Max words <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opt.)</span>
                         </label>
                         <input
+                            id="ea-max-words"
                             type="number"
                             min={0}
                             value={maxWords}
@@ -239,10 +243,11 @@ export default function EssayAssignmentModal({
                         />
                     </div>
                     <div className="form-group" style={{ marginBottom: 0, flex: 1 }}>
-                        <label>
+                        <label htmlFor="ea-time-limit">
                             Time limit (min) <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opt.)</span>
                         </label>
                         <input
+                            id="ea-time-limit"
                             type="number"
                             min={1}
                             value={timeLimitMinutes}
@@ -292,13 +297,14 @@ export default function EssayAssignmentModal({
 
                 {/* Expiry */}
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label>
+                    <label htmlFor="ea-expires-at">
                         Deadline{' '}
                         <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
                             (optional — students cannot submit after this date/time)
                         </span>
                     </label>
                     <input
+                        id="ea-expires-at"
                         type="datetime-local"
                         value={expiresAt}
                         onChange={(e) => setExpiresAt(e.target.value)}
@@ -385,9 +391,10 @@ export default function EssayAssignmentModal({
 
                 {/* Generated URL */}
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label>Student essay link</label>
+                    <label htmlFor="ea-essay-link">Student essay link</label>
                     <div style={{ display: 'flex', gap: 8 }}>
                         <input
+                            id="ea-essay-link"
                             readOnly
                             value={essayUrl}
                             style={{

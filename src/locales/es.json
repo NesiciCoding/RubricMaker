@@ -40,7 +40,10 @@
         "main_section": "Principal",
         "quick_stats": "Estadísticas rápidas",
         "rubrics_count": "Rúbricas",
-        "students_count": "Estudiantes"
+        "students_count": "Estudiantes",
+        "nav_label": "Navegación principal",
+        "expand": "Expandir barra lateral",
+        "collapse": "Contraer barra lateral"
     },
     "settings": {
         "title": "Ajustes",
@@ -454,7 +457,9 @@
         "achieve_threshold_label": "Umbral de Logro (%)",
         "achieve_threshold_help": "Una puntuación igual o superior a este porcentaje cuenta como 'Logrado' en el perfil del estudiante.",
         "progress_chart_title": "Radar de Habilidades MCER",
-        "no_chart_data": "Datos de habilidades insuficientes para un gráfico."
+        "no_chart_data": "Datos de habilidades insuficientes para un gráfico.",
+        "progress_chart_aria_label": "Gráfico de radar de habilidades MCER con puntuaciones medias por habilidad y nivel",
+        "skill": "Habilidad"
     },
     "framework": {
         "picker_title": "Descriptores del Marco de Evaluación",
@@ -608,6 +613,8 @@
         "students": "Estudiantes",
         "criterion_avg": "Promedio por Criterio (%)",
         "score_distribution": "Distribución de Puntuaciones",
+        "blooms_chart_summary": "Gráfico de rendimiento de la taxonomía de Bloom",
+        "no_data": "Sin datos",
         "blooms_title": "Taxonomía de Bloom",
         "ib_title": "Perfil del Alumno IB",
         "heatmap": "Mapa de Calor de Criterios",
@@ -775,6 +782,7 @@
     "notifications": {
         "bell_title": "Notificaciones ({{count}} pendientes)",
         "panel_title": "Estudiantes Pendientes",
+        "panel_label": "Panel de notificaciones",
         "all_up_to_date": "Todos los estudiantes calificados en los últimos {{threshold}} días.",
         "overdue_subtitle": "{{count}} estudiante(s) sin calificar en {{threshold}}+ días",
         "days_ago": "Hace {{count}}d",
@@ -856,5 +864,14 @@
         "retention_title": "Ajustes de Retención",
         "retention_desc": "Los estudiantes cuya calificación más reciente sea anterior al período de retención serán anonimizados automáticamente.",
         "retention_per_school": "Establece el período de retención por escuela en la pestaña Escuelas."
+    },
+    "tts": {
+        "read_prompt": "Leer instrucción en voz alta",
+        "read_prompt_short": "Leer instrucción",
+        "play": "Leer ensayo en voz alta",
+        "pause": "Pausar lectura",
+        "resume": "Reanudar",
+        "stop": "Detener",
+        "progress": "Progreso de lectura"
     }
 }

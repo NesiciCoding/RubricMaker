@@ -67,8 +67,9 @@ export default function NotificationBell() {
             <button
                 className="btn btn-ghost btn-icon"
                 onClick={handleToggle}
-                title={t('notifications.bell_title', { count })}
                 aria-label={t('notifications.bell_title', { count })}
+                aria-expanded={open}
+                aria-haspopup="true"
             >
                 <Bell size={18} />
                 {count > 0 && (
@@ -97,6 +98,8 @@ export default function NotificationBell() {
 
             {open && (
                 <div
+                    role="region"
+                    aria-label={t('notifications.panel_label')}
                     style={{
                         position: 'absolute',
                         top: 'calc(100% + 8px)',

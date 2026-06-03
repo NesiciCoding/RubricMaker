@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { Clock, CheckCircle, Copy, AlertTriangle, Mail, Loader2, Save } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import EssayEditor from '../components/Editor/EssayEditor';
+import EssayTTSControls from '../components/Essay/EssayTTSControls';
 import { decodeEssayAssignment } from '../utils/essayShareCode';
 import { encodeEssaySubmission } from '../utils/essaySubmissionCode';
 import { countWords } from '../utils/essayUtils';
@@ -182,6 +184,7 @@ function EmailGate({ adapter, onAuthenticated }: EmailGateProps) {
 }
 
 export default function StudentEssayPage() {
+    const { i18n } = useTranslation();
     const { code } = useParams<{ code: string }>();
     const assignment = code ? decodeEssayAssignment(code) : null;
 
@@ -502,6 +505,13 @@ export default function StudentEssayPage() {
                             </span>
                         )}
                     </div>
+                    {!submitted && (
+                        <EssayTTSControls
+                            promptText={assignment.prompt}
+                            contentHtml={html}
+                            lang={i18n.language}
+                        />
+                    )}
                 </div>
             </div>
 

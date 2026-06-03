@@ -101,7 +101,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
                 className={`sidebar${mobileOpen ? ' mobile-open' : ''}`}
                 data-collapsed={collapsed ? 'true' : undefined}
                 style={{ width: collapsed ? 64 : 260 }}
-                aria-hidden={undefined /* always visible on desktop; CSS handles mobile */}
+                aria-label={t('sidebar.nav_label')}
             >
                 {/* Logo + collapse toggle */}
                 <div
@@ -133,7 +133,8 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
                     <button
                         className="btn btn-ghost btn-icon btn-sm sidebar-collapse-btn"
                         onClick={() => setCollapsed((c) => !c)}
-                        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                        aria-label={collapsed ? t('sidebar.expand') : t('sidebar.collapse')}
+                        aria-expanded={!collapsed}
                         style={{ flexShrink: 0, marginLeft: collapsed ? 0 : 4 }}
                     >
                         {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}

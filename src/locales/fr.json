@@ -37,7 +37,10 @@
         "main_section": "Principal",
         "quick_stats": "Stats Rapides",
         "rubrics_count": "Rubriques",
-        "students_count": "Élèves"
+        "students_count": "Élèves",
+        "nav_label": "Navigation principale",
+        "expand": "Développer la barre latérale",
+        "collapse": "Réduire la barre latérale"
     },
     "settings": {
         "title": "Paramètres",
@@ -445,7 +448,9 @@
         "achieve_threshold_label": "Seuil de réussite (%)",
         "achieve_threshold_help": "Un score égal ou supérieur à ce pourcentage est comptabilisé comme « Atteint » sur le profil de l'élève.",
         "progress_chart_title": "Radar des compétences CECR",
-        "no_chart_data": "Données de compétences insuffisantes pour le graphique."
+        "no_chart_data": "Données de compétences insuffisantes pour le graphique.",
+        "progress_chart_aria_label": "Graphique radar des compétences CECR avec scores moyens par compétence et niveau",
+        "skill": "Compétence"
     },
     "framework": {
         "picker_title": "Descripteurs du cadre d'évaluation",
@@ -564,6 +569,8 @@
         "grade_distribution": "Distribution des notes",
         "no_grade_scale": "Aucun barème configuré pour cette rubrique.",
         "students": "Élèves",
+        "blooms_chart_summary": "Graphique de performance de la taxonomie de Bloom",
+        "no_data": "Aucune donnée",
         "criterion_avg": "Moyenne par critère (%)",
         "score_distribution": "Distribution des scores",
         "heatmap": "Carte thermique des critères",
@@ -731,6 +738,7 @@
     "notifications": {
         "bell_title": "Notifications ({{count}} en retard)",
         "panel_title": "Élèves en retard",
+        "panel_label": "Panneau de notifications",
         "all_up_to_date": "Tous les élèves ont été notés au cours des {{threshold}} derniers jours.",
         "overdue_subtitle": "{{count}} élève(s) non noté(s) depuis {{threshold}}+ jours",
         "days_ago": "il y a {{count}}j",
@@ -740,5 +748,14 @@
         "permission_denied": "Notifications du navigateur bloquées. Autorisez-les dans les paramètres du navigateur.",
         "browser_title": "RubricMaker — Élèves en retard",
         "browser_body": "{{count}} élève(s) non noté(s) depuis {{threshold}}+ jours."
+    },
+    "tts": {
+        "read_prompt": "Lire la consigne à voix haute",
+        "read_prompt_short": "Lire la consigne",
+        "play": "Lire la rédaction à voix haute",
+        "pause": "Pause",
+        "resume": "Reprendre",
+        "stop": "Arrêter",
+        "progress": "Progression de lecture"
     }
 }

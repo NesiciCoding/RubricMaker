@@ -37,7 +37,10 @@
         "main_section": "Hauptmenü",
         "quick_stats": "Schnellstatistiken",
         "rubrics_count": "Rubriken",
-        "students_count": "Schüler"
+        "students_count": "Schüler",
+        "nav_label": "Hauptnavigation",
+        "expand": "Seitenleiste erweitern",
+        "collapse": "Seitenleiste einklappen"
     },
     "settings": {
         "title": "Einstellungen",
@@ -445,7 +448,9 @@
         "achieve_threshold_label": "Leistungsschwelle (%)",
         "achieve_threshold_help": "Eine Punktzahl ab diesem Prozentsatz gilt als 'Erreicht' im Schülerprofil.",
         "progress_chart_title": "GER-Kompetenz-Radar",
-        "no_chart_data": "Nicht genug Kompetenzdaten für ein Diagramm."
+        "no_chart_data": "Nicht genug Kompetenzdaten für ein Diagramm.",
+        "progress_chart_aria_label": "GER-Kompetenz-Radar mit Durchschnittswerten je Kompetenz und Niveau",
+        "skill": "Kompetenz"
     },
     "framework": {
         "picker_title": "Bewertungsrahmen-Deskriptoren",
@@ -564,6 +569,8 @@
         "grade_distribution": "Notenverteilung",
         "no_grade_scale": "Keine Notenskala für diese Rubrik konfiguriert.",
         "students": "Schüler",
+        "blooms_chart_summary": "Leistungsdiagramm Bloomsche Taxonomie",
+        "no_data": "Keine Daten",
         "criterion_avg": "Durchschnitt je Kriterium (%)",
         "score_distribution": "Punkteverteilung",
         "heatmap": "Kriterien-Heatmap",
@@ -731,6 +738,7 @@
     "notifications": {
         "bell_title": "Benachrichtigungen ({{count}} überfällig)",
         "panel_title": "Überfällige Schüler",
+        "panel_label": "Benachrichtigungspanel",
         "all_up_to_date": "Alle Schüler wurden in den letzten {{threshold}} Tagen benotet.",
         "overdue_subtitle": "{{count}} Schüler seit {{threshold}}+ Tagen nicht benotet",
         "days_ago": "vor {{count}}T",
@@ -740,5 +748,14 @@
         "permission_denied": "Browser-Benachrichtigungen blockiert. Erlauben Sie sie in den Browser-Einstellungen.",
         "browser_title": "RubricMaker — Überfällige Schüler",
         "browser_body": "{{count}} Schüler seit {{threshold}}+ Tagen nicht benotet."
+    },
+    "tts": {
+        "read_prompt": "Aufgabenstellung vorlesen",
+        "read_prompt_short": "Prompt vorlesen",
+        "play": "Aufsatz vorlesen",
+        "pause": "Vorlesen pausieren",
+        "resume": "Fortsetzen",
+        "stop": "Stopp",
+        "progress": "Lesefortschritt"
     }
 }

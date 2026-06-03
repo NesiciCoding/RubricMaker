@@ -40,7 +40,10 @@
         "main_section": "Hoofdmenu",
         "quick_stats": "Snelle statistieken",
         "rubrics_count": "Rubrieken",
-        "students_count": "Leerlingen"
+        "students_count": "Leerlingen",
+        "nav_label": "Hoofdnavigatie",
+        "expand": "Zijbalk uitvouwen",
+        "collapse": "Zijbalk inklappen"
     },
     "settings": {
         "title": "Instellingen",
@@ -456,7 +459,9 @@
         "achieve_threshold_label": "Drempel voor 'Behaald' (%)",
         "achieve_threshold_help": "Een score op of boven dit percentage telt als 'Behaald' op het leerlingprofiel.",
         "progress_chart_title": "ERK Vaardigheden Radar",
-        "no_chart_data": "Onvoldoende vaardigheidsdata voor een grafiek."
+        "no_chart_data": "Onvoldoende vaardigheidsdata voor een grafiek.",
+        "progress_chart_aria_label": "ERK vaardigheden radargrafiek met gemiddelde scores per vaardigheid en niveau",
+        "skill": "Vaardigheid"
     },
     "framework": {
         "picker_title": "Beoordelingskader Uitspraken",
@@ -610,6 +615,8 @@
         "students": "Leerlingen",
         "criterion_avg": "Gemiddelde per Criterium (%)",
         "score_distribution": "Score Verdeling",
+        "blooms_chart_summary": "Prestatiediagram Bloom's taxonomie",
+        "no_data": "Geen gegevens",
         "blooms_title": "Taxonomie van Bloom",
         "ib_title": "IB Leerlingprofiel",
         "heatmap": "Criterium Heatmap",
@@ -777,6 +784,7 @@
     "notifications": {
         "bell_title": "Meldingen ({{count}} achterstallig)",
         "panel_title": "Achterstallige Leerlingen",
+        "panel_label": "Meldingenpaneel",
         "all_up_to_date": "Alle leerlingen zijn de afgelopen {{threshold}} dagen nagekeken.",
         "overdue_subtitle": "{{count}} leerling(en) al {{threshold}}+ dagen niet nagekeken",
         "days_ago": "{{count}}d geleden",
@@ -858,5 +866,14 @@
         "retention_title": "Retentie-instellingen",
         "retention_desc": "Leerlingen van wie de meest recente beoordeling ouder is dan de bewaartermijn worden automatisch geanonimiseerd.",
         "retention_per_school": "Stel de bewaartermijn per school in op het tabblad Scholen."
+    },
+    "tts": {
+        "read_prompt": "Lees de opdrachtprompt voor",
+        "read_prompt_short": "Lees prompt",
+        "play": "Lees essay voor",
+        "pause": "Pauzeer voorlezen",
+        "resume": "Hervatten",
+        "stop": "Stop",
+        "progress": "Leesvoortgang"
     }
 }
