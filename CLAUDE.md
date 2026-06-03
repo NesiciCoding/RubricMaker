@@ -116,6 +116,25 @@ Write no comments unless the *why* is non-obvious. Never describe what the code 
 - Do not mock `localStorage` globally; tests use the jsdom implementation.
 - Keep coverage above the thresholds: 50% lines/statements, 37% functions/branches.
 
+#### E2E tests — keep expanding
+
+Both suites live in `e2e/specs/`. Run them with:
+
+```bash
+npm run e2e              # offline suite (chromium + firefox + webkit)
+npm run e2e:supabase     # Supabase integration suite (requires npm run db:start)
+```
+
+**Offline suite** (`e2e/specs/01-*.spec.ts` … `13-*.spec.ts`) — covers the core teacher workflow without any backend. Add new specs here for every significant new offline feature.
+
+**Supabase suite** (`e2e/specs/14-supabase-sync.spec.ts`) — uses `e2e/fixtures/supabase.fixture.ts` (magic-link sign-in, per-test user teardown). Currently covers auth, cloud persistence, deletion sync, offline-queue flush, and queue-empty-while-online. **Priority gaps to fill:**
+- Shared rubric flow (teacher A shares → teacher B sees it)
+- Grading while offline → grade syncs after reconnect
+- Student portal sign-in via share code
+- Reconnect-hydration with conflicting local edits (last-write-wins on `updated_at`)
+
+When adding new Supabase sync paths to the app, add a corresponding spec in the Supabase suite. Keep the offline suite fast and dependency-free — never import from `supabase.fixture.ts` in the standard specs.
+
 ## Directory structure
 
 ```
