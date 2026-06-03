@@ -806,6 +806,7 @@
         "prompt_placeholder": "Schreiben Sie über…",
         "optional": "optional",
         "opt": "opt.",
+        "number_placeholder": "—",
         "min_words_label": "Mindestwörter",
         "max_words_label": "Höchstwörter",
         "time_limit_label": "Zeitlimit (Min.)",

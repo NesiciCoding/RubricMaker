@@ -112,7 +112,7 @@ export default function EssayAssignmentModal({
         } else {
             setSaveError(result.error ?? t('essay_assignment.save_error_fallback'));
         }
-    }, [onSaveAssignment, buildAssignment, studentId]);
+    }, [onSaveAssignment, buildAssignment, studentId, t]);
 
     const handleDownloadSEB = useCallback(() => {
         const xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -233,7 +233,7 @@ export default function EssayAssignmentModal({
                             min={0}
                             value={minWords}
                             onChange={(e) => setMinWords(e.target.value)}
-                            placeholder="—"
+                            placeholder={t('essay_assignment.number_placeholder')}
                         />
                     </div>
                     <div className="form-group" style={{ marginBottom: 0, flex: 1 }}>
@@ -249,7 +249,7 @@ export default function EssayAssignmentModal({
                             min={0}
                             value={maxWords}
                             onChange={(e) => setMaxWords(e.target.value)}
-                            placeholder="—"
+                            placeholder={t('essay_assignment.number_placeholder')}
                         />
                     </div>
                     <div className="form-group" style={{ marginBottom: 0, flex: 1 }}>
@@ -265,7 +265,7 @@ export default function EssayAssignmentModal({
                             min={1}
                             value={timeLimitMinutes}
                             onChange={(e) => setTimeLimitMinutes(e.target.value)}
-                            placeholder="—"
+                            placeholder={t('essay_assignment.number_placeholder')}
                         />
                     </div>
                 </div>

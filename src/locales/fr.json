@@ -806,6 +806,7 @@
         "prompt_placeholder": "Rédigez sur…",
         "optional": "facultatif",
         "opt": "opt.",
+        "number_placeholder": "—",
         "min_words_label": "Mots min.",
         "max_words_label": "Mots max.",
         "time_limit_label": "Limite de temps (min)",

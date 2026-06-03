@@ -877,6 +877,7 @@
         "prompt_placeholder": "Schrijf over…",
         "optional": "optioneel",
         "opt": "opt.",
+        "number_placeholder": "—",
         "min_words_label": "Min. woorden",
         "max_words_label": "Max. woorden",
         "time_limit_label": "Tijdslimiet (min)",

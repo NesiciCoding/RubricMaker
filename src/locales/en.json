@@ -875,6 +875,7 @@
         "prompt_placeholder": "Write about…",
         "optional": "optional",
         "opt": "opt.",
+        "number_placeholder": "—",
         "min_words_label": "Min words",
         "max_words_label": "Max words",
         "time_limit_label": "Time limit (min)",
