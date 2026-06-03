@@ -35,7 +35,8 @@
         "close": "Close",
         "settings": "Settings",
         "language": "Language",
-        "toggle_theme": "Toggle theme"
+        "toggle_theme": "Toggle theme",
+        "print": "Print"
     },
     "sidebar": {
         "main_section": "Main",
@@ -56,6 +57,9 @@
         "theme_light": "Light",
         "language_en": "English",
         "language_nl": "Nederlands",
+        "language_fr": "Français",
+        "language_de": "Deutsch",
+        "language_es": "Español",
         "language_help": "Choose your preferred language for the interface.",
         "admin_dashboard_desc": "Manage users, schools, and student data retention.",
         "open_admin_dashboard": "Open dashboard",
@@ -103,6 +107,7 @@
         "delete_scale_confirm": "Are you sure you want to delete this grade scale? This cannot be undone.",
         "accent_color_label": "Accent Color",
         "accent_color_invalid": "Enter a valid 6-digit hex color (e.g. #3b82f6).",
+        "ui_font_label": "Interface Font",
         "cloud_sync": "Cloud Sync (Microsoft 365)",
         "cloud_sync_help": "Connect your Microsoft account to sync rubrics across devices via OneDrive or SharePoint.",
         "action_login_microsoft": "Login with Microsoft",
@@ -828,6 +833,8 @@
         "title": "Admin Dashboard",
         "tab_users": "Users",
         "tab_schools": "Schools",
+        "tab_database": "Database",
+        "tab_integrations": "Integrations",
         "tab_data": "Data",
         "tab_retention": "Retention",
         "users_title": "User Management",

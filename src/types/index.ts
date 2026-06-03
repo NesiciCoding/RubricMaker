@@ -449,6 +449,8 @@ export interface AppSettings {
     cambridgeApiKey?: string;
     /** Display name of the user's school (populated on login). */
     schoolName?: string;
+    /** UI font family for the app chrome (key into FONT_OPTIONS). */
+    uiFontFamily?: string;
 }
 
 export interface CommentBankItem {

@@ -35,7 +35,8 @@
         "language": "Langue",
         "toggle_theme": "Basculer le thème",
         "back": "Retour",
-        "close": "Fermer"
+        "close": "Fermer",
+        "print": "Imprimer"
     },
     "sidebar": {
         "main_section": "Principal",
@@ -58,6 +59,7 @@
         "language_nl": "Nederlands",
         "language_fr": "Français",
         "language_de": "Deutsch",
+        "language_es": "Español",
         "language_help": "Choisissez votre langue préférée pour l'interface.",
         "standards_integration": "Intégration des Standards",
         "standards_help_1": "Pour lier des standards (CCSS, NGSS, etc.) depuis le <strong>Common Standards Project</strong>, vous avez besoin d'une clé API gratuite.",
@@ -97,6 +99,7 @@
         "delete_scale_confirm": "Êtes-vous sûr de vouloir supprimer ce barème ? Cette action est irréversible.",
         "accent_color_label": "Couleur d'accentuation",
         "accent_color_invalid": "Entrez une couleur hexadécimale valide à 6 chiffres (ex. #3b82f6).",
+        "ui_font_label": "Police d'interface",
         "cloud_sync": "Sync Cloud (Microsoft 365)",
         "cloud_sync_help": "Connectez votre compte Microsoft pour synchroniser les rubriques sur vos appareils via OneDrive ou SharePoint.",
         "action_login_microsoft": "Se connecter avec Microsoft",
@@ -869,6 +872,8 @@
         "title": "Tableau de bord administrateur",
         "tab_users": "Utilisateurs",
         "tab_schools": "Établissements",
+        "tab_database": "Base de données",
+        "tab_integrations": "Intégrations",
         "tab_data": "Données",
         "tab_retention": "Conservation",
         "users_title": "Gestion des utilisateurs",

@@ -35,7 +35,8 @@
         "close": "Cerrar",
         "settings": "Ajustes",
         "language": "Idioma",
-        "toggle_theme": "Cambiar tema"
+        "toggle_theme": "Cambiar tema",
+        "print": "Imprimir"
     },
     "sidebar": {
         "main_section": "Principal",
@@ -56,6 +57,9 @@
         "theme_light": "Claro",
         "language_en": "English",
         "language_nl": "Nederlands",
+        "language_fr": "Français",
+        "language_de": "Deutsch",
+        "language_es": "Español",
         "language_help": "Elige tu idioma preferido para la interfaz.",
         "admin_dashboard_desc": "Gestionar usuarios, escuelas y retención de datos de estudiantes.",
         "open_admin_dashboard": "Abrir panel",
@@ -103,6 +107,7 @@
         "delete_scale_confirm": "¿Estás seguro de que quieres eliminar esta escala de calificación? Esta acción no se puede deshacer.",
         "accent_color_label": "Color de Acento",
         "accent_color_invalid": "Introduce un color hexadecimal válido de 6 dígitos (p. ej. #3b82f6).",
+        "ui_font_label": "Fuente de interfaz",
         "cloud_sync": "Sincronización en la Nube (Microsoft 365)",
         "cloud_sync_help": "Conecta tu cuenta de Microsoft para sincronizar rúbricas entre dispositivos a través de OneDrive o SharePoint.",
         "action_login_microsoft": "Iniciar sesión con Microsoft",
@@ -828,6 +833,8 @@
         "title": "Panel de Administración",
         "tab_users": "Usuarios",
         "tab_schools": "Escuelas",
+        "tab_database": "Base de datos",
+        "tab_integrations": "Integraciones",
         "tab_data": "Datos",
         "tab_retention": "Retención",
         "users_title": "Gestión de Usuarios",

@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { TrendingUp, Users, BookOpen, Download, Maximize2 } from 'lucide-react';
+import { TrendingUp, Users, BookOpen, Download, Maximize2, Printer } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { BLOOM_LEVELS } from '../data/bloomsTaxonomy';
 import { IB_ATTRIBUTES } from '../data/ibLearnerProfile';
@@ -421,10 +421,17 @@ export default function StatisticsPage() {
     // ── Render ────────────────────────────────────────────────────────────────
     return (
         <>
-            <Topbar title={t('statistics.title')} />
+            <Topbar
+                title={t('statistics.title')}
+                actions={
+                    <button className="btn btn-ghost btn-sm no-print" onClick={() => window.print()}>
+                        <Printer size={14} /> {t('common.print')}
+                    </button>
+                }
+            />
             <div className="page-content fade-in">
                 {/* ── Top controls ── */}
-                <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                <div className="statistics-controls" style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap', alignItems: 'flex-end' }}>
                     {/* View mode toggle */}
                     <div className="form-group" style={{ marginBottom: 0 }}>
                         <label>{t('statistics.view_mode')}</label>

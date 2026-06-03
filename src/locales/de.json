@@ -35,7 +35,8 @@
         "language": "Sprache",
         "toggle_theme": "Thema wechseln",
         "back": "Zurück",
-        "close": "Schließen"
+        "close": "Schließen",
+        "print": "Drucken"
     },
     "sidebar": {
         "main_section": "Hauptmenü",
@@ -58,6 +59,7 @@
         "language_nl": "Nederlands",
         "language_fr": "Français",
         "language_de": "Deutsch",
+        "language_es": "Español",
         "language_help": "Wählen Sie Ihre bevorzugte Sprache für die Oberfläche.",
         "standards_integration": "Standards-Integration",
         "standards_help_1": "Um Standards (CCSS, NGSS usw.) aus dem <strong>Common Standards Project</strong> zu verknüpfen, benötigen Sie einen kostenlosen API-Schlüssel.",
@@ -97,6 +99,7 @@
         "delete_scale_confirm": "Sind Sie sicher, dass Sie diese Notenskala löschen möchten? Dies kann nicht rückgängig gemacht werden.",
         "accent_color_label": "Akzentfarbe",
         "accent_color_invalid": "Geben Sie eine gültige 6-stellige Hex-Farbe ein (z. B. #3b82f6).",
+        "ui_font_label": "Schnittstellenschrift",
         "cloud_sync": "Cloud-Synchronisierung (Microsoft 365)",
         "cloud_sync_help": "Verbinden Sie Ihr Microsoft-Konto, um Rubriken über OneDrive oder SharePoint geräteübergreifend zu synchronisieren.",
         "action_login_microsoft": "Mit Microsoft anmelden",
@@ -869,6 +872,8 @@
         "title": "Admin-Dashboard",
         "tab_users": "Benutzer",
         "tab_schools": "Schulen",
+        "tab_database": "Datenbank",
+        "tab_integrations": "Integrationen",
         "tab_data": "Daten",
         "tab_retention": "Aufbewahrung",
         "users_title": "Benutzerverwaltung",

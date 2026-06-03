@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import Topbar from '../components/Layout/Topbar';
-import { ArrowLeft, Check, Equal, ChevronRight, ChevronLeft, MessageSquare, Shuffle } from 'lucide-react';
+import { ArrowLeft, Check, Equal, ChevronRight, ChevronLeft, MessageSquare, Shuffle, Printer } from 'lucide-react';
 import { nanoid } from '../utils/nanoid';
 import { useTranslation } from 'react-i18next';
 import { calcGradeSummary } from '../utils/gradeCalc';
@@ -540,9 +540,14 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
             <Topbar
                 title={`Comparative: ${rubric.name}`}
                 actions={
-                    <button className="btn btn-ghost btn-sm" onClick={() => navigate(-1)}>
-                        <ArrowLeft size={15} /> Back
-                    </button>
+                    <>
+                        <button className="btn btn-ghost btn-sm no-print" onClick={() => window.print()}>
+                            <Printer size={14} /> {t('common.print')}
+                        </button>
+                        <button className="btn btn-ghost btn-sm no-print" onClick={() => navigate(-1)}>
+                            <ArrowLeft size={15} /> Back
+                        </button>
+                    </>
                 }
             />
             <div
@@ -1248,7 +1253,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                             </div>
                         </div>
 
-                        <div style={{ marginTop: 20, marginBottom: 40, display: 'flex', justifyContent: 'center' }}>
+                        <div className="comparative-actions" style={{ marginTop: 20, marginBottom: 40, display: 'flex', justifyContent: 'center' }}>
                             <button
                                 className="btn btn-primary"
                                 onClick={handleSaveAndNext}
