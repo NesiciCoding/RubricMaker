@@ -1253,7 +1253,10 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                             </div>
                         </div>
 
-                        <div className="comparative-actions" style={{ marginTop: 20, marginBottom: 40, display: 'flex', justifyContent: 'center' }}>
+                        <div
+                            className="comparative-actions"
+                            style={{ marginTop: 20, marginBottom: 40, display: 'flex', justifyContent: 'center' }}
+                        >
                             <button
                                 className="btn btn-primary"
                                 onClick={handleSaveAndNext}

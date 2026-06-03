@@ -181,7 +181,10 @@ export default function StudentProfilePage() {
                         <button className="btn btn-ghost btn-sm no-print" onClick={() => window.print()}>
                             <Printer size={14} /> {t('common.print')}
                         </button>
-                        <button className="btn btn-ghost btn-sm no-print" onClick={() => navigate(`/portal/${student.id}`)}>
+                        <button
+                            className="btn btn-ghost btn-sm no-print"
+                            onClick={() => navigate(`/portal/${student.id}`)}
+                        >
                             <ExternalLink size={14} /> {t('studentPortal.view_portal_btn')}
                         </button>
                         <button className="btn btn-ghost btn-sm no-print" onClick={() => navigate('/students')}>

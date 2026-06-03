@@ -383,7 +383,9 @@ function DatabaseTab() {
     const dbStatus = useDbStatus();
 
     const existingConfig = loadSupabaseConfig();
-    const [dbUrl, setDbUrl] = useState(existingConfig?.supabaseUrl ?? (import.meta.env.VITE_SUPABASE_URL as string) ?? '');
+    const [dbUrl, setDbUrl] = useState(
+        existingConfig?.supabaseUrl ?? (import.meta.env.VITE_SUPABASE_URL as string) ?? ''
+    );
     const [dbKey, setDbKey] = useState(
         existingConfig?.supabaseAnonKey ?? (import.meta.env.VITE_SUPABASE_ANON_KEY as string) ?? ''
     );
@@ -424,7 +426,10 @@ function DatabaseTab() {
             return;
         }
         setLoadingRubricShares(true);
-        storageSync.adapter.fetchRubricShares(shareRubricId).then(setRubricShares).finally(() => setLoadingRubricShares(false));
+        storageSync.adapter
+            .fetchRubricShares(shareRubricId)
+            .then(setRubricShares)
+            .finally(() => setLoadingRubricShares(false));
     }, [shareRubricId, dbStatus.isConnected]);
 
     useEffect(() => {
@@ -433,7 +438,10 @@ function DatabaseTab() {
             return;
         }
         setLoadingClassMembers(true);
-        storageSync.adapter.fetchClassMembers(shareClassId).then(setClassMembers).finally(() => setLoadingClassMembers(false));
+        storageSync.adapter
+            .fetchClassMembers(shareClassId)
+            .then(setClassMembers)
+            .finally(() => setLoadingClassMembers(false));
     }, [shareClassId, dbStatus.isConnected]);
 
     useEffect(() => {
@@ -450,7 +458,15 @@ function DatabaseTab() {
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
                     <Database size={20} style={{ color: 'var(--accent)' }} aria-hidden="true" />
                     <h3 style={{ margin: 0 }}>Database (Supabase)</h3>
-                    <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem' }}>
+                    <span
+                        style={{
+                            marginLeft: 'auto',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            fontSize: '0.8rem',
+                        }}
+                    >
                         {dbStatus.isConnected ? (
                             <>
                                 <Wifi size={14} style={{ color: 'var(--green)' }} aria-hidden="true" />
@@ -468,7 +484,16 @@ function DatabaseTab() {
                 {dbStatus.isConnected ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                         {/* Sync info */}
-                        <div style={{ background: 'var(--bg-elevated)', borderRadius: 8, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        <div
+                            style={{
+                                background: 'var(--bg-elevated)',
+                                borderRadius: 8,
+                                padding: '12px 16px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 8,
+                            }}
+                        >
                             <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                                 {dbStatus.lastSyncAt
                                     ? `Last synced: ${new Date(dbStatus.lastSyncAt).toLocaleString()}`
@@ -477,7 +502,18 @@ function DatabaseTab() {
                             {dbStatus.userId && (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.8rem' }}>
                                     <span style={{ color: 'var(--text-muted)' }}>Your user ID:</span>
-                                    <code style={{ background: 'var(--bg)', padding: '2px 6px', borderRadius: 4, fontSize: '0.75rem', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    <code
+                                        style={{
+                                            background: 'var(--bg)',
+                                            padding: '2px 6px',
+                                            borderRadius: 4,
+                                            fontSize: '0.75rem',
+                                            maxWidth: 200,
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap',
+                                        }}
+                                    >
                                         {dbStatus.userId}
                                     </code>
                                     <button
@@ -489,7 +525,11 @@ function DatabaseTab() {
                                             setTimeout(() => setUserIdCopied(false), 2000);
                                         }}
                                     >
-                                        {userIdCopied ? <Check size={12} aria-hidden="true" /> : <Copy size={12} aria-hidden="true" />}
+                                        {userIdCopied ? (
+                                            <Check size={12} aria-hidden="true" />
+                                        ) : (
+                                            <Copy size={12} aria-hidden="true" />
+                                        )}
                                     </button>
                                 </div>
                             )}
@@ -511,7 +551,9 @@ function DatabaseTab() {
                                     disabled={savingDisplayName}
                                     onClick={async () => {
                                         setSavingDisplayName(true);
-                                        const result = await updateMyProfile({ displayName: displayNameInput.trim() || undefined });
+                                        const result = await updateMyProfile({
+                                            displayName: displayNameInput.trim() || undefined,
+                                        });
                                         setSavingDisplayName(false);
                                         showToast(
                                             result.success ? 'Display name saved' : `Error: ${result.error}`,
@@ -592,18 +634,22 @@ function DatabaseTab() {
                                     const result = await pushAllToDatabase();
                                     setDbSyncing(false);
                                     showToast(
-                                        result.success ? 'All local data pushed to database' : `Push failed: ${result.error}`,
+                                        result.success
+                                            ? 'All local data pushed to database'
+                                            : `Push failed: ${result.error}`,
                                         result.success ? 'success' : 'error'
                                     );
                                 }}
                             >
-                                <Upload size={15} aria-hidden="true" /> {dbSyncing ? 'Pushing…' : 'Push local → database'}
+                                <Upload size={15} aria-hidden="true" />{' '}
+                                {dbSyncing ? 'Pushing…' : 'Push local → database'}
                             </button>
                             <button
                                 className="btn btn-secondary"
                                 disabled={dbSyncing}
                                 onClick={async () => {
-                                    if (!confirm('This will overwrite your local data with the database. Continue?')) return;
+                                    if (!confirm('This will overwrite your local data with the database. Continue?'))
+                                        return;
                                     setDbSyncing(true);
                                     await pullFromDatabase();
                                     setDbSyncing(false);
@@ -626,26 +672,52 @@ function DatabaseTab() {
 
                         {/* Sharing — only visible when user has an account */}
                         {dbStatus.userId && (
-                            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 20 }}>
+                            <div
+                                style={{
+                                    borderTop: '1px solid var(--border)',
+                                    paddingTop: 16,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: 20,
+                                }}
+                            >
                                 {/* Rubric sharing */}
                                 <div>
-                                    <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <div
+                                        style={{
+                                            fontSize: '0.85rem',
+                                            fontWeight: 600,
+                                            marginBottom: 10,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 6,
+                                        }}
+                                    >
                                         <Share2 size={13} aria-hidden="true" />
                                         {t('settings.sharing_rubric_title')}
                                     </div>
                                     {allDbUsers.filter((u) => u.id !== dbStatus.userId).length === 0 ? (
-                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t('settings.sharing_no_users')}</p>
+                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                            {t('settings.sharing_no_users')}
+                                        </p>
                                     ) : (
                                         <>
-                                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+                                            <div
+                                                style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}
+                                            >
                                                 <select
                                                     value={shareRubricId}
-                                                    onChange={(e) => { setShareRubricId(e.target.value); setShareTargetUser(''); }}
+                                                    onChange={(e) => {
+                                                        setShareRubricId(e.target.value);
+                                                        setShareTargetUser('');
+                                                    }}
                                                     style={{ flex: 2, minWidth: 140 }}
                                                 >
                                                     <option value="">{t('settings.sharing_select_rubric')}</option>
                                                     {rubrics.map((r) => (
-                                                        <option key={r.id} value={r.id}>{r.name}</option>
+                                                        <option key={r.id} value={r.id}>
+                                                            {r.name}
+                                                        </option>
                                                     ))}
                                                 </select>
                                                 <select
@@ -656,9 +728,15 @@ function DatabaseTab() {
                                                 >
                                                     <option value="">{t('settings.sharing_select_colleague')}</option>
                                                     {allDbUsers
-                                                        .filter((u) => u.id !== dbStatus.userId && !rubricShares.some((s) => s.userId === u.id))
+                                                        .filter(
+                                                            (u) =>
+                                                                u.id !== dbStatus.userId &&
+                                                                !rubricShares.some((s) => s.userId === u.id)
+                                                        )
                                                         .map((u) => (
-                                                            <option key={u.id} value={u.id}>{u.displayName ?? u.email ?? u.id}</option>
+                                                            <option key={u.id} value={u.id}>
+                                                                {u.displayName ?? u.email ?? u.id}
+                                                            </option>
                                                         ))}
                                                 </select>
                                                 <select
@@ -674,14 +752,24 @@ function DatabaseTab() {
                                                     className="btn btn-primary btn-sm"
                                                     disabled={!shareRubricId || !shareTargetUser}
                                                     onClick={async () => {
-                                                        const result = await storageSync.adapter.shareRubric(shareRubricId, shareTargetUser, shareMode);
+                                                        const result = await storageSync.adapter.shareRubric(
+                                                            shareRubricId,
+                                                            shareTargetUser,
+                                                            shareMode
+                                                        );
                                                         if (result.success) {
                                                             showToast(t('settings.sharing_success'), 'success');
                                                             setShareTargetUser('');
-                                                            const updated = await storageSync.adapter.fetchRubricShares(shareRubricId);
+                                                            const updated =
+                                                                await storageSync.adapter.fetchRubricShares(
+                                                                    shareRubricId
+                                                                );
                                                             setRubricShares(updated);
                                                         } else {
-                                                            showToast(t('settings.sharing_failed', { error: result.error }), 'error');
+                                                            showToast(
+                                                                t('settings.sharing_failed', { error: result.error }),
+                                                                'error'
+                                                            );
                                                         }
                                                     }}
                                                 >
@@ -690,28 +778,80 @@ function DatabaseTab() {
                                             </div>
                                             {shareRubricId && (
                                                 <div>
-                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 6 }}>{t('settings.sharing_current')}</div>
+                                                    <div
+                                                        style={{
+                                                            fontSize: '0.75rem',
+                                                            color: 'var(--text-muted)',
+                                                            marginBottom: 6,
+                                                        }}
+                                                    >
+                                                        {t('settings.sharing_current')}
+                                                    </div>
                                                     {loadingRubricShares ? (
-                                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>…</p>
+                                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                                            …
+                                                        </p>
                                                     ) : rubricShares.length === 0 ? (
-                                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t('settings.sharing_no_shares')}</p>
+                                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                                            {t('settings.sharing_no_shares')}
+                                                        </p>
                                                     ) : (
-                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                                        <div
+                                                            style={{ display: 'flex', flexDirection: 'column', gap: 6 }}
+                                                        >
                                                             {rubricShares.map((s) => (
-                                                                <div key={s.userId} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', background: 'var(--bg-elevated)', borderRadius: 6, border: '1px solid var(--border)' }}>
-                                                                    <User size={12} aria-hidden="true" style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-                                                                    <span style={{ flex: 1, fontSize: '0.82rem' }}>{s.displayName ?? s.email ?? s.userId}</span>
-                                                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                                                        {s.mode === 'edit' ? t('settings.sharing_mode_edit') : t('settings.sharing_mode_read')}
+                                                                <div
+                                                                    key={s.userId}
+                                                                    style={{
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: 8,
+                                                                        padding: '6px 10px',
+                                                                        background: 'var(--bg-elevated)',
+                                                                        borderRadius: 6,
+                                                                        border: '1px solid var(--border)',
+                                                                    }}
+                                                                >
+                                                                    <User
+                                                                        size={12}
+                                                                        aria-hidden="true"
+                                                                        style={{
+                                                                            color: 'var(--text-muted)',
+                                                                            flexShrink: 0,
+                                                                        }}
+                                                                    />
+                                                                    <span style={{ flex: 1, fontSize: '0.82rem' }}>
+                                                                        {s.displayName ?? s.email ?? s.userId}
+                                                                    </span>
+                                                                    <span
+                                                                        style={{
+                                                                            fontSize: '0.75rem',
+                                                                            color: 'var(--text-muted)',
+                                                                        }}
+                                                                    >
+                                                                        {s.mode === 'edit'
+                                                                            ? t('settings.sharing_mode_edit')
+                                                                            : t('settings.sharing_mode_read')}
                                                                     </span>
                                                                     <button
                                                                         className="btn btn-ghost btn-icon btn-sm"
                                                                         title={t('settings.sharing_btn_remove')}
                                                                         onClick={async () => {
-                                                                            const result = await storageSync.adapter.unshareRubric(shareRubricId, s.userId);
+                                                                            const result =
+                                                                                await storageSync.adapter.unshareRubric(
+                                                                                    shareRubricId,
+                                                                                    s.userId
+                                                                                );
                                                                             if (result.success) {
-                                                                                showToast(t('settings.sharing_removed'), 'success');
-                                                                                setRubricShares((prev) => prev.filter((x) => x.userId !== s.userId));
+                                                                                showToast(
+                                                                                    t('settings.sharing_removed'),
+                                                                                    'success'
+                                                                                );
+                                                                                setRubricShares((prev) =>
+                                                                                    prev.filter(
+                                                                                        (x) => x.userId !== s.userId
+                                                                                    )
+                                                                                );
                                                                             }
                                                                         }}
                                                                     >
@@ -729,23 +869,41 @@ function DatabaseTab() {
 
                                 {/* Class sharing */}
                                 <div>
-                                    <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <div
+                                        style={{
+                                            fontSize: '0.85rem',
+                                            fontWeight: 600,
+                                            marginBottom: 10,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 6,
+                                        }}
+                                    >
                                         <Share2 size={13} aria-hidden="true" />
                                         {t('settings.sharing_class_title')}
                                     </div>
                                     {allDbUsers.filter((u) => u.id !== dbStatus.userId).length === 0 ? (
-                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t('settings.sharing_no_users')}</p>
+                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                            {t('settings.sharing_no_users')}
+                                        </p>
                                     ) : (
                                         <>
-                                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+                                            <div
+                                                style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}
+                                            >
                                                 <select
                                                     value={shareClassId}
-                                                    onChange={(e) => { setShareClassId(e.target.value); setShareClassTargetUser(''); }}
+                                                    onChange={(e) => {
+                                                        setShareClassId(e.target.value);
+                                                        setShareClassTargetUser('');
+                                                    }}
                                                     style={{ flex: 2, minWidth: 140 }}
                                                 >
                                                     <option value="">{t('settings.sharing_select_class')}</option>
                                                     {classes.map((c) => (
-                                                        <option key={c.id} value={c.id}>{c.name}</option>
+                                                        <option key={c.id} value={c.id}>
+                                                            {c.name}
+                                                        </option>
                                                     ))}
                                                 </select>
                                                 <select
@@ -756,14 +914,22 @@ function DatabaseTab() {
                                                 >
                                                     <option value="">{t('settings.sharing_select_colleague')}</option>
                                                     {allDbUsers
-                                                        .filter((u) => u.id !== dbStatus.userId && !classMembers.some((m) => m.userId === u.id))
+                                                        .filter(
+                                                            (u) =>
+                                                                u.id !== dbStatus.userId &&
+                                                                !classMembers.some((m) => m.userId === u.id)
+                                                        )
                                                         .map((u) => (
-                                                            <option key={u.id} value={u.id}>{u.displayName ?? u.email ?? u.id}</option>
+                                                            <option key={u.id} value={u.id}>
+                                                                {u.displayName ?? u.email ?? u.id}
+                                                            </option>
                                                         ))}
                                                 </select>
                                                 <select
                                                     value={shareClassRole}
-                                                    onChange={(e) => setShareClassRole(e.target.value as 'viewer' | 'editor')}
+                                                    onChange={(e) =>
+                                                        setShareClassRole(e.target.value as 'viewer' | 'editor')
+                                                    }
                                                     style={{ width: 110 }}
                                                     disabled={!shareClassId}
                                                 >
@@ -774,14 +940,24 @@ function DatabaseTab() {
                                                     className="btn btn-primary btn-sm"
                                                     disabled={!shareClassId || !shareClassTargetUser}
                                                     onClick={async () => {
-                                                        const result = await storageSync.adapter.addClassMember(shareClassId, shareClassTargetUser, shareClassRole);
+                                                        const result = await storageSync.adapter.addClassMember(
+                                                            shareClassId,
+                                                            shareClassTargetUser,
+                                                            shareClassRole
+                                                        );
                                                         if (result.success) {
                                                             showToast(t('settings.sharing_success'), 'success');
                                                             setShareClassTargetUser('');
-                                                            const updated = await storageSync.adapter.fetchClassMembers(shareClassId);
+                                                            const updated =
+                                                                await storageSync.adapter.fetchClassMembers(
+                                                                    shareClassId
+                                                                );
                                                             setClassMembers(updated);
                                                         } else {
-                                                            showToast(t('settings.sharing_failed', { error: result.error }), 'error');
+                                                            showToast(
+                                                                t('settings.sharing_failed', { error: result.error }),
+                                                                'error'
+                                                            );
                                                         }
                                                     }}
                                                 >
@@ -790,28 +966,80 @@ function DatabaseTab() {
                                             </div>
                                             {shareClassId && (
                                                 <div>
-                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 6 }}>{t('settings.sharing_class_members')}</div>
+                                                    <div
+                                                        style={{
+                                                            fontSize: '0.75rem',
+                                                            color: 'var(--text-muted)',
+                                                            marginBottom: 6,
+                                                        }}
+                                                    >
+                                                        {t('settings.sharing_class_members')}
+                                                    </div>
                                                     {loadingClassMembers ? (
-                                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>…</p>
+                                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                                            …
+                                                        </p>
                                                     ) : classMembers.length === 0 ? (
-                                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t('settings.sharing_no_members')}</p>
+                                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                                            {t('settings.sharing_no_members')}
+                                                        </p>
                                                     ) : (
-                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                                        <div
+                                                            style={{ display: 'flex', flexDirection: 'column', gap: 6 }}
+                                                        >
                                                             {classMembers.map((m) => (
-                                                                <div key={m.userId} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', background: 'var(--bg-elevated)', borderRadius: 6, border: '1px solid var(--border)' }}>
-                                                                    <User size={12} aria-hidden="true" style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-                                                                    <span style={{ flex: 1, fontSize: '0.82rem' }}>{m.displayName ?? m.email ?? m.userId}</span>
-                                                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                                                        {m.role === 'editor' ? t('settings.sharing_role_editor') : t('settings.sharing_role_viewer')}
+                                                                <div
+                                                                    key={m.userId}
+                                                                    style={{
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: 8,
+                                                                        padding: '6px 10px',
+                                                                        background: 'var(--bg-elevated)',
+                                                                        borderRadius: 6,
+                                                                        border: '1px solid var(--border)',
+                                                                    }}
+                                                                >
+                                                                    <User
+                                                                        size={12}
+                                                                        aria-hidden="true"
+                                                                        style={{
+                                                                            color: 'var(--text-muted)',
+                                                                            flexShrink: 0,
+                                                                        }}
+                                                                    />
+                                                                    <span style={{ flex: 1, fontSize: '0.82rem' }}>
+                                                                        {m.displayName ?? m.email ?? m.userId}
+                                                                    </span>
+                                                                    <span
+                                                                        style={{
+                                                                            fontSize: '0.75rem',
+                                                                            color: 'var(--text-muted)',
+                                                                        }}
+                                                                    >
+                                                                        {m.role === 'editor'
+                                                                            ? t('settings.sharing_role_editor')
+                                                                            : t('settings.sharing_role_viewer')}
                                                                     </span>
                                                                     <button
                                                                         className="btn btn-ghost btn-icon btn-sm"
                                                                         title={t('settings.sharing_btn_remove')}
                                                                         onClick={async () => {
-                                                                            const result = await storageSync.adapter.removeClassMember(shareClassId, m.userId);
+                                                                            const result =
+                                                                                await storageSync.adapter.removeClassMember(
+                                                                                    shareClassId,
+                                                                                    m.userId
+                                                                                );
                                                                             if (result.success) {
-                                                                                showToast(t('settings.sharing_removed'), 'success');
-                                                                                setClassMembers((prev) => prev.filter((x) => x.userId !== m.userId));
+                                                                                showToast(
+                                                                                    t('settings.sharing_removed'),
+                                                                                    'success'
+                                                                                );
+                                                                                setClassMembers((prev) =>
+                                                                                    prev.filter(
+                                                                                        (x) => x.userId !== m.userId
+                                                                                    )
+                                                                                );
                                                                             }
                                                                         }}
                                                                     >
@@ -835,7 +1063,12 @@ function DatabaseTab() {
                                 className="btn btn-ghost btn-sm"
                                 style={{ color: 'var(--red)', fontSize: '0.8rem' }}
                                 onClick={async () => {
-                                    if (!confirm('This will permanently delete ALL your data from the database. Your local data is not affected. Continue?')) return;
+                                    if (
+                                        !confirm(
+                                            'This will permanently delete ALL your data from the database. Your local data is not affected. Continue?'
+                                        )
+                                    )
+                                        return;
                                     const result = await storageSync.adapter.deleteAllMyData();
                                     showToast(
                                         result.success ? 'All database data deleted' : `Error: ${result.error}`,
@@ -859,7 +1092,17 @@ function DatabaseTab() {
                         />
                         <div>
                             <button
-                                style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.8rem', padding: '2px 0' }}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 6,
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    color: 'var(--text-muted)',
+                                    fontSize: '0.8rem',
+                                    padding: '2px 0',
+                                }}
                                 onClick={() => setShowAdvancedConnect((o) => !o)}
                             >
                                 {showAdvancedConnect ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
@@ -869,9 +1112,15 @@ function DatabaseTab() {
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
                                     <p className="text-muted text-sm" style={{ margin: 0 }}>
                                         Run <code>supabase start</code> locally or use a custom project at{' '}
-                                        <a href="https://supabase.com" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>
+                                        <a
+                                            href="https://supabase.com"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            style={{ color: 'var(--accent)' }}
+                                        >
                                             supabase.com <ExternalLink size={10} />
-                                        </a>.
+                                        </a>
+                                        .
                                     </p>
                                     <div className="form-group">
                                         <label>Supabase URL</label>
@@ -898,7 +1147,10 @@ function DatabaseTab() {
                                             disabled={!dbUrl || !dbKey || dbConnecting}
                                             onClick={async () => {
                                                 setDbConnecting(true);
-                                                const ok = await connectForOAuth({ supabaseUrl: dbUrl, supabaseAnonKey: dbKey });
+                                                const ok = await connectForOAuth({
+                                                    supabaseUrl: dbUrl,
+                                                    supabaseAnonKey: dbKey,
+                                                });
                                                 setDbConnecting(false);
                                                 if (ok) {
                                                     setSupabaseReady(true);
@@ -907,22 +1159,43 @@ function DatabaseTab() {
                                                 } else showToast('Connection failed — check URL and key', 'error');
                                             }}
                                         >
-                                            {dbConnecting ? <><RefreshCw size={13} className="spin" /> Connecting…</> : <><Database size={13} /> Set Supabase instance</>}
+                                            {dbConnecting ? (
+                                                <>
+                                                    <RefreshCw size={13} className="spin" /> Connecting…
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Database size={13} /> Set Supabase instance
+                                                </>
+                                            )}
                                         </button>
                                         <button
                                             className="btn btn-primary btn-sm"
                                             disabled={!dbUrl || !dbKey || dbConnecting}
                                             onClick={async () => {
                                                 setDbConnecting(true);
-                                                const ok = await connectDatabase({ supabaseUrl: dbUrl, supabaseAnonKey: dbKey });
+                                                const ok = await connectDatabase({
+                                                    supabaseUrl: dbUrl,
+                                                    supabaseAnonKey: dbKey,
+                                                });
                                                 setDbConnecting(false);
                                                 showToast(
-                                                    ok ? 'Connected to database' : 'Connection failed — check URL and key',
+                                                    ok
+                                                        ? 'Connected to database'
+                                                        : 'Connection failed — check URL and key',
                                                     ok ? 'success' : 'error'
                                                 );
                                             }}
                                         >
-                                            {dbConnecting ? <><RefreshCw size={13} className="spin" /> Connecting…</> : <><Database size={13} /> Connect &amp; Sync (anonymous)</>}
+                                            {dbConnecting ? (
+                                                <>
+                                                    <RefreshCw size={13} className="spin" /> Connecting…
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Database size={13} /> Connect &amp; Sync (anonymous)
+                                                </>
+                                            )}
                                         </button>
                                     </div>
                                 </div>
@@ -951,7 +1224,8 @@ function IntegrationsTab() {
                 </div>
                 <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
                     <Trans i18nKey="settings.standards_help_1">
-                        To link standards (CCSS, NGSS, etc.) from the <strong>Common Standards Project</strong>, you need a free API key.
+                        To link standards (CCSS, NGSS, etc.) from the <strong>Common Standards Project</strong>, you
+                        need a free API key.
                     </Trans>
                 </p>
                 <div className="form-group">
@@ -965,22 +1239,36 @@ function IntegrationsTab() {
                         autoComplete="off"
                     />
                 </div>
-                <div style={{ marginTop: 16, background: 'var(--bg-elevated)', padding: 12, borderRadius: 8, fontSize: '0.85rem' }}>
+                <div
+                    style={{
+                        marginTop: 16,
+                        background: 'var(--bg-elevated)',
+                        padding: 12,
+                        borderRadius: 8,
+                        fontSize: '0.85rem',
+                    }}
+                >
                     <div style={{ fontWeight: 600, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
                         <AlertCircle size={14} aria-hidden="true" /> {t('settings.standards_setup_instructions')}
                     </div>
                     <ol style={{ paddingLeft: 20, margin: 0, lineHeight: 1.6 }}>
                         <li>
                             {t('settings.standards_setup_1')}{' '}
-                            <a href="https://commonstandardsproject.com/developers" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>
+                            <a
+                                href="https://commonstandardsproject.com/developers"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ color: 'var(--accent)' }}
+                            >
                                 commonstandardsproject.com/developers <ExternalLink size={10} />
                             </a>
                         </li>
                         <li>{t('settings.standards_setup_2')}</li>
                         <li>
                             <Trans i18nKey="settings.standards_setup_3" values={{ origin: window.location.origin }}>
-                                <strong>Important:</strong> Add this app's URL (<code>{window.location.origin}</code>) to the{' '}
-                                <strong>Allowed Origins</strong> list on their dashboard, or requests will be blocked by CORS.
+                                <strong>Important:</strong> Add this app's URL (<code>{window.location.origin}</code>)
+                                to the <strong>Allowed Origins</strong> list on their dashboard, or requests will be
+                                blocked by CORS.
                             </Trans>
                         </li>
                     </ol>
@@ -992,11 +1280,20 @@ function IntegrationsTab() {
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
                     <Key size={20} style={{ color: 'var(--accent)' }} aria-hidden="true" />
                     <h3 style={{ margin: 0 }}>{t('settings.cambridge_api_title')}</h3>
-                    <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                    <span
+                        style={{
+                            marginLeft: 'auto',
+                            fontSize: '0.75rem',
+                            color: 'var(--text-muted)',
+                            fontStyle: 'italic',
+                        }}
+                    >
                         {t('settings.optional')}
                     </span>
                 </div>
-                <p className="text-muted text-sm" style={{ marginBottom: 16 }}>{t('settings.cambridge_api_help')}</p>
+                <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
+                    {t('settings.cambridge_api_help')}
+                </p>
                 <div className="form-group">
                     <label htmlFor="admin-cambridge-key">{t('settings.cambridge_api_key')}</label>
                     <input
@@ -1008,7 +1305,16 @@ function IntegrationsTab() {
                         autoComplete="off"
                     />
                 </div>
-                <div style={{ marginTop: 12, fontSize: '0.82rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div
+                    style={{
+                        marginTop: 12,
+                        fontSize: '0.82rem',
+                        color: 'var(--text-muted)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                    }}
+                >
                     <ExternalLink size={13} aria-hidden="true" />
                     <span>
                         {t('settings.cambridge_api_register')}{' '}

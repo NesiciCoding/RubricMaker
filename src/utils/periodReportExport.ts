@@ -137,9 +137,7 @@ export async function exportPeriodReport(input: PeriodReportInput): Promise<void
             return new TableCell({
                 children: [
                     new Paragraph({
-                        children: [
-                            new TextRun({ text: `${pct.toFixed(0)}%`, size: 16, bold: true }),
-                        ],
+                        children: [new TextRun({ text: `${pct.toFixed(0)}%`, size: 16, bold: true })],
                         alignment: AlignmentType.CENTER,
                         spacing: { before: 40 },
                     }),
@@ -170,7 +168,12 @@ export async function exportPeriodReport(input: PeriodReportInput): Promise<void
 
     const tableRows: TableRow[] = [
         new TableRow({
-            children: [headerCell('Assignment', 40), headerCell('Date', 20), headerCell('Score', 20), headerCell('Grade', 20)],
+            children: [
+                headerCell('Assignment', 40),
+                headerCell('Date', 20),
+                headerCell('Score', 20),
+                headerCell('Grade', 20),
+            ],
         }),
         ...summaries.map(
             (s) =>
@@ -178,7 +181,11 @@ export async function exportPeriodReport(input: PeriodReportInput): Promise<void
                     children: [
                         dataCell(s.rubric.name, 40),
                         dataCell(s.dateStr, 20),
-                        dataCell(`${s.summary.modifiedPercentage.toFixed(1)}%`, 20, gradeColor(s.summary.modifiedPercentage)),
+                        dataCell(
+                            `${s.summary.modifiedPercentage.toFixed(1)}%`,
+                            20,
+                            gradeColor(s.summary.modifiedPercentage)
+                        ),
                         dataCell(s.summary.letterGrade || '—', 20),
                     ],
                 })
@@ -204,11 +211,7 @@ export async function exportPeriodReport(input: PeriodReportInput): Promise<void
 
         const goalRows: TableRow[] = [
             new TableRow({
-                children: [
-                    headerCell('Goal', 50),
-                    headerCell('Average', 20),
-                    headerCell('Progress', 30),
-                ],
+                children: [headerCell('Goal', 50), headerCell('Average', 20), headerCell('Progress', 30)],
             }),
             ...goals.map((g) => {
                 const pct = g.averagePercentage;
@@ -222,7 +225,12 @@ export async function exportPeriodReport(input: PeriodReportInput): Promise<void
                             children: [
                                 new Paragraph({
                                     children: [
-                                        new TextRun({ text: bar, size: 18, font: 'Courier New', color: pct >= 75 ? '16A34A' : pct >= 55 ? 'CA8A04' : 'DC2626' }),
+                                        new TextRun({
+                                            text: bar,
+                                            size: 18,
+                                            font: 'Courier New',
+                                            color: pct >= 75 ? '16A34A' : pct >= 55 ? 'CA8A04' : 'DC2626',
+                                        }),
                                     ],
                                 }),
                             ],

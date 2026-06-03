@@ -118,7 +118,6 @@ export default function SettingsPage() {
     const [accentInput, setAccentInput] = useState(settings.accentColor || '#3b82f6');
     const [accentError, setAccentError] = useState(false);
 
-
     useEffect(() => {
         if (settings.language && i18n.language !== settings.language) {
             i18n.changeLanguage(settings.language);
@@ -454,11 +453,15 @@ export default function SettingsPage() {
                                                         height: 22,
                                                         borderRadius: '50%',
                                                         background: color,
-                                                        border: accentInput === color ? '2.5px solid var(--text)' : '2px solid transparent',
+                                                        border:
+                                                            accentInput === color
+                                                                ? '2.5px solid var(--text)'
+                                                                : '2px solid transparent',
                                                         cursor: 'pointer',
                                                         padding: 0,
                                                         outline: 'none',
-                                                        boxShadow: accentInput === color ? `0 0 0 1px ${color}` : 'none',
+                                                        boxShadow:
+                                                            accentInput === color ? `0 0 0 1px ${color}` : 'none',
                                                         transition: 'border 0.15s',
                                                     }}
                                                 />
@@ -473,7 +476,11 @@ export default function SettingsPage() {
                                             id="setting-ui-font"
                                             value={settings.uiFontFamily || 'Inter'}
                                             onChange={(e) => updateSettings({ uiFontFamily: e.target.value })}
-                                            style={{ fontFamily: settings.uiFontFamily ? `'${settings.uiFontFamily}', system-ui, sans-serif` : undefined }}
+                                            style={{
+                                                fontFamily: settings.uiFontFamily
+                                                    ? `'${settings.uiFontFamily}', system-ui, sans-serif`
+                                                    : undefined,
+                                            }}
                                         >
                                             {[
                                                 { key: 'Inter', label: 'Inter (default)' },
@@ -482,7 +489,9 @@ export default function SettingsPage() {
                                                 { key: 'Lato', label: 'Lato — professional' },
                                                 { key: 'Roboto', label: 'Roboto — modern' },
                                             ].map(({ key, label }) => (
-                                                <option key={key} value={key}>{label}</option>
+                                                <option key={key} value={key}>
+                                                    {label}
+                                                </option>
                                             ))}
                                         </select>
                                     </div>
@@ -1074,7 +1083,6 @@ export default function SettingsPage() {
                                         {t('settings.open_admin_dashboard', 'Open')}
                                     </Link>
                                 </div>
-
 
                                 {/* Backup — full (export + import) */}
                                 <div className="card" style={{ marginBottom: 24 }}>

@@ -431,7 +431,10 @@ export default function StatisticsPage() {
             />
             <div className="page-content fade-in">
                 {/* ── Top controls ── */}
-                <div className="statistics-controls" style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                <div
+                    className="statistics-controls"
+                    style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap', alignItems: 'flex-end' }}
+                >
                     {/* View mode toggle */}
                     <div className="form-group" style={{ marginBottom: 0 }}>
                         <label>{t('statistics.view_mode')}</label>
