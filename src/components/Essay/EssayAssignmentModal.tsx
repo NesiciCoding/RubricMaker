@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { X, Copy, Download, Check, FileText, Database, AlertCircle } from 'lucide-react';
 import { saveAs } from 'file-saver';
+import { useTranslation } from 'react-i18next';
 import { encodeEssayAssignment } from '../../utils/essayShareCode';
 import { nanoid } from '../../utils/nanoid';
 import Modal from '../ui/Modal';
@@ -29,6 +30,7 @@ export default function EssayAssignmentModal({
     onSaveAssignment,
     classStudents,
 }: Props) {
+    const { t } = useTranslation();
     const dbStatus = useDbStatus();
     const config = loadSupabaseConfig();
 
@@ -102,15 +104,20 @@ export default function EssayAssignmentModal({
         if (!onSaveAssignment) return;
         setSaving(true);
         setSaveError('');
-        const assignment = buildAssignment(studentId);
-        const result = await onSaveAssignment(assignment);
-        setSaving(false);
-        if (result.success) {
-            setSaved(true);
-        } else {
-            setSaveError(result.error ?? 'Failed to save assignment');
+        try {
+            const assignment = buildAssignment(studentId);
+            const result = await onSaveAssignment(assignment);
+            if (result.success) {
+                setSaved(true);
+            } else {
+                setSaveError(result.error ?? t('essay_assignment.save_error_fallback'));
+            }
+        } catch {
+            setSaveError(t('essay_assignment.save_error_fallback'));
+        } finally {
+            setSaving(false);
         }
-    }, [onSaveAssignment, buildAssignment, studentId]);
+    }, [onSaveAssignment, buildAssignment, studentId, t]);
 
     const handleDownloadSEB = useCallback(() => {
         const xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -169,10 +176,10 @@ export default function EssayAssignmentModal({
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <FileText size={18} style={{ color: 'var(--accent)' }} aria-hidden="true" />
                     <h2 id="essay-assignment-title" style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>
-                        Essay Assignment — {studentName}
+                        {t('essay_assignment.modal_title', { name: studentName })}
                     </h2>
                 </div>
-                <button className="btn btn-ghost btn-icon btn-sm" onClick={onClose} aria-label="Close">
+                <button className="btn btn-ghost btn-icon btn-sm" onClick={onClose} aria-label={t('common.close')}>
                     <X size={16} />
                 </button>
             </div>
@@ -189,25 +196,29 @@ export default function EssayAssignmentModal({
             >
                 {/* Title */}
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label>Assignment title</label>
+                    <label htmlFor="ea-title">{t('essay_assignment.title_label')}</label>
                     <input
+                        id="ea-title"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        placeholder="e.g. Essay writing — Chapter 3"
+                        placeholder={t('essay_assignment.title_placeholder')}
                     />
                 </div>
 
                 {/* Prompt */}
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label>
-                        Prompt / instructions{' '}
-                        <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span>
+                    <label htmlFor="ea-prompt">
+                        {t('essay_assignment.prompt_label')}{' '}
+                        <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
+                            ({t('essay_assignment.optional')})
+                        </span>
                     </label>
                     <textarea
+                        id="ea-prompt"
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
                         rows={3}
-                        placeholder="Write about…"
+                        placeholder={t('essay_assignment.prompt_placeholder')}
                         style={{ resize: 'vertical' }}
                     />
                 </div>
@@ -215,39 +226,51 @@ export default function EssayAssignmentModal({
                 {/* Word limits + time */}
                 <div style={{ display: 'flex', gap: 12 }}>
                     <div className="form-group" style={{ marginBottom: 0, flex: 1 }}>
-                        <label>
-                            Min words <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opt.)</span>
+                        <label htmlFor="ea-min-words">
+                            {t('essay_assignment.min_words_label')}{' '}
+                            <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
+                                ({t('essay_assignment.opt')})
+                            </span>
                         </label>
                         <input
+                            id="ea-min-words"
                             type="number"
                             min={0}
                             value={minWords}
                             onChange={(e) => setMinWords(e.target.value)}
-                            placeholder="—"
+                            placeholder={t('essay_assignment.number_placeholder')}
                         />
                     </div>
                     <div className="form-group" style={{ marginBottom: 0, flex: 1 }}>
-                        <label>
-                            Max words <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opt.)</span>
+                        <label htmlFor="ea-max-words">
+                            {t('essay_assignment.max_words_label')}{' '}
+                            <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
+                                ({t('essay_assignment.opt')})
+                            </span>
                         </label>
                         <input
+                            id="ea-max-words"
                             type="number"
                             min={0}
                             value={maxWords}
                             onChange={(e) => setMaxWords(e.target.value)}
-                            placeholder="—"
+                            placeholder={t('essay_assignment.number_placeholder')}
                         />
                     </div>
                     <div className="form-group" style={{ marginBottom: 0, flex: 1 }}>
-                        <label>
-                            Time limit (min) <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opt.)</span>
+                        <label htmlFor="ea-time-limit">
+                            {t('essay_assignment.time_limit_label')}{' '}
+                            <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
+                                ({t('essay_assignment.opt')})
+                            </span>
                         </label>
                         <input
+                            id="ea-time-limit"
                             type="number"
                             min={1}
                             value={timeLimitMinutes}
                             onChange={(e) => setTimeLimitMinutes(e.target.value)}
-                            placeholder="—"
+                            placeholder={t('essay_assignment.number_placeholder')}
                         />
                     </div>
                 </div>
@@ -269,7 +292,7 @@ export default function EssayAssignmentModal({
                             onChange={(e) => setRequireSEB(e.target.checked)}
                             style={{ accentColor: 'var(--accent)' }}
                         />
-                        Require Safe Exam Browser
+                        {t('essay_assignment.require_seb_label')}
                     </label>
                     <label
                         style={{
@@ -286,19 +309,20 @@ export default function EssayAssignmentModal({
                             onChange={(e) => setReadOnlyAfterSubmit(e.target.checked)}
                             style={{ accentColor: 'var(--accent)' }}
                         />
-                        Lock essay after submit
+                        {t('essay_assignment.lock_after_submit_label')}
                     </label>
                 </div>
 
                 {/* Expiry */}
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label>
-                        Deadline{' '}
+                    <label htmlFor="ea-expires-at">
+                        {t('essay_assignment.deadline_label')}{' '}
                         <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
-                            (optional — students cannot submit after this date/time)
+                            ({t('essay_assignment.deadline_help')})
                         </span>
                     </label>
                     <input
+                        id="ea-expires-at"
                         type="datetime-local"
                         value={expiresAt}
                         onChange={(e) => setExpiresAt(e.target.value)}
@@ -336,12 +360,11 @@ export default function EssayAssignmentModal({
                                 style={{ accentColor: 'var(--accent)' }}
                             />
                             <Database size={13} style={{ color: 'var(--accent)' }} />
-                            Enable direct submission to database
+                            {t('essay_assignment.db_embed_label')}
                         </label>
                         {embedDb && (
                             <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                                Students will verify their email via OTP, then submit directly to your Supabase project.
-                                No copy-paste code needed. The backup code is still shown as a receipt.
+                                {t('essay_assignment.db_embed_help')}
                             </p>
                         )}
                     </div>
@@ -357,13 +380,13 @@ export default function EssayAssignmentModal({
                         >
                             {saved ? (
                                 <>
-                                    <Check size={13} /> Saved to database
+                                    <Check size={13} /> {t('essay_assignment.saved_to_db')}
                                 </>
                             ) : saving ? (
-                                'Saving…'
+                                t('essay_assignment.saving')
                             ) : (
                                 <>
-                                    <Database size={13} /> Save assignment to database
+                                    <Database size={13} /> {t('essay_assignment.save_to_db')}
                                 </>
                             )}
                         </button>
@@ -385,9 +408,10 @@ export default function EssayAssignmentModal({
 
                 {/* Generated URL */}
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label>Student essay link</label>
+                    <label htmlFor="ea-essay-link">{t('essay_assignment.essay_link_label')}</label>
                     <div style={{ display: 'flex', gap: 8 }}>
                         <input
+                            id="ea-essay-link"
                             readOnly
                             value={essayUrl}
                             style={{
@@ -399,7 +423,7 @@ export default function EssayAssignmentModal({
                         />
                         <button className="btn btn-secondary btn-sm" onClick={handleCopyLink} style={{ flexShrink: 0 }}>
                             {copied ? <Check size={14} /> : <Copy size={14} />}
-                            {copied ? 'Copied!' : 'Copy'}
+                            {copied ? t('essay_assignment.copied') : t('essay_assignment.copy')}
                         </button>
                     </div>
                 </div>
@@ -418,15 +442,15 @@ export default function EssayAssignmentModal({
             >
                 {classStudents.length > 1 && (
                     <button className="btn btn-secondary btn-sm" onClick={handlePrintSlips}>
-                        Print class slips ({classStudents.length} students)
+                        {t('essay_assignment.print_slips', { count: classStudents.length })}
                     </button>
                 )}
                 <button className="btn btn-secondary btn-sm" onClick={handleDownloadSEB}>
-                    <Download size={14} /> Download .seb config
+                    <Download size={14} /> {t('essay_assignment.download_seb')}
                 </button>
                 <button className="btn btn-primary btn-sm" onClick={handleCopyLink}>
                     {copied ? <Check size={14} /> : <Copy size={14} />}
-                    {copied ? 'Link copied!' : 'Copy link'}
+                    {copied ? t('essay_assignment.link_copied') : t('essay_assignment.copy_link')}
                 </button>
             </div>
         </Modal>

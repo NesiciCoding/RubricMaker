@@ -32,6 +32,7 @@
         "edit": "Edit",
         "add": "Add",
         "back": "Back",
+        "close": "Close",
         "settings": "Settings",
         "language": "Language",
         "toggle_theme": "Toggle theme"
@@ -40,7 +41,10 @@
         "main_section": "Main",
         "quick_stats": "Quick Stats",
         "rubrics_count": "Rubrics",
-        "students_count": "Students"
+        "students_count": "Students",
+        "nav_label": "Main navigation",
+        "expand": "Expand sidebar",
+        "collapse": "Collapse sidebar"
     },
     "settings": {
         "title": "Settings",
@@ -455,7 +459,9 @@
         "achieve_threshold_label": "Achievement Threshold (%)",
         "achieve_threshold_help": "Score at or above this percentage counts as 'Achieved' on the student profile.",
         "progress_chart_title": "CEFR Skills Radar",
-        "no_chart_data": "Not enough skill data for a chart."
+        "no_chart_data": "Not enough skill data for a chart.",
+        "progress_chart_aria_label": "CEFR skills radar chart showing average scores per skill and level",
+        "skill": "Skill"
     },
     "framework": {
         "picker_title": "Assessment Framework Descriptors",
@@ -609,6 +615,8 @@
         "students": "Students",
         "criterion_avg": "Per-Criterion Average (%)",
         "score_distribution": "Score Distribution",
+        "blooms_chart_summary": "Bloom's taxonomy performance chart",
+        "no_data": "No data",
         "blooms_title": "Bloom's Taxonomy",
         "ib_title": "IB Learner Profile",
         "heatmap": "Criterion Heat Map",
@@ -776,6 +784,7 @@
     "notifications": {
         "bell_title": "Notifications ({{count}} overdue)",
         "panel_title": "Overdue Students",
+        "panel_label": "Notifications panel",
         "all_up_to_date": "All students graded within the last {{threshold}} days.",
         "overdue_subtitle": "{{count}} student(s) not graded in {{threshold}}+ days",
         "days_ago": "{{count}}d ago",
@@ -857,5 +866,44 @@
         "retention_title": "Retention Settings",
         "retention_desc": "Students whose most recent grade is older than the retention period will be automatically anonymized.",
         "retention_per_school": "Set retention period per school on the Schools tab."
+    },
+    "essay_assignment": {
+        "modal_title": "Essay Assignment — {{name}}",
+        "title_label": "Assignment title",
+        "title_placeholder": "e.g. Essay writing — Chapter 3",
+        "prompt_label": "Prompt / instructions",
+        "prompt_placeholder": "Write about…",
+        "optional": "optional",
+        "opt": "opt.",
+        "number_placeholder": "—",
+        "min_words_label": "Min words",
+        "max_words_label": "Max words",
+        "time_limit_label": "Time limit (min)",
+        "require_seb_label": "Require Safe Exam Browser",
+        "lock_after_submit_label": "Lock essay after submit",
+        "deadline_label": "Deadline",
+        "deadline_help": "optional — students cannot submit after this date/time",
+        "db_embed_label": "Enable direct submission to database",
+        "db_embed_help": "Students will verify their email via OTP, then submit directly to your Supabase project. No copy-paste code needed. The backup code is still shown as a receipt.",
+        "save_to_db": "Save assignment to database",
+        "saving": "Saving…",
+        "saved_to_db": "Saved to database",
+        "save_error_fallback": "Failed to save assignment",
+        "essay_link_label": "Student essay link",
+        "copy": "Copy",
+        "copied": "Copied!",
+        "copy_link": "Copy link",
+        "link_copied": "Link copied!",
+        "print_slips": "Print class slips ({{count}} students)",
+        "download_seb": "Download .seb config"
+    },
+    "tts": {
+        "read_prompt": "Read assignment prompt aloud",
+        "read_prompt_short": "Read prompt",
+        "play": "Read essay aloud",
+        "pause": "Pause reading",
+        "resume": "Resume reading",
+        "stop": "Stop reading",
+        "progress": "Reading progress"
     }
 }

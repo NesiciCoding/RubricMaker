@@ -32,6 +32,7 @@
         "edit": "Editar",
         "add": "Añadir",
         "back": "Volver",
+        "close": "Cerrar",
         "settings": "Ajustes",
         "language": "Idioma",
         "toggle_theme": "Cambiar tema"
@@ -40,7 +41,10 @@
         "main_section": "Principal",
         "quick_stats": "Estadísticas rápidas",
         "rubrics_count": "Rúbricas",
-        "students_count": "Estudiantes"
+        "students_count": "Estudiantes",
+        "nav_label": "Navegación principal",
+        "expand": "Expandir barra lateral",
+        "collapse": "Contraer barra lateral"
     },
     "settings": {
         "title": "Ajustes",
@@ -455,7 +459,9 @@
         "achieve_threshold_label": "Umbral de Logro (%)",
         "achieve_threshold_help": "Una puntuación igual o superior a este porcentaje cuenta como 'Logrado' en el perfil del estudiante.",
         "progress_chart_title": "Radar de Habilidades MCER",
-        "no_chart_data": "Datos de habilidades insuficientes para un gráfico."
+        "no_chart_data": "Datos de habilidades insuficientes para un gráfico.",
+        "progress_chart_aria_label": "Gráfico de radar de habilidades MCER con puntuaciones medias por habilidad y nivel",
+        "skill": "Habilidad"
     },
     "framework": {
         "picker_title": "Descriptores del Marco de Evaluación",
@@ -609,6 +615,8 @@
         "students": "Estudiantes",
         "criterion_avg": "Promedio por Criterio (%)",
         "score_distribution": "Distribución de Puntuaciones",
+        "blooms_chart_summary": "Gráfico de rendimiento de la taxonomía de Bloom",
+        "no_data": "Sin datos",
         "blooms_title": "Taxonomía de Bloom",
         "ib_title": "Perfil del Alumno IB",
         "heatmap": "Mapa de Calor de Criterios",
@@ -776,6 +784,7 @@
     "notifications": {
         "bell_title": "Notificaciones ({{count}} pendientes)",
         "panel_title": "Estudiantes Pendientes",
+        "panel_label": "Panel de notificaciones",
         "all_up_to_date": "Todos los estudiantes calificados en los últimos {{threshold}} días.",
         "overdue_subtitle": "{{count}} estudiante(s) sin calificar en {{threshold}}+ días",
         "days_ago": "Hace {{count}}d",
@@ -857,5 +866,44 @@
         "retention_title": "Ajustes de Retención",
         "retention_desc": "Los estudiantes cuya calificación más reciente sea anterior al período de retención serán anonimizados automáticamente.",
         "retention_per_school": "Establece el período de retención por escuela en la pestaña Escuelas."
+    },
+    "essay_assignment": {
+        "modal_title": "Tarea de ensayo — {{name}}",
+        "title_label": "Título de la tarea",
+        "title_placeholder": "p.ej. Redacción — Capítulo 3",
+        "prompt_label": "Instrucciones / enunciado",
+        "prompt_placeholder": "Escribe sobre…",
+        "optional": "opcional",
+        "opt": "opt.",
+        "number_placeholder": "—",
+        "min_words_label": "Mín. palabras",
+        "max_words_label": "Máx. palabras",
+        "time_limit_label": "Límite de tiempo (min)",
+        "require_seb_label": "Requerir Safe Exam Browser",
+        "lock_after_submit_label": "Bloquear ensayo tras enviar",
+        "deadline_label": "Fecha límite",
+        "deadline_help": "opcional — los estudiantes no pueden enviar después de esta fecha/hora",
+        "db_embed_label": "Activar envío directo a base de datos",
+        "db_embed_help": "Los estudiantes verificarán su correo mediante OTP y enviarán directamente a tu proyecto Supabase. No se necesita copiar código. El código de respaldo seguirá mostrándose como resguardo.",
+        "save_to_db": "Guardar tarea en base de datos",
+        "saving": "Guardando…",
+        "saved_to_db": "Guardado en la base de datos",
+        "save_error_fallback": "No se pudo guardar la tarea",
+        "essay_link_label": "Enlace del ensayo del estudiante",
+        "copy": "Copiar",
+        "copied": "¡Copiado!",
+        "copy_link": "Copiar enlace",
+        "link_copied": "¡Enlace copiado!",
+        "print_slips": "Imprimir fichas de clase ({{count}} estudiantes)",
+        "download_seb": "Descargar configuración .seb"
+    },
+    "tts": {
+        "read_prompt": "Leer instrucción en voz alta",
+        "read_prompt_short": "Leer instrucción",
+        "play": "Leer ensayo en voz alta",
+        "pause": "Pausar lectura",
+        "resume": "Reanudar",
+        "stop": "Detener",
+        "progress": "Progreso de lectura"
     }
 }

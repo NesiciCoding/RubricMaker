@@ -34,13 +34,17 @@
         "settings": "Einstellungen",
         "language": "Sprache",
         "toggle_theme": "Thema wechseln",
-        "back": "Zurück"
+        "back": "Zurück",
+        "close": "Schließen"
     },
     "sidebar": {
         "main_section": "Hauptmenü",
         "quick_stats": "Schnellstatistiken",
         "rubrics_count": "Rubriken",
-        "students_count": "Schüler"
+        "students_count": "Schüler",
+        "nav_label": "Hauptnavigation",
+        "expand": "Seitenleiste erweitern",
+        "collapse": "Seitenleiste einklappen"
     },
     "settings": {
         "title": "Einstellungen",
@@ -457,7 +461,9 @@
         "achieve_threshold_label": "Leistungsschwelle (%)",
         "achieve_threshold_help": "Eine Punktzahl ab diesem Prozentsatz gilt als 'Erreicht' im Schülerprofil.",
         "progress_chart_title": "GER-Kompetenz-Radar",
-        "no_chart_data": "Nicht genug Kompetenzdaten für ein Diagramm."
+        "no_chart_data": "Nicht genug Kompetenzdaten für ein Diagramm.",
+        "progress_chart_aria_label": "GER-Kompetenz-Radar mit Durchschnittswerten je Kompetenz und Niveau",
+        "skill": "Kompetenz"
     },
     "framework": {
         "picker_title": "Bewertungsrahmen-Deskriptoren",
@@ -609,6 +615,8 @@
         "grade_distribution": "Notenverteilung",
         "no_grade_scale": "Keine Notenskala für diese Rubrik konfiguriert.",
         "students": "Schüler",
+        "blooms_chart_summary": "Leistungsdiagramm Bloomsche Taxonomie",
+        "no_data": "Keine Daten",
         "criterion_avg": "Durchschnitt je Kriterium (%)",
         "score_distribution": "Punkteverteilung",
         "heatmap": "Kriterien-Heatmap",
@@ -778,6 +786,7 @@
     "notifications": {
         "bell_title": "Benachrichtigungen ({{count}} überfällig)",
         "panel_title": "Überfällige Schüler",
+        "panel_label": "Benachrichtigungspanel",
         "all_up_to_date": "Alle Schüler wurden in den letzten {{threshold}} Tagen benotet.",
         "overdue_subtitle": "{{count}} Schüler seit {{threshold}}+ Tagen nicht benotet",
         "days_ago": "vor {{count}}T",
@@ -788,6 +797,45 @@
         "browser_title": "RubricMaker — Überfällige Schüler",
         "browser_body": "{{count}} Schüler seit {{threshold}}+ Tagen nicht benotet.",
         "clear_all": "Alle löschen"
+    },
+    "essay_assignment": {
+        "modal_title": "Aufsatzaufgabe — {{name}}",
+        "title_label": "Aufgabentitel",
+        "title_placeholder": "z.B. Aufsatzschreiben — Kapitel 3",
+        "prompt_label": "Prompt / Anweisungen",
+        "prompt_placeholder": "Schreiben Sie über…",
+        "optional": "optional",
+        "opt": "opt.",
+        "number_placeholder": "—",
+        "min_words_label": "Mindestwörter",
+        "max_words_label": "Höchstwörter",
+        "time_limit_label": "Zeitlimit (Min.)",
+        "require_seb_label": "Safe Exam Browser erforderlich",
+        "lock_after_submit_label": "Aufsatz nach Abgabe sperren",
+        "deadline_label": "Abgabefrist",
+        "deadline_help": "optional — Schüler können nach diesem Datum/Uhrzeit nicht mehr abgeben",
+        "db_embed_label": "Direkte Einreichung in Datenbank aktivieren",
+        "db_embed_help": "Schüler verifizieren ihre E-Mail per OTP und reichen direkt in Ihrem Supabase-Projekt ein. Kein Kopieren-Einfügen nötig. Der Backup-Code wird weiterhin als Nachweis angezeigt.",
+        "save_to_db": "Aufgabe in Datenbank speichern",
+        "saving": "Speichern…",
+        "saved_to_db": "In Datenbank gespeichert",
+        "save_error_fallback": "Aufgabe konnte nicht gespeichert werden",
+        "essay_link_label": "Link zum Schüleraufsatz",
+        "copy": "Kopieren",
+        "copied": "Kopiert!",
+        "copy_link": "Link kopieren",
+        "link_copied": "Link kopiert!",
+        "print_slips": "Klassenzettel drucken ({{count}} Schüler)",
+        "download_seb": ".seb-Konfiguration herunterladen"
+    },
+    "tts": {
+        "read_prompt": "Aufgabenstellung vorlesen",
+        "read_prompt_short": "Prompt vorlesen",
+        "play": "Aufsatz vorlesen",
+        "pause": "Vorlesen pausieren",
+        "resume": "Fortsetzen",
+        "stop": "Stopp",
+        "progress": "Lesefortschritt"
     },
     "onboarding": {
         "title": "Willkommen bei RubricMaker",

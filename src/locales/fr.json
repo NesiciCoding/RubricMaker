@@ -34,13 +34,17 @@
         "settings": "Paramètres",
         "language": "Langue",
         "toggle_theme": "Basculer le thème",
-        "back": "Retour"
+        "back": "Retour",
+        "close": "Fermer"
     },
     "sidebar": {
         "main_section": "Principal",
         "quick_stats": "Stats Rapides",
         "rubrics_count": "Rubriques",
-        "students_count": "Élèves"
+        "students_count": "Élèves",
+        "nav_label": "Navigation principale",
+        "expand": "Développer la barre latérale",
+        "collapse": "Réduire la barre latérale"
     },
     "settings": {
         "title": "Paramètres",
@@ -457,7 +461,9 @@
         "achieve_threshold_label": "Seuil de réussite (%)",
         "achieve_threshold_help": "Un score égal ou supérieur à ce pourcentage est comptabilisé comme « Atteint » sur le profil de l'élève.",
         "progress_chart_title": "Radar des compétences CECR",
-        "no_chart_data": "Données de compétences insuffisantes pour le graphique."
+        "no_chart_data": "Données de compétences insuffisantes pour le graphique.",
+        "progress_chart_aria_label": "Graphique radar des compétences CECR avec scores moyens par compétence et niveau",
+        "skill": "Compétence"
     },
     "framework": {
         "picker_title": "Descripteurs du cadre d'évaluation",
@@ -609,6 +615,8 @@
         "grade_distribution": "Distribution des notes",
         "no_grade_scale": "Aucun barème configuré pour cette rubrique.",
         "students": "Élèves",
+        "blooms_chart_summary": "Graphique de performance de la taxonomie de Bloom",
+        "no_data": "Aucune donnée",
         "criterion_avg": "Moyenne par critère (%)",
         "score_distribution": "Distribution des scores",
         "heatmap": "Carte thermique des critères",
@@ -778,6 +786,7 @@
     "notifications": {
         "bell_title": "Notifications ({{count}} en retard)",
         "panel_title": "Élèves en retard",
+        "panel_label": "Panneau de notifications",
         "all_up_to_date": "Tous les élèves ont été notés au cours des {{threshold}} derniers jours.",
         "overdue_subtitle": "{{count}} élève(s) non noté(s) depuis {{threshold}}+ jours",
         "days_ago": "il y a {{count}}j",
@@ -788,6 +797,45 @@
         "browser_title": "RubricMaker — Élèves en retard",
         "browser_body": "{{count}} élève(s) non noté(s) depuis {{threshold}}+ jours.",
         "clear_all": "Tout effacer"
+    },
+    "essay_assignment": {
+        "modal_title": "Devoir de rédaction — {{name}}",
+        "title_label": "Titre de la tâche",
+        "title_placeholder": "p.ex. Rédaction — Chapitre 3",
+        "prompt_label": "Consigne / instructions",
+        "prompt_placeholder": "Rédigez sur…",
+        "optional": "facultatif",
+        "opt": "opt.",
+        "number_placeholder": "—",
+        "min_words_label": "Mots min.",
+        "max_words_label": "Mots max.",
+        "time_limit_label": "Limite de temps (min)",
+        "require_seb_label": "Exiger Safe Exam Browser",
+        "lock_after_submit_label": "Verrouiller après soumission",
+        "deadline_label": "Date limite",
+        "deadline_help": "facultatif — les élèves ne peuvent plus soumettre après cette date/heure",
+        "db_embed_label": "Activer la soumission directe à la base de données",
+        "db_embed_help": "Les élèves vérifieront leur adresse e-mail par OTP, puis soumettront directement à votre projet Supabase. Pas besoin de copier-coller de code. Le code de sauvegarde reste visible comme reçu.",
+        "save_to_db": "Enregistrer le devoir dans la base de données",
+        "saving": "Enregistrement…",
+        "saved_to_db": "Enregistré dans la base de données",
+        "save_error_fallback": "Impossible d'enregistrer le devoir",
+        "essay_link_label": "Lien vers la rédaction de l'élève",
+        "copy": "Copier",
+        "copied": "Copié !",
+        "copy_link": "Copier le lien",
+        "link_copied": "Lien copié !",
+        "print_slips": "Imprimer les fiches de classe ({{count}} élèves)",
+        "download_seb": "Télécharger la config .seb"
+    },
+    "tts": {
+        "read_prompt": "Lire la consigne à voix haute",
+        "read_prompt_short": "Lire la consigne",
+        "play": "Lire la rédaction à voix haute",
+        "pause": "Pause",
+        "resume": "Reprendre",
+        "stop": "Arrêter",
+        "progress": "Progression de lecture"
     },
     "onboarding": {
         "title": "Bienvenue sur RubricMaker",

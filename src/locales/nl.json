@@ -32,6 +32,7 @@
         "edit": "Bewerken",
         "add": "Toevoegen",
         "back": "Terug",
+        "close": "Sluiten",
         "settings": "Instellingen",
         "language": "Taal",
         "toggle_theme": "Thema wisselen"
@@ -40,7 +41,10 @@
         "main_section": "Hoofdmenu",
         "quick_stats": "Snelle statistieken",
         "rubrics_count": "Rubrieken",
-        "students_count": "Leerlingen"
+        "students_count": "Leerlingen",
+        "nav_label": "Hoofdnavigatie",
+        "expand": "Zijbalk uitvouwen",
+        "collapse": "Zijbalk inklappen"
     },
     "settings": {
         "title": "Instellingen",
@@ -457,7 +461,9 @@
         "achieve_threshold_label": "Drempel voor 'Behaald' (%)",
         "achieve_threshold_help": "Een score op of boven dit percentage telt als 'Behaald' op het leerlingprofiel.",
         "progress_chart_title": "ERK Vaardigheden Radar",
-        "no_chart_data": "Onvoldoende vaardigheidsdata voor een grafiek."
+        "no_chart_data": "Onvoldoende vaardigheidsdata voor een grafiek.",
+        "progress_chart_aria_label": "ERK vaardigheden radargrafiek met gemiddelde scores per vaardigheid en niveau",
+        "skill": "Vaardigheid"
     },
     "framework": {
         "picker_title": "Beoordelingskader Uitspraken",
@@ -611,6 +617,8 @@
         "students": "Leerlingen",
         "criterion_avg": "Gemiddelde per Criterium (%)",
         "score_distribution": "Score Verdeling",
+        "blooms_chart_summary": "Prestatiediagram Bloom's taxonomie",
+        "no_data": "Geen gegevens",
         "blooms_title": "Taxonomie van Bloom",
         "ib_title": "IB Leerlingprofiel",
         "heatmap": "Criterium Heatmap",
@@ -778,6 +786,7 @@
     "notifications": {
         "bell_title": "Meldingen ({{count}} achterstallig)",
         "panel_title": "Achterstallige Leerlingen",
+        "panel_label": "Meldingenpaneel",
         "all_up_to_date": "Alle leerlingen zijn de afgelopen {{threshold}} dagen nagekeken.",
         "overdue_subtitle": "{{count}} leerling(en) al {{threshold}}+ dagen niet nagekeken",
         "days_ago": "{{count}}d geleden",
@@ -859,5 +868,44 @@
         "retention_title": "Retentie-instellingen",
         "retention_desc": "Leerlingen van wie de meest recente beoordeling ouder is dan de bewaartermijn worden automatisch geanonimiseerd.",
         "retention_per_school": "Stel de bewaartermijn per school in op het tabblad Scholen."
+    },
+    "essay_assignment": {
+        "modal_title": "Essay-opdracht — {{name}}",
+        "title_label": "Opdrachttitel",
+        "title_placeholder": "bijv. Schrijfopdracht — Hoofdstuk 3",
+        "prompt_label": "Prompt / instructies",
+        "prompt_placeholder": "Schrijf over…",
+        "optional": "optioneel",
+        "opt": "opt.",
+        "number_placeholder": "—",
+        "min_words_label": "Min. woorden",
+        "max_words_label": "Max. woorden",
+        "time_limit_label": "Tijdslimiet (min)",
+        "require_seb_label": "Safe Exam Browser vereisen",
+        "lock_after_submit_label": "Essay vergrendelen na inleveren",
+        "deadline_label": "Deadline",
+        "deadline_help": "optioneel — leerlingen kunnen na deze datum/tijd niet meer inleveren",
+        "db_embed_label": "Directe inzending naar database inschakelen",
+        "db_embed_help": "Leerlingen verifiëren hun e-mail via OTP en leveren direct in bij je Supabase-project. Geen plakcode nodig. De back-upcode wordt nog steeds getoond als bewijs.",
+        "save_to_db": "Opdracht opslaan in database",
+        "saving": "Opslaan…",
+        "saved_to_db": "Opgeslagen in database",
+        "save_error_fallback": "Opslaan mislukt",
+        "essay_link_label": "Link naar het essay",
+        "copy": "Kopiëren",
+        "copied": "Gekopieerd!",
+        "copy_link": "Link kopiëren",
+        "link_copied": "Link gekopieerd!",
+        "print_slips": "Klasbriefjes afdrukken ({{count}} leerlingen)",
+        "download_seb": "Download .seb-configuratie"
+    },
+    "tts": {
+        "read_prompt": "Lees de opdrachtprompt voor",
+        "read_prompt_short": "Lees prompt",
+        "play": "Lees essay voor",
+        "pause": "Pauzeer voorlezen",
+        "resume": "Hervatten",
+        "stop": "Stop",
+        "progress": "Leesvoortgang"
     }
 }
