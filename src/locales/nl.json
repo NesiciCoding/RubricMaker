@@ -32,6 +32,7 @@
         "edit": "Bewerken",
         "add": "Toevoegen",
         "back": "Terug",
+        "close": "Sluiten",
         "settings": "Instellingen",
         "language": "Taal",
         "toggle_theme": "Thema wisselen"
@@ -869,8 +870,11 @@
         "retention_per_school": "Stel de bewaartermijn per school in op het tabblad Scholen."
     },
     "essay_assignment": {
-        "title_label": "Opdrachtttitel",
+        "modal_title": "Essay-opdracht — {{name}}",
+        "title_label": "Opdrachttitel",
+        "title_placeholder": "bijv. Schrijfopdracht — Hoofdstuk 3",
         "prompt_label": "Prompt / instructies",
+        "prompt_placeholder": "Schrijf over…",
         "optional": "optioneel",
         "opt": "opt.",
         "min_words_label": "Min. woorden",
@@ -880,7 +884,19 @@
         "lock_after_submit_label": "Essay vergrendelen na inleveren",
         "deadline_label": "Deadline",
         "deadline_help": "optioneel — leerlingen kunnen na deze datum/tijd niet meer inleveren",
-        "essay_link_label": "Link naar het essay"
+        "db_embed_label": "Directe inzending naar database inschakelen",
+        "db_embed_help": "Leerlingen verifiëren hun e-mail via OTP en leveren direct in bij je Supabase-project. Geen plakcode nodig. De back-upcode wordt nog steeds getoond als bewijs.",
+        "save_to_db": "Opdracht opslaan in database",
+        "saving": "Opslaan…",
+        "saved_to_db": "Opgeslagen in database",
+        "save_error_fallback": "Opslaan mislukt",
+        "essay_link_label": "Link naar het essay",
+        "copy": "Kopiëren",
+        "copied": "Gekopieerd!",
+        "copy_link": "Link kopiëren",
+        "link_copied": "Link gekopieerd!",
+        "print_slips": "Klasbriefjes afdrukken ({{count}} leerlingen)",
+        "download_seb": "Download .seb-configuratie"
     },
     "tts": {
         "read_prompt": "Lees de opdrachtprompt voor",

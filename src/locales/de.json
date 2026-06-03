@@ -34,7 +34,8 @@
         "settings": "Einstellungen",
         "language": "Sprache",
         "toggle_theme": "Thema wechseln",
-        "back": "Zurück"
+        "back": "Zurück",
+        "close": "Schließen"
     },
     "sidebar": {
         "main_section": "Hauptmenü",
@@ -798,8 +799,11 @@
         "clear_all": "Alle löschen"
     },
     "essay_assignment": {
+        "modal_title": "Aufsatzaufgabe — {{name}}",
         "title_label": "Aufgabentitel",
+        "title_placeholder": "z.B. Aufsatzschreiben — Kapitel 3",
         "prompt_label": "Prompt / Anweisungen",
+        "prompt_placeholder": "Schreiben Sie über…",
         "optional": "optional",
         "opt": "opt.",
         "min_words_label": "Mindestwörter",
@@ -809,7 +813,19 @@
         "lock_after_submit_label": "Aufsatz nach Abgabe sperren",
         "deadline_label": "Abgabefrist",
         "deadline_help": "optional — Schüler können nach diesem Datum/Uhrzeit nicht mehr abgeben",
-        "essay_link_label": "Link zum Schüleraufsatz"
+        "db_embed_label": "Direkte Einreichung in Datenbank aktivieren",
+        "db_embed_help": "Schüler verifizieren ihre E-Mail per OTP und reichen direkt in Ihrem Supabase-Projekt ein. Kein Kopieren-Einfügen nötig. Der Backup-Code wird weiterhin als Nachweis angezeigt.",
+        "save_to_db": "Aufgabe in Datenbank speichern",
+        "saving": "Speichern…",
+        "saved_to_db": "In Datenbank gespeichert",
+        "save_error_fallback": "Aufgabe konnte nicht gespeichert werden",
+        "essay_link_label": "Link zum Schüleraufsatz",
+        "copy": "Kopieren",
+        "copied": "Kopiert!",
+        "copy_link": "Link kopieren",
+        "link_copied": "Link kopiert!",
+        "print_slips": "Klassenzettel drucken ({{count}} Schüler)",
+        "download_seb": ".seb-Konfiguration herunterladen"
     },
     "tts": {
         "read_prompt": "Aufgabenstellung vorlesen",

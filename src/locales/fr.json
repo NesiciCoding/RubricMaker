@@ -34,7 +34,8 @@
         "settings": "Paramètres",
         "language": "Langue",
         "toggle_theme": "Basculer le thème",
-        "back": "Retour"
+        "back": "Retour",
+        "close": "Fermer"
     },
     "sidebar": {
         "main_section": "Principal",
@@ -798,8 +799,11 @@
         "clear_all": "Tout effacer"
     },
     "essay_assignment": {
+        "modal_title": "Devoir de rédaction — {{name}}",
         "title_label": "Titre de la tâche",
+        "title_placeholder": "p.ex. Rédaction — Chapitre 3",
         "prompt_label": "Consigne / instructions",
+        "prompt_placeholder": "Rédigez sur…",
         "optional": "facultatif",
         "opt": "opt.",
         "min_words_label": "Mots min.",
@@ -809,7 +813,19 @@
         "lock_after_submit_label": "Verrouiller après soumission",
         "deadline_label": "Date limite",
         "deadline_help": "facultatif — les élèves ne peuvent plus soumettre après cette date/heure",
-        "essay_link_label": "Lien vers la rédaction de l'élève"
+        "db_embed_label": "Activer la soumission directe à la base de données",
+        "db_embed_help": "Les élèves vérifieront leur adresse e-mail par OTP, puis soumettront directement à votre projet Supabase. Pas besoin de copier-coller de code. Le code de sauvegarde reste visible comme reçu.",
+        "save_to_db": "Enregistrer le devoir dans la base de données",
+        "saving": "Enregistrement…",
+        "saved_to_db": "Enregistré dans la base de données",
+        "save_error_fallback": "Impossible d'enregistrer le devoir",
+        "essay_link_label": "Lien vers la rédaction de l'élève",
+        "copy": "Copier",
+        "copied": "Copié !",
+        "copy_link": "Copier le lien",
+        "link_copied": "Lien copié !",
+        "print_slips": "Imprimer les fiches de classe ({{count}} élèves)",
+        "download_seb": "Télécharger la config .seb"
     },
     "tts": {
         "read_prompt": "Lire la consigne à voix haute",

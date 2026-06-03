@@ -110,7 +110,7 @@ export default function EssayAssignmentModal({
         if (result.success) {
             setSaved(true);
         } else {
-            setSaveError(result.error ?? 'Failed to save assignment');
+            setSaveError(result.error ?? t('essay_assignment.save_error_fallback'));
         }
     }, [onSaveAssignment, buildAssignment, studentId]);
 
@@ -171,10 +171,10 @@ export default function EssayAssignmentModal({
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <FileText size={18} style={{ color: 'var(--accent)' }} aria-hidden="true" />
                     <h2 id="essay-assignment-title" style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>
-                        Essay Assignment — {studentName}
+                        {t('essay_assignment.modal_title', { name: studentName })}
                     </h2>
                 </div>
-                <button className="btn btn-ghost btn-icon btn-sm" onClick={onClose} aria-label="Close">
+                <button className="btn btn-ghost btn-icon btn-sm" onClick={onClose} aria-label={t('common.close')}>
                     <X size={16} />
                 </button>
             </div>
@@ -196,7 +196,7 @@ export default function EssayAssignmentModal({
                         id="ea-title"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        placeholder="e.g. Essay writing — Chapter 3"
+                        placeholder={t('essay_assignment.title_placeholder')}
                     />
                 </div>
 
@@ -213,7 +213,7 @@ export default function EssayAssignmentModal({
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
                         rows={3}
-                        placeholder="Write about…"
+                        placeholder={t('essay_assignment.prompt_placeholder')}
                         style={{ resize: 'vertical' }}
                     />
                 </div>
@@ -355,12 +355,11 @@ export default function EssayAssignmentModal({
                                 style={{ accentColor: 'var(--accent)' }}
                             />
                             <Database size={13} style={{ color: 'var(--accent)' }} />
-                            Enable direct submission to database
+                            {t('essay_assignment.db_embed_label')}
                         </label>
                         {embedDb && (
                             <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                                Students will verify their email via OTP, then submit directly to your Supabase project.
-                                No copy-paste code needed. The backup code is still shown as a receipt.
+                                {t('essay_assignment.db_embed_help')}
                             </p>
                         )}
                     </div>
@@ -376,13 +375,13 @@ export default function EssayAssignmentModal({
                         >
                             {saved ? (
                                 <>
-                                    <Check size={13} /> Saved to database
+                                    <Check size={13} /> {t('essay_assignment.saved_to_db')}
                                 </>
                             ) : saving ? (
-                                'Saving…'
+                                t('essay_assignment.saving')
                             ) : (
                                 <>
-                                    <Database size={13} /> Save assignment to database
+                                    <Database size={13} /> {t('essay_assignment.save_to_db')}
                                 </>
                             )}
                         </button>
@@ -419,7 +418,7 @@ export default function EssayAssignmentModal({
                         />
                         <button className="btn btn-secondary btn-sm" onClick={handleCopyLink} style={{ flexShrink: 0 }}>
                             {copied ? <Check size={14} /> : <Copy size={14} />}
-                            {copied ? 'Copied!' : 'Copy'}
+                            {copied ? t('essay_assignment.copied') : t('essay_assignment.copy')}
                         </button>
                     </div>
                 </div>
@@ -438,15 +437,15 @@ export default function EssayAssignmentModal({
             >
                 {classStudents.length > 1 && (
                     <button className="btn btn-secondary btn-sm" onClick={handlePrintSlips}>
-                        Print class slips ({classStudents.length} students)
+                        {t('essay_assignment.print_slips', { count: classStudents.length })}
                     </button>
                 )}
                 <button className="btn btn-secondary btn-sm" onClick={handleDownloadSEB}>
-                    <Download size={14} /> Download .seb config
+                    <Download size={14} /> {t('essay_assignment.download_seb')}
                 </button>
                 <button className="btn btn-primary btn-sm" onClick={handleCopyLink}>
                     {copied ? <Check size={14} /> : <Copy size={14} />}
-                    {copied ? 'Link copied!' : 'Copy link'}
+                    {copied ? t('essay_assignment.link_copied') : t('essay_assignment.copy_link')}
                 </button>
             </div>
         </Modal>

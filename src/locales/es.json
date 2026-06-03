@@ -32,6 +32,7 @@
         "edit": "Editar",
         "add": "Añadir",
         "back": "Volver",
+        "close": "Cerrar",
         "settings": "Ajustes",
         "language": "Idioma",
         "toggle_theme": "Cambiar tema"
@@ -867,8 +868,11 @@
         "retention_per_school": "Establece el período de retención por escuela en la pestaña Escuelas."
     },
     "essay_assignment": {
+        "modal_title": "Tarea de ensayo — {{name}}",
         "title_label": "Título de la tarea",
+        "title_placeholder": "p.ej. Redacción — Capítulo 3",
         "prompt_label": "Instrucciones / enunciado",
+        "prompt_placeholder": "Escribe sobre…",
         "optional": "opcional",
         "opt": "opt.",
         "min_words_label": "Mín. palabras",
@@ -878,7 +882,19 @@
         "lock_after_submit_label": "Bloquear ensayo tras enviar",
         "deadline_label": "Fecha límite",
         "deadline_help": "opcional — los estudiantes no pueden enviar después de esta fecha/hora",
-        "essay_link_label": "Enlace del ensayo del estudiante"
+        "db_embed_label": "Activar envío directo a base de datos",
+        "db_embed_help": "Los estudiantes verificarán su correo mediante OTP y enviarán directamente a tu proyecto Supabase. No se necesita copiar código. El código de respaldo seguirá mostrándose como resguardo.",
+        "save_to_db": "Guardar tarea en base de datos",
+        "saving": "Guardando…",
+        "saved_to_db": "Guardado en la base de datos",
+        "save_error_fallback": "No se pudo guardar la tarea",
+        "essay_link_label": "Enlace del ensayo del estudiante",
+        "copy": "Copiar",
+        "copied": "¡Copiado!",
+        "copy_link": "Copiar enlace",
+        "link_copied": "¡Enlace copiado!",
+        "print_slips": "Imprimir fichas de clase ({{count}} estudiantes)",
+        "download_seb": "Descargar configuración .seb"
     },
     "tts": {
         "read_prompt": "Leer instrucción en voz alta",
