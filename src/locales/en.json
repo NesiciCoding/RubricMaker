@@ -425,7 +425,8 @@
         "sync_push_failed": "Changes may not be synced — check your connection.",
         "sync_queued": "Offline — changes will sync when you reconnect.",
         "sync_flushed": "Back online — all changes synced.",
-        "copy_paste_failed": "Copy/paste failed. Please try again."
+        "copy_paste_failed": "Copy/paste failed. Please try again.",
+        "sync_offline_cache": "You're offline — using locally cached data."
     },
     "cefr": {
         "rubric_section_title": "CEFR / ERK Level",

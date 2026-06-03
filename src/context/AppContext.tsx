@@ -661,6 +661,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 return;
             }
             storageSync.setToastFn(showToast);
+            if (!navigator.onLine) {
+                showToast(t('toast.sync_offline_cache'), 'info');
+                setLandingState('hide');
+                return;
+            }
             const { data: fresh, error: hydrateError } = await storageSync.hydrate();
             if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
             if (fresh) {
