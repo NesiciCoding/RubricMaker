@@ -294,15 +294,17 @@ class StorageSyncService {
     // ── Hydration (DB → app state) ────────────────────────────────────────────
 
     private static readonly HYDRATE_TIMEOUT_MS = 8000;
+    private hydrationGeneration = 0;
 
     async hydrate(): Promise<{ data: Partial<StoreData> | null; error?: string }> {
+        const gen = ++this.hydrationGeneration;
         const timeout = new Promise<{ data: null; error: string }>((resolve) =>
             setTimeout(() => resolve({ data: null, error: 'timeout' }), StorageSyncService.HYDRATE_TIMEOUT_MS)
         );
-        return Promise.race([this._hydrateImpl(), timeout]);
+        return Promise.race([this._hydrateImpl(gen), timeout]);
     }
 
-    private async _hydrateImpl(): Promise<{ data: Partial<StoreData> | null; error?: string }> {
+    private async _hydrateImpl(gen: number): Promise<{ data: Partial<StoreData> | null; error?: string }> {
         if (!this.adapter.isConnected()) return { data: null };
         this.setStatus('syncing');
         try {
@@ -341,6 +343,10 @@ class StorageSyncService {
                 this.adapter.fetchSettings(),
                 this.adapter.fetchMyProfile(),
             ]);
+
+            // Discard results if a newer hydration has superseded this one (e.g. this
+            // call timed out and the caller already fell back to cached state).
+            if (gen !== this.hydrationGeneration) return { data: null };
 
             const now = new Date().toISOString();
             this.lastSyncAt = now;
@@ -401,7 +407,7 @@ class StorageSyncService {
             return { data: result };
         } catch (e) {
             console.error('[sync] hydrate failed', e);
-            this.setStatus('error');
+            if (gen === this.hydrationGeneration) this.setStatus('error');
             return { data: null, error: String(e) };
         }
     }
