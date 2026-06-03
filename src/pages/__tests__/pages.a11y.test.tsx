@@ -258,9 +258,7 @@ vi.mock('../../hooks/useDbStatus', () => ({
 
 describe('EssayAssignmentModal — a11y', () => {
     it('has no axe violations', async () => {
-        const { default: EssayAssignmentModal } = await import(
-            '../../components/Essay/EssayAssignmentModal'
-        );
+        const { default: EssayAssignmentModal } = await import('../../components/Essay/EssayAssignmentModal');
         render(
             <EssayAssignmentModal
                 rubricId="r1"
@@ -277,9 +275,7 @@ describe('EssayAssignmentModal — a11y', () => {
     });
 
     it('all text inputs have associated labels', async () => {
-        const { default: EssayAssignmentModal } = await import(
-            '../../components/Essay/EssayAssignmentModal'
-        );
+        const { default: EssayAssignmentModal } = await import('../../components/Essay/EssayAssignmentModal');
         render(
             <EssayAssignmentModal
                 rubricId="r1"
@@ -304,9 +300,7 @@ describe('EssayAssignmentModal — a11y', () => {
 
 describe('BloomsPyramidChart — a11y', () => {
     it('has no axe violations', async () => {
-        const { default: BloomsPyramidChart } = await import(
-            '../../components/Statistics/BloomsPyramidChart'
-        );
+        const { default: BloomsPyramidChart } = await import('../../components/Statistics/BloomsPyramidChart');
         const levels = [
             { id: 'l1', order: 1, labelEn: 'Remember', labelNl: 'Onthouden', color: '#3b82f6', value: 75 },
             { id: 'l2', order: 2, labelEn: 'Understand', labelNl: 'Begrijpen', color: '#22c55e', value: 60 },
@@ -317,12 +311,8 @@ describe('BloomsPyramidChart — a11y', () => {
     });
 
     it('renders a figure with aria-label', async () => {
-        const { default: BloomsPyramidChart } = await import(
-            '../../components/Statistics/BloomsPyramidChart'
-        );
-        const levels = [
-            { id: 'l1', order: 1, labelEn: 'Remember', labelNl: 'Onthouden', color: '#3b82f6', value: 75 },
-        ];
+        const { default: BloomsPyramidChart } = await import('../../components/Statistics/BloomsPyramidChart');
+        const levels = [{ id: 'l1', order: 1, labelEn: 'Remember', labelNl: 'Onthouden', color: '#3b82f6', value: 75 }];
         render(<BloomsPyramidChart levels={levels} lang="en" />);
         const figure = document.querySelector('figure');
         expect(figure).not.toBeNull();
@@ -330,12 +320,8 @@ describe('BloomsPyramidChart — a11y', () => {
     });
 
     it('renders a sr-only data list with level values', async () => {
-        const { default: BloomsPyramidChart } = await import(
-            '../../components/Statistics/BloomsPyramidChart'
-        );
-        const levels = [
-            { id: 'l1', order: 1, labelEn: 'Remember', labelNl: 'Onthouden', color: '#3b82f6', value: 75 },
-        ];
+        const { default: BloomsPyramidChart } = await import('../../components/Statistics/BloomsPyramidChart');
+        const levels = [{ id: 'l1', order: 1, labelEn: 'Remember', labelNl: 'Onthouden', color: '#3b82f6', value: 75 }];
         render(<BloomsPyramidChart levels={levels} lang="en" />);
         const srList = document.querySelector('ul.sr-only');
         expect(srList).not.toBeNull();

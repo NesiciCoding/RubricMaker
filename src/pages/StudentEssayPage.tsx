@@ -506,11 +506,7 @@ export default function StudentEssayPage() {
                         )}
                     </div>
                     {!submitted && (
-                        <EssayTTSControls
-                            promptText={assignment.prompt}
-                            contentHtml={html}
-                            lang={i18n.language}
-                        />
+                        <EssayTTSControls promptText={assignment.prompt} contentHtml={html} lang={i18n.language} />
                     )}
                 </div>
             </div>

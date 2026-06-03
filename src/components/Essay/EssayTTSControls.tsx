@@ -76,8 +76,7 @@ export default function EssayTTSControls({ promptText, contentHtml, lang }: Essa
                             activeTarget === 'prompt' && isBusy
                                 ? 'color-mix(in srgb, var(--accent) 15%, transparent)'
                                 : 'var(--bg-elevated)',
-                        borderColor:
-                            activeTarget === 'prompt' && isBusy ? 'var(--accent)' : 'var(--border)',
+                        borderColor: activeTarget === 'prompt' && isBusy ? 'var(--accent)' : 'var(--border)',
                     }}
                     onClick={handleReadPrompt}
                     aria-label={t('tts.read_prompt')}
@@ -95,8 +94,7 @@ export default function EssayTTSControls({ promptText, contentHtml, lang }: Essa
                         activeTarget === 'essay' && isBusy
                             ? 'color-mix(in srgb, var(--accent) 15%, transparent)'
                             : 'var(--bg-elevated)',
-                    borderColor:
-                        activeTarget === 'essay' && isBusy ? 'var(--accent)' : 'var(--border)',
+                    borderColor: activeTarget === 'essay' && isBusy ? 'var(--accent)' : 'var(--border)',
                 }}
                 onClick={handlePlayPause}
                 aria-label={
@@ -116,11 +114,7 @@ export default function EssayTTSControls({ promptText, contentHtml, lang }: Essa
             </button>
 
             {isBusy && (
-                <button
-                    style={btnStyle}
-                    onClick={handleStop}
-                    aria-label={t('tts.stop')}
-                >
+                <button style={btnStyle} onClick={handleStop} aria-label={t('tts.stop')}>
                     <Square size={13} aria-hidden="true" />
                 </button>
             )}

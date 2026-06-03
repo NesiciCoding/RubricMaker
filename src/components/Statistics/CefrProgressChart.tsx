@@ -102,7 +102,9 @@ export default function CefrProgressChart({ entries }: Props) {
                     <tr>
                         <th scope="col">{t('cefr.skill')}</th>
                         {levelsPresent.map((lvl) => (
-                            <th key={lvl} scope="col">{lvl}</th>
+                            <th key={lvl} scope="col">
+                                {lvl}
+                            </th>
                         ))}
                     </tr>
                 </thead>

@@ -70,7 +70,9 @@ export function useTTS({ lang, rate = 1, pitch = 1 }: UseTTSOptions): UseTTSRetu
 
     useEffect(() => {
         const ss = isSupported() ? window.speechSynthesis : null;
-        return () => { ss?.cancel(); };
+        return () => {
+            ss?.cancel();
+        };
     }, []);
 
     const speak = useCallback(

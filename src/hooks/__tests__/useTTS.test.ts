@@ -57,17 +57,20 @@ describe('useTTS', () => {
             removeEventListener: vi.fn(),
         };
         vi.stubGlobal('speechSynthesis', mockSpeechSynthesis);
-        vi.stubGlobal('SpeechSynthesisUtterance', class {
-            lang = '';
-            voice: SpeechSynthesisVoice | null = null;
-            rate = 1;
-            pitch = 1;
-            onstart: (() => void) | null = null;
-            onend: (() => void) | null = null;
-            onerror: (() => void) | null = null;
-            onboundary: ((e: { charIndex: number }) => void) | null = null;
-            constructor(public text: string) {}
-        });
+        vi.stubGlobal(
+            'SpeechSynthesisUtterance',
+            class {
+                lang = '';
+                voice: SpeechSynthesisVoice | null = null;
+                rate = 1;
+                pitch = 1;
+                onstart: (() => void) | null = null;
+                onend: (() => void) | null = null;
+                onerror: (() => void) | null = null;
+                onboundary: ((e: { charIndex: number }) => void) | null = null;
+                constructor(public text: string) {}
+            }
+        );
     });
 
     afterEach(() => {
