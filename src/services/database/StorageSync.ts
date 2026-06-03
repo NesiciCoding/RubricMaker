@@ -299,8 +299,14 @@ class StorageSyncService {
     async hydrate(): Promise<{ data: Partial<StoreData> | null; error?: string }> {
         const gen = ++this.hydrationGeneration;
         let timer: ReturnType<typeof setTimeout> | undefined;
-        const timeout = new Promise<{ data: null; error: string }>((resolve) => {
+        const timeout = new Promise<{ data: null; error?: string }>((resolve) => {
             timer = setTimeout(() => {
+                // Only act if this is still the active generation; a newer hydrate()
+                // call could have started between when this timer was set and when it fires.
+                if (gen !== this.hydrationGeneration) {
+                    resolve({ data: null });
+                    return;
+                }
                 // Supersede the in-flight impl so its late completion is discarded,
                 // then settle the status to match the warning toast that AppContext shows.
                 this.hydrationGeneration++;
