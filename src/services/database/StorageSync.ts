@@ -293,7 +293,16 @@ class StorageSyncService {
 
     // ── Hydration (DB → app state) ────────────────────────────────────────────
 
+    private static readonly HYDRATE_TIMEOUT_MS = 8000;
+
     async hydrate(): Promise<{ data: Partial<StoreData> | null; error?: string }> {
+        const timeout = new Promise<{ data: null; error: string }>((resolve) =>
+            setTimeout(() => resolve({ data: null, error: 'timeout' }), StorageSyncService.HYDRATE_TIMEOUT_MS)
+        );
+        return Promise.race([this._hydrateImpl(), timeout]);
+    }
+
+    private async _hydrateImpl(): Promise<{ data: Partial<StoreData> | null; error?: string }> {
         if (!this.adapter.isConnected()) return { data: null };
         this.setStatus('syncing');
         try {

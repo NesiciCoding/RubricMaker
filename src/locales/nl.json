@@ -424,7 +424,8 @@
         "sync_push_failed": "Wijzigingen zijn mogelijk niet gesynchroniseerd — controleer je verbinding.",
         "sync_queued": "Offline — wijzigingen worden gesynchroniseerd wanneer je weer verbinding hebt.",
         "sync_flushed": "Weer online — alle wijzigingen gesynchroniseerd.",
-        "copy_paste_failed": "Kopiëren/plakken mislukt. Probeer het opnieuw."
+        "copy_paste_failed": "Kopiëren/plakken mislukt. Probeer het opnieuw.",
+        "sync_offline_cache": "Je bent offline — lokaal gecachte gegevens worden gebruikt."
     },
     "cefr": {
         "rubric_section_title": "CEFR / ERK Niveau",
