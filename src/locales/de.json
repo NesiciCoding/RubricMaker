@@ -797,6 +797,20 @@
         "browser_body": "{{count}} Schüler seit {{threshold}}+ Tagen nicht benotet.",
         "clear_all": "Alle löschen"
     },
+    "essay_assignment": {
+        "title_label": "Aufgabentitel",
+        "prompt_label": "Prompt / Anweisungen",
+        "optional": "optional",
+        "opt": "opt.",
+        "min_words_label": "Mindestwörter",
+        "max_words_label": "Höchstwörter",
+        "time_limit_label": "Zeitlimit (Min.)",
+        "require_seb_label": "Safe Exam Browser erforderlich",
+        "lock_after_submit_label": "Aufsatz nach Abgabe sperren",
+        "deadline_label": "Abgabefrist",
+        "deadline_help": "optional — Schüler können nach diesem Datum/Uhrzeit nicht mehr abgeben",
+        "essay_link_label": "Link zum Schüleraufsatz"
+    },
     "tts": {
         "read_prompt": "Aufgabenstellung vorlesen",
         "read_prompt_short": "Prompt vorlesen",

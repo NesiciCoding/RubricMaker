@@ -797,6 +797,20 @@
         "browser_body": "{{count}} élève(s) non noté(s) depuis {{threshold}}+ jours.",
         "clear_all": "Tout effacer"
     },
+    "essay_assignment": {
+        "title_label": "Titre de la tâche",
+        "prompt_label": "Consigne / instructions",
+        "optional": "facultatif",
+        "opt": "opt.",
+        "min_words_label": "Mots min.",
+        "max_words_label": "Mots max.",
+        "time_limit_label": "Limite de temps (min)",
+        "require_seb_label": "Exiger Safe Exam Browser",
+        "lock_after_submit_label": "Verrouiller après soumission",
+        "deadline_label": "Date limite",
+        "deadline_help": "facultatif — les élèves ne peuvent plus soumettre après cette date/heure",
+        "essay_link_label": "Lien vers la rédaction de l'élève"
+    },
     "tts": {
         "read_prompt": "Lire la consigne à voix haute",
         "read_prompt_short": "Lire la consigne",

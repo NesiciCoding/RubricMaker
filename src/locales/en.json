@@ -866,6 +866,20 @@
         "retention_desc": "Students whose most recent grade is older than the retention period will be automatically anonymized.",
         "retention_per_school": "Set retention period per school on the Schools tab."
     },
+    "essay_assignment": {
+        "title_label": "Assignment title",
+        "prompt_label": "Prompt / instructions",
+        "optional": "optional",
+        "opt": "opt.",
+        "min_words_label": "Min words",
+        "max_words_label": "Max words",
+        "time_limit_label": "Time limit (min)",
+        "require_seb_label": "Require Safe Exam Browser",
+        "lock_after_submit_label": "Lock essay after submit",
+        "deadline_label": "Deadline",
+        "deadline_help": "optional — students cannot submit after this date/time",
+        "essay_link_label": "Student essay link"
+    },
     "tts": {
         "read_prompt": "Read assignment prompt aloud",
         "read_prompt_short": "Read prompt",

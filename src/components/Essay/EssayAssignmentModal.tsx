@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { X, Copy, Download, Check, FileText, Database, AlertCircle } from 'lucide-react';
 import { saveAs } from 'file-saver';
+import { useTranslation } from 'react-i18next';
 import { encodeEssayAssignment } from '../../utils/essayShareCode';
 import { nanoid } from '../../utils/nanoid';
 import Modal from '../ui/Modal';
@@ -29,6 +30,7 @@ export default function EssayAssignmentModal({
     onSaveAssignment,
     classStudents,
 }: Props) {
+    const { t } = useTranslation();
     const dbStatus = useDbStatus();
     const config = loadSupabaseConfig();
 
@@ -189,7 +191,7 @@ export default function EssayAssignmentModal({
             >
                 {/* Title */}
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label htmlFor="ea-title">Assignment title</label>
+                    <label htmlFor="ea-title">{t('essay_assignment.title_label')}</label>
                     <input
                         id="ea-title"
                         value={title}
@@ -201,8 +203,10 @@ export default function EssayAssignmentModal({
                 {/* Prompt */}
                 <div className="form-group" style={{ marginBottom: 0 }}>
                     <label htmlFor="ea-prompt">
-                        Prompt / instructions{' '}
-                        <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span>
+                        {t('essay_assignment.prompt_label')}{' '}
+                        <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
+                            ({t('essay_assignment.optional')})
+                        </span>
                     </label>
                     <textarea
                         id="ea-prompt"
@@ -218,7 +222,10 @@ export default function EssayAssignmentModal({
                 <div style={{ display: 'flex', gap: 12 }}>
                     <div className="form-group" style={{ marginBottom: 0, flex: 1 }}>
                         <label htmlFor="ea-min-words">
-                            Min words <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opt.)</span>
+                            {t('essay_assignment.min_words_label')}{' '}
+                            <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
+                                ({t('essay_assignment.opt')})
+                            </span>
                         </label>
                         <input
                             id="ea-min-words"
@@ -231,7 +238,10 @@ export default function EssayAssignmentModal({
                     </div>
                     <div className="form-group" style={{ marginBottom: 0, flex: 1 }}>
                         <label htmlFor="ea-max-words">
-                            Max words <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opt.)</span>
+                            {t('essay_assignment.max_words_label')}{' '}
+                            <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
+                                ({t('essay_assignment.opt')})
+                            </span>
                         </label>
                         <input
                             id="ea-max-words"
@@ -244,7 +254,10 @@ export default function EssayAssignmentModal({
                     </div>
                     <div className="form-group" style={{ marginBottom: 0, flex: 1 }}>
                         <label htmlFor="ea-time-limit">
-                            Time limit (min) <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opt.)</span>
+                            {t('essay_assignment.time_limit_label')}{' '}
+                            <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
+                                ({t('essay_assignment.opt')})
+                            </span>
                         </label>
                         <input
                             id="ea-time-limit"
@@ -274,7 +287,7 @@ export default function EssayAssignmentModal({
                             onChange={(e) => setRequireSEB(e.target.checked)}
                             style={{ accentColor: 'var(--accent)' }}
                         />
-                        Require Safe Exam Browser
+                        {t('essay_assignment.require_seb_label')}
                     </label>
                     <label
                         style={{
@@ -291,16 +304,16 @@ export default function EssayAssignmentModal({
                             onChange={(e) => setReadOnlyAfterSubmit(e.target.checked)}
                             style={{ accentColor: 'var(--accent)' }}
                         />
-                        Lock essay after submit
+                        {t('essay_assignment.lock_after_submit_label')}
                     </label>
                 </div>
 
                 {/* Expiry */}
                 <div className="form-group" style={{ marginBottom: 0 }}>
                     <label htmlFor="ea-expires-at">
-                        Deadline{' '}
+                        {t('essay_assignment.deadline_label')}{' '}
                         <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
-                            (optional — students cannot submit after this date/time)
+                            ({t('essay_assignment.deadline_help')})
                         </span>
                     </label>
                     <input
@@ -391,7 +404,7 @@ export default function EssayAssignmentModal({
 
                 {/* Generated URL */}
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label htmlFor="ea-essay-link">Student essay link</label>
+                    <label htmlFor="ea-essay-link">{t('essay_assignment.essay_link_label')}</label>
                     <div style={{ display: 'flex', gap: 8 }}>
                         <input
                             id="ea-essay-link"

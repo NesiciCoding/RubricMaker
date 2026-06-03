@@ -866,6 +866,20 @@
         "retention_desc": "Los estudiantes cuya calificación más reciente sea anterior al período de retención serán anonimizados automáticamente.",
         "retention_per_school": "Establece el período de retención por escuela en la pestaña Escuelas."
     },
+    "essay_assignment": {
+        "title_label": "Título de la tarea",
+        "prompt_label": "Instrucciones / enunciado",
+        "optional": "opcional",
+        "opt": "opt.",
+        "min_words_label": "Mín. palabras",
+        "max_words_label": "Máx. palabras",
+        "time_limit_label": "Límite de tiempo (min)",
+        "require_seb_label": "Requerir Safe Exam Browser",
+        "lock_after_submit_label": "Bloquear ensayo tras enviar",
+        "deadline_label": "Fecha límite",
+        "deadline_help": "opcional — los estudiantes no pueden enviar después de esta fecha/hora",
+        "essay_link_label": "Enlace del ensayo del estudiante"
+    },
     "tts": {
         "read_prompt": "Leer instrucción en voz alta",
         "read_prompt_short": "Leer instrucción",

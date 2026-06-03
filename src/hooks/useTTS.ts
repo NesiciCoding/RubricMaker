@@ -39,13 +39,12 @@ function pickVoice(lang: string): SpeechSynthesisVoice | null {
 }
 
 export function htmlToPlainText(html: string): string {
-    const div = document.createElement('div');
-    div.innerHTML = html;
-    div.querySelectorAll('p,br,div,li,h1,h2,h3,h4,h5,h6').forEach((el) => {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    doc.body.querySelectorAll('p,br,div,li,h1,h2,h3,h4,h5,h6').forEach((el) => {
         el.prepend(document.createTextNode(' '));
         el.append(document.createTextNode(' '));
     });
-    return (div.textContent ?? '').replace(/\s+/g, ' ').trim();
+    return (doc.body.textContent ?? '').replace(/\s+/g, ' ').trim();
 }
 
 function isSupported(): boolean {

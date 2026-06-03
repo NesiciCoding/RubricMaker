@@ -868,6 +868,20 @@
         "retention_desc": "Leerlingen van wie de meest recente beoordeling ouder is dan de bewaartermijn worden automatisch geanonimiseerd.",
         "retention_per_school": "Stel de bewaartermijn per school in op het tabblad Scholen."
     },
+    "essay_assignment": {
+        "title_label": "Opdrachtttitel",
+        "prompt_label": "Prompt / instructies",
+        "optional": "optioneel",
+        "opt": "opt.",
+        "min_words_label": "Min. woorden",
+        "max_words_label": "Max. woorden",
+        "time_limit_label": "Tijdslimiet (min)",
+        "require_seb_label": "Safe Exam Browser vereisen",
+        "lock_after_submit_label": "Essay vergrendelen na inleveren",
+        "deadline_label": "Deadline",
+        "deadline_help": "optioneel — leerlingen kunnen na deze datum/tijd niet meer inleveren",
+        "essay_link_label": "Link naar het essay"
+    },
     "tts": {
         "read_prompt": "Lees de opdrachtprompt voor",
         "read_prompt_short": "Lees prompt",
