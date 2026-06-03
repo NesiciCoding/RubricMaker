@@ -298,10 +298,21 @@ class StorageSyncService {
 
     async hydrate(): Promise<{ data: Partial<StoreData> | null; error?: string }> {
         const gen = ++this.hydrationGeneration;
-        const timeout = new Promise<{ data: null; error: string }>((resolve) =>
-            setTimeout(() => resolve({ data: null, error: 'timeout' }), StorageSyncService.HYDRATE_TIMEOUT_MS)
-        );
-        return Promise.race([this._hydrateImpl(gen), timeout]);
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const timeout = new Promise<{ data: null; error: string }>((resolve) => {
+            timer = setTimeout(() => {
+                // Supersede the in-flight impl so its late completion is discarded,
+                // then settle the status to match the warning toast that AppContext shows.
+                this.hydrationGeneration++;
+                this.setStatus('error');
+                resolve({ data: null, error: 'timeout' });
+            }, StorageSyncService.HYDRATE_TIMEOUT_MS);
+        });
+        try {
+            return await Promise.race([this._hydrateImpl(gen), timeout]);
+        } finally {
+            clearTimeout(timer);
+        }
     }
 
     private async _hydrateImpl(gen: number): Promise<{ data: Partial<StoreData> | null; error?: string }> {
