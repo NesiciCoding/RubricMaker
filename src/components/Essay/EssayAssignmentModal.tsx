@@ -104,13 +104,18 @@ export default function EssayAssignmentModal({
         if (!onSaveAssignment) return;
         setSaving(true);
         setSaveError('');
-        const assignment = buildAssignment(studentId);
-        const result = await onSaveAssignment(assignment);
-        setSaving(false);
-        if (result.success) {
-            setSaved(true);
-        } else {
-            setSaveError(result.error ?? t('essay_assignment.save_error_fallback'));
+        try {
+            const assignment = buildAssignment(studentId);
+            const result = await onSaveAssignment(assignment);
+            if (result.success) {
+                setSaved(true);
+            } else {
+                setSaveError(result.error ?? t('essay_assignment.save_error_fallback'));
+            }
+        } catch {
+            setSaveError(t('essay_assignment.save_error_fallback'));
+        } finally {
+            setSaving(false);
         }
     }, [onSaveAssignment, buildAssignment, studentId, t]);
 
