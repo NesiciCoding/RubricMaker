@@ -12,6 +12,7 @@ vi.mock('docx', () => ({
     AlignmentType: { LEFT: 'left', CENTER: 'center' },
     HeadingLevel: { HEADING_1: 'h1', HEADING_2: 'h2' },
     BorderStyle: { SINGLE: 'single', NONE: 'none' },
+    ShadingType: { CLEAR: 'clear' },
 }));
 
 vi.mock('file-saver', () => ({ saveAs: vi.fn() }));
