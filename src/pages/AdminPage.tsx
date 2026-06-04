@@ -45,17 +45,19 @@ function UsersTab() {
     const { t } = useTranslation();
     const { fetchAllUsers, updateUserRole, getCurrentDatabaseUserId } = useApp();
     const { showToast } = useToast();
+    const dbStatus = useDbStatus();
     const [users, setUsers] = useState<DbUser[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState<string | null>(null);
     const [currentUserId] = useState<string | null>(() => getCurrentDatabaseUserId());
 
     useEffect(() => {
+        if (!dbStatus.isConnected) { setLoading(false); return; }
         fetchAllUsers().then((u) => {
             setUsers(u);
             setLoading(false);
         });
-    }, [fetchAllUsers]);
+    }, [fetchAllUsers, dbStatus.isConnected]);
 
     async function handleRoleChange(userId: string, newRole: 'admin' | 'user' | 'student') {
         setSaving(userId);
@@ -68,6 +70,13 @@ function UsersTab() {
         setSaving(null);
     }
 
+    if (!dbStatus.isConnected)
+        return (
+            <div style={{ padding: '24px 0', display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 480 }}>
+                <p style={{ fontWeight: 600, color: 'var(--text)' }}>{t('admin.users_offline_title')}</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('admin.users_offline_body')}</p>
+            </div>
+        );
     if (loading) return <p style={{ color: 'var(--text-muted)' }}>{t('admin.users_loading')}</p>;
     if (users.length === 0) return <p style={{ color: 'var(--text-muted)' }}>{t('admin.users_empty')}</p>;
 
@@ -136,6 +145,7 @@ function UsersTab() {
 
 function SchoolsTab() {
     const { t } = useTranslation();
+    const dbStatus = useDbStatus();
     const { fetchSchools, createSchool, updateSchool, deleteSchool, fetchSchoolMembers, removeSchoolMember } = useApp();
     const [schools, setSchools] = useState<SchoolType[]>([]);
     const [loading, setLoading] = useState(true);
@@ -147,10 +157,11 @@ function SchoolsTab() {
     const [editRetention, setEditRetention] = useState<Record<string, number>>({});
 
     const load = useCallback(async () => {
+        if (!dbStatus.isConnected) { setLoading(false); return; }
         const list = await fetchSchools();
         setSchools(list);
         setLoading(false);
-    }, [fetchSchools]);
+    }, [fetchSchools, dbStatus.isConnected]);
 
     useEffect(() => {
         load();
@@ -200,6 +211,14 @@ function SchoolsTab() {
         const m = await fetchSchoolMembers(schoolId);
         setMembers((prev) => ({ ...prev, [schoolId]: m }));
     }
+
+    if (!dbStatus.isConnected)
+        return (
+            <div style={{ padding: '24px 0', display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 480 }}>
+                <p style={{ fontWeight: 600, color: 'var(--text)' }}>{t('admin.schools_offline_title')}</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('admin.schools_offline_body')}</p>
+            </div>
+        );
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

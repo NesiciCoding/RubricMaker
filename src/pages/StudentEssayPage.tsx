@@ -209,7 +209,8 @@ export default function StudentEssayPage() {
     const [studentUserId, setStudentUserId] = useState<string | null>(null);
     const [studentEmail, setStudentEmail] = useState<string | null>(null);
 
-    const [html, setHtml] = useState<string>(() => sessionStorage.getItem(draftKey) ?? '');
+    const [html, setHtml] = useState<string>(() => localStorage.getItem(draftKey) ?? '');
+    const [draftRestored, setDraftRestored] = useState<boolean>(() => !!localStorage.getItem(draftKey));
     const [submitted, setSubmitted] = useState(false);
     const [submissionCode, setSubmissionCode] = useState('');
     const [copied, setCopied] = useState(false);
@@ -240,7 +241,7 @@ export default function StudentEssayPage() {
     useEffect(() => {
         if (submitted) return;
         const interval = setInterval(() => {
-            sessionStorage.setItem(draftKey, html);
+            localStorage.setItem(draftKey, html);
             setDraftSavedAt(new Date());
         }, 30_000);
         return () => clearInterval(interval);
@@ -248,7 +249,7 @@ export default function StudentEssayPage() {
 
     const handleSubmit = useCallback(async () => {
         if (!assignment) return;
-        sessionStorage.setItem(draftKey, html);
+        localStorage.setItem(draftKey, html);
         if (timerRef.current) clearInterval(timerRef.current);
 
         const submissionId = nanoid();
@@ -287,6 +288,7 @@ export default function StudentEssayPage() {
         }
 
         setSubmissionCode(legacyCode);
+        localStorage.removeItem(draftKey);
         setSubmitted(true);
         if (isInSEB) {
             copyText(legacyCode);
@@ -422,6 +424,31 @@ export default function StudentEssayPage() {
                 color: '#1e293b',
             }}
         >
+            {/* Draft restored banner */}
+            {draftRestored && !submitted && (
+                <div
+                    style={{
+                        background: '#eff6ff',
+                        borderBottom: '1px solid #93c5fd',
+                        padding: '10px 20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        fontSize: '0.875rem',
+                        color: '#1e40af',
+                    }}
+                >
+                    <Save size={14} style={{ flexShrink: 0 }} />
+                    Draft restored from your last session.{' '}
+                    <button
+                        onClick={() => setDraftRestored(false)}
+                        style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#1e40af', fontSize: '0.8rem', textDecoration: 'underline' }}
+                    >
+                        Dismiss
+                    </button>
+                </div>
+            )}
+
             {/* SEB blocking banner */}
             {sebBlocked && (
                 <div

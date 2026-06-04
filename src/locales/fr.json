@@ -321,7 +321,10 @@
         "shortcut_save": "Enregistrer & passer à l'élève suivant",
         "shortcut_help": "Afficher cette aide",
         "shortcut_esc": "Désélectionner le critère",
-        "action_print": "Imprimer"
+        "action_print": "Imprimer",
+        "action_essay": "Dissertation",
+        "action_import_essay": "Importer la dissertation",
+        "anchor_help_text": "Les copies de référence sont des travaux utilisés pour calibrer votre évaluation. Marquer une copie comme référence vous permet de la comparer côte à côte avec de nouvelles copies dans le pied de page de notation."
     },
     "rubricBuilder": {
         "action_back": "Retour",
@@ -421,7 +424,17 @@
         "version_n": "Version {{n}}",
         "criteria_count": "critères",
         "auto_save_badge": "auto",
-        "action_print": "Imprimer la rubrique"
+        "action_print": "Imprimer la rubrique",
+        "section_rubric_details": "Détails de la grille",
+        "action_expand_all": "Tout développer",
+        "action_collapse_all": "Tout réduire",
+        "action_copy_criterion": "Copier le critère dans le presse-papiers",
+        "action_duplicate_criterion": "Dupliquer le critère",
+        "action_paste_criterion": "Coller le critère",
+        "single_point_descriptor_label": "Descripteur de compétence — ce que “répond aux attentes” signifie",
+        "single_point_descriptor_placeholder": "Décrivez ce que fait l’élève lorsqu’il/elle répond à ce critère…",
+        "single_point_meets_points": "Points (atteint)",
+        "level_quality_tip": "💡 Conseil : décrivez ce que l’élève fait, pas seulement la qualité (ex. : « utilise 3+ exemples pour étayer chaque argument »)"
     },
     "peerReview": {
         "round_label": "Tour",
@@ -526,14 +539,24 @@
         "select_level": "Sélectionner un niveau…",
         "label_score": "Score de {{name}} :",
         "label_points": "Points",
-        "progress_matchups": "{{count}} comparaison(s) effectuée(s)",
+        "progress_matchups": "{{done}} / {{total}} faites · {{left}} restantes",
         "progress_coverage": "{{covered}} / {{total}} élèves vus",
         "not_enough_students": "Pas assez d'élèves dans cette classe. Ajoutez au moins deux élèves.",
         "loading": "Préparation de la comparaison…",
         "anchor_changed": "Élève ancre remplacé — nouvel appariement.",
         "toggle_comments": "Afficher/masquer les notes de critère",
         "comment_placeholder": "Note pour ce critère…",
-        "unsaved_warning": "Vous avez des scores de comparaison non enregistrés. Quitter quand même ?"
+        "unsaved_warning": "Vous avez des scores de comparaison non enregistrés. Quitter quand même ?",
+        "title_compare": "Comparer : {{name}}",
+        "all_classes": "Toutes les classes liées",
+        "all_classes_scope": "Toutes les classes liées ({{names}})",
+        "session_complete_title": "Session terminée",
+        "session_complete_body": "Tous les élèves ont atteint la limite de {{count}} comparaison(s) par élève. Tous les scores ont été enregistrés.",
+        "action_continue": "Continuer la comparaison",
+        "matchups_done": "{{done}} / {{max}} comparaisons effectuées",
+        "per_student_limit": "Limite par élève :",
+        "per_student_limit_hint": "Comparaisons max par élève (0 = illimité)",
+        "student_progress": "Progression des élèves"
     },
     "studentPortal": {
         "not_found": "Élève introuvable.",
@@ -923,6 +946,10 @@
         "anonymized_badge": "Anonymisé",
         "retention_title": "Paramètres de conservation",
         "retention_desc": "Les élèves dont la dernière note est plus ancienne que la période de conservation seront automatiquement anonymisés.",
-        "retention_per_school": "Définissez la période de conservation par établissement dans l'onglet Établissements."
+        "retention_per_school": "Définissez la période de conservation par établissement dans l'onglet Établissements.",
+        "users_offline_title": "La gestion des utilisateurs nécessite une connexion à la base de données",
+        "users_offline_body": "Connectez une base de données Supabase pour gérer les rôles des utilisateurs et consulter tous les comptes enregistrés.",
+        "schools_offline_title": "La gestion des écoles nécessite une connexion à la base de données",
+        "schools_offline_body": "Connectez une base de données Supabase pour créer et gérer des écoles, définir des politiques de conservation des données et afficher les membres."
     }
 }

@@ -321,7 +321,10 @@
         "shortcut_save": "Opslaan & ga naar volgende leerling",
         "shortcut_help": "Toon dit overzicht",
         "shortcut_esc": "Criterium-focus wissen",
-        "action_print": "Afdrukken"
+        "action_print": "Afdrukken",
+        "action_essay": "Opstel",
+        "action_import_essay": "Opstel importeren",
+        "anchor_help_text": "Ankerwerkstukken zijn referentie-inzendingen die worden gebruikt om je beoordeling te kalibreren. Door een inzending als anker te markeren, kun je deze naast nieuwe inzendingen vergelijken in de beoordelingsvoettekst."
     },
     "rubricBuilder": {
         "action_back": "Terug",
@@ -421,7 +424,17 @@
         "version_n": "Versie {{n}}",
         "criteria_count": "criteria",
         "auto_save_badge": "auto",
-        "action_print": "Rubriek afdrukken"
+        "action_print": "Rubriek afdrukken",
+        "section_rubric_details": "Rubrieksdetails",
+        "action_expand_all": "Alles uitklappen",
+        "action_collapse_all": "Alles inklappen",
+        "action_copy_criterion": "Criterium kopiëren naar klembord",
+        "action_duplicate_criterion": "Criterium dupliceren",
+        "action_paste_criterion": "Criterium plakken",
+        "single_point_descriptor_label": "Vaardigheidsbeschrijving — wat “voldoet aan de norm” betekent",
+        "single_point_descriptor_placeholder": "Beschrijf wat een leerling doet als hij/zij aan de norm voldoet…",
+        "single_point_meets_points": "Punten (voldoet)",
+        "level_quality_tip": "💡 Tip: beschrijf wat de leerling dóét, niet alleen hoe goed het is (bijv. “gebruikt 3+ voorbeelden om elk argument te onderbouwen”)"
     },
     "peerReview": {
         "round_label": "Ronde",
@@ -526,14 +539,24 @@
         "select_level": "Selecteer niveau…",
         "label_score": "Score van {{name}}:",
         "label_points": "Punten",
-        "progress_matchups": "{{count}} vergelijking(en) gedaan",
+        "progress_matchups": "{{done}} / {{total}} gedaan · {{left}} over",
         "progress_coverage": "{{covered}} / {{total}} leerlingen gezien",
         "not_enough_students": "Niet genoeg leerlingen in deze klas voor een vergelijking. Voeg minimaal twee leerlingen toe.",
         "loading": "Vergelijking voorbereiden…",
         "anchor_changed": "Ankerleerling gewisseld — nieuwe koppelingen starten.",
         "toggle_comments": "Notities bij criterium aan/uit",
         "comment_placeholder": "Notitie bij dit criterium…",
-        "unsaved_warning": "Je hebt niet-opgeslagen vergelijkingsscores. Toch verlaten?"
+        "unsaved_warning": "Je hebt niet-opgeslagen vergelijkingsscores. Toch verlaten?",
+        "title_compare": "Vergelijken: {{name}}",
+        "all_classes": "Alle gekoppelde klassen",
+        "all_classes_scope": "Alle gekoppelde klassen ({{names}})",
+        "session_complete_title": "Sessie voltooid",
+        "session_complete_body": "Alle leerlingen hebben de per-leerling limiet van {{count}} vergelijking(en) bereikt. Alle scores zijn opgeslagen.",
+        "action_continue": "Doorgaan met vergelijken",
+        "matchups_done": "{{done}} / {{max}} vergelijkingen gedaan",
+        "per_student_limit": "Limiet per leerling:",
+        "per_student_limit_hint": "Maximale vergelijkingen per leerling (0 = onbeperkt)",
+        "student_progress": "Voortgang leerlingen"
     },
     "studentPortal": {
         "not_found": "Leerling niet gevonden.",
@@ -884,7 +907,11 @@
         "anonymized_badge": "Geanonimiseerd",
         "retention_title": "Retentie-instellingen",
         "retention_desc": "Leerlingen van wie de meest recente beoordeling ouder is dan de bewaartermijn worden automatisch geanonimiseerd.",
-        "retention_per_school": "Stel de bewaartermijn per school in op het tabblad Scholen."
+        "retention_per_school": "Stel de bewaartermijn per school in op het tabblad Scholen.",
+        "users_offline_title": "Gebruikersbeheer vereist een databaseverbinding",
+        "users_offline_body": "Verbind een Supabase-database om gebruikersrollen te beheren en alle geregistreerde accounts te bekijken. Zie de implementatiedocumentatie om cloudsynchronisatie te configureren.",
+        "schools_offline_title": "Schoolbeheer vereist een databaseverbinding",
+        "schools_offline_body": "Verbind een Supabase-database om scholen aan te maken en te beheren, gegevensbewaringsbeleid in te stellen en schoolleden te bekijken."
     },
     "essay_assignment": {
         "modal_title": "Essay-opdracht — {{name}}",

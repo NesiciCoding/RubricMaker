@@ -321,7 +321,10 @@
         "shortcut_save": "Save & advance to next student",
         "shortcut_help": "Show this overlay",
         "shortcut_esc": "Clear criterion focus",
-        "action_print": "Print"
+        "action_print": "Print",
+        "action_essay": "Essay",
+        "action_import_essay": "Import essay",
+        "anchor_help_text": "Anchor papers are reference submissions used to calibrate your grading. Marking a submission as an anchor lets you compare it side-by-side with new submissions in the grade footer."
     },
     "rubricBuilder": {
         "action_back": "Back",
@@ -421,7 +424,17 @@
         "version_n": "Version {{n}}",
         "criteria_count": "criteria",
         "auto_save_badge": "auto",
-        "action_print": "Print Rubric"
+        "action_print": "Print Rubric",
+        "section_rubric_details": "Rubric Details",
+        "action_expand_all": "Expand all",
+        "action_collapse_all": "Collapse all",
+        "action_copy_criterion": "Copy criterion to clipboard",
+        "action_duplicate_criterion": "Duplicate criterion",
+        "action_paste_criterion": "Paste criterion",
+        "single_point_descriptor_label": "Proficiency descriptor — what “meets standard” looks like",
+        "single_point_descriptor_placeholder": "Describe what a student does when they meet this standard…",
+        "single_point_meets_points": "Points (meets)",
+        "level_quality_tip": "💡 Tip: describe what the student does, not just how good it is (e.g. \"uses 3+ examples to support each claim\")"
     },
     "peerReview": {
         "round_label": "Round",
@@ -526,14 +539,24 @@
         "select_level": "Select level…",
         "label_score": "{{name}}'s Score:",
         "label_points": "Points",
-        "progress_matchups": "{{count}} matchup(s) done",
+        "progress_matchups": "{{done}} / {{total}} done · {{left}} left",
         "progress_coverage": "{{covered}} / {{total}} students seen",
         "not_enough_students": "Not enough students in this class for a comparison. Add at least two students.",
         "loading": "Setting up matchup…",
         "anchor_changed": "Anchor student rotated — starting fresh pairing.",
         "toggle_comments": "Toggle criterion notes",
         "comment_placeholder": "Note for this criterion…",
-        "unsaved_warning": "You have unsaved comparison scores. Leave anyway?"
+        "unsaved_warning": "You have unsaved comparison scores. Leave anyway?",
+        "title_compare": "Compare: {{name}}",
+        "all_classes": "All linked classes",
+        "all_classes_scope": "All linked classes ({{names}})",
+        "session_complete_title": "Session Complete",
+        "session_complete_body": "All students have reached the per-student limit of {{count}} comparison(s). All scores have been saved.",
+        "action_continue": "Continue Comparing",
+        "matchups_done": "{{done}} / {{max}} matchups done",
+        "per_student_limit": "Per-student limit:",
+        "per_student_limit_hint": "Max comparisons per student (0 = unlimited)",
+        "student_progress": "Student Progress"
     },
     "studentPortal": {
         "not_found": "Student not found.",
@@ -884,7 +907,11 @@
         "anonymized_badge": "Anonymized",
         "retention_title": "Retention Settings",
         "retention_desc": "Students whose most recent grade is older than the retention period will be automatically anonymized.",
-        "retention_per_school": "Set retention period per school on the Schools tab."
+        "retention_per_school": "Set retention period per school on the Schools tab.",
+        "users_offline_title": "User management requires a database connection",
+        "users_offline_body": "Connect a Supabase database to manage user roles and view all registered accounts. See the Deployment documentation to configure cloud sync.",
+        "schools_offline_title": "School management requires a database connection",
+        "schools_offline_body": "Connect a Supabase database to create and manage schools, set data retention policies, and view school members."
     },
     "essay_assignment": {
         "modal_title": "Essay Assignment — {{name}}",

@@ -27,6 +27,7 @@ import {
     MoveLeft,
     MoveRight,
     Copy,
+    Files,
     GripHorizontal,
     Clock,
     RotateCcw,
@@ -724,7 +725,7 @@ export default function RubricBuilder() {
                     <div style={{ display: viewMode === 'form' ? 'block' : 'none' }}>
                         {/* Rubric Meta */}
                         <div className="card" style={{ marginBottom: 20 }}>
-                            <h3 style={{ marginBottom: 16 }}>Rubric Details</h3>
+                            <h3 style={{ marginBottom: 16 }}>{t('rubricBuilder.section_rubric_details')}</h3>
                             <div className="grid-2" style={{ gap: 12 }}>
                                 <div className="form-group">
                                     <label>Rubric Name *</label>
@@ -1032,14 +1033,14 @@ export default function RubricBuilder() {
                                             className="btn btn-ghost btn-sm"
                                             onClick={() => setCollapsedCriteria(new Set())}
                                         >
-                                            Expand all
+                                            {t('rubricBuilder.action_expand_all')}
                                         </button>
                                     ) : (
                                         <button
                                             className="btn btn-ghost btn-sm"
                                             onClick={() => setCollapsedCriteria(new Set(criteria.map((c) => c.id)))}
                                         >
-                                            Collapse all
+                                            {t('rubricBuilder.action_collapse_all')}
                                         </button>
                                     ))}
                                 {(cefrSkill === 'speaking_production' || cefrSkill === 'speaking_interaction') && (
@@ -1060,9 +1061,9 @@ export default function RubricBuilder() {
                                 <button
                                     className="btn btn-secondary btn-sm"
                                     onClick={pasteFromClipboard}
-                                    title="Paste criterion from clipboard"
+                                    title={t('rubricBuilder.action_paste_criterion')}
                                 >
-                                    <Plus size={15} /> Paste
+                                    <Plus size={15} /> {t('rubricBuilder.action_paste_criterion')}
                                 </button>
                                 <button
                                     className="btn btn-primary btn-sm"
@@ -1525,7 +1526,8 @@ export default function RubricBuilder() {
                                                                     className="btn btn-ghost btn-icon btn-sm"
                                                                     style={{ color: 'var(--accent)' }}
                                                                     onClick={() => copyToClipboard(criterion)}
-                                                                    title="Copy to clipboard"
+                                                                    title={t('rubricBuilder.action_copy_criterion')}
+                                                                    aria-label={t('rubricBuilder.action_copy_criterion')}
                                                                 >
                                                                     <Copy size={15} />
                                                                 </button>
@@ -1533,9 +1535,10 @@ export default function RubricBuilder() {
                                                                     className="btn btn-ghost btn-icon btn-sm"
                                                                     style={{ color: 'var(--text-muted)' }}
                                                                     onClick={() => duplicateCriterion(cIdx)}
-                                                                    title="Duplicate Criterion"
+                                                                    title={t('rubricBuilder.action_duplicate_criterion')}
+                                                                    aria-label={t('rubricBuilder.action_duplicate_criterion')}
                                                                 >
-                                                                    <Copy size={15} />
+                                                                    <Files size={15} />
                                                                 </button>
                                                                 <button
                                                                     className="btn btn-ghost btn-icon btn-sm"
@@ -1590,8 +1593,7 @@ export default function RubricBuilder() {
                                                                                 fontWeight: 600,
                                                                             }}
                                                                         >
-                                                                            Proficiency descriptor — what "meets
-                                                                            standard" looks like
+                                                                            {t('rubricBuilder.single_point_descriptor_label')}
                                                                         </div>
                                                                         <textarea
                                                                             value={
@@ -1607,7 +1609,7 @@ export default function RubricBuilder() {
                                                                                     { description: e.target.value }
                                                                                 );
                                                                             }}
-                                                                            placeholder="Describe what a student does when they meet this standard…"
+                                                                            placeholder={t('rubricBuilder.single_point_descriptor_placeholder')}
                                                                             rows={4}
                                                                             style={{
                                                                                 width: '100%',
@@ -1624,7 +1626,7 @@ export default function RubricBuilder() {
                                                                                 fontWeight: 600,
                                                                             }}
                                                                         >
-                                                                            Points (meets)
+                                                                            {t('rubricBuilder.single_point_meets_points')}
                                                                         </div>
                                                                         <input
                                                                             type="number"
@@ -1855,12 +1857,7 @@ export default function RubricBuilder() {
                                                                                                     marginBottom: 6,
                                                                                                 }}
                                                                                             >
-                                                                                                💡 Tip: describe what
-                                                                                                the student{' '}
-                                                                                                <em>does</em>, not just
-                                                                                                how good it is (e.g.
-                                                                                                "uses 3+ examples to
-                                                                                                support each claim")
+                                                                                                {t('rubricBuilder.level_quality_tip')}
                                                                                             </div>
                                                                                         )}
 

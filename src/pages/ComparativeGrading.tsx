@@ -15,6 +15,7 @@ const COMBINED_ID = '__combined__';
 // Step 1: pick a class (or "all linked classes"). Step 2: pick a starting student (or random).
 function ClassPicker({ rubricId }: { rubricId: string }) {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const { classes, rubrics, students } = useApp();
     const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
 
@@ -42,16 +43,16 @@ function ClassPicker({ rubricId }: { rubricId: string }) {
         const isCombined = selectedClassId === COMBINED_ID;
         const cls = isCombined ? null : classes.find((c) => c.id === selectedClassId);
         const scopeLabel = isCombined
-            ? `All linked classes (${offerClasses.map((c) => c.name).join(', ')})`
+            ? t('comparativeGrading.all_classes_scope', { names: offerClasses.map((c) => c.name).join(', ') })
             : `${cls?.name}${cls?.year ? ` — ${cls.year}` : ''}`;
 
         return (
             <>
                 <Topbar
-                    title={rubric ? `Compare: ${rubric.name}` : 'Comparative Grading'}
+                    title={rubric ? t('comparativeGrading.title_compare', { name: rubric.name }) : t('comparativeGrading.page_title')}
                     actions={
                         <button className="btn btn-ghost btn-sm" onClick={() => setSelectedClassId(null)}>
-                            <ArrowLeft size={15} /> Back
+                            <ArrowLeft size={15} /> {t('common.back')}
                         </button>
                     }
                 />
@@ -63,22 +64,22 @@ function ClassPicker({ rubricId }: { rubricId: string }) {
                         className="card"
                         style={{ maxWidth: 420, width: '100%', textAlign: 'center', padding: '32px 28px' }}
                     >
-                        <h2 style={{ marginBottom: 4 }}>Choose Starting Student</h2>
+                        <h2 style={{ marginBottom: 4 }}>{t('comparativeGrading.select_student_title')}</h2>
                         <p className="text-muted text-sm" style={{ marginBottom: 8 }}>
                             {scopeLabel}
                         </p>
                         <p className="text-muted text-sm" style={{ marginBottom: 24 }}>
-                            Pick who to start with, or let the system choose randomly.
+                            {t('comparativeGrading.select_student_description')}
                         </p>
                         <button
                             className="btn btn-primary"
                             style={{ marginBottom: 16, width: '100%' }}
                             onClick={() => goToSession(selectedClassId)}
                         >
-                            <Shuffle size={15} /> Random Start
+                            <Shuffle size={15} /> {t('comparativeGrading.action_start_random')}
                         </button>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                            {pickerStudents.length === 0 && <p className="text-muted text-sm">No students found.</p>}
+                            {pickerStudents.length === 0 && <p className="text-muted text-sm">{t('comparativeGrading.no_students')}</p>}
                             {[...pickerStudents]
                                 .sort((a, b) => a.name.localeCompare(b.name))
                                 .map((s) => {
@@ -111,10 +112,10 @@ function ClassPicker({ rubricId }: { rubricId: string }) {
     return (
         <>
             <Topbar
-                title={rubric ? `Compare: ${rubric.name}` : 'Comparative Grading'}
+                title={rubric ? t('comparativeGrading.title_compare', { name: rubric.name }) : t('comparativeGrading.page_title')}
                 actions={
                     <button className="btn btn-ghost btn-sm" onClick={() => navigate(-1)}>
-                        <ArrowLeft size={15} /> Back
+                        <ArrowLeft size={15} /> {t('common.back')}
                     </button>
                 }
             />
@@ -126,17 +127,17 @@ function ClassPicker({ rubricId }: { rubricId: string }) {
                     className="card"
                     style={{ maxWidth: 420, width: '100%', textAlign: 'center', padding: '32px 28px' }}
                 >
-                    <h2 style={{ marginBottom: 8 }}>Select a Class</h2>
+                    <h2 style={{ marginBottom: 8 }}>{t('comparativeGrading.select_class_title')}</h2>
                     <p className="text-muted text-sm" style={{ marginBottom: 24 }}>
-                        Choose which class to grade, or compare across all linked classes at once.
+                        {t('comparativeGrading.select_class_description')}
                     </p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                         {offerClasses.length === 0 && (
-                            <p className="text-muted text-sm">No classes found. Add a class first.</p>
+                            <p className="text-muted text-sm">{t('comparativeGrading.no_classes')}</p>
                         )}
                         {offerClasses.length > 1 && (
                             <button className="btn btn-primary" onClick={() => setSelectedClassId(COMBINED_ID)}>
-                                All linked classes
+                                {t('comparativeGrading.all_classes')}
                             </button>
                         )}
                         {offerClasses.map((c) => (
@@ -488,10 +489,10 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
         return (
             <>
                 <Topbar
-                    title={`Comparative: ${rubric?.name}`}
+                    title={t('comparativeGrading.title_compare', { name: rubric?.name ?? '' })}
                     actions={
                         <button className="btn btn-ghost btn-sm" onClick={() => navigate(-1)}>
-                            <ArrowLeft size={15} /> Back
+                            <ArrowLeft size={15} /> {t('common.back')}
                         </button>
                     }
                 />
@@ -504,10 +505,9 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                         style={{ maxWidth: 420, width: '100%', textAlign: 'center', padding: '32px 28px' }}
                     >
                         <Check size={40} style={{ color: 'var(--accent)', marginBottom: 16 }} />
-                        <h2 style={{ marginBottom: 8 }}>Session Complete</h2>
+                        <h2 style={{ marginBottom: 8 }}>{t('comparativeGrading.session_complete_title')}</h2>
                         <p className="text-muted text-sm" style={{ marginBottom: 24 }}>
-                            All students have reached the per-student limit of {matchupLimit} comparison
-                            {matchupLimit !== 1 ? 's' : ''}. All scores have been saved.
+                            {t('comparativeGrading.session_complete_body', { count: matchupLimit })}
                         </p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                             <button
@@ -517,10 +517,10 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                     pickNextMatchup(studentA.id, srA);
                                 }}
                             >
-                                Continue Comparing
+                                {t('comparativeGrading.action_continue')}
                             </button>
                             <button className="btn btn-secondary" onClick={() => navigate(-1)}>
-                                <ArrowLeft size={15} /> Back to Rubric
+                                <ArrowLeft size={15} /> {t('comparativeGrading.action_back')}
                             </button>
                         </div>
                     </div>
@@ -538,7 +538,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
     return (
         <>
             <Topbar
-                title={`Comparative: ${rubric.name}`}
+                title={t('comparativeGrading.title_compare', { name: rubric.name })}
                 actions={
                     <>
                         <button className="btn btn-ghost btn-sm no-print" onClick={() => window.print()}>
@@ -570,7 +570,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                 {sumA?.rawScore} pts ({sumA?.modifiedPercentage.toFixed(1)}%)
                             </div>
                             <div className="text-xs text-muted" style={{ marginTop: 2 }}>
-                                {perStudentDone[studentA.id] ?? 0} / {maxPerStudent} matchups done
+                                {t('comparativeGrading.matchups_done', { done: perStudentDone[studentA.id] ?? 0, max: maxPerStudent })}
                             </div>
                         </div>
 
@@ -609,12 +609,12 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                     />
                                 </div>
                                 <div className="text-xs text-muted" style={{ marginTop: 4 }}>
-                                    {matchupsDone} / {sessionMax} done · <strong>{matchupsLeft}</strong> left
+                                    {t('comparativeGrading.progress_matchups', { done: matchupsDone, total: sessionMax, left: matchupsLeft })}
                                 </div>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
                                 <label className="text-xs text-muted" style={{ whiteSpace: 'nowrap' }}>
-                                    Per-student limit:
+                                    {t('comparativeGrading.per_student_limit')}
                                 </label>
                                 <input
                                     type="number"
@@ -623,7 +623,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                     placeholder="∞"
                                     onChange={(e) => setMatchupLimit(Math.max(0, parseInt(e.target.value) || 0))}
                                     style={{ width: 48, fontSize: '0.8rem', textAlign: 'center', padding: '2px 4px' }}
-                                    title="Max comparisons per student (0 = unlimited)"
+                                    title={t('comparativeGrading.per_student_limit_hint')}
                                 />
                             </div>
                         </div>
@@ -635,7 +635,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                 {sumB?.rawScore} pts ({sumB?.modifiedPercentage.toFixed(1)}%)
                             </div>
                             <div className="text-xs text-muted" style={{ marginTop: 2 }}>
-                                {perStudentDone[studentB.id] ?? 0} / {maxPerStudent} matchups done
+                                {t('comparativeGrading.matchups_done', { done: perStudentDone[studentB.id] ?? 0, max: maxPerStudent })}
                             </div>
                         </div>
                     </div>
@@ -663,7 +663,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                     >
                         {/* Per-student progress */}
                         <div className="card" style={{ background: 'var(--bg-elevated)', padding: '14px 16px' }}>
-                            <h3 style={{ marginBottom: 10, fontSize: '0.9rem' }}>Student Progress</h3>
+                            <h3 style={{ marginBottom: 10, fontSize: '0.9rem' }}>{t('comparativeGrading.student_progress')}</h3>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                                 {[...classStudents]
                                     .sort((a, b) => (perStudentDone[a.id] ?? 0) - (perStudentDone[b.id] ?? 0))

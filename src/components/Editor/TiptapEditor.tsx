@@ -1,7 +1,11 @@
-import React from 'react';
+import React, { useImperativeHandle, forwardRef } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import { Bold, Italic, List, ListOrdered, Type } from 'lucide-react';
+import { Bold, Italic, List, ListOrdered } from 'lucide-react';
+
+export interface TiptapEditorHandle {
+    insertContent: (text: string) => void;
+}
 
 interface TiptapEditorProps {
     content: string;
@@ -9,7 +13,10 @@ interface TiptapEditorProps {
     placeholder?: string;
 }
 
-export default function TiptapEditor({ content, onChange, placeholder }: TiptapEditorProps) {
+const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function TiptapEditor(
+    { content, onChange, placeholder },
+    ref
+) {
     const editor = useEditor({
         extensions: [StarterKit],
         content: content,
@@ -22,6 +29,17 @@ export default function TiptapEditor({ content, onChange, placeholder }: TiptapE
             },
         },
     });
+
+    useImperativeHandle(
+        ref,
+        () => ({
+            insertContent: (text: string) => {
+                if (!editor) return;
+                editor.chain().focus().insertContent(text).run();
+            },
+        }),
+        [editor]
+    );
 
     if (!editor) {
         return null;
@@ -67,4 +85,6 @@ export default function TiptapEditor({ content, onChange, placeholder }: TiptapE
             <EditorContent editor={editor} placeholder={placeholder} />
         </div>
     );
-}
+});
+
+export default TiptapEditor;
