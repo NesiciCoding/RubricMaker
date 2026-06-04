@@ -7,7 +7,7 @@
  *  #29 – Admin offline guard renders without crash
  *  #30 – Anchor paper tooltip
  */
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 // ── #26: locale files all contain the new keys ──────────────────────────────
 import en from '../../locales/en.json';

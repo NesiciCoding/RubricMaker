@@ -43,17 +43,8 @@ import type { EssayAssignment } from '../types';
 export default function RubricList() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const {
-        rubrics,
-        students,
-        classes,
-        studentRubrics,
-        addRubric,
-        deleteRubric,
-        settings,
-        gradeScales,
-        saveEssayAssignment,
-    } = useApp();
+    const { rubrics, students, classes, studentRubrics, addRubric, deleteRubric, settings, saveEssayAssignment } =
+        useApp();
     const [search, setSearch] = useState('');
     const [subjectFilter, setSubjectFilter] = useState<string>('all');
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();

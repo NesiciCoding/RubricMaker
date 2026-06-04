@@ -2132,6 +2132,7 @@ export default function RubricBuilder() {
                                                                                                                                 .subItems
                                                                                                                                 .length
                                                                                                                         }
+
                                                                                                                         )
                                                                                                                     </span>
                                                                                                                     <ChevronRight
