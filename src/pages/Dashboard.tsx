@@ -36,7 +36,9 @@ export default function Dashboard() {
     useEffect(() => {
         try {
             setUserTemplates(JSON.parse(localStorage.getItem(USER_TEMPLATES_KEY) ?? '[]'));
-        } catch { /* ignore */ }
+        } catch {
+            /* ignore */
+        }
     }, []);
 
     const scale = useMemo(
@@ -389,7 +391,16 @@ export default function Dashboard() {
                             <h3 style={{ marginBottom: 16 }}>{t('dashboard.quick_start_templates')}</h3>
                             {userTemplates.length > 0 && (
                                 <>
-                                    <div style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 8, letterSpacing: '0.04em' }}>
+                                    <div
+                                        style={{
+                                            fontSize: '0.75rem',
+                                            fontWeight: 600,
+                                            textTransform: 'uppercase',
+                                            color: 'var(--text-muted)',
+                                            marginBottom: 8,
+                                            letterSpacing: '0.04em',
+                                        }}
+                                    >
                                         {t('dashboard.my_templates', 'My Templates')}
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
@@ -408,15 +419,25 @@ export default function Dashboard() {
                                                     gap: 10,
                                                 }}
                                                 onClick={() => {
-                                                    const stored = JSON.parse(localStorage.getItem(USER_TEMPLATES_KEY) ?? '[]');
+                                                    const stored = JSON.parse(
+                                                        localStorage.getItem(USER_TEMPLATES_KEY) ?? '[]'
+                                                    );
                                                     const found = stored.find((t: { id: string }) => t.id === tpl.id);
                                                     if (found) navigate('/rubrics/new', { state: { template: found } });
                                                 }}
                                                 className="hoverable"
                                             >
                                                 <div>
-                                                    <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{tpl.name}</div>
-                                                    {tpl.subject && <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{tpl.subject}</div>}
+                                                    <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>
+                                                        {tpl.name}
+                                                    </div>
+                                                    {tpl.subject && (
+                                                        <div
+                                                            style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}
+                                                        >
+                                                            {tpl.subject}
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <button
                                                     className="btn btn-ghost btn-icon btn-sm"
@@ -424,8 +445,15 @@ export default function Dashboard() {
                                                     title={t('common.delete')}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        const existing = JSON.parse(localStorage.getItem(USER_TEMPLATES_KEY) ?? '[]');
-                                                        localStorage.setItem(USER_TEMPLATES_KEY, JSON.stringify(existing.filter((t: { id: string }) => t.id !== tpl.id)));
+                                                        const existing = JSON.parse(
+                                                            localStorage.getItem(USER_TEMPLATES_KEY) ?? '[]'
+                                                        );
+                                                        localStorage.setItem(
+                                                            USER_TEMPLATES_KEY,
+                                                            JSON.stringify(
+                                                                existing.filter((t: { id: string }) => t.id !== tpl.id)
+                                                            )
+                                                        );
                                                         setUserTemplates((prev) => prev.filter((t) => t.id !== tpl.id));
                                                     }}
                                                 >
@@ -434,7 +462,16 @@ export default function Dashboard() {
                                             </div>
                                         ))}
                                     </div>
-                                    <div style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 8, letterSpacing: '0.04em' }}>
+                                    <div
+                                        style={{
+                                            fontSize: '0.75rem',
+                                            fontWeight: 600,
+                                            textTransform: 'uppercase',
+                                            color: 'var(--text-muted)',
+                                            marginBottom: 8,
+                                            letterSpacing: '0.04em',
+                                        }}
+                                    >
                                         {t('dashboard.built_in_templates', 'Built-in Templates')}
                                     </div>
                                 </>
@@ -453,7 +490,12 @@ export default function Dashboard() {
                                         }}
                                         onClick={() => {
                                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                            const newRubric = { ...tpl, id: undefined, createdAt: undefined, updatedAt: undefined } as any;
+                                            const newRubric = {
+                                                ...tpl,
+                                                id: undefined,
+                                                createdAt: undefined,
+                                                updatedAt: undefined,
+                                            } as any;
                                             navigate('/rubrics/new', { state: { template: newRubric } });
                                         }}
                                         className="hoverable"

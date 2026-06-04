@@ -92,14 +92,15 @@ describe('#32 – essay HTML decoding from base64 attachment', () => {
     });
 
     it('handles invalid base64 without throwing (try-catch)', () => {
-        // Simulate the EssayPanel try-catch
-        let result = '';
-        try {
-            result = decodeURIComponent(escape(atob('not_valid_base64!!!')));
-        } catch {
-            result = '';
-        }
-        expect(result).toBe('');
+        // Simulate the EssayPanel try-catch — invalid base64 should not propagate
+        const tryDecode = () => {
+            try {
+                return decodeURIComponent(escape(atob('not_valid_base64!!!')));
+            } catch {
+                return '';
+            }
+        };
+        expect(tryDecode()).toBe('');
     });
 });
 

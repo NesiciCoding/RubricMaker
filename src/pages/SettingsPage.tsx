@@ -650,7 +650,9 @@ export default function SettingsPage() {
                         {/* Grade notification (Supabase mode only) */}
                         {dbStatus.isConnected && (
                             <div className="card" style={{ marginBottom: 24 }}>
-                                <h3 style={{ marginBottom: 12 }}>{t('settings.notify_students_title', 'Student Notifications')}</h3>
+                                <h3 style={{ marginBottom: 12 }}>
+                                    {t('settings.notify_students_title', 'Student Notifications')}
+                                </h3>
                                 <label
                                     style={{
                                         display: 'flex',
@@ -667,9 +669,14 @@ export default function SettingsPage() {
                                         style={{ accentColor: 'var(--accent)' }}
                                     />
                                     <div>
-                                        <div style={{ fontWeight: 500 }}>{t('settings.notify_on_grade_label', 'Notify students when graded')}</div>
+                                        <div style={{ fontWeight: 500 }}>
+                                            {t('settings.notify_on_grade_label', 'Notify students when graded')}
+                                        </div>
                                         <div className="text-xs text-muted" style={{ marginTop: 2 }}>
-                                            {t('settings.notify_on_grade_help', 'Sends an email to the student when you save a grade. Requires SMTP to be configured in your Supabase project.')}
+                                            {t(
+                                                'settings.notify_on_grade_help',
+                                                'Sends an email to the student when you save a grade. Requires SMTP to be configured in your Supabase project.'
+                                            )}
                                         </div>
                                     </div>
                                 </label>

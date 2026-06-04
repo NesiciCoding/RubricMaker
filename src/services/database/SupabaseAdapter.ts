@@ -1187,10 +1187,17 @@ export class SupabaseAdapter {
             .eq('email', email.trim().toLowerCase())
             .maybeSingle();
         if (!data) return null;
-        return { userId: (data as { id: string; display_name?: string }).id, displayName: (data as { id: string; display_name?: string }).display_name ?? undefined };
+        return {
+            userId: (data as { id: string; display_name?: string }).id,
+            displayName: (data as { id: string; display_name?: string }).display_name ?? undefined,
+        };
     }
 
-    async shareRubricWithEmail(rubricId: string, email: string, mode: 'read' | 'edit'): Promise<SyncResult & { notFound?: boolean }> {
+    async shareRubricWithEmail(
+        rubricId: string,
+        email: string,
+        mode: 'read' | 'edit'
+    ): Promise<SyncResult & { notFound?: boolean }> {
         const user = await this.lookupUserByEmail(email);
         if (!user) return { success: false, notFound: true, error: `No account found for ${email}` };
         return this.shareRubric(rubricId, user.userId, mode);

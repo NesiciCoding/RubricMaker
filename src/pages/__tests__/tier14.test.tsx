@@ -16,13 +16,7 @@ const locales: Record<string, any> = { en, nl, fr, de, es };
 
 // ── #34: self-assessment graduated scale locale keys ─────────────────────────
 
-const selfAssessNewKeys = [
-    'rated_count',
-    'level_not_yet',
-    'level_sometimes',
-    'level_usually',
-    'level_confident',
-];
+const selfAssessNewKeys = ['rated_count', 'level_not_yet', 'level_sometimes', 'level_usually', 'level_confident'];
 
 describe('#34 – graduated confidence scale locale keys', () => {
     for (const lang of ['en', 'nl', 'fr', 'de', 'es']) {
@@ -46,9 +40,11 @@ describe('#34 – graduated confidence scale locale keys', () => {
 describe('#34 – ConfidenceLevel backward compat logic', () => {
     it('levels ≥3 map to confident=true (backward compat)', () => {
         // Simulate the save logic: confident = !!cl && cl >= 3
-        function isConfident(cl: number | undefined): boolean { return !!cl && cl >= 3; }
-        expect(isConfident(3)).toBe(true);  // Usually → confident
-        expect(isConfident(4)).toBe(true);  // Confident → confident
+        function isConfident(cl: number | undefined): boolean {
+            return !!cl && cl >= 3;
+        }
+        expect(isConfident(3)).toBe(true); // Usually → confident
+        expect(isConfident(4)).toBe(true); // Confident → confident
         expect(isConfident(2)).toBe(false); // Sometimes → not confident
         expect(isConfident(1)).toBe(false); // Not yet → not confident
         expect(isConfident(undefined)).toBe(false); // unrated → not confident

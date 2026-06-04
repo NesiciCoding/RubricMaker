@@ -17,12 +17,7 @@ const locales: Record<string, any> = { en, nl, fr, de, es };
 
 // ── #37: weight validation locale keys ────────────────────────────────────────
 
-const weightKeys = [
-    'weight_total_label',
-    'weight_total_hint',
-    'weight_total_warning',
-    'weight_distribute_evenly',
-];
+const weightKeys = ['weight_total_label', 'weight_total_hint', 'weight_total_warning', 'weight_distribute_evenly'];
 
 describe('#37 – criterion weight validation locale keys', () => {
     for (const lang of ['en', 'nl', 'fr', 'de', 'es']) {

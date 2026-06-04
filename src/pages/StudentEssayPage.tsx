@@ -440,7 +440,15 @@ export default function StudentEssayPage() {
                     {t('essay.draft_restored')}
                     <button
                         onClick={() => setDraftRestored(false)}
-                        style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', fontSize: '0.8rem', textDecoration: 'underline' }}
+                        style={{
+                            marginLeft: 'auto',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: 'var(--accent)',
+                            fontSize: '0.8rem',
+                            textDecoration: 'underline',
+                        }}
                     >
                         {t('essay.dismiss')}
                     </button>
@@ -502,7 +510,9 @@ export default function StudentEssayPage() {
                             }}
                         >
                             <Save size={12} />
-                            {t('essay.draft_saved_at', { time: draftSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })}
+                            {t('essay.draft_saved_at', {
+                                time: draftSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                            })}
                         </div>
                     )}
                     {secondsLeft !== null && (
@@ -702,7 +712,8 @@ export default function StudentEssayPage() {
                         >
                             {submitting ? (
                                 <>
-                                    <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> {t('essay.submitting')}
+                                    <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />{' '}
+                                    {t('essay.submitting')}
                                 </>
                             ) : (
                                 t('essay.submit_btn')

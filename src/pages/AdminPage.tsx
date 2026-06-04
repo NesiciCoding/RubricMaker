@@ -52,7 +52,10 @@ function UsersTab() {
     const [currentUserId] = useState<string | null>(() => getCurrentDatabaseUserId());
 
     useEffect(() => {
-        if (!dbStatus.isConnected) { setLoading(false); return; }
+        if (!dbStatus.isConnected) {
+            setLoading(false);
+            return;
+        }
         fetchAllUsers().then((u) => {
             setUsers(u);
             setLoading(false);
@@ -157,7 +160,10 @@ function SchoolsTab() {
     const [editRetention, setEditRetention] = useState<Record<string, number>>({});
 
     const load = useCallback(async () => {
-        if (!dbStatus.isConnected) { setLoading(false); return; }
+        if (!dbStatus.isConnected) {
+            setLoading(false);
+            return;
+        }
         const list = await fetchSchools();
         setSchools(list);
         setLoading(false);

@@ -167,7 +167,9 @@ export default function GradeStudent() {
                         Authorization: `Bearer ${config.supabaseAnonKey}`,
                     },
                     body: JSON.stringify({ studentId, rubricName: rubric.name, portalUrl }),
-                }).catch(() => { /* silently ignore network errors */ });
+                }).catch(() => {
+                    /* silently ignore network errors */
+                });
             }
         }
     }, [sr, rubric, saveStudentRubric, settings.notifyStudentsOnGrade, student, studentId]);

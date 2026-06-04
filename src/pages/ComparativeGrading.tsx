@@ -49,7 +49,11 @@ function ClassPicker({ rubricId }: { rubricId: string }) {
         return (
             <>
                 <Topbar
-                    title={rubric ? t('comparativeGrading.title_compare', { name: rubric.name }) : t('comparativeGrading.page_title')}
+                    title={
+                        rubric
+                            ? t('comparativeGrading.title_compare', { name: rubric.name })
+                            : t('comparativeGrading.page_title')
+                    }
                     actions={
                         <button className="btn btn-ghost btn-sm" onClick={() => setSelectedClassId(null)}>
                             <ArrowLeft size={15} /> {t('common.back')}
@@ -79,7 +83,9 @@ function ClassPicker({ rubricId }: { rubricId: string }) {
                             <Shuffle size={15} /> {t('comparativeGrading.action_start_random')}
                         </button>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                            {pickerStudents.length === 0 && <p className="text-muted text-sm">{t('comparativeGrading.no_students')}</p>}
+                            {pickerStudents.length === 0 && (
+                                <p className="text-muted text-sm">{t('comparativeGrading.no_students')}</p>
+                            )}
                             {[...pickerStudents]
                                 .sort((a, b) => a.name.localeCompare(b.name))
                                 .map((s) => {
@@ -112,7 +118,11 @@ function ClassPicker({ rubricId }: { rubricId: string }) {
     return (
         <>
             <Topbar
-                title={rubric ? t('comparativeGrading.title_compare', { name: rubric.name }) : t('comparativeGrading.page_title')}
+                title={
+                    rubric
+                        ? t('comparativeGrading.title_compare', { name: rubric.name })
+                        : t('comparativeGrading.page_title')
+                }
                 actions={
                     <button className="btn btn-ghost btn-sm" onClick={() => navigate(-1)}>
                         <ArrowLeft size={15} /> {t('common.back')}
@@ -185,7 +195,10 @@ function EssayPanel({ attachment, label }: { attachment: Attachment; label: stri
                 onClick={() => setOpen((o) => !o)}
             >
                 <span>{label}</span>
-                <ChevronRight size={14} style={{ transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }} />
+                <ChevronRight
+                    size={14}
+                    style={{ transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }}
+                />
             </button>
             {open && (
                 <div
@@ -622,7 +635,10 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                 {sumA?.rawScore} pts ({sumA?.modifiedPercentage.toFixed(1)}%)
                             </div>
                             <div className="text-xs text-muted" style={{ marginTop: 2 }}>
-                                {t('comparativeGrading.matchups_done', { done: perStudentDone[studentA.id] ?? 0, max: maxPerStudent })}
+                                {t('comparativeGrading.matchups_done', {
+                                    done: perStudentDone[studentA.id] ?? 0,
+                                    max: maxPerStudent,
+                                })}
                             </div>
                         </div>
 
@@ -661,7 +677,11 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                     />
                                 </div>
                                 <div className="text-xs text-muted" style={{ marginTop: 4 }}>
-                                    {t('comparativeGrading.progress_matchups', { done: matchupsDone, total: sessionMax, left: matchupsLeft })}
+                                    {t('comparativeGrading.progress_matchups', {
+                                        done: matchupsDone,
+                                        total: sessionMax,
+                                        left: matchupsLeft,
+                                    })}
                                 </div>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
@@ -687,7 +707,10 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                 {sumB?.rawScore} pts ({sumB?.modifiedPercentage.toFixed(1)}%)
                             </div>
                             <div className="text-xs text-muted" style={{ marginTop: 2 }}>
-                                {t('comparativeGrading.matchups_done', { done: perStudentDone[studentB.id] ?? 0, max: maxPerStudent })}
+                                {t('comparativeGrading.matchups_done', {
+                                    done: perStudentDone[studentB.id] ?? 0,
+                                    max: maxPerStudent,
+                                })}
                             </div>
                         </div>
                     </div>
@@ -715,7 +738,9 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                     >
                         {/* Per-student progress */}
                         <div className="card" style={{ background: 'var(--bg-elevated)', padding: '14px 16px' }}>
-                            <h3 style={{ marginBottom: 10, fontSize: '0.9rem' }}>{t('comparativeGrading.student_progress')}</h3>
+                            <h3 style={{ marginBottom: 10, fontSize: '0.9rem' }}>
+                                {t('comparativeGrading.student_progress')}
+                            </h3>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                                 {[...classStudents]
                                     .sort((a, b) => (perStudentDone[a.id] ?? 0) - (perStudentDone[b.id] ?? 0))
@@ -772,9 +797,11 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                         </div>
 
                         {/* Student A essay text */}
-                        {attA.filter((a) => a.mimeType === 'text/html').map((a) => (
-                            <EssayPanel key={a.id} attachment={a} label={t('essay.essay_text_label')} />
-                        ))}
+                        {attA
+                            .filter((a) => a.mimeType === 'text/html')
+                            .map((a) => (
+                                <EssayPanel key={a.id} attachment={a} label={t('essay.essay_text_label')} />
+                            ))}
 
                         {/* Student A attachments */}
                         <div className="card" style={{ background: 'var(--bg-elevated)' }}>
@@ -1329,9 +1356,11 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                         style={{ display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto', paddingLeft: 4 }}
                     >
                         {/* Student B essay text */}
-                        {attB.filter((a) => a.mimeType === 'text/html').map((a) => (
-                            <EssayPanel key={a.id} attachment={a} label={t('essay.essay_text_label')} />
-                        ))}
+                        {attB
+                            .filter((a) => a.mimeType === 'text/html')
+                            .map((a) => (
+                                <EssayPanel key={a.id} attachment={a} label={t('essay.essay_text_label')} />
+                            ))}
 
                         <div className="card" style={{ background: 'var(--bg-elevated)' }}>
                             <h3 style={{ marginBottom: 12 }}>{t('comparativeGrading.attachments')}</h3>

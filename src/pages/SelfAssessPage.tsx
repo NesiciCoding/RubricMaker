@@ -7,7 +7,14 @@ import CefrBadge from '../components/CEFR/CefrBadge';
 import { useApp } from '../context/AppContext';
 import { nanoid } from '../utils/nanoid';
 import { getCefrDescriptors, CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
-import type { CefrLevel, CefrSkill, SelfAssessment, SelfAssessmentRating, LinkedCefrDescriptor, ConfidenceLevel } from '../types';
+import type {
+    CefrLevel,
+    CefrSkill,
+    SelfAssessment,
+    SelfAssessmentRating,
+    LinkedCefrDescriptor,
+    ConfidenceLevel,
+} from '../types';
 
 export default function SelfAssessPage() {
     const { rubricId, studentId } = useParams();
@@ -295,9 +302,22 @@ export default function SelfAssessPage() {
                                             }}
                                         >
                                             {/* Text + level badge */}
-                                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 10 }}>
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'flex-start',
+                                                    gap: 10,
+                                                    marginBottom: 10,
+                                                }}
+                                            >
                                                 <div style={{ flex: 1 }}>
-                                                    <div style={{ fontSize: '0.92rem', lineHeight: 1.5, color: 'var(--text)' }}>
+                                                    <div
+                                                        style={{
+                                                            fontSize: '0.92rem',
+                                                            lineHeight: 1.5,
+                                                            color: 'var(--text)',
+                                                        }}
+                                                    >
                                                         {text}
                                                     </div>
                                                 </div>

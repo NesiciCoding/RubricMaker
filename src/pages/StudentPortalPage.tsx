@@ -417,12 +417,26 @@ export default function StudentPortalPage() {
                                             <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: 4 }}>
                                                 {rubric.name}
                                             </div>
-                                            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 6 }}>
+                                            <div
+                                                style={{
+                                                    fontSize: '0.78rem',
+                                                    color: 'var(--text-muted)',
+                                                    marginBottom: 6,
+                                                }}
+                                            >
                                                 {pr.gradedAt && new Date(pr.gradedAt).toLocaleDateString()}
                                             </div>
                                             {hasComment && (
-                                                <div style={{ fontSize: '0.82rem', color: 'var(--text)', fontStyle: 'italic' }}>
-                                                    {pr.overallComment || pr.entries.find((e) => e.comment)?.comment || ''}
+                                                <div
+                                                    style={{
+                                                        fontSize: '0.82rem',
+                                                        color: 'var(--text)',
+                                                        fontStyle: 'italic',
+                                                    }}
+                                                >
+                                                    {pr.overallComment ||
+                                                        pr.entries.find((e) => e.comment)?.comment ||
+                                                        ''}
                                                 </div>
                                             )}
                                         </div>

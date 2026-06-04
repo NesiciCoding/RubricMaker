@@ -45,31 +45,20 @@ const newComparativeGradingKeys = [
     'student_progress',
 ];
 
-const newAdminKeys = [
-    'users_offline_title',
-    'users_offline_body',
-    'schools_offline_title',
-    'schools_offline_body',
-];
+const newAdminKeys = ['users_offline_title', 'users_offline_body', 'schools_offline_title', 'schools_offline_body'];
 
 describe('#26 – new i18n keys present in all locales', () => {
     for (const lang of ['en', 'nl', 'fr', 'de', 'es']) {
         describe(`${lang}.json`, () => {
             it('has all new rubricBuilder keys', () => {
                 for (const key of newRubricBuilderKeys) {
-                    expect(
-                        locales[lang].rubricBuilder,
-                        `${lang}.rubricBuilder.${key} missing`
-                    ).toHaveProperty(key);
+                    expect(locales[lang].rubricBuilder, `${lang}.rubricBuilder.${key} missing`).toHaveProperty(key);
                 }
             });
 
             it('has all new gradeStudent keys', () => {
                 for (const key of newGradeStudentKeys) {
-                    expect(
-                        locales[lang].gradeStudent,
-                        `${lang}.gradeStudent.${key} missing`
-                    ).toHaveProperty(key);
+                    expect(locales[lang].gradeStudent, `${lang}.gradeStudent.${key} missing`).toHaveProperty(key);
                 }
             });
 
@@ -84,10 +73,7 @@ describe('#26 – new i18n keys present in all locales', () => {
 
             it('has all new admin offline keys', () => {
                 for (const key of newAdminKeys) {
-                    expect(
-                        locales[lang].admin,
-                        `${lang}.admin.${key} missing`
-                    ).toHaveProperty(key);
+                    expect(locales[lang].admin, `${lang}.admin.${key} missing`).toHaveProperty(key);
                 }
             });
         });
@@ -144,8 +130,7 @@ describe('#28 – voice grading language map', () => {
     for (const [appLang, expected] of Object.entries(langMap)) {
         it(`maps app language "${appLang}" to BCP-47 "${expected}"`, () => {
             const result =
-                ({ nl: 'nl-NL', fr: 'fr-FR', de: 'de-DE', es: 'es-ES' } as Record<string, string>)[appLang] ??
-                'en-US';
+                ({ nl: 'nl-NL', fr: 'fr-FR', de: 'de-DE', es: 'es-ES' } as Record<string, string>)[appLang] ?? 'en-US';
             expect(result).toBe(expected);
         });
     }

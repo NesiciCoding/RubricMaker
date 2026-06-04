@@ -43,7 +43,17 @@ import type { EssayAssignment } from '../types';
 export default function RubricList() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { rubrics, students, classes, studentRubrics, addRubric, deleteRubric, settings, gradeScales, saveEssayAssignment } = useApp();
+    const {
+        rubrics,
+        students,
+        classes,
+        studentRubrics,
+        addRubric,
+        deleteRubric,
+        settings,
+        gradeScales,
+        saveEssayAssignment,
+    } = useApp();
     const [search, setSearch] = useState('');
     const [subjectFilter, setSubjectFilter] = useState<string>('all');
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
@@ -64,7 +74,9 @@ export default function RubricList() {
     const [shareMode, setShareMode] = useState<'read' | 'edit'>('read');
     const [shareStatus, setShareStatus] = useState<'idle' | 'loading' | 'success' | 'error' | 'notfound'>('idle');
     const [shareErrorMsg, setShareErrorMsg] = useState('');
-    const [shareList, setShareList] = useState<{ userId: string; email?: string; displayName?: string; mode: 'read' | 'edit' }[]>([]);
+    const [shareList, setShareList] = useState<
+        { userId: string; email?: string; displayName?: string; mode: 'read' | 'edit' }[]
+    >([]);
     const [shareListLoading, setShareListLoading] = useState(false);
 
     async function openShareModal(rubricId: string, rubricName: string) {
@@ -77,7 +89,9 @@ export default function RubricList() {
         try {
             const list = await storageSync.adapter.fetchRubricShares(rubricId);
             setShareList(list);
-        } catch { /* ignore */ }
+        } catch {
+            /* ignore */
+        }
         setShareListLoading(false);
     }
 
@@ -85,7 +99,11 @@ export default function RubricList() {
         if (!shareModal || !shareEmail.trim()) return;
         setShareStatus('loading');
         try {
-            const result = await storageSync.adapter.shareRubricWithEmail(shareModal.rubricId, shareEmail.trim(), shareMode);
+            const result = await storageSync.adapter.shareRubricWithEmail(
+                shareModal.rubricId,
+                shareEmail.trim(),
+                shareMode
+            );
             if (result.success) {
                 setShareStatus('success');
                 setShareEmail('');
@@ -749,13 +767,25 @@ export default function RubricList() {
 
             {/* ── Share with colleague modal ── */}
             {shareModal && (
-                <div className="modal-overlay" onClick={() => { setShareModal(null); setShareStatus('idle'); }}>
+                <div
+                    className="modal-overlay"
+                    onClick={() => {
+                        setShareModal(null);
+                        setShareStatus('idle');
+                    }}
+                >
                     <div className="modal" style={{ maxWidth: 480 }} onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
                             <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                 <Users2 size={16} /> {t('rubricList.share_modal_title')}
                             </h3>
-                            <button className="btn btn-ghost btn-icon" onClick={() => { setShareModal(null); setShareStatus('idle'); }}>
+                            <button
+                                className="btn btn-ghost btn-icon"
+                                onClick={() => {
+                                    setShareModal(null);
+                                    setShareStatus('idle');
+                                }}
+                            >
                                 <X size={16} />
                             </button>
                         </div>
@@ -768,32 +798,69 @@ export default function RubricList() {
                                     type="email"
                                     placeholder={t('rubricList.share_email_placeholder')}
                                     value={shareEmail}
-                                    onChange={(e) => { setShareEmail(e.target.value); setShareStatus('idle'); }}
+                                    onChange={(e) => {
+                                        setShareEmail(e.target.value);
+                                        setShareStatus('idle');
+                                    }}
                                     onKeyDown={(e) => e.key === 'Enter' && handleShare()}
                                     style={{ flex: 1 }}
                                     autoFocus
                                 />
-                                <select value={shareMode} onChange={(e) => setShareMode(e.target.value as 'read' | 'edit')} style={{ width: 100 }}>
+                                <select
+                                    value={shareMode}
+                                    onChange={(e) => setShareMode(e.target.value as 'read' | 'edit')}
+                                    style={{ width: 100 }}
+                                >
                                     <option value="read">{t('rubricList.share_mode_read')}</option>
                                     <option value="edit">{t('rubricList.share_mode_edit')}</option>
                                 </select>
                             </div>
-                            {shareStatus === 'success' && <p style={{ color: 'var(--green)', fontSize: '0.85rem', marginBottom: 8 }}>{t('rubricList.share_success')}</p>}
-                            {shareStatus === 'notfound' && <p style={{ color: 'var(--red)', fontSize: '0.85rem', marginBottom: 8 }}>{t('rubricList.share_notfound', { email: shareErrorMsg })}</p>}
-                            {shareStatus === 'error' && <p style={{ color: 'var(--red)', fontSize: '0.85rem', marginBottom: 8 }}>{shareErrorMsg}</p>}
+                            {shareStatus === 'success' && (
+                                <p style={{ color: 'var(--green)', fontSize: '0.85rem', marginBottom: 8 }}>
+                                    {t('rubricList.share_success')}
+                                </p>
+                            )}
+                            {shareStatus === 'notfound' && (
+                                <p style={{ color: 'var(--red)', fontSize: '0.85rem', marginBottom: 8 }}>
+                                    {t('rubricList.share_notfound', { email: shareErrorMsg })}
+                                </p>
+                            )}
+                            {shareStatus === 'error' && (
+                                <p style={{ color: 'var(--red)', fontSize: '0.85rem', marginBottom: 8 }}>
+                                    {shareErrorMsg}
+                                </p>
+                            )}
 
                             {/* Current shares */}
                             {shareListLoading && <p className="text-muted text-sm">{t('admin.users_loading')}</p>}
                             {shareList.length > 0 && (
                                 <div style={{ marginBottom: 16 }}>
-                                    <p className="text-xs text-muted" style={{ marginBottom: 8, textTransform: 'uppercase', fontWeight: 600 }}>
+                                    <p
+                                        className="text-xs text-muted"
+                                        style={{ marginBottom: 8, textTransform: 'uppercase', fontWeight: 600 }}
+                                    >
                                         {t('rubricList.share_shared_with')}
                                     </p>
                                     {shareList.map((s) => (
-                                        <div key={s.userId} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
-                                            <div style={{ flex: 1, fontSize: '0.875rem' }}>{s.email ?? s.displayName ?? s.userId}</div>
+                                        <div
+                                            key={s.userId}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 8,
+                                                padding: '6px 0',
+                                                borderBottom: '1px solid var(--border)',
+                                            }}
+                                        >
+                                            <div style={{ flex: 1, fontSize: '0.875rem' }}>
+                                                {s.email ?? s.displayName ?? s.userId}
+                                            </div>
                                             <span className="badge">{s.mode}</span>
-                                            <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--red)' }} onClick={() => handleUnshare(s.userId)}>
+                                            <button
+                                                className="btn btn-ghost btn-icon btn-sm"
+                                                style={{ color: 'var(--red)' }}
+                                                onClick={() => handleUnshare(s.userId)}
+                                            >
                                                 <Trash2 size={13} />
                                             </button>
                                         </div>
@@ -802,7 +869,13 @@ export default function RubricList() {
                             )}
                         </div>
                         <div className="modal-footer">
-                            <button className="btn btn-secondary" onClick={() => { setShareModal(null); setShareStatus('idle'); }}>
+                            <button
+                                className="btn btn-secondary"
+                                onClick={() => {
+                                    setShareModal(null);
+                                    setShareStatus('idle');
+                                }}
+                            >
                                 {t('common.close')}
                             </button>
                             <button
@@ -818,80 +891,94 @@ export default function RubricList() {
             )}
 
             {/* ── Essay flow: Step 1 — class picker ── */}
-            {essayFlow?.step === 'class-pick' && (() => {
-                const rubric = rubrics.find((r) => r.id === essayFlow.rubricId);
-                const linkedClasses = classes.filter((c) => c.rubricIds?.includes(essayFlow.rubricId));
-                const offerClasses = linkedClasses.length > 0 ? linkedClasses : classes;
-                return (
-                    <div className="modal-overlay" onClick={() => setEssayFlow(null)}>
-                        <div className="modal" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
-                            <div className="modal-header">
-                                <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <PenLine size={16} /> {t('rubricList.essay_pick_class_title')}
-                                </h3>
-                                <button className="btn btn-ghost btn-icon" onClick={() => setEssayFlow(null)}>
-                                    <X size={16} />
-                                </button>
-                            </div>
-                            <div className="modal-body">
-                                {rubric && (
-                                    <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
-                                        {t('rubricList.essay_pick_class_desc', { rubric: rubric.name })}
-                                    </p>
-                                )}
-                                {offerClasses.length === 0 ? (
-                                    <p className="text-muted text-sm">{t('comparativeGrading.no_classes')}</p>
-                                ) : (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                        {offerClasses.map((c) => (
-                                            <button
-                                                key={c.id}
-                                                className="btn btn-secondary"
-                                                onClick={() => {
-                                                    const classStudents = students
-                                                        .filter((s) => s.classId === c.id)
-                                                        .map((s) => ({ id: s.id, name: s.name }));
-                                                    if (classStudents.length === 0) return;
-                                                    setEssayFlow({ step: 'assignment', rubricId: essayFlow.rubricId, classId: c.id });
-                                                }}
-                                            >
-                                                {c.name}{c.year ? ` — ${c.year}` : ''}
-                                                <span className="text-muted text-xs" style={{ marginLeft: 6 }}>
-                                                    ({students.filter((s) => s.classId === c.id).length} {t('rubricList.students_graded_count')})
-                                                </span>
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
+            {essayFlow?.step === 'class-pick' &&
+                (() => {
+                    const rubric = rubrics.find((r) => r.id === essayFlow.rubricId);
+                    const linkedClasses = classes.filter((c) => c.rubricIds?.includes(essayFlow.rubricId));
+                    const offerClasses = linkedClasses.length > 0 ? linkedClasses : classes;
+                    return (
+                        <div className="modal-overlay" onClick={() => setEssayFlow(null)}>
+                            <div className="modal" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
+                                <div className="modal-header">
+                                    <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <PenLine size={16} /> {t('rubricList.essay_pick_class_title')}
+                                    </h3>
+                                    <button className="btn btn-ghost btn-icon" onClick={() => setEssayFlow(null)}>
+                                        <X size={16} />
+                                    </button>
+                                </div>
+                                <div className="modal-body">
+                                    {rubric && (
+                                        <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
+                                            {t('rubricList.essay_pick_class_desc', { rubric: rubric.name })}
+                                        </p>
+                                    )}
+                                    {offerClasses.length === 0 ? (
+                                        <p className="text-muted text-sm">{t('comparativeGrading.no_classes')}</p>
+                                    ) : (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                            {offerClasses.map((c) => (
+                                                <button
+                                                    key={c.id}
+                                                    className="btn btn-secondary"
+                                                    onClick={() => {
+                                                        const classStudents = students
+                                                            .filter((s) => s.classId === c.id)
+                                                            .map((s) => ({ id: s.id, name: s.name }));
+                                                        if (classStudents.length === 0) return;
+                                                        setEssayFlow({
+                                                            step: 'assignment',
+                                                            rubricId: essayFlow.rubricId,
+                                                            classId: c.id,
+                                                        });
+                                                    }}
+                                                >
+                                                    {c.name}
+                                                    {c.year ? ` — ${c.year}` : ''}
+                                                    <span className="text-muted text-xs" style={{ marginLeft: 6 }}>
+                                                        ({students.filter((s) => s.classId === c.id).length}{' '}
+                                                        {t('rubricList.students_graded_count')})
+                                                    </span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                );
-            })()}
+                    );
+                })()}
 
             {/* ── Essay flow: Step 2 — assignment modal ── */}
-            {essayFlow?.step === 'assignment' && essayFlow.classId && (() => {
-                const rubric = rubrics.find((r) => r.id === essayFlow.rubricId);
-                const classStudents = students
-                    .filter((s) => s.classId === essayFlow.classId)
-                    .map((s) => ({ id: s.id, name: s.name }));
-                const firstStudent = classStudents[0];
-                if (!rubric || !firstStudent) return null;
-                return (
-                    <EssayAssignmentModal
-                        rubricId={rubric.id}
-                        rubricName={rubric.name}
-                        studentId={firstStudent.id}
-                        studentName={firstStudent.name}
-                        classStudents={classStudents}
-                        onSaveAssignment={saveEssayAssignment}
-                        onClose={() => setEssayFlow(null)}
-                        onOpenSlipSheet={(assignment, sts) =>
-                            setEssayFlow({ step: 'slipsheet', rubricId: essayFlow.rubricId, classId: essayFlow.classId, slipSheetData: { assignment, students: sts } })
-                        }
-                    />
-                );
-            })()}
+            {essayFlow?.step === 'assignment' &&
+                essayFlow.classId &&
+                (() => {
+                    const rubric = rubrics.find((r) => r.id === essayFlow.rubricId);
+                    const classStudents = students
+                        .filter((s) => s.classId === essayFlow.classId)
+                        .map((s) => ({ id: s.id, name: s.name }));
+                    const firstStudent = classStudents[0];
+                    if (!rubric || !firstStudent) return null;
+                    return (
+                        <EssayAssignmentModal
+                            rubricId={rubric.id}
+                            rubricName={rubric.name}
+                            studentId={firstStudent.id}
+                            studentName={firstStudent.name}
+                            classStudents={classStudents}
+                            onSaveAssignment={saveEssayAssignment}
+                            onClose={() => setEssayFlow(null)}
+                            onOpenSlipSheet={(assignment, sts) =>
+                                setEssayFlow({
+                                    step: 'slipsheet',
+                                    rubricId: essayFlow.rubricId,
+                                    classId: essayFlow.classId,
+                                    slipSheetData: { assignment, students: sts },
+                                })
+                            }
+                        />
+                    );
+                })()}
 
             {/* ── Essay flow: Step 3 — slip sheet ── */}
             {essayFlow?.step === 'slipsheet' && essayFlow.slipSheetData && (
