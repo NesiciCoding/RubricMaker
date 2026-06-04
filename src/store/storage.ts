@@ -360,7 +360,10 @@ export function importFullBackup(json: string): boolean {
         const data = raw as Partial<StoreData>;
 
         if (data.rubrics !== undefined) {
-            if (isObjectArray(data.rubrics) && (data.rubrics as unknown[]).every((r) => Array.isArray((r as Rubric).criteria)))
+            if (
+                isObjectArray(data.rubrics) &&
+                (data.rubrics as unknown[]).every((r) => Array.isArray((r as Rubric).criteria))
+            )
                 saveRubrics(data.rubrics as Rubric[]);
             else console.warn('[importFullBackup] rubrics failed validation — skipped');
         }
@@ -393,7 +396,12 @@ export function importFullBackup(json: string): boolean {
             else console.warn('[importFullBackup] settings failed validation — skipped');
         }
         if (data.favoriteStandards !== undefined) {
-            if (Array.isArray(data.favoriteStandards) && data.favoriteStandards.every((s) => isPlainObject(s) && typeof (s as Record<string, unknown>).guid === 'string'))
+            if (
+                Array.isArray(data.favoriteStandards) &&
+                data.favoriteStandards.every(
+                    (s) => isPlainObject(s) && typeof (s as Record<string, unknown>).guid === 'string'
+                )
+            )
                 saveFavoriteStandards(data.favoriteStandards as LinkedStandard[]);
             else console.warn('[importFullBackup] favoriteStandards failed validation — skipped');
         }
@@ -418,7 +426,8 @@ export function importFullBackup(json: string): boolean {
             else console.warn('[importFullBackup] speakingSessions failed validation — skipped');
         }
         if (data.analysisResults !== undefined) {
-            if (isObjectArray(data.analysisResults)) saveAnalysisResults(data.analysisResults as DocumentAnalysisResult[]);
+            if (isObjectArray(data.analysisResults))
+                saveAnalysisResults(data.analysisResults as DocumentAnalysisResult[]);
             else console.warn('[importFullBackup] analysisResults failed validation — skipped');
         }
         return true;

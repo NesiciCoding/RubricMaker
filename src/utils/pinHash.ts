@@ -23,7 +23,7 @@ async function pbkdf2Hex(pin: string, salt: Uint8Array): Promise<string> {
     const bits = await crypto.subtle.deriveBits(
         { name: 'PBKDF2', salt: salt as BufferSource, iterations: 100_000, hash: 'SHA-256' },
         key,
-        256,
+        256
     );
     return toHex(new Uint8Array(bits));
 }

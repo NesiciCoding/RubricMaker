@@ -1423,29 +1423,93 @@ export default function SettingsPage() {
                         </p>
 
                         {/* Summary table: current vs backup */}
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', marginBottom: 20 }}>
+                        <table
+                            style={{
+                                width: '100%',
+                                borderCollapse: 'collapse',
+                                fontSize: '0.875rem',
+                                marginBottom: 20,
+                            }}
+                        >
                             <thead>
                                 <tr>
-                                    <th style={{ textAlign: 'left', padding: '6px 8px', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}></th>
-                                    <th style={{ textAlign: 'right', padding: '6px 8px', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+                                    <th
+                                        style={{
+                                            textAlign: 'left',
+                                            padding: '6px 8px',
+                                            borderBottom: '1px solid var(--border)',
+                                            color: 'var(--text-muted)',
+                                        }}
+                                    ></th>
+                                    <th
+                                        style={{
+                                            textAlign: 'right',
+                                            padding: '6px 8px',
+                                            borderBottom: '1px solid var(--border)',
+                                            color: 'var(--text-muted)',
+                                        }}
+                                    >
                                         {t('settings.backup_preview_current')}
                                     </th>
-                                    <th style={{ textAlign: 'right', padding: '6px 8px', borderBottom: '1px solid var(--border)', color: 'var(--accent)', fontWeight: 700 }}>
+                                    <th
+                                        style={{
+                                            textAlign: 'right',
+                                            padding: '6px 8px',
+                                            borderBottom: '1px solid var(--border)',
+                                            color: 'var(--accent)',
+                                            fontWeight: 700,
+                                        }}
+                                    >
                                         {t('settings.backup_preview_backup')}
                                     </th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {([
-                                    [t('settings.backup_preview_rubrics'), rubrics.length, backupPreview.summary.rubrics],
-                                    [t('settings.backup_preview_students'), students.length, backupPreview.summary.students],
-                                    [t('settings.backup_preview_classes'), classes.length, backupPreview.summary.classes],
-                                    [t('settings.backup_preview_grades'), studentRubrics.length, backupPreview.summary.studentRubrics],
-                                ] as [string, number, number][]).map(([label, current, backup]) => (
+                                {(
+                                    [
+                                        [
+                                            t('settings.backup_preview_rubrics'),
+                                            rubrics.length,
+                                            backupPreview.summary.rubrics,
+                                        ],
+                                        [
+                                            t('settings.backup_preview_students'),
+                                            students.length,
+                                            backupPreview.summary.students,
+                                        ],
+                                        [
+                                            t('settings.backup_preview_classes'),
+                                            classes.length,
+                                            backupPreview.summary.classes,
+                                        ],
+                                        [
+                                            t('settings.backup_preview_grades'),
+                                            studentRubrics.length,
+                                            backupPreview.summary.studentRubrics,
+                                        ],
+                                    ] as [string, number, number][]
+                                ).map(([label, current, backup]) => (
                                     <tr key={label}>
                                         <td style={{ padding: '6px 8px', color: 'var(--text)' }}>{label}</td>
-                                        <td style={{ padding: '6px 8px', textAlign: 'right', color: 'var(--text-muted)' }}>{current}</td>
-                                        <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 600, color: backup !== current ? 'var(--accent)' : 'var(--text)' }}>{backup}</td>
+                                        <td
+                                            style={{
+                                                padding: '6px 8px',
+                                                textAlign: 'right',
+                                                color: 'var(--text-muted)',
+                                            }}
+                                        >
+                                            {current}
+                                        </td>
+                                        <td
+                                            style={{
+                                                padding: '6px 8px',
+                                                textAlign: 'right',
+                                                fontWeight: 600,
+                                                color: backup !== current ? 'var(--accent)' : 'var(--text)',
+                                            }}
+                                        >
+                                            {backup}
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -1462,7 +1526,11 @@ export default function SettingsPage() {
                                 marginBottom: 20,
                             }}
                         >
-                            <AlertCircle size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 6 }} aria-hidden="true" />
+                            <AlertCircle
+                                size={12}
+                                style={{ display: 'inline', verticalAlign: 'middle', marginRight: 6 }}
+                                aria-hidden="true"
+                            />
                             {t('settings.backup_preview_warning')}
                         </div>
 
