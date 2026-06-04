@@ -428,6 +428,7 @@ function DatabaseTab() {
             .then((shares) => {
                 if (!cancelled) setRubricShares(shares);
             })
+            .catch((err) => console.error('Failed to fetch rubric shares:', err))
             .finally(() => {
                 if (!cancelled) setLoadingRubricShares(false);
             });
@@ -448,6 +449,7 @@ function DatabaseTab() {
             .then((members) => {
                 if (!cancelled) setClassMembers(members);
             })
+            .catch((err) => console.error('Failed to fetch class members:', err))
             .finally(() => {
                 if (!cancelled) setLoadingClassMembers(false);
             });
@@ -643,14 +645,17 @@ function DatabaseTab() {
                                 disabled={dbSyncing}
                                 onClick={async () => {
                                     setDbSyncing(true);
-                                    const result = await pushAllToDatabase();
-                                    setDbSyncing(false);
-                                    showToast(
-                                        result.success
-                                            ? 'All local data pushed to database'
-                                            : `Push failed: ${result.error}`,
-                                        result.success ? 'success' : 'error'
-                                    );
+                                    try {
+                                        const result = await pushAllToDatabase();
+                                        showToast(
+                                            result.success
+                                                ? 'All local data pushed to database'
+                                                : `Push failed: ${result.error}`,
+                                            result.success ? 'success' : 'error'
+                                        );
+                                    } finally {
+                                        setDbSyncing(false);
+                                    }
                                 }}
                             >
                                 <Upload size={15} aria-hidden="true" />{' '}
