@@ -1,5 +1,7 @@
 const V1_PREFIX = 'rm-pin-v1:';
 const V2_PREFIX = 'rm-pin-v2:';
+// Canonical v2 format: 16-byte salt (32 hex) + ":" + 32-byte PBKDF2 output (64 hex)
+const V2_BODY_RE = /^([0-9a-f]{32}):([0-9a-f]{64})$/;
 
 function toHex(bytes: Uint8Array): string {
     return Array.from(bytes)
@@ -45,11 +47,10 @@ export async function hashPin(pin: string): Promise<string> {
 /** Verifies a PIN against v2 (PBKDF2), v1 (SHA-256), or legacy plaintext hashes. */
 export async function verifyPin(pin: string, storedHash: string): Promise<boolean> {
     if (storedHash.startsWith(V2_PREFIX)) {
-        const rest = storedHash.slice(V2_PREFIX.length);
-        const sep = rest.indexOf(':');
-        if (sep === -1) return false;
-        const salt = fromHex(rest.slice(0, sep));
-        const expected = rest.slice(sep + 1);
+        const match = V2_BODY_RE.exec(storedHash.slice(V2_PREFIX.length));
+        if (!match) return false;
+        const [, saltHex, expected] = match;
+        const salt = fromHex(saltHex);
         const candidate = await pbkdf2Hex(pin, salt);
         return constantTimeEqual(candidate, expected);
     }

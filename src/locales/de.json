@@ -104,6 +104,7 @@
         "backup_preview_grades": "Noten",
         "backup_preview_warning": "Diese Aktion kann nicht rückgängig gemacht werden. Exportieren Sie zuerst Ihre aktuellen Daten, wenn Sie eine Sicherungskopie benötigen.",
         "action_confirm_import": "Überschreiben & importieren",
+        "backup_preview_table_label": "Aktuelle Daten vs. Sicherung",
         "alert_cannot_delete_default": "Die Standardskala kann nicht gelöscht werden.",
         "delete_scale_title": "Notenskala löschen?",
         "delete_scale_confirm": "Sind Sie sicher, dass Sie diese Notenskala löschen möchten? Dies kann nicht rückgängig gemacht werden.",

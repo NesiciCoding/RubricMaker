@@ -337,7 +337,11 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
     return v !== null && typeof v === 'object' && !Array.isArray(v);
 }
 
-/** Every element must be a non-null object with a string `id` property. */
+/**
+ * Returns true when `v` is an array (including empty) whose every element is a
+ * non-null object with a string `id` property. Empty arrays are intentionally
+ * accepted — a backup with zero rubrics is a valid partial backup.
+ */
 function isObjectArray(v: unknown): boolean {
     return (
         Array.isArray(v) &&
@@ -360,6 +364,9 @@ export function importFullBackup(json: string): boolean {
         const data = raw as Partial<StoreData>;
 
         if (data.rubrics !== undefined) {
+            // Structural validation: each rubric must have an id and a criteria array.
+            // Individual RubricCriterion fields are not validated because backup files
+            // are produced by exportFullBackup and are assumed to be structurally sound.
             if (
                 isObjectArray(data.rubrics) &&
                 (data.rubrics as unknown[]).every((r) => Array.isArray((r as Rubric).criteria))

@@ -112,6 +112,7 @@
         "backup_preview_grades": "Calificaciones",
         "backup_preview_warning": "Esta acción no se puede deshacer. Exporte sus datos actuales primero si necesita una copia de seguridad.",
         "action_confirm_import": "Sobrescribir e importar",
+        "backup_preview_table_label": "Datos actuales frente a copia de seguridad",
         "alert_cannot_delete_default": "No se puede eliminar la escala predeterminada.",
         "delete_scale_title": "¿Eliminar Escala de Calificación?",
         "delete_scale_confirm": "¿Estás seguro de que quieres eliminar esta escala de calificación? Esta acción no se puede deshacer.",

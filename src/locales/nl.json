@@ -112,6 +112,7 @@
         "backup_preview_grades": "Beoordelingen",
         "backup_preview_warning": "Deze actie kan niet ongedaan worden gemaakt. Exporteer eerst uw huidige gegevens als u een reservekopie wilt bewaren.",
         "action_confirm_import": "Overschrijven & importeren",
+        "backup_preview_table_label": "Huidige versus back-up dataoverzicht",
         "alert_cannot_delete_default": "Kan de standaard schaal niet verwijderen.",
         "delete_scale_title": "Beoordelingsschaal verwijderen?",
         "delete_scale_confirm": "Weet je zeker dat je deze beoordelingsschaal wilt verwijderen? Dit kan niet ongedaan worden gemaakt.",

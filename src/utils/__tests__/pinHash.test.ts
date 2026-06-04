@@ -2,15 +2,13 @@ import { describe, it, expect } from 'vitest';
 import { hashPin, verifyPin, isHashed } from '../pinHash';
 import { nanoid } from '../nanoid';
 
-describe('hashPin', () => {
-    it('returns a string prefixed with rm-pin-v2:', async () => {
-        const hash = await hashPin('1234');
-        expect(hash.startsWith('rm-pin-v2:')).toBe(true);
-    });
+// Canonical v2 wire format: rm-pin-v2:<32 hex salt>:<64 hex hash>
+const V2_FORMAT_RE = /^rm-pin-v2:([0-9a-f]{32}):([0-9a-f]{64})$/;
 
-    it('returns a non-trivially-short string', async () => {
+describe('hashPin', () => {
+    it('conforms to the full v2 wire format rm-pin-v2:<32 hex>:<64 hex>', async () => {
         const hash = await hashPin('1234');
-        expect(hash.length).toBeGreaterThan(20);
+        expect(V2_FORMAT_RE.test(hash)).toBe(true);
     });
 
     it('produces different hashes for the same input (random salt)', async () => {
@@ -69,8 +67,22 @@ describe('verifyPin', () => {
         expect(await verifyPin('wrong', 'plain')).toBe(false);
     });
 
-    it('returns false for a v2 hash with a malformed structure (no colon separator)', async () => {
+    it('returns false for a v2 hash with no colon separator', async () => {
         expect(await verifyPin('x', 'rm-pin-v2:noseparatorhere')).toBe(false);
+    });
+
+    it('returns false for a v2 hash with wrong salt length (not 32 hex chars)', async () => {
+        // 30 hex salt chars instead of 32
+        expect(await verifyPin('x', 'rm-pin-v2:' + 'a'.repeat(30) + ':' + 'b'.repeat(64))).toBe(false);
+    });
+
+    it('returns false for a v2 hash with wrong hash length (not 64 hex chars)', async () => {
+        // Correct 32 hex salt but only 60 hex chars for hash
+        expect(await verifyPin('x', 'rm-pin-v2:' + 'a'.repeat(32) + ':' + 'b'.repeat(60))).toBe(false);
+    });
+
+    it('returns false for a v2 hash with non-hex characters in body', async () => {
+        expect(await verifyPin('x', 'rm-pin-v2:' + 'z'.repeat(32) + ':' + 'b'.repeat(64))).toBe(false);
     });
 });
 

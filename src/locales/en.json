@@ -112,6 +112,7 @@
         "backup_preview_grades": "Grades",
         "backup_preview_warning": "This action cannot be undone. Export your current data first if you need a safety copy.",
         "action_confirm_import": "Overwrite & import",
+        "backup_preview_table_label": "Current vs backup data counts",
         "alert_cannot_delete_default": "Can't delete the default scale.",
         "delete_scale_title": "Delete Grade Scale?",
         "delete_scale_confirm": "Are you sure you want to delete this grade scale? This cannot be undone.",

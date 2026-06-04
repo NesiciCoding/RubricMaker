@@ -104,6 +104,7 @@
         "backup_preview_grades": "Notes",
         "backup_preview_warning": "Cette action est irréversible. Exportez d'abord vos données actuelles si vous souhaitez une copie de sécurité.",
         "action_confirm_import": "Écraser et importer",
+        "backup_preview_table_label": "Comparaison des données actuelles et de la sauvegarde",
         "alert_cannot_delete_default": "Impossible de supprimer le barème par défaut.",
         "delete_scale_title": "Supprimer le barème ?",
         "delete_scale_confirm": "Êtes-vous sûr de vouloir supprimer ce barème ? Cette action est irréversible.",

@@ -81,7 +81,10 @@ serve(async (req) => {
         .select('id', { count: 'exact', head: true })
         .eq('student_user_id', user.id)
         .gte('submitted_at', sixtySecondsAgo);
-    if (!rateErr && (recentCount ?? 0) >= 5) {
+    if (rateErr) {
+        return json({ error: 'Rate limit check failed. Please try again.' }, 503);
+    }
+    if ((recentCount ?? 0) >= 5) {
         return json({ error: 'Too many submission attempts. Please wait before trying again.' }, 429);
     }
 

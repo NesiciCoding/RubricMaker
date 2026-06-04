@@ -240,10 +240,14 @@ export default function SettingsPage() {
                 setBackupPreview({
                     json,
                     summary: {
-                        rubrics: Array.isArray(data.rubrics) ? data.rubrics.length : 0,
-                        students: Array.isArray(data.students) ? data.students.length : 0,
-                        classes: Array.isArray(data.classes) ? data.classes.length : 0,
-                        studentRubrics: Array.isArray(data.studentRubrics) ? data.studentRubrics.length : 0,
+                        rubrics: data.rubrics !== undefined && Array.isArray(data.rubrics) ? data.rubrics.length : 0,
+                        students:
+                            data.students !== undefined && Array.isArray(data.students) ? data.students.length : 0,
+                        classes: data.classes !== undefined && Array.isArray(data.classes) ? data.classes.length : 0,
+                        studentRubrics:
+                            data.studentRubrics !== undefined && Array.isArray(data.studentRubrics)
+                                ? data.studentRubrics.length
+                                : 0,
                     },
                 });
             } catch {
@@ -256,10 +260,19 @@ export default function SettingsPage() {
 
     async function confirmImportBackup() {
         if (!backupPreview) return;
-        const ok = await importBackup(backupPreview.json);
-        setBackupPreview(null);
-        if (ok) showToast(t('toast.import_success'), 'success');
-        else showToast(t('toast.import_error'), 'error');
+        try {
+            const ok = await importBackup(backupPreview.json);
+            if (ok) {
+                showToast(t('toast.import_success'), 'success');
+                setBackupPreview(null);
+            } else {
+                showToast(t('toast.import_error'), 'error');
+                setBackupPreview(null);
+            }
+        } catch {
+            showToast(t('toast.import_error'), 'error');
+            setBackupPreview(null);
+        }
     }
 
     function handleAccentChange(val: string) {
@@ -1424,6 +1437,7 @@ export default function SettingsPage() {
 
                         {/* Summary table: current vs backup */}
                         <table
+                            aria-label={t('settings.backup_preview_table_label')}
                             style={{
                                 width: '100%',
                                 borderCollapse: 'collapse',
