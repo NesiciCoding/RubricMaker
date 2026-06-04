@@ -140,8 +140,7 @@ export default function OnboardingPage() {
                             </h2>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                                 {(['user', 'admin', 'student'] as RoleChoice[]).map((r) => {
-                                    const labelKey =
-                                        r === 'user' ? 'teacher' : r === 'admin' ? 'admin' : 'student';
+                                    const labelKey = r === 'user' ? 'teacher' : r === 'admin' ? 'admin' : 'student';
                                     return (
                                         <button
                                             key={r}

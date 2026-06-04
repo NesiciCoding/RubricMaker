@@ -69,7 +69,9 @@ function UsersTab() {
                 if (!cancelled) setLoading(false);
             }
         })();
-        return () => { cancelled = true; };
+        return () => {
+            cancelled = true;
+        };
     }, [fetchAllUsers, dbStatus.isConnected]);
 
     async function handleRoleChange(userId: string, newRole: 'admin' | 'user' | 'student') {

@@ -210,24 +210,25 @@ export default function StudentEssayPage() {
             return {};
         }
     })();
-    const envUrl =
-        (import.meta.env.VITE_SUPABASE_URL as string | undefined) || savedConfig.supabaseUrl || undefined;
+    const envUrl = (import.meta.env.VITE_SUPABASE_URL as string | undefined) || savedConfig.supabaseUrl || undefined;
     const envKey =
         (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) || savedConfig.supabaseAnonKey || undefined;
     const shortCodeActive = !legacyAssignment && !!code && !!envUrl && !!envKey && isShortCode(code);
 
-    const assignment = legacyAssignment ?? (shortCodeActive
-        ? {
-              teacherKey: code!,
-              rubricId: '',
-              studentId: '',
-              title: '',
-              readOnlyAfterSubmit: true,
-              createdAt: new Date().toISOString(),
-              supabaseUrl: envUrl,
-              supabaseAnonKey: envKey,
-          }
-        : null);
+    const assignment =
+        legacyAssignment ??
+        (shortCodeActive
+            ? {
+                  teacherKey: code!,
+                  rubricId: '',
+                  studentId: '',
+                  title: '',
+                  readOnlyAfterSubmit: true,
+                  createdAt: new Date().toISOString(),
+                  supabaseUrl: envUrl,
+                  supabaseAnonKey: envKey,
+              }
+            : null);
 
     // Determine if this assignment uses Supabase DB submission.
     // useMemo keeps the adapter instance stable for the component's lifetime.
