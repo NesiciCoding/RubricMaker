@@ -653,6 +653,9 @@ function DatabaseTab() {
                                                 : `Push failed: ${result.error}`,
                                             result.success ? 'success' : 'error'
                                         );
+                                    } catch (err) {
+                                        console.error('Push to database failed:', err);
+                                        showToast('Push failed unexpectedly', 'error');
                                     } finally {
                                         setDbSyncing(false);
                                     }
