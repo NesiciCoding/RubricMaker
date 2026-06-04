@@ -218,7 +218,10 @@
         "delete_rubric_warning": "Esto eliminará permanentemente la rúbrica y todas las calificaciones asociadas de los estudiantes. Esta acción no se puede deshacer.",
         "action_compare": "Comparar",
         "shared_with_me": "Compartido conmigo",
-        "shared_badge": "Compartido"
+        "shared_badge": "Compartido",
+        "action_essay": "Redacción",
+        "essay_pick_class_title": "Asignar redacción a una clase",
+        "essay_pick_class_desc": "Seleccione una clase para asignar la redacción \"{{rubric}}\". Cada estudiante recibirá su propio enlace único."
     },
     "studentsPage": {
         "title": "Estudiantes y Clases",
@@ -951,5 +954,38 @@
         "resume": "Reanudar",
         "stop": "Detener",
         "progress": "Progreso de lectura"
+    },
+    "essay": {
+        "email_gate_title": "Ingrese su correo electrónico escolar",
+        "email_gate_desc": "Su correo electrónico se usa para vincular su redacción a su cuenta. No se necesita contraseña ni código.",
+        "email_placeholder": "alumno@escuela.es",
+        "start_btn": "Comenzar redacción",
+        "starting": "Iniciando…",
+        "invalid_link_title": "Enlace inválido o caducado",
+        "invalid_link_desc": "Este enlace de redacción no es válido. Pida a su profesor un nuevo enlace.",
+        "expired_title": "La fecha límite ha pasado",
+        "expired_desc": "La fecha límite era {{date}}. Comuníquese con su profesor.",
+        "seb_blocked": "Este examen debe abrirse en Safe Exam Browser. El envío está bloqueado hasta que abra este enlace en SEB.",
+        "draft_restored": "Borrador restaurado desde su última sesión.",
+        "dismiss": "Descartar",
+        "signed_in_as": "Conectado como {{email}}",
+        "draft_saved_at": "Guardado a las {{time}}",
+        "time_up_countdown": "Tiempo agotado",
+        "words_count": "{{count}} palabras",
+        "prompt_label": "Instrucciones",
+        "submitted_title_db": "¡Redacción enviada a su profesor!",
+        "submitted_title": "¡Redacción enviada!",
+        "submitted_desc_db": "Su profesor puede ver su envío en RubricMaker. Guarde el código de respaldo a continuación por si acaso.",
+        "submitted_desc_code": "Copie el código de envío a continuación y envíeselo a su profesor.",
+        "copy": "Copiar",
+        "copied": "¡Copiado!",
+        "editor_placeholder": "Comience a escribir su redacción aquí…",
+        "time_up_auto": "El tiempo ha terminado — su redacción se envió automáticamente.",
+        "over_limit": "{{count}} palabras sobre el límite.",
+        "submit_btn": "Enviar redacción",
+        "submitting": "Enviando…",
+        "essay_text_label": "Redacción",
+        "show_essay": "Mostrar redacción",
+        "hide_essay": "Ocultar redacción"
     }
 }

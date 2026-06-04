@@ -218,7 +218,10 @@
         "delete_rubric_warning": "Ceci supprimera définitivement la rubrique et toutes les notes associées. Cette action est irréversible.",
         "action_compare": "Comparer",
         "shared_with_me": "Partagé avec moi",
-        "shared_badge": "Partagé"
+        "shared_badge": "Partagé",
+        "action_essay": "Dissertation",
+        "essay_pick_class_title": "Assigner la dissertation à une classe",
+        "essay_pick_class_desc": "Sélectionnez une classe pour assigner la dissertation \"{{rubric}}\". Chaque élève recevra son propre lien unique."
     },
     "studentsPage": {
         "title": "Élèves et Classes",
@@ -951,5 +954,38 @@
         "users_offline_body": "Connectez une base de données Supabase pour gérer les rôles des utilisateurs et consulter tous les comptes enregistrés.",
         "schools_offline_title": "La gestion des écoles nécessite une connexion à la base de données",
         "schools_offline_body": "Connectez une base de données Supabase pour créer et gérer des écoles, définir des politiques de conservation des données et afficher les membres."
+    },
+    "essay": {
+        "email_gate_title": "Entrez votre adresse email scolaire",
+        "email_gate_desc": "Votre email est utilisé pour lier votre dissertation à votre compte. Aucun mot de passe ou code n'est nécessaire.",
+        "email_placeholder": "eleve@ecole.fr",
+        "start_btn": "Commencer la dissertation",
+        "starting": "Démarrage…",
+        "invalid_link_title": "Lien invalide ou expiré",
+        "invalid_link_desc": "Ce lien de dissertation n'est pas valide. Veuillez demander un nouveau lien à votre professeur.",
+        "expired_title": "La date limite est dépassée",
+        "expired_desc": "La date limite était {{date}}. Veuillez contacter votre professeur.",
+        "seb_blocked": "Cet examen doit être ouvert dans Safe Exam Browser. La soumission est bloquée jusqu'à ce que vous rouvriez ce lien dans SEB.",
+        "draft_restored": "Brouillon restauré depuis votre dernière session.",
+        "dismiss": "Ignorer",
+        "signed_in_as": "Connecté en tant que {{email}}",
+        "draft_saved_at": "Enregistré à {{time}}",
+        "time_up_countdown": "Temps écoulé",
+        "words_count": "{{count}} mots",
+        "prompt_label": "Consigne",
+        "submitted_title_db": "Dissertation soumise à votre professeur !",
+        "submitted_title": "Dissertation soumise !",
+        "submitted_desc_db": "Votre professeur peut voir votre soumission dans RubricMaker. Gardez le code de sauvegarde ci-dessous au cas où.",
+        "submitted_desc_code": "Copiez le code de soumission ci-dessous et envoyez-le à votre professeur.",
+        "copy": "Copier",
+        "copied": "Copié !",
+        "editor_placeholder": "Commencez à rédiger votre dissertation ici…",
+        "time_up_auto": "Le temps est écoulé — votre dissertation a été soumise automatiquement.",
+        "over_limit": "Dépasse la limite de {{count}} mots.",
+        "submit_btn": "Soumettre la dissertation",
+        "submitting": "Soumission…",
+        "essay_text_label": "Dissertation",
+        "show_essay": "Afficher la dissertation",
+        "hide_essay": "Masquer la dissertation"
     }
 }

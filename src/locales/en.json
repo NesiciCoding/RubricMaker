@@ -218,7 +218,10 @@
         "delete_rubric_warning": "This will permanently delete the rubric and all associated student scores. This cannot be undone.",
         "action_compare": "Compare",
         "shared_with_me": "Shared with me",
-        "shared_badge": "Shared"
+        "shared_badge": "Shared",
+        "action_essay": "Essay",
+        "essay_pick_class_title": "Assign Essay to Class",
+        "essay_pick_class_desc": "Select a class to assign the \"{{rubric}}\" essay to. Each student will get their own unique link."
     },
     "studentsPage": {
         "title": "Students & Classes",
@@ -951,5 +954,38 @@
         "resume": "Resume reading",
         "stop": "Stop reading",
         "progress": "Reading progress"
+    },
+    "essay": {
+        "email_gate_title": "Enter your school email",
+        "email_gate_desc": "Your email is used to link your essay to your account. No password or code needed.",
+        "email_placeholder": "student@school.nl",
+        "start_btn": "Start essay",
+        "starting": "Starting…",
+        "invalid_link_title": "Invalid or expired link",
+        "invalid_link_desc": "This essay link is not valid. Please ask your teacher for a new link.",
+        "expired_title": "Assignment deadline has passed",
+        "expired_desc": "The deadline was {{date}}. Please contact your teacher.",
+        "seb_blocked": "This exam must be opened in Safe Exam Browser. Submission is blocked until you reopen this link inside SEB.",
+        "draft_restored": "Draft restored from your last session.",
+        "dismiss": "Dismiss",
+        "signed_in_as": "Signed in as {{email}}",
+        "draft_saved_at": "Saved {{time}}",
+        "time_up_countdown": "Time up",
+        "words_count": "{{count}} words",
+        "prompt_label": "Assignment prompt",
+        "submitted_title_db": "Essay submitted to your teacher!",
+        "submitted_title": "Essay submitted!",
+        "submitted_desc_db": "Your teacher can see your submission in RubricMaker. Keep the backup code below just in case.",
+        "submitted_desc_code": "Copy the submission code below and send it to your teacher.",
+        "copy": "Copy",
+        "copied": "Copied!",
+        "editor_placeholder": "Start writing your essay here…",
+        "time_up_auto": "Time is up — your essay was submitted automatically.",
+        "over_limit": "Over limit by {{count}} words.",
+        "submit_btn": "Submit essay",
+        "submitting": "Submitting…",
+        "essay_text_label": "Essay",
+        "show_essay": "Show essay",
+        "hide_essay": "Hide essay"
     }
 }

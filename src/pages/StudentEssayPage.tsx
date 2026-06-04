@@ -47,6 +47,7 @@ interface EmailGateProps {
 }
 
 function EmailGate({ adapter, onAuthenticated }: EmailGateProps) {
+    const { t } = useTranslation();
     const [email, setEmail] = useState('');
     const [busy, setBusy] = useState(false);
     const [sessionChecking, setSessionChecking] = useState(true);
@@ -126,10 +127,10 @@ function EmailGate({ adapter, onAuthenticated }: EmailGateProps) {
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <Mail size={22} style={{ color: 'var(--accent)' }} />
-                    <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>Enter your school email</h2>
+                    <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>{t('essay.email_gate_title')}</h2>
                 </div>
                 <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                    Your email is used to link your essay to your account. No password or code needed.
+                    {t('essay.email_gate_desc')}
                 </p>
                 <input
                     type="email"
@@ -139,7 +140,7 @@ function EmailGate({ adapter, onAuthenticated }: EmailGateProps) {
                         setError('');
                     }}
                     onKeyDown={(e) => e.key === 'Enter' && handleStart()}
-                    placeholder="student@school.nl"
+                    placeholder={t('essay.email_placeholder')}
                     style={{
                         padding: '10px 14px',
                         borderRadius: 8,
@@ -172,10 +173,10 @@ function EmailGate({ adapter, onAuthenticated }: EmailGateProps) {
                 >
                     {busy ? (
                         <>
-                            <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Starting…
+                            <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> {t('essay.starting')}
                         </>
                     ) : (
-                        'Start essay'
+                        t('essay.start_btn')
                     )}
                 </button>
             </div>
@@ -184,7 +185,7 @@ function EmailGate({ adapter, onAuthenticated }: EmailGateProps) {
 }
 
 export default function StudentEssayPage() {
-    const { i18n } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { code } = useParams<{ code: string }>();
     const assignment = code ? decodeEssayAssignment(code) : null;
 
@@ -354,16 +355,14 @@ export default function StudentEssayPage() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    background: '#f8fafc',
+                    background: 'var(--bg)',
                     padding: 24,
                 }}
             >
                 <div style={{ maxWidth: 480, textAlign: 'center' }}>
                     <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
-                    <h2 style={{ marginBottom: 8 }}>Invalid or expired link</h2>
-                    <p style={{ color: '#64748b' }}>
-                        This essay link is not valid. Please ask your teacher for a new link.
-                    </p>
+                    <h2 style={{ marginBottom: 8, color: 'var(--text)' }}>{t('essay.invalid_link_title')}</h2>
+                    <p style={{ color: 'var(--text-muted)' }}>{t('essay.invalid_link_desc')}</p>
                 </div>
             </div>
         );
@@ -378,15 +377,15 @@ export default function StudentEssayPage() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    background: '#f8fafc',
+                    background: 'var(--bg)',
                     padding: 24,
                 }}
             >
                 <div style={{ maxWidth: 480, textAlign: 'center' }}>
                     <div style={{ fontSize: 48, marginBottom: 16 }}>⏰</div>
-                    <h2 style={{ marginBottom: 8 }}>Assignment deadline has passed</h2>
-                    <p style={{ color: '#64748b' }}>
-                        The deadline was {new Date(assignment.expiresAt).toLocaleString()}. Please contact your teacher.
+                    <h2 style={{ marginBottom: 8, color: 'var(--text)' }}>{t('essay.expired_title')}</h2>
+                    <p style={{ color: 'var(--text-muted)' }}>
+                        {t('essay.expired_desc', { date: new Date(assignment.expiresAt).toLocaleString() })}
                     </p>
                 </div>
             </div>
@@ -418,33 +417,32 @@ export default function StudentEssayPage() {
         <div
             style={{
                 minHeight: '100vh',
-                background: '#f8fafc',
-                fontFamily: 'Inter, system-ui, sans-serif',
-                colorScheme: 'light',
-                color: '#1e293b',
+                background: 'var(--bg)',
+                fontFamily: 'var(--font, Inter, system-ui, sans-serif)',
+                color: 'var(--text)',
             }}
         >
             {/* Draft restored banner */}
             {draftRestored && !submitted && (
                 <div
                     style={{
-                        background: '#eff6ff',
-                        borderBottom: '1px solid #93c5fd',
+                        background: 'color-mix(in srgb, var(--accent) 10%, transparent)',
+                        borderBottom: '1px solid color-mix(in srgb, var(--accent) 30%, transparent)',
                         padding: '10px 20px',
                         display: 'flex',
                         alignItems: 'center',
                         gap: 8,
                         fontSize: '0.875rem',
-                        color: '#1e40af',
+                        color: 'var(--accent)',
                     }}
                 >
                     <Save size={14} style={{ flexShrink: 0 }} />
-                    Draft restored from your last session.{' '}
+                    {t('essay.draft_restored')}
                     <button
                         onClick={() => setDraftRestored(false)}
-                        style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#1e40af', fontSize: '0.8rem', textDecoration: 'underline' }}
+                        style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', fontSize: '0.8rem', textDecoration: 'underline' }}
                     >
-                        Dismiss
+                        {t('essay.dismiss')}
                     </button>
                 </div>
             )}
@@ -465,16 +463,15 @@ export default function StudentEssayPage() {
                     }}
                 >
                     <AlertTriangle size={16} style={{ flexShrink: 0 }} />
-                    This exam must be opened in Safe Exam Browser. Submission is blocked until you reopen this link
-                    inside SEB.
+                    {t('essay.seb_blocked')}
                 </div>
             )}
 
             {/* Header */}
             <div
                 style={{
-                    background: '#fff',
-                    borderBottom: '1px solid #e2e8f0',
+                    background: 'var(--bg-elevated)',
+                    borderBottom: '1px solid var(--border)',
                     padding: '14px 28px',
                     display: 'flex',
                     alignItems: 'center',
@@ -484,12 +481,12 @@ export default function StudentEssayPage() {
                 }}
             >
                 <div>
-                    <h1 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#1e293b' }}>
+                    <h1 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: 'var(--text)' }}>
                         {assignment.title}
                     </h1>
                     {studentEmail && (
-                        <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 2 }}>
-                            Signed in as {studentEmail}
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                            {t('essay.signed_in_as', { email: studentEmail })}
                         </div>
                     )}
                 </div>
@@ -501,11 +498,11 @@ export default function StudentEssayPage() {
                                 alignItems: 'center',
                                 gap: 4,
                                 fontSize: '0.75rem',
-                                color: '#64748b',
+                                color: 'var(--text-muted)',
                             }}
                         >
                             <Save size={12} />
-                            Saved {draftSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {t('essay.draft_saved_at', { time: draftSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })}
                         </div>
                     )}
                     {secondsLeft !== null && (
@@ -517,17 +514,17 @@ export default function StudentEssayPage() {
                                 fontWeight: 700,
                                 fontSize: '1.05rem',
                                 fontVariantNumeric: 'tabular-nums',
-                                color: secondsLeft < 120 ? '#ef4444' : '#374151',
+                                color: secondsLeft < 120 ? '#ef4444' : 'var(--text)',
                             }}
                         >
                             <Clock size={17} />
-                            {timedOut ? 'Time up' : formatTime(secondsLeft)}
+                            {timedOut ? t('essay.time_up_countdown') : formatTime(secondsLeft)}
                         </div>
                     )}
                     <div style={{ fontSize: '0.875rem', fontWeight: 600, color: wordCountColor }}>
-                        {wordCount} words
+                        {t('essay.words_count', { count: wordCount })}
                         {(assignment.minWords || assignment.maxWords) && (
-                            <span style={{ color: '#94a3b8', fontWeight: 400, marginLeft: 4 }}>
+                            <span style={{ color: 'var(--text-dim)', fontWeight: 400, marginLeft: 4 }}>
                                 ({assignment.minWords ?? 0}–{assignment.maxWords ?? '∞'})
                             </span>
                         )}
@@ -543,13 +540,13 @@ export default function StudentEssayPage() {
                 {assignment.prompt && (
                     <div
                         style={{
-                            background: '#eff6ff',
-                            border: '1px solid #bfdbfe',
+                            background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
+                            border: '1px solid color-mix(in srgb, var(--accent) 25%, transparent)',
                             borderRadius: 10,
                             padding: '14px 18px',
                             marginBottom: 20,
                             fontSize: '0.95rem',
-                            color: '#1e40af',
+                            color: 'var(--text)',
                             lineHeight: 1.6,
                         }}
                     >
@@ -558,12 +555,12 @@ export default function StudentEssayPage() {
                                 fontSize: '0.7rem',
                                 fontWeight: 700,
                                 textTransform: 'uppercase',
-                                color: '#3b82f6',
+                                color: 'var(--accent)',
                                 marginBottom: 6,
                                 letterSpacing: '0.05em',
                             }}
                         >
-                            Assignment prompt
+                            {t('essay.prompt_label')}
                         </div>
                         {assignment.prompt}
                     </div>
@@ -604,17 +601,16 @@ export default function StudentEssayPage() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                             <CheckCircle size={20} style={{ color: '#16a34a', flexShrink: 0 }} />
                             <span style={{ fontWeight: 700, fontSize: '1rem', color: '#15803d' }}>
-                                {hasDb && !submitError ? 'Essay submitted to your teacher!' : 'Essay submitted!'}
+                                {hasDb && !submitError ? t('essay.submitted_title_db') : t('essay.submitted_title')}
                             </span>
                         </div>
                         {hasDb && !submitError ? (
                             <p style={{ margin: '0 0 12px', fontSize: '0.875rem', color: '#166534' }}>
-                                Your teacher can see your submission in RubricMaker. Keep the backup code below just in
-                                case.
+                                {t('essay.submitted_desc_db')}
                             </p>
                         ) : (
                             <p style={{ margin: '0 0 12px', fontSize: '0.875rem', color: '#166534' }}>
-                                Copy the submission code below and send it to your teacher.
+                                {t('essay.submitted_desc_code')}
                             </p>
                         )}
                         <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
@@ -627,11 +623,11 @@ export default function StudentEssayPage() {
                                     fontFamily: 'monospace',
                                     fontSize: '0.72rem',
                                     resize: 'vertical',
-                                    background: '#fff',
+                                    background: 'var(--bg-elevated)',
                                     border: '1px solid #86efac',
                                     borderRadius: 8,
                                     padding: 10,
-                                    color: '#374151',
+                                    color: 'var(--text)',
                                 }}
                             />
                             <button
@@ -652,7 +648,7 @@ export default function StudentEssayPage() {
                                 }}
                             >
                                 <Copy size={14} />
-                                {copied ? 'Copied!' : 'Copy'}
+                                {copied ? t('essay.copied') : t('essay.copy')}
                             </button>
                         </div>
                     </div>
@@ -663,7 +659,7 @@ export default function StudentEssayPage() {
                     content={html}
                     onChange={setHtml}
                     editable={!submitted || !assignment.readOnlyAfterSubmit}
-                    placeholder="Start writing your essay here…"
+                    placeholder={t('essay.editor_placeholder')}
                 />
 
                 {/* Submit row */}
@@ -679,12 +675,12 @@ export default function StudentEssayPage() {
                     >
                         {timedOut && (
                             <span style={{ fontSize: '0.875rem', color: '#ef4444', fontWeight: 600 }}>
-                                Time is up — your essay was submitted automatically.
+                                {t('essay.time_up_auto')}
                             </span>
                         )}
                         {isOverLimit && (
                             <span style={{ fontSize: '0.875rem', color: '#ef4444' }}>
-                                Over limit by {wordCount - (assignment.maxWords ?? 0)} words.
+                                {t('essay.over_limit', { count: wordCount - (assignment.maxWords ?? 0) })}
                             </span>
                         )}
                         <button
@@ -696,8 +692,8 @@ export default function StudentEssayPage() {
                                 border: 'none',
                                 fontWeight: 700,
                                 fontSize: '0.95rem',
-                                background: canSubmit ? '#6366f1' : '#e2e8f0',
-                                color: canSubmit ? '#fff' : '#94a3b8',
+                                background: canSubmit ? 'var(--accent)' : 'var(--bg-elevated)',
+                                color: canSubmit ? '#fff' : 'var(--text-dim)',
                                 cursor: canSubmit ? 'pointer' : 'not-allowed',
                                 display: 'flex',
                                 alignItems: 'center',
@@ -706,10 +702,10 @@ export default function StudentEssayPage() {
                         >
                             {submitting ? (
                                 <>
-                                    <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Submitting…
+                                    <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> {t('essay.submitting')}
                                 </>
                             ) : (
-                                'Submit essay'
+                                t('essay.submit_btn')
                             )}
                         </button>
                     </div>

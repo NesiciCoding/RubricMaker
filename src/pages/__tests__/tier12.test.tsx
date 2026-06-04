@@ -16,7 +16,8 @@ import fr from '../../locales/fr.json';
 import de from '../../locales/de.json';
 import es from '../../locales/es.json';
 
-const locales = { en, nl, fr, de, es } as Record<string, Record<string, Record<string, string>>>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const locales: Record<string, any> = { en, nl, fr, de, es };
 
 const newRubricBuilderKeys = [
     'section_rubric_details',

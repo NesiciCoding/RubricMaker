@@ -153,6 +153,58 @@ function ClassPicker({ rubricId }: { rubricId: string }) {
     );
 }
 
+// ─── Essay panel ─────────────────────────────────────────────────────────────
+// Shows a decoded base64 HTML attachment inline in a collapsible card.
+import type { Attachment } from '../types';
+
+function EssayPanel({ attachment, label }: { attachment: Attachment; label: string }) {
+    const [open, setOpen] = React.useState(true);
+    const html = React.useMemo(() => {
+        try {
+            const base64 = attachment.dataUrl.split(',')[1];
+            return decodeURIComponent(escape(atob(base64)));
+        } catch {
+            return '';
+        }
+    }, [attachment.dataUrl]);
+
+    return (
+        <div className="card" style={{ background: 'var(--bg-elevated)', padding: 0, overflow: 'hidden' }}>
+            <button
+                className="btn btn-ghost"
+                style={{
+                    width: '100%',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '10px 14px',
+                    borderRadius: 0,
+                    fontWeight: 600,
+                    fontSize: '0.875rem',
+                }}
+                onClick={() => setOpen((o) => !o)}
+            >
+                <span>{label}</span>
+                <ChevronRight size={14} style={{ transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }} />
+            </button>
+            {open && (
+                <div
+                    style={{
+                        padding: '0 14px 14px',
+                        fontSize: '0.85rem',
+                        lineHeight: 1.6,
+                        color: 'var(--text)',
+                        maxHeight: 320,
+                        overflowY: 'auto',
+                        borderTop: '1px solid var(--border)',
+                    }}
+                    dangerouslySetInnerHTML={{ __html: html }}
+                />
+            )}
+        </div>
+    );
+}
+
 // ─── Grading session ─────────────────────────────────────────────────────────
 // classId is either a real class ID or COMBINED_ID for all linked classes.
 function ComparativeGradingSession({ classId, rubricId }: { classId: string; rubricId: string }) {
@@ -719,11 +771,16 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                             </div>
                         </div>
 
+                        {/* Student A essay text */}
+                        {attA.filter((a) => a.mimeType === 'text/html').map((a) => (
+                            <EssayPanel key={a.id} attachment={a} label={t('essay.essay_text_label')} />
+                        ))}
+
                         {/* Student A attachments */}
                         <div className="card" style={{ background: 'var(--bg-elevated)' }}>
-                            <h3 style={{ marginBottom: 12 }}>Attachments</h3>
+                            <h3 style={{ marginBottom: 12 }}>{t('comparativeGrading.attachments')}</h3>
                             {attA.length === 0 ? (
-                                <p className="text-muted text-sm">No attachments uploaded.</p>
+                                <p className="text-muted text-sm">{t('comparativeGrading.no_attachments')}</p>
                             ) : (
                                 attA.map((a) => <AttachmentViewer key={a.id} attachment={a} />)
                             )}
@@ -1271,10 +1328,15 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                     <div
                         style={{ display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto', paddingLeft: 4 }}
                     >
+                        {/* Student B essay text */}
+                        {attB.filter((a) => a.mimeType === 'text/html').map((a) => (
+                            <EssayPanel key={a.id} attachment={a} label={t('essay.essay_text_label')} />
+                        ))}
+
                         <div className="card" style={{ background: 'var(--bg-elevated)' }}>
-                            <h3 style={{ marginBottom: 12 }}>Attachments</h3>
+                            <h3 style={{ marginBottom: 12 }}>{t('comparativeGrading.attachments')}</h3>
                             {attB.length === 0 ? (
-                                <p className="text-muted text-sm">No attachments uploaded.</p>
+                                <p className="text-muted text-sm">{t('comparativeGrading.no_attachments')}</p>
                             ) : (
                                 attB.map((a) => <AttachmentViewer key={a.id} attachment={a} />)
                             )}

@@ -218,7 +218,10 @@
         "delete_rubric_warning": "Dadurch werden die Rubrik und alle zugehörigen Schülernoten dauerhaft gelöscht. Dies kann nicht rückgängig gemacht werden.",
         "action_compare": "Vergleichen",
         "shared_with_me": "Mit mir geteilt",
-        "shared_badge": "Geteilt"
+        "shared_badge": "Geteilt",
+        "action_essay": "Aufsatz",
+        "essay_pick_class_title": "Aufsatz einer Klasse zuweisen",
+        "essay_pick_class_desc": "Wählen Sie eine Klasse, um den \"{{rubric}}\" Aufsatz zuzuweisen. Jeder Schüler erhält einen eigenen einzigartigen Link."
     },
     "studentsPage": {
         "title": "Schüler und Klassen",
@@ -951,5 +954,38 @@
         "users_offline_body": "Verbinden Sie eine Supabase-Datenbank, um Benutzerrollen zu verwalten und alle registrierten Konten anzuzeigen.",
         "schools_offline_title": "Schulverwaltung erfordert eine Datenbankverbindung",
         "schools_offline_body": "Verbinden Sie eine Supabase-Datenbank, um Schulen zu erstellen und zu verwalten, Datenaufbewahrungsrichtlinien festzulegen und Schulmitglieder anzuzeigen."
+    },
+    "essay": {
+        "email_gate_title": "Geben Sie Ihre Schul-E-Mail-Adresse ein",
+        "email_gate_desc": "Ihre E-Mail-Adresse wird verwendet, um Ihren Aufsatz mit Ihrem Konto zu verknüpfen. Kein Passwort oder Code erforderlich.",
+        "email_placeholder": "schueler@schule.de",
+        "start_btn": "Aufsatz starten",
+        "starting": "Wird gestartet…",
+        "invalid_link_title": "Ungültiger oder abgelaufener Link",
+        "invalid_link_desc": "Dieser Aufsatz-Link ist nicht gültig. Bitte fragen Sie Ihren Lehrer nach einem neuen Link.",
+        "expired_title": "Abgabefrist abgelaufen",
+        "expired_desc": "Die Frist war {{date}}. Bitte kontaktieren Sie Ihren Lehrer.",
+        "seb_blocked": "Diese Prüfung muss im Safe Exam Browser geöffnet werden. Das Einreichen ist gesperrt, bis Sie diesen Link in SEB öffnen.",
+        "draft_restored": "Entwurf aus Ihrer letzten Sitzung wiederhergestellt.",
+        "dismiss": "Schließen",
+        "signed_in_as": "Angemeldet als {{email}}",
+        "draft_saved_at": "Gespeichert um {{time}}",
+        "time_up_countdown": "Zeit abgelaufen",
+        "words_count": "{{count}} Wörter",
+        "prompt_label": "Aufgabenstellung",
+        "submitted_title_db": "Aufsatz bei Ihrem Lehrer eingereicht!",
+        "submitted_title": "Aufsatz eingereicht!",
+        "submitted_desc_db": "Ihr Lehrer kann Ihre Einreichung in RubricMaker einsehen. Bewahren Sie den Backup-Code unten auf, nur für den Fall.",
+        "submitted_desc_code": "Kopieren Sie den Einreichungscode unten und senden Sie ihn an Ihren Lehrer.",
+        "copy": "Kopieren",
+        "copied": "Kopiert!",
+        "editor_placeholder": "Beginnen Sie hier mit dem Schreiben Ihres Aufsatzes…",
+        "time_up_auto": "Die Zeit ist abgelaufen — Ihr Aufsatz wurde automatisch eingereicht.",
+        "over_limit": "{{count}} Wörter über dem Limit.",
+        "submit_btn": "Aufsatz einreichen",
+        "submitting": "Einreichen…",
+        "essay_text_label": "Aufsatz",
+        "show_essay": "Aufsatz anzeigen",
+        "hide_essay": "Aufsatz ausblenden"
     }
 }

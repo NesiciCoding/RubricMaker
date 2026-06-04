@@ -218,7 +218,10 @@
         "delete_rubric_warning": "Dit zal de rubriek en alle bijbehorende leerlingscores permanent verwijderen. Dit kan niet ongedaan worden gemaakt.",
         "action_compare": "Vergelijken",
         "shared_with_me": "Gedeeld met mij",
-        "shared_badge": "Gedeeld"
+        "shared_badge": "Gedeeld",
+        "action_essay": "Opstel",
+        "essay_pick_class_title": "Opstelopdracht toewijzen aan klas",
+        "essay_pick_class_desc": "Selecteer een klas om de \"{{rubric}}\" opdracht toe te wijzen. Elke leerling krijgt een eigen unieke link."
     },
     "studentsPage": {
         "title": "Leerlingen & Klassen",
@@ -951,5 +954,38 @@
         "resume": "Hervatten",
         "stop": "Stop",
         "progress": "Leesvoortgang"
+    },
+    "essay": {
+        "email_gate_title": "Voer je schoole-mailadres in",
+        "email_gate_desc": "Je e-mailadres wordt gebruikt om je opstel aan je account te koppelen. Geen wachtwoord of code nodig.",
+        "email_placeholder": "leerling@school.nl",
+        "start_btn": "Opstel starten",
+        "starting": "Starten…",
+        "invalid_link_title": "Ongeldige of verlopen link",
+        "invalid_link_desc": "Deze opstelkoppeling is niet geldig. Vraag je docent om een nieuwe link.",
+        "expired_title": "Deadline is verstreken",
+        "expired_desc": "De deadline was {{date}}. Neem contact op met je docent.",
+        "seb_blocked": "Dit examen moet worden geopend in Safe Exam Browser. Indienen is geblokkeerd totdat je deze link in SEB opent.",
+        "draft_restored": "Concept hersteld vanuit je laatste sessie.",
+        "dismiss": "Sluiten",
+        "signed_in_as": "Ingelogd als {{email}}",
+        "draft_saved_at": "Opgeslagen {{time}}",
+        "time_up_countdown": "Tijd op",
+        "words_count": "{{count}} woorden",
+        "prompt_label": "Opdrachttekst",
+        "submitted_title_db": "Opstel ingediend bij je docent!",
+        "submitted_title": "Opstel ingediend!",
+        "submitted_desc_db": "Je docent kan je inzending bekijken in RubricMaker. Bewaar de reservecode hieronder voor de zekerheid.",
+        "submitted_desc_code": "Kopieer de inzendcode hieronder en stuur deze naar je docent.",
+        "copy": "Kopiëren",
+        "copied": "Gekopieerd!",
+        "editor_placeholder": "Begin hier met het schrijven van je opstel…",
+        "time_up_auto": "De tijd is op — je opstel is automatisch ingediend.",
+        "over_limit": "{{count}} woorden boven de limiet.",
+        "submit_btn": "Opstel indienen",
+        "submitting": "Indienen…",
+        "essay_text_label": "Opstel",
+        "show_essay": "Opstel tonen",
+        "hide_essay": "Opstel verbergen"
     }
 }
