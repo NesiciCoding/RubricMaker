@@ -198,7 +198,9 @@
         "activity_updated_prefix": "Aktualisiert",
         "action_resume": "Fortsetzen",
         "action_open": "Öffnen",
-        "quick_start_templates": "Schnellstart-Vorlagen"
+        "quick_start_templates": "Schnellstart-Vorlagen",
+        "my_templates": "Meine Vorlagen",
+        "built_in_templates": "Eingebaute Vorlagen"
     },
     "rubricList": {
         "title": "Rubriken",
@@ -224,7 +226,17 @@
         "shared_badge": "Geteilt",
         "action_essay": "Aufsatz",
         "essay_pick_class_title": "Aufsatz einer Klasse zuweisen",
-        "essay_pick_class_desc": "Wählen Sie eine Klasse, um den \"{{rubric}}\" Aufsatz zuzuweisen. Jeder Schüler erhält einen eigenen einzigartigen Link."
+        "essay_pick_class_desc": "Wählen Sie eine Klasse, um den \"{{rubric}}\" Aufsatz zuzuweisen. Jeder Schüler erhält einen eigenen einzigartigen Link.",
+        "action_share_colleague": "Mit Kollegen teilen",
+        "share_modal_title": "Mit Kollegen teilen",
+        "share_modal_desc": "Teilen Sie \"{{rubric}}\" mit einem anderen Lehrer. Sie müssen ein Konto in dieser RubricMaker-Instanz haben.",
+        "share_email_placeholder": "kollege@schule.de",
+        "share_mode_read": "Nur anzeigen",
+        "share_mode_edit": "Kann bearbeiten",
+        "share_success": "Rubrik erfolgreich geteilt!",
+        "share_notfound": "Kein Konto für {{email}} gefunden. Bitten Sie sie, sich zuerst bei RubricMaker anzumelden.",
+        "share_shared_with": "Geteilt mit",
+        "share_btn": "Teilen"
     },
     "studentsPage": {
         "title": "Schüler und Klassen",
@@ -440,7 +452,13 @@
         "single_point_descriptor_label": "Kompetenz-Deskriptor — was „erfüllt den Standard“ bedeutet",
         "single_point_descriptor_placeholder": "Beschreiben Sie, was ein Schüler tut, wenn er/sie diesen Standard erfüllt…",
         "single_point_meets_points": "Punkte (erfüllt)",
-        "level_quality_tip": "💡 Tipp: Beschreiben Sie, was der Schüler tut, nicht nur wie gut es ist (z. B. „nutzt 3+ Beispiele zur Unterstützung jedes Arguments“)"
+        "level_quality_tip": "💡 Tipp: Beschreiben Sie, was der Schüler tut, nicht nur wie gut es ist (z. B. „nutzt 3+ Beispiele zur Unterstützung jedes Arguments“)",
+        "action_save_as_template": "Als Vorlage speichern",
+        "save_as_template_success": "Als Vorlage gespeichert",
+        "weight_total_label": "Gesamtgewicht:",
+        "weight_total_hint": "(sollte 100% sein)",
+        "weight_total_warning": "Gewichte ergeben {{total}}% (erwartet 100%). Sie können trotzdem speichern — das Bewertungssystem normalisiert sie.",
+        "weight_distribute_evenly": "Gleichmäßig verteilen"
     },
     "peerReview": {
         "round_label": "Runde",

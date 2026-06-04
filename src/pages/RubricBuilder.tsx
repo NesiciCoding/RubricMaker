@@ -28,6 +28,7 @@ import {
     MoveRight,
     Copy,
     Files,
+    Layers,
     GripHorizontal,
     Clock,
     RotateCcw,
@@ -238,10 +239,28 @@ export default function RubricBuilder() {
 
     const onDragEnd = (result: DropResult) => {
         if (!result.destination) return;
-        const items = Array.from(criteria);
-        const [reorderedItem] = items.splice(result.source.index, 1);
-        items.splice(result.destination.index, 0, reorderedItem);
-        setCriteria(items);
+        const { source, destination } = result;
+        const droppableId = destination.droppableId;
+
+        if (droppableId === 'criteria') {
+            // Reorder criteria
+            const items = Array.from(criteria);
+            const [moved] = items.splice(source.index, 1);
+            items.splice(destination.index, 0, moved);
+            setCriteria(items);
+        } else if (droppableId.startsWith('levels-')) {
+            // Reorder levels within a criterion
+            const cid = droppableId.slice('levels-'.length);
+            setCriteria((prev) =>
+                prev.map((c) => {
+                    if (c.id !== cid) return c;
+                    const lvls = Array.from(c.levels);
+                    const [moved] = lvls.splice(source.index, 1);
+                    lvls.splice(destination.index, 0, moved);
+                    return { ...c, levels: lvls };
+                })
+            );
+        }
     };
 
     const handleExport = async (type: 'pdf' | 'docx' | 'json') => {
@@ -263,6 +282,31 @@ export default function RubricBuilder() {
         }
     };
 
+    const USER_TEMPLATES_KEY = 'rm_user_templates';
+
+    function handleSaveAsTemplate() {
+        const rubric = getRubricData();
+        const template = {
+            id: rubric.id !== 'temp' ? rubric.id : `tpl_${Date.now()}`,
+            name: rubric.name,
+            subject: rubric.subject,
+            description: rubric.description,
+            criteria: rubric.criteria,
+            scoringMode: rubric.scoringMode,
+            totalMaxPoints: rubric.totalMaxPoints,
+            format: rubric.format,
+            savedAt: new Date().toISOString(),
+        };
+        try {
+            const existing = JSON.parse(localStorage.getItem(USER_TEMPLATES_KEY) ?? '[]');
+            const filtered = existing.filter((t: { id: string }) => t.id !== template.id);
+            localStorage.setItem(USER_TEMPLATES_KEY, JSON.stringify([template, ...filtered].slice(0, 20)));
+            showToast(t('rubricBuilder.save_as_template_success', `"${rubric.name}" saved as template`), 'success');
+        } catch {
+            showToast(t('toast.export_error'), 'error');
+        }
+    }
+
     function handlePrint() {
         const orientation = format.orientation || 'portrait';
         const style = document.createElement('style');
@@ -278,6 +322,16 @@ export default function RubricBuilder() {
             return;
         }
         setNameError('');
+        // Warn (non-blocking) if weights are outside a sensible range in weighted mode
+        if (scoringMode === 'weighted-percentage' && criteria.length > 0) {
+            const totalWeight = criteria.reduce((sum, c) => sum + (c.weight || 0), 0);
+            if (totalWeight < 85 || totalWeight > 115) {
+                showToast(
+                    t('rubricBuilder.weight_total_warning', `Weights total ${totalWeight}% (expected 100%). You can still save — the grade engine normalises them.`),
+                    'warning'
+                );
+            }
+        }
         const rubricData = {
             name: name.trim(),
             subject,
@@ -692,6 +746,17 @@ export default function RubricBuilder() {
                                         >
                                             <Printer size={14} /> {t('rubricBuilder.action_print')}
                                         </button>
+                                        <hr style={{ margin: '4px 0', border: 'none', borderTop: '1px solid var(--border)' }} />
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            style={{ justifyContent: 'flex-start' }}
+                                            onClick={() => {
+                                                setShowExportMenu(false);
+                                                handleSaveAsTemplate();
+                                            }}
+                                        >
+                                            <Layers size={14} /> {t('rubricBuilder.action_save_as_template')}
+                                        </button>
                                     </div>
                                 </>
                             )}
@@ -1014,6 +1079,53 @@ export default function RubricBuilder() {
                                 </p>
                             )}
                         </div>
+
+                        {/* Weight running total (weighted-percentage mode only) */}
+                        {scoringMode === 'weighted-percentage' && criteria.length > 0 && (() => {
+                            const totalWeight = criteria.reduce((sum, c) => sum + (c.weight || 0), 0);
+                            const ok = totalWeight >= 98 && totalWeight <= 102;
+                            const warn = !ok && totalWeight >= 85 && totalWeight <= 115;
+                            const color = ok ? 'var(--green, #10b981)' : warn ? 'var(--yellow, #f59e0b)' : 'var(--red, #ef4444)';
+                            return (
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 8,
+                                        padding: '6px 12px',
+                                        borderRadius: 8,
+                                        background: ok ? 'color-mix(in srgb, var(--green, #10b981) 10%, transparent)' : 'color-mix(in srgb, var(--yellow, #f59e0b) 10%, transparent)',
+                                        border: `1px solid ${color}40`,
+                                        marginTop: 16,
+                                        marginBottom: 4,
+                                        fontSize: '0.82rem',
+                                    }}
+                                >
+                                    <span style={{ color: 'var(--text-muted)' }}>{t('rubricBuilder.weight_total_label', 'Total weight:')}</span>
+                                    <span style={{ fontWeight: 700, color }}>{totalWeight}%</span>
+                                    {!ok && (
+                                        <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                                            {t('rubricBuilder.weight_total_hint', '(should be 100%)')}
+                                        </span>
+                                    )}
+                                    <button
+                                        className="btn btn-ghost btn-sm"
+                                        style={{ marginLeft: 'auto', fontSize: '0.75rem', color: 'var(--accent)' }}
+                                        onClick={() => {
+                                            const even = Math.round(100 / criteria.length);
+                                            const remainder = 100 - even * (criteria.length - 1);
+                                            setCriteria((prev) => prev.map((c, i) => ({
+                                                ...c,
+                                                weight: i === prev.length - 1 ? remainder : even,
+                                            })));
+                                        }}
+                                        title={t('rubricBuilder.weight_distribute_evenly', 'Distribute evenly')}
+                                    >
+                                        {t('rubricBuilder.weight_distribute_evenly', 'Distribute evenly')}
+                                    </button>
+                                </div>
+                            );
+                        })()}
 
                         {/* Criteria */}
                         <div
@@ -1653,7 +1765,11 @@ export default function RubricBuilder() {
                                                         {!collapsedCriteria.has(criterion.id) &&
                                                             scoringMode !== 'single-point' && (
                                                                 <div style={{ overflowX: 'auto' }}>
+                                                                    <Droppable droppableId={`levels-${criterion.id}`} direction="horizontal">
+                                                                    {(levelProvided) => (
                                                                     <div
+                                                                        {...levelProvided.droppableProps}
+                                                                        ref={levelProvided.innerRef}
                                                                         style={{
                                                                             display: 'flex',
                                                                             gap: 10,
@@ -1661,7 +1777,16 @@ export default function RubricBuilder() {
                                                                             paddingBottom: 4,
                                                                         }}
                                                                     >
-                                                                        {criterion.levels.map((level) => {
+                                                                        {criterion.levels.map((level, lvlIdx) => (
+                                                                        <Draggable key={level.id} draggableId={`level-${level.id}`} index={lvlIdx}>
+                                                                        {(lvlDraggable) => (
+                                                                        <div
+                                                                            ref={lvlDraggable.innerRef}
+                                                                            {...lvlDraggable.draggableProps}
+                                                                            style={{ ...lvlDraggable.draggableProps.style }}
+                                                                        >
+                                                                        {/* Inner level content — use a closure-wrapper to avoid shadowing */}
+                                                                        {(() => {
                                                                             const levelKey = `${criterion.id}_${level.id}`;
                                                                             const subExpanded =
                                                                                 expandedSubItems.has(levelKey);
@@ -1678,14 +1803,22 @@ export default function RubricBuilder() {
                                                                                         padding: 12,
                                                                                     }}
                                                                                 >
-                                                                                    {/* Level label + delete */}
+                                                                                    {/* Level label + drag handle + delete */}
                                                                                     <div
                                                                                         style={{
                                                                                             display: 'flex',
                                                                                             gap: 6,
                                                                                             marginBottom: 8,
+                                                                                            alignItems: 'center',
                                                                                         }}
                                                                                     >
+                                                                                        <div
+                                                                                            {...lvlDraggable.dragHandleProps}
+                                                                                            aria-label={`Drag to reorder level: ${level.label || 'Untitled'}`}
+                                                                                            style={{ cursor: 'grab', color: 'var(--text-dim)', flexShrink: 0, display: 'flex' }}
+                                                                                        >
+                                                                                            <GripHorizontal size={13} />
+                                                                                        </div>
                                                                                         <input
                                                                                             type="text"
                                                                                             value={level.label}
@@ -2248,7 +2381,12 @@ export default function RubricBuilder() {
                                                                                     )}
                                                                                 </div>
                                                                             );
-                                                                        })}
+                                                                        })()}
+                                                                        </div>
+                                                                        )}
+                                                                        </Draggable>
+                                                                        ))}
+                                                                        {levelProvided.placeholder}
                                                                         <div
                                                                             style={{
                                                                                 width: 210,
@@ -2267,6 +2405,8 @@ export default function RubricBuilder() {
                                                                             </button>
                                                                         </div>
                                                                     </div>
+                                                                    )}
+                                                                    </Droppable>
                                                                 </div>
                                                             )}
                                                     </div>

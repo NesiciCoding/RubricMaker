@@ -198,7 +198,9 @@
         "activity_updated_prefix": "Updated",
         "action_resume": "Resume",
         "action_open": "Open",
-        "quick_start_templates": "Quick Start Templates"
+        "quick_start_templates": "Quick Start Templates",
+        "my_templates": "My Templates",
+        "built_in_templates": "Built-in Templates"
     },
     "rubricList": {
         "title": "Rubrics",
@@ -224,7 +226,17 @@
         "shared_badge": "Shared",
         "action_essay": "Essay",
         "essay_pick_class_title": "Assign Essay to Class",
-        "essay_pick_class_desc": "Select a class to assign the \"{{rubric}}\" essay to. Each student will get their own unique link."
+        "essay_pick_class_desc": "Select a class to assign the \"{{rubric}}\" essay to. Each student will get their own unique link.",
+        "action_share_colleague": "Share with colleague",
+        "share_modal_title": "Share with Colleague",
+        "share_modal_desc": "Share \"{{rubric}}\" with another teacher. They must have an account in this RubricMaker instance.",
+        "share_email_placeholder": "colleague@school.nl",
+        "share_mode_read": "View only",
+        "share_mode_edit": "Can edit",
+        "share_success": "Rubric shared successfully!",
+        "share_notfound": "No account found for {{email}}. Ask them to sign in to RubricMaker first.",
+        "share_shared_with": "Shared with",
+        "share_btn": "Share"
     },
     "studentsPage": {
         "title": "Students & Classes",
@@ -440,7 +452,13 @@
         "single_point_descriptor_label": "Proficiency descriptor — what “meets standard” looks like",
         "single_point_descriptor_placeholder": "Describe what a student does when they meet this standard…",
         "single_point_meets_points": "Points (meets)",
-        "level_quality_tip": "💡 Tip: describe what the student does, not just how good it is (e.g. \"uses 3+ examples to support each claim\")"
+        "level_quality_tip": "💡 Tip: describe what the student does, not just how good it is (e.g. \"uses 3+ examples to support each claim\")",
+        "action_save_as_template": "Save as template",
+        "save_as_template_success": "Saved as template",
+        "weight_total_label": "Total weight:",
+        "weight_total_hint": "(should be 100%)",
+        "weight_total_warning": "Weights total {{total}}% (expected 100%). You can still save — the grade engine normalises them.",
+        "weight_distribute_evenly": "Distribute evenly"
     },
     "peerReview": {
         "round_label": "Round",

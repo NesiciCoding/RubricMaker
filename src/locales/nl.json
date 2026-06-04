@@ -198,7 +198,9 @@
         "activity_updated_prefix": "Bijgewerkt",
         "action_resume": "Verdergaan",
         "action_open": "Openen",
-        "quick_start_templates": "Snelstart Sjablonen"
+        "quick_start_templates": "Snelstart Sjablonen",
+        "my_templates": "Mijn sjablonen",
+        "built_in_templates": "Ingebouwde sjablonen"
     },
     "rubricList": {
         "title": "Rubrieken",
@@ -224,7 +226,17 @@
         "shared_badge": "Gedeeld",
         "action_essay": "Opstel",
         "essay_pick_class_title": "Opstelopdracht toewijzen aan klas",
-        "essay_pick_class_desc": "Selecteer een klas om de \"{{rubric}}\" opdracht toe te wijzen. Elke leerling krijgt een eigen unieke link."
+        "essay_pick_class_desc": "Selecteer een klas om de \"{{rubric}}\" opdracht toe te wijzen. Elke leerling krijgt een eigen unieke link.",
+        "action_share_colleague": "Delen met collega",
+        "share_modal_title": "Delen met collega",
+        "share_modal_desc": "Deel \"{{rubric}}\" met een andere docent. Zij moeten een account hebben in deze RubricMaker-instantie.",
+        "share_email_placeholder": "collega@school.nl",
+        "share_mode_read": "Alleen bekijken",
+        "share_mode_edit": "Mag bewerken",
+        "share_success": "Rubriek succesvol gedeeld!",
+        "share_notfound": "Geen account gevonden voor {{email}}. Vraag hen eerst in te loggen bij RubricMaker.",
+        "share_shared_with": "Gedeeld met",
+        "share_btn": "Delen"
     },
     "studentsPage": {
         "title": "Leerlingen & Klassen",
@@ -440,7 +452,13 @@
         "single_point_descriptor_label": "Vaardigheidsbeschrijving — wat “voldoet aan de norm” betekent",
         "single_point_descriptor_placeholder": "Beschrijf wat een leerling doet als hij/zij aan de norm voldoet…",
         "single_point_meets_points": "Punten (voldoet)",
-        "level_quality_tip": "💡 Tip: beschrijf wat de leerling dóét, niet alleen hoe goed het is (bijv. “gebruikt 3+ voorbeelden om elk argument te onderbouwen”)"
+        "level_quality_tip": "💡 Tip: beschrijf wat de leerling dóét, niet alleen hoe goed het is (bijv. “gebruikt 3+ voorbeelden om elk argument te onderbouwen”)",
+        "action_save_as_template": "Opslaan als sjabloon",
+        "save_as_template_success": "Opgeslagen als sjabloon",
+        "weight_total_label": "Totaal gewicht:",
+        "weight_total_hint": "(moet 100% zijn)",
+        "weight_total_warning": "Gewichten totaal {{total}}% (verwacht 100%). U kunt toch opslaan — het beoordelingssysteem normaliseert ze.",
+        "weight_distribute_evenly": "Gelijk verdelen"
     },
     "peerReview": {
         "round_label": "Ronde",

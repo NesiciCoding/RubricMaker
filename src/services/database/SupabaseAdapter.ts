@@ -1180,6 +1180,22 @@ export class SupabaseAdapter {
         });
     }
 
+    async lookupUserByEmail(email: string): Promise<{ userId: string; displayName?: string } | null> {
+        const { data } = await this.db()
+            .from('profiles')
+            .select('id, display_name')
+            .eq('email', email.trim().toLowerCase())
+            .maybeSingle();
+        if (!data) return null;
+        return { userId: (data as { id: string; display_name?: string }).id, displayName: (data as { id: string; display_name?: string }).display_name ?? undefined };
+    }
+
+    async shareRubricWithEmail(rubricId: string, email: string, mode: 'read' | 'edit'): Promise<SyncResult & { notFound?: boolean }> {
+        const user = await this.lookupUserByEmail(email);
+        if (!user) return { success: false, notFound: true, error: `No account found for ${email}` };
+        return this.shareRubric(rubricId, user.userId, mode);
+    }
+
     async fetchSharedRubrics(): Promise<Rubric[]> {
         const { data, error } = await this.db().from('rubric_shares').select('rubrics(data)').eq('user_id', this.uid());
         if (error) {

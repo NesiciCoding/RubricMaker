@@ -46,11 +46,12 @@ describe('#34 – graduated confidence scale locale keys', () => {
 describe('#34 – ConfidenceLevel backward compat logic', () => {
     it('levels ≥3 map to confident=true (backward compat)', () => {
         // Simulate the save logic: confident = !!cl && cl >= 3
-        expect(!!3 && 3 >= 3).toBe(true);  // Usually → confident
-        expect(!!4 && 4 >= 3).toBe(true);  // Confident → confident
-        expect(!!2 && 2 >= 3).toBe(false); // Sometimes → not confident
-        expect(!!1 && 1 >= 3).toBe(false); // Not yet → not confident
-        expect(!!undefined && (undefined as unknown as number) >= 3).toBe(false); // unrated → not confident
+        function isConfident(cl: number | undefined): boolean { return !!cl && cl >= 3; }
+        expect(isConfident(3)).toBe(true);  // Usually → confident
+        expect(isConfident(4)).toBe(true);  // Confident → confident
+        expect(isConfident(2)).toBe(false); // Sometimes → not confident
+        expect(isConfident(1)).toBe(false); // Not yet → not confident
+        expect(isConfident(undefined)).toBe(false); // unrated → not confident
     });
 
     it('legacy confident=true maps to level 3 on load', () => {

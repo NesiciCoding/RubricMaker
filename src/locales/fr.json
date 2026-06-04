@@ -198,7 +198,9 @@
         "activity_updated_prefix": "Mis à jour",
         "action_resume": "Reprendre",
         "action_open": "Ouvrir",
-        "quick_start_templates": "Modèles de démarrage rapide"
+        "quick_start_templates": "Modèles de démarrage rapide",
+        "my_templates": "Mes modèles",
+        "built_in_templates": "Modèles intégrés"
     },
     "rubricList": {
         "title": "Rubriques",
@@ -224,7 +226,17 @@
         "shared_badge": "Partagé",
         "action_essay": "Dissertation",
         "essay_pick_class_title": "Assigner la dissertation à une classe",
-        "essay_pick_class_desc": "Sélectionnez une classe pour assigner la dissertation \"{{rubric}}\". Chaque élève recevra son propre lien unique."
+        "essay_pick_class_desc": "Sélectionnez une classe pour assigner la dissertation \"{{rubric}}\". Chaque élève recevra son propre lien unique.",
+        "action_share_colleague": "Partager avec un collègue",
+        "share_modal_title": "Partager avec un collègue",
+        "share_modal_desc": "Partagez \"{{rubric}}\" avec un autre enseignant. Il doit avoir un compte dans cette instance de RubricMaker.",
+        "share_email_placeholder": "collegue@ecole.fr",
+        "share_mode_read": "Lecture seule",
+        "share_mode_edit": "Peut modifier",
+        "share_success": "Grille partagée avec succès !",
+        "share_notfound": "Aucun compte trouvé pour {{email}}. Demandez-leur de se connecter à RubricMaker d'abord.",
+        "share_shared_with": "Partagé avec",
+        "share_btn": "Partager"
     },
     "studentsPage": {
         "title": "Élèves et Classes",
@@ -440,7 +452,13 @@
         "single_point_descriptor_label": "Descripteur de compétence — ce que “répond aux attentes” signifie",
         "single_point_descriptor_placeholder": "Décrivez ce que fait l’élève lorsqu’il/elle répond à ce critère…",
         "single_point_meets_points": "Points (atteint)",
-        "level_quality_tip": "💡 Conseil : décrivez ce que l’élève fait, pas seulement la qualité (ex. : « utilise 3+ exemples pour étayer chaque argument »)"
+        "level_quality_tip": "💡 Conseil : décrivez ce que l’élève fait, pas seulement la qualité (ex. : « utilise 3+ exemples pour étayer chaque argument »)",
+        "action_save_as_template": "Enregistrer comme modèle",
+        "save_as_template_success": "Enregistré comme modèle",
+        "weight_total_label": "Poids total :",
+        "weight_total_hint": "(doit être 100%)",
+        "weight_total_warning": "Le poids total est de {{total}}% (attendu 100%). Vous pouvez quand même enregistrer — le moteur de notation normalise les valeurs.",
+        "weight_distribute_evenly": "Distribuer uniformément"
     },
     "peerReview": {
         "round_label": "Tour",

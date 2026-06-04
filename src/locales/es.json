@@ -198,7 +198,9 @@
         "activity_updated_prefix": "Actualizado",
         "action_resume": "Reanudar",
         "action_open": "Abrir",
-        "quick_start_templates": "Plantillas de inicio rápido"
+        "quick_start_templates": "Plantillas de inicio rápido",
+        "my_templates": "Mis plantillas",
+        "built_in_templates": "Plantillas integradas"
     },
     "rubricList": {
         "title": "Rúbricas",
@@ -224,7 +226,17 @@
         "shared_badge": "Compartido",
         "action_essay": "Redacción",
         "essay_pick_class_title": "Asignar redacción a una clase",
-        "essay_pick_class_desc": "Seleccione una clase para asignar la redacción \"{{rubric}}\". Cada estudiante recibirá su propio enlace único."
+        "essay_pick_class_desc": "Seleccione una clase para asignar la redacción \"{{rubric}}\". Cada estudiante recibirá su propio enlace único.",
+        "action_share_colleague": "Compartir con colega",
+        "share_modal_title": "Compartir con colega",
+        "share_modal_desc": "Comparta \"{{rubric}}\" con otro profesor. Deben tener una cuenta en esta instancia de RubricMaker.",
+        "share_email_placeholder": "colega@escuela.es",
+        "share_mode_read": "Solo lectura",
+        "share_mode_edit": "Puede editar",
+        "share_success": "¡Rúbrica compartida con éxito!",
+        "share_notfound": "No se encontró ninguna cuenta para {{email}}. Pídales que inicien sesión en RubricMaker primero.",
+        "share_shared_with": "Compartido con",
+        "share_btn": "Compartir"
     },
     "studentsPage": {
         "title": "Estudiantes y Clases",
@@ -440,7 +452,13 @@
         "single_point_descriptor_label": "Descriptor de competencia — qué significa “cumple el estándar”",
         "single_point_descriptor_placeholder": "Describa lo que hace un estudiante cuando cumple este estándar…",
         "single_point_meets_points": "Puntos (cumple)",
-        "level_quality_tip": "💡 Consejo: describa lo que hace el estudiante, no solo qué tan bien lo hace (ej. “usa 3+ ejemplos para apoyar cada argumento”)"
+        "level_quality_tip": "💡 Consejo: describa lo que hace el estudiante, no solo qué tan bien lo hace (ej. “usa 3+ ejemplos para apoyar cada argumento”)",
+        "action_save_as_template": "Guardar como plantilla",
+        "save_as_template_success": "Guardado como plantilla",
+        "weight_total_label": "Peso total:",
+        "weight_total_hint": "(debe ser 100%)",
+        "weight_total_warning": "Los pesos totalizan {{total}}% (esperado 100%). Puede guardar igualmente — el motor de calificación los normaliza.",
+        "weight_distribute_evenly": "Distribuir uniformemente"
     },
     "peerReview": {
         "round_label": "Ronda",
