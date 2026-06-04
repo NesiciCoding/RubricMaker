@@ -1185,7 +1185,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const newState = loadStore();
             dispatch({ type: 'SET_ALL', payload: newState });
             if (storageSync.isConnected()) {
-                await storageSync.pushAll(newState);
+                // Wrap pushAll so a cloud-sync failure after a successful local
+                // restore does not propagate as a rejection. The caller receives
+                // true (restore succeeded) and the pending-queue will retry later.
+                await storageSync.pushAll(newState).catch((e: unknown) => {
+                    console.warn('[importBackup] local restore succeeded; cloud sync failed', e);
+                });
             }
         }
         return ok;
