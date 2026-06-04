@@ -157,7 +157,10 @@
         "cambridge_api_key": "Cambridge API-Schlüssel",
         "cambridge_api_placeholder": "Fügen Sie hier Ihren Cambridge Dictionary API-Schlüssel ein…",
         "cambridge_api_register": "Registrieren Sie sich für einen kostenlosen Schlüssel auf",
-        "optional": "Optional"
+        "optional": "Optional",
+        "notify_students_title": "Schülerbenachrichtigungen",
+        "notify_on_grade_label": "Schüler bei Bewertung benachrichtigen",
+        "notify_on_grade_help": "Sendet eine E-Mail an den Schüler, wenn Sie eine Bewertung speichern. Erfordert eine SMTP-Konfiguration in Ihrem Supabase-Projekt."
     },
     "navigation": {
         "dashboard": "Dashboard",
@@ -609,7 +612,8 @@
         "essay_time": "{{n}} Min.",
         "essay_seb_required": "Safe Exam Browser erforderlich",
         "essay_submitted_words": "Eingereicht am {{date}} · {{wordCount}} Wörter",
-        "essays_load_error": "Ihre Aufsatzaufgaben konnten nicht geladen werden. Bitte aktualisieren Sie die Seite."
+        "essays_load_error": "Ihre Aufsatzaufgaben konnten nicht geladen werden. Bitte aktualisieren Sie die Seite.",
+        "peer_reviews_received": "Erhaltene Peer-Reviews"
     },
     "selfAssess": {
         "title": "GER-Selbstbewertung",
@@ -628,7 +632,12 @@
         "confident_short": "sicher",
         "mismatch_overestimate": "Der Schüler überschätzt sich möglicherweise — ein Reflexionsgespräch wäre sinnvoll.",
         "mismatch_underestimate": "Der Schüler unterschätzt möglicherweise seine Fortschritte — ermütigen Sie ihn!",
-        "view_full": "Vollständige Selbstbewertung anzeigen"
+        "view_full": "Vollständige Selbstbewertung anzeigen",
+        "rated_count": "bewertet",
+        "level_not_yet": "Noch nicht",
+        "level_sometimes": "Manchmal",
+        "level_usually": "Meistens",
+        "level_confident": "Sicher"
     },
     "statistics": {
         "download_csv": "CSV herunterladen",

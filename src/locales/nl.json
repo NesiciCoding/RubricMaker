@@ -157,7 +157,10 @@
         "sharing_success": "Succesvol gedeeld.",
         "sharing_failed": "Delen mislukt: {{error}}",
         "sharing_removed": "Toegang verwijderd.",
-        "sharing_no_users": "Geen andere gebruikers gevonden. Zorg dat collega's zich minimaal één keer hebben aangemeld."
+        "sharing_no_users": "Geen andere gebruikers gevonden. Zorg dat collega's zich minimaal één keer hebben aangemeld.",
+        "notify_students_title": "Leerlingmeldingen",
+        "notify_on_grade_label": "Leerlingen informeren bij een beoordeling",
+        "notify_on_grade_help": "Stuurt een e-mail naar de leerling wanneer je een beoordeling opslaat. Vereist dat SMTP is geconfigureerd in je Supabase-project."
     },
     "navigation": {
         "dashboard": "Dashboard",
@@ -609,7 +612,8 @@
         "essay_time": "{{n}} min",
         "essay_seb_required": "Safe Exam Browser vereist",
         "essay_submitted_words": "Ingediend op {{date}} · {{wordCount}} woorden",
-        "essays_load_error": "Essayopdrachten konden niet worden geladen. Probeer de pagina te vernieuwen."
+        "essays_load_error": "Essayopdrachten konden niet worden geladen. Probeer de pagina te vernieuwen.",
+        "peer_reviews_received": "Ontvangen peerreviews"
     },
     "selfAssess": {
         "title": "ERK Zelfbeoordeling",
@@ -628,7 +632,12 @@
         "confident_short": "zeker",
         "mismatch_overestimate": "Leerling overschat mogelijk zichzelf — een reflectiegesprek is hier nuttig.",
         "mismatch_underestimate": "Leerling onderschat mogelijk zijn/haar voortgang — geef een compliment!",
-        "view_full": "Volledige zelfbeoordeling bekijken"
+        "view_full": "Volledige zelfbeoordeling bekijken",
+        "rated_count": "beoordeeld",
+        "level_not_yet": "Nog niet",
+        "level_sometimes": "Soms",
+        "level_usually": "Meestal",
+        "level_confident": "Zeker"
     },
     "statistics": {
         "download_csv": "Download CSV",

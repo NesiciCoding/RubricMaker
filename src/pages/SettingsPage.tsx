@@ -28,6 +28,7 @@ import Modal from '../components/ui/Modal';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
+import { useDbStatus } from '../hooks/useDbStatus';
 import type { GradeScale, GradeRange, UserRole } from '../types';
 import { exportFullBackup } from '../store/storage';
 import { hashPin, verifyPin, isHashed } from '../utils/pinHash';
@@ -85,6 +86,7 @@ export default function SettingsPage() {
         importBackup,
     } = useApp();
     const { showToast } = useToast();
+    const dbStatus = useDbStatus();
 
     // ─── Role state ─────────────────────────────────────────────────────────────
     const role: UserRole = settings.userRole ?? 'admin';
@@ -644,6 +646,35 @@ export default function SettingsPage() {
                                 </div>
                             </div>
                         </div>
+
+                        {/* Grade notification (Supabase mode only) */}
+                        {dbStatus.isConnected && (
+                            <div className="card" style={{ marginBottom: 24 }}>
+                                <h3 style={{ marginBottom: 12 }}>{t('settings.notify_students_title', 'Student Notifications')}</h3>
+                                <label
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 10,
+                                        cursor: 'pointer',
+                                        userSelect: 'none',
+                                    }}
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={!!settings.notifyStudentsOnGrade}
+                                        onChange={(e) => updateSettings({ notifyStudentsOnGrade: e.target.checked })}
+                                        style={{ accentColor: 'var(--accent)' }}
+                                    />
+                                    <div>
+                                        <div style={{ fontWeight: 500 }}>{t('settings.notify_on_grade_label', 'Notify students when graded')}</div>
+                                        <div className="text-xs text-muted" style={{ marginTop: 2 }}>
+                                            {t('settings.notify_on_grade_help', 'Sends an email to the student when you save a grade. Requires SMTP to be configured in your Supabase project.')}
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        )}
 
                         {/* Overdue Reminder Threshold */}
                         <div className="card" style={{ marginBottom: 24 }}>

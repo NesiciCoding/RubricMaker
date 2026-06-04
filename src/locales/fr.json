@@ -157,7 +157,10 @@
         "cambridge_api_key": "Clé API Cambridge",
         "cambridge_api_placeholder": "Collez ici votre clé API du dictionnaire Cambridge…",
         "cambridge_api_register": "Inscrivez-vous pour une clé gratuite sur",
-        "optional": "Optionnel"
+        "optional": "Optionnel",
+        "notify_students_title": "Notifications aux élèves",
+        "notify_on_grade_label": "Notifier les élèves lors de la notation",
+        "notify_on_grade_help": "Envoie un e-mail à l'élève lorsque vous enregistrez une note. Nécessite une configuration SMTP dans votre projet Supabase."
     },
     "navigation": {
         "dashboard": "Tableau de bord",
@@ -609,7 +612,8 @@
         "essay_time": "{{n}} min",
         "essay_seb_required": "Safe Exam Browser requis",
         "essay_submitted_words": "Soumis le {{date}} · {{wordCount}} mots",
-        "essays_load_error": "Impossible de charger vos devoirs d'essai. Veuillez actualiser la page."
+        "essays_load_error": "Impossible de charger vos devoirs d'essai. Veuillez actualiser la page.",
+        "peer_reviews_received": "Évaluations par les pairs reçues"
     },
     "selfAssess": {
         "title": "Auto-évaluation CECR",
@@ -628,7 +632,12 @@
         "confident_short": "maîtrisé",
         "mismatch_overestimate": "L'élève semble surestimer ses capacités — une conversation de réflexion serait utile.",
         "mismatch_underestimate": "L'élève semble sous-estimer ses progrès — encouragez-le !",
-        "view_full": "Voir l'auto-évaluation complète"
+        "view_full": "Voir l'auto-évaluation complète",
+        "rated_count": "évalués",
+        "level_not_yet": "Pas encore",
+        "level_sometimes": "Parfois",
+        "level_usually": "Généralement",
+        "level_confident": "Confiant"
     },
     "statistics": {
         "download_csv": "Télécharger CSV",

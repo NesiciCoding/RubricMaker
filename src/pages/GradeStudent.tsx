@@ -33,6 +33,7 @@ import TiptapEditor, { type TiptapEditorHandle } from '../components/Editor/Tipt
 import type { ScoreEntry, Modifier, EssayAssignment } from '../types';
 import { calcGradeSummary } from '../utils/gradeCalc';
 import { exportSinglePdf } from '../utils/pdfExport';
+import { loadSupabaseConfig } from '../services/database';
 
 export default function GradeStudent() {
     const { t } = useTranslation();
@@ -153,7 +154,23 @@ export default function GradeStudent() {
         setSaved(true);
         setIsDirty(false);
         setTimeout(() => setSaved(false), 2000);
-    }, [sr, rubric, saveStudentRubric]);
+
+        // Fire-and-forget grade notification if the teacher has opted in
+        if (settings.notifyStudentsOnGrade && student && studentId) {
+            const config = loadSupabaseConfig();
+            if (config?.supabaseUrl && config.supabaseAnonKey) {
+                const portalUrl = `${window.location.origin}${window.location.pathname}#/portal/${studentId}`;
+                fetch(`${config.supabaseUrl}/functions/v1/notify-student-graded`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${config.supabaseAnonKey}`,
+                    },
+                    body: JSON.stringify({ studentId, rubricName: rubric.name, portalUrl }),
+                }).catch(() => { /* silently ignore network errors */ });
+            }
+        }
+    }, [sr, rubric, saveStudentRubric, settings.notifyStudentsOnGrade, student, studentId]);
 
     // Find next student; scope is configurable: stay in current class or span all rubric-linked classes
     const navScope = settings.gradeNavigationScope ?? 'rubric-classes';

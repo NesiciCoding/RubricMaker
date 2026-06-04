@@ -7,7 +7,7 @@ import CefrBadge from '../components/CEFR/CefrBadge';
 import { useApp } from '../context/AppContext';
 import { nanoid } from '../utils/nanoid';
 import { getCefrDescriptors, CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
-import type { CefrLevel, CefrSkill, SelfAssessment, SelfAssessmentRating, LinkedCefrDescriptor } from '../types';
+import type { CefrLevel, CefrSkill, SelfAssessment, SelfAssessmentRating, LinkedCefrDescriptor, ConfidenceLevel } from '../types';
 
 export default function SelfAssessPage() {
     const { rubricId, studentId } = useParams();
@@ -65,27 +65,45 @@ export default function SelfAssessPage() {
     // Load existing self-assessment if present
     const existing = selfAssessments.find((sa) => sa.rubricId === rubricId && sa.studentId === studentId);
 
-    const [confident, setConfident] = useState<Set<string>>(
-        new Set(existing?.ratings.filter((r) => r.confident).map((r) => r.descriptorId) ?? [])
-    );
+    const [confidence, setConfidence] = useState<Map<string, ConfidenceLevel>>(() => {
+        const m = new Map<string, ConfidenceLevel>();
+        if (existing) {
+            for (const r of existing.ratings) {
+                if (r.confidenceLevel) {
+                    m.set(r.descriptorId, r.confidenceLevel);
+                } else if (r.confident) {
+                    m.set(r.descriptorId, 3); // legacy confident → "Usually"
+                }
+            }
+        }
+        return m;
+    });
     const [reflection, setReflection] = useState(existing?.reflection ?? '');
     const [saved, setSaved] = useState(false);
 
-    // Keep confident in sync if existing changes (e.g. navigating back)
+    // Keep confidence in sync if existing changes (e.g. navigating back)
     useEffect(() => {
         if (existing) {
-            setConfident(new Set(existing.ratings.filter((r) => r.confident).map((r) => r.descriptorId)));
+            const m = new Map<string, ConfidenceLevel>();
+            for (const r of existing.ratings) {
+                if (r.confidenceLevel) {
+                    m.set(r.descriptorId, r.confidenceLevel);
+                } else if (r.confident) {
+                    m.set(r.descriptorId, 3);
+                }
+            }
+            setConfidence(m);
             setReflection(existing.reflection ?? '');
         }
     }, [existing?.id]);
 
-    function toggleConfident(descriptorId: string) {
-        setConfident((prev) => {
-            const next = new Set(prev);
-            if (next.has(descriptorId)) {
-                next.delete(descriptorId);
+    function setLevel(descriptorId: string, level: ConfidenceLevel) {
+        setConfidence((prev) => {
+            const next = new Map(prev);
+            if (next.get(descriptorId) === level) {
+                next.delete(descriptorId); // clicking same level deselects
             } else {
-                next.add(descriptorId);
+                next.set(descriptorId, level);
             }
             return next;
         });
@@ -93,12 +111,16 @@ export default function SelfAssessPage() {
     }
 
     function handleSave() {
-        const ratings: SelfAssessmentRating[] = linkedDescriptors.map((d) => ({
-            descriptorId: d.descriptorId,
-            level: d.level,
-            skill: d.skill,
-            confident: confident.has(d.descriptorId),
-        }));
+        const ratings: SelfAssessmentRating[] = linkedDescriptors.map((d) => {
+            const cl = confidence.get(d.descriptorId);
+            return {
+                descriptorId: d.descriptorId,
+                level: d.level,
+                skill: d.skill,
+                confident: !!cl && cl >= 3, // backward compat: "Usually"/"Confident" = confident
+                confidenceLevel: cl,
+            };
+        });
         const sa: SelfAssessment = {
             id: existing?.id ?? nanoid(),
             rubricId: rubricId!,
@@ -154,8 +176,21 @@ export default function SelfAssessPage() {
         );
     }
 
+    const CONFIDENCE_LABELS: Record<ConfidenceLevel, string> = {
+        1: t('selfAssess.level_not_yet', 'Not yet'),
+        2: t('selfAssess.level_sometimes', 'Sometimes'),
+        3: t('selfAssess.level_usually', 'Usually'),
+        4: t('selfAssess.level_confident', 'Confident'),
+    };
+    const CONFIDENCE_COLORS: Record<ConfidenceLevel, string> = {
+        1: '#ef4444',
+        2: '#f59e0b',
+        3: '#3b82f6',
+        4: '#10b981',
+    };
+
     const totalCount = linkedDescriptors.length;
-    const confidentCount = confident.size;
+    const ratedCount = confidence.size;
 
     return (
         <>
@@ -216,10 +251,10 @@ export default function SelfAssessPage() {
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
                         <div style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--accent)' }}>
-                            {confidentCount}/{totalCount}
+                            {ratedCount}/{totalCount}
                         </div>
                         <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                            {t('selfAssess.confident_count')}
+                            {t('selfAssess.rated_count', 'rated')}
                         </div>
                     </div>
                 </div>
@@ -245,62 +280,58 @@ export default function SelfAssessPage() {
                             </h3>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                                 {descriptors.map((d) => {
-                                    const isConfident = confident.has(d.descriptorId);
+                                    const currentLevel = confidence.get(d.descriptorId);
                                     const text = lang === 'nl' ? d.descriptionNl : d.descriptionEn;
-                                    const color = CEFR_LEVEL_COLORS[d.level];
+                                    const cefrColor = CEFR_LEVEL_COLORS[d.level];
                                     return (
-                                        <button
+                                        <div
                                             key={d.descriptorId}
-                                            onClick={() => toggleConfident(d.descriptorId)}
                                             style={{
-                                                display: 'flex',
-                                                alignItems: 'flex-start',
-                                                gap: 14,
-                                                padding: '14px 16px',
+                                                padding: '12px 14px',
                                                 borderRadius: 10,
-                                                border: `2px solid ${isConfident ? color : 'var(--border)'}`,
-                                                background: isConfident ? `${color}14` : 'var(--bg-elevated)',
-                                                cursor: 'pointer',
-                                                textAlign: 'left',
+                                                border: `1px solid ${currentLevel ? cefrColor + '60' : 'var(--border)'}`,
+                                                background: currentLevel ? `${cefrColor}08` : 'var(--bg-elevated)',
                                                 transition: 'border-color 0.15s, background 0.15s',
-                                                width: '100%',
                                             }}
                                         >
-                                            {/* Checkbox indicator */}
-                                            <div
-                                                style={{
-                                                    width: 24,
-                                                    height: 24,
-                                                    borderRadius: 6,
-                                                    flexShrink: 0,
-                                                    border: `2px solid ${isConfident ? color : 'var(--border)'}`,
-                                                    background: isConfident ? color : 'transparent',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    marginTop: 1,
-                                                    transition: 'background 0.15s, border-color 0.15s',
-                                                }}
-                                            >
-                                                {isConfident && <Check size={14} color="#fff" strokeWidth={3} />}
-                                            </div>
                                             {/* Text + level badge */}
-                                            <div style={{ flex: 1 }}>
-                                                <div
-                                                    style={{
-                                                        fontSize: '0.95rem',
-                                                        lineHeight: 1.5,
-                                                        color: 'var(--text)',
-                                                        fontWeight: isConfident ? 500 : 400,
-                                                    }}
-                                                >
-                                                    {text}
+                                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 10 }}>
+                                                <div style={{ flex: 1 }}>
+                                                    <div style={{ fontSize: '0.92rem', lineHeight: 1.5, color: 'var(--text)' }}>
+                                                        {text}
+                                                    </div>
                                                 </div>
-                                                <div style={{ marginTop: 6 }}>
-                                                    <CefrBadge level={d.level} size="sm" />
-                                                </div>
+                                                <CefrBadge level={d.level} size="sm" />
                                             </div>
-                                        </button>
+                                            {/* 4-point confidence selector */}
+                                            <div style={{ display: 'flex', gap: 4 }}>
+                                                {([1, 2, 3, 4] as ConfidenceLevel[]).map((lvl) => {
+                                                    const selected = currentLevel === lvl;
+                                                    const clr = CONFIDENCE_COLORS[lvl];
+                                                    return (
+                                                        <button
+                                                            key={lvl}
+                                                            onClick={() => setLevel(d.descriptorId, lvl)}
+                                                            style={{
+                                                                flex: 1,
+                                                                padding: '5px 2px',
+                                                                borderRadius: 6,
+                                                                border: `1.5px solid ${selected ? clr : 'var(--border)'}`,
+                                                                background: selected ? clr : 'transparent',
+                                                                color: selected ? '#fff' : 'var(--text-muted)',
+                                                                fontSize: '0.72rem',
+                                                                fontWeight: selected ? 700 : 400,
+                                                                cursor: 'pointer',
+                                                                transition: 'all 0.15s',
+                                                                whiteSpace: 'nowrap',
+                                                            }}
+                                                        >
+                                                            {CONFIDENCE_LABELS[lvl]}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
                                     );
                                 })}
                             </div>

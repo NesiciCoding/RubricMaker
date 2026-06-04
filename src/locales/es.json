@@ -157,7 +157,10 @@
         "sharing_success": "Compartido correctamente.",
         "sharing_failed": "Error al compartir: {{error}}",
         "sharing_removed": "Acceso eliminado.",
-        "sharing_no_users": "No se encontraron otros usuarios. Asegúrate de que los colegas hayan iniciado sesión al menos una vez."
+        "sharing_no_users": "No se encontraron otros usuarios. Asegúrate de que los colegas hayan iniciado sesión al menos una vez.",
+        "notify_students_title": "Notificaciones a estudiantes",
+        "notify_on_grade_label": "Notificar a los estudiantes cuando se califica",
+        "notify_on_grade_help": "Envía un correo electrónico al estudiante cuando guarda una calificación. Requiere que SMTP esté configurado en su proyecto de Supabase."
     },
     "navigation": {
         "dashboard": "Panel",
@@ -609,7 +612,8 @@
         "essay_time": "{{n}} min",
         "essay_seb_required": "Se requiere Safe Exam Browser",
         "essay_submitted_words": "Enviado el {{date}} · {{wordCount}} palabras",
-        "essays_load_error": "No se pudieron cargar tus tareas de ensayo. Por favor, intenta actualizar la página."
+        "essays_load_error": "No se pudieron cargar tus tareas de ensayo. Por favor, intenta actualizar la página.",
+        "peer_reviews_received": "Revisiones de pares recibidas"
     },
     "selfAssess": {
         "title": "Autoevaluación MCER",
@@ -628,7 +632,12 @@
         "confident_short": "confiado",
         "mismatch_overestimate": "El estudiante puede estar sobreestimando — merece una conversación de reflexión.",
         "mismatch_underestimate": "¡El estudiante puede estar subestimando su progreso — anímale!",
-        "view_full": "Ver autoevaluación completa"
+        "view_full": "Ver autoevaluación completa",
+        "rated_count": "evaluados",
+        "level_not_yet": "Todavía no",
+        "level_sometimes": "A veces",
+        "level_usually": "Generalmente",
+        "level_confident": "Seguro"
     },
     "statistics": {
         "download_csv": "Descargar CSV",

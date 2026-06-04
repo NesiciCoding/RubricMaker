@@ -157,7 +157,10 @@
         "sharing_success": "Shared successfully.",
         "sharing_failed": "Share failed: {{error}}",
         "sharing_removed": "Access removed.",
-        "sharing_no_users": "No other users found. Make sure colleagues have signed in at least once."
+        "sharing_no_users": "No other users found. Make sure colleagues have signed in at least once.",
+        "notify_students_title": "Student Notifications",
+        "notify_on_grade_label": "Notify students when graded",
+        "notify_on_grade_help": "Sends an email to the student when you save a grade. Requires SMTP to be configured in your Supabase project."
     },
     "navigation": {
         "dashboard": "Dashboard",
@@ -609,7 +612,8 @@
         "essay_time": "{{n}} min",
         "essay_seb_required": "Safe Exam Browser required",
         "essay_submitted_words": "Submitted {{date}} · {{wordCount}} words",
-        "essays_load_error": "Could not load your essay assignments. Please try refreshing the page."
+        "essays_load_error": "Could not load your essay assignments. Please try refreshing the page.",
+        "peer_reviews_received": "Peer Reviews Received"
     },
     "selfAssess": {
         "title": "CEFR Self-Assessment",
@@ -628,7 +632,12 @@
         "confident_short": "confident",
         "mismatch_overestimate": "Student may be overestimating — worth a reflection conversation.",
         "mismatch_underestimate": "Student may be underestimating their progress — encourage them!",
-        "view_full": "View full self-assessment"
+        "view_full": "View full self-assessment",
+        "rated_count": "rated",
+        "level_not_yet": "Not yet",
+        "level_sometimes": "Sometimes",
+        "level_usually": "Usually",
+        "level_confident": "Confident"
     },
     "statistics": {
         "download_csv": "Download CSV",
