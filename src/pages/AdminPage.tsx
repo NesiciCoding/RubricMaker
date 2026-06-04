@@ -35,7 +35,7 @@ import { useDbStatus } from '../hooks/useDbStatus';
 import { loadSupabaseConfig, storageSync } from '../services/database';
 import LoginButtons from '../components/auth/LoginButtons';
 import type { DbUser } from '../services/database/types';
-import type { School as SchoolType } from '../types';
+import type { School as SchoolType, RubricShare, ClassMember } from '../types';
 
 type Tab = 'users' | 'schools' | 'database' | 'integrations' | 'data' | 'retention';
 
@@ -405,9 +405,7 @@ function DatabaseTab() {
     const [shareRubricId, setShareRubricId] = useState('');
     const [shareTargetUser, setShareTargetUser] = useState('');
     const [shareMode, setShareMode] = useState<'read' | 'edit'>('read');
-    const [rubricShares, setRubricShares] = useState<
-        { userId: string; email?: string; displayName?: string; mode: 'read' | 'edit' }[]
-    >([]);
+    const [rubricShares, setRubricShares] = useState<RubricShare[]>([]);
     const [loadingRubricShares, setLoadingRubricShares] = useState(false);
     const [allDbUsers, setAllDbUsers] = useState<DbUser[]>([]);
 
@@ -415,12 +413,11 @@ function DatabaseTab() {
     const [shareClassId, setShareClassId] = useState('');
     const [shareClassTargetUser, setShareClassTargetUser] = useState('');
     const [shareClassRole, setShareClassRole] = useState<'viewer' | 'editor'>('viewer');
-    const [classMembers, setClassMembers] = useState<
-        { userId: string; email?: string; displayName?: string; role: 'viewer' | 'editor' }[]
-    >([]);
+    const [classMembers, setClassMembers] = useState<ClassMember[]>([]);
     const [loadingClassMembers, setLoadingClassMembers] = useState(false);
 
     useEffect(() => {
+        let cancelled = false;
         if (!shareRubricId || !dbStatus.isConnected) {
             setRubricShares([]);
             return;
@@ -428,11 +425,19 @@ function DatabaseTab() {
         setLoadingRubricShares(true);
         storageSync.adapter
             .fetchRubricShares(shareRubricId)
-            .then(setRubricShares)
-            .finally(() => setLoadingRubricShares(false));
+            .then((shares) => {
+                if (!cancelled) setRubricShares(shares);
+            })
+            .finally(() => {
+                if (!cancelled) setLoadingRubricShares(false);
+            });
+        return () => {
+            cancelled = true;
+        };
     }, [shareRubricId, dbStatus.isConnected]);
 
     useEffect(() => {
+        let cancelled = false;
         if (!shareClassId || !dbStatus.isConnected) {
             setClassMembers([]);
             return;
@@ -440,15 +445,22 @@ function DatabaseTab() {
         setLoadingClassMembers(true);
         storageSync.adapter
             .fetchClassMembers(shareClassId)
-            .then(setClassMembers)
-            .finally(() => setLoadingClassMembers(false));
+            .then((members) => {
+                if (!cancelled) setClassMembers(members);
+            })
+            .finally(() => {
+                if (!cancelled) setLoadingClassMembers(false);
+            });
+        return () => {
+            cancelled = true;
+        };
     }, [shareClassId, dbStatus.isConnected]);
 
     useEffect(() => {
         if (!dbStatus.isConnected) return;
         fetchAllUsers()
             .then((users) => setAllDbUsers(users))
-            .catch(() => {});
+            .catch((err) => console.error('Failed to fetch users for sharing:', err));
     }, [dbStatus.isConnected, fetchAllUsers]);
 
     return (
@@ -653,7 +665,6 @@ function DatabaseTab() {
                                     setDbSyncing(true);
                                     await pullFromDatabase();
                                     setDbSyncing(false);
-                                    showToast('Data pulled from database', 'success');
                                 }}
                             >
                                 <Download size={15} aria-hidden="true" /> Pull database → local
@@ -670,8 +681,8 @@ function DatabaseTab() {
                             </button>
                         </div>
 
-                        {/* Sharing — only visible when user has an account */}
-                        {dbStatus.userId && (
+                        {/* Sharing — only visible when signed in with a real (email-backed) account */}
+                        {dbStatus.currentUser?.email && (
                             <div
                                 style={{
                                     borderTop: '1px solid var(--border)',

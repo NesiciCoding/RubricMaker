@@ -254,7 +254,8 @@
         "merge_confirm_title": "Confirmer la fusion",
         "merge_confirm_description": "Tous les élèves de <strong>{{source}}</strong> seront déplacés dans <strong>{{target}}</strong>. La classe source sera supprimée. Cette action est irréversible.",
         "merge_confirm_action": "Fusionner",
-        "action_export_summaries": "Exporter les résumés"
+        "action_export_summaries": "Exporter les résumés",
+        "back_to_roster": "Retour à la liste"
     },
     "gradeStudent": {
         "title_prefix": "Notation :",

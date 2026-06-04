@@ -282,7 +282,7 @@ export default function ExportPage() {
                     className: cls?.name ?? '',
                     entries,
                     periodLabel: reportPeriodLabel || undefined,
-                    goals: getStudentGoalScores(student.id, studentRubrics, rubrics),
+                    goals: getStudentGoalScores(student.id, srs, rubrics),
                 };
             });
 

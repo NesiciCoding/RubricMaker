@@ -40,10 +40,16 @@ function gradeColor(pct: number): string {
     return 'FEE2E2'; // red-100
 }
 
+function normalizePct(value: number): number {
+    if (!Number.isFinite(value)) return 0;
+    return Math.max(0, Math.min(100, value));
+}
+
 function sparkBar(pct: number): string {
     const bars = '▁▂▃▄▅▆▇█';
-    const idx = Math.min(7, Math.floor((pct / 100) * 8));
-    return bars[idx];
+    const safe = normalizePct(pct);
+    const idx = Math.min(7, Math.floor((safe / 100) * 8));
+    return bars[idx] ?? bars[0];
 }
 
 function headerCell(text: string, pct = 25): TableCell {
@@ -88,7 +94,6 @@ export async function exportPeriodReport(input: PeriodReportInput): Promise<void
 
     const sections: (Paragraph | Table)[] = [];
 
-    // ── Title ──────────────────────────────────────────────────────────────────
     sections.push(
         new Paragraph({
             text: student.name,
@@ -107,7 +112,6 @@ export async function exportPeriodReport(input: PeriodReportInput): Promise<void
         })
     );
 
-    // ── Summary row (average + sparkline) ──────────────────────────────────────
     if (avg !== null) {
         const spark = summaries.map((s) => sparkBar(s.summary.modifiedPercentage)).join(' ');
         sections.push(
@@ -122,7 +126,6 @@ export async function exportPeriodReport(input: PeriodReportInput): Promise<void
         );
     }
 
-    // ── Grade trend mini-chart ─────────────────────────────────────────────────
     if (summaries.length >= 2) {
         sections.push(
             new Paragraph({
@@ -161,7 +164,6 @@ export async function exportPeriodReport(input: PeriodReportInput): Promise<void
         );
     }
 
-    // ── Grades table ──────────────────────────────────────────────────────────
     sections.push(
         new Paragraph({ text: 'Grades', heading: HeadingLevel.HEADING_2, spacing: { before: 280, after: 120 } })
     );
@@ -199,7 +201,6 @@ export async function exportPeriodReport(input: PeriodReportInput): Promise<void
         })
     );
 
-    // ── Learning Goals overview ────────────────────────────────────────────────
     if (goals && goals.length > 0) {
         sections.push(
             new Paragraph({
@@ -214,7 +215,7 @@ export async function exportPeriodReport(input: PeriodReportInput): Promise<void
                 children: [headerCell('Goal', 50), headerCell('Average', 20), headerCell('Progress', 30)],
             }),
             ...goals.map((g) => {
-                const pct = g.averagePercentage;
+                const pct = normalizePct(g.averagePercentage);
                 const filledBlocks = Math.round((pct / 100) * 10);
                 const bar = '█'.repeat(filledBlocks) + '░'.repeat(10 - filledBlocks);
                 return new TableRow({
@@ -250,7 +251,6 @@ export async function exportPeriodReport(input: PeriodReportInput): Promise<void
         );
     }
 
-    // ── Feedback section ───────────────────────────────────────────────────────
     const withComments = summaries.filter((s) => s.sr.overallComment || s.sr.entries.some((e) => e.comment));
 
     if (withComments.length > 0) {

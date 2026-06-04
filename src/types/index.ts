@@ -449,8 +449,24 @@ export interface AppSettings {
     cambridgeApiKey?: string;
     /** Display name of the user's school (populated on login). */
     schoolName?: string;
-    /** UI font family for the app chrome (key into FONT_OPTIONS). */
-    uiFontFamily?: string;
+    /** UI font family for the app chrome. */
+    uiFontFamily?: UiFontFamily;
+}
+
+export type UiFontFamily = 'Inter' | 'Nunito' | 'Source Sans 3' | 'Lato' | 'Roboto';
+
+export interface RubricShare {
+    userId: string;
+    email?: string;
+    displayName?: string;
+    mode: 'read' | 'edit';
+}
+
+export interface ClassMember {
+    userId: string;
+    email?: string;
+    displayName?: string;
+    role: 'viewer' | 'editor';
 }
 
 export interface CommentBankItem {

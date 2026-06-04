@@ -254,7 +254,8 @@
         "merge_confirm_title": "Samenvoegen bevestigen",
         "merge_confirm_description": "Alle leerlingen uit <strong>{{source}}</strong> worden verplaatst naar <strong>{{target}}</strong>. De bronklas wordt verwijderd. Dit kan niet ongedaan worden gemaakt.",
         "merge_confirm_action": "Samenvoegen",
-        "action_export_summaries": "Samenvattingen Exporteren"
+        "action_export_summaries": "Samenvattingen Exporteren",
+        "back_to_roster": "Terug naar Leerlingenlijst"
     },
     "gradeStudent": {
         "title_prefix": "Beoordeling:",

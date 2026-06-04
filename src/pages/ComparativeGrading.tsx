@@ -545,7 +545,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                             <Printer size={14} /> {t('common.print')}
                         </button>
                         <button className="btn btn-ghost btn-sm no-print" onClick={() => navigate(-1)}>
-                            <ArrowLeft size={15} /> Back
+                            <ArrowLeft size={15} /> {t('common.back')}
                         </button>
                     </>
                 }

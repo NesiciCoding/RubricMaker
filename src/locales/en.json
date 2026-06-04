@@ -254,7 +254,8 @@
         "merge_confirm_title": "Confirm Merge",
         "merge_confirm_description": "All students from <strong>{{source}}</strong> will be moved into <strong>{{target}}</strong>. The source class will be deleted. This cannot be undone.",
         "merge_confirm_action": "Merge",
-        "action_export_summaries": "Export Summaries"
+        "action_export_summaries": "Export Summaries",
+        "back_to_roster": "Back to Roster"
     },
     "gradeStudent": {
         "title_prefix": "Grading:",

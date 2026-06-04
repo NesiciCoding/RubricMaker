@@ -254,7 +254,8 @@
         "merge_confirm_title": "Confirmar Fusión",
         "merge_confirm_description": "Todos los estudiantes de <strong>{{source}}</strong> se moverán a <strong>{{target}}</strong>. La clase de origen se eliminará. Esta acción no se puede deshacer.",
         "merge_confirm_action": "Fusionar",
-        "action_export_summaries": "Exportar Resúmenes"
+        "action_export_summaries": "Exportar Resúmenes",
+        "back_to_roster": "Volver al listado"
     },
     "gradeStudent": {
         "title_prefix": "Calificando:",

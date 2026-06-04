@@ -475,7 +475,11 @@ export default function SettingsPage() {
                                         <select
                                             id="setting-ui-font"
                                             value={settings.uiFontFamily || 'Inter'}
-                                            onChange={(e) => updateSettings({ uiFontFamily: e.target.value })}
+                                            onChange={(e) =>
+                                                updateSettings({
+                                                    uiFontFamily: e.target.value as import('../types').UiFontFamily,
+                                                })
+                                            }
                                             style={{
                                                 fontFamily: settings.uiFontFamily
                                                     ? `'${settings.uiFontFamily}', system-ui, sans-serif`

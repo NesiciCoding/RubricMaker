@@ -254,7 +254,8 @@
         "merge_confirm_title": "Zusammenführung bestätigen",
         "merge_confirm_description": "Alle Schüler aus <strong>{{source}}</strong> werden in <strong>{{target}}</strong> verschoben. Die Quellklasse wird gelöscht. Dies kann nicht rückgängig gemacht werden.",
         "merge_confirm_action": "Zusammenführen",
-        "action_export_summaries": "Zusammenfassungen exportieren"
+        "action_export_summaries": "Zusammenfassungen exportieren",
+        "back_to_roster": "Zurück zur Liste"
     },
     "gradeStudent": {
         "title_prefix": "Benotung:",

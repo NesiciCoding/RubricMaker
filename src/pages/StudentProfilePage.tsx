@@ -188,7 +188,7 @@ export default function StudentProfilePage() {
                             <ExternalLink size={14} /> {t('studentPortal.view_portal_btn')}
                         </button>
                         <button className="btn btn-ghost btn-sm no-print" onClick={() => navigate('/students')}>
-                            <ArrowLeft size={15} /> Back to Roster
+                            <ArrowLeft size={15} /> {t('studentsPage.back_to_roster')}
                         </button>
                     </>
                 }
