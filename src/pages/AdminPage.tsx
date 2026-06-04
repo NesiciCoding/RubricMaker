@@ -663,8 +663,11 @@ function DatabaseTab() {
                                     if (!confirm('This will overwrite your local data with the database. Continue?'))
                                         return;
                                     setDbSyncing(true);
-                                    await pullFromDatabase();
-                                    setDbSyncing(false);
+                                    try {
+                                        await pullFromDatabase();
+                                    } finally {
+                                        setDbSyncing(false);
+                                    }
                                 }}
                             >
                                 <Download size={15} aria-hidden="true" /> Pull database → local
