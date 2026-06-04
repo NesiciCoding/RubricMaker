@@ -199,14 +199,38 @@ export class EssayAdapter {
         return { success: true };
     }
 
-    /** Fetch the assignment row (for validation on the student page) */
-    async fetchAssignment(assignmentId: string): Promise<{ exists: boolean; error?: string }> {
-        const { data, error } = await this.client
-            .from('essay_assignments')
-            .select('id')
-            .eq('id', assignmentId)
-            .single();
-        if (error) return { exists: false, error: error.message };
-        return { exists: !!data };
+    /** Shape returned by get-essay-assignment edge function. */
+    async fetchAssignmentContent(assignmentId: string): Promise<{
+        rubricId: string;
+        studentId: string;
+        title: string;
+        prompt: string | null;
+        minWords: number | null;
+        maxWords: number | null;
+        timeLimitMinutes: number | null;
+        requireSEB: boolean;
+        expiresAt: string | null;
+        readOnlyAfterSubmit: boolean;
+    } | null> {
+        const active = await this.getActiveSession();
+        if (!active) return null;
+
+        let response: Response;
+        try {
+            response = await fetch(`${this.supabaseUrl}/functions/v1/get-essay-assignment`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${active.session.access_token}`,
+                    apikey: this.supabaseAnonKey,
+                },
+                body: JSON.stringify({ assignmentId }),
+            });
+        } catch {
+            return null;
+        }
+
+        if (!response.ok) return null;
+        return response.json().catch(() => null);
     }
 }

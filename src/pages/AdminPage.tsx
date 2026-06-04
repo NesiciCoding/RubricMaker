@@ -25,8 +25,10 @@ import {
     LogOut,
     ExternalLink,
     AlertCircle,
+    AlertTriangle,
     UserMinus,
     Plug,
+    Search,
 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
@@ -56,10 +58,18 @@ function UsersTab() {
             setLoading(false);
             return;
         }
-        fetchAllUsers().then((u) => {
-            setUsers(u);
-            setLoading(false);
-        });
+        let cancelled = false;
+        (async () => {
+            try {
+                const u = await fetchAllUsers();
+                if (!cancelled) setUsers(u);
+            } catch {
+                // leave users as []
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        })();
+        return () => { cancelled = true; };
     }, [fetchAllUsers, dbStatus.isConnected]);
 
     async function handleRoleChange(userId: string, newRole: 'admin' | 'user' | 'student') {
@@ -164,9 +174,14 @@ function SchoolsTab() {
             setLoading(false);
             return;
         }
-        const list = await fetchSchools();
-        setSchools(list);
-        setLoading(false);
+        try {
+            const list = await fetchSchools();
+            setSchools(list);
+        } catch {
+            // leave schools as []
+        } finally {
+            setLoading(false);
+        }
     }, [fetchSchools, dbStatus.isConnected]);
 
     useEffect(() => {
@@ -1379,18 +1394,56 @@ function IntegrationsTab() {
 
 function DataTab() {
     const { t } = useTranslation();
-    const { students, anonymizeStudent } = useApp();
+    const { students, anonymizeStudent, deleteStudent } = useApp();
+    const [search, setSearch] = useState('');
+
+    const filtered = search.trim()
+        ? students.filter((s) => {
+              const q = search.toLowerCase();
+              return s.name.toLowerCase().includes(q) || (s.email ?? '').toLowerCase().includes(q);
+          })
+        : students;
 
     function handleAnonymize(id: string) {
         if (!window.confirm(t('admin.anonymize_confirm'))) return;
         anonymizeStudent(id);
     }
 
-    if (students.length === 0) return <p style={{ color: 'var(--text-muted)' }}>{t('admin.data_empty')}</p>;
+    function handleDelete(id: string) {
+        if (!window.confirm(t('admin.delete_student_confirm'))) return;
+        deleteStudent(id);
+    }
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {students.map((s) => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ position: 'relative', maxWidth: 360 }}>
+                <Search
+                    size={14}
+                    style={{
+                        position: 'absolute',
+                        left: 10,
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        color: 'var(--text-muted)',
+                        pointerEvents: 'none',
+                    }}
+                />
+                <input
+                    className="input"
+                    style={{ paddingLeft: 32, width: '100%', boxSizing: 'border-box' }}
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder={t('admin.data_search_placeholder')}
+                />
+            </div>
+
+            {filtered.length === 0 && (
+                <p style={{ color: 'var(--text-muted)' }}>
+                    {students.length === 0 ? t('admin.data_empty') : t('admin.data_no_results')}
+                </p>
+            )}
+
+            {filtered.map((s) => (
                 <div
                     key={s.id}
                     style={{
@@ -1409,28 +1462,38 @@ function DataTab() {
                             </span>
                         )}
                     </div>
-                    {s.anonymizedAt ? (
-                        <span
-                            style={{
-                                fontSize: '0.75rem',
-                                color: '#64748b',
-                                background: 'var(--bg-panel)',
-                                border: '1px solid var(--border)',
-                                borderRadius: 4,
-                                padding: '2px 8px',
-                            }}
-                        >
-                            {t('admin.anonymized_badge')}
-                        </span>
-                    ) : (
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                        {s.anonymizedAt ? (
+                            <span
+                                style={{
+                                    fontSize: '0.75rem',
+                                    color: '#64748b',
+                                    background: 'var(--bg-panel)',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: 4,
+                                    padding: '2px 8px',
+                                }}
+                            >
+                                {t('admin.anonymized_badge')}
+                            </span>
+                        ) : (
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                style={{ color: '#dc2626' }}
+                                onClick={() => handleAnonymize(s.id)}
+                            >
+                                {t('admin.anonymize_btn')}
+                            </button>
+                        )}
                         <button
                             className="btn btn-secondary btn-sm"
                             style={{ color: '#dc2626' }}
-                            onClick={() => handleAnonymize(s.id)}
+                            onClick={() => handleDelete(s.id)}
+                            aria-label={t('admin.delete_student_btn')}
                         >
-                            {t('admin.anonymize_btn')}
+                            <Trash2 size={13} />
                         </button>
-                    )}
+                    </div>
                 </div>
             ))}
         </div>
@@ -1442,11 +1505,36 @@ function DataTab() {
 function RetentionTab() {
     const { t } = useTranslation();
     return (
-        <div style={{ maxWidth: 560 }}>
-            <p style={{ color: 'var(--text)', lineHeight: 1.6 }}>{t('admin.retention_desc')}</p>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: 8 }}>
-                {t('admin.retention_per_school')}
-            </p>
+        <div style={{ maxWidth: 560, display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <div>
+                <p style={{ color: 'var(--text)', lineHeight: 1.6 }}>{t('admin.retention_desc')}</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: 8 }}>
+                    {t('admin.retention_per_school')}
+                </p>
+            </div>
+
+            <div
+                className="card"
+                style={{
+                    borderLeft: '3px solid #f59e0b',
+                    display: 'flex',
+                    gap: 12,
+                    alignItems: 'flex-start',
+                }}
+            >
+                <AlertTriangle size={18} style={{ color: '#f59e0b', flexShrink: 0, marginTop: 2 }} />
+                <div>
+                    <p style={{ margin: '0 0 4px', fontWeight: 600, color: 'var(--text)', fontSize: '0.9rem' }}>
+                        {t('admin.anon_auth_title')}
+                    </p>
+                    <p style={{ margin: '0 0 8px', color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                        {t('admin.anon_auth_desc')}
+                    </p>
+                    <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.82rem', lineHeight: 1.5 }}>
+                        {t('admin.anon_auth_hint')}
+                    </p>
+                </div>
+            </div>
         </div>
     );
 }
