@@ -102,6 +102,17 @@
         "action_import_backup": "Import Backup",
         "backup_help": "Export saves all rubrics, students, grades, and settings to a JSON file. Import restores everything.",
         "alert_invalid_backup": "Invalid backup file.",
+        "backup_preview_title": "Confirm Backup Import",
+        "backup_preview_subtitle": "Review the changes below. Importing will replace all current data with the backup contents.",
+        "backup_preview_current": "Current",
+        "backup_preview_backup": "Backup",
+        "backup_preview_rubrics": "Rubrics",
+        "backup_preview_students": "Students",
+        "backup_preview_classes": "Classes",
+        "backup_preview_grades": "Grades",
+        "backup_preview_warning": "This action cannot be undone. Export your current data first if you need a safety copy.",
+        "action_confirm_import": "Overwrite & import",
+        "backup_preview_table_label": "Current vs backup data counts",
         "alert_cannot_delete_default": "Can't delete the default scale.",
         "delete_scale_title": "Delete Grade Scale?",
         "delete_scale_confirm": "Are you sure you want to delete this grade scale? This cannot be undone.",
@@ -146,7 +157,10 @@
         "sharing_success": "Shared successfully.",
         "sharing_failed": "Share failed: {{error}}",
         "sharing_removed": "Access removed.",
-        "sharing_no_users": "No other users found. Make sure colleagues have signed in at least once."
+        "sharing_no_users": "No other users found. Make sure colleagues have signed in at least once.",
+        "notify_students_title": "Student Notifications",
+        "notify_on_grade_label": "Notify students when graded",
+        "notify_on_grade_help": "Sends an email to the student when you save a grade. Requires SMTP to be configured in your Supabase project."
     },
     "navigation": {
         "dashboard": "Dashboard",
@@ -184,7 +198,9 @@
         "activity_updated_prefix": "Updated",
         "action_resume": "Resume",
         "action_open": "Open",
-        "quick_start_templates": "Quick Start Templates"
+        "quick_start_templates": "Quick Start Templates",
+        "my_templates": "My Templates",
+        "built_in_templates": "Built-in Templates"
     },
     "rubricList": {
         "title": "Rubrics",
@@ -207,7 +223,20 @@
         "delete_rubric_warning": "This will permanently delete the rubric and all associated student scores. This cannot be undone.",
         "action_compare": "Compare",
         "shared_with_me": "Shared with me",
-        "shared_badge": "Shared"
+        "shared_badge": "Shared",
+        "action_essay": "Essay",
+        "essay_pick_class_title": "Assign Essay to Class",
+        "essay_pick_class_desc": "Select a class to assign the \"{{rubric}}\" essay to. Each student will get their own unique link.",
+        "action_share_colleague": "Share with colleague",
+        "share_modal_title": "Share with Colleague",
+        "share_modal_desc": "Share \"{{rubric}}\" with another teacher. They must have an account in this RubricMaker instance.",
+        "share_email_placeholder": "colleague@school.nl",
+        "share_mode_read": "View only",
+        "share_mode_edit": "Can edit",
+        "share_success": "Rubric shared successfully!",
+        "share_notfound": "No account found for {{email}}. Ask them to sign in to RubricMaker first.",
+        "share_shared_with": "Shared with",
+        "share_btn": "Share"
     },
     "studentsPage": {
         "title": "Students & Classes",
@@ -310,7 +339,10 @@
         "shortcut_save": "Save & advance to next student",
         "shortcut_help": "Show this overlay",
         "shortcut_esc": "Clear criterion focus",
-        "action_print": "Print"
+        "action_print": "Print",
+        "action_essay": "Essay",
+        "action_import_essay": "Import essay",
+        "anchor_help_text": "Anchor papers are reference submissions used to calibrate your grading. Marking a submission as an anchor lets you compare it side-by-side with new submissions in the grade footer."
     },
     "rubricBuilder": {
         "action_back": "Back",
@@ -410,7 +442,23 @@
         "version_n": "Version {{n}}",
         "criteria_count": "criteria",
         "auto_save_badge": "auto",
-        "action_print": "Print Rubric"
+        "action_print": "Print Rubric",
+        "section_rubric_details": "Rubric Details",
+        "action_expand_all": "Expand all",
+        "action_collapse_all": "Collapse all",
+        "action_copy_criterion": "Copy criterion to clipboard",
+        "action_duplicate_criterion": "Duplicate criterion",
+        "action_paste_criterion": "Paste criterion",
+        "single_point_descriptor_label": "Proficiency descriptor — what “meets standard” looks like",
+        "single_point_descriptor_placeholder": "Describe what a student does when they meet this standard…",
+        "single_point_meets_points": "Points (meets)",
+        "level_quality_tip": "💡 Tip: describe what the student does, not just how good it is (e.g. \"uses 3+ examples to support each claim\")",
+        "action_save_as_template": "Save as template",
+        "save_as_template_success": "Saved as template",
+        "weight_total_label": "Total weight:",
+        "weight_total_hint": "(should be 100%)",
+        "weight_total_warning": "Weights total {{total}}% (expected 100%). You can still save — the grade engine normalises them.",
+        "weight_distribute_evenly": "Distribute evenly"
     },
     "peerReview": {
         "round_label": "Round",
@@ -515,14 +563,24 @@
         "select_level": "Select level…",
         "label_score": "{{name}}'s Score:",
         "label_points": "Points",
-        "progress_matchups": "{{count}} matchup(s) done",
+        "progress_matchups": "{{done}} / {{total}} done · {{left}} left",
         "progress_coverage": "{{covered}} / {{total}} students seen",
         "not_enough_students": "Not enough students in this class for a comparison. Add at least two students.",
         "loading": "Setting up matchup…",
         "anchor_changed": "Anchor student rotated — starting fresh pairing.",
         "toggle_comments": "Toggle criterion notes",
         "comment_placeholder": "Note for this criterion…",
-        "unsaved_warning": "You have unsaved comparison scores. Leave anyway?"
+        "unsaved_warning": "You have unsaved comparison scores. Leave anyway?",
+        "title_compare": "Compare: {{name}}",
+        "all_classes": "All linked classes",
+        "all_classes_scope": "All linked classes ({{names}})",
+        "session_complete_title": "Session Complete",
+        "session_complete_body": "All students have reached the per-student limit of {{count}} comparison(s). All scores have been saved.",
+        "action_continue": "Continue Comparing",
+        "matchups_done": "{{done}} / {{max}} matchups done",
+        "per_student_limit": "Per-student limit:",
+        "per_student_limit_hint": "Max comparisons per student (0 = unlimited)",
+        "student_progress": "Student Progress"
     },
     "studentPortal": {
         "not_found": "Student not found.",
@@ -572,7 +630,8 @@
         "essay_time": "{{n}} min",
         "essay_seb_required": "Safe Exam Browser required",
         "essay_submitted_words": "Submitted {{date}} · {{wordCount}} words",
-        "essays_load_error": "Could not load your essay assignments. Please try refreshing the page."
+        "essays_load_error": "Could not load your essay assignments. Please try refreshing the page.",
+        "peer_reviews_received": "Peer Reviews Received"
     },
     "selfAssess": {
         "title": "CEFR Self-Assessment",
@@ -591,7 +650,12 @@
         "confident_short": "confident",
         "mismatch_overestimate": "Student may be overestimating — worth a reflection conversation.",
         "mismatch_underestimate": "Student may be underestimating their progress — encourage them!",
-        "view_full": "View full self-assessment"
+        "view_full": "View full self-assessment",
+        "rated_count": "rated",
+        "level_not_yet": "Not yet",
+        "level_sometimes": "Sometimes",
+        "level_usually": "Usually",
+        "level_confident": "Confident"
     },
     "statistics": {
         "download_csv": "Download CSV",
@@ -873,7 +937,11 @@
         "anonymized_badge": "Anonymized",
         "retention_title": "Retention Settings",
         "retention_desc": "Students whose most recent grade is older than the retention period will be automatically anonymized.",
-        "retention_per_school": "Set retention period per school on the Schools tab."
+        "retention_per_school": "Set retention period per school on the Schools tab.",
+        "users_offline_title": "User management requires a database connection",
+        "users_offline_body": "Connect a Supabase database to manage user roles and view all registered accounts. See the Deployment documentation to configure cloud sync.",
+        "schools_offline_title": "School management requires a database connection",
+        "schools_offline_body": "Connect a Supabase database to create and manage schools, set data retention policies, and view school members."
     },
     "essay_assignment": {
         "modal_title": "Essay Assignment — {{name}}",
@@ -913,5 +981,38 @@
         "resume": "Resume reading",
         "stop": "Stop reading",
         "progress": "Reading progress"
+    },
+    "essay": {
+        "email_gate_title": "Enter your school email",
+        "email_gate_desc": "Your email is used to link your essay to your account. No password or code needed.",
+        "email_placeholder": "student@school.nl",
+        "start_btn": "Start essay",
+        "starting": "Starting…",
+        "invalid_link_title": "Invalid or expired link",
+        "invalid_link_desc": "This essay link is not valid. Please ask your teacher for a new link.",
+        "expired_title": "Assignment deadline has passed",
+        "expired_desc": "The deadline was {{date}}. Please contact your teacher.",
+        "seb_blocked": "This exam must be opened in Safe Exam Browser. Submission is blocked until you reopen this link inside SEB.",
+        "draft_restored": "Draft restored from your last session.",
+        "dismiss": "Dismiss",
+        "signed_in_as": "Signed in as {{email}}",
+        "draft_saved_at": "Saved {{time}}",
+        "time_up_countdown": "Time up",
+        "words_count": "{{count}} words",
+        "prompt_label": "Assignment prompt",
+        "submitted_title_db": "Essay submitted to your teacher!",
+        "submitted_title": "Essay submitted!",
+        "submitted_desc_db": "Your teacher can see your submission in RubricMaker. Keep the backup code below just in case.",
+        "submitted_desc_code": "Copy the submission code below and send it to your teacher.",
+        "copy": "Copy",
+        "copied": "Copied!",
+        "editor_placeholder": "Start writing your essay here…",
+        "time_up_auto": "Time is up — your essay was submitted automatically.",
+        "over_limit": "Over limit by {{count}} words.",
+        "submit_btn": "Submit essay",
+        "submitting": "Submitting…",
+        "essay_text_label": "Essay",
+        "show_essay": "Show essay",
+        "hide_essay": "Hide essay"
     }
 }

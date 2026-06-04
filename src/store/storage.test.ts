@@ -284,11 +284,69 @@ describe('importFullBackup', () => {
         expect(result).toBe(false);
     });
 
+    it('returns false when top-level value is an array', () => {
+        expect(importFullBackup(JSON.stringify([]))).toBe(false);
+    });
+
+    it('returns false when top-level value is a primitive', () => {
+        expect(importFullBackup(JSON.stringify(42))).toBe(false);
+        expect(importFullBackup(JSON.stringify('string'))).toBe(false);
+    });
+
     it('handles partial backup (only some keys present)', () => {
         const partial = JSON.stringify({ rubrics: [makeRubric('r-partial')] });
         const result = importFullBackup(partial);
         expect(result).toBe(true);
         expect(loadStore().rubrics[0].id).toBe('r-partial');
+    });
+
+    it('skips rubrics field when it is not an array', () => {
+        saveRubrics([makeRubric('original')]);
+        const result = importFullBackup(JSON.stringify({ rubrics: 'not-an-array' }));
+        expect(result).toBe(true);
+        // rubrics were not overwritten
+        expect(loadStore().rubrics[0].id).toBe('original');
+    });
+
+    it('skips rubrics field when items are missing id', () => {
+        saveRubrics([makeRubric('original')]);
+        const result = importFullBackup(JSON.stringify({ rubrics: [{ name: 'no-id', criteria: [] }] }));
+        expect(result).toBe(true);
+        expect(loadStore().rubrics[0].id).toBe('original');
+    });
+
+    it('skips rubrics field when items have non-array criteria', () => {
+        saveRubrics([makeRubric('original')]);
+        const result = importFullBackup(JSON.stringify({ rubrics: [{ id: 'x', criteria: 'bad' }] }));
+        expect(result).toBe(true);
+        expect(loadStore().rubrics[0].id).toBe('original');
+    });
+
+    it('skips students field when it is not an array of objects with id', () => {
+        saveStudents([{ id: 's-orig', name: 'Alice', classId: 'c1' }]);
+        const result = importFullBackup(JSON.stringify({ students: [{ name: 'no-id' }] }));
+        expect(result).toBe(true);
+        expect(loadStore().students[0].id).toBe('s-orig');
+    });
+
+    it('skips settings field when it is not a plain object', () => {
+        const original = makeSettings();
+        saveSettings(original);
+        const result = importFullBackup(JSON.stringify({ settings: ['invalid'] }));
+        expect(result).toBe(true);
+        expect(loadStore().settings.theme).toBe('dark');
+    });
+
+    it('imports valid fields even when another field is invalid', () => {
+        const result = importFullBackup(
+            JSON.stringify({
+                rubrics: 'bad',
+                students: [{ id: 's-valid', name: 'Bob', classId: 'c1' }],
+            })
+        );
+        expect(result).toBe(true);
+        expect(loadStore().students[0].id).toBe('s-valid');
+        expect(loadStore().rubrics).toEqual([]);
     });
 });
 

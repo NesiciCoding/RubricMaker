@@ -16,13 +16,21 @@ export interface CefrDescriptor {
     descriptionNl: string;
 }
 
+/**
+ * 4-point confidence scale for CEFR self-assessments.
+ * 1 = Not yet, 2 = Sometimes, 3 = Usually, 4 = Confident/Always.
+ */
+export type ConfidenceLevel = 1 | 2 | 3 | 4;
+
 /** A single descriptor rating in a student self-assessment */
 export interface SelfAssessmentRating {
     descriptorId: string;
     level: CefrLevel;
     skill: CefrSkill;
-    /** true = student feels confident with this Can-Do statement */
+    /** true = student feels confident with this Can-Do statement (legacy field, kept for compat) */
     confident: boolean;
+    /** Graduated 4-point confidence scale. When present, overrides the binary confident field. */
+    confidenceLevel?: ConfidenceLevel;
 }
 
 /** A student's self-assessment of CEFR Can-Do descriptors for a rubric */
@@ -451,6 +459,8 @@ export interface AppSettings {
     schoolName?: string;
     /** UI font family for the app chrome. */
     uiFontFamily?: UiFontFamily;
+    /** Whether to send an email notification to the student when a grade is saved (Supabase mode only). */
+    notifyStudentsOnGrade?: boolean;
 }
 
 export type UiFontFamily = 'Inter' | 'Nunito' | 'Source Sans 3' | 'Lato' | 'Roboto';

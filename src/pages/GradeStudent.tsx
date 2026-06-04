@@ -29,10 +29,11 @@ import EssaySlipSheet from '../components/Essay/EssaySlipSheet';
 import { useApp } from '../context/AppContext';
 import { useTranslation } from 'react-i18next';
 import { useVoiceGrading } from '../hooks/useVoiceGrading';
-import TiptapEditor from '../components/Editor/TiptapEditor';
+import TiptapEditor, { type TiptapEditorHandle } from '../components/Editor/TiptapEditor';
 import type { ScoreEntry, Modifier, EssayAssignment } from '../types';
 import { calcGradeSummary } from '../utils/gradeCalc';
 import { exportSinglePdf } from '../utils/pdfExport';
+import { loadSupabaseConfig } from '../services/database';
 
 export default function GradeStudent() {
     const { t } = useTranslation();
@@ -98,6 +99,7 @@ export default function GradeStudent() {
     const audioChunksRef = useRef<Record<string, BlobPart[]>>({});
     const [activeCommentCrit, setActiveCommentCrit] = useState<string | null>(null);
     const [showCommentBankFor, setShowCommentBankFor] = useState<string | null>(null);
+    const commentEditorRef = useRef<TiptapEditorHandle>(null);
     const [showAttachPanel, setShowAttachPanel] = useState(false);
     const [showAnalysisPanel, setShowAnalysisPanel] = useState(false);
     const [showEssayAssignment, setShowEssayAssignment] = useState(false);
@@ -152,7 +154,25 @@ export default function GradeStudent() {
         setSaved(true);
         setIsDirty(false);
         setTimeout(() => setSaved(false), 2000);
-    }, [sr, rubric, saveStudentRubric]);
+
+        // Fire-and-forget grade notification if the teacher has opted in
+        if (settings.notifyStudentsOnGrade && student && studentId) {
+            const config = loadSupabaseConfig();
+            if (config?.supabaseUrl && config.supabaseAnonKey) {
+                const portalUrl = `${window.location.origin}${window.location.pathname}#/portal/${studentId}`;
+                fetch(`${config.supabaseUrl}/functions/v1/notify-student-graded`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${config.supabaseAnonKey}`,
+                    },
+                    body: JSON.stringify({ studentId, rubricName: rubric.name, portalUrl }),
+                }).catch(() => {
+                    /* silently ignore network errors */
+                });
+            }
+        }
+    }, [sr, rubric, saveStudentRubric, settings.notifyStudentsOnGrade, student, studentId]);
 
     // Find next student; scope is configurable: stay in current class or span all rubric-linked classes
     const navScope = settings.gradeNavigationScope ?? 'rubric-classes';
@@ -351,7 +371,7 @@ export default function GradeStudent() {
             setSr((p) => (p ? { ...p, overallComment: (p.overallComment ? p.overallComment + ' ' : '') + text } : p));
             setIsDirty(true);
         },
-        settings.language === 'nl' ? 'nl-NL' : 'en-US'
+        ({ nl: 'nl-NL', fr: 'fr-FR', de: 'de-DE', es: 'es-ES' } as Record<string, string>)[settings.language] ?? 'en-US'
     );
 
     const handlePrint = useCallback(() => {
@@ -448,16 +468,16 @@ export default function GradeStudent() {
                         <button
                             className="btn btn-secondary btn-sm"
                             onClick={() => setShowEssayAssignment(true)}
-                            title="Create essay assignment link"
+                            title={t('gradeStudent.action_essay')}
                         >
-                            <PenLine size={15} /> Essay
+                            <PenLine size={15} /> {t('gradeStudent.action_essay')}
                         </button>
                         <button
                             className="btn btn-secondary btn-sm"
                             onClick={() => setShowEssayImport(true)}
-                            title="Import student essay submission"
+                            title={t('gradeStudent.action_import_essay')}
                         >
-                            <Upload size={15} /> Import essay
+                            <Upload size={15} /> {t('gradeStudent.action_import_essay')}
                         </button>
                         <button
                             className="btn btn-secondary btn-sm"
@@ -1151,6 +1171,7 @@ export default function GradeStudent() {
                                         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                                             <div style={{ flex: 1 }}>
                                                 <TiptapEditor
+                                                    ref={commentEditorRef}
                                                     content={entry.comment || ''}
                                                     onChange={(html) => updateEntry(c.id, { comment: html })}
                                                     placeholder={t('gradeStudent.comment_placeholder')}
@@ -1352,11 +1373,10 @@ export default function GradeStudent() {
                     onClose={() => setShowCommentBankFor(null)}
                     onSelect={(text) => {
                         if (!showCommentBankFor) return;
-                        const entry = sr.entries.find((e) => e.criterionId === showCommentBankFor);
-                        if (entry) {
-                            const current = entry.comment || '';
-                            const spacer = current && !current.endsWith(' ') ? ' ' : '';
-                            updateEntry(showCommentBankFor, { comment: current + spacer + text });
+                        // Use the TipTap editor's insertContent API so the text lands as a
+                        // proper document node rather than being appended to raw HTML.
+                        if (commentEditorRef.current) {
+                            commentEditorRef.current.insertContent(text);
                         }
                         setShowCommentBankFor(null);
                     }}
@@ -1533,6 +1553,27 @@ export default function GradeStudent() {
                                 style={{ accentColor: 'var(--accent)' }}
                             />
                             {t('gradeStudent.mark_as_anchor')}
+                            <span
+                                title={t('gradeStudent.anchor_help_text')}
+                                aria-label={t('gradeStudent.anchor_help_text')}
+                                style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    width: 14,
+                                    height: 14,
+                                    borderRadius: '50%',
+                                    background: 'var(--bg-elevated)',
+                                    border: '1px solid var(--border)',
+                                    fontSize: '0.65rem',
+                                    fontWeight: 700,
+                                    color: 'var(--text-dim)',
+                                    cursor: 'help',
+                                    flexShrink: 0,
+                                }}
+                            >
+                                ?
+                            </span>
                         </label>
                         {anchorSR && (
                             <button

@@ -94,6 +94,17 @@
         "action_import_backup": "Sicherung importieren",
         "backup_help": "Der Export speichert alle Rubriken, Schüler, Noten und Einstellungen in eine JSON-Datei. Der Import stellt alles wieder her.",
         "alert_invalid_backup": "Ungültige Sicherungsdatei.",
+        "backup_preview_title": "Sicherungsimport bestätigen",
+        "backup_preview_subtitle": "Überprüfen Sie die Änderungen unten. Der Import ersetzt alle aktuellen Daten durch den Inhalt der Sicherung.",
+        "backup_preview_current": "Aktuell",
+        "backup_preview_backup": "Sicherung",
+        "backup_preview_rubrics": "Rubriken",
+        "backup_preview_students": "Schüler",
+        "backup_preview_classes": "Klassen",
+        "backup_preview_grades": "Noten",
+        "backup_preview_warning": "Diese Aktion kann nicht rückgängig gemacht werden. Exportieren Sie zuerst Ihre aktuellen Daten, wenn Sie eine Sicherungskopie benötigen.",
+        "action_confirm_import": "Überschreiben & importieren",
+        "backup_preview_table_label": "Aktuelle Daten vs. Sicherung",
         "alert_cannot_delete_default": "Die Standardskala kann nicht gelöscht werden.",
         "delete_scale_title": "Notenskala löschen?",
         "delete_scale_confirm": "Sind Sie sicher, dass Sie diese Notenskala löschen möchten? Dies kann nicht rückgängig gemacht werden.",
@@ -146,7 +157,10 @@
         "cambridge_api_key": "Cambridge API-Schlüssel",
         "cambridge_api_placeholder": "Fügen Sie hier Ihren Cambridge Dictionary API-Schlüssel ein…",
         "cambridge_api_register": "Registrieren Sie sich für einen kostenlosen Schlüssel auf",
-        "optional": "Optional"
+        "optional": "Optional",
+        "notify_students_title": "Schülerbenachrichtigungen",
+        "notify_on_grade_label": "Schüler bei Bewertung benachrichtigen",
+        "notify_on_grade_help": "Sendet eine E-Mail an den Schüler, wenn Sie eine Bewertung speichern. Erfordert eine SMTP-Konfiguration in Ihrem Supabase-Projekt."
     },
     "navigation": {
         "dashboard": "Dashboard",
@@ -184,7 +198,9 @@
         "activity_updated_prefix": "Aktualisiert",
         "action_resume": "Fortsetzen",
         "action_open": "Öffnen",
-        "quick_start_templates": "Schnellstart-Vorlagen"
+        "quick_start_templates": "Schnellstart-Vorlagen",
+        "my_templates": "Meine Vorlagen",
+        "built_in_templates": "Eingebaute Vorlagen"
     },
     "rubricList": {
         "title": "Rubriken",
@@ -207,7 +223,20 @@
         "delete_rubric_warning": "Dadurch werden die Rubrik und alle zugehörigen Schülernoten dauerhaft gelöscht. Dies kann nicht rückgängig gemacht werden.",
         "action_compare": "Vergleichen",
         "shared_with_me": "Mit mir geteilt",
-        "shared_badge": "Geteilt"
+        "shared_badge": "Geteilt",
+        "action_essay": "Aufsatz",
+        "essay_pick_class_title": "Aufsatz einer Klasse zuweisen",
+        "essay_pick_class_desc": "Wählen Sie eine Klasse, um den \"{{rubric}}\" Aufsatz zuzuweisen. Jeder Schüler erhält einen eigenen einzigartigen Link.",
+        "action_share_colleague": "Mit Kollegen teilen",
+        "share_modal_title": "Mit Kollegen teilen",
+        "share_modal_desc": "Teilen Sie \"{{rubric}}\" mit einem anderen Lehrer. Sie müssen ein Konto in dieser RubricMaker-Instanz haben.",
+        "share_email_placeholder": "kollege@schule.de",
+        "share_mode_read": "Nur anzeigen",
+        "share_mode_edit": "Kann bearbeiten",
+        "share_success": "Rubrik erfolgreich geteilt!",
+        "share_notfound": "Kein Konto für {{email}} gefunden. Bitten Sie sie, sich zuerst bei RubricMaker anzumelden.",
+        "share_shared_with": "Geteilt mit",
+        "share_btn": "Teilen"
     },
     "studentsPage": {
         "title": "Schüler und Klassen",
@@ -310,7 +339,10 @@
         "shortcut_save": "Speichern & zum nächsten Schüler",
         "shortcut_help": "Diese Übersicht anzeigen",
         "shortcut_esc": "Kriteriumsfokus aufheben",
-        "action_print": "Drucken"
+        "action_print": "Drucken",
+        "action_essay": "Aufsatz",
+        "action_import_essay": "Aufsatz importieren",
+        "anchor_help_text": "Ankerarbeiten sind Referenzeinreichungen, die zur Kalibrierung Ihrer Bewertung verwendet werden. Durch das Markieren einer Einreichung als Anker können Sie sie in der Bewertungsfußzeile neben neuen Einreichungen vergleichen."
     },
     "rubricBuilder": {
         "action_back": "Zurück",
@@ -410,7 +442,23 @@
         "version_n": "Version {{n}}",
         "criteria_count": "Kriterien",
         "auto_save_badge": "auto",
-        "action_print": "Rubrik drucken"
+        "action_print": "Rubrik drucken",
+        "section_rubric_details": "Rubrik-Details",
+        "action_expand_all": "Alle aufklappen",
+        "action_collapse_all": "Alle zuklappen",
+        "action_copy_criterion": "Kriterium in Zwischenablage kopieren",
+        "action_duplicate_criterion": "Kriterium duplizieren",
+        "action_paste_criterion": "Kriterium einfügen",
+        "single_point_descriptor_label": "Kompetenz-Deskriptor — was „erfüllt den Standard“ bedeutet",
+        "single_point_descriptor_placeholder": "Beschreiben Sie, was ein Schüler tut, wenn er/sie diesen Standard erfüllt…",
+        "single_point_meets_points": "Punkte (erfüllt)",
+        "level_quality_tip": "💡 Tipp: Beschreiben Sie, was der Schüler tut, nicht nur wie gut es ist (z. B. „nutzt 3+ Beispiele zur Unterstützung jedes Arguments“)",
+        "action_save_as_template": "Als Vorlage speichern",
+        "save_as_template_success": "Als Vorlage gespeichert",
+        "weight_total_label": "Gesamtgewicht:",
+        "weight_total_hint": "(sollte 100% sein)",
+        "weight_total_warning": "Gewichte ergeben {{total}}% (erwartet 100%). Sie können trotzdem speichern — das Bewertungssystem normalisiert sie.",
+        "weight_distribute_evenly": "Gleichmäßig verteilen"
     },
     "peerReview": {
         "round_label": "Runde",
@@ -515,14 +563,24 @@
         "select_level": "Stufe auswählen…",
         "label_score": "{{name}}s Punktzahl:",
         "label_points": "Punkte",
-        "progress_matchups": "{{count}} Vergleich(e) abgeschlossen",
+        "progress_matchups": "{{done}} / {{total}} durchgeführt · {{left}} verbleibend",
         "progress_coverage": "{{covered}} / {{total}} Schüler gesehen",
         "not_enough_students": "Nicht genug Schüler in dieser Klasse. Fügen Sie mindestens zwei hinzu.",
         "loading": "Vergleich wird vorbereitet…",
         "anchor_changed": "Ankerschüler gewechselt — neue Paarung startet.",
         "toggle_comments": "Kriteriumsnotizen ein-/ausblenden",
         "comment_placeholder": "Notiz zu diesem Kriterium…",
-        "unsaved_warning": "Sie haben ungespeicherte Vergleichsergebnisse. Trotzdem verlassen?"
+        "unsaved_warning": "Sie haben ungespeicherte Vergleichsergebnisse. Trotzdem verlassen?",
+        "title_compare": "Vergleichen: {{name}}",
+        "all_classes": "Alle verknüpften Klassen",
+        "all_classes_scope": "Alle verknüpften Klassen ({{names}})",
+        "session_complete_title": "Sitzung abgeschlossen",
+        "session_complete_body": "Alle Schüler haben das Limit von {{count}} Vergleich(en) pro Schüler erreicht. Alle Ergebnisse wurden gespeichert.",
+        "action_continue": "Weiter vergleichen",
+        "matchups_done": "{{done}} / {{max}} Vergleiche durchgeführt",
+        "per_student_limit": "Limit pro Schüler:",
+        "per_student_limit_hint": "Max. Vergleiche pro Schüler (0 = unbegrenzt)",
+        "student_progress": "Schülerfortschritt"
     },
     "studentPortal": {
         "not_found": "Schüler nicht gefunden.",
@@ -572,7 +630,8 @@
         "essay_time": "{{n}} Min.",
         "essay_seb_required": "Safe Exam Browser erforderlich",
         "essay_submitted_words": "Eingereicht am {{date}} · {{wordCount}} Wörter",
-        "essays_load_error": "Ihre Aufsatzaufgaben konnten nicht geladen werden. Bitte aktualisieren Sie die Seite."
+        "essays_load_error": "Ihre Aufsatzaufgaben konnten nicht geladen werden. Bitte aktualisieren Sie die Seite.",
+        "peer_reviews_received": "Erhaltene Peer-Reviews"
     },
     "selfAssess": {
         "title": "GER-Selbstbewertung",
@@ -591,7 +650,12 @@
         "confident_short": "sicher",
         "mismatch_overestimate": "Der Schüler überschätzt sich möglicherweise — ein Reflexionsgespräch wäre sinnvoll.",
         "mismatch_underestimate": "Der Schüler unterschätzt möglicherweise seine Fortschritte — ermütigen Sie ihn!",
-        "view_full": "Vollständige Selbstbewertung anzeigen"
+        "view_full": "Vollständige Selbstbewertung anzeigen",
+        "rated_count": "bewertet",
+        "level_not_yet": "Noch nicht",
+        "level_sometimes": "Manchmal",
+        "level_usually": "Meistens",
+        "level_confident": "Sicher"
     },
     "statistics": {
         "download_csv": "CSV herunterladen",
@@ -912,6 +976,43 @@
         "anonymized_badge": "Anonymisiert",
         "retention_title": "Aufbewahrungseinstellungen",
         "retention_desc": "Schüler, deren letzte Note älter als die Aufbewahrungsfrist ist, werden automatisch anonymisiert.",
-        "retention_per_school": "Legen Sie die Aufbewahrungsfrist pro Schule auf der Registerkarte Schulen fest."
+        "retention_per_school": "Legen Sie die Aufbewahrungsfrist pro Schule auf der Registerkarte Schulen fest.",
+        "users_offline_title": "Benutzerverwaltung erfordert eine Datenbankverbindung",
+        "users_offline_body": "Verbinden Sie eine Supabase-Datenbank, um Benutzerrollen zu verwalten und alle registrierten Konten anzuzeigen.",
+        "schools_offline_title": "Schulverwaltung erfordert eine Datenbankverbindung",
+        "schools_offline_body": "Verbinden Sie eine Supabase-Datenbank, um Schulen zu erstellen und zu verwalten, Datenaufbewahrungsrichtlinien festzulegen und Schulmitglieder anzuzeigen."
+    },
+    "essay": {
+        "email_gate_title": "Geben Sie Ihre Schul-E-Mail-Adresse ein",
+        "email_gate_desc": "Ihre E-Mail-Adresse wird verwendet, um Ihren Aufsatz mit Ihrem Konto zu verknüpfen. Kein Passwort oder Code erforderlich.",
+        "email_placeholder": "schueler@schule.de",
+        "start_btn": "Aufsatz starten",
+        "starting": "Wird gestartet…",
+        "invalid_link_title": "Ungültiger oder abgelaufener Link",
+        "invalid_link_desc": "Dieser Aufsatz-Link ist nicht gültig. Bitte fragen Sie Ihren Lehrer nach einem neuen Link.",
+        "expired_title": "Abgabefrist abgelaufen",
+        "expired_desc": "Die Frist war {{date}}. Bitte kontaktieren Sie Ihren Lehrer.",
+        "seb_blocked": "Diese Prüfung muss im Safe Exam Browser geöffnet werden. Das Einreichen ist gesperrt, bis Sie diesen Link in SEB öffnen.",
+        "draft_restored": "Entwurf aus Ihrer letzten Sitzung wiederhergestellt.",
+        "dismiss": "Schließen",
+        "signed_in_as": "Angemeldet als {{email}}",
+        "draft_saved_at": "Gespeichert um {{time}}",
+        "time_up_countdown": "Zeit abgelaufen",
+        "words_count": "{{count}} Wörter",
+        "prompt_label": "Aufgabenstellung",
+        "submitted_title_db": "Aufsatz bei Ihrem Lehrer eingereicht!",
+        "submitted_title": "Aufsatz eingereicht!",
+        "submitted_desc_db": "Ihr Lehrer kann Ihre Einreichung in RubricMaker einsehen. Bewahren Sie den Backup-Code unten auf, nur für den Fall.",
+        "submitted_desc_code": "Kopieren Sie den Einreichungscode unten und senden Sie ihn an Ihren Lehrer.",
+        "copy": "Kopieren",
+        "copied": "Kopiert!",
+        "editor_placeholder": "Beginnen Sie hier mit dem Schreiben Ihres Aufsatzes…",
+        "time_up_auto": "Die Zeit ist abgelaufen — Ihr Aufsatz wurde automatisch eingereicht.",
+        "over_limit": "{{count}} Wörter über dem Limit.",
+        "submit_btn": "Aufsatz einreichen",
+        "submitting": "Einreichen…",
+        "essay_text_label": "Aufsatz",
+        "show_essay": "Aufsatz anzeigen",
+        "hide_essay": "Aufsatz ausblenden"
     }
 }

@@ -102,6 +102,17 @@
         "action_import_backup": "Importar Copia de Seguridad",
         "backup_help": "La exportación guarda todas las rúbricas, estudiantes, calificaciones y ajustes en un archivo JSON. La importación restaura todo.",
         "alert_invalid_backup": "Archivo de copia de seguridad no válido.",
+        "backup_preview_title": "Confirmar importación de copia de seguridad",
+        "backup_preview_subtitle": "Revise los cambios a continuación. La importación reemplazará todos los datos actuales con el contenido de la copia de seguridad.",
+        "backup_preview_current": "Actual",
+        "backup_preview_backup": "Copia de seguridad",
+        "backup_preview_rubrics": "Rúbricas",
+        "backup_preview_students": "Estudiantes",
+        "backup_preview_classes": "Clases",
+        "backup_preview_grades": "Calificaciones",
+        "backup_preview_warning": "Esta acción no se puede deshacer. Exporte sus datos actuales primero si necesita una copia de seguridad.",
+        "action_confirm_import": "Sobrescribir e importar",
+        "backup_preview_table_label": "Datos actuales frente a copia de seguridad",
         "alert_cannot_delete_default": "No se puede eliminar la escala predeterminada.",
         "delete_scale_title": "¿Eliminar Escala de Calificación?",
         "delete_scale_confirm": "¿Estás seguro de que quieres eliminar esta escala de calificación? Esta acción no se puede deshacer.",
@@ -146,7 +157,10 @@
         "sharing_success": "Compartido correctamente.",
         "sharing_failed": "Error al compartir: {{error}}",
         "sharing_removed": "Acceso eliminado.",
-        "sharing_no_users": "No se encontraron otros usuarios. Asegúrate de que los colegas hayan iniciado sesión al menos una vez."
+        "sharing_no_users": "No se encontraron otros usuarios. Asegúrate de que los colegas hayan iniciado sesión al menos una vez.",
+        "notify_students_title": "Notificaciones a estudiantes",
+        "notify_on_grade_label": "Notificar a los estudiantes cuando se califica",
+        "notify_on_grade_help": "Envía un correo electrónico al estudiante cuando guarda una calificación. Requiere que SMTP esté configurado en su proyecto de Supabase."
     },
     "navigation": {
         "dashboard": "Panel",
@@ -184,7 +198,9 @@
         "activity_updated_prefix": "Actualizado",
         "action_resume": "Reanudar",
         "action_open": "Abrir",
-        "quick_start_templates": "Plantillas de inicio rápido"
+        "quick_start_templates": "Plantillas de inicio rápido",
+        "my_templates": "Mis plantillas",
+        "built_in_templates": "Plantillas integradas"
     },
     "rubricList": {
         "title": "Rúbricas",
@@ -207,7 +223,20 @@
         "delete_rubric_warning": "Esto eliminará permanentemente la rúbrica y todas las calificaciones asociadas de los estudiantes. Esta acción no se puede deshacer.",
         "action_compare": "Comparar",
         "shared_with_me": "Compartido conmigo",
-        "shared_badge": "Compartido"
+        "shared_badge": "Compartido",
+        "action_essay": "Redacción",
+        "essay_pick_class_title": "Asignar redacción a una clase",
+        "essay_pick_class_desc": "Seleccione una clase para asignar la redacción \"{{rubric}}\". Cada estudiante recibirá su propio enlace único.",
+        "action_share_colleague": "Compartir con colega",
+        "share_modal_title": "Compartir con colega",
+        "share_modal_desc": "Comparta \"{{rubric}}\" con otro profesor. Deben tener una cuenta en esta instancia de RubricMaker.",
+        "share_email_placeholder": "colega@escuela.es",
+        "share_mode_read": "Solo lectura",
+        "share_mode_edit": "Puede editar",
+        "share_success": "¡Rúbrica compartida con éxito!",
+        "share_notfound": "No se encontró ninguna cuenta para {{email}}. Pídales que inicien sesión en RubricMaker primero.",
+        "share_shared_with": "Compartido con",
+        "share_btn": "Compartir"
     },
     "studentsPage": {
         "title": "Estudiantes y Clases",
@@ -310,7 +339,10 @@
         "shortcut_save": "Guardar y avanzar al siguiente estudiante",
         "shortcut_help": "Mostrar este panel",
         "shortcut_esc": "Quitar foco del criterio",
-        "action_print": "Imprimir"
+        "action_print": "Imprimir",
+        "action_essay": "Redacción",
+        "action_import_essay": "Importar redacción",
+        "anchor_help_text": "Los trabajos de referencia son envíos usados para calibrar su evaluación. Marcar un envío como referencia le permite compararlo junto a nuevos envíos en el pie de página de calificación."
     },
     "rubricBuilder": {
         "action_back": "Volver",
@@ -410,7 +442,23 @@
         "version_n": "Versión {{n}}",
         "criteria_count": "criterios",
         "auto_save_badge": "auto",
-        "action_print": "Imprimir Rúbrica"
+        "action_print": "Imprimir Rúbrica",
+        "section_rubric_details": "Detalles de la rúbrica",
+        "action_expand_all": "Expandir todo",
+        "action_collapse_all": "Contraer todo",
+        "action_copy_criterion": "Copiar criterio al portapapeles",
+        "action_duplicate_criterion": "Duplicar criterio",
+        "action_paste_criterion": "Pegar criterio",
+        "single_point_descriptor_label": "Descriptor de competencia — qué significa “cumple el estándar”",
+        "single_point_descriptor_placeholder": "Describa lo que hace un estudiante cuando cumple este estándar…",
+        "single_point_meets_points": "Puntos (cumple)",
+        "level_quality_tip": "💡 Consejo: describa lo que hace el estudiante, no solo qué tan bien lo hace (ej. “usa 3+ ejemplos para apoyar cada argumento”)",
+        "action_save_as_template": "Guardar como plantilla",
+        "save_as_template_success": "Guardado como plantilla",
+        "weight_total_label": "Peso total:",
+        "weight_total_hint": "(debe ser 100%)",
+        "weight_total_warning": "Los pesos totalizan {{total}}% (esperado 100%). Puede guardar igualmente — el motor de calificación los normaliza.",
+        "weight_distribute_evenly": "Distribuir uniformemente"
     },
     "peerReview": {
         "round_label": "Ronda",
@@ -515,14 +563,24 @@
         "select_level": "Seleccionar nivel…",
         "label_score": "Puntuación de {{name}}:",
         "label_points": "Puntos",
-        "progress_matchups": "{{count}} emparejamiento(s) realizados",
+        "progress_matchups": "{{done}} / {{total}} realizadas · {{left}} restantes",
         "progress_coverage": "{{covered}} / {{total}} estudiantes vistos",
         "not_enough_students": "No hay suficientes estudiantes en esta clase para una comparación. Añade al menos dos estudiantes.",
         "loading": "Preparando emparejamiento…",
         "anchor_changed": "El estudiante de referencia ha rotado — comenzando un nuevo emparejamiento.",
         "toggle_comments": "Alternar notas de criterio",
         "comment_placeholder": "Nota para este criterio…",
-        "unsaved_warning": "Tienes puntuaciones de comparación sin guardar. ¿Salir de todas formas?"
+        "unsaved_warning": "Tienes puntuaciones de comparación sin guardar. ¿Salir de todas formas?",
+        "title_compare": "Comparar: {{name}}",
+        "all_classes": "Todas las clases vinculadas",
+        "all_classes_scope": "Todas las clases vinculadas ({{names}})",
+        "session_complete_title": "Sesión completa",
+        "session_complete_body": "Todos los estudiantes han alcanzado el límite de {{count}} comparación(es) por estudiante. Todas las puntuaciones han sido guardadas.",
+        "action_continue": "Continuar comparando",
+        "matchups_done": "{{done}} / {{max}} comparaciones realizadas",
+        "per_student_limit": "Límite por estudiante:",
+        "per_student_limit_hint": "Máx. comparaciones por estudiante (0 = ilimitado)",
+        "student_progress": "Progreso de los estudiantes"
     },
     "studentPortal": {
         "not_found": "Estudiante no encontrado.",
@@ -572,7 +630,8 @@
         "essay_time": "{{n}} min",
         "essay_seb_required": "Se requiere Safe Exam Browser",
         "essay_submitted_words": "Enviado el {{date}} · {{wordCount}} palabras",
-        "essays_load_error": "No se pudieron cargar tus tareas de ensayo. Por favor, intenta actualizar la página."
+        "essays_load_error": "No se pudieron cargar tus tareas de ensayo. Por favor, intenta actualizar la página.",
+        "peer_reviews_received": "Revisiones de pares recibidas"
     },
     "selfAssess": {
         "title": "Autoevaluación MCER",
@@ -591,7 +650,12 @@
         "confident_short": "confiado",
         "mismatch_overestimate": "El estudiante puede estar sobreestimando — merece una conversación de reflexión.",
         "mismatch_underestimate": "¡El estudiante puede estar subestimando su progreso — anímale!",
-        "view_full": "Ver autoevaluación completa"
+        "view_full": "Ver autoevaluación completa",
+        "rated_count": "evaluados",
+        "level_not_yet": "Todavía no",
+        "level_sometimes": "A veces",
+        "level_usually": "Generalmente",
+        "level_confident": "Seguro"
     },
     "statistics": {
         "download_csv": "Descargar CSV",
@@ -873,7 +937,11 @@
         "anonymized_badge": "Anonimizado",
         "retention_title": "Ajustes de Retención",
         "retention_desc": "Los estudiantes cuya calificación más reciente sea anterior al período de retención serán anonimizados automáticamente.",
-        "retention_per_school": "Establece el período de retención por escuela en la pestaña Escuelas."
+        "retention_per_school": "Establece el período de retención por escuela en la pestaña Escuelas.",
+        "users_offline_title": "La administración de usuarios requiere una conexión a la base de datos",
+        "users_offline_body": "Conecte una base de datos Supabase para gestionar los roles de usuarios y ver todas las cuentas registradas.",
+        "schools_offline_title": "La administración de escuelas requiere una conexión a la base de datos",
+        "schools_offline_body": "Conecte una base de datos Supabase para crear y gestionar escuelas, establecer políticas de retención de datos y ver los miembros."
     },
     "essay_assignment": {
         "modal_title": "Tarea de ensayo — {{name}}",
@@ -913,5 +981,38 @@
         "resume": "Reanudar",
         "stop": "Detener",
         "progress": "Progreso de lectura"
+    },
+    "essay": {
+        "email_gate_title": "Ingrese su correo electrónico escolar",
+        "email_gate_desc": "Su correo electrónico se usa para vincular su redacción a su cuenta. No se necesita contraseña ni código.",
+        "email_placeholder": "alumno@escuela.es",
+        "start_btn": "Comenzar redacción",
+        "starting": "Iniciando…",
+        "invalid_link_title": "Enlace inválido o caducado",
+        "invalid_link_desc": "Este enlace de redacción no es válido. Pida a su profesor un nuevo enlace.",
+        "expired_title": "La fecha límite ha pasado",
+        "expired_desc": "La fecha límite era {{date}}. Comuníquese con su profesor.",
+        "seb_blocked": "Este examen debe abrirse en Safe Exam Browser. El envío está bloqueado hasta que abra este enlace en SEB.",
+        "draft_restored": "Borrador restaurado desde su última sesión.",
+        "dismiss": "Descartar",
+        "signed_in_as": "Conectado como {{email}}",
+        "draft_saved_at": "Guardado a las {{time}}",
+        "time_up_countdown": "Tiempo agotado",
+        "words_count": "{{count}} palabras",
+        "prompt_label": "Instrucciones",
+        "submitted_title_db": "¡Redacción enviada a su profesor!",
+        "submitted_title": "¡Redacción enviada!",
+        "submitted_desc_db": "Su profesor puede ver su envío en RubricMaker. Guarde el código de respaldo a continuación por si acaso.",
+        "submitted_desc_code": "Copie el código de envío a continuación y envíeselo a su profesor.",
+        "copy": "Copiar",
+        "copied": "¡Copiado!",
+        "editor_placeholder": "Comience a escribir su redacción aquí…",
+        "time_up_auto": "El tiempo ha terminado — su redacción se envió automáticamente.",
+        "over_limit": "{{count}} palabras sobre el límite.",
+        "submit_btn": "Enviar redacción",
+        "submitting": "Enviando…",
+        "essay_text_label": "Redacción",
+        "show_essay": "Mostrar redacción",
+        "hide_essay": "Ocultar redacción"
     }
 }

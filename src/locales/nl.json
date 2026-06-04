@@ -102,6 +102,17 @@
         "action_import_backup": "Importeer Back-up",
         "backup_help": "Exporteren slaat alle rubrieken, leerlingen, cijfers en instellingen op in een JSON bestand. Importeren herstelt alles.",
         "alert_invalid_backup": "Ongeldig back-up bestand.",
+        "backup_preview_title": "Back-up importeren bevestigen",
+        "backup_preview_subtitle": "Controleer de wijzigingen hieronder. Importeren vervangt alle huidige gegevens door de back-up.",
+        "backup_preview_current": "Huidig",
+        "backup_preview_backup": "Back-up",
+        "backup_preview_rubrics": "Rubrieken",
+        "backup_preview_students": "Leerlingen",
+        "backup_preview_classes": "Klassen",
+        "backup_preview_grades": "Beoordelingen",
+        "backup_preview_warning": "Deze actie kan niet ongedaan worden gemaakt. Exporteer eerst uw huidige gegevens als u een reservekopie wilt bewaren.",
+        "action_confirm_import": "Overschrijven & importeren",
+        "backup_preview_table_label": "Huidige versus back-up dataoverzicht",
         "alert_cannot_delete_default": "Kan de standaard schaal niet verwijderen.",
         "delete_scale_title": "Beoordelingsschaal verwijderen?",
         "delete_scale_confirm": "Weet je zeker dat je deze beoordelingsschaal wilt verwijderen? Dit kan niet ongedaan worden gemaakt.",
@@ -146,7 +157,10 @@
         "sharing_success": "Succesvol gedeeld.",
         "sharing_failed": "Delen mislukt: {{error}}",
         "sharing_removed": "Toegang verwijderd.",
-        "sharing_no_users": "Geen andere gebruikers gevonden. Zorg dat collega's zich minimaal één keer hebben aangemeld."
+        "sharing_no_users": "Geen andere gebruikers gevonden. Zorg dat collega's zich minimaal één keer hebben aangemeld.",
+        "notify_students_title": "Leerlingmeldingen",
+        "notify_on_grade_label": "Leerlingen informeren bij een beoordeling",
+        "notify_on_grade_help": "Stuurt een e-mail naar de leerling wanneer je een beoordeling opslaat. Vereist dat SMTP is geconfigureerd in je Supabase-project."
     },
     "navigation": {
         "dashboard": "Dashboard",
@@ -184,7 +198,9 @@
         "activity_updated_prefix": "Bijgewerkt",
         "action_resume": "Verdergaan",
         "action_open": "Openen",
-        "quick_start_templates": "Snelstart Sjablonen"
+        "quick_start_templates": "Snelstart Sjablonen",
+        "my_templates": "Mijn sjablonen",
+        "built_in_templates": "Ingebouwde sjablonen"
     },
     "rubricList": {
         "title": "Rubrieken",
@@ -207,7 +223,20 @@
         "delete_rubric_warning": "Dit zal de rubriek en alle bijbehorende leerlingscores permanent verwijderen. Dit kan niet ongedaan worden gemaakt.",
         "action_compare": "Vergelijken",
         "shared_with_me": "Gedeeld met mij",
-        "shared_badge": "Gedeeld"
+        "shared_badge": "Gedeeld",
+        "action_essay": "Opstel",
+        "essay_pick_class_title": "Opstelopdracht toewijzen aan klas",
+        "essay_pick_class_desc": "Selecteer een klas om de \"{{rubric}}\" opdracht toe te wijzen. Elke leerling krijgt een eigen unieke link.",
+        "action_share_colleague": "Delen met collega",
+        "share_modal_title": "Delen met collega",
+        "share_modal_desc": "Deel \"{{rubric}}\" met een andere docent. Zij moeten een account hebben in deze RubricMaker-instantie.",
+        "share_email_placeholder": "collega@school.nl",
+        "share_mode_read": "Alleen bekijken",
+        "share_mode_edit": "Mag bewerken",
+        "share_success": "Rubriek succesvol gedeeld!",
+        "share_notfound": "Geen account gevonden voor {{email}}. Vraag hen eerst in te loggen bij RubricMaker.",
+        "share_shared_with": "Gedeeld met",
+        "share_btn": "Delen"
     },
     "studentsPage": {
         "title": "Leerlingen & Klassen",
@@ -310,7 +339,10 @@
         "shortcut_save": "Opslaan & ga naar volgende leerling",
         "shortcut_help": "Toon dit overzicht",
         "shortcut_esc": "Criterium-focus wissen",
-        "action_print": "Afdrukken"
+        "action_print": "Afdrukken",
+        "action_essay": "Opstel",
+        "action_import_essay": "Opstel importeren",
+        "anchor_help_text": "Ankerwerkstukken zijn referentie-inzendingen die worden gebruikt om je beoordeling te kalibreren. Door een inzending als anker te markeren, kun je deze naast nieuwe inzendingen vergelijken in de beoordelingsvoettekst."
     },
     "rubricBuilder": {
         "action_back": "Terug",
@@ -410,7 +442,23 @@
         "version_n": "Versie {{n}}",
         "criteria_count": "criteria",
         "auto_save_badge": "auto",
-        "action_print": "Rubriek afdrukken"
+        "action_print": "Rubriek afdrukken",
+        "section_rubric_details": "Rubrieksdetails",
+        "action_expand_all": "Alles uitklappen",
+        "action_collapse_all": "Alles inklappen",
+        "action_copy_criterion": "Criterium kopiëren naar klembord",
+        "action_duplicate_criterion": "Criterium dupliceren",
+        "action_paste_criterion": "Criterium plakken",
+        "single_point_descriptor_label": "Vaardigheidsbeschrijving — wat “voldoet aan de norm” betekent",
+        "single_point_descriptor_placeholder": "Beschrijf wat een leerling doet als hij/zij aan de norm voldoet…",
+        "single_point_meets_points": "Punten (voldoet)",
+        "level_quality_tip": "💡 Tip: beschrijf wat de leerling dóét, niet alleen hoe goed het is (bijv. “gebruikt 3+ voorbeelden om elk argument te onderbouwen”)",
+        "action_save_as_template": "Opslaan als sjabloon",
+        "save_as_template_success": "Opgeslagen als sjabloon",
+        "weight_total_label": "Totaal gewicht:",
+        "weight_total_hint": "(moet 100% zijn)",
+        "weight_total_warning": "Gewichten totaal {{total}}% (verwacht 100%). U kunt toch opslaan — het beoordelingssysteem normaliseert ze.",
+        "weight_distribute_evenly": "Gelijk verdelen"
     },
     "peerReview": {
         "round_label": "Ronde",
@@ -515,14 +563,24 @@
         "select_level": "Selecteer niveau…",
         "label_score": "Score van {{name}}:",
         "label_points": "Punten",
-        "progress_matchups": "{{count}} vergelijking(en) gedaan",
+        "progress_matchups": "{{done}} / {{total}} gedaan · {{left}} over",
         "progress_coverage": "{{covered}} / {{total}} leerlingen gezien",
         "not_enough_students": "Niet genoeg leerlingen in deze klas voor een vergelijking. Voeg minimaal twee leerlingen toe.",
         "loading": "Vergelijking voorbereiden…",
         "anchor_changed": "Ankerleerling gewisseld — nieuwe koppelingen starten.",
         "toggle_comments": "Notities bij criterium aan/uit",
         "comment_placeholder": "Notitie bij dit criterium…",
-        "unsaved_warning": "Je hebt niet-opgeslagen vergelijkingsscores. Toch verlaten?"
+        "unsaved_warning": "Je hebt niet-opgeslagen vergelijkingsscores. Toch verlaten?",
+        "title_compare": "Vergelijken: {{name}}",
+        "all_classes": "Alle gekoppelde klassen",
+        "all_classes_scope": "Alle gekoppelde klassen ({{names}})",
+        "session_complete_title": "Sessie voltooid",
+        "session_complete_body": "Alle leerlingen hebben de per-leerling limiet van {{count}} vergelijking(en) bereikt. Alle scores zijn opgeslagen.",
+        "action_continue": "Doorgaan met vergelijken",
+        "matchups_done": "{{done}} / {{max}} vergelijkingen gedaan",
+        "per_student_limit": "Limiet per leerling:",
+        "per_student_limit_hint": "Maximale vergelijkingen per leerling (0 = onbeperkt)",
+        "student_progress": "Voortgang leerlingen"
     },
     "studentPortal": {
         "not_found": "Leerling niet gevonden.",
@@ -572,7 +630,8 @@
         "essay_time": "{{n}} min",
         "essay_seb_required": "Safe Exam Browser vereist",
         "essay_submitted_words": "Ingediend op {{date}} · {{wordCount}} woorden",
-        "essays_load_error": "Essayopdrachten konden niet worden geladen. Probeer de pagina te vernieuwen."
+        "essays_load_error": "Essayopdrachten konden niet worden geladen. Probeer de pagina te vernieuwen.",
+        "peer_reviews_received": "Ontvangen peerreviews"
     },
     "selfAssess": {
         "title": "ERK Zelfbeoordeling",
@@ -591,7 +650,12 @@
         "confident_short": "zeker",
         "mismatch_overestimate": "Leerling overschat mogelijk zichzelf — een reflectiegesprek is hier nuttig.",
         "mismatch_underestimate": "Leerling onderschat mogelijk zijn/haar voortgang — geef een compliment!",
-        "view_full": "Volledige zelfbeoordeling bekijken"
+        "view_full": "Volledige zelfbeoordeling bekijken",
+        "rated_count": "beoordeeld",
+        "level_not_yet": "Nog niet",
+        "level_sometimes": "Soms",
+        "level_usually": "Meestal",
+        "level_confident": "Zeker"
     },
     "statistics": {
         "download_csv": "Download CSV",
@@ -873,7 +937,11 @@
         "anonymized_badge": "Geanonimiseerd",
         "retention_title": "Retentie-instellingen",
         "retention_desc": "Leerlingen van wie de meest recente beoordeling ouder is dan de bewaartermijn worden automatisch geanonimiseerd.",
-        "retention_per_school": "Stel de bewaartermijn per school in op het tabblad Scholen."
+        "retention_per_school": "Stel de bewaartermijn per school in op het tabblad Scholen.",
+        "users_offline_title": "Gebruikersbeheer vereist een databaseverbinding",
+        "users_offline_body": "Verbind een Supabase-database om gebruikersrollen te beheren en alle geregistreerde accounts te bekijken. Zie de implementatiedocumentatie om cloudsynchronisatie te configureren.",
+        "schools_offline_title": "Schoolbeheer vereist een databaseverbinding",
+        "schools_offline_body": "Verbind een Supabase-database om scholen aan te maken en te beheren, gegevensbewaringsbeleid in te stellen en schoolleden te bekijken."
     },
     "essay_assignment": {
         "modal_title": "Essay-opdracht — {{name}}",
@@ -913,5 +981,38 @@
         "resume": "Hervatten",
         "stop": "Stop",
         "progress": "Leesvoortgang"
+    },
+    "essay": {
+        "email_gate_title": "Voer je schoole-mailadres in",
+        "email_gate_desc": "Je e-mailadres wordt gebruikt om je opstel aan je account te koppelen. Geen wachtwoord of code nodig.",
+        "email_placeholder": "leerling@school.nl",
+        "start_btn": "Opstel starten",
+        "starting": "Starten…",
+        "invalid_link_title": "Ongeldige of verlopen link",
+        "invalid_link_desc": "Deze opstelkoppeling is niet geldig. Vraag je docent om een nieuwe link.",
+        "expired_title": "Deadline is verstreken",
+        "expired_desc": "De deadline was {{date}}. Neem contact op met je docent.",
+        "seb_blocked": "Dit examen moet worden geopend in Safe Exam Browser. Indienen is geblokkeerd totdat je deze link in SEB opent.",
+        "draft_restored": "Concept hersteld vanuit je laatste sessie.",
+        "dismiss": "Sluiten",
+        "signed_in_as": "Ingelogd als {{email}}",
+        "draft_saved_at": "Opgeslagen {{time}}",
+        "time_up_countdown": "Tijd op",
+        "words_count": "{{count}} woorden",
+        "prompt_label": "Opdrachttekst",
+        "submitted_title_db": "Opstel ingediend bij je docent!",
+        "submitted_title": "Opstel ingediend!",
+        "submitted_desc_db": "Je docent kan je inzending bekijken in RubricMaker. Bewaar de reservecode hieronder voor de zekerheid.",
+        "submitted_desc_code": "Kopieer de inzendcode hieronder en stuur deze naar je docent.",
+        "copy": "Kopiëren",
+        "copied": "Gekopieerd!",
+        "editor_placeholder": "Begin hier met het schrijven van je opstel…",
+        "time_up_auto": "De tijd is op — je opstel is automatisch ingediend.",
+        "over_limit": "{{count}} woorden boven de limiet.",
+        "submit_btn": "Opstel indienen",
+        "submitting": "Indienen…",
+        "essay_text_label": "Opstel",
+        "show_essay": "Opstel tonen",
+        "hide_essay": "Opstel verbergen"
     }
 }
