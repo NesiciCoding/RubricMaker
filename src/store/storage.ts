@@ -331,24 +331,96 @@ export function exportFullBackup(): string {
     return JSON.stringify(loadStore(), null, 2);
 }
 
+// ─── Backup import validators ──────────────────────────────────────────────────
+
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+    return v !== null && typeof v === 'object' && !Array.isArray(v);
+}
+
+/** Every element must be a non-null object with a string `id` property. */
+function isObjectArray(v: unknown): boolean {
+    return (
+        Array.isArray(v) &&
+        v.every((item) => isPlainObject(item) && typeof (item as Record<string, unknown>).id === 'string')
+    );
+}
+
+/**
+ * Restores app state from a backup JSON string.
+ *
+ * Each field is validated independently: invalid fields are skipped with a
+ * console warning rather than aborting the whole import. The function returns
+ * false only when the JSON itself is unparseable or the top-level value is not
+ * a plain object.
+ */
 export function importFullBackup(json: string): boolean {
     try {
-        const data: Partial<StoreData> = JSON.parse(json);
-        if (data.rubrics) saveRubrics(data.rubrics);
-        if (data.students) saveStudents(data.students);
-        if (data.classes) saveClasses(data.classes);
-        if (data.studentRubrics) saveStudentRubrics(data.studentRubrics);
-        if (data.attachments) saveAttachments(data.attachments);
-        if (data.gradeScales) saveGradeScales(data.gradeScales);
-        if (data.commentSnippets) saveCommentSnippets(data.commentSnippets);
-        if (data.settings) saveSettings(data.settings);
-        if (data.favoriteStandards) saveFavoriteStandards(data.favoriteStandards);
-        if (data.commentBank) saveCommentBank(data.commentBank);
-        if (data.exportTemplates) saveExportTemplates(data.exportTemplates);
-        if (data.peerReviews) savePeerReviews(data.peerReviews);
-        if (data.selfAssessments) saveSelfAssessments(data.selfAssessments);
-        if (data.speakingSessions) saveSpeakingSessions(data.speakingSessions);
-        if (data.analysisResults) saveAnalysisResults(data.analysisResults);
+        const raw = JSON.parse(json) as unknown;
+        if (!isPlainObject(raw)) return false;
+        const data = raw as Partial<StoreData>;
+
+        if (data.rubrics !== undefined) {
+            if (isObjectArray(data.rubrics) && (data.rubrics as unknown[]).every((r) => Array.isArray((r as Rubric).criteria)))
+                saveRubrics(data.rubrics as Rubric[]);
+            else console.warn('[importFullBackup] rubrics failed validation — skipped');
+        }
+        if (data.students !== undefined) {
+            if (isObjectArray(data.students)) saveStudents(data.students as Student[]);
+            else console.warn('[importFullBackup] students failed validation — skipped');
+        }
+        if (data.classes !== undefined) {
+            if (isObjectArray(data.classes)) saveClasses(data.classes as Class[]);
+            else console.warn('[importFullBackup] classes failed validation — skipped');
+        }
+        if (data.studentRubrics !== undefined) {
+            if (isObjectArray(data.studentRubrics)) saveStudentRubrics(data.studentRubrics as StudentRubric[]);
+            else console.warn('[importFullBackup] studentRubrics failed validation — skipped');
+        }
+        if (data.attachments !== undefined) {
+            if (isObjectArray(data.attachments)) saveAttachments(data.attachments as Attachment[]);
+            else console.warn('[importFullBackup] attachments failed validation — skipped');
+        }
+        if (data.gradeScales !== undefined) {
+            if (isObjectArray(data.gradeScales)) saveGradeScales(data.gradeScales as GradeScale[]);
+            else console.warn('[importFullBackup] gradeScales failed validation — skipped');
+        }
+        if (data.commentSnippets !== undefined) {
+            if (isObjectArray(data.commentSnippets)) saveCommentSnippets(data.commentSnippets as CommentSnippet[]);
+            else console.warn('[importFullBackup] commentSnippets failed validation — skipped');
+        }
+        if (data.settings !== undefined) {
+            if (isPlainObject(data.settings)) saveSettings(data.settings as AppSettings);
+            else console.warn('[importFullBackup] settings failed validation — skipped');
+        }
+        if (data.favoriteStandards !== undefined) {
+            if (Array.isArray(data.favoriteStandards) && data.favoriteStandards.every((s) => isPlainObject(s) && typeof (s as Record<string, unknown>).guid === 'string'))
+                saveFavoriteStandards(data.favoriteStandards as LinkedStandard[]);
+            else console.warn('[importFullBackup] favoriteStandards failed validation — skipped');
+        }
+        if (data.commentBank !== undefined) {
+            if (isObjectArray(data.commentBank)) saveCommentBank(data.commentBank as CommentBankItem[]);
+            else console.warn('[importFullBackup] commentBank failed validation — skipped');
+        }
+        if (data.exportTemplates !== undefined) {
+            if (isObjectArray(data.exportTemplates)) saveExportTemplates(data.exportTemplates as ExportTemplate[]);
+            else console.warn('[importFullBackup] exportTemplates failed validation — skipped');
+        }
+        if (data.peerReviews !== undefined) {
+            if (isObjectArray(data.peerReviews)) savePeerReviews(data.peerReviews as StudentRubric[]);
+            else console.warn('[importFullBackup] peerReviews failed validation — skipped');
+        }
+        if (data.selfAssessments !== undefined) {
+            if (isObjectArray(data.selfAssessments)) saveSelfAssessments(data.selfAssessments as SelfAssessment[]);
+            else console.warn('[importFullBackup] selfAssessments failed validation — skipped');
+        }
+        if (data.speakingSessions !== undefined) {
+            if (isObjectArray(data.speakingSessions)) saveSpeakingSessions(data.speakingSessions as SpeakingSession[]);
+            else console.warn('[importFullBackup] speakingSessions failed validation — skipped');
+        }
+        if (data.analysisResults !== undefined) {
+            if (isObjectArray(data.analysisResults)) saveAnalysisResults(data.analysisResults as DocumentAnalysisResult[]);
+            else console.warn('[importFullBackup] analysisResults failed validation — skipped');
+        }
         return true;
     } catch (e) {
         console.error('Import failed', e);

@@ -78,6 +78,10 @@ export default function SettingsPage() {
         exportTemplates,
         addExportTemplate,
         deleteExportTemplate,
+        rubrics,
+        students,
+        classes,
+        studentRubrics,
         importBackup,
     } = useApp();
     const { showToast } = useToast();
@@ -93,6 +97,15 @@ export default function SettingsPage() {
     useEffect(() => {
         if (!isUserPlus && activeTab !== 'general') setActiveTab('general');
     }, [isUserPlus, activeTab]);
+
+    // Backup import preview — holds parsed JSON + summary until user confirms
+    interface BackupSummary {
+        rubrics: number;
+        students: number;
+        classes: number;
+        studentRubrics: number;
+    }
+    const [backupPreview, setBackupPreview] = useState<{ json: string; summary: BackupSummary } | null>(null);
 
     // Role switch dialog (password-protected admin access)
     const [showPinDialog, setShowPinDialog] = useState(false);
@@ -216,13 +229,37 @@ export default function SettingsPage() {
         const file = e.target.files?.[0];
         if (!file) return;
         const reader = new FileReader();
-        reader.onload = async () => {
-            const ok = await importBackup(reader.result as string);
-            if (ok) showToast(t('toast.import_success'), 'success');
-            else showToast(t('toast.import_error'), 'error');
+        reader.onload = () => {
+            const json = reader.result as string;
+            try {
+                const data = JSON.parse(json) as Record<string, unknown>;
+                if (!data || typeof data !== 'object' || Array.isArray(data)) {
+                    showToast(t('toast.import_error'), 'error');
+                    return;
+                }
+                setBackupPreview({
+                    json,
+                    summary: {
+                        rubrics: Array.isArray(data.rubrics) ? data.rubrics.length : 0,
+                        students: Array.isArray(data.students) ? data.students.length : 0,
+                        classes: Array.isArray(data.classes) ? data.classes.length : 0,
+                        studentRubrics: Array.isArray(data.studentRubrics) ? data.studentRubrics.length : 0,
+                    },
+                });
+            } catch {
+                showToast(t('toast.import_error'), 'error');
+            }
         };
         reader.readAsText(file);
         e.target.value = '';
+    }
+
+    async function confirmImportBackup() {
+        if (!backupPreview) return;
+        const ok = await importBackup(backupPreview.json);
+        setBackupPreview(null);
+        if (ok) showToast(t('toast.import_success'), 'success');
+        else showToast(t('toast.import_error'), 'error');
     }
 
     function handleAccentChange(val: string) {
@@ -1363,6 +1400,82 @@ export default function SettingsPage() {
                         setShowTemplateUpload(false);
                     }}
                 />
+            )}
+
+            {/* Backup import preview / confirmation */}
+            {backupPreview && (
+                <Modal titleId="backup-preview-title" onClose={() => setBackupPreview(null)} maxWidth={480}>
+                    <div className="modal-header">
+                        <h3 id="backup-preview-title" style={{ margin: 0 }}>
+                            {t('settings.backup_preview_title')}
+                        </h3>
+                        <button
+                            className="btn btn-ghost btn-icon btn-sm"
+                            onClick={() => setBackupPreview(null)}
+                            aria-label={t('common.cancel')}
+                        >
+                            ✕
+                        </button>
+                    </div>
+                    <div style={{ padding: '20px 24px' }}>
+                        <p className="text-muted" style={{ marginBottom: 16, fontSize: '0.9rem' }}>
+                            {t('settings.backup_preview_subtitle')}
+                        </p>
+
+                        {/* Summary table: current vs backup */}
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', marginBottom: 20 }}>
+                            <thead>
+                                <tr>
+                                    <th style={{ textAlign: 'left', padding: '6px 8px', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}></th>
+                                    <th style={{ textAlign: 'right', padding: '6px 8px', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+                                        {t('settings.backup_preview_current')}
+                                    </th>
+                                    <th style={{ textAlign: 'right', padding: '6px 8px', borderBottom: '1px solid var(--border)', color: 'var(--accent)', fontWeight: 700 }}>
+                                        {t('settings.backup_preview_backup')}
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {([
+                                    [t('settings.backup_preview_rubrics'), rubrics.length, backupPreview.summary.rubrics],
+                                    [t('settings.backup_preview_students'), students.length, backupPreview.summary.students],
+                                    [t('settings.backup_preview_classes'), classes.length, backupPreview.summary.classes],
+                                    [t('settings.backup_preview_grades'), studentRubrics.length, backupPreview.summary.studentRubrics],
+                                ] as [string, number, number][]).map(([label, current, backup]) => (
+                                    <tr key={label}>
+                                        <td style={{ padding: '6px 8px', color: 'var(--text)' }}>{label}</td>
+                                        <td style={{ padding: '6px 8px', textAlign: 'right', color: 'var(--text-muted)' }}>{current}</td>
+                                        <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 600, color: backup !== current ? 'var(--accent)' : 'var(--text)' }}>{backup}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+
+                        <div
+                            style={{
+                                padding: '10px 12px',
+                                background: 'color-mix(in srgb, var(--red) 10%, transparent)',
+                                border: '1px solid color-mix(in srgb, var(--red) 30%, transparent)',
+                                borderRadius: 8,
+                                fontSize: '0.8rem',
+                                color: 'var(--text-muted)',
+                                marginBottom: 20,
+                            }}
+                        >
+                            <AlertCircle size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 6 }} aria-hidden="true" />
+                            {t('settings.backup_preview_warning')}
+                        </div>
+
+                        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                            <button className="btn btn-ghost" onClick={() => setBackupPreview(null)}>
+                                {t('common.cancel')}
+                            </button>
+                            <button className="btn btn-danger" onClick={confirmImportBackup}>
+                                {t('settings.action_confirm_import')}
+                            </button>
+                        </div>
+                    </div>
+                </Modal>
             )}
 
             {/* Delete grade scale confirm */}
