@@ -35,7 +35,8 @@
         "close": "Sluiten",
         "settings": "Instellingen",
         "language": "Taal",
-        "toggle_theme": "Thema wisselen"
+        "toggle_theme": "Thema wisselen",
+        "print": "Afdrukken"
     },
     "sidebar": {
         "main_section": "Hoofdmenu",
@@ -58,6 +59,7 @@
         "language_nl": "Nederlands",
         "language_fr": "Français",
         "language_de": "Deutsch",
+        "language_es": "Español",
         "language_help": "Kies je voorkeurstaal voor de interface.",
         "admin_dashboard_desc": "Beheer gebruikers, scholen en bewaartermijnen van leerlinggegevens.",
         "open_admin_dashboard": "Dashboard openen",
@@ -105,6 +107,7 @@
         "delete_scale_confirm": "Weet je zeker dat je deze beoordelingsschaal wilt verwijderen? Dit kan niet ongedaan worden gemaakt.",
         "accent_color_label": "Accentkleur",
         "accent_color_invalid": "Voer een geldige 6-cijferige hex-kleur in (bijv. #3b82f6).",
+        "ui_font_label": "Interfacelettertype",
         "cloud_sync": "Cloud Synchronisatie (Microsoft 365)",
         "cloud_sync_help": "Verbind je Microsoft-account om rubrics over apparaten te synchroniseren via OneDrive of SharePoint.",
         "action_login_microsoft": "Inloggen met Microsoft",
@@ -251,7 +254,8 @@
         "merge_confirm_title": "Samenvoegen bevestigen",
         "merge_confirm_description": "Alle leerlingen uit <strong>{{source}}</strong> worden verplaatst naar <strong>{{target}}</strong>. De bronklas wordt verwijderd. Dit kan niet ongedaan worden gemaakt.",
         "merge_confirm_action": "Samenvoegen",
-        "action_export_summaries": "Samenvattingen Exporteren"
+        "action_export_summaries": "Samenvattingen Exporteren",
+        "back_to_roster": "Terug naar Leerlingenlijst"
     },
     "gradeStudent": {
         "title_prefix": "Beoordeling:",
@@ -830,6 +834,8 @@
         "title": "Beheerdashboard",
         "tab_users": "Gebruikers",
         "tab_schools": "Scholen",
+        "tab_database": "Database",
+        "tab_integrations": "Integraties",
         "tab_data": "Gegevens",
         "tab_retention": "Retentie",
         "users_title": "Gebruikersbeheer",

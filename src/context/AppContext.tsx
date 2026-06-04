@@ -635,6 +635,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
         root.style.setProperty('--accent-glow', `${accent}66`);
     }, [state.settings.accentColor]);
 
+    useEffect(() => {
+        const fontKey = state.settings.uiFontFamily || 'Inter';
+        const GOOGLE_FONTS: Record<string, string> = {
+            Nunito: 'Nunito:wght@400;500;600;700',
+            'Source Sans 3': 'Source+Sans+3:wght@400;500;600;700',
+            Lato: 'Lato:wght@400;700',
+            Roboto: 'Roboto:wght@400;500;700',
+        };
+        document.documentElement.style.setProperty('--font', `'${fontKey}', system-ui, sans-serif`);
+        if (GOOGLE_FONTS[fontKey]) {
+            let link = document.getElementById('app-gfont') as HTMLLinkElement | null;
+            if (!link) {
+                link = document.createElement('link');
+                link.id = 'app-gfont';
+                link.rel = 'stylesheet';
+                document.head.appendChild(link);
+            }
+            link.href = `https://fonts.googleapis.com/css2?family=${GOOGLE_FONTS[fontKey]}&display=swap`;
+        }
+    }, [state.settings.uiFontFamily]);
+
     // ── Startup: detect local mode / existing session / OAuth callback ────────
     useEffect(() => {
         if (localStorage.getItem(LOCAL_MODE_KEY) === 'true') {

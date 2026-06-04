@@ -1009,6 +1009,36 @@ select.input-error {
     .rubric-builder-layout {
         grid-template-columns: 1fr !important;
     }
+
+    /* Statistics page: hide filter/control bar */
+    .statistics-controls {
+        display: none !important;
+    }
+
+    /* Comparative grading: hide action buttons */
+    .comparative-actions {
+        display: none !important;
+    }
+
+    /* Student profile: hide action strip */
+    .student-profile-actions {
+        display: none !important;
+    }
+
+    /* Force white background for all pages */
+    body,
+    .app-layout,
+    .main-area,
+    .page-content,
+    .card {
+        background: #ffffff !important;
+        color: #111111 !important;
+    }
+
+    /* Recharts SVGs: ensure they fill the page width */
+    .recharts-responsive-container {
+        width: 100% !important;
+    }
 }
 
 /* ─── Mobile hamburger / slide-in drawer ────────────────────────────────────── */

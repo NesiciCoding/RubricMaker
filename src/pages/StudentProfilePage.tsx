@@ -14,6 +14,7 @@ import {
     AlertTriangle,
     ClipboardCheck,
     ExternalLink,
+    Printer,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
@@ -177,11 +178,17 @@ export default function StudentProfilePage() {
                 title="Student Profile"
                 actions={
                     <>
-                        <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/portal/${student.id}`)}>
+                        <button className="btn btn-ghost btn-sm no-print" onClick={() => window.print()}>
+                            <Printer size={14} /> {t('common.print')}
+                        </button>
+                        <button
+                            className="btn btn-ghost btn-sm no-print"
+                            onClick={() => navigate(`/portal/${student.id}`)}
+                        >
                             <ExternalLink size={14} /> {t('studentPortal.view_portal_btn')}
                         </button>
-                        <button className="btn btn-ghost btn-sm" onClick={() => navigate('/students')}>
-                            <ArrowLeft size={15} /> Back to Roster
+                        <button className="btn btn-ghost btn-sm no-print" onClick={() => navigate('/students')}>
+                            <ArrowLeft size={15} /> {t('studentsPage.back_to_roster')}
                         </button>
                     </>
                 }
@@ -673,7 +680,7 @@ export default function StudentProfilePage() {
                                                 {h.sr.overallComment || '—'}
                                             </td>
                                             <td>
-                                                <div style={{ display: 'flex', gap: 6 }}>
+                                                <div className="no-print" style={{ display: 'flex', gap: 6 }}>
                                                     <button
                                                         className="btn btn-secondary btn-sm"
                                                         onClick={() => handleExport(h)}
