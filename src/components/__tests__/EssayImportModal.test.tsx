@@ -3,6 +3,13 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import EssayImportModal from '../Essay/EssayImportModal';
 
+vi.mock('react-i18next', () => ({
+    useTranslation: () => ({
+        t: (key: string) => key,
+        i18n: { language: 'en', changeLanguage: vi.fn() },
+    }),
+}));
+
 vi.mock('../../utils/essaySubmissionCode', () => ({
     decodeEssaySubmission: vi.fn(),
 }));
@@ -144,26 +151,27 @@ describe('EssayImportModal', () => {
             fireEvent.click(screen.getByRole('button', { name: /import essay/i }));
         }
 
-        it('shows "Over word limit" badge after importing an over-limit submission', () => {
+        it('shows over-limit badge after importing an over-limit submission', () => {
             importWith('over');
-            expect(screen.getByText(/over word limit/i)).toBeInTheDocument();
+            // t('essay.word_limit_over') returns the key verbatim; EssayImportModal uses useTranslation
+            expect(screen.getByText(/essay\.word_limit_over/i)).toBeInTheDocument();
         });
 
-        it('shows "Under word limit" badge after importing an under-limit submission', () => {
+        it('shows under-limit badge after importing an under-limit submission', () => {
             importWith('under');
-            expect(screen.getByText(/under word limit/i)).toBeInTheDocument();
+            expect(screen.getByText(/essay\.word_limit_under/i)).toBeInTheDocument();
         });
 
         it('shows no limit badge when status is "ok"', () => {
             importWith('ok');
-            expect(screen.queryByText(/over word limit/i)).not.toBeInTheDocument();
-            expect(screen.queryByText(/under word limit/i)).not.toBeInTheDocument();
+            expect(screen.queryByText(/essay\.word_limit_over/i)).not.toBeInTheDocument();
+            expect(screen.queryByText(/essay\.word_limit_under/i)).not.toBeInTheDocument();
         });
 
         it('shows no limit badge for legacy submissions without a status', () => {
             importWith(undefined);
-            expect(screen.queryByText(/over word limit/i)).not.toBeInTheDocument();
-            expect(screen.queryByText(/under word limit/i)).not.toBeInTheDocument();
+            expect(screen.queryByText(/essay\.word_limit_over/i)).not.toBeInTheDocument();
+            expect(screen.queryByText(/essay\.word_limit_under/i)).not.toBeInTheDocument();
         });
     });
 });

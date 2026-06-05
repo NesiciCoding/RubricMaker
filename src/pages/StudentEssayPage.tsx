@@ -531,8 +531,8 @@ export default function StudentEssayPage() {
     const isBelowMin = effectiveMinWords ? wordCount < effectiveMinWords : false;
     const timedOut = secondsLeft !== null && secondsLeft <= 0;
     const sebBlocked = !!(resolvedContent?.requireSEB && !isInSEB);
-    // Allow manual submission even after the timer expires so a student who was over the
-    // word limit when time ran out can still reduce their essay and submit.
+    // Manual submit is blocked when over the word limit. The timer auto-submits
+    // unconditionally when it expires, setting submitted = true.
     const canSubmit = !isOverLimit && !submitted && !submitting && !sebBlocked;
     const wordCountColor = isOverLimit ? '#ef4444' : isBelowMin ? '#f59e0b' : '#10b981';
 
@@ -817,8 +817,9 @@ export default function StudentEssayPage() {
                         )}
                         {timedOut && isOverLimit && (
                             <span style={{ fontSize: '0.875rem', color: '#ef4444', fontWeight: 600 }}>
-                                Time is up — reduce your essay by {wordCount - (assignment.maxWords ?? 0)} words to
-                                submit.
+                                {t('essay.time_up_over_submitted', {
+                                    count: wordCount - (effectiveMaxWords ?? 0),
+                                })}
                             </span>
                         )}
                         {!timedOut && isOverLimit && (
@@ -854,7 +855,7 @@ export default function StudentEssayPage() {
                                 </>
                             ) : isOverLimit ? (
                                 <>
-                                    <AlertTriangle size={16} /> Too many words
+                                    <AlertTriangle size={16} /> {t('essay.too_many_words')}
                                 </>
                             ) : (
                                 t('essay.submit_btn')

@@ -10,6 +10,7 @@ import {
     AlertTriangle,
     TrendingDown,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { decodeEssaySubmission } from '../../utils/essaySubmissionCode';
 import Modal from '../ui/Modal';
 import type { Attachment } from '../../types';
@@ -50,6 +51,7 @@ export default function EssayImportModal({
     onGetSignedUrl,
     onDeleteSubmission,
 }: Props) {
+    const { t } = useTranslation();
     const dbStatus = useDbStatus();
     const hasDb = dbStatus.isConnected && !!teacherKey && !!onFetchSubmissions;
 
@@ -222,14 +224,14 @@ export default function EssayImportModal({
                                 gap: 6,
                                 fontSize: '0.8rem',
                                 fontWeight: 600,
-                                color: '#dc2626',
-                                background: '#fef2f2',
-                                border: '1px solid #fca5a5',
+                                color: 'var(--red)',
+                                background: 'color-mix(in srgb, var(--red) 10%, transparent)',
+                                border: '1px solid var(--red)',
                                 borderRadius: 6,
                                 padding: '4px 10px',
                             }}
                         >
-                            <AlertTriangle size={13} /> Over word limit
+                            <AlertTriangle size={13} /> {t('essay.word_limit_over')}
                         </div>
                     )}
                     {meta.wordLimitStatus === 'under' && (
@@ -240,14 +242,14 @@ export default function EssayImportModal({
                                 gap: 6,
                                 fontSize: '0.8rem',
                                 fontWeight: 600,
-                                color: '#d97706',
-                                background: '#fffbeb',
-                                border: '1px solid #fcd34d',
+                                color: 'var(--yellow)',
+                                background: 'color-mix(in srgb, var(--yellow) 10%, transparent)',
+                                border: '1px solid var(--yellow)',
                                 borderRadius: 6,
                                 padding: '4px 10px',
                             }}
                         >
-                            <TrendingDown size={13} /> Under word limit
+                            <TrendingDown size={13} /> {t('essay.word_limit_under')}
                         </div>
                     )}
                     <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)', margin: 0 }}>
@@ -424,14 +426,15 @@ export default function EssayImportModal({
                                                             alignItems: 'center',
                                                             gap: 3,
                                                             fontWeight: 600,
-                                                            color: '#dc2626',
-                                                            background: '#fef2f2',
-                                                            border: '1px solid #fca5a5',
+                                                            color: 'var(--red)',
+                                                            background:
+                                                                'color-mix(in srgb, var(--red) 10%, transparent)',
+                                                            border: '1px solid var(--red)',
                                                             borderRadius: 4,
                                                             padding: '1px 6px',
                                                         }}
                                                     >
-                                                        <AlertTriangle size={10} /> Over limit
+                                                        <AlertTriangle size={10} /> {t('essay.word_limit_over')}
                                                     </span>
                                                 )}
                                                 {sub.wordLimitStatus === 'under' && (
@@ -441,14 +444,15 @@ export default function EssayImportModal({
                                                             alignItems: 'center',
                                                             gap: 3,
                                                             fontWeight: 600,
-                                                            color: '#d97706',
-                                                            background: '#fffbeb',
-                                                            border: '1px solid #fcd34d',
+                                                            color: 'var(--yellow)',
+                                                            background:
+                                                                'color-mix(in srgb, var(--yellow) 10%, transparent)',
+                                                            border: '1px solid var(--yellow)',
                                                             borderRadius: 4,
                                                             padding: '1px 6px',
                                                         }}
                                                     >
-                                                        <TrendingDown size={10} /> Under limit
+                                                        <TrendingDown size={10} /> {t('essay.word_limit_under')}
                                                     </span>
                                                 )}
                                             </div>

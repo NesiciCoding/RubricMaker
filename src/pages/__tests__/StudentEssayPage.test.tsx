@@ -101,10 +101,11 @@ describe('StudentEssayPage — submit button state', () => {
         expect(screen.getByRole('button', { name: /essay\.submit_btn/i })).not.toBeDisabled();
     });
 
-    it('shows "Too many words" warning and is disabled when word count exceeds maxWords', () => {
+    it('shows word-limit warning and is disabled when word count exceeds maxWords', () => {
         renderPage(makeAssignment({ maxWords: 5 }));
         setContent(6);
-        const btn = screen.getByRole('button', { name: /too many words/i });
+        // t('essay.too_many_words') returns the key verbatim with the mock
+        const btn = screen.getByRole('button', { name: /essay\.too_many_words/i });
         expect(btn).toBeInTheDocument();
         expect(btn).toBeDisabled();
     });
@@ -119,7 +120,7 @@ describe('StudentEssayPage — submit button state', () => {
     it('re-enables the submit button once word count drops back to or below maxWords', () => {
         renderPage(makeAssignment({ maxWords: 5 }));
         setContent(6); // over
-        expect(screen.getByRole('button', { name: /too many words/i })).toBeDisabled();
+        expect(screen.getByRole('button', { name: /essay\.too_many_words/i })).toBeDisabled();
         setContent(5); // exactly at limit
         expect(screen.getByRole('button', { name: /essay\.submit_btn/i })).not.toBeDisabled();
     });

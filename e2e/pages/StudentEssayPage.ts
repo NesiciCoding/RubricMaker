@@ -52,9 +52,9 @@ export class StudentEssayPage {
         return this.page.locator('text=/\\d+ words/');
     }
 
-    /** The "Submit essay" button */
+    /** The submit button — label changes to "Too many words" when over the word limit */
     submitButton(): Locator {
-        return this.page.getByRole('button', { name: /submit essay/i });
+        return this.page.getByRole('button', { name: /submit essay|too many words/i });
     }
 
     // ── Post-submission ───────────────────────────────────────────────────────
