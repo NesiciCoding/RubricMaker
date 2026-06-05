@@ -1025,6 +1025,7 @@
         "submitting": "Indienen…",
         "essay_text_label": "Opstel",
         "show_essay": "Opstel tonen",
-        "hide_essay": "Opstel verbergen"
+        "hide_essay": "Opstel verbergen",
+        "expired_desc_no_date": "Deze opdracht is verlopen. Neem contact op met uw docent."
     }
 }

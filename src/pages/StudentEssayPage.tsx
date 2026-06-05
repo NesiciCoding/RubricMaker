@@ -475,7 +475,9 @@ export default function StudentEssayPage() {
                     <div style={{ fontSize: 48, marginBottom: 16 }}>⏰</div>
                     <h2 style={{ marginBottom: 8, color: 'var(--text)' }}>{t('essay.expired_title')}</h2>
                     <p style={{ color: 'var(--text-muted)' }}>
-                        {t('essay.expired_desc', { date: new Date(effectiveExpiresAt!).toLocaleString() })}
+                        {effectiveExpiresAt
+                            ? t('essay.expired_desc', { date: new Date(effectiveExpiresAt).toLocaleString() })
+                            : t('essay.expired_desc_no_date')}
                     </p>
                 </div>
             </div>

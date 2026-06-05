@@ -931,7 +931,12 @@
         "error_name_required": "Bitte geben Sie einen Schulnamen ein.",
         "error_id_required": "Bitte geben Sie eine Schul-ID ein.",
         "error_create": "Schule konnte nicht erstellt werden: {{error}}",
-        "error_join": "Schule konnte nicht beigetreten werden: {{error}}"
+        "error_join": "Schule konnte nicht beigetreten werden: {{error}}",
+        "role_student": "Schüler",
+        "role_student_desc": "Noten einsehen und Schreibaufgaben bearbeiten.",
+        "done_body": "Ihre Schule ist eingerichtet. Sie können jetzt Rubiken erstellen und Schüler benoten.",
+        "student_done_body": "Ihr Konto ist als Schüler eingerichtet. Sie werden zu Ihrem Portal weitergeleitet, sobald Ihr Lehrer Ihre Schul-E-Mail mit einem Schülerprofil verknüpft.",
+        "error_role_update": "Rolle konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut."
     },
     "admin": {
         "title": "Admin-Dashboard",
@@ -980,7 +985,14 @@
         "users_offline_title": "Benutzerverwaltung erfordert eine Datenbankverbindung",
         "users_offline_body": "Verbinden Sie eine Supabase-Datenbank, um Benutzerrollen zu verwalten und alle registrierten Konten anzuzeigen.",
         "schools_offline_title": "Schulverwaltung erfordert eine Datenbankverbindung",
-        "schools_offline_body": "Verbinden Sie eine Supabase-Datenbank, um Schulen zu erstellen und zu verwalten, Datenaufbewahrungsrichtlinien festzulegen und Schulmitglieder anzuzeigen."
+        "schools_offline_body": "Verbinden Sie eine Supabase-Datenbank, um Schulen zu erstellen und zu verwalten, Datenaufbewahrungsrichtlinien festzulegen und Schulmitglieder anzuzeigen.",
+        "data_search_placeholder": "Schüler suchen…",
+        "data_no_results": "Keine Schüler gefunden.",
+        "delete_student_btn": "Löschen",
+        "delete_student_confirm": "Diesen Schüler und alle zugehörigen Noten dauerhaft löschen? Dies kann nicht rückgängig gemacht werden.",
+        "anon_auth_title": "Anonyme Anmeldung (Schreibaufgaben)",
+        "anon_auth_desc": "Schüler, die Safe Exam Browser verwenden, können sich nicht per OTP anmelden. Die anonyme Anmeldung ermöglicht ihnen den Zugriff auf Schreibaufgaben ohne Passwort.",
+        "anon_auth_hint": "Aktivieren Sie 'Anonyme Anmeldung erlauben' in Ihrem Supabase-Projekt unter Authentifizierung → Konfiguration."
     },
     "essay": {
         "email_gate_title": "Geben Sie Ihre Schul-E-Mail-Adresse ein",
@@ -1013,24 +1025,7 @@
         "submitting": "Einreichen…",
         "essay_text_label": "Aufsatz",
         "show_essay": "Aufsatz anzeigen",
-        "hide_essay": "Aufsatz ausblenden"
-    },
-    "onboarding": {
-        "done_body": "Ihre Schule ist eingerichtet. Sie können jetzt Rubiken erstellen und Schüler benoten.",
-        "student_done_body": "Ihr Konto ist als Schüler eingerichtet. Sie werden zu Ihrem Portal weitergeleitet, sobald Ihr Lehrer Ihre Schul-E-Mail mit einem Schülerprofil verknüpft.",
-        "error_role_update": "Rolle konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut."
-    },
-    "admin": {
-        "data_search_placeholder": "Schüler suchen…",
-        "data_no_results": "Keine Schüler gefunden.",
-        "delete_student_btn": "Löschen",
-        "delete_student_confirm": "Diesen Schüler und alle zugehörigen Noten dauerhaft löschen? Dies kann nicht rückgängig gemacht werden.",
-        "anon_auth_title": "Anonyme Anmeldung (Schreibaufgaben)",
-        "anon_auth_desc": "Schüler, die Safe Exam Browser verwenden, können sich nicht per OTP anmelden. Die anonyme Anmeldung ermöglicht ihnen den Zugriff auf Schreibaufgaben ohne Passwort.",
-        "anon_auth_hint": "Aktivieren Sie 'Anonyme Anmeldung erlauben' in Ihrem Supabase-Projekt unter Authentifizierung → Konfiguration.",
-        "users_offline_title": "Benutzerverwaltung erfordert eine Datenbankverbindung",
-        "users_offline_body": "Verbinden Sie eine Supabase-Datenbank, um Benutzerrollen zu verwalten und alle registrierten Konten anzuzeigen.",
-        "schools_offline_title": "Schulverwaltung erfordert eine Datenbankverbindung",
-        "schools_offline_body": "Verbinden Sie eine Supabase-Datenbank, um Schulen zu verwalten, Datenspeicherrichtlinien festzulegen und Schulmitglieder anzuzeigen."
+        "hide_essay": "Aufsatz ausblenden",
+        "expired_desc_no_date": "Diese Aufgabe ist abgelaufen. Bitte kontaktieren Sie Ihren Lehrer."
     }
 }

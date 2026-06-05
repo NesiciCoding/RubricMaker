@@ -1025,6 +1025,7 @@
         "submitting": "Submitting…",
         "essay_text_label": "Essay",
         "show_essay": "Show essay",
-        "hide_essay": "Hide essay"
+        "hide_essay": "Hide essay",
+        "expired_desc_no_date": "This assignment has expired. Please contact your teacher."
     }
 }

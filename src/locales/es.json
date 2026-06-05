@@ -1025,6 +1025,7 @@
         "submitting": "Enviando…",
         "essay_text_label": "Redacción",
         "show_essay": "Mostrar redacción",
-        "hide_essay": "Ocultar redacción"
+        "hide_essay": "Ocultar redacción",
+        "expired_desc_no_date": "Esta tarea ha caducado. Por favor, contacte con su profesor."
     }
 }
