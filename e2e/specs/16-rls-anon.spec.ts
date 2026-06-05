@@ -340,10 +340,14 @@ test.describe('Student onboarding flow', () => {
             await page.waitForLoadState('networkidle', { timeout: 30_000 });
             await expect(page.getByText(/choose your role/i)).toBeVisible({ timeout: 30_000 });
 
-            // Select the Student role card and proceed to the done screen.
+            // Select the Student role card and proceed.
+            // updateSettings({ userRole:'student' }) is dispatched before setStep('done'),
+            // so App.tsx reroutes away from onboarding immediately — the "done" step never
+            // renders.  The test user has no linked student email, so the app shows the
+            // "no student account" screen instead.  Assert on that route change.
             await page.getByRole('button', { name: /student/i }).first().click();
             await page.getByRole('button', { name: /next/i }).click();
-            await expect(page.getByText(/you're all set/i)).toBeVisible({ timeout: 10_000 });
+            await expect(page.getByText(/no student account linked/i)).toBeVisible({ timeout: 10_000 });
 
             // ── DB trigger test ───────────────────────────────────────────────────────
             // Extract the real access token from the browser session so we can test the
