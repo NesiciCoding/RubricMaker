@@ -8,7 +8,7 @@ import { decodeEssayAssignment } from '../utils/essayShareCode';
 import { encodeEssaySubmission } from '../utils/essaySubmissionCode';
 import { countWords } from '../utils/essayUtils';
 import { nanoid } from '../utils/nanoid';
-import type { EssaySubmission } from '../types';
+import type { EssayAssignmentContent, EssaySubmission } from '../types';
 import { EssayAdapter } from '../services/database/EssayAdapter';
 
 const DRAFT_KEY_PREFIX = 'rm_essay_draft_';
@@ -184,14 +184,54 @@ function EmailGate({ adapter, onAuthenticated }: EmailGateProps) {
     );
 }
 
+// Detect a short-code link: bare nanoid (21 URL-safe chars), no base64 JSON.
+// These are generated when the app has Supabase configured; all content is
+// fetched from the get-essay-assignment edge function after authentication.
+function isShortCode(code: string): boolean {
+    return /^[A-Za-z0-9_-]{10,40}$/.test(code);
+}
+
 export default function StudentEssayPage() {
     const { t, i18n } = useTranslation();
     const { code } = useParams<{ code: string }>();
-    const assignment = code ? decodeEssayAssignment(code) : null;
+
+    // Legacy format: full JSON base64 — try to decode first.
+    const legacyAssignment = code ? decodeEssayAssignment(code) : null;
+
+    // Short-code format: bare teacherKey — credentials come from the app's env vars, or from
+    // the rm_supabase_config localStorage entry set by the teacher app on the same origin.
+    const savedConfig = (() => {
+        try {
+            return JSON.parse(localStorage.getItem('rm_supabase_config') ?? '{}') as {
+                supabaseUrl?: string;
+                supabaseAnonKey?: string;
+            };
+        } catch {
+            return {};
+        }
+    })();
+    const envUrl = (import.meta.env.VITE_SUPABASE_URL as string | undefined) || savedConfig.supabaseUrl || undefined;
+    const envKey =
+        (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) || savedConfig.supabaseAnonKey || undefined;
+    const shortCodeActive = !legacyAssignment && !!code && !!envUrl && !!envKey && isShortCode(code);
+
+    const assignment =
+        legacyAssignment ??
+        (shortCodeActive
+            ? {
+                  teacherKey: code!,
+                  rubricId: '',
+                  studentId: '',
+                  title: '',
+                  readOnlyAfterSubmit: true,
+                  createdAt: new Date().toISOString(),
+                  supabaseUrl: envUrl,
+                  supabaseAnonKey: envKey,
+              }
+            : null);
 
     // Determine if this assignment uses Supabase DB submission.
-    // useMemo keeps the adapter instance stable for the component's lifetime
-    // (assignment comes from the URL and never changes mid-session).
+    // useMemo keeps the adapter instance stable for the component's lifetime.
     const hasDb = !!(assignment?.supabaseUrl && assignment?.supabaseAnonKey);
     const adapter = useMemo<EssayAdapter | null>(() => {
         if (!assignment?.supabaseUrl || !assignment?.supabaseAnonKey) return null;
@@ -210,6 +250,31 @@ export default function StudentEssayPage() {
     const [studentUserId, setStudentUserId] = useState<string | null>(null);
     const [studentEmail, setStudentEmail] = useState<string | null>(null);
 
+    // Tracks an 'expired' result from the edge function so the expiry guard fires
+    // even for short-code links that have no expiresAt embedded in the URL.
+    const [contentExpired, setContentExpired] = useState(false);
+
+    // Content resolved from the edge function after authentication.
+    // For legacy links the content is already in the URL; for short codes everything
+    // is fetched here. undefined = not yet fetched; null = fetch complete, no data.
+    const [resolvedContent, setResolvedContent] = useState<EssayAssignmentContent | null | undefined>(
+        legacyAssignment
+            ? {
+                  rubricId: legacyAssignment.rubricId,
+                  studentId: legacyAssignment.studentId,
+                  title: legacyAssignment.title,
+                  prompt: legacyAssignment.prompt ?? null,
+                  minWords: legacyAssignment.minWords ?? null,
+                  maxWords: legacyAssignment.maxWords ?? null,
+                  timeLimitMinutes: legacyAssignment.timeLimitMinutes ?? null,
+                  requireSEB: legacyAssignment.requireSEB ?? false,
+                  expiresAt: legacyAssignment.expiresAt ?? null,
+                  readOnlyAfterSubmit: legacyAssignment.readOnlyAfterSubmit,
+              }
+            : undefined
+    );
+    const contentReady = resolvedContent !== undefined;
+
     const [html, setHtml] = useState<string>(() => localStorage.getItem(draftKey) ?? '');
     const [draftRestored, setDraftRestored] = useState<boolean>(() => !!localStorage.getItem(draftKey));
     const [submitted, setSubmitted] = useState(false);
@@ -219,24 +284,46 @@ export default function StudentEssayPage() {
     const [submitError, setSubmitError] = useState('');
     const [draftSavedAt, setDraftSavedAt] = useState<Date | null>(null);
 
-    // Timer
+    // Timer — initialised from the URL (legacy) or from resolved content (short code).
     const [secondsLeft, setSecondsLeft] = useState<number | null>(() => {
-        if (!assignment?.timeLimitMinutes) return null;
+        const minutes = legacyAssignment?.timeLimitMinutes ?? null;
+        if (!minutes) return null;
         const stored = sessionStorage.getItem(timerKey);
         if (stored) return Math.max(0, parseInt(stored, 10));
-        return assignment.timeLimitMinutes * 60;
+        return minutes * 60;
     });
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-    // Set document title to assignment name
+    // After the student authenticates, fetch full assignment content from the edge function.
+    // For legacy links this is a no-op (content already in URL, resolvedContent pre-filled).
+    // For short-code links this is the only way to get title, prompt, limits, etc.
     useEffect(() => {
-        if (!assignment) return;
+        if (!studentUserId || !hasDb || !adapter || contentReady) return;
+        adapter.fetchAssignmentContent(assignment!.teacherKey).then((result) => {
+            if (result.ok) {
+                setResolvedContent(result.data);
+                // Start timer if the assignment has a time limit and it hasn't started yet.
+                if (result.data.timeLimitMinutes && secondsLeft === null) {
+                    const stored = sessionStorage.getItem(timerKey);
+                    setSecondsLeft(stored ? Math.max(0, parseInt(stored, 10)) : result.data.timeLimitMinutes * 60);
+                }
+            } else {
+                if (result.reason === 'expired') setContentExpired(true);
+                setResolvedContent(null);
+            }
+        });
+    }, [studentUserId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Set document title once we have the resolved title
+    useEffect(() => {
+        const title = resolvedContent?.title || assignment?.title;
+        if (!title) return;
         const prev = document.title;
-        document.title = assignment.title;
+        document.title = title;
         return () => {
             document.title = prev;
         };
-    }, [assignment?.title]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [resolvedContent?.title, assignment?.title]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Auto-save draft every 30 s and record timestamp for the indicator
     useEffect(() => {
@@ -260,8 +347,8 @@ export default function StudentEssayPage() {
         // Always generate the legacy code as a fallback / receipt
         const submissionObj: EssaySubmission = {
             id: submissionId,
-            assignmentRubricId: assignment.rubricId,
-            assignmentStudentId: assignment.studentId,
+            assignmentRubricId: resolvedContent?.rubricId ?? assignment.rubricId,
+            assignmentStudentId: resolvedContent?.studentId ?? assignment.studentId,
             teacherKey: assignment.teacherKey,
             contentHtml: html,
             wordCount,
@@ -369,7 +456,10 @@ export default function StudentEssayPage() {
     }
 
     // ── Guard: assignment expired ─────────────────────────────────────────────
-    if (assignment.expiresAt && new Date(assignment.expiresAt) < new Date()) {
+    // contentExpired is set when the edge function returns 410 for a short-code link.
+    // effectiveExpiresAt covers legacy links where expiresAt is embedded in the URL.
+    const effectiveExpiresAt = resolvedContent?.expiresAt ?? assignment.expiresAt ?? null;
+    if (contentExpired || (effectiveExpiresAt && new Date(effectiveExpiresAt) < new Date())) {
         return (
             <div
                 style={{
@@ -385,7 +475,9 @@ export default function StudentEssayPage() {
                     <div style={{ fontSize: 48, marginBottom: 16 }}>⏰</div>
                     <h2 style={{ marginBottom: 8, color: 'var(--text)' }}>{t('essay.expired_title')}</h2>
                     <p style={{ color: 'var(--text-muted)' }}>
-                        {t('essay.expired_desc', { date: new Date(assignment.expiresAt).toLocaleString() })}
+                        {effectiveExpiresAt
+                            ? t('essay.expired_desc', { date: new Date(effectiveExpiresAt).toLocaleString() })
+                            : t('essay.expired_desc_no_date')}
                     </p>
                 </div>
             </div>
@@ -405,11 +497,30 @@ export default function StudentEssayPage() {
         );
     }
 
+    // ── Guard: waiting for assignment content from edge function ─────────────
+    if (hasDb && studentUserId && !contentReady) {
+        return (
+            <div
+                style={{
+                    minHeight: '100vh',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: '#f8fafc',
+                }}
+            >
+                <Loader2 size={28} style={{ color: '#6366f1', animation: 'spin 1s linear infinite' }} />
+            </div>
+        );
+    }
+
     const wordCount = countWords(html);
-    const isOverLimit = assignment.maxWords ? wordCount > assignment.maxWords : false;
-    const isBelowMin = assignment.minWords ? wordCount < assignment.minWords : false;
+    const effectiveMaxWords = resolvedContent?.maxWords ?? null;
+    const effectiveMinWords = resolvedContent?.minWords ?? null;
+    const isOverLimit = effectiveMaxWords ? wordCount > effectiveMaxWords : false;
+    const isBelowMin = effectiveMinWords ? wordCount < effectiveMinWords : false;
     const timedOut = secondsLeft !== null && secondsLeft <= 0;
-    const sebBlocked = !!(assignment.requireSEB && !isInSEB);
+    const sebBlocked = !!(resolvedContent?.requireSEB && !isInSEB);
     const canSubmit = !isOverLimit && !timedOut && !submitted && !submitting && !sebBlocked;
     const wordCountColor = isOverLimit ? '#ef4444' : isBelowMin ? '#f59e0b' : '#10b981';
 
@@ -490,7 +601,7 @@ export default function StudentEssayPage() {
             >
                 <div>
                     <h1 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: 'var(--text)' }}>
-                        {assignment.title}
+                        {resolvedContent?.title || assignment.title}
                     </h1>
                     {studentEmail && (
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>
@@ -533,21 +644,25 @@ export default function StudentEssayPage() {
                     )}
                     <div style={{ fontSize: '0.875rem', fontWeight: 600, color: wordCountColor }}>
                         {t('essay.words_count', { count: wordCount })}
-                        {(assignment.minWords || assignment.maxWords) && (
+                        {(effectiveMinWords || effectiveMaxWords) && (
                             <span style={{ color: 'var(--text-dim)', fontWeight: 400, marginLeft: 4 }}>
-                                ({assignment.minWords ?? 0}–{assignment.maxWords ?? '∞'})
+                                ({effectiveMinWords ?? 0}–{effectiveMaxWords ?? '∞'})
                             </span>
                         )}
                     </div>
                     {!submitted && (
-                        <EssayTTSControls promptText={assignment.prompt} contentHtml={html} lang={i18n.language} />
+                        <EssayTTSControls
+                            promptText={resolvedContent?.prompt ?? assignment.prompt}
+                            contentHtml={html}
+                            lang={i18n.language}
+                        />
                     )}
                 </div>
             </div>
 
             <div style={{ maxWidth: 860, margin: '0 auto', padding: '24px 20px' }}>
-                {/* Prompt */}
-                {assignment.prompt && (
+                {/* Prompt — fetched from edge function after auth when Supabase is configured */}
+                {resolvedContent?.prompt && (
                     <div
                         style={{
                             background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
@@ -572,7 +687,7 @@ export default function StudentEssayPage() {
                         >
                             {t('essay.prompt_label')}
                         </div>
-                        {assignment.prompt}
+                        {resolvedContent?.prompt}
                     </div>
                 )}
 
@@ -668,7 +783,7 @@ export default function StudentEssayPage() {
                 <EssayEditor
                     content={html}
                     onChange={setHtml}
-                    editable={!submitted || !assignment.readOnlyAfterSubmit}
+                    editable={!submitted || !(resolvedContent?.readOnlyAfterSubmit ?? assignment.readOnlyAfterSubmit)}
                     placeholder={t('essay.editor_placeholder')}
                 />
 
@@ -690,7 +805,7 @@ export default function StudentEssayPage() {
                         )}
                         {isOverLimit && (
                             <span style={{ fontSize: '0.875rem', color: '#ef4444' }}>
-                                {t('essay.over_limit', { count: wordCount - (assignment.maxWords ?? 0) })}
+                                {t('essay.over_limit', { count: wordCount - (effectiveMaxWords ?? 0) })}
                             </span>
                         )}
                         <button

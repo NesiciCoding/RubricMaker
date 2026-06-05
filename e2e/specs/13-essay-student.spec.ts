@@ -2,15 +2,22 @@
  * E2E tests for the student essay page (/essay/:code).
  *
  * The essay page is standalone — it lives outside AppProvider and works from
- * the URL-encoded assignment alone.  Tests are split into three groups:
+ * the URL-encoded assignment alone.  Tests are split into four groups:
  *
  *  1. No-DB (offline) mode  — no Supabase involved, most comprehensive
  *  2. DB mode               — Supabase auth + edge function mocked via page.route()
  *  3. Portal session bypass — portal localStorage session skips the email gate
+ *  4. Short-code format     — bare teacherKey URL (credentials from rm_supabase_config)
  */
 
 import { test, expect } from '@playwright/test';
-import { StudentEssayPage, buildEssayCode, buildPortalSession } from '../pages/StudentEssayPage';
+import {
+    StudentEssayPage,
+    buildEssayCode,
+    buildShortCode,
+    buildPortalSession,
+    mockGetEssayAssignment,
+} from '../pages/StudentEssayPage';
 
 // ── Mock Supabase helpers ─────────────────────────────────────────────────────
 
@@ -356,5 +363,140 @@ test.describe('Essay page — portal session bypass', () => {
         await essay.goto(code);
 
         await expect(essay.signedInAs('jane.doe@myschool.nl')).toBeVisible({ timeout: 10_000 });
+    });
+});
+
+// ── Group 4: Short-code format ────────────────────────────────────────────────
+
+test.describe('Essay page — short-code format (teacherKey only in URL)', () => {
+    /**
+     * Inject rm_supabase_config into localStorage so the page detects the short
+     * code and creates an EssayAdapter with the mock Supabase URL.
+     * Must be called via addInitScript BEFORE goto() so it runs before React mounts.
+     */
+    async function injectConfig(page: import('@playwright/test').Page) {
+        await page.addInitScript(
+            ({ url, key }: { url: string; key: string }) => {
+                localStorage.setItem(
+                    'rm_supabase_config',
+                    JSON.stringify({ supabaseUrl: url, supabaseAnonKey: key }),
+                );
+            },
+            { url: MOCK_SUPABASE_URL, key: MOCK_ANON_KEY },
+        );
+    }
+
+    test('short code without rm_supabase_config shows invalid link', async ({ page }) => {
+        // No config injected — short code cannot be resolved.
+        const essay = new StudentEssayPage(page);
+        await essay.goto(buildShortCode());
+        await expect(essay.invalidLinkMessage()).toBeVisible({ timeout: 10_000 });
+    });
+
+    test('short code with config shows email gate', async ({ page }) => {
+        await injectConfig(page);
+        await mockSupabaseAuth(page);
+        await mockGetEssayAssignment(page, MOCK_SUPABASE_URL);
+
+        const essay = new StudentEssayPage(page);
+        await essay.goto(buildShortCode());
+        await expect(essay.emailInput()).toBeVisible({ timeout: 10_000 });
+    });
+
+    test('prompt is NOT present in the page before authenticating', async ({ page }) => {
+        await injectConfig(page);
+        await mockSupabaseAuth(page);
+        await mockGetEssayAssignment(page, MOCK_SUPABASE_URL, {
+            content: { prompt: 'SECRET EXAM QUESTION' },
+        });
+
+        const essay = new StudentEssayPage(page);
+        await essay.goto(buildShortCode());
+        // Email gate is visible — edge function not yet called
+        await expect(essay.emailInput()).toBeVisible({ timeout: 10_000 });
+        // Prompt must not be visible at this stage
+        await expect(page.getByText('SECRET EXAM QUESTION')).not.toBeVisible();
+    });
+
+    test('prompt appears after authenticating (fetched from edge function)', async ({ page }) => {
+        await injectConfig(page);
+        await mockSupabaseAuth(page);
+        await mockGetEssayAssignment(page, MOCK_SUPABASE_URL, {
+            content: { prompt: 'Describe the water cycle in your own words.' },
+        });
+        await mockSubmitEssay(page);
+
+        const essay = new StudentEssayPage(page);
+        await essay.goto(buildShortCode());
+        await expect(essay.emailInput()).toBeVisible({ timeout: 10_000 });
+
+        await essay.fillEmailAndStart('student@school.nl');
+        await expect(essay.editor()).toBeVisible({ timeout: 10_000 });
+        await expect(
+            page.getByText('Describe the water cycle in your own words.'),
+        ).toBeVisible({ timeout: 5_000 });
+    });
+
+    test('title from edge function is shown in header after auth', async ({ page }) => {
+        await injectConfig(page);
+        await mockSupabaseAuth(page);
+        await mockGetEssayAssignment(page, MOCK_SUPABASE_URL, {
+            content: { title: 'Klimaat Schrijfopdracht' },
+        });
+        await mockSubmitEssay(page);
+
+        const essay = new StudentEssayPage(page);
+        await essay.goto(buildShortCode());
+        await essay.fillEmailAndStart('student@school.nl');
+        await expect(essay.editor()).toBeVisible({ timeout: 10_000 });
+        await expect(page.getByText('Klimaat Schrijfopdracht')).toBeVisible({ timeout: 5_000 });
+    });
+
+    test('edge function failure still shows editor (graceful degradation)', async ({ page }) => {
+        await injectConfig(page);
+        await mockSupabaseAuth(page);
+        // Edge function returns 404 — no content available
+        await mockGetEssayAssignment(page, MOCK_SUPABASE_URL, { fail: true });
+        await mockSubmitEssay(page);
+
+        const essay = new StudentEssayPage(page);
+        await essay.goto(buildShortCode());
+        await essay.fillEmailAndStart('student@school.nl');
+
+        // Editor should still be reachable despite content fetch failing
+        await expect(essay.editor()).toBeVisible({ timeout: 10_000 });
+    });
+
+    test('word limits from edge function are enforced', async ({ page }) => {
+        await injectConfig(page);
+        await mockSupabaseAuth(page);
+        await mockGetEssayAssignment(page, MOCK_SUPABASE_URL, {
+            content: { maxWords: 3 },
+        });
+
+        const essay = new StudentEssayPage(page);
+        await essay.goto(buildShortCode());
+        await essay.fillEmailAndStart('student@school.nl');
+        await expect(essay.editor()).toBeVisible({ timeout: 10_000 });
+
+        await essay.typeInEditor('one two three four five');
+        await expect(essay.submitButton()).toBeDisabled({ timeout: 5_000 });
+        await expect(page.getByText(/over limit/i)).toBeVisible({ timeout: 3_000 });
+    });
+
+    test('short code full submit flow works end-to-end', async ({ page }) => {
+        await injectConfig(page);
+        await mockSupabaseAuth(page);
+        await mockGetEssayAssignment(page, MOCK_SUPABASE_URL);
+        await mockSubmitEssay(page);
+
+        const essay = new StudentEssayPage(page);
+        await essay.goto(buildShortCode());
+        await essay.fillEmailAndStart('student@school.nl');
+        await expect(essay.editor()).toBeVisible({ timeout: 10_000 });
+
+        await essay.typeInEditor('My complete short-code essay answer.');
+        await essay.submitButton().click();
+        await expect(essay.dbSuccessBanner()).toBeVisible({ timeout: 10_000 });
     });
 });
