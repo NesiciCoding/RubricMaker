@@ -182,6 +182,9 @@ export default function OnboardingPage() {
                                 {busy && <Loader size={14} className="spin" />}
                                 {t('onboarding.btn_next')}
                             </button>
+                            {error && (
+                                <p style={{ margin: '12px 0 0', color: '#dc2626', fontSize: '0.875rem' }}>{error}</p>
+                            )}
                         </>
                     )}
 

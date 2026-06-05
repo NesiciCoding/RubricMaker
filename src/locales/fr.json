@@ -1014,5 +1014,19 @@
         "essay_text_label": "Dissertation",
         "show_essay": "Afficher la dissertation",
         "hide_essay": "Masquer la dissertation"
+    },
+    "onboarding": {
+        "done_body": "Votre école est configurée. Vous pouvez maintenant créer des grilles et noter vos élèves.",
+        "student_done_body": "Votre compte est configuré en tant qu'élève. Vous serez redirigé vers votre portail une fois que votre enseignant aura lié votre adresse e-mail scolaire à un profil d'élève.",
+        "error_role_update": "Impossible de mettre à jour votre rôle. Veuillez réessayer."
+    },
+    "admin": {
+        "data_search_placeholder": "Rechercher des élèves…",
+        "data_no_results": "Aucun élève trouvé.",
+        "delete_student_btn": "Supprimer",
+        "delete_student_confirm": "Supprimer définitivement cet élève et toutes ses notes ? Cette action est irréversible.",
+        "anon_auth_title": "Connexion anonyme (devoirs de rédaction)",
+        "anon_auth_desc": "Les élèves utilisant Safe Exam Browser ne peuvent pas se connecter par OTP. La connexion anonyme leur permet d'accéder aux devoirs sans mot de passe.",
+        "anon_auth_hint": "Activez « Autoriser les connexions anonymes » dans votre projet Supabase sous Authentification → Configuration."
     }
 }

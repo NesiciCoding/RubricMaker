@@ -250,6 +250,10 @@ export default function StudentEssayPage() {
     const [studentUserId, setStudentUserId] = useState<string | null>(null);
     const [studentEmail, setStudentEmail] = useState<string | null>(null);
 
+    // Tracks an 'expired' result from the edge function so the expiry guard fires
+    // even for short-code links that have no expiresAt embedded in the URL.
+    const [contentExpired, setContentExpired] = useState(false);
+
     // Content resolved from the edge function after authentication.
     // For legacy links the content is already in the URL; for short codes everything
     // is fetched here. undefined = not yet fetched; null = fetch complete, no data.
@@ -304,7 +308,7 @@ export default function StudentEssayPage() {
                     setSecondsLeft(stored ? Math.max(0, parseInt(stored, 10)) : result.data.timeLimitMinutes * 60);
                 }
             } else {
-                // Mark as resolved (null) so the loading guard clears; expired triggers its own guard.
+                if (result.reason === 'expired') setContentExpired(true);
                 setResolvedContent(null);
             }
         });
@@ -452,10 +456,10 @@ export default function StudentEssayPage() {
     }
 
     // ── Guard: assignment expired ─────────────────────────────────────────────
-    // For short-code links, expiresAt is only known after the content fetch;
-    // the edge function will reject expired submissions server-side regardless.
+    // contentExpired is set when the edge function returns 410 for a short-code link.
+    // effectiveExpiresAt covers legacy links where expiresAt is embedded in the URL.
     const effectiveExpiresAt = resolvedContent?.expiresAt ?? assignment.expiresAt ?? null;
-    if (effectiveExpiresAt && new Date(effectiveExpiresAt) < new Date()) {
+    if (contentExpired || (effectiveExpiresAt && new Date(effectiveExpiresAt) < new Date())) {
         return (
             <div
                 style={{

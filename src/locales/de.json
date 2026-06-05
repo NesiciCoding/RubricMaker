@@ -1014,5 +1014,19 @@
         "essay_text_label": "Aufsatz",
         "show_essay": "Aufsatz anzeigen",
         "hide_essay": "Aufsatz ausblenden"
+    },
+    "onboarding": {
+        "done_body": "Ihre Schule ist eingerichtet. Sie können jetzt Rubiken erstellen und Schüler benoten.",
+        "student_done_body": "Ihr Konto ist als Schüler eingerichtet. Sie werden zu Ihrem Portal weitergeleitet, sobald Ihr Lehrer Ihre Schul-E-Mail mit einem Schülerprofil verknüpft.",
+        "error_role_update": "Rolle konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut."
+    },
+    "admin": {
+        "data_search_placeholder": "Schüler suchen…",
+        "data_no_results": "Keine Schüler gefunden.",
+        "delete_student_btn": "Löschen",
+        "delete_student_confirm": "Diesen Schüler und alle zugehörigen Noten dauerhaft löschen? Dies kann nicht rückgängig gemacht werden.",
+        "anon_auth_title": "Anonyme Anmeldung (Schreibaufgaben)",
+        "anon_auth_desc": "Schüler, die Safe Exam Browser verwenden, können sich nicht per OTP anmelden. Die anonyme Anmeldung ermöglicht ihnen den Zugriff auf Schreibaufgaben ohne Passwort.",
+        "anon_auth_hint": "Aktivieren Sie 'Anonyme Anmeldung erlauben' in Ihrem Supabase-Projekt unter Authentifizierung → Konfiguration."
     }
 }
