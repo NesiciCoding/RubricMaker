@@ -580,4 +580,6 @@ export interface EssaySubmission {
     contentHtml: string;
     wordCount: number;
     submittedAt: string;
+    /** Present when the assignment defined word limits; null/absent means no limits were set */
+    wordLimitStatus?: 'ok' | 'under' | 'over' | null;
 }

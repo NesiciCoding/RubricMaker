@@ -946,6 +946,11 @@ select.input-error {
 
 /* ─── Print styles ───────────────────────────────────────────────────────────── */
 @media print {
+    /* When the slip sheet is portalled to body, hide the main app entirely */
+    body:has(.slip-sheet-overlay) #root {
+        display: none !important;
+    }
+
     .sidebar,
     .topbar,
     .grade-footer,

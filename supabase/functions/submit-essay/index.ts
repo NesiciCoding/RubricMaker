@@ -119,12 +119,16 @@ serve(async (req) => {
         return json({ error: 'Assignment deadline has passed' }, 403);
     }
 
-    // Word-count bounds
-    if (assignment.min_words && wordCount < assignment.min_words) {
-        return json({ error: `Word count ${wordCount} is below the minimum of ${assignment.min_words}` }, 422);
-    }
-    if (assignment.max_words && wordCount > assignment.max_words) {
-        return json({ error: `Word count ${wordCount} exceeds the limit of ${assignment.max_words}` }, 422);
+    // Compute word-limit status for the teacher's view; do not reject over/under submissions.
+    let wordLimitStatus: 'ok' | 'under' | 'over' | null = null;
+    if (assignment.min_words !== null || assignment.max_words !== null) {
+        if (assignment.max_words !== null && wordCount > assignment.max_words) {
+            wordLimitStatus = 'over';
+        } else if (assignment.min_words !== null && wordCount < assignment.min_words) {
+            wordLimitStatus = 'under';
+        } else {
+            wordLimitStatus = 'ok';
+        }
     }
 
     // Upload HTML to Storage
@@ -147,6 +151,7 @@ serve(async (req) => {
             student_email: studentEmail ?? null,
             student_user_id: user.id,
             word_count: wordCount,
+            word_limit_status: wordLimitStatus,
             submitted_at: new Date().toISOString(),
             storage_path: storagePath,
         });

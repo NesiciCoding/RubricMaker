@@ -76,4 +76,31 @@ describe('decodeEssaySubmission', () => {
         const padded = '  ' + encodeEssaySubmission(original) + '\n';
         expect(decodeEssaySubmission(padded)).not.toBeNull();
     });
+
+    it('round-trips wordLimitStatus "over"', () => {
+        const original = makeSubmission({ wordLimitStatus: 'over' });
+        const decoded = decodeEssaySubmission(encodeEssaySubmission(original));
+        expect(decoded!.wordLimitStatus).toBe('over');
+    });
+
+    it('round-trips wordLimitStatus "under"', () => {
+        const original = makeSubmission({ wordLimitStatus: 'under' });
+        const decoded = decodeEssaySubmission(encodeEssaySubmission(original));
+        expect(decoded!.wordLimitStatus).toBe('under');
+    });
+
+    it('round-trips wordLimitStatus "ok"', () => {
+        const original = makeSubmission({ wordLimitStatus: 'ok' });
+        const decoded = decodeEssaySubmission(encodeEssaySubmission(original));
+        expect(decoded!.wordLimitStatus).toBe('ok');
+    });
+
+    it('decodes legacy codes without wordLimitStatus as undefined', () => {
+        // Simulate a code produced before wordLimitStatus was added
+        const legacy = { assignmentRubricId: 'r1', assignmentStudentId: 's1', contentHtml: '<p>old</p>', wordCount: 1 };
+        const code = btoa(encodeURIComponent(JSON.stringify(legacy)));
+        const decoded = decodeEssaySubmission(code);
+        expect(decoded).not.toBeNull();
+        expect(decoded!.wordLimitStatus).toBeUndefined();
+    });
 });

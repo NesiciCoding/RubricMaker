@@ -344,6 +344,15 @@ export default function StudentEssayPage() {
         const wordCount = countWords(html);
         const now = new Date().toISOString();
 
+        const hasLimits = !!(assignment.minWords || assignment.maxWords);
+        const wordLimitStatus: EssaySubmission['wordLimitStatus'] = hasLimits
+            ? assignment.maxWords && wordCount > assignment.maxWords
+                ? 'over'
+                : assignment.minWords && wordCount < assignment.minWords
+                  ? 'under'
+                  : 'ok'
+            : undefined;
+
         // Always generate the legacy code as a fallback / receipt
         const submissionObj: EssaySubmission = {
             id: submissionId,
@@ -353,6 +362,7 @@ export default function StudentEssayPage() {
             contentHtml: html,
             wordCount,
             submittedAt: now,
+            wordLimitStatus,
         };
         const legacyCode = encodeEssaySubmission(submissionObj);
 
@@ -521,7 +531,9 @@ export default function StudentEssayPage() {
     const isBelowMin = effectiveMinWords ? wordCount < effectiveMinWords : false;
     const timedOut = secondsLeft !== null && secondsLeft <= 0;
     const sebBlocked = !!(resolvedContent?.requireSEB && !isInSEB);
-    const canSubmit = !isOverLimit && !timedOut && !submitted && !submitting && !sebBlocked;
+    // Manual submit is blocked when over the word limit. The timer auto-submits
+    // unconditionally when it expires, setting submitted = true.
+    const canSubmit = !isOverLimit && !submitted && !submitting && !sebBlocked;
     const wordCountColor = isOverLimit ? '#ef4444' : isBelowMin ? '#f59e0b' : '#10b981';
 
     return (
@@ -798,12 +810,19 @@ export default function StudentEssayPage() {
                             marginTop: 16,
                         }}
                     >
-                        {timedOut && (
+                        {timedOut && !isOverLimit && (
                             <span style={{ fontSize: '0.875rem', color: '#ef4444', fontWeight: 600 }}>
                                 {t('essay.time_up_auto')}
                             </span>
                         )}
-                        {isOverLimit && (
+                        {timedOut && isOverLimit && (
+                            <span style={{ fontSize: '0.875rem', color: '#ef4444', fontWeight: 600 }}>
+                                {t('essay.time_up_over_submitted', {
+                                    count: wordCount - (effectiveMaxWords ?? 0),
+                                })}
+                            </span>
+                        )}
+                        {!timedOut && isOverLimit && (
                             <span style={{ fontSize: '0.875rem', color: '#ef4444' }}>
                                 {t('essay.over_limit', { count: wordCount - (effectiveMaxWords ?? 0) })}
                             </span>
@@ -814,11 +833,15 @@ export default function StudentEssayPage() {
                             style={{
                                 padding: '10px 32px',
                                 borderRadius: 8,
-                                border: 'none',
+                                border: isOverLimit ? '1.5px solid #fca5a5' : 'none',
                                 fontWeight: 700,
                                 fontSize: '0.95rem',
-                                background: canSubmit ? 'var(--accent)' : 'var(--bg-elevated)',
-                                color: canSubmit ? '#fff' : 'var(--text-dim)',
+                                background: isOverLimit
+                                    ? '#fef2f2'
+                                    : canSubmit
+                                      ? 'var(--accent)'
+                                      : 'var(--bg-elevated)',
+                                color: isOverLimit ? '#dc2626' : canSubmit ? '#fff' : 'var(--text-dim)',
                                 cursor: canSubmit ? 'pointer' : 'not-allowed',
                                 display: 'flex',
                                 alignItems: 'center',
@@ -829,6 +852,10 @@ export default function StudentEssayPage() {
                                 <>
                                     <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />{' '}
                                     {t('essay.submitting')}
+                                </>
+                            ) : isOverLimit ? (
+                                <>
+                                    <AlertTriangle size={16} /> {t('essay.too_many_words')}
                                 </>
                             ) : (
                                 t('essay.submit_btn')
