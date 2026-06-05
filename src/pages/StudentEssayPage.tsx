@@ -817,7 +817,8 @@ export default function StudentEssayPage() {
                         )}
                         {timedOut && isOverLimit && (
                             <span style={{ fontSize: '0.875rem', color: '#ef4444', fontWeight: 600 }}>
-                                Time is up — reduce your essay by {wordCount - (assignment.maxWords ?? 0)} words to submit.
+                                Time is up — reduce your essay by {wordCount - (assignment.maxWords ?? 0)} words to
+                                submit.
                             </span>
                         )}
                         {!timedOut && isOverLimit && (
@@ -834,7 +835,11 @@ export default function StudentEssayPage() {
                                 border: isOverLimit ? '1.5px solid #fca5a5' : 'none',
                                 fontWeight: 700,
                                 fontSize: '0.95rem',
-                                background: isOverLimit ? '#fef2f2' : canSubmit ? 'var(--accent)' : 'var(--bg-elevated)',
+                                background: isOverLimit
+                                    ? '#fef2f2'
+                                    : canSubmit
+                                      ? 'var(--accent)'
+                                      : 'var(--bg-elevated)',
                                 color: isOverLimit ? '#dc2626' : canSubmit ? '#fff' : 'var(--text-dim)',
                                 cursor: canSubmit ? 'pointer' : 'not-allowed',
                                 display: 'flex',
