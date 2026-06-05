@@ -934,7 +934,7 @@
         "error_join": "Schule konnte nicht beigetreten werden: {{error}}",
         "role_student": "Schüler",
         "role_student_desc": "Noten einsehen und Schreibaufgaben bearbeiten.",
-        "done_body": "Ihre Schule ist eingerichtet. Sie können jetzt Rubiken erstellen und Schüler benoten.",
+        "done_body": "Ihre Schule ist eingerichtet. Sie können jetzt Rubriken erstellen und Schüler benoten.",
         "student_done_body": "Ihr Konto ist als Schüler eingerichtet. Sie werden zu Ihrem Portal weitergeleitet, sobald Ihr Lehrer Ihre Schul-E-Mail mit einem Schülerprofil verknüpft.",
         "error_role_update": "Rolle konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut."
     },
