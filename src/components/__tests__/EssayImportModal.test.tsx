@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import EssayImportModal from '../Essay/EssayImportModal';
+import type { EssaySubmission } from '../../types';
 
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
@@ -142,7 +143,7 @@ describe('EssayImportModal', () => {
     });
 
     describe('word limit status badges', () => {
-        function importWith(wordLimitStatus: 'ok' | 'under' | 'over' | undefined) {
+        function importWith(wordLimitStatus: EssaySubmission['wordLimitStatus']) {
             mockDecode.mockReturnValue({ ...validSubmission, wordLimitStatus });
             render(<EssayImportModal {...baseProps} />);
             fireEvent.change(screen.getByPlaceholderText(/Paste the student's submission code/i), {
@@ -170,6 +171,12 @@ describe('EssayImportModal', () => {
 
         it('shows no limit badge for legacy submissions without a status', () => {
             importWith(undefined);
+            expect(screen.queryByText(/essay\.word_limit_over/i)).not.toBeInTheDocument();
+            expect(screen.queryByText(/essay\.word_limit_under/i)).not.toBeInTheDocument();
+        });
+
+        it('shows no limit badge when status is null (no limits configured on assignment)', () => {
+            importWith(null);
             expect(screen.queryByText(/essay\.word_limit_over/i)).not.toBeInTheDocument();
             expect(screen.queryByText(/essay\.word_limit_under/i)).not.toBeInTheDocument();
         });
