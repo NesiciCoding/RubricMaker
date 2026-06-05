@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import ReactDOM from 'react-dom';
 import { X, Printer } from 'lucide-react';
 import QRCode from 'qrcode';
 import { encodeEssayAssignment } from '../../utils/essayShareCode';
@@ -67,12 +68,12 @@ function SlipItem({ student, assignment }: { student: ClassStudent; assignment: 
 export default function EssaySlipSheet({ baseAssignment, students, onClose }: Props) {
     const [columns, setColumns] = useState<2 | 4>(2);
 
-    return (
+    const content = (
         <>
-            {/* Print styles */}
+            {/* Print styles — overlay is portalled to body so #root is hidden via index.css */}
             <style>{`
                 @media print {
-                    .slip-sheet-overlay { position: static !important; background: none !important; }
+                    .slip-sheet-overlay { position: static !important; background: none !important; padding: 0 !important; }
                     .slip-sheet-controls { display: none !important; }
                     .slip-sheet-container { box-shadow: none !important; border-radius: 0 !important; max-height: none !important; overflow: visible !important; }
                     .slip-sheet-grid { grid-template-columns: repeat(${columns}, 1fr) !important; }
@@ -172,4 +173,6 @@ export default function EssaySlipSheet({ baseAssignment, students, onClose }: Pr
             </div>
         </>
     );
+
+    return ReactDOM.createPortal(content, document.body);
 }

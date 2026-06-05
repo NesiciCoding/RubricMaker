@@ -133,4 +133,37 @@ describe('EssayImportModal', () => {
         fireEvent.change(textarea, { target: { value: 'updated' } });
         expect(screen.queryByText(/Invalid submission code/i)).not.toBeInTheDocument();
     });
+
+    describe('word limit status badges', () => {
+        function importWith(wordLimitStatus: 'ok' | 'under' | 'over' | undefined) {
+            mockDecode.mockReturnValue({ ...validSubmission, wordLimitStatus });
+            render(<EssayImportModal {...baseProps} />);
+            fireEvent.change(screen.getByPlaceholderText(/Paste the student's submission code/i), {
+                target: { value: 'code' },
+            });
+            fireEvent.click(screen.getByRole('button', { name: /import essay/i }));
+        }
+
+        it('shows "Over word limit" badge after importing an over-limit submission', () => {
+            importWith('over');
+            expect(screen.getByText(/over word limit/i)).toBeInTheDocument();
+        });
+
+        it('shows "Under word limit" badge after importing an under-limit submission', () => {
+            importWith('under');
+            expect(screen.getByText(/under word limit/i)).toBeInTheDocument();
+        });
+
+        it('shows no limit badge when status is "ok"', () => {
+            importWith('ok');
+            expect(screen.queryByText(/over word limit/i)).not.toBeInTheDocument();
+            expect(screen.queryByText(/under word limit/i)).not.toBeInTheDocument();
+        });
+
+        it('shows no limit badge for legacy submissions without a status', () => {
+            importWith(undefined);
+            expect(screen.queryByText(/over word limit/i)).not.toBeInTheDocument();
+            expect(screen.queryByText(/under word limit/i)).not.toBeInTheDocument();
+        });
+    });
 });
