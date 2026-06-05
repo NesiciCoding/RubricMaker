@@ -302,68 +302,31 @@ test.describe('Student onboarding flow', () => {
                 return;
             }
 
-            // Exchange the magic link token from Node.js (more reliable than browser navigation).
-            // The Supabase verify endpoint redirects to the app URL with auth tokens in the hash.
-            const verifyRes = await fetch(actionLink, {
-                redirect: 'manual',
-                headers: { apikey: SUPABASE_ANON_KEY },
-            });
-            const location = verifyRes.headers.get('location') ?? '';
-            const fragment = location.includes('#') ? location.split('#')[1] : '';
-            const params = new URLSearchParams(fragment);
-            const accessToken = params.get('access_token');
-            const refreshToken = params.get('refresh_token');
-            const expiresIn = parseInt(params.get('expires_in') ?? '3600', 10);
-
-            if (!accessToken || !refreshToken) {
-                throw new Error(
-                    `Could not extract tokens from magic link redirect. Location: ${location}`,
-                );
-            }
-
-            // Fetch user info to build the full session object supabase-js expects.
-            const userInfoRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-                headers: { Authorization: `Bearer ${accessToken}`, apikey: SUPABASE_ANON_KEY },
-            });
-            const userInfo = (await userInfoRes.json()) as Record<string, unknown>;
-
-            // Compute the supabase-js localStorage key from the project URL.
-            // supabase-js v2: `sb-${url.hostname.split('.')[0]}-auth-token`
-            const projectRef = new URL(SUPABASE_URL).hostname.split('.')[0];
-            const storageKey = `sb-${projectRef}-auth-token`;
-            const session = {
-                access_token: accessToken,
-                token_type: 'bearer',
-                expires_in: expiresIn,
-                expires_at: Math.floor(Date.now() / 1000) + expiresIn,
-                refresh_token: refreshToken,
-                user: userInfo,
-            };
-
-            // Inject Supabase config + session directly into localStorage.
-            // No browser magic-link navigation needed — avoids timing races in CI.
+            // Inject Supabase config before every navigation so the app connects to the local stack.
+            // Also suppress the migration-prompt modal so it doesn't block the onboarding page.
             await page.addInitScript(
-                ({
-                    sKey,
-                    sess,
-                    url,
-                    key,
-                }: {
-                    sKey: string;
-                    sess: unknown;
-                    url: string;
-                    key: string;
-                }) => {
+                ({ url, key }: { url: string; key: string }) => {
                     localStorage.setItem('rm_supabase_config', JSON.stringify({ supabaseUrl: url, supabaseAnonKey: key }));
                     localStorage.setItem('rm_migration_done', 'true');
-                    localStorage.setItem(sKey, JSON.stringify(sess));
                 },
-                { sKey: storageKey, sess: session, url: SUPABASE_URL, key: SUPABASE_ANON_KEY },
+                { url: SUPABASE_URL, key: SUPABASE_ANON_KEY },
             );
 
-            // Navigate directly to the app root.
-            // App reads session from localStorage, hydrates (no school → needsOnboarding=true),
-            // and renders the onboarding page.
+            // Navigate to the Supabase verify URL.  In implicit-flow mode (the default)
+            // the server redirects to http://localhost:5173/#access_token=...&refresh_token=...
+            // supabase-js detects the tokens in the hash and stores them in localStorage.
+            await page.goto(actionLink, { waitUntil: 'commit' });
+            await page.waitForURL('http://localhost:5173/**', { timeout: 15_000 });
+
+            // Wait for supabase-js to finish processing the auth tokens and write the
+            // session to localStorage.  CI machines can be slow, so give it up to 60 s.
+            await page.waitForFunction(
+                () => Object.keys(localStorage).some((k) => k.startsWith('sb-') && k.endsWith('-auth-token')),
+                { timeout: 60_000, polling: 300 },
+            );
+
+            // Navigate to the app root so the app hydrates fresh without auth tokens
+            // in the URL.  App detects no school → needsOnboarding=true → onboarding page.
             await page.goto('http://localhost:5173/#/');
             await page.waitForLoadState('networkidle', { timeout: 30_000 });
             await expect(page.getByText(/choose your role/i)).toBeVisible({ timeout: 30_000 });
