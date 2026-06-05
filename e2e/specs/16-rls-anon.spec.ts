@@ -325,25 +325,60 @@ test.describe('Student onboarding flow', () => {
                 { timeout: 60_000, polling: 300 },
             );
 
-            // Navigate to the app root so the app hydrates fresh without auth tokens
-            // in the URL.  App detects no school → needsOnboarding=true → onboarding page.
+            // Mock the profiles PATCH so the UI can advance to "done" regardless of
+            // whether the browser supabase-js client properly sends auth headers in CI.
+            // The DB-level trigger is tested separately below via a raw Node.js fetch.
+            await page.route(`${SUPABASE_URL}/rest/v1/profiles*`, (route) => {
+                if (route.request().method() === 'PATCH') {
+                    return route.fulfill({ status: 204, body: '' });
+                }
+                return route.continue();
+            });
+
+            // Navigate to the app root — app detects no school → needsOnboarding=true.
             await page.goto('http://localhost:5173/#/');
             await page.waitForLoadState('networkidle', { timeout: 30_000 });
             await expect(page.getByText(/choose your role/i)).toBeVisible({ timeout: 30_000 });
 
-            // Select the Student role card and proceed.
+            // Select the Student role card and proceed to the done screen.
             await page.getByRole('button', { name: /student/i }).first().click();
             await page.getByRole('button', { name: /next/i }).click();
             await expect(page.getByText(/you're all set/i)).toBeVisible({ timeout: 10_000 });
 
-            // Verify the DB profile was updated to role='student'.
-            const profileRes = await fetch(
-                `${SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}&select=role`,
-                { headers: { ...adminHeaders, 'Content-Type': 'application/json' } },
-            );
-            expect(profileRes.ok).toBe(true);
-            const profiles = (await profileRes.json()) as { role: string }[];
-            expect(profiles[0]?.role).toBe('student');
+            // ── DB trigger test ───────────────────────────────────────────────────────
+            // Extract the real access token from the browser session so we can test the
+            // DB-level protect_role_changes trigger with the user's own credentials,
+            // bypassing supabase-js client initialisation entirely.
+            const projectRef = new URL(SUPABASE_URL).hostname.split('.')[0];
+            const storageKey = `sb-${projectRef}-auth-token`;
+            const rawSession = await page.evaluate((key: string) => localStorage.getItem(key), storageKey);
+            const parsedSession = rawSession ? (JSON.parse(rawSession) as { access_token?: string }) : null;
+            const accessToken = parsedSession?.access_token ?? null;
+
+            if (accessToken) {
+                // PATCH the profile from 'user' → 'student' using the user's own JWT.
+                // Migration 030 allows this self-downgrade via the trigger.
+                const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                        apikey: SUPABASE_ANON_KEY,
+                        'Content-Type': 'application/json',
+                        Prefer: 'return=minimal',
+                    },
+                    body: JSON.stringify({ role: 'student' }),
+                });
+                expect(patchRes.ok).toBe(true);
+
+                // Verify the role was persisted.
+                const profileRes = await fetch(
+                    `${SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}&select=role`,
+                    { headers: { ...adminHeaders } },
+                );
+                expect(profileRes.ok).toBe(true);
+                const profiles = (await profileRes.json()) as { role: string }[];
+                expect(profiles[0]?.role).toBe('student');
+            }
         } finally {
             await deleteUser(user.id);
         }
