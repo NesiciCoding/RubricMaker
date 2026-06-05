@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { CheckCircle2, Loader } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
+import type { UserRole } from '../types';
 
-type RoleChoice = 'user' | 'admin' | 'student';
+type RoleChoice = UserRole;
 type SchoolAction = 'create' | 'join';
 type Step = 'role' | 'school' | 'done';
 
@@ -74,13 +75,21 @@ export default function OnboardingPage() {
     async function handleRoleNext() {
         if (role === 'student') {
             setBusy(true);
-            const currentId = getCurrentDatabaseUserId();
-            if (currentId) {
-                await updateUserRole(currentId, 'student');
+            setError('');
+            try {
+                const currentId = getCurrentDatabaseUserId();
+                if (currentId) {
+                    const result = await updateUserRole(currentId, 'student');
+                    if (!result.success) {
+                        setError(result.error ?? t('onboarding.error_role_update'));
+                        return;
+                    }
+                }
+                updateSettings({ needsOnboarding: false, userRole: 'student' });
+                setStep('done');
+            } finally {
+                setBusy(false);
             }
-            updateSettings({ needsOnboarding: false, userRole: 'student' });
-            setStep('done');
-            setBusy(false);
         } else {
             setStep('school');
         }
@@ -314,9 +323,7 @@ export default function OnboardingPage() {
                                 {t('onboarding.student_linked_title')}
                             </h2>
                             <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>
-                                {role === 'student'
-                                    ? t('onboarding.student_done_body')
-                                    : t('onboarding.student_linked_btn')}
+                                {role === 'student' ? t('onboarding.student_done_body') : t('onboarding.done_body')}
                             </p>
                         </div>
                     )}

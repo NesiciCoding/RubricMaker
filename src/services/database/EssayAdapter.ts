@@ -12,8 +12,12 @@
  */
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import type { EssayAssignment } from '../../types';
+import type { EssayAssignment, EssayAssignmentContent } from '../../types';
 import type { SyncResult } from './types';
+
+export type FetchContentResult =
+    | { ok: true; data: EssayAssignmentContent }
+    | { ok: false; reason: 'unauthenticated' | 'not_found' | 'expired' | 'network' | 'invalid_response' };
 
 export interface EssaySubmissionPayload {
     id: string;
@@ -199,21 +203,10 @@ export class EssayAdapter {
         return { success: true };
     }
 
-    /** Shape returned by get-essay-assignment edge function. */
-    async fetchAssignmentContent(assignmentId: string): Promise<{
-        rubricId: string;
-        studentId: string;
-        title: string;
-        prompt: string | null;
-        minWords: number | null;
-        maxWords: number | null;
-        timeLimitMinutes: number | null;
-        requireSEB: boolean;
-        expiresAt: string | null;
-        readOnlyAfterSubmit: boolean;
-    } | null> {
+    /** Fetch full assignment content from the get-essay-assignment edge function. */
+    async fetchAssignmentContent(assignmentId: string): Promise<FetchContentResult> {
         const active = await this.getActiveSession();
-        if (!active) return null;
+        if (!active) return { ok: false, reason: 'unauthenticated' };
 
         let response: Response;
         try {
@@ -227,10 +220,14 @@ export class EssayAdapter {
                 body: JSON.stringify({ assignmentId }),
             });
         } catch {
-            return null;
+            return { ok: false, reason: 'network' };
         }
 
-        if (!response.ok) return null;
-        return response.json().catch(() => null);
+        if (response.status === 404) return { ok: false, reason: 'not_found' };
+        if (response.status === 410) return { ok: false, reason: 'expired' };
+        if (!response.ok) return { ok: false, reason: 'invalid_response' };
+
+        const data = await response.json().catch(() => null);
+        return data ? { ok: true, data } : { ok: false, reason: 'invalid_response' };
     }
 }

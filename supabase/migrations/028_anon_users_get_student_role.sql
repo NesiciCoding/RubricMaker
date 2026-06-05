@@ -41,6 +41,10 @@ BEGIN
 
   ELSE
     -- First real user ever becomes admin; all others start as teacher ('user').
+    -- Advisory lock prevents two concurrent first sign-ups both seeing "no profiles"
+    -- and both committing as admin. Lock is released automatically at transaction end.
+    PERFORM pg_advisory_xact_lock(hashtext('public.handle_new_user:first_admin'));
+
     SELECT CASE WHEN EXISTS (
       SELECT 1 FROM public.profiles WHERE NOT (
         -- Ignore profiles created for anonymous users when counting first-admin

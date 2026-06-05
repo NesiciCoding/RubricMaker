@@ -8,7 +8,7 @@ import { decodeEssayAssignment } from '../utils/essayShareCode';
 import { encodeEssaySubmission } from '../utils/essaySubmissionCode';
 import { countWords } from '../utils/essayUtils';
 import { nanoid } from '../utils/nanoid';
-import type { EssaySubmission } from '../types';
+import type { EssayAssignmentContent, EssaySubmission } from '../types';
 import { EssayAdapter } from '../services/database/EssayAdapter';
 
 const DRAFT_KEY_PREFIX = 'rm_essay_draft_';
@@ -253,8 +253,7 @@ export default function StudentEssayPage() {
     // Content resolved from the edge function after authentication.
     // For legacy links the content is already in the URL; for short codes everything
     // is fetched here. undefined = not yet fetched; null = fetch complete, no data.
-    type ResolvedContent = Awaited<ReturnType<EssayAdapter['fetchAssignmentContent']>>;
-    const [resolvedContent, setResolvedContent] = useState<ResolvedContent | undefined>(
+    const [resolvedContent, setResolvedContent] = useState<EssayAssignmentContent | null | undefined>(
         legacyAssignment
             ? {
                   rubricId: legacyAssignment.rubricId,
@@ -296,12 +295,17 @@ export default function StudentEssayPage() {
     // For short-code links this is the only way to get title, prompt, limits, etc.
     useEffect(() => {
         if (!studentUserId || !hasDb || !adapter || contentReady) return;
-        adapter.fetchAssignmentContent(assignment!.teacherKey).then((content) => {
-            setResolvedContent(content ?? null);
-            // Start timer if the assignment has a time limit and it hasn't started yet.
-            if (content?.timeLimitMinutes && secondsLeft === null) {
-                const stored = sessionStorage.getItem(timerKey);
-                setSecondsLeft(stored ? Math.max(0, parseInt(stored, 10)) : content.timeLimitMinutes * 60);
+        adapter.fetchAssignmentContent(assignment!.teacherKey).then((result) => {
+            if (result.ok) {
+                setResolvedContent(result.data);
+                // Start timer if the assignment has a time limit and it hasn't started yet.
+                if (result.data.timeLimitMinutes && secondsLeft === null) {
+                    const stored = sessionStorage.getItem(timerKey);
+                    setSecondsLeft(stored ? Math.max(0, parseInt(stored, 10)) : result.data.timeLimitMinutes * 60);
+                }
+            } else {
+                // Mark as resolved (null) so the loading guard clears; expired triggers its own guard.
+                setResolvedContent(null);
             }
         });
     }, [studentUserId]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -641,7 +645,11 @@ export default function StudentEssayPage() {
                         )}
                     </div>
                     {!submitted && (
-                        <EssayTTSControls promptText={assignment.prompt} contentHtml={html} lang={i18n.language} />
+                        <EssayTTSControls
+                            promptText={resolvedContent?.prompt ?? assignment.prompt}
+                            contentHtml={html}
+                            lang={i18n.language}
+                        />
                     )}
                 </div>
             </div>

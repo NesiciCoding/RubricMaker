@@ -58,13 +58,14 @@ function UsersTab() {
             setLoading(false);
             return;
         }
+        setLoading(true);
         let cancelled = false;
         (async () => {
             try {
                 const u = await fetchAllUsers();
                 if (!cancelled) setUsers(u);
-            } catch {
-                // leave users as []
+            } catch (err) {
+                console.error('[AdminPage] fetchAllUsers failed', err);
             } finally {
                 if (!cancelled) setLoading(false);
             }
@@ -176,11 +177,12 @@ function SchoolsTab() {
             setLoading(false);
             return;
         }
+        setLoading(true);
         try {
             const list = await fetchSchools();
             setSchools(list);
-        } catch {
-            // leave schools as []
+        } catch (err) {
+            console.error('[AdminPage] fetchSchools failed', err);
         } finally {
             setLoading(false);
         }

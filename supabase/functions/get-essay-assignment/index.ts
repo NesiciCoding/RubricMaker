@@ -28,6 +28,12 @@ function json(body: unknown, status = 200) {
 
 serve(async (req) => {
     if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
+    if (req.method !== 'POST') {
+        return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+            status: 405,
+            headers: { ...CORS, 'Content-Type': 'application/json', Allow: 'POST, OPTIONS' },
+        });
+    }
 
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) return json({ error: 'Unauthorized' }, 401);

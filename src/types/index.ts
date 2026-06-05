@@ -501,6 +501,20 @@ export interface PronunciationMark {
     note?: string;
 }
 
+/** Payload returned by the get-essay-assignment edge function. */
+export interface EssayAssignmentContent {
+    rubricId: string;
+    studentId: string;
+    title: string;
+    prompt: string | null;
+    minWords: number | null;
+    maxWords: number | null;
+    timeLimitMinutes: number | null;
+    requireSEB: boolean;
+    expiresAt: string | null;
+    readOnlyAfterSubmit: boolean;
+}
+
 export interface SpeakingSession {
     id: string;
     rubricId: string;

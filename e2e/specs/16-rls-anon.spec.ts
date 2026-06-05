@@ -47,10 +47,13 @@ async function anonSignIn(): Promise<{ accessToken: string; userId: string }> {
 
 /** Delete a user by ID using the service-role admin API. */
 async function deleteUser(userId: string): Promise<void> {
-    await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
         method: 'DELETE',
         headers: svcHeaders,
     });
+    if (!res.ok && res.status !== 404) {
+        throw new Error(`Failed to delete user ${userId}: ${res.status} ${await res.text()}`);
+    }
 }
 
 /** Inject rm_supabase_config into localStorage so the essay page resolves short codes. */
@@ -260,69 +263,83 @@ test.describe('Student onboarding flow', () => {
         page,
         testUserEmail,
     }) => {
-        // Look up the test user so we can verify their profile role after onboarding.
         const adminHeaders = {
             apikey: SUPABASE_SERVICE_KEY,
             Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
         };
 
-        // Sign in as the fresh test user via magic link (same as supabasePage fixture
-        // but without the school-setup step so needsOnboarding stays true).
+        // Create a fresh user without a school so needsOnboarding stays true.
         const createRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
             method: 'POST',
             headers: { ...adminHeaders, 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: testUserEmail, email_confirm: true }),
         });
+        if (!createRes.ok) {
+            throw new Error(`Failed to create test user: ${createRes.status} ${await createRes.text()}`);
+        }
         const user = (await createRes.json()) as { id: string };
 
-        const linkRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/generate_link`, {
-            method: 'POST',
-            headers: { ...adminHeaders, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                type: 'magiclink',
-                email: testUserEmail,
-                redirect_to: 'http://localhost:5173',
-            }),
-        });
-        const linkData = (await linkRes.json()) as {
-            action_link?: string;
-            properties?: { action_link?: string };
-        };
-        const actionLink = linkData.action_link ?? linkData.properties?.action_link;
-        if (!actionLink) test.skip();
+        try {
+            const linkRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/generate_link`, {
+                method: 'POST',
+                headers: { ...adminHeaders, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: 'magiclink',
+                    email: testUserEmail,
+                    redirect_to: 'http://localhost:5173',
+                }),
+            });
+            if (!linkRes.ok) {
+                throw new Error(`Failed to generate magic link: ${linkRes.status} ${await linkRes.text()}`);
+            }
+            const linkData = (await linkRes.json()) as {
+                action_link?: string;
+                properties?: { action_link?: string };
+            };
+            const actionLink = linkData.action_link ?? linkData.properties?.action_link;
+            if (!actionLink) {
+                test.skip();
+                return;
+            }
 
-        // Inject Supabase config so the app connects to the local stack
-        await page.addInitScript(
-            ({ url, key }: { url: string; key: string }) => {
-                localStorage.setItem('rm_supabase_config', JSON.stringify({ supabaseUrl: url, supabaseAnonKey: key }));
-            },
-            { url: SUPABASE_URL, key: SUPABASE_ANON_KEY },
-        );
-        await page.goto(actionLink!, { waitUntil: 'commit' });
-        await page.waitForURL('http://localhost:5173/**', { timeout: 15_000 });
-        await page.goto('http://localhost:5173/#/');
-
-        // Should land on the onboarding page (no school → needsOnboarding=true)
-        await expect(page.getByText(/choose your role/i)).toBeVisible({ timeout: 20_000 });
-
-        // Select the Student role card
-        await page.getByRole('button', { name: /student/i }).first().click();
-        await page.getByRole('button', { name: /next/i }).click();
-
-        // Should advance to the done step
-        await expect(page.getByText(/you're all set/i)).toBeVisible({ timeout: 10_000 });
-
-        // Verify the DB profile was updated to role='student'
-        const profileRes = await fetch(
-            `${SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}&select=role`,
-            {
-                headers: {
-                    ...adminHeaders,
-                    'Content-Type': 'application/json',
+            // Inject Supabase config before every navigation so the app connects to local stack.
+            await page.addInitScript(
+                ({ url, key }: { url: string; key: string }) => {
+                    localStorage.setItem(
+                        'rm_supabase_config',
+                        JSON.stringify({ supabaseUrl: url, supabaseAnonKey: key }),
+                    );
                 },
-            },
-        );
-        const profiles = (await profileRes.json()) as { role: string }[];
-        expect(profiles[0]?.role).toBe('student');
+                { url: SUPABASE_URL, key: SUPABASE_ANON_KEY },
+            );
+
+            // Navigate to the verify URL and wait for supabase-js to store the session.
+            await page.goto(actionLink, { waitUntil: 'commit' });
+            await page.waitForURL('http://localhost:5173/**', { timeout: 15_000 });
+            await page.waitForFunction(
+                () => Object.keys(localStorage).some((k) => k.startsWith('sb-') && k.endsWith('-auth-token')),
+                { timeout: 10_000, polling: 250 },
+            );
+
+            // Navigate to the app root — app should detect needsOnboarding=true (no school).
+            await page.goto('http://localhost:5173/#/');
+            await expect(page.getByText(/choose your role/i)).toBeVisible({ timeout: 30_000 });
+
+            // Select the Student role card and proceed.
+            await page.getByRole('button', { name: /student/i }).first().click();
+            await page.getByRole('button', { name: /next/i }).click();
+            await expect(page.getByText(/you're all set/i)).toBeVisible({ timeout: 10_000 });
+
+            // Verify the DB profile was updated to role='student'.
+            const profileRes = await fetch(
+                `${SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}&select=role`,
+                { headers: { ...adminHeaders, 'Content-Type': 'application/json' } },
+            );
+            expect(profileRes.ok).toBe(true);
+            const profiles = (await profileRes.json()) as { role: string }[];
+            expect(profiles[0]?.role).toBe('student');
+        } finally {
+            await deleteUser(user.id);
+        }
     });
 });
