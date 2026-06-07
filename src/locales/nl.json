@@ -202,7 +202,8 @@
         "quick_start_templates": "Snelstart Sjablonen",
         "my_templates": "Mijn sjablonen",
         "built_in_templates": "Ingebouwde sjablonen",
-        "builtin_templates": "Ingebouwde sjablonen"
+        "builtin_templates": "Ingebouwde sjablonen",
+        "remove_template": "Sjabloon verwijderen"
     },
     "rubricList": {
         "title": "Rubrieken",
@@ -519,7 +520,28 @@
         "progress_chart_title": "ERK Vaardigheden Radar",
         "no_chart_data": "Onvoldoende vaardigheidsdata voor een grafiek.",
         "progress_chart_aria_label": "ERK vaardigheden radargrafiek met gemiddelde scores per vaardigheid en niveau",
-        "skill": "Vaardigheid"
+        "skill": "Vaardigheid",
+        "skills": {
+            "reading": "Lezen",
+            "reading_short": "Lezen",
+            "writing": "Schrijven",
+            "writing_short": "Schrijf",
+            "speaking_production": "Spreken (Prod.)",
+            "speaking_production_short": "Spr↑",
+            "speaking_interaction": "Spreken (Int.)",
+            "speaking_interaction_short": "Spr↔",
+            "listening": "Luisteren",
+            "listening_short": "Luister"
+        },
+        "view_class": "Klasoverzicht",
+        "view_student": "Leerlingdetails",
+        "empty_no_students": "Geen leerlingen gevonden. Voeg leerlingen toe en koppel rubrieken met ERK-doelniveaus.",
+        "table_header_student": "Leerling",
+        "table_header_detail": "Details",
+        "legend_achieved": "Behaald",
+        "legend_developing": "In ontwikkeling",
+        "legend_not_started": "Niet gestart",
+        "legend_target_level": "Doelniveau"
     },
     "framework": {
         "picker_title": "Beoordelingskader Uitspraken",
@@ -1016,6 +1038,10 @@
         "resume": "Hervatten",
         "stop": "Stop",
         "progress": "Leesvoortgang"
+    },
+    "editor": {
+        "switchToCompactView": "Naar compacte weergave",
+        "switchToPageView": "Naar A4-paginaweergave"
     },
     "essay": {
         "email_gate_title": "Voer je schoole-mailadres in",

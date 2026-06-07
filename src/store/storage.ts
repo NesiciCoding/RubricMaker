@@ -15,6 +15,7 @@ import type {
     SpeakingSession,
     DocumentAnalysisResult,
     RubricCriterion,
+    UserTemplate,
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 import { nanoid } from '../utils/nanoid';
@@ -520,11 +521,11 @@ export function removePendingWrites(ids: string[]): void {
 
 // ─── User templates ────────────────────────────────────────────────────────────
 
-export function loadUserTemplates(): import('../types').UserTemplate[] {
-    return load<import('../types').UserTemplate[]>(KEYS.userTemplates, []);
+export function loadUserTemplates(): UserTemplate[] {
+    return load<UserTemplate[]>(KEYS.userTemplates, []);
 }
 
-export function saveUserTemplates(templates: import('../types').UserTemplate[]): void {
+export function saveUserTemplates(templates: UserTemplate[]): void {
     try {
         localStorage.setItem(KEYS.userTemplates, JSON.stringify(templates));
     } catch {

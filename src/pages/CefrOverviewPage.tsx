@@ -13,19 +13,27 @@ import { CEFR_LEVELS } from '../data/cefrDescriptors';
 import { VO_TRACK_LABELS, VO_TRACK_COLORS, VO_TRACK_DEFAULT_CEFR } from '../data/voTracks';
 import type { CefrSkill } from '../types';
 
-const SKILLS: { key: CefrSkill; label: string; short: string }[] = [
-    { key: 'reading', label: 'Reading', short: 'Read' },
-    { key: 'writing', label: 'Writing', short: 'Write' },
-    { key: 'speaking_production', label: 'Speaking (Prod.)', short: 'Spk↑' },
-    { key: 'speaking_interaction', label: 'Speaking (Int.)', short: 'Spk↔' },
-    { key: 'listening', label: 'Listening', short: 'Listen' },
-];
-
 export default function CefrOverviewPage() {
     const { students, classes, rubrics, studentRubrics, selfAssessments, analysisResults } = useApp();
     const { t, i18n } = useTranslation();
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
     const navigate = useNavigate();
+
+    const SKILLS: { key: CefrSkill; label: string; short: string }[] = [
+        { key: 'reading', label: t('cefr.skills.reading'), short: t('cefr.skills.reading_short') },
+        { key: 'writing', label: t('cefr.skills.writing'), short: t('cefr.skills.writing_short') },
+        {
+            key: 'speaking_production',
+            label: t('cefr.skills.speaking_production'),
+            short: t('cefr.skills.speaking_production_short'),
+        },
+        {
+            key: 'speaking_interaction',
+            label: t('cefr.skills.speaking_interaction'),
+            short: t('cefr.skills.speaking_interaction_short'),
+        },
+        { key: 'listening', label: t('cefr.skills.listening'), short: t('cefr.skills.listening_short') },
+    ];
 
     const [selectedClassId, setSelectedClassId] = useState<string>('all');
     const [selectedStudentId, setSelectedStudentId] = useState<string>('');
@@ -110,14 +118,14 @@ export default function CefrOverviewPage() {
                             style={{ border: 'none' }}
                             onClick={() => setViewMode('class')}
                         >
-                            <Users size={14} /> {t('cefrOverview.class_view')}
+                            <Users size={14} /> {t('cefr.view_class')}
                         </button>
                         <button
                             className={`btn btn-sm ${viewMode === 'student' ? 'btn-secondary' : 'btn-ghost'}`}
                             style={{ border: 'none' }}
                             onClick={() => setViewMode('student')}
                         >
-                            <BookOpen size={14} /> {t('cefrOverview.student_detail')}
+                            <BookOpen size={14} /> {t('cefr.view_student')}
                         </button>
                     </div>
                 </div>
@@ -127,7 +135,7 @@ export default function CefrOverviewPage() {
                         {filteredStudents.length === 0 ? (
                             <div className="empty-state">
                                 <Users size={36} />
-                                <p>{t('cefrOverview.class_empty')}</p>
+                                <p>{t('cefr.empty_no_students')}</p>
                             </div>
                         ) : (
                             <div className="card" style={{ overflowX: 'auto', padding: 0 }}>
@@ -147,7 +155,7 @@ export default function CefrOverviewPage() {
                                                     zIndex: 1,
                                                 }}
                                             >
-                                                {t('cefrOverview.table_student_header')}
+                                                {t('cefr.table_header_student')}
                                             </th>
                                             {SKILLS.map((sk) => (
                                                 <th
@@ -174,7 +182,7 @@ export default function CefrOverviewPage() {
                                                     whiteSpace: 'nowrap',
                                                 }}
                                             >
-                                                {t('cefrOverview.table_detail_header')}
+                                                {t('cefr.table_header_detail')}
                                             </th>
                                         </tr>
                                         <tr
@@ -416,22 +424,22 @@ export default function CefrOverviewPage() {
                                     {[
                                         {
                                             color: '#22c55e',
-                                            label: t('cefrOverview.cell_achieved'),
+                                            label: t('cefr.legend_achieved'),
                                             bg: 'rgba(34,197,94,0.25)',
                                         },
                                         {
                                             color: '#eab308',
-                                            label: t('cefrOverview.cell_developing'),
+                                            label: t('cefr.legend_developing'),
                                             bg: 'rgba(234,179,8,0.25)',
                                         },
                                         {
                                             color: 'var(--text-dim)',
-                                            label: t('cefrOverview.cell_not_started'),
+                                            label: t('cefr.legend_not_started'),
                                             bg: 'rgba(148,163,184,0.12)',
                                         },
                                         {
                                             color: 'var(--accent)',
-                                            label: t('cefrOverview.legend_target_level'),
+                                            label: t('cefr.legend_target_level'),
                                             bg: 'transparent',
                                             outline: true,
                                         },

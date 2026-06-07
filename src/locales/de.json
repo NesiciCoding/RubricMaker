@@ -202,7 +202,8 @@
         "quick_start_templates": "Schnellstart-Vorlagen",
         "my_templates": "Meine Vorlagen",
         "built_in_templates": "Eingebaute Vorlagen",
-        "builtin_templates": "Integrierte Vorlagen"
+        "builtin_templates": "Integrierte Vorlagen",
+        "remove_template": "Vorlage entfernen"
     },
     "rubricList": {
         "title": "Rubriken",
@@ -519,7 +520,28 @@
         "progress_chart_title": "GER-Kompetenz-Radar",
         "no_chart_data": "Nicht genug Kompetenzdaten für ein Diagramm.",
         "progress_chart_aria_label": "GER-Kompetenz-Radar mit Durchschnittswerten je Kompetenz und Niveau",
-        "skill": "Kompetenz"
+        "skill": "Kompetenz",
+        "skills": {
+            "reading": "Lesen",
+            "reading_short": "Lesen",
+            "writing": "Schreiben",
+            "writing_short": "Schr.",
+            "speaking_production": "Sprechen (Prod.)",
+            "speaking_production_short": "Spr↑",
+            "speaking_interaction": "Sprechen (Int.)",
+            "speaking_interaction_short": "Spr↔",
+            "listening": "Hören",
+            "listening_short": "Hören"
+        },
+        "view_class": "Klassenansicht",
+        "view_student": "Schülerdetails",
+        "empty_no_students": "Keine Schüler gefunden. Fügen Sie Schüler hinzu und verknüpfen Sie Rubriken mit GER-Zielniveaus.",
+        "table_header_student": "Schüler",
+        "table_header_detail": "Details",
+        "legend_achieved": "Erreicht",
+        "legend_developing": "In Entwicklung",
+        "legend_not_started": "Nicht gestartet",
+        "legend_target_level": "Zielniveau"
     },
     "framework": {
         "picker_title": "Bewertungsrahmen-Deskriptoren",
@@ -1016,6 +1038,10 @@
         "anon_auth_title": "Anonyme Anmeldung (Schreibaufgaben)",
         "anon_auth_desc": "Schüler, die Safe Exam Browser verwenden, können sich nicht per OTP anmelden. Die anonyme Anmeldung ermöglicht ihnen den Zugriff auf Schreibaufgaben ohne Passwort.",
         "anon_auth_hint": "Aktivieren Sie 'Anonyme Anmeldung erlauben' in Ihrem Supabase-Projekt unter Authentifizierung → Konfiguration."
+    },
+    "editor": {
+        "switchToCompactView": "Zur kompakten Ansicht wechseln",
+        "switchToPageView": "Zur A4-Seitenansicht wechseln"
     },
     "essay": {
         "email_gate_title": "Geben Sie Ihre Schul-E-Mail-Adresse ein",

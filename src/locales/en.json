@@ -202,7 +202,8 @@
         "quick_start_templates": "Quick Start Templates",
         "my_templates": "My Templates",
         "built_in_templates": "Built-in Templates",
-        "builtin_templates": "Built-in Templates"
+        "builtin_templates": "Built-in Templates",
+        "remove_template": "Remove template"
     },
     "rubricList": {
         "title": "Rubrics",
@@ -519,7 +520,28 @@
         "progress_chart_title": "CEFR Skills Radar",
         "no_chart_data": "Not enough skill data for a chart.",
         "progress_chart_aria_label": "CEFR skills radar chart showing average scores per skill and level",
-        "skill": "Skill"
+        "skill": "Skill",
+        "skills": {
+            "reading": "Reading",
+            "reading_short": "Read",
+            "writing": "Writing",
+            "writing_short": "Write",
+            "speaking_production": "Speaking (Prod.)",
+            "speaking_production_short": "Spk↑",
+            "speaking_interaction": "Speaking (Int.)",
+            "speaking_interaction_short": "Spk↔",
+            "listening": "Listening",
+            "listening_short": "Listen"
+        },
+        "view_class": "Class View",
+        "view_student": "Student Detail",
+        "empty_no_students": "No students found. Add students and link rubrics with CEFR target levels.",
+        "table_header_student": "Student",
+        "table_header_detail": "Detail",
+        "legend_achieved": "Achieved",
+        "legend_developing": "Developing",
+        "legend_not_started": "Not started",
+        "legend_target_level": "Target level"
     },
     "framework": {
         "picker_title": "Assessment Framework Descriptors",
@@ -1016,6 +1038,10 @@
         "resume": "Resume reading",
         "stop": "Stop reading",
         "progress": "Reading progress"
+    },
+    "editor": {
+        "switchToCompactView": "Switch to compact view",
+        "switchToPageView": "Switch to A4 page view"
     },
     "essay": {
         "email_gate_title": "Enter your school email",

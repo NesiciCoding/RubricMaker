@@ -202,7 +202,8 @@
         "quick_start_templates": "Plantillas de inicio rápido",
         "my_templates": "Mis plantillas",
         "built_in_templates": "Plantillas integradas",
-        "builtin_templates": "Plantillas integradas"
+        "builtin_templates": "Plantillas integradas",
+        "remove_template": "Eliminar plantilla"
     },
     "rubricList": {
         "title": "Rúbricas",
@@ -519,7 +520,28 @@
         "progress_chart_title": "Radar de Habilidades MCER",
         "no_chart_data": "Datos de habilidades insuficientes para un gráfico.",
         "progress_chart_aria_label": "Gráfico de radar de habilidades MCER con puntuaciones medias por habilidad y nivel",
-        "skill": "Habilidad"
+        "skill": "Habilidad",
+        "skills": {
+            "reading": "Lectura",
+            "reading_short": "Leer",
+            "writing": "Escritura",
+            "writing_short": "Escr.",
+            "speaking_production": "Hablar (Prod.)",
+            "speaking_production_short": "Habl↑",
+            "speaking_interaction": "Hablar (Int.)",
+            "speaking_interaction_short": "Habl↔",
+            "listening": "Escucha",
+            "listening_short": "Escucha"
+        },
+        "view_class": "Vista de clase",
+        "view_student": "Detalles del estudiante",
+        "empty_no_students": "No se encontraron estudiantes. Agregue estudiantes y vincule rúbricas con niveles MCER objetivo.",
+        "table_header_student": "Estudiante",
+        "table_header_detail": "Detalles",
+        "legend_achieved": "Logrado",
+        "legend_developing": "En desarrollo",
+        "legend_not_started": "No iniciado",
+        "legend_target_level": "Nivel objetivo"
     },
     "framework": {
         "picker_title": "Descriptores del Marco de Evaluación",
@@ -1016,6 +1038,10 @@
         "resume": "Reanudar",
         "stop": "Detener",
         "progress": "Progreso de lectura"
+    },
+    "editor": {
+        "switchToCompactView": "Cambiar a vista compacta",
+        "switchToPageView": "Cambiar a vista de página A4"
     },
     "essay": {
         "email_gate_title": "Ingrese su correo electrónico escolar",

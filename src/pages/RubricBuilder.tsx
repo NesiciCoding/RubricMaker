@@ -294,7 +294,7 @@ export default function RubricBuilder() {
         };
         try {
             const existing = loadUserTemplates();
-            const filtered = existing.filter((t) => t.id !== template.id);
+            const filtered = existing.filter((tpl) => tpl.id !== template.id);
             saveUserTemplates([template, ...filtered].slice(0, 20));
             showToast(t('rubricBuilder.save_as_template_success', `"${rubric.name}" saved as template`), 'success');
         } catch {

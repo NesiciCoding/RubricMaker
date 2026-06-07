@@ -429,14 +429,14 @@ export default function Dashboard() {
                                                         <div
                                                             style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}
                                                         >
-                                                            {tpl.subject}
+                                                            {tpl.subject || t('dashboard.no_subject')}
                                                         </div>
                                                     )}
                                                 </div>
                                                 <button
                                                     className="btn btn-ghost btn-icon btn-sm"
                                                     style={{ color: 'var(--red)', flexShrink: 0 }}
-                                                    title={t('common.delete')}
+                                                    title={t('dashboard.remove_template')}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         const updated = userTemplates.filter((ut) => ut.id !== tpl.id);
@@ -459,7 +459,7 @@ export default function Dashboard() {
                                             letterSpacing: '0.04em',
                                         }}
                                     >
-                                        {t('dashboard.built_in_templates', 'Built-in Templates')}
+                                        {t('dashboard.builtin_templates')}
                                     </div>
                                 </>
                             )}
