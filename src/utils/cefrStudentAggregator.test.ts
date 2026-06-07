@@ -242,6 +242,352 @@ describe('getCefrStudentOverview', () => {
         expect(() => getCefrStudentOverview('s1', [sr], [rubric], [])).not.toThrow();
     });
 
+    it('marks a cell as directly achieved when the selected level carries a cefrLevel tag', () => {
+        const rubric = makeRubric({
+            criteria: [
+                {
+                    id: 'c1',
+                    title: 'Reading',
+                    description: '',
+                    weight: 100,
+                    cefrSkill: 'reading',
+                    levels: [
+                        {
+                            id: 'l1',
+                            label: 'Strong',
+                            minPoints: 80,
+                            maxPoints: 100,
+                            description: '',
+                            subItems: [],
+                            cefrLevel: 'B1',
+                        },
+                        { id: 'l2', label: 'Weak', minPoints: 0, maxPoints: 50, description: '', subItems: [] },
+                    ],
+                },
+            ],
+        });
+        const sr = makeSr({
+            entries: [{ criterionId: 'c1', levelId: 'l1', selectedPoints: 85, checkedSubItems: [], comment: '' }],
+        });
+        const result = getCefrStudentOverview('s1', [sr], [rubric], []);
+
+        const cell = result.cellMap.get('reading__B1')!;
+        expect(cell).toBeDefined();
+        expect(cell.rubricAchieved).toBe(true);
+        expect(cell.state).toBe('achieved');
+    });
+
+    it('falls back to rubric.cefrSkill, then "writing", for cefrLevel-tagged cells without a criterion cefrSkill', () => {
+        const rubric = makeRubric({
+            cefrSkill: 'listening',
+            criteria: [
+                {
+                    id: 'c1',
+                    title: 'Listening',
+                    description: '',
+                    weight: 100,
+                    levels: [
+                        {
+                            id: 'l1',
+                            label: 'Strong',
+                            minPoints: 80,
+                            maxPoints: 100,
+                            description: '',
+                            subItems: [],
+                            cefrLevel: 'A2',
+                        },
+                    ],
+                },
+            ],
+        });
+        const sr = makeSr({
+            entries: [{ criterionId: 'c1', levelId: 'l1', selectedPoints: 85, checkedSubItems: [], comment: '' }],
+        });
+        const result = getCefrStudentOverview('s1', [sr], [rubric], []);
+        expect(result.cellMap.get('listening__A2')?.rubricAchieved).toBe(true);
+
+        const rubricNoSkill = makeRubric({
+            criteria: [
+                {
+                    id: 'c1',
+                    title: 'Untagged',
+                    description: '',
+                    weight: 100,
+                    levels: [
+                        {
+                            id: 'l1',
+                            label: 'Strong',
+                            minPoints: 80,
+                            maxPoints: 100,
+                            description: '',
+                            subItems: [],
+                            cefrLevel: 'A2',
+                        },
+                    ],
+                },
+            ],
+        });
+        const result2 = getCefrStudentOverview('s1', [makeSr()], [rubricNoSkill], []);
+        expect(result2.cellMap.get('writing__A2')?.rubricAchieved).toBe(true);
+    });
+
+    it('skips per-criterion CEFR tagging when entry has no levelId, references a missing criterion, or the level has no cefrLevel', () => {
+        const rubric = makeRubric({
+            criteria: [
+                {
+                    id: 'c1',
+                    title: 'Writing Quality',
+                    description: '',
+                    weight: 50,
+                    levels: [
+                        { id: 'l1', label: 'Untagged', minPoints: 80, maxPoints: 100, description: '', subItems: [] },
+                    ],
+                },
+                {
+                    id: 'c2',
+                    title: 'Other',
+                    description: '',
+                    weight: 50,
+                    levels: [{ id: 'l3', label: 'L3', minPoints: 0, maxPoints: 50, description: '', subItems: [] }],
+                },
+            ],
+        });
+        const sr = makeSr({
+            entries: [
+                { criterionId: 'c1', levelId: '', selectedPoints: 85, checkedSubItems: [], comment: '' },
+                {
+                    criterionId: 'missing-criterion',
+                    levelId: 'l1',
+                    selectedPoints: 85,
+                    checkedSubItems: [],
+                    comment: '',
+                },
+                { criterionId: 'c1', levelId: 'l1', selectedPoints: 85, checkedSubItems: [], comment: '' },
+            ],
+        });
+        const result = getCefrStudentOverview('s1', [sr], [rubric], []);
+        // None of the entries reference a cefrLevel-tagged level, so no CEFR cells are created
+        expect(result.cellMap.size).toBe(0);
+    });
+
+    it('aggregates standards via overridePoints across multiple linked standards', () => {
+        const std1: import('../types').LinkedStandard = {
+            guid: 'std1',
+            description: 'Std 1',
+            standardSetTitle: 'CCSS',
+            jurisdictionTitle: 'US',
+        };
+        const std2: import('../types').LinkedStandard = {
+            guid: 'std2',
+            description: 'Std 2',
+            standardSetTitle: 'CCSS',
+            jurisdictionTitle: 'US',
+        };
+        const rubric = makeRubric({
+            criteria: [
+                {
+                    id: 'c1',
+                    title: 'C1',
+                    description: '',
+                    weight: 100,
+                    linkedStandard: std1,
+                    linkedStandards: [std2],
+                    levels: [
+                        { id: 'l1', label: 'A', minPoints: 0, maxPoints: 80, description: '', subItems: [] },
+                        { id: 'l2', label: 'B', minPoints: 0, maxPoints: 100, description: '', subItems: [] },
+                    ],
+                },
+            ],
+        });
+        const sr = makeSr({
+            entries: [{ criterionId: 'c1', levelId: 'l1', overridePoints: 60, checkedSubItems: [], comment: '' }],
+        });
+        const result = getCefrStudentOverview('s1', [sr], [rubric], []);
+
+        expect(result.standardsCovered).toBe(2);
+        const set = result.standardSets.find((g) => g.setTitle === 'CCSS')!;
+        expect(set.standards).toHaveLength(2);
+        for (const s of set.standards) {
+            // overridePoints (60) earned against the max of the criterion's level points (100)
+            expect(s.avgScore).toBe(60);
+        }
+    });
+
+    it('aggregates standards via sub-item scores, splitting between sub-item-linked and criterion-linked standards', () => {
+        const stdSub: import('../types').LinkedStandard = {
+            guid: 'std-sub',
+            description: 'Sub-item standard',
+            standardSetTitle: 'NGSS',
+            jurisdictionTitle: 'US',
+        };
+        const stdCriterion: import('../types').LinkedStandard = {
+            guid: 'std-criterion',
+            description: 'Criterion standard',
+            standardSetTitle: 'NGSS',
+            jurisdictionTitle: 'US',
+        };
+        const rubric = makeRubric({
+            criteria: [
+                {
+                    id: 'c1',
+                    title: 'C1',
+                    description: '',
+                    weight: 100,
+                    linkedStandard: stdCriterion,
+                    levels: [
+                        {
+                            id: 'l1',
+                            label: 'A',
+                            minPoints: 0,
+                            maxPoints: 100,
+                            description: '',
+                            subItems: [
+                                { id: 'si1', label: 'Sub 1', points: 10, maxPoints: 10, linkedStandards: [stdSub] },
+                                { id: 'si2', label: 'Sub 2', points: 5, maxPoints: 5 },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        });
+        const sr = makeSr({
+            entries: [
+                {
+                    criterionId: 'c1',
+                    levelId: 'l1',
+                    checkedSubItems: ['si2'],
+                    subItemScores: { si1: 8 },
+                    comment: '',
+                },
+            ],
+        });
+        const result = getCefrStudentOverview('s1', [sr], [rubric], []);
+
+        const set = result.standardSets.find((g) => g.setTitle === 'NGSS')!;
+        const sub = set.standards.find((s) => s.guid === 'std-sub')!;
+        const criterionLinked = set.standards.find((s) => s.guid === 'std-criterion')!;
+        // si1 uses the explicit subItemScore (8/10 = 80%); si2 falls back to checked points (5/5 = 100%) on the criterion-linked standard
+        expect(sub.avgScore).toBe(80);
+        expect(criterionLinked.avgScore).toBe(100);
+    });
+
+    it('gives zero points for unchecked sub-items without explicit scores', () => {
+        const std: import('../types').LinkedStandard = {
+            guid: 'std-unchecked',
+            description: 'Unchecked',
+            standardSetTitle: 'CCSS',
+            jurisdictionTitle: 'US',
+        };
+        const rubric = makeRubric({
+            criteria: [
+                {
+                    id: 'c1',
+                    title: 'C1',
+                    description: '',
+                    weight: 100,
+                    linkedStandard: std,
+                    levels: [
+                        {
+                            id: 'l1',
+                            label: 'A',
+                            minPoints: 0,
+                            maxPoints: 10,
+                            description: '',
+                            subItems: [{ id: 'si1', label: 'Sub 1', points: 10, maxPoints: 10 }],
+                        },
+                    ],
+                },
+            ],
+        });
+        const sr = makeSr({
+            entries: [{ criterionId: 'c1', levelId: 'l1', checkedSubItems: [], comment: '' }],
+        });
+        const result = getCefrStudentOverview('s1', [sr], [rubric], []);
+        const set = result.standardSets.find((g) => g.setTitle === 'CCSS')!;
+        expect(set.standards[0].avgScore).toBe(0);
+    });
+
+    it('aggregates standards from selectedLevel points when the level has no sub-items', () => {
+        const std: import('../types').LinkedStandard = {
+            guid: 'std-level',
+            description: 'Level standard',
+            standardSetTitle: 'CCSS',
+            jurisdictionTitle: 'US',
+        };
+        const rubric = makeRubric({
+            criteria: [
+                {
+                    id: 'c1',
+                    title: 'C1',
+                    description: '',
+                    weight: 100,
+                    linkedStandard: std,
+                    levels: [{ id: 'l1', label: 'A', minPoints: 40, maxPoints: 100, description: '', subItems: [] }],
+                },
+            ],
+        });
+        const sr = makeSr({
+            entries: [{ criterionId: 'c1', levelId: 'l1', selectedPoints: 90, checkedSubItems: [], comment: '' }],
+        });
+        const result = getCefrStudentOverview('s1', [sr], [rubric], []);
+        const set = result.standardSets.find((g) => g.setTitle === 'CCSS')!;
+        expect(set.standards[0].avgScore).toBe(90);
+    });
+
+    it('falls back to selectedLevel.minPoints when entry has no selectedPoints', () => {
+        const std: import('../types').LinkedStandard = {
+            guid: 'std-min',
+            description: 'Min points standard',
+            standardSetTitle: 'CCSS',
+            jurisdictionTitle: 'US',
+        };
+        const rubric = makeRubric({
+            criteria: [
+                {
+                    id: 'c1',
+                    title: 'C1',
+                    description: '',
+                    weight: 100,
+                    linkedStandard: std,
+                    levels: [{ id: 'l1', label: 'A', minPoints: 40, maxPoints: 100, description: '', subItems: [] }],
+                },
+            ],
+        });
+        const sr = makeSr({
+            entries: [{ criterionId: 'c1', levelId: 'l1', checkedSubItems: [], comment: '' }],
+        });
+        const result = getCefrStudentOverview('s1', [sr], [rubric], []);
+        const set = result.standardSets.find((g) => g.setTitle === 'CCSS')!;
+        // earned falls back to selectedLevel.minPoints (40) over a max of 100
+        expect(set.standards[0].avgScore).toBe(40);
+    });
+
+    it('does not aggregate standards when the entry references no level and has no override points', () => {
+        const std: import('../types').LinkedStandard = {
+            guid: 'std-none',
+            description: 'No level',
+            standardSetTitle: 'CCSS',
+            jurisdictionTitle: 'US',
+        };
+        const rubric = makeRubric({
+            criteria: [
+                {
+                    id: 'c1',
+                    title: 'C1',
+                    description: '',
+                    weight: 100,
+                    linkedStandard: std,
+                    levels: [{ id: 'l1', label: 'A', minPoints: 40, maxPoints: 100, description: '', subItems: [] }],
+                },
+            ],
+        });
+        const sr = makeSr({
+            entries: [{ criterionId: 'c1', levelId: 'unknown-level', checkedSubItems: [], comment: '' }],
+        });
+        const result = getCefrStudentOverview('s1', [sr], [rubric], []);
+        expect(result.standardsCovered).toBe(0);
+    });
+
     it('cellMap provides O(1) lookup for any skill+level key', () => {
         const sa: SelfAssessment = {
             id: 'sa1',

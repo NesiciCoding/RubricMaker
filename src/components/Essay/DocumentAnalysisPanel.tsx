@@ -232,7 +232,11 @@ export default function DocumentAnalysisPanel({
                             {rubricName}
                         </p>
                     </div>
-                    <button className="btn btn-ghost btn-icon" onClick={onClose}>
+                    <button
+                        className="btn btn-ghost btn-icon"
+                        onClick={onClose}
+                        aria-label={t('common.close', 'Close')}
+                    >
                         <X size={18} />
                     </button>
                 </div>

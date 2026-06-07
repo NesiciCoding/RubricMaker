@@ -10,6 +10,7 @@ import CefrOverviewGrid from '../CEFR/CefrOverviewGrid';
 import StandardsCoveragePanel from '../Standards/StandardsCoveragePanel';
 import LoginButtons from '../auth/LoginButtons';
 import MigrationPrompt from '../auth/MigrationPrompt';
+import { storageSync } from '../../services/database';
 
 // ─── Hoisted mock refs ────────────────────────────────────────────────────────
 
@@ -419,6 +420,160 @@ describe('LoginButtons', () => {
         expect(screen.getByPlaceholderText(/your@email/i)).toBeInTheDocument();
         fireEvent.click(toggle);
         expect(screen.queryByPlaceholderText(/your@email/i)).not.toBeInTheDocument();
+    });
+
+    it('changes button background on hover for OAuth buttons', async () => {
+        render(<LoginButtons supabaseReady />);
+        await waitFor(() => screen.getByText(/school \/ work/i));
+        const buttons = screen
+            .getAllByRole('button')
+            .filter((b) => /sign in with (google|microsoft)/i.test(b.textContent ?? ''));
+        expect(buttons.length).toBeGreaterThanOrEqual(3);
+        for (const btn of buttons) {
+            const restingBackground = btn.style.background;
+            fireEvent.mouseEnter(btn);
+            expect(btn.style.background).not.toBe(restingBackground);
+            fireEvent.mouseLeave(btn);
+            expect(btn.style.background).toBe(restingBackground);
+        }
+    });
+
+    it('shows an error returned from Google OAuth and stops the busy spinner', async () => {
+        render(<LoginButtons supabaseReady />);
+        await waitFor(() => screen.getByText(/google/i));
+        fireEvent.click(screen.getByText(/google/i).closest('button') as HTMLButtonElement);
+        await waitFor(() => {
+            expect(screen.getByText('OAuth not available in tests')).toBeInTheDocument();
+        });
+        expect(storageSync.signInWithGoogle).toHaveBeenCalled();
+    });
+
+    it('triggers the Microsoft personal OAuth handler', async () => {
+        render(<LoginButtons supabaseReady />);
+        await waitFor(() => screen.getByText(/school \/ work/i));
+        const personalBtn = screen
+            .getAllByRole('button')
+            .find((b) => /sign in with microsoft/i.test(b.textContent ?? '') && !/school/i.test(b.textContent ?? ''));
+        fireEvent.click(personalBtn!);
+        expect(storageSync.signInWithMicrosoftPersonal).toHaveBeenCalled();
+    });
+
+    it('triggers the Azure AD OAuth handler', async () => {
+        render(<LoginButtons supabaseReady />);
+        await waitFor(() => screen.getByText(/school \/ work/i));
+        const azureBtn = screen.getAllByRole('button').find((b) => /school \/ work/i.test(b.textContent ?? ''));
+        fireEvent.click(azureBtn!);
+        expect(storageSync.signInWithAzureAD).toHaveBeenCalled();
+    });
+
+    it('shows an error when sending the OTP with an empty email via Enter', async () => {
+        render(<LoginButtons supabaseReady />);
+        await waitFor(() => screen.getByText(/email/i));
+        fireEvent.click(screen.getByText(/email/i).closest('button') as HTMLButtonElement);
+        const emailInput = screen.getByPlaceholderText(/your@email/i);
+        fireEvent.keyDown(emailInput, { key: 'Enter' });
+        expect(screen.getByText('Enter your email address.')).toBeInTheDocument();
+    });
+
+    it('calls onNeedConfig instead of sending an OTP when supabase is not ready', async () => {
+        const onNeedConfig = vi.fn();
+        render(<LoginButtons supabaseReady={false} onNeedConfig={onNeedConfig} />);
+        await waitFor(() => screen.getByText(/email/i));
+        fireEvent.click(screen.getByText(/email/i).closest('button') as HTMLButtonElement);
+        fireEvent.change(screen.getByPlaceholderText(/your@email/i), { target: { value: 'teacher@school.com' } });
+        fireEvent.click(screen.getByRole('button', { name: /send login code/i }));
+        expect(onNeedConfig).toHaveBeenCalled();
+        expect(storageSync.adapter.signInWithEmail).not.toHaveBeenCalled();
+    });
+
+    it('sends the OTP, advances to code entry, and verifies it successfully', async () => {
+        const onEmailSuccess = vi.fn();
+        render(<LoginButtons supabaseReady onEmailSuccess={onEmailSuccess} />);
+        await waitFor(() => screen.getByText(/email/i));
+        fireEvent.click(screen.getByText(/email/i).closest('button') as HTMLButtonElement);
+
+        const emailInput = screen.getByPlaceholderText(/your@email/i);
+        fireEvent.change(emailInput, { target: { value: 'teacher@school.com' } });
+        fireEvent.click(screen.getByRole('button', { name: /send login code/i }));
+
+        await waitFor(() => expect(storageSync.adapter.signInWithEmail).toHaveBeenCalledWith('teacher@school.com'));
+        await waitFor(() => screen.getByPlaceholderText('12345678'));
+        expect(screen.getByText('teacher@school.com')).toBeInTheDocument();
+
+        const otpInput = screen.getByPlaceholderText('12345678');
+        fireEvent.change(otpInput, { target: { value: 'ab12cd34' } });
+        expect((otpInput as HTMLInputElement).value).toBe('1234');
+
+        fireEvent.change(otpInput, { target: { value: '12345678' } });
+        fireEvent.click(screen.getByRole('button', { name: /verify code/i }));
+
+        await waitFor(() =>
+            expect(storageSync.adapter.verifyOtp).toHaveBeenCalledWith('teacher@school.com', '12345678')
+        );
+        await waitFor(() => expect(screen.getByText(/signed in/i)).toBeInTheDocument());
+        expect(onEmailSuccess).toHaveBeenCalled();
+    });
+
+    it('shows an error when the OTP code is too short and submitted via Enter', async () => {
+        render(<LoginButtons supabaseReady />);
+        await waitFor(() => screen.getByText(/email/i));
+        fireEvent.click(screen.getByText(/email/i).closest('button') as HTMLButtonElement);
+        fireEvent.change(screen.getByPlaceholderText(/your@email/i), { target: { value: 'teacher@school.com' } });
+        fireEvent.click(screen.getByRole('button', { name: /send login code/i }));
+
+        await waitFor(() => screen.getByPlaceholderText('12345678'));
+        const otpInput = screen.getByPlaceholderText('12345678');
+        fireEvent.change(otpInput, { target: { value: '123' } });
+        fireEvent.keyDown(otpInput, { key: 'Enter' });
+        expect(screen.getByText('Enter the 8-digit code.')).toBeInTheDocument();
+    });
+
+    it('returns to the email step when Back is clicked', async () => {
+        render(<LoginButtons supabaseReady />);
+        await waitFor(() => screen.getByText(/email/i));
+        fireEvent.click(screen.getByText(/email/i).closest('button') as HTMLButtonElement);
+        fireEvent.change(screen.getByPlaceholderText(/your@email/i), { target: { value: 'teacher@school.com' } });
+        fireEvent.click(screen.getByRole('button', { name: /send login code/i }));
+
+        await waitFor(() => screen.getByPlaceholderText('12345678'));
+        fireEvent.click(screen.getByRole('button', { name: /back/i }));
+        expect(screen.getByPlaceholderText(/your@email/i)).toBeInTheDocument();
+    });
+
+    it('shows an error returned by signInWithEmail', async () => {
+        vi.mocked(storageSync.adapter.signInWithEmail).mockResolvedValueOnce({ error: 'Too many requests' });
+        render(<LoginButtons supabaseReady />);
+        await waitFor(() => screen.getByText(/email/i));
+        fireEvent.click(screen.getByText(/email/i).closest('button') as HTMLButtonElement);
+        fireEvent.change(screen.getByPlaceholderText(/your@email/i), { target: { value: 'teacher@school.com' } });
+        fireEvent.click(screen.getByRole('button', { name: /send login code/i }));
+        await waitFor(() => expect(screen.getByText('Too many requests')).toBeInTheDocument());
+    });
+
+    it('shows an error returned by verifyOtp and clears it when the email changes', async () => {
+        vi.mocked(storageSync.adapter.verifyOtp).mockResolvedValueOnce({ error: 'Invalid code' });
+        render(<LoginButtons supabaseReady />);
+        await waitFor(() => screen.getByText(/email/i));
+        fireEvent.click(screen.getByText(/email/i).closest('button') as HTMLButtonElement);
+        fireEvent.change(screen.getByPlaceholderText(/your@email/i), { target: { value: 'teacher@school.com' } });
+        fireEvent.click(screen.getByRole('button', { name: /send login code/i }));
+
+        await waitFor(() => screen.getByPlaceholderText('12345678'));
+        const otpInput = screen.getByPlaceholderText('12345678');
+        fireEvent.change(otpInput, { target: { value: '12345678' } });
+        fireEvent.click(screen.getByRole('button', { name: /verify code/i }));
+        await waitFor(() => expect(screen.getByText('Invalid code')).toBeInTheDocument());
+
+        fireEvent.change(otpInput, { target: { value: '87654321' } });
+        expect(screen.queryByText('Invalid code')).not.toBeInTheDocument();
+    });
+
+    it('only renders providers present in enabledProviders once loaded', async () => {
+        vi.mocked(storageSync.adapter.fetchAuthProviders).mockResolvedValueOnce(['google', 'email']);
+        render(<LoginButtons supabaseReady />);
+        await waitFor(() => screen.getByText(/sign in with google/i));
+        expect(screen.queryByText(/sign in with microsoft/i)).not.toBeInTheDocument();
+        expect(screen.getByText(/sign in with email/i)).toBeInTheDocument();
     });
 });
 
