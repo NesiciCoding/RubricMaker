@@ -89,6 +89,7 @@ export default function CefrOverviewPage() {
                     <div className="form-group" style={{ flex: '0 0 auto', minWidth: 180, marginBottom: 0 }}>
                         <label>{t('statistics.label_class_filter')}</label>
                         <select
+                            aria-label={t('statistics.label_class_filter')}
                             value={selectedClassId}
                             onChange={(e) => {
                                 setSelectedClassId(e.target.value);
@@ -199,7 +200,9 @@ export default function CefrOverviewPage() {
                                                     background: 'var(--bg-elevated)',
                                                     zIndex: 1,
                                                 }}
-                                            />
+                                            >
+                                                <span className="sr-only">{t('cefr.table_header_student')}</span>
+                                            </th>
                                             {SKILLS.map((sk) =>
                                                 CEFR_LEVELS.map((lvl) => (
                                                     <th
@@ -218,7 +221,9 @@ export default function CefrOverviewPage() {
                                                     </th>
                                                 ))
                                             )}
-                                            <th style={{ borderLeft: '2px solid var(--border)' }} />
+                                            <th style={{ borderLeft: '2px solid var(--border)' }}>
+                                                <span className="sr-only">{t('cefr.table_header_detail')}</span>
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -490,7 +495,11 @@ export default function CefrOverviewPage() {
                     <>
                         <div className="form-group" style={{ maxWidth: 320, marginBottom: 24 }}>
                             <label>{t('statistics.label_student')}</label>
-                            <select value={selectedStudentId} onChange={(e) => setSelectedStudentId(e.target.value)}>
+                            <select
+                                aria-label={t('statistics.label_student')}
+                                value={selectedStudentId}
+                                onChange={(e) => setSelectedStudentId(e.target.value)}
+                            >
                                 <option value="" disabled>
                                     {t('statistics.select_student_placeholder')}
                                 </option>
