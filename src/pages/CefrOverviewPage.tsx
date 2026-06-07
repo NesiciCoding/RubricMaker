@@ -9,7 +9,7 @@ import CefrProgressChart from '../components/Statistics/CefrProgressChart';
 import StandardsCoveragePanel from '../components/Standards/StandardsCoveragePanel';
 import { useApp } from '../context/AppContext';
 import { getCefrStudentOverview } from '../utils/cefrStudentAggregator';
-import { CEFR_LEVELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
+import { CEFR_LEVELS } from '../data/cefrDescriptors';
 import { VO_TRACK_LABELS, VO_TRACK_COLORS, VO_TRACK_DEFAULT_CEFR } from '../data/voTracks';
 import type { CefrLevel, CefrSkill } from '../types';
 
@@ -22,26 +22,6 @@ const SKILLS: { key: CefrSkill; label: string; short: string }[] = [
 ];
 
 const LEVEL_ORDER: Record<CefrLevel, number> = { A1: 1, A2: 2, B1: 3, B2: 4, C1: 5, C2: 6 };
-
-function highestAchievedLevel(
-    cells: ReturnType<typeof getCefrStudentOverview>['cells'],
-    skill: CefrSkill
-): CefrLevel | null {
-    const achieved = cells
-        .filter((c) => c.skill === skill && c.state === 'achieved')
-        .sort((a, b) => (LEVEL_ORDER[b.level] ?? 0) - (LEVEL_ORDER[a.level] ?? 0));
-    return achieved[0]?.level ?? null;
-}
-
-function developingLevel(
-    cells: ReturnType<typeof getCefrStudentOverview>['cells'],
-    skill: CefrSkill
-): CefrLevel | null {
-    const developing = cells
-        .filter((c) => c.skill === skill && c.state === 'developing')
-        .sort((a, b) => (LEVEL_ORDER[a.level] ?? 0) - (LEVEL_ORDER[b.level] ?? 0));
-    return developing[0]?.level ?? null;
-}
 
 export default function CefrOverviewPage() {
     const { students, classes, rubrics, studentRubrics, selfAssessments, analysisResults } = useApp();

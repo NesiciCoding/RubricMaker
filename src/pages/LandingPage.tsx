@@ -11,7 +11,6 @@ import {
     Users,
     BarChart3,
     FileText,
-    Download,
     Layers,
     Globe,
     Shield,

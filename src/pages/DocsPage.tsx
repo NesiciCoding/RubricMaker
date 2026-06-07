@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import {
     BookOpen,
-    Users,
     FileText,
     BarChart3,
     Download,
     GraduationCap,
     Database,
     Map,
-    ChevronRight,
     CheckCircle,
     MessageSquare,
     Layers,
