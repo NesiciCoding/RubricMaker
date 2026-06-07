@@ -86,6 +86,18 @@ describe('LearningGoalChart', () => {
         expect(screen.getByRole('option', { name: /Second/ })).toBeInTheDocument();
     });
 
+    it('resets selection to the first goal when the selected goal disappears', () => {
+        const goals = [makeGoal('g1', 'First'), makeGoal('g2', 'Second')];
+        const { rerender, getByRole } = render(<LearningGoalChart goals={goals} />);
+        const select = getByRole('combobox');
+        fireEvent.change(select, { target: { value: 'g2' } });
+        expect((select as HTMLSelectElement).value).toBe('g2');
+
+        rerender(<LearningGoalChart goals={[makeGoal('g3', 'Third')]} />);
+        expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe('g3');
+        expect(screen.getByRole('option', { name: /Third/ })).toBeInTheDocument();
+    });
+
     it('updates selected goal on select change', () => {
         const goals = [makeGoal('g1', 'First'), makeGoal('g2', 'Second')];
         render(<LearningGoalChart goals={goals} />);

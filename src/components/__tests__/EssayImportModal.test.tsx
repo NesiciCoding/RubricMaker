@@ -15,8 +15,33 @@ vi.mock('../../utils/essaySubmissionCode', () => ({
     decodeEssaySubmission: vi.fn(),
 }));
 
+let mockDbConnected = false;
+vi.mock('../../hooks/useDbStatus', () => ({
+    useDbStatus: () => ({ isConnected: mockDbConnected, status: 'idle', lastSyncAt: null }),
+}));
+
 import { decodeEssaySubmission } from '../../utils/essaySubmissionCode';
 const mockDecode = vi.mocked(decodeEssaySubmission);
+
+const dbSubmission = {
+    id: 'db-1',
+    studentEmail: 'alice@school.com',
+    wordCount: 120,
+    wordLimitStatus: 'ok' as const,
+    submittedAt: '2024-03-01T10:00:00Z',
+    storagePath: 'submissions/db-1.html',
+};
+
+function dbProps(overrides: Record<string, unknown> = {}) {
+    return {
+        ...baseProps,
+        teacherKey: 'teacher-1',
+        onFetchSubmissions: vi.fn(async () => [dbSubmission]),
+        onGetSignedUrl: vi.fn(async () => 'https://example.com/signed-url'),
+        onDeleteSubmission: vi.fn(async () => ({ success: true })),
+        ...overrides,
+    };
+}
 
 const baseProps = {
     rubricId: 'r1',
@@ -179,6 +204,224 @@ describe('EssayImportModal', () => {
             importWith(null);
             expect(screen.queryByText(/essay\.word_limit_over/i)).not.toBeInTheDocument();
             expect(screen.queryByText(/essay\.word_limit_under/i)).not.toBeInTheDocument();
+        });
+    });
+
+    describe('database tab', () => {
+        beforeEach(() => {
+            mockDbConnected = true;
+        });
+
+        it('does not show the database tab when db is not connected', () => {
+            mockDbConnected = false;
+            render(<EssayImportModal {...dbProps()} />);
+            expect(screen.getByPlaceholderText(/Paste the student's submission code/i)).toBeInTheDocument();
+            expect(screen.queryByText('From database')).not.toBeInTheDocument();
+        });
+
+        it('does not show the database tab when teacherKey is missing', () => {
+            render(<EssayImportModal {...dbProps({ teacherKey: undefined })} />);
+            expect(screen.queryByText('From database')).not.toBeInTheDocument();
+        });
+
+        it('defaults to the database tab and loads submissions', async () => {
+            const props = dbProps();
+            render(<EssayImportModal {...props} />);
+            expect(props.onFetchSubmissions).toHaveBeenCalledWith('teacher-1');
+            expect(await screen.findByText('alice@school.com')).toBeInTheDocument();
+            expect(screen.getByText(/120 words/)).toBeInTheDocument();
+        });
+
+        it('shows a loading indicator while submissions are being fetched', async () => {
+            let resolveFetch: (rows: typeof dbSubmission[]) => void = () => {};
+            const onFetchSubmissions = vi.fn(
+                () =>
+                    new Promise<(typeof dbSubmission)[]>((resolve) => {
+                        resolveFetch = resolve;
+                    })
+            );
+            render(<EssayImportModal {...dbProps({ onFetchSubmissions })} />);
+            expect(screen.getByText('Loading…')).toBeInTheDocument();
+            resolveFetch([dbSubmission]);
+            expect(await screen.findByText('alice@school.com')).toBeInTheDocument();
+        });
+
+        it('shows an empty state when there are no submissions', async () => {
+            render(<EssayImportModal {...dbProps({ onFetchSubmissions: vi.fn(async () => []) })} />);
+            expect(await screen.findByText('No submissions yet for this assignment.')).toBeInTheDocument();
+        });
+
+        it('shows an error when loading submissions fails', async () => {
+            render(
+                <EssayImportModal
+                    {...dbProps({
+                        onFetchSubmissions: vi.fn(async () => {
+                            throw new Error('boom');
+                        }),
+                    })}
+                />
+            );
+            expect(
+                await screen.findByText(/Failed to load submissions\. Make sure you are connected/i)
+            ).toBeInTheDocument();
+        });
+
+        it('refreshes submissions when the refresh button is clicked', async () => {
+            const props = dbProps();
+            render(<EssayImportModal {...props} />);
+            await screen.findByText('alice@school.com');
+            fireEvent.click(screen.getByTitle('Refresh'));
+            expect(props.onFetchSubmissions).toHaveBeenCalledTimes(2);
+        });
+
+        it('switches between the database and code-paste tabs', async () => {
+            render(<EssayImportModal {...dbProps()} />);
+            await screen.findByText('alice@school.com');
+            fireEvent.click(screen.getByText('Paste code'));
+            expect(screen.getByPlaceholderText(/Paste the student's submission code/i)).toBeInTheDocument();
+            fireEvent.click(screen.getByText('From database'));
+            expect(await screen.findByText('alice@school.com')).toBeInTheDocument();
+        });
+
+        it('shows over and under word-limit badges in the submission list', async () => {
+            const overSub = { ...dbSubmission, id: 'db-2', studentEmail: 'bob@school.com', wordLimitStatus: 'over' as const };
+            const underSub = { ...dbSubmission, id: 'db-3', studentEmail: 'cara@school.com', wordLimitStatus: 'under' as const };
+            render(
+                <EssayImportModal {...dbProps({ onFetchSubmissions: vi.fn(async () => [overSub, underSub]) })} />
+            );
+            expect(await screen.findByText('essay.word_limit_over')).toBeInTheDocument();
+            expect(screen.getByText('essay.word_limit_under')).toBeInTheDocument();
+        });
+
+        it('shows "Anonymous" for submissions without a student email', async () => {
+            const anon = { ...dbSubmission, studentEmail: null };
+            render(<EssayImportModal {...dbProps({ onFetchSubmissions: vi.fn(async () => [anon]) })} />);
+            expect(await screen.findByText('Anonymous')).toBeInTheDocument();
+        });
+
+        it('imports a submission from the database and shows the success screen', async () => {
+            const fetchMock = vi.fn(async () => ({ text: async () => '<p>Essay body</p>' }));
+            vi.stubGlobal('fetch', fetchMock);
+            const props = dbProps();
+            render(<EssayImportModal {...props} />);
+            fireEvent.click(await screen.findByRole('button', { name: /^import$/i }));
+
+            expect(await screen.findByText(/Essay imported successfully/i)).toBeInTheDocument();
+            expect(props.onGetSignedUrl).toHaveBeenCalledWith('submissions/db-1.html');
+            expect(fetchMock).toHaveBeenCalledWith('https://example.com/signed-url');
+            expect(props.onImport).toHaveBeenCalledWith(
+                expect.objectContaining({ mimeType: 'text/html', rubricId: 'r1', studentId: 's1' })
+            );
+            vi.unstubAllGlobals();
+        });
+
+        it('does nothing when clicking import without an onGetSignedUrl handler', async () => {
+            const props = dbProps({ onGetSignedUrl: undefined });
+            render(<EssayImportModal {...props} />);
+            fireEvent.click(await screen.findByRole('button', { name: /^import$/i }));
+            expect(props.onImport).not.toHaveBeenCalled();
+            expect(screen.queryByText(/Essay imported successfully/i)).not.toBeInTheDocument();
+        });
+
+        it('falls back to the student name when importing an anonymous submission', async () => {
+            const fetchMock = vi.fn(async () => ({ text: async () => '<p>Essay body</p>' }));
+            vi.stubGlobal('fetch', fetchMock);
+            const anon = { ...dbSubmission, studentEmail: null };
+            const props = dbProps({ onFetchSubmissions: vi.fn(async () => [anon]) });
+            render(<EssayImportModal {...props} />);
+            fireEvent.click(await screen.findByRole('button', { name: /^import$/i }));
+            expect(await screen.findByText(/Essay imported successfully/i)).toBeInTheDocument();
+            expect(props.onImport).toHaveBeenCalledWith(
+                expect.objectContaining({ name: expect.stringContaining(`Essay – ${baseProps.studentName} –`) })
+            );
+            vi.unstubAllGlobals();
+        });
+
+        it('falls back to a generic label when confirming deletion of an anonymous submission', async () => {
+            const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+            const anon = { ...dbSubmission, studentEmail: null };
+            const props = dbProps({ onFetchSubmissions: vi.fn(async () => [anon]) });
+            render(<EssayImportModal {...props} />);
+            await screen.findByText('Anonymous');
+            fireEvent.click(screen.getByTitle('Delete submission'));
+            expect(confirmSpy).toHaveBeenCalledWith('Delete this submission from student? This cannot be undone.');
+            confirmSpy.mockRestore();
+        });
+
+        it('shows an error when no signed URL can be obtained', async () => {
+            const props = dbProps({ onGetSignedUrl: vi.fn(async () => null) });
+            render(<EssayImportModal {...props} />);
+            fireEvent.click(await screen.findByRole('button', { name: /^import$/i }));
+            expect(await screen.findByText(/Could not get download URL\. Try again\./i)).toBeInTheDocument();
+            expect(props.onImport).not.toHaveBeenCalled();
+        });
+
+        it('shows an error when downloading the essay fails', async () => {
+            vi.stubGlobal(
+                'fetch',
+                vi.fn(async () => {
+                    throw new Error('network down');
+                })
+            );
+            const props = dbProps();
+            render(<EssayImportModal {...props} />);
+            fireEvent.click(await screen.findByRole('button', { name: /^import$/i }));
+            expect(
+                await screen.findByText(/Failed to download essay\. Check your connection and try again\./i)
+            ).toBeInTheDocument();
+            vi.unstubAllGlobals();
+        });
+
+        it('deletes a submission after confirmation', async () => {
+            const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+            const props = dbProps();
+            render(<EssayImportModal {...props} />);
+            await screen.findByText('alice@school.com');
+            fireEvent.click(screen.getByTitle('Delete submission'));
+            expect(confirmSpy).toHaveBeenCalledWith(
+                'Delete this submission from alice@school.com? This cannot be undone.'
+            );
+            await vi.waitFor(() => expect(props.onDeleteSubmission).toHaveBeenCalledWith('db-1', 'submissions/db-1.html'));
+            await vi.waitFor(() => expect(screen.queryByText('alice@school.com')).not.toBeInTheDocument());
+            confirmSpy.mockRestore();
+        });
+
+        it('does not delete a submission when the confirmation is cancelled', async () => {
+            const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+            const props = dbProps();
+            render(<EssayImportModal {...props} />);
+            await screen.findByText('alice@school.com');
+            fireEvent.click(screen.getByTitle('Delete submission'));
+            expect(props.onDeleteSubmission).not.toHaveBeenCalled();
+            expect(screen.getByText('alice@school.com')).toBeInTheDocument();
+            confirmSpy.mockRestore();
+        });
+
+        it('shows an error message when deleting a submission fails', async () => {
+            const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+            const props = dbProps({
+                onDeleteSubmission: vi.fn(async () => ({ success: false, error: 'permission denied' })),
+            });
+            render(<EssayImportModal {...props} />);
+            await screen.findByText('alice@school.com');
+            fireEvent.click(screen.getByTitle('Delete submission'));
+            expect(await screen.findByText('Delete failed: permission denied')).toBeInTheDocument();
+            expect(screen.getByText('alice@school.com')).toBeInTheDocument();
+            confirmSpy.mockRestore();
+        });
+
+        it('hides the delete button when onDeleteSubmission is not provided', async () => {
+            render(<EssayImportModal {...dbProps({ onDeleteSubmission: undefined })} />);
+            await screen.findByText('alice@school.com');
+            expect(screen.queryByTitle('Delete submission')).not.toBeInTheDocument();
+        });
+
+        it('closes the modal from the database tab cancel button', async () => {
+            const props = dbProps();
+            render(<EssayImportModal {...props} />);
+            await screen.findByText('alice@school.com');
+            fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
+            expect(props.onClose).toHaveBeenCalled();
         });
     });
 });

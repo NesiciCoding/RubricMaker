@@ -124,6 +124,13 @@ describe('ConfirmDialog', () => {
         // No AlertTriangle when danger=false — only the confirm/cancel buttons exist
         expect(screen.queryByRole('button', { name: /confirm/i })?.className).not.toContain('btn-danger');
     });
+
+    it('calls onCancel when the dialog is dismissed via Escape', () => {
+        const onCancel = vi.fn();
+        render(<ConfirmDialog {...baseProps} open onCancel={onCancel} />);
+        fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+        expect(onCancel).toHaveBeenCalled();
+    });
 });
 
 // ─── EmptyState ───────────────────────────────────────────────────────────────
@@ -220,6 +227,25 @@ describe('ErrorBoundary', () => {
             </ErrorBoundary>
         );
         expect(screen.getByRole('button', { name: /reload page/i })).toBeInTheDocument();
+    });
+
+    it('reloads the page when the Reload page button is clicked', () => {
+        const reload = vi.fn();
+        const originalLocation = window.location;
+        Object.defineProperty(window, 'location', {
+            configurable: true,
+            value: { ...originalLocation, reload },
+        });
+
+        render(
+            <ErrorBoundary>
+                <Bomb />
+            </ErrorBoundary>
+        );
+        fireEvent.click(screen.getByRole('button', { name: /reload page/i }));
+        expect(reload).toHaveBeenCalledTimes(1);
+
+        Object.defineProperty(window, 'location', { configurable: true, value: originalLocation });
     });
 });
 
