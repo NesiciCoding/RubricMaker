@@ -167,7 +167,14 @@ export function getCefrStudentOverview(
             const key = `${skill}__${level}`;
 
             if (!cellAccMap.has(key)) {
-                cellAccMap.set(key, { skill, level, scores: [], thresholds: [], directlyAchieved: false, confidenceByDescriptor: new Map() });
+                cellAccMap.set(key, {
+                    skill,
+                    level,
+                    scores: [],
+                    thresholds: [],
+                    directlyAchieved: false,
+                    confidenceByDescriptor: new Map(),
+                });
             }
             // Flag this cell as directly achieved — not subject to percentage averaging.
             cellAccMap.get(key)!.directlyAchieved = true;
