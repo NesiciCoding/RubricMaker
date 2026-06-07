@@ -425,12 +425,17 @@ describe('LoginButtons', () => {
     it('changes button background on hover for OAuth buttons', async () => {
         render(<LoginButtons supabaseReady />);
         await waitFor(() => screen.getByText(/school \/ work/i));
-        const buttons = screen.getAllByRole('button').filter((b) => /sign in with/i.test(b.textContent ?? ''));
-        for (const btn of buttons) {
-            fireEvent.mouseEnter(btn);
-            fireEvent.mouseLeave(btn);
-        }
+        const buttons = screen
+            .getAllByRole('button')
+            .filter((b) => /sign in with (google|microsoft)/i.test(b.textContent ?? ''));
         expect(buttons.length).toBeGreaterThanOrEqual(3);
+        for (const btn of buttons) {
+            const restingBackground = btn.style.background;
+            fireEvent.mouseEnter(btn);
+            expect(btn.style.background).not.toBe(restingBackground);
+            fireEvent.mouseLeave(btn);
+            expect(btn.style.background).toBe(restingBackground);
+        }
     });
 
     it('shows an error returned from Google OAuth and stops the busy spinner', async () => {

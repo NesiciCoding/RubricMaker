@@ -145,9 +145,7 @@ describe('DocumentAnalysisPanel', () => {
     it('calls onClose when the close button is clicked', () => {
         const onClose = vi.fn();
         render(<DocumentAnalysisPanel {...baseProps} onClose={onClose} />);
-        const btns = screen.getAllByRole('button');
-        const closeBtn = btns[0];
-        fireEvent.click(closeBtn);
+        fireEvent.click(screen.getByRole('button', { name: 'Close' }));
         expect(onClose).toHaveBeenCalled();
     });
 
