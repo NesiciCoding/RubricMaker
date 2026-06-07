@@ -1039,10 +1039,6 @@
         "anon_auth_desc": "Schüler, die Safe Exam Browser verwenden, können sich nicht per OTP anmelden. Die anonyme Anmeldung ermöglicht ihnen den Zugriff auf Schreibaufgaben ohne Passwort.",
         "anon_auth_hint": "Aktivieren Sie 'Anonyme Anmeldung erlauben' in Ihrem Supabase-Projekt unter Authentifizierung → Konfiguration."
     },
-    "editor": {
-        "switchToCompactView": "Zur kompakten Ansicht wechseln",
-        "switchToPageView": "Zur A4-Seitenansicht wechseln"
-    },
     "essay": {
         "email_gate_title": "Geben Sie Ihre Schul-E-Mail-Adresse ein",
         "email_gate_desc": "Ihre E-Mail-Adresse wird verwendet, um Ihren Aufsatz mit Ihrem Konto zu verknüpfen. Kein Passwort oder Code erforderlich.",

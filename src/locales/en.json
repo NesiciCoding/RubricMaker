@@ -1039,10 +1039,6 @@
         "stop": "Stop reading",
         "progress": "Reading progress"
     },
-    "editor": {
-        "switchToCompactView": "Switch to compact view",
-        "switchToPageView": "Switch to A4 page view"
-    },
     "essay": {
         "email_gate_title": "Enter your school email",
         "email_gate_desc": "Your email is used to link your essay to your account. No password or code needed.",

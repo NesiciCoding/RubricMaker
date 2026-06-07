@@ -1039,10 +1039,6 @@
         "stop": "Stop",
         "progress": "Leesvoortgang"
     },
-    "editor": {
-        "switchToCompactView": "Naar compacte weergave",
-        "switchToPageView": "Naar A4-paginaweergave"
-    },
     "essay": {
         "email_gate_title": "Voer je schoole-mailadres in",
         "email_gate_desc": "Je e-mailadres wordt gebruikt om je opstel aan je account te koppelen. Geen wachtwoord of code nodig.",

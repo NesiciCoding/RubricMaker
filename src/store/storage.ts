@@ -255,6 +255,7 @@ export interface StoreData {
     selfAssessments: SelfAssessment[];
     speakingSessions: SpeakingSession[];
     analysisResults: DocumentAnalysisResult[];
+    userTemplates: UserTemplate[];
 }
 
 export function loadStore(): StoreData {
@@ -274,6 +275,7 @@ export function loadStore(): StoreData {
         selfAssessments: load<SelfAssessment[]>(KEYS.selfAssessments, []),
         speakingSessions: load<SpeakingSession[]>(KEYS.speakingSessions, []),
         analysisResults: load<DocumentAnalysisResult[]>(KEYS.analysisResults, []),
+        userTemplates: load<UserTemplate[]>(KEYS.userTemplates, []),
     };
 }
 
@@ -439,6 +441,19 @@ export function importFullBackup(json: string): boolean {
                 saveAnalysisResults(data.analysisResults as DocumentAnalysisResult[]);
             else console.warn('[importFullBackup] analysisResults failed validation — skipped');
         }
+        if (data.userTemplates !== undefined) {
+            if (
+                Array.isArray(data.userTemplates) &&
+                data.userTemplates.every(
+                    (t) =>
+                        isPlainObject(t) &&
+                        typeof (t as Record<string, unknown>).id === 'string' &&
+                        Array.isArray((t as UserTemplate).criteria)
+                )
+            )
+                saveUserTemplates(data.userTemplates as UserTemplate[]);
+            else console.warn('[importFullBackup] userTemplates failed validation — skipped');
+        }
         return true;
     } catch (e) {
         console.error('Import failed', e);
@@ -526,9 +541,5 @@ export function loadUserTemplates(): UserTemplate[] {
 }
 
 export function saveUserTemplates(templates: UserTemplate[]): void {
-    try {
-        localStorage.setItem(KEYS.userTemplates, JSON.stringify(templates));
-    } catch {
-        // ignore
-    }
+    save(KEYS.userTemplates, templates);
 }

@@ -1039,10 +1039,6 @@
         "anon_auth_desc": "Les élèves utilisant Safe Exam Browser ne peuvent pas se connecter par OTP. La connexion anonyme leur permet d'accéder aux devoirs sans mot de passe.",
         "anon_auth_hint": "Activez « Autoriser les connexions anonymes » dans votre projet Supabase sous Authentification → Configuration."
     },
-    "editor": {
-        "switchToCompactView": "Basculer vers la vue compacte",
-        "switchToPageView": "Basculer vers la vue page A4"
-    },
     "essay": {
         "email_gate_title": "Entrez votre adresse email scolaire",
         "email_gate_desc": "Votre email est utilisé pour lier votre dissertation à votre compte. Aucun mot de passe ou code n'est nécessaire.",

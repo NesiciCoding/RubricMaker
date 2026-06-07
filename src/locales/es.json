@@ -1039,10 +1039,6 @@
         "stop": "Detener",
         "progress": "Progreso de lectura"
     },
-    "editor": {
-        "switchToCompactView": "Cambiar a vista compacta",
-        "switchToPageView": "Cambiar a vista de página A4"
-    },
     "essay": {
         "email_gate_title": "Ingrese su correo electrónico escolar",
         "email_gate_desc": "Su correo electrónico se usa para vincular su redacción a su cuenta. No se necesita contraseña ni código.",
