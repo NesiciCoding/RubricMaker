@@ -415,7 +415,7 @@ export default function Dashboard() {
                                                     gap: 10,
                                                 }}
                                                 onClick={() => {
-                                                    const found = getUserTemplates().find((t) => t.id === tpl.id);
+                                                    const found = userTemplates.find((t) => t.id === tpl.id);
                                                     if (found) navigate('/rubrics/new', { state: { template: found } });
                                                 }}
                                                 className="hoverable"
@@ -438,7 +438,7 @@ export default function Dashboard() {
                                                     title={t('dashboard.remove_template')}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        const updated = getUserTemplates().filter((t) => t.id !== tpl.id);
+                                                        const updated = userTemplates.filter((t) => t.id !== tpl.id);
                                                         saveUserTemplates(updated);
                                                         setUserTemplates(updated);
                                                     }}

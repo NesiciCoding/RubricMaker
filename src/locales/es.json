@@ -839,9 +839,9 @@
         "auto_lock": "Bloquear automáticamente cuando termina el temporizador",
         "time_up": "¡Se acabó el tiempo!",
         "clear_marks": "Borrar marcas",
-        "launch_session": "Sesión de conversación",
+        "launch_session": "Sesión de expresión oral",
         "choose_rubric": "Elegir rúbrica",
-        "empty_state_no_sessions": "Aún no hay sesiones de conversación.",
+        "empty_state_no_sessions": "Aún no hay sesiones de expresión oral.",
         "new_session": "Nueva sesión"
     },
     "cefrOverview": {

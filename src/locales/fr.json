@@ -839,10 +839,10 @@
         "auto_lock": "Verrouillage automatique à la fin du chronomètre",
         "time_up": "Temps écoulé !",
         "clear_marks": "Effacer les marques",
-        "launch_session": "Session de parole",
+        "launch_session": "Session d'expression orale",
         "choose_rubric": "Choisir une rubrique",
-        "empty_state_no_sessions": "Aucune session de parole pour le moment.",
-        "new_session": "Nouvelle session"
+        "empty_state_no_sessions": "Aucune session d'expression orale pour le moment.",
+        "new_session": "Nouvelle session d'expression orale"
     },
     "cefrOverview": {
         "page_title": "Aperçu CECR",
