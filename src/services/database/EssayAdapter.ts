@@ -12,8 +12,12 @@
  */
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import type { EssayAssignment } from '../../types';
+import type { EssayAssignment, EssayAssignmentContent } from '../../types';
 import type { SyncResult } from './types';
+
+export type FetchContentResult =
+    | { ok: true; data: EssayAssignmentContent }
+    | { ok: false; reason: 'unauthenticated' | 'not_found' | 'expired' | 'network' | 'invalid_response' };
 
 export interface EssaySubmissionPayload {
     id: string;
@@ -199,14 +203,31 @@ export class EssayAdapter {
         return { success: true };
     }
 
-    /** Fetch the assignment row (for validation on the student page) */
-    async fetchAssignment(assignmentId: string): Promise<{ exists: boolean; error?: string }> {
-        const { data, error } = await this.client
-            .from('essay_assignments')
-            .select('id')
-            .eq('id', assignmentId)
-            .single();
-        if (error) return { exists: false, error: error.message };
-        return { exists: !!data };
+    /** Fetch full assignment content from the get-essay-assignment edge function. */
+    async fetchAssignmentContent(assignmentId: string): Promise<FetchContentResult> {
+        const active = await this.getActiveSession();
+        if (!active) return { ok: false, reason: 'unauthenticated' };
+
+        let response: Response;
+        try {
+            response = await fetch(`${this.supabaseUrl}/functions/v1/get-essay-assignment`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${active.session.access_token}`,
+                    apikey: this.supabaseAnonKey,
+                },
+                body: JSON.stringify({ assignmentId }),
+            });
+        } catch {
+            return { ok: false, reason: 'network' };
+        }
+
+        if (response.status === 404) return { ok: false, reason: 'not_found' };
+        if (response.status === 410) return { ok: false, reason: 'expired' };
+        if (!response.ok) return { ok: false, reason: 'invalid_response' };
+
+        const data = await response.json().catch(() => null);
+        return data ? { ok: true, data } : { ok: false, reason: 'invalid_response' };
     }
 }

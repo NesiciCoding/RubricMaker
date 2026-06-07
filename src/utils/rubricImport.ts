@@ -80,8 +80,9 @@ export async function parsePdfToRubric(file: File): Promise<ParsedRubric> {
     // Dynamically import pdfjs-dist
     const pdfjsLib = await import('pdfjs-dist');
 
-    // Set up worker – use CDN to avoid bundling the large worker
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+    // Use the worker bundled with the app — Vite resolves this to the hashed
+    // asset path at build time, avoiding any external CDN dependency.
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).href;
 
     const arrayBuffer = await file.arrayBuffer();
     const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;

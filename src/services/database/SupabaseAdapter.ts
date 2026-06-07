@@ -968,13 +968,14 @@ export class SupabaseAdapter {
             id: string;
             studentEmail: string | null;
             wordCount: number;
+            wordLimitStatus: 'ok' | 'under' | 'over' | null;
             submittedAt: string;
             storagePath: string;
         }>
     > {
         const { data, error } = await this.db()
             .from('essay_submissions')
-            .select('id, student_email, word_count, submitted_at, storage_path')
+            .select('id, student_email, word_count, word_limit_status, submitted_at, storage_path')
             .eq('assignment_id', teacherKey)
             .order('submitted_at', { ascending: false });
         if (error || !data) return [];
@@ -982,6 +983,7 @@ export class SupabaseAdapter {
             id: r.id,
             studentEmail: r.student_email ?? null,
             wordCount: r.word_count,
+            wordLimitStatus: (r.word_limit_status as 'ok' | 'under' | 'over' | null) ?? null,
             submittedAt: r.submitted_at,
             storagePath: r.storage_path,
         }));
@@ -997,6 +999,7 @@ export class SupabaseAdapter {
             assignmentTitle: string;
             studentEmail: string | null;
             wordCount: number;
+            wordLimitStatus: 'ok' | 'under' | 'over' | null;
             submittedAt: string;
             storagePath: string;
         }>
@@ -1004,7 +1007,7 @@ export class SupabaseAdapter {
         const { data, error } = await this.db()
             .from('essay_submissions')
             .select(
-                'id, assignment_id, word_count, submitted_at, storage_path, student_email, essay_assignments(rubric_id, student_id, title)'
+                'id, assignment_id, word_count, word_limit_status, submitted_at, storage_path, student_email, essay_assignments(rubric_id, student_id, title)'
             )
             .order('submitted_at', { ascending: false })
             .limit(500);
@@ -1023,6 +1026,7 @@ export class SupabaseAdapter {
                 assignmentTitle: ea?.title ?? '',
                 studentEmail: r.student_email ?? null,
                 wordCount: r.word_count,
+                wordLimitStatus: (r.word_limit_status as 'ok' | 'under' | 'over' | null) ?? null,
                 submittedAt: r.submitted_at,
                 storagePath: r.storage_path,
             };
@@ -1039,6 +1043,7 @@ export class SupabaseAdapter {
             assignmentId: string;
             studentEmail: string | null;
             wordCount: number;
+            wordLimitStatus: 'ok' | 'under' | 'over' | null;
             submittedAt: string;
             storagePath: string;
         }>
@@ -1046,7 +1051,7 @@ export class SupabaseAdapter {
         const { data, error } = await this.db()
             .from('essay_submissions')
             .select(
-                'id, assignment_id, student_email, word_count, submitted_at, storage_path, essay_assignments!inner(rubric_id, student_id)'
+                'id, assignment_id, student_email, word_count, word_limit_status, submitted_at, storage_path, essay_assignments!inner(rubric_id, student_id)'
             )
             .eq('essay_assignments.rubric_id', rubricId)
             .eq('essay_assignments.student_id', studentId)
@@ -1057,6 +1062,7 @@ export class SupabaseAdapter {
             assignmentId: r.assignment_id,
             studentEmail: r.student_email ?? null,
             wordCount: r.word_count,
+            wordLimitStatus: (r.word_limit_status as 'ok' | 'under' | 'over' | null) ?? null,
             submittedAt: r.submitted_at,
             storagePath: r.storage_path,
         }));
@@ -1178,6 +1184,29 @@ export class SupabaseAdapter {
                 mode: row.mode as 'read' | 'edit',
             };
         });
+    }
+
+    async lookupUserByEmail(email: string): Promise<{ userId: string; displayName?: string } | null> {
+        const { data } = await this.db()
+            .from('profiles')
+            .select('id, display_name')
+            .eq('email', email.trim().toLowerCase())
+            .maybeSingle();
+        if (!data) return null;
+        return {
+            userId: (data as { id: string; display_name?: string }).id,
+            displayName: (data as { id: string; display_name?: string }).display_name ?? undefined,
+        };
+    }
+
+    async shareRubricWithEmail(
+        rubricId: string,
+        email: string,
+        mode: 'read' | 'edit'
+    ): Promise<SyncResult & { notFound?: boolean }> {
+        const user = await this.lookupUserByEmail(email);
+        if (!user) return { success: false, notFound: true, error: `No account found for ${email}` };
+        return this.shareRubric(rubricId, user.userId, mode);
     }
 
     async fetchSharedRubrics(): Promise<Rubric[]> {

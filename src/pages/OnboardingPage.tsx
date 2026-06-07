@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { CheckCircle2, Loader } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
+import type { UserRole } from '../types';
 
-type RoleChoice = 'user' | 'admin';
+type RoleChoice = UserRole;
 type SchoolAction = 'create' | 'join';
 type Step = 'role' | 'school' | 'done';
 
@@ -16,7 +17,8 @@ type Step = 'role' | 'school' | 'done';
  */
 export default function OnboardingPage() {
     const { t } = useTranslation();
-    const { createSchool, joinSchool, updateSettings, signOutFromDatabase } = useApp();
+    const { createSchool, joinSchool, updateSettings, signOutFromDatabase, updateUserRole, getCurrentDatabaseUserId } =
+        useApp();
 
     const [step, setStep] = useState<Step>('role');
     const [role, setRole] = useState<RoleChoice>('user');
@@ -67,6 +69,29 @@ export default function OnboardingPage() {
             } finally {
                 setBusy(false);
             }
+        }
+    }
+
+    async function handleRoleNext() {
+        if (role === 'student') {
+            setBusy(true);
+            setError('');
+            try {
+                const currentId = getCurrentDatabaseUserId();
+                if (currentId) {
+                    const result = await updateUserRole(currentId, 'student');
+                    if (!result.success) {
+                        setError(result.error ?? t('onboarding.error_role_update'));
+                        return;
+                    }
+                }
+                updateSettings({ needsOnboarding: false, userRole: 'student' });
+                setStep('done');
+            } finally {
+                setBusy(false);
+            }
+        } else {
+            setStep('school');
         }
     }
 
@@ -123,28 +148,43 @@ export default function OnboardingPage() {
                                 {t('onboarding.step_role')}
                             </h2>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                                {(['user', 'admin'] as RoleChoice[]).map((r) => (
-                                    <button
-                                        key={r}
-                                        style={role === r ? selectedCardStyle : cardStyle}
-                                        onClick={() => setRole(r)}
-                                    >
-                                        <div style={{ fontWeight: 600, color: '#1e293b', marginBottom: 4 }}>
-                                            {t(`onboarding.role_${r === 'user' ? 'teacher' : 'admin'}`)}
-                                        </div>
-                                        <div style={{ fontSize: '0.875rem', color: '#64748b' }}>
-                                            {t(`onboarding.role_${r === 'user' ? 'teacher' : 'admin'}_desc`)}
-                                        </div>
-                                    </button>
-                                ))}
+                                {(['user', 'admin', 'student'] as RoleChoice[]).map((r) => {
+                                    const labelKey = r === 'user' ? 'teacher' : r === 'admin' ? 'admin' : 'student';
+                                    return (
+                                        <button
+                                            key={r}
+                                            style={role === r ? selectedCardStyle : cardStyle}
+                                            onClick={() => setRole(r)}
+                                        >
+                                            <div style={{ fontWeight: 600, color: '#1e293b', marginBottom: 4 }}>
+                                                {t(`onboarding.role_${labelKey}`)}
+                                            </div>
+                                            <div style={{ fontSize: '0.875rem', color: '#64748b' }}>
+                                                {t(`onboarding.role_${labelKey}_desc`)}
+                                            </div>
+                                        </button>
+                                    );
+                                })}
                             </div>
                             <button
                                 className="btn btn-primary"
-                                style={{ marginTop: 24, width: '100%' }}
-                                onClick={() => setStep('school')}
+                                style={{
+                                    marginTop: 24,
+                                    width: '100%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: 6,
+                                }}
+                                onClick={handleRoleNext}
+                                disabled={busy}
                             >
+                                {busy && <Loader size={14} className="spin" />}
                                 {t('onboarding.btn_next')}
                             </button>
+                            {error && (
+                                <p style={{ margin: '12px 0 0', color: '#dc2626', fontSize: '0.875rem' }}>{error}</p>
+                            )}
                         </>
                     )}
 
@@ -286,7 +326,7 @@ export default function OnboardingPage() {
                                 {t('onboarding.student_linked_title')}
                             </h2>
                             <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>
-                                {t('onboarding.student_linked_btn')}
+                                {role === 'student' ? t('onboarding.student_done_body') : t('onboarding.done_body')}
                             </p>
                         </div>
                     )}

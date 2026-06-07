@@ -180,3 +180,151 @@ describe('CefrOverviewPage — a11y', () => {
         expect(results.violations).toHaveLength(0);
     });
 });
+
+// ─── Sidebar ──────────────────────────────────────────────────────────────────
+
+describe('Sidebar — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations', async () => {
+        const { default: Sidebar } = await import('../../components/Layout/Sidebar');
+        render(
+            <MemoryRouter>
+                <Sidebar />
+            </MemoryRouter>
+        );
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+
+    it('renders a <nav> inside an <aside>', async () => {
+        const { default: Sidebar } = await import('../../components/Layout/Sidebar');
+        render(
+            <MemoryRouter>
+                <Sidebar />
+            </MemoryRouter>
+        );
+        expect(document.querySelector('aside')).not.toBeNull();
+        expect(document.querySelector('aside nav')).not.toBeNull();
+    });
+
+    it('aside has an aria-label', async () => {
+        const { default: Sidebar } = await import('../../components/Layout/Sidebar');
+        render(
+            <MemoryRouter>
+                <Sidebar />
+            </MemoryRouter>
+        );
+        const aside = document.querySelector('aside');
+        expect(aside?.getAttribute('aria-label')).toBeTruthy();
+    });
+});
+
+// ─── NotificationBell ─────────────────────────────────────────────────────────
+
+vi.mock('../../hooks/useOverdueStudents', () => ({
+    useOverdueStudents: () => ({ overdueStudents: [], threshold: 30 }),
+}));
+
+describe('NotificationBell — a11y', () => {
+    it('has no axe violations (closed state)', async () => {
+        const { default: NotificationBell } = await import('../../components/Layout/NotificationBell');
+        render(
+            <MemoryRouter>
+                <NotificationBell />
+            </MemoryRouter>
+        );
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+
+    it('toggle button has aria-expanded=false when closed', async () => {
+        const { default: NotificationBell } = await import('../../components/Layout/NotificationBell');
+        render(
+            <MemoryRouter>
+                <NotificationBell />
+            </MemoryRouter>
+        );
+        const btn = document.querySelector('button[aria-expanded]');
+        expect(btn?.getAttribute('aria-expanded')).toBe('false');
+    });
+});
+
+// ─── EssayAssignmentModal ─────────────────────────────────────────────────────
+
+vi.mock('../../hooks/useDbStatus', () => ({
+    useDbStatus: () => ({ isConnected: false, userId: null }),
+}));
+
+describe('EssayAssignmentModal — a11y', () => {
+    it('has no axe violations', async () => {
+        const { default: EssayAssignmentModal } = await import('../../components/Essay/EssayAssignmentModal');
+        render(
+            <EssayAssignmentModal
+                rubricId="r1"
+                rubricName="Test Rubric"
+                studentId="s1"
+                studentName="Alice"
+                onClose={vi.fn()}
+                onOpenSlipSheet={vi.fn()}
+                classStudents={[{ id: 's1', name: 'Alice' }]}
+            />
+        );
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+
+    it('all text inputs have associated labels', async () => {
+        const { default: EssayAssignmentModal } = await import('../../components/Essay/EssayAssignmentModal');
+        render(
+            <EssayAssignmentModal
+                rubricId="r1"
+                rubricName="Test Rubric"
+                studentId="s1"
+                studentName="Alice"
+                onClose={vi.fn()}
+                onOpenSlipSheet={vi.fn()}
+                classStudents={[{ id: 's1', name: 'Alice' }]}
+            />
+        );
+        const inputs = Array.from(document.querySelectorAll<HTMLInputElement>('input:not([type=checkbox])'));
+        inputs.forEach((input) => {
+            const label = document.querySelector(`label[for="${input.id}"]`);
+            expect(input.id, `input is missing an id or label: ${input.placeholder}`).toBeTruthy();
+            expect(label, `label missing for input#${input.id}`).not.toBeNull();
+        });
+    });
+});
+
+// ─── BloomsPyramidChart ───────────────────────────────────────────────────────
+
+describe('BloomsPyramidChart — a11y', () => {
+    it('has no axe violations', async () => {
+        const { default: BloomsPyramidChart } = await import('../../components/Statistics/BloomsPyramidChart');
+        const levels = [
+            { id: 'l1', order: 1, labelEn: 'Remember', labelNl: 'Onthouden', color: '#3b82f6', value: 75 },
+            { id: 'l2', order: 2, labelEn: 'Understand', labelNl: 'Begrijpen', color: '#22c55e', value: 60 },
+        ];
+        render(<BloomsPyramidChart levels={levels} lang="en" />);
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+
+    it('renders a figure with aria-label', async () => {
+        const { default: BloomsPyramidChart } = await import('../../components/Statistics/BloomsPyramidChart');
+        const levels = [{ id: 'l1', order: 1, labelEn: 'Remember', labelNl: 'Onthouden', color: '#3b82f6', value: 75 }];
+        render(<BloomsPyramidChart levels={levels} lang="en" />);
+        const figure = document.querySelector('figure');
+        expect(figure).not.toBeNull();
+        expect(figure?.getAttribute('aria-label')).toBeTruthy();
+    });
+
+    it('renders a sr-only data list with level values', async () => {
+        const { default: BloomsPyramidChart } = await import('../../components/Statistics/BloomsPyramidChart');
+        const levels = [{ id: 'l1', order: 1, labelEn: 'Remember', labelNl: 'Onthouden', color: '#3b82f6', value: 75 }];
+        render(<BloomsPyramidChart levels={levels} lang="en" />);
+        const srList = document.querySelector('ul.sr-only');
+        expect(srList).not.toBeNull();
+        expect(srList?.textContent).toContain('75%');
+    });
+});

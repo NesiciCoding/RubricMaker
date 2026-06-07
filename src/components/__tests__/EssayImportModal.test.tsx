@@ -2,6 +2,14 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import EssayImportModal from '../Essay/EssayImportModal';
+import type { EssaySubmission } from '../../types';
+
+vi.mock('react-i18next', () => ({
+    useTranslation: () => ({
+        t: (key: string) => key,
+        i18n: { language: 'en', changeLanguage: vi.fn() },
+    }),
+}));
 
 vi.mock('../../utils/essaySubmissionCode', () => ({
     decodeEssaySubmission: vi.fn(),
@@ -132,5 +140,45 @@ describe('EssayImportModal', () => {
         expect(screen.getByText(/Invalid submission code/i)).toBeInTheDocument();
         fireEvent.change(textarea, { target: { value: 'updated' } });
         expect(screen.queryByText(/Invalid submission code/i)).not.toBeInTheDocument();
+    });
+
+    describe('word limit status badges', () => {
+        function importWith(wordLimitStatus: EssaySubmission['wordLimitStatus']) {
+            mockDecode.mockReturnValue({ ...validSubmission, wordLimitStatus });
+            render(<EssayImportModal {...baseProps} />);
+            fireEvent.change(screen.getByPlaceholderText(/Paste the student's submission code/i), {
+                target: { value: 'code' },
+            });
+            fireEvent.click(screen.getByRole('button', { name: /import essay/i }));
+        }
+
+        it('shows over-limit badge after importing an over-limit submission', () => {
+            importWith('over');
+            // t('essay.word_limit_over') returns the key verbatim; EssayImportModal uses useTranslation
+            expect(screen.getByText(/essay\.word_limit_over/i)).toBeInTheDocument();
+        });
+
+        it('shows under-limit badge after importing an under-limit submission', () => {
+            importWith('under');
+            expect(screen.getByText(/essay\.word_limit_under/i)).toBeInTheDocument();
+        });
+
+        it('shows no limit badge when status is "ok"', () => {
+            importWith('ok');
+            expect(screen.queryByText(/essay\.word_limit_over/i)).not.toBeInTheDocument();
+            expect(screen.queryByText(/essay\.word_limit_under/i)).not.toBeInTheDocument();
+        });
+
+        it('shows no limit badge for legacy submissions without a status', () => {
+            importWith(undefined);
+            expect(screen.queryByText(/essay\.word_limit_over/i)).not.toBeInTheDocument();
+            expect(screen.queryByText(/essay\.word_limit_under/i)).not.toBeInTheDocument();
+        });
+
+        it('shows no limit badge when status is null (no limits configured on assignment)', () => {
+            importWith(null);
+            expect(screen.queryByText(/essay\.word_limit_over/i)).not.toBeInTheDocument();
+            expect(screen.queryByText(/essay\.word_limit_under/i)).not.toBeInTheDocument();
+        });
     });
 });

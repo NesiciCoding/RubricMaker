@@ -52,9 +52,9 @@ export class StudentEssayPage {
         return this.page.locator('text=/\\d+ words/');
     }
 
-    /** The "Submit essay" button */
+    /** The submit button — label changes to "Too many words" when over the word limit */
     submitButton(): Locator {
-        return this.page.getByRole('button', { name: /submit essay/i });
+        return this.page.getByRole('button', { name: /submit essay|too many words/i });
     }
 
     // ── Post-submission ───────────────────────────────────────────────────────
@@ -143,6 +143,67 @@ export function buildEssayCode(overrides: TestEssayAssignment = {}): string {
     };
     return btoa(encodeURIComponent(JSON.stringify(assignment)));
 }
+
+// ── Short-code builder ────────────────────────────────────────────────────────
+
+/**
+ * Return a bare teacherKey (short-code format).
+ * The page detects this as a short code and reads Supabase credentials from
+ * the rm_supabase_config localStorage entry or VITE_SUPABASE_* env vars.
+ */
+export function buildShortCode(teacherKey = 'e2etestkey0123456789A'): string {
+    return teacherKey;
+}
+
+// ── Edge-function mock ────────────────────────────────────────────────────────
+
+export interface MockAssignmentContent {
+    rubricId?: string;
+    studentId?: string;
+    title?: string;
+    prompt?: string | null;
+    minWords?: number | null;
+    maxWords?: number | null;
+    timeLimitMinutes?: number | null;
+    requireSEB?: boolean;
+    expiresAt?: string | null;
+    readOnlyAfterSubmit?: boolean;
+}
+
+/** Route the get-essay-assignment edge function call to a fake response. */
+export async function mockGetEssayAssignment(
+    page: Page,
+    supabaseUrl: string,
+    opts: { fail?: boolean; content?: MockAssignmentContent } = {}
+): Promise<void> {
+    await page.route(`${supabaseUrl}/functions/v1/get-essay-assignment`, (route) => {
+        if (opts.fail) {
+            return route.fulfill({
+                status: 404,
+                contentType: 'application/json',
+                body: JSON.stringify({ error: 'Assignment not found' }),
+            });
+        }
+        route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+                rubricId: opts.content?.rubricId ?? 'test-rubric-id',
+                studentId: opts.content?.studentId ?? 'test-student-id',
+                title: opts.content?.title ?? 'E2E Short Code Essay',
+                prompt: opts.content?.prompt ?? 'Write about the importance of automated testing.',
+                minWords: opts.content?.minWords ?? null,
+                maxWords: opts.content?.maxWords ?? null,
+                timeLimitMinutes: opts.content?.timeLimitMinutes ?? null,
+                requireSEB: opts.content?.requireSEB ?? false,
+                expiresAt: opts.content?.expiresAt ?? null,
+                readOnlyAfterSubmit: opts.content?.readOnlyAfterSubmit ?? true,
+            }),
+        });
+    });
+}
+
+// ── Portal session builder ────────────────────────────────────────────────────
 
 export function buildPortalSession(email: string, userId = 'portal-user-id') {
     const fakeJwt =

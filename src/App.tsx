@@ -1,5 +1,5 @@
-import React, { Suspense, lazy, useMemo, useState } from 'react';
-import { Routes, Route, Navigate, useParams } from 'react-router-dom';
+import React, { Suspense, lazy, useMemo, useState, useEffect } from 'react';
+import { Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom';
 import Sidebar from './components/Layout/Sidebar';
 import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
@@ -40,6 +40,20 @@ const DocsPage = lazy(() => import('./pages/DocsPage'));
 function GradeStudentRoute() {
     const { studentId } = useParams();
     return <GradeStudent key={studentId} />;
+}
+
+function RouteAnnouncer() {
+    const location = useLocation();
+    const [msg, setMsg] = useState('');
+    useEffect(() => {
+        const id = setTimeout(() => setMsg(document.title), 50);
+        return () => clearTimeout(id);
+    }, [location.pathname]);
+    return (
+        <span role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+            {msg}
+        </span>
+    );
 }
 
 const Spinner = () => {
@@ -162,8 +176,9 @@ export default function App() {
                         },
                     }}
                 />
+                <RouteAnnouncer />
                 <Sidebar mobileOpen={mobileMenuOpen} onMobileClose={() => setMobileMenuOpen(false)} />
-                <div className="main-area" id="main-content">
+                <main className="main-area" id="main-content">
                     <ErrorBoundary>
                         <Suspense fallback={<Spinner />}>
                             <Routes>
@@ -198,7 +213,7 @@ export default function App() {
                             </Routes>
                         </Suspense>
                     </ErrorBoundary>
-                </div>
+                </main>
             </div>
         </MobileMenuContext.Provider>
     );

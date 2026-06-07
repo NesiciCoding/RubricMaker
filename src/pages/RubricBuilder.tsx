@@ -27,6 +27,8 @@ import {
     MoveLeft,
     MoveRight,
     Copy,
+    Files,
+    Layers,
     GripHorizontal,
     Clock,
     RotateCcw,
@@ -237,10 +239,28 @@ export default function RubricBuilder() {
 
     const onDragEnd = (result: DropResult) => {
         if (!result.destination) return;
-        const items = Array.from(criteria);
-        const [reorderedItem] = items.splice(result.source.index, 1);
-        items.splice(result.destination.index, 0, reorderedItem);
-        setCriteria(items);
+        const { source, destination } = result;
+        const droppableId = destination.droppableId;
+
+        if (droppableId === 'criteria') {
+            // Reorder criteria
+            const items = Array.from(criteria);
+            const [moved] = items.splice(source.index, 1);
+            items.splice(destination.index, 0, moved);
+            setCriteria(items);
+        } else if (droppableId.startsWith('levels-')) {
+            // Reorder levels within a criterion
+            const cid = droppableId.slice('levels-'.length);
+            setCriteria((prev) =>
+                prev.map((c) => {
+                    if (c.id !== cid) return c;
+                    const lvls = Array.from(c.levels);
+                    const [moved] = lvls.splice(source.index, 1);
+                    lvls.splice(destination.index, 0, moved);
+                    return { ...c, levels: lvls };
+                })
+            );
+        }
     };
 
     const handleExport = async (type: 'pdf' | 'docx' | 'json') => {
@@ -262,6 +282,31 @@ export default function RubricBuilder() {
         }
     };
 
+    const USER_TEMPLATES_KEY = 'rm_user_templates';
+
+    function handleSaveAsTemplate() {
+        const rubric = getRubricData();
+        const template = {
+            id: rubric.id !== 'temp' ? rubric.id : `tpl_${Date.now()}`,
+            name: rubric.name,
+            subject: rubric.subject,
+            description: rubric.description,
+            criteria: rubric.criteria,
+            scoringMode: rubric.scoringMode,
+            totalMaxPoints: rubric.totalMaxPoints,
+            format: rubric.format,
+            savedAt: new Date().toISOString(),
+        };
+        try {
+            const existing = JSON.parse(localStorage.getItem(USER_TEMPLATES_KEY) ?? '[]');
+            const filtered = existing.filter((t: { id: string }) => t.id !== template.id);
+            localStorage.setItem(USER_TEMPLATES_KEY, JSON.stringify([template, ...filtered].slice(0, 20)));
+            showToast(t('rubricBuilder.save_as_template_success', `"${rubric.name}" saved as template`), 'success');
+        } catch {
+            showToast(t('toast.export_error'), 'error');
+        }
+    }
+
     function handlePrint() {
         const orientation = format.orientation || 'portrait';
         const style = document.createElement('style');
@@ -277,6 +322,19 @@ export default function RubricBuilder() {
             return;
         }
         setNameError('');
+        // Warn (non-blocking) if weights are outside a sensible range in weighted mode
+        if (scoringMode === 'weighted-percentage' && criteria.length > 0) {
+            const totalWeight = criteria.reduce((sum, c) => sum + (c.weight || 0), 0);
+            if (totalWeight < 85 || totalWeight > 115) {
+                showToast(
+                    t(
+                        'rubricBuilder.weight_total_warning',
+                        `Weights total ${totalWeight}% (expected 100%). You can still save — the grade engine normalises them.`
+                    ),
+                    'warning'
+                );
+            }
+        }
         const rubricData = {
             name: name.trim(),
             subject,
@@ -328,30 +386,6 @@ export default function RubricBuilder() {
         studentRubrics,
         peerReviews,
     ]);
-
-    // ── Save as Template ────────────────────────────────────────────────────────
-    const USER_TEMPLATES_KEY = 'rm_user_templates';
-
-    const [savedAsTemplate, setSavedAsTemplate] = useState(false);
-
-    function handleSaveAsTemplate() {
-        if (!name.trim()) return;
-        const raw = localStorage.getItem(USER_TEMPLATES_KEY);
-        const existing: Array<{ id: string; name: string; subject: string; description: string; criteria: typeof criteria; savedAt: string }> =
-            raw ? JSON.parse(raw) : [];
-        const entry = {
-            id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2),
-            name: name.trim(),
-            subject,
-            description,
-            criteria,
-            savedAt: new Date().toISOString(),
-        };
-        const filtered = existing.filter((t) => t.name !== entry.name);
-        localStorage.setItem(USER_TEMPLATES_KEY, JSON.stringify([entry, ...filtered].slice(0, 20)));
-        setSavedAsTemplate(true);
-        setTimeout(() => setSavedAsTemplate(false), 2000);
-    }
 
     // ── Criterion operations ────────────────────────────────────────────────────
     function moveCriterion(idx: number, dir: -1 | 1) {
@@ -715,6 +749,23 @@ export default function RubricBuilder() {
                                         >
                                             <Printer size={14} /> {t('rubricBuilder.action_print')}
                                         </button>
+                                        <hr
+                                            style={{
+                                                margin: '4px 0',
+                                                border: 'none',
+                                                borderTop: '1px solid var(--border)',
+                                            }}
+                                        />
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            style={{ justifyContent: 'flex-start' }}
+                                            onClick={() => {
+                                                setShowExportMenu(false);
+                                                handleSaveAsTemplate();
+                                            }}
+                                        >
+                                            <Layers size={14} /> {t('rubricBuilder.action_save_as_template')}
+                                        </button>
                                     </div>
                                 </>
                             )}
@@ -728,14 +779,6 @@ export default function RubricBuilder() {
                                 <Clock size={15} /> {t('rubricBuilder.version_history')}
                             </button>
                         )}
-                        <button
-                            className="btn btn-secondary btn-sm"
-                            onClick={handleSaveAsTemplate}
-                            title="Save current rubric as a reusable template"
-                        >
-                            <Copy size={15} />{' '}
-                            {savedAsTemplate ? 'Saved!' : 'Save as Template'}
-                        </button>
                         <button className="btn btn-primary btn-sm" onClick={handleSave}>
                             <Save size={15} />{' '}
                             {saved ? t('rubricBuilder.action_saved') : t('rubricBuilder.action_save')}
@@ -756,7 +799,7 @@ export default function RubricBuilder() {
                     <div style={{ display: viewMode === 'form' ? 'block' : 'none' }}>
                         {/* Rubric Meta */}
                         <div className="card" style={{ marginBottom: 20 }}>
-                            <h3 style={{ marginBottom: 16 }}>Rubric Details</h3>
+                            <h3 style={{ marginBottom: 16 }}>{t('rubricBuilder.section_rubric_details')}</h3>
                             <div className="grid-2" style={{ gap: 12 }}>
                                 <div className="form-group">
                                     <label>Rubric Name *</label>
@@ -1046,6 +1089,65 @@ export default function RubricBuilder() {
                             )}
                         </div>
 
+                        {/* Weight running total (weighted-percentage mode only) */}
+                        {scoringMode === 'weighted-percentage' &&
+                            criteria.length > 0 &&
+                            (() => {
+                                const totalWeight = criteria.reduce((sum, c) => sum + (c.weight || 0), 0);
+                                const ok = totalWeight >= 98 && totalWeight <= 102;
+                                const warn = !ok && totalWeight >= 85 && totalWeight <= 115;
+                                const color = ok
+                                    ? 'var(--green, #10b981)'
+                                    : warn
+                                      ? 'var(--yellow, #f59e0b)'
+                                      : 'var(--red, #ef4444)';
+                                return (
+                                    <div
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 8,
+                                            padding: '6px 12px',
+                                            borderRadius: 8,
+                                            background: ok
+                                                ? 'color-mix(in srgb, var(--green, #10b981) 10%, transparent)'
+                                                : 'color-mix(in srgb, var(--yellow, #f59e0b) 10%, transparent)',
+                                            border: `1px solid ${color}40`,
+                                            marginTop: 16,
+                                            marginBottom: 4,
+                                            fontSize: '0.82rem',
+                                        }}
+                                    >
+                                        <span style={{ color: 'var(--text-muted)' }}>
+                                            {t('rubricBuilder.weight_total_label', 'Total weight:')}
+                                        </span>
+                                        <span style={{ fontWeight: 700, color }}>{totalWeight}%</span>
+                                        {!ok && (
+                                            <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                                                {t('rubricBuilder.weight_total_hint', '(should be 100%)')}
+                                            </span>
+                                        )}
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            style={{ marginLeft: 'auto', fontSize: '0.75rem', color: 'var(--accent)' }}
+                                            onClick={() => {
+                                                const even = Math.round(100 / criteria.length);
+                                                const remainder = 100 - even * (criteria.length - 1);
+                                                setCriteria((prev) =>
+                                                    prev.map((c, i) => ({
+                                                        ...c,
+                                                        weight: i === prev.length - 1 ? remainder : even,
+                                                    }))
+                                                );
+                                            }}
+                                            title={t('rubricBuilder.weight_distribute_evenly', 'Distribute evenly')}
+                                        >
+                                            {t('rubricBuilder.weight_distribute_evenly', 'Distribute evenly')}
+                                        </button>
+                                    </div>
+                                );
+                            })()}
+
                         {/* Criteria */}
                         <div
                             style={{
@@ -1064,14 +1166,14 @@ export default function RubricBuilder() {
                                             className="btn btn-ghost btn-sm"
                                             onClick={() => setCollapsedCriteria(new Set())}
                                         >
-                                            Expand all
+                                            {t('rubricBuilder.action_expand_all')}
                                         </button>
                                     ) : (
                                         <button
                                             className="btn btn-ghost btn-sm"
                                             onClick={() => setCollapsedCriteria(new Set(criteria.map((c) => c.id)))}
                                         >
-                                            Collapse all
+                                            {t('rubricBuilder.action_collapse_all')}
                                         </button>
                                     ))}
                                 {(cefrSkill === 'speaking_production' || cefrSkill === 'speaking_interaction') && (
@@ -1092,9 +1194,9 @@ export default function RubricBuilder() {
                                 <button
                                     className="btn btn-secondary btn-sm"
                                     onClick={pasteFromClipboard}
-                                    title="Paste criterion from clipboard"
+                                    title={t('rubricBuilder.action_paste_criterion')}
                                 >
-                                    <Plus size={15} /> Paste
+                                    <Plus size={15} /> {t('rubricBuilder.action_paste_criterion')}
                                 </button>
                                 <button
                                     className="btn btn-primary btn-sm"
@@ -1580,7 +1682,10 @@ export default function RubricBuilder() {
                                                                     className="btn btn-ghost btn-icon btn-sm"
                                                                     style={{ color: 'var(--accent)' }}
                                                                     onClick={() => copyToClipboard(criterion)}
-                                                                    title="Copy to clipboard"
+                                                                    title={t('rubricBuilder.action_copy_criterion')}
+                                                                    aria-label={t(
+                                                                        'rubricBuilder.action_copy_criterion'
+                                                                    )}
                                                                 >
                                                                     <Copy size={15} />
                                                                 </button>
@@ -1588,9 +1693,14 @@ export default function RubricBuilder() {
                                                                     className="btn btn-ghost btn-icon btn-sm"
                                                                     style={{ color: 'var(--text-muted)' }}
                                                                     onClick={() => duplicateCriterion(cIdx)}
-                                                                    title="Duplicate Criterion"
+                                                                    title={t(
+                                                                        'rubricBuilder.action_duplicate_criterion'
+                                                                    )}
+                                                                    aria-label={t(
+                                                                        'rubricBuilder.action_duplicate_criterion'
+                                                                    )}
                                                                 >
-                                                                    <Copy size={15} />
+                                                                    <Files size={15} />
                                                                 </button>
                                                                 <button
                                                                     className="btn btn-ghost btn-icon btn-sm"
@@ -1645,8 +1755,9 @@ export default function RubricBuilder() {
                                                                                 fontWeight: 600,
                                                                             }}
                                                                         >
-                                                                            Proficiency descriptor — what "meets
-                                                                            standard" looks like
+                                                                            {t(
+                                                                                'rubricBuilder.single_point_descriptor_label'
+                                                                            )}
                                                                         </div>
                                                                         <textarea
                                                                             value={
@@ -1662,7 +1773,9 @@ export default function RubricBuilder() {
                                                                                     { description: e.target.value }
                                                                                 );
                                                                             }}
-                                                                            placeholder="Describe what a student does when they meet this standard…"
+                                                                            placeholder={t(
+                                                                                'rubricBuilder.single_point_descriptor_placeholder'
+                                                                            )}
                                                                             rows={4}
                                                                             style={{
                                                                                 width: '100%',
@@ -1679,7 +1792,9 @@ export default function RubricBuilder() {
                                                                                 fontWeight: 600,
                                                                             }}
                                                                         >
-                                                                            Points (meets)
+                                                                            {t(
+                                                                                'rubricBuilder.single_point_meets_points'
+                                                                            )}
                                                                         </div>
                                                                         <input
                                                                             type="number"
@@ -1706,653 +1821,783 @@ export default function RubricBuilder() {
                                                         {!collapsedCriteria.has(criterion.id) &&
                                                             scoringMode !== 'single-point' && (
                                                                 <div style={{ overflowX: 'auto' }}>
-                                                                    <div
-                                                                        style={{
-                                                                            display: 'flex',
-                                                                            gap: 10,
-                                                                            minWidth: 'max-content',
-                                                                            paddingBottom: 4,
-                                                                        }}
+                                                                    <Droppable
+                                                                        droppableId={`levels-${criterion.id}`}
+                                                                        direction="horizontal"
                                                                     >
-                                                                        {criterion.levels.map((level) => {
-                                                                            const levelKey = `${criterion.id}_${level.id}`;
-                                                                            const subExpanded =
-                                                                                expandedSubItems.has(levelKey);
-                                                                            return (
-                                                                                <div
-                                                                                    key={level.id}
-                                                                                    style={{
-                                                                                        width: 210,
-                                                                                        flexShrink: 0,
-                                                                                        background:
-                                                                                            'var(--bg-elevated)',
-                                                                                        border: '1px solid var(--border)',
-                                                                                        borderRadius: 8,
-                                                                                        padding: 12,
-                                                                                    }}
-                                                                                >
-                                                                                    {/* Level label + delete */}
-                                                                                    <div
-                                                                                        style={{
-                                                                                            display: 'flex',
-                                                                                            gap: 6,
-                                                                                            marginBottom: 8,
-                                                                                        }}
-                                                                                    >
-                                                                                        <input
-                                                                                            type="text"
-                                                                                            value={level.label}
-                                                                                            onChange={(e) =>
-                                                                                                updateLevel(
-                                                                                                    criterion.id,
-                                                                                                    level.id,
-                                                                                                    {
-                                                                                                        label: e.target
-                                                                                                            .value,
+                                                                        {(levelProvided) => (
+                                                                            <div
+                                                                                {...levelProvided.droppableProps}
+                                                                                ref={levelProvided.innerRef}
+                                                                                style={{
+                                                                                    display: 'flex',
+                                                                                    gap: 10,
+                                                                                    minWidth: 'max-content',
+                                                                                    paddingBottom: 4,
+                                                                                }}
+                                                                            >
+                                                                                {criterion.levels.map(
+                                                                                    (level, lvlIdx) => (
+                                                                                        <Draggable
+                                                                                            key={level.id}
+                                                                                            draggableId={`level-${level.id}`}
+                                                                                            index={lvlIdx}
+                                                                                        >
+                                                                                            {(lvlDraggable) => (
+                                                                                                <div
+                                                                                                    ref={
+                                                                                                        lvlDraggable.innerRef
                                                                                                     }
-                                                                                                )
-                                                                                            }
-                                                                                            style={{
-                                                                                                flex: 1,
-                                                                                                fontWeight: 600,
-                                                                                            }}
-                                                                                            placeholder={t(
-                                                                                                'rubricBuilder.placeholder_level_name'
-                                                                                            )}
-                                                                                        />
-                                                                                        {criterion.levels.length >
-                                                                                            1 && (
-                                                                                            <button
-                                                                                                className="btn btn-ghost btn-icon btn-sm"
-                                                                                                style={{
-                                                                                                    color: 'var(--red)',
-                                                                                                }}
-                                                                                                onClick={() =>
-                                                                                                    deleteLevel(
-                                                                                                        criterion.id,
-                                                                                                        level.id
-                                                                                                    )
-                                                                                                }
-                                                                                            >
-                                                                                                <Trash2 size={13} />
-                                                                                            </button>
-                                                                                        )}
-                                                                                    </div>
-
-                                                                                    {/* Min/Max points */}
-                                                                                    <div
-                                                                                        style={{
-                                                                                            display: 'flex',
-                                                                                            gap: 6,
-                                                                                            marginBottom: 8,
-                                                                                            alignItems: 'center',
-                                                                                        }}
-                                                                                    >
-                                                                                        <div style={{ flex: 1 }}>
-                                                                                            <div
-                                                                                                className="text-xs text-muted"
-                                                                                                style={{
-                                                                                                    marginBottom: 2,
-                                                                                                }}
-                                                                                            >
-                                                                                                {t(
-                                                                                                    'rubricBuilder.label_min_pts'
-                                                                                                )}
-                                                                                            </div>
-                                                                                            <input
-                                                                                                type="number"
-                                                                                                value={level.minPoints}
-                                                                                                min={0}
-                                                                                                onChange={(e) =>
-                                                                                                    updateLevel(
-                                                                                                        criterion.id,
-                                                                                                        level.id,
-                                                                                                        {
-                                                                                                            minPoints:
-                                                                                                                Number(
-                                                                                                                    e
-                                                                                                                        .target
-                                                                                                                        .value
-                                                                                                                ),
-                                                                                                        }
-                                                                                                    )
-                                                                                                }
-                                                                                            />
-                                                                                        </div>
-                                                                                        <span
-                                                                                            style={{
-                                                                                                color: 'var(--text-muted)',
-                                                                                                paddingTop: 16,
-                                                                                            }}
-                                                                                        >
-                                                                                            –
-                                                                                        </span>
-                                                                                        <div style={{ flex: 1 }}>
-                                                                                            <div
-                                                                                                className="text-xs text-muted"
-                                                                                                style={{
-                                                                                                    marginBottom: 2,
-                                                                                                }}
-                                                                                            >
-                                                                                                {t(
-                                                                                                    'rubricBuilder.label_max_pts'
-                                                                                                )}
-                                                                                            </div>
-                                                                                            <input
-                                                                                                type="number"
-                                                                                                value={level.maxPoints}
-                                                                                                min={0}
-                                                                                                onChange={(e) =>
-                                                                                                    updateLevel(
-                                                                                                        criterion.id,
-                                                                                                        level.id,
-                                                                                                        {
-                                                                                                            maxPoints:
-                                                                                                                Number(
-                                                                                                                    e
-                                                                                                                        .target
-                                                                                                                        .value
-                                                                                                                ),
-                                                                                                        }
-                                                                                                    )
-                                                                                                }
-                                                                                            />
-                                                                                        </div>
-                                                                                    </div>
-
-                                                                                    {/* Description */}
-                                                                                    <textarea
-                                                                                        value={level.description}
-                                                                                        onChange={(e) =>
-                                                                                            updateLevel(
-                                                                                                criterion.id,
-                                                                                                level.id,
-                                                                                                {
-                                                                                                    description:
-                                                                                                        e.target.value,
-                                                                                                }
-                                                                                            )
-                                                                                        }
-                                                                                        placeholder={t(
-                                                                                            'rubricBuilder.placeholder_level_description'
-                                                                                        )}
-                                                                                        rows={3}
-                                                                                        style={{
-                                                                                            fontSize: '0.8rem',
-                                                                                            width: '100%',
-                                                                                            marginBottom:
-                                                                                                level.description &&
-                                                                                                /\b(good|adequate|poor|excellent|satisfactory|bad|fair|very good|great|wonderful)\b/i.test(
-                                                                                                    level.description
-                                                                                                ) &&
-                                                                                                !/\b(student|demonstrates|shows|uses|writes|includes|provides|explains|applies|describes|identifies|analyzes|creates)\b/i.test(
-                                                                                                    level.description
-                                                                                                )
-                                                                                                    ? 2
-                                                                                                    : 8,
-                                                                                        }}
-                                                                                    />
-                                                                                    {level.description &&
-                                                                                        /\b(good|adequate|poor|excellent|satisfactory|bad|fair|very good|great|wonderful)\b/i.test(
-                                                                                            level.description
-                                                                                        ) &&
-                                                                                        !/\b(student|demonstrates|shows|uses|writes|includes|provides|explains|applies|describes|identifies|analyzes|creates)\b/i.test(
-                                                                                            level.description
-                                                                                        ) && (
-                                                                                            <div
-                                                                                                style={{
-                                                                                                    fontSize: '0.7rem',
-                                                                                                    color: 'var(--yellow, #b45309)',
-                                                                                                    background:
-                                                                                                        'rgba(251,191,36,0.12)',
-                                                                                                    borderRadius: 4,
-                                                                                                    padding: '3px 7px',
-                                                                                                    marginBottom: 6,
-                                                                                                }}
-                                                                                            >
-                                                                                                💡 Tip: describe what
-                                                                                                the student{' '}
-                                                                                                <em>does</em>, not just
-                                                                                                how good it is (e.g.
-                                                                                                "uses 3+ examples to
-                                                                                                support each claim")
-                                                                                            </div>
-                                                                                        )}
-
-                                                                                    {/* CEFR level tag */}
-                                                                                    <div style={{ marginBottom: 8 }}>
-                                                                                        <div className="text-xs text-muted" style={{ marginBottom: 4 }}>CEFR level</div>
-                                                                                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                                                                                            {(['A1','A2','B1','B2','C1','C2'] as const).map((lvl) => {
-                                                                                                const active = level.cefrLevel === lvl;
-                                                                                                return (
-                                                                                                    <button
-                                                                                                        key={lvl}
-                                                                                                        type="button"
-                                                                                                        onClick={() => updateLevel(criterion.id, level.id, { cefrLevel: active ? undefined : lvl })}
-                                                                                                        style={{
-                                                                                                            padding: '2px 8px',
-                                                                                                            borderRadius: 4,
-                                                                                                            border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
-                                                                                                            background: active ? 'var(--accent)' : 'var(--bg-elevated)',
-                                                                                                            color: active ? '#fff' : 'var(--text-muted)',
-                                                                                                            fontSize: '0.72rem',
-                                                                                                            fontWeight: 700,
-                                                                                                            cursor: 'pointer',
-                                                                                                            letterSpacing: '0.02em',
-                                                                                                        }}
-                                                                                                    >{lvl}</button>
-                                                                                                );
-                                                                                            })}
-                                                                                        </div>
-                                                                                    </div>
-
-                                                                                    {/* Sub-items toggle */}
-                                                                                    <button
-                                                                                        className="btn btn-ghost btn-sm"
-                                                                                        style={{
-                                                                                            width: '100%',
-                                                                                            justifyContent:
-                                                                                                'space-between',
-                                                                                        }}
-                                                                                        onClick={() =>
-                                                                                            toggleSubItems(levelKey)
-                                                                                        }
-                                                                                    >
-                                                                                        <span
-                                                                                            style={{
-                                                                                                fontSize: '0.78rem',
-                                                                                            }}
-                                                                                        >
-                                                                                            {t(
-                                                                                                'rubricBuilder.label_sub_items'
-                                                                                            )}{' '}
-                                                                                            ({level.subItems.length})
-                                                                                        </span>
-                                                                                        <ChevronRight
-                                                                                            size={13}
-                                                                                            style={{
-                                                                                                transform: subExpanded
-                                                                                                    ? 'rotate(90deg)'
-                                                                                                    : 'none',
-                                                                                                transition:
-                                                                                                    'transform 0.2s',
-                                                                                            }}
-                                                                                        />
-                                                                                    </button>
-
-                                                                                    {subExpanded && (
-                                                                                        <div
-                                                                                            style={{
-                                                                                                marginTop: 8,
-                                                                                                display: 'flex',
-                                                                                                flexDirection: 'column',
-                                                                                                gap: 6,
-                                                                                            }}
-                                                                                        >
-                                                                                            {level.subItems.map(
-                                                                                                (si) => (
-                                                                                                    <div
-                                                                                                        key={si.id}
-                                                                                                        style={{
-                                                                                                            display:
-                                                                                                                'flex',
-                                                                                                            flexDirection:
-                                                                                                                'column',
-                                                                                                            gap: 4,
-                                                                                                            paddingBottom: 6,
-                                                                                                            borderBottom:
-                                                                                                                '1px solid var(--border)',
-                                                                                                        }}
-                                                                                                    >
-                                                                                                        <div
-                                                                                                            style={{
-                                                                                                                display:
-                                                                                                                    'flex',
-                                                                                                                flexDirection:
-                                                                                                                    'column',
-                                                                                                                gap: 6,
-                                                                                                            }}
-                                                                                                        >
-                                                                                                            <textarea
-                                                                                                                value={
-                                                                                                                    si.label
-                                                                                                                }
-                                                                                                                onChange={(
-                                                                                                                    e
-                                                                                                                ) =>
-                                                                                                                    updateSubItem(
-                                                                                                                        criterion.id,
-                                                                                                                        level.id,
-                                                                                                                        si.id,
-                                                                                                                        {
-                                                                                                                            label: e
-                                                                                                                                .target
-                                                                                                                                .value,
-                                                                                                                        }
-                                                                                                                    )
-                                                                                                                }
-                                                                                                                placeholder={t(
-                                                                                                                    'rubricBuilder.placeholder_sub_item_label'
-                                                                                                                )}
-                                                                                                                rows={2}
-                                                                                                                style={{
-                                                                                                                    width: '100%',
-                                                                                                                    fontSize:
-                                                                                                                        '0.78rem',
-                                                                                                                    resize: 'vertical',
-                                                                                                                    minHeight: 40,
-                                                                                                                    fontFamily:
-                                                                                                                        'inherit',
-                                                                                                                    padding:
-                                                                                                                        '6px 8px',
-                                                                                                                    borderRadius: 4,
-                                                                                                                    border: '1px solid var(--border)',
-                                                                                                                }}
-                                                                                                            />
+                                                                                                    {...lvlDraggable.draggableProps}
+                                                                                                    style={{
+                                                                                                        ...lvlDraggable
+                                                                                                            .draggableProps
+                                                                                                            .style,
+                                                                                                    }}
+                                                                                                >
+                                                                                                    {/* Inner level content — use a closure-wrapper to avoid shadowing */}
+                                                                                                    {(() => {
+                                                                                                        const levelKey = `${criterion.id}_${level.id}`;
+                                                                                                        const subExpanded =
+                                                                                                            expandedSubItems.has(
+                                                                                                                levelKey
+                                                                                                            );
+                                                                                                        return (
                                                                                                             <div
+                                                                                                                key={
+                                                                                                                    level.id
+                                                                                                                }
                                                                                                                 style={{
-                                                                                                                    display:
-                                                                                                                        'flex',
-                                                                                                                    gap: 6,
-                                                                                                                    alignItems:
-                                                                                                                        'flex-end',
-                                                                                                                    justifyContent:
-                                                                                                                        'flex-start',
+                                                                                                                    width: 210,
+                                                                                                                    flexShrink: 0,
+                                                                                                                    background:
+                                                                                                                        'var(--bg-elevated)',
+                                                                                                                    border: '1px solid var(--border)',
+                                                                                                                    borderRadius: 8,
+                                                                                                                    padding: 12,
                                                                                                                 }}
                                                                                                             >
+                                                                                                                {/* Level label + drag handle + delete */}
                                                                                                                 <div
                                                                                                                     style={{
                                                                                                                         display:
                                                                                                                             'flex',
-                                                                                                                        flexDirection:
-                                                                                                                            'column',
-                                                                                                                        gap: 2,
+                                                                                                                        gap: 6,
+                                                                                                                        marginBottom: 8,
+                                                                                                                        alignItems:
+                                                                                                                            'center',
                                                                                                                     }}
                                                                                                                 >
-                                                                                                                    <span
+                                                                                                                    <div
+                                                                                                                        {...lvlDraggable.dragHandleProps}
+                                                                                                                        aria-label={`Drag to reorder level: ${level.label || 'Untitled'}`}
                                                                                                                         style={{
-                                                                                                                            fontSize:
-                                                                                                                                '9px',
-                                                                                                                            color: 'var(--text-muted)',
+                                                                                                                            cursor: 'grab',
+                                                                                                                            color: 'var(--text-dim)',
+                                                                                                                            flexShrink: 0,
+                                                                                                                            display:
+                                                                                                                                'flex',
                                                                                                                         }}
                                                                                                                     >
-                                                                                                                        {t(
-                                                                                                                            'rubricBuilder.label_sub_item_min'
-                                                                                                                        )}
-                                                                                                                    </span>
+                                                                                                                        <GripHorizontal
+                                                                                                                            size={
+                                                                                                                                13
+                                                                                                                            }
+                                                                                                                        />
+                                                                                                                    </div>
                                                                                                                     <input
-                                                                                                                        type="number"
+                                                                                                                        type="text"
                                                                                                                         value={
-                                                                                                                            si.minPoints ??
-                                                                                                                            0
-                                                                                                                        }
-                                                                                                                        min={
-                                                                                                                            0
+                                                                                                                            level.label
                                                                                                                         }
                                                                                                                         onChange={(
                                                                                                                             e
                                                                                                                         ) =>
-                                                                                                                            updateSubItem(
+                                                                                                                            updateLevel(
                                                                                                                                 criterion.id,
                                                                                                                                 level.id,
-                                                                                                                                si.id,
                                                                                                                                 {
-                                                                                                                                    minPoints:
-                                                                                                                                        Number(
-                                                                                                                                            e
-                                                                                                                                                .target
-                                                                                                                                                .value
-                                                                                                                                        ),
+                                                                                                                                    label: e
+                                                                                                                                        .target
+                                                                                                                                        .value,
                                                                                                                                 }
                                                                                                                             )
                                                                                                                         }
                                                                                                                         style={{
-                                                                                                                            width: 45,
-                                                                                                                            fontSize:
-                                                                                                                                '0.78rem',
-                                                                                                                            height: 26,
-                                                                                                                            padding:
-                                                                                                                                '2px 4px',
+                                                                                                                            flex: 1,
+                                                                                                                            fontWeight: 600,
                                                                                                                         }}
-                                                                                                                        title="Min points for this sub-item"
+                                                                                                                        placeholder={t(
+                                                                                                                            'rubricBuilder.placeholder_level_name'
+                                                                                                                        )}
                                                                                                                     />
+                                                                                                                    {criterion
+                                                                                                                        .levels
+                                                                                                                        .length >
+                                                                                                                        1 && (
+                                                                                                                        <button
+                                                                                                                            className="btn btn-ghost btn-icon btn-sm"
+                                                                                                                            style={{
+                                                                                                                                color: 'var(--red)',
+                                                                                                                            }}
+                                                                                                                            onClick={() =>
+                                                                                                                                deleteLevel(
+                                                                                                                                    criterion.id,
+                                                                                                                                    level.id
+                                                                                                                                )
+                                                                                                                            }
+                                                                                                                        >
+                                                                                                                            <Trash2
+                                                                                                                                size={
+                                                                                                                                    13
+                                                                                                                                }
+                                                                                                                            />
+                                                                                                                        </button>
+                                                                                                                    )}
                                                                                                                 </div>
+
+                                                                                                                {/* Min/Max points */}
                                                                                                                 <div
                                                                                                                     style={{
                                                                                                                         display:
                                                                                                                             'flex',
-                                                                                                                        flexDirection:
-                                                                                                                            'column',
-                                                                                                                        gap: 2,
+                                                                                                                        gap: 6,
+                                                                                                                        marginBottom: 8,
+                                                                                                                        alignItems:
+                                                                                                                            'center',
                                                                                                                     }}
                                                                                                                 >
-                                                                                                                    <span
+                                                                                                                    <div
                                                                                                                         style={{
-                                                                                                                            fontSize:
-                                                                                                                                '9px',
-                                                                                                                            color: 'var(--text-muted)',
+                                                                                                                            flex: 1,
                                                                                                                         }}
                                                                                                                     >
-                                                                                                                        {t(
-                                                                                                                            'rubricBuilder.label_sub_item_max'
-                                                                                                                        )}
-                                                                                                                    </span>
-                                                                                                                    <input
-                                                                                                                        type="number"
-                                                                                                                        value={
-                                                                                                                            si.maxPoints ??
-                                                                                                                            si.points ??
-                                                                                                                            1
-                                                                                                                        }
-                                                                                                                        min={
-                                                                                                                            si.minPoints ??
-                                                                                                                            0
-                                                                                                                        }
-                                                                                                                        onChange={(
-                                                                                                                            e
-                                                                                                                        ) =>
-                                                                                                                            updateSubItem(
-                                                                                                                                criterion.id,
-                                                                                                                                level.id,
-                                                                                                                                si.id,
-                                                                                                                                {
-                                                                                                                                    maxPoints:
-                                                                                                                                        Number(
-                                                                                                                                            e
-                                                                                                                                                .target
-                                                                                                                                                .value
-                                                                                                                                        ),
-                                                                                                                                }
-                                                                                                                            )
-                                                                                                                        }
+                                                                                                                        <div
+                                                                                                                            className="text-xs text-muted"
+                                                                                                                            style={{
+                                                                                                                                marginBottom: 2,
+                                                                                                                            }}
+                                                                                                                        >
+                                                                                                                            {t(
+                                                                                                                                'rubricBuilder.label_min_pts'
+                                                                                                                            )}
+                                                                                                                        </div>
+                                                                                                                        <input
+                                                                                                                            type="number"
+                                                                                                                            value={
+                                                                                                                                level.minPoints
+                                                                                                                            }
+                                                                                                                            min={
+                                                                                                                                0
+                                                                                                                            }
+                                                                                                                            onChange={(
+                                                                                                                                e
+                                                                                                                            ) =>
+                                                                                                                                updateLevel(
+                                                                                                                                    criterion.id,
+                                                                                                                                    level.id,
+                                                                                                                                    {
+                                                                                                                                        minPoints:
+                                                                                                                                            Number(
+                                                                                                                                                e
+                                                                                                                                                    .target
+                                                                                                                                                    .value
+                                                                                                                                            ),
+                                                                                                                                    }
+                                                                                                                                )
+                                                                                                                            }
+                                                                                                                        />
+                                                                                                                    </div>
+                                                                                                                    <span
                                                                                                                         style={{
-                                                                                                                            width: 45,
-                                                                                                                            fontSize:
-                                                                                                                                '0.78rem',
-                                                                                                                            height: 26,
-                                                                                                                            padding:
-                                                                                                                                '2px 4px',
+                                                                                                                            color: 'var(--text-muted)',
+                                                                                                                            paddingTop: 16,
                                                                                                                         }}
-                                                                                                                        title="Max points for this sub-item"
-                                                                                                                    />
+                                                                                                                    >
+                                                                                                                        –
+                                                                                                                    </span>
+                                                                                                                    <div
+                                                                                                                        style={{
+                                                                                                                            flex: 1,
+                                                                                                                        }}
+                                                                                                                    >
+                                                                                                                        <div
+                                                                                                                            className="text-xs text-muted"
+                                                                                                                            style={{
+                                                                                                                                marginBottom: 2,
+                                                                                                                            }}
+                                                                                                                        >
+                                                                                                                            {t(
+                                                                                                                                'rubricBuilder.label_max_pts'
+                                                                                                                            )}
+                                                                                                                        </div>
+                                                                                                                        <input
+                                                                                                                            type="number"
+                                                                                                                            value={
+                                                                                                                                level.maxPoints
+                                                                                                                            }
+                                                                                                                            min={
+                                                                                                                                0
+                                                                                                                            }
+                                                                                                                            onChange={(
+                                                                                                                                e
+                                                                                                                            ) =>
+                                                                                                                                updateLevel(
+                                                                                                                                    criterion.id,
+                                                                                                                                    level.id,
+                                                                                                                                    {
+                                                                                                                                        maxPoints:
+                                                                                                                                            Number(
+                                                                                                                                                e
+                                                                                                                                                    .target
+                                                                                                                                                    .value
+                                                                                                                                            ),
+                                                                                                                                    }
+                                                                                                                                )
+                                                                                                                            }
+                                                                                                                        />
+                                                                                                                    </div>
                                                                                                                 </div>
-                                                                                                                <div
-                                                                                                                    style={{
-                                                                                                                        flex: 1,
-                                                                                                                    }}
-                                                                                                                />
-                                                                                                                <button
-                                                                                                                    className="btn btn-ghost btn-icon btn-sm"
-                                                                                                                    style={{
-                                                                                                                        color: 'var(--accent)',
-                                                                                                                        height: 26,
-                                                                                                                        width: 26,
-                                                                                                                    }}
-                                                                                                                    onClick={() =>
-                                                                                                                        setPickingStandardFor(
+
+                                                                                                                {/* Description */}
+                                                                                                                <textarea
+                                                                                                                    value={
+                                                                                                                        level.description
+                                                                                                                    }
+                                                                                                                    onChange={(
+                                                                                                                        e
+                                                                                                                    ) =>
+                                                                                                                        updateLevel(
+                                                                                                                            criterion.id,
+                                                                                                                            level.id,
                                                                                                                             {
-                                                                                                                                type: 'subitem',
-                                                                                                                                cid: criterion.id,
-                                                                                                                                lid: level.id,
-                                                                                                                                sid: si.id,
+                                                                                                                                description:
+                                                                                                                                    e
+                                                                                                                                        .target
+                                                                                                                                        .value,
                                                                                                                             }
                                                                                                                         )
                                                                                                                     }
-                                                                                                                    title="Link standard to this sub-item"
-                                                                                                                >
-                                                                                                                    <Link2
-                                                                                                                        size={
-                                                                                                                            11
-                                                                                                                        }
-                                                                                                                    />
-                                                                                                                </button>
-                                                                                                                <button
-                                                                                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                                                                                    placeholder={t(
+                                                                                                                        'rubricBuilder.placeholder_level_description'
+                                                                                                                    )}
+                                                                                                                    rows={
+                                                                                                                        3
+                                                                                                                    }
                                                                                                                     style={{
-                                                                                                                        color: 'var(--red)',
-                                                                                                                        height: 26,
-                                                                                                                        width: 26,
+                                                                                                                        fontSize:
+                                                                                                                            '0.8rem',
+                                                                                                                        width: '100%',
+                                                                                                                        marginBottom:
+                                                                                                                            level.description &&
+                                                                                                                            /\b(good|adequate|poor|excellent|satisfactory|bad|fair|very good|great|wonderful)\b/i.test(
+                                                                                                                                level.description
+                                                                                                                            ) &&
+                                                                                                                            !/\b(student|demonstrates|shows|uses|writes|includes|provides|explains|applies|describes|identifies|analyzes|creates)\b/i.test(
+                                                                                                                                level.description
+                                                                                                                            )
+                                                                                                                                ? 2
+                                                                                                                                : 8,
+                                                                                                                    }}
+                                                                                                                />
+                                                                                                                {level.description &&
+                                                                                                                    /\b(good|adequate|poor|excellent|satisfactory|bad|fair|very good|great|wonderful)\b/i.test(
+                                                                                                                        level.description
+                                                                                                                    ) &&
+                                                                                                                    !/\b(student|demonstrates|shows|uses|writes|includes|provides|explains|applies|describes|identifies|analyzes|creates)\b/i.test(
+                                                                                                                        level.description
+                                                                                                                    ) && (
+                                                                                                                        <div
+                                                                                                                            style={{
+                                                                                                                                fontSize:
+                                                                                                                                    '0.7rem',
+                                                                                                                                color: 'var(--yellow, #b45309)',
+                                                                                                                                background:
+                                                                                                                                    'rgba(251,191,36,0.12)',
+                                                                                                                                borderRadius: 4,
+                                                                                                                                padding:
+                                                                                                                                    '3px 7px',
+                                                                                                                                marginBottom: 6,
+                                                                                                                            }}
+                                                                                                                        >
+                                                                                                                            {t(
+                                                                                                                                'rubricBuilder.level_quality_tip'
+                                                                                                                            )}
+                                                                                                                        </div>
+                                                                                                                    )}
+
+                                                                                                                {/* CEFR level tag */}
+                                                                                                                <div style={{ marginBottom: 8 }}>
+                                                                                                                    <div className="text-xs text-muted" style={{ marginBottom: 4 }}>CEFR level</div>
+                                                                                                                    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                                                                                                                        {(['A1','A2','B1','B2','C1','C2'] as const).map((lvl) => {
+                                                                                                                            const active = level.cefrLevel === lvl;
+                                                                                                                            return (
+                                                                                                                                <button
+                                                                                                                                    key={lvl}
+                                                                                                                                    type="button"
+                                                                                                                                    onClick={() => updateLevel(criterion.id, level.id, { cefrLevel: active ? undefined : lvl })}
+                                                                                                                                    style={{
+                                                                                                                                        padding: '2px 8px',
+                                                                                                                                        borderRadius: 4,
+                                                                                                                                        border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
+                                                                                                                                        background: active ? 'var(--accent)' : 'var(--bg-elevated)',
+                                                                                                                                        color: active ? '#fff' : 'var(--text-muted)',
+                                                                                                                                        fontSize: '0.72rem',
+                                                                                                                                        fontWeight: 700,
+                                                                                                                                        cursor: 'pointer',
+                                                                                                                                        letterSpacing: '0.02em',
+                                                                                                                                    }}
+                                                                                                                                >{lvl}</button>
+                                                                                                                            );
+                                                                                                                        })}
+                                                                                                                    </div>
+                                                                                                                </div>
+
+                                                                                                                {/* Sub-items toggle */}
+                                                                                                                <button
+                                                                                                                    className="btn btn-ghost btn-sm"
+                                                                                                                    style={{
+                                                                                                                        width: '100%',
+                                                                                                                        justifyContent:
+                                                                                                                            'space-between',
                                                                                                                     }}
                                                                                                                     onClick={() =>
-                                                                                                                        deleteSubItem(
-                                                                                                                            criterion.id,
-                                                                                                                            level.id,
-                                                                                                                            si.id
+                                                                                                                        toggleSubItems(
+                                                                                                                            levelKey
                                                                                                                         )
                                                                                                                     }
-                                                                                                                    title="Delete sub-item"
                                                                                                                 >
-                                                                                                                    <Trash2
-                                                                                                                        size={
-                                                                                                                            11
+                                                                                                                    <span
+                                                                                                                        style={{
+                                                                                                                            fontSize:
+                                                                                                                                '0.78rem',
+                                                                                                                        }}
+                                                                                                                    >
+                                                                                                                        {t(
+                                                                                                                            'rubricBuilder.label_sub_items'
+                                                                                                                        )}{' '}
+                                                                                                                        (
+                                                                                                                        {
+                                                                                                                            level
+                                                                                                                                .subItems
+                                                                                                                                .length
                                                                                                                         }
+
+                                                                                                                        )
+                                                                                                                    </span>
+                                                                                                                    <ChevronRight
+                                                                                                                        size={
+                                                                                                                            13
+                                                                                                                        }
+                                                                                                                        style={{
+                                                                                                                            transform:
+                                                                                                                                subExpanded
+                                                                                                                                    ? 'rotate(90deg)'
+                                                                                                                                    : 'none',
+                                                                                                                            transition:
+                                                                                                                                'transform 0.2s',
+                                                                                                                        }}
                                                                                                                     />
                                                                                                                 </button>
-                                                                                                            </div>
-                                                                                                        </div>
-                                                                                                        {si.linkedStandards &&
-                                                                                                            si
-                                                                                                                .linkedStandards
-                                                                                                                .length >
-                                                                                                                0 && (
-                                                                                                                <div
-                                                                                                                    style={{
-                                                                                                                        display:
-                                                                                                                            'flex',
-                                                                                                                        flexWrap:
-                                                                                                                            'wrap',
-                                                                                                                        gap: 4,
-                                                                                                                    }}
-                                                                                                                >
-                                                                                                                    {si.linkedStandards.map(
-                                                                                                                        (
-                                                                                                                            std,
-                                                                                                                            idx
-                                                                                                                        ) => (
-                                                                                                                            <div
-                                                                                                                                key={
-                                                                                                                                    std.guid +
-                                                                                                                                    idx
-                                                                                                                                }
-                                                                                                                                style={{
-                                                                                                                                    display:
-                                                                                                                                        'inline-flex',
-                                                                                                                                    alignItems:
-                                                                                                                                        'center',
-                                                                                                                                    gap: 4,
-                                                                                                                                    background:
-                                                                                                                                        'var(--accent-soft)',
-                                                                                                                                    borderRadius: 4,
-                                                                                                                                    padding:
-                                                                                                                                        '2px 6px',
-                                                                                                                                    fontSize:
-                                                                                                                                        '0.65rem',
-                                                                                                                                }}
-                                                                                                                            >
-                                                                                                                                <span
-                                                                                                                                    style={{
-                                                                                                                                        color: 'var(--accent)',
-                                                                                                                                        fontWeight: 600,
-                                                                                                                                    }}
-                                                                                                                                >
-                                                                                                                                    {std.statementNotation ??
-                                                                                                                                        std.guid}
-                                                                                                                                </span>
-                                                                                                                                <button
-                                                                                                                                    className="btn btn-ghost btn-icon"
-                                                                                                                                    style={{
-                                                                                                                                        padding: 0,
-                                                                                                                                        height: 'auto',
-                                                                                                                                        minHeight: 0,
-                                                                                                                                        color: 'var(--text-muted)',
-                                                                                                                                    }}
-                                                                                                                                    onClick={() =>
-                                                                                                                                        unlinkStandard(
-                                                                                                                                            {
-                                                                                                                                                type: 'subitem',
-                                                                                                                                                cid: criterion.id,
-                                                                                                                                                lid: level.id,
-                                                                                                                                                sid: si.id,
-                                                                                                                                            },
-                                                                                                                                            idx
-                                                                                                                                        )
+
+                                                                                                                {subExpanded && (
+                                                                                                                    <div
+                                                                                                                        style={{
+                                                                                                                            marginTop: 8,
+                                                                                                                            display:
+                                                                                                                                'flex',
+                                                                                                                            flexDirection:
+                                                                                                                                'column',
+                                                                                                                            gap: 6,
+                                                                                                                        }}
+                                                                                                                    >
+                                                                                                                        {level.subItems.map(
+                                                                                                                            (
+                                                                                                                                si
+                                                                                                                            ) => (
+                                                                                                                                <div
+                                                                                                                                    key={
+                                                                                                                                        si.id
                                                                                                                                     }
+                                                                                                                                    style={{
+                                                                                                                                        display:
+                                                                                                                                            'flex',
+                                                                                                                                        flexDirection:
+                                                                                                                                            'column',
+                                                                                                                                        gap: 4,
+                                                                                                                                        paddingBottom: 6,
+                                                                                                                                        borderBottom:
+                                                                                                                                            '1px solid var(--border)',
+                                                                                                                                    }}
                                                                                                                                 >
-                                                                                                                                    <X
-                                                                                                                                        size={
-                                                                                                                                            10
-                                                                                                                                        }
-                                                                                                                                    />
-                                                                                                                                </button>
-                                                                                                                            </div>
-                                                                                                                        )
-                                                                                                                    )}
-                                                                                                                </div>
-                                                                                                            )}
-                                                                                                    </div>
-                                                                                                )
+                                                                                                                                    <div
+                                                                                                                                        style={{
+                                                                                                                                            display:
+                                                                                                                                                'flex',
+                                                                                                                                            flexDirection:
+                                                                                                                                                'column',
+                                                                                                                                            gap: 6,
+                                                                                                                                        }}
+                                                                                                                                    >
+                                                                                                                                        <textarea
+                                                                                                                                            value={
+                                                                                                                                                si.label
+                                                                                                                                            }
+                                                                                                                                            onChange={(
+                                                                                                                                                e
+                                                                                                                                            ) =>
+                                                                                                                                                updateSubItem(
+                                                                                                                                                    criterion.id,
+                                                                                                                                                    level.id,
+                                                                                                                                                    si.id,
+                                                                                                                                                    {
+                                                                                                                                                        label: e
+                                                                                                                                                            .target
+                                                                                                                                                            .value,
+                                                                                                                                                    }
+                                                                                                                                                )
+                                                                                                                                            }
+                                                                                                                                            placeholder={t(
+                                                                                                                                                'rubricBuilder.placeholder_sub_item_label'
+                                                                                                                                            )}
+                                                                                                                                            rows={
+                                                                                                                                                2
+                                                                                                                                            }
+                                                                                                                                            style={{
+                                                                                                                                                width: '100%',
+                                                                                                                                                fontSize:
+                                                                                                                                                    '0.78rem',
+                                                                                                                                                resize: 'vertical',
+                                                                                                                                                minHeight: 40,
+                                                                                                                                                fontFamily:
+                                                                                                                                                    'inherit',
+                                                                                                                                                padding:
+                                                                                                                                                    '6px 8px',
+                                                                                                                                                borderRadius: 4,
+                                                                                                                                                border: '1px solid var(--border)',
+                                                                                                                                            }}
+                                                                                                                                        />
+                                                                                                                                        <div
+                                                                                                                                            style={{
+                                                                                                                                                display:
+                                                                                                                                                    'flex',
+                                                                                                                                                gap: 6,
+                                                                                                                                                alignItems:
+                                                                                                                                                    'flex-end',
+                                                                                                                                                justifyContent:
+                                                                                                                                                    'flex-start',
+                                                                                                                                            }}
+                                                                                                                                        >
+                                                                                                                                            <div
+                                                                                                                                                style={{
+                                                                                                                                                    display:
+                                                                                                                                                        'flex',
+                                                                                                                                                    flexDirection:
+                                                                                                                                                        'column',
+                                                                                                                                                    gap: 2,
+                                                                                                                                                }}
+                                                                                                                                            >
+                                                                                                                                                <span
+                                                                                                                                                    style={{
+                                                                                                                                                        fontSize:
+                                                                                                                                                            '9px',
+                                                                                                                                                        color: 'var(--text-muted)',
+                                                                                                                                                    }}
+                                                                                                                                                >
+                                                                                                                                                    {t(
+                                                                                                                                                        'rubricBuilder.label_sub_item_min'
+                                                                                                                                                    )}
+                                                                                                                                                </span>
+                                                                                                                                                <input
+                                                                                                                                                    type="number"
+                                                                                                                                                    value={
+                                                                                                                                                        si.minPoints ??
+                                                                                                                                                        0
+                                                                                                                                                    }
+                                                                                                                                                    min={
+                                                                                                                                                        0
+                                                                                                                                                    }
+                                                                                                                                                    onChange={(
+                                                                                                                                                        e
+                                                                                                                                                    ) =>
+                                                                                                                                                        updateSubItem(
+                                                                                                                                                            criterion.id,
+                                                                                                                                                            level.id,
+                                                                                                                                                            si.id,
+                                                                                                                                                            {
+                                                                                                                                                                minPoints:
+                                                                                                                                                                    Number(
+                                                                                                                                                                        e
+                                                                                                                                                                            .target
+                                                                                                                                                                            .value
+                                                                                                                                                                    ),
+                                                                                                                                                            }
+                                                                                                                                                        )
+                                                                                                                                                    }
+                                                                                                                                                    style={{
+                                                                                                                                                        width: 45,
+                                                                                                                                                        fontSize:
+                                                                                                                                                            '0.78rem',
+                                                                                                                                                        height: 26,
+                                                                                                                                                        padding:
+                                                                                                                                                            '2px 4px',
+                                                                                                                                                    }}
+                                                                                                                                                    title="Min points for this sub-item"
+                                                                                                                                                />
+                                                                                                                                            </div>
+                                                                                                                                            <div
+                                                                                                                                                style={{
+                                                                                                                                                    display:
+                                                                                                                                                        'flex',
+                                                                                                                                                    flexDirection:
+                                                                                                                                                        'column',
+                                                                                                                                                    gap: 2,
+                                                                                                                                                }}
+                                                                                                                                            >
+                                                                                                                                                <span
+                                                                                                                                                    style={{
+                                                                                                                                                        fontSize:
+                                                                                                                                                            '9px',
+                                                                                                                                                        color: 'var(--text-muted)',
+                                                                                                                                                    }}
+                                                                                                                                                >
+                                                                                                                                                    {t(
+                                                                                                                                                        'rubricBuilder.label_sub_item_max'
+                                                                                                                                                    )}
+                                                                                                                                                </span>
+                                                                                                                                                <input
+                                                                                                                                                    type="number"
+                                                                                                                                                    value={
+                                                                                                                                                        si.maxPoints ??
+                                                                                                                                                        si.points ??
+                                                                                                                                                        1
+                                                                                                                                                    }
+                                                                                                                                                    min={
+                                                                                                                                                        si.minPoints ??
+                                                                                                                                                        0
+                                                                                                                                                    }
+                                                                                                                                                    onChange={(
+                                                                                                                                                        e
+                                                                                                                                                    ) =>
+                                                                                                                                                        updateSubItem(
+                                                                                                                                                            criterion.id,
+                                                                                                                                                            level.id,
+                                                                                                                                                            si.id,
+                                                                                                                                                            {
+                                                                                                                                                                maxPoints:
+                                                                                                                                                                    Number(
+                                                                                                                                                                        e
+                                                                                                                                                                            .target
+                                                                                                                                                                            .value
+                                                                                                                                                                    ),
+                                                                                                                                                            }
+                                                                                                                                                        )
+                                                                                                                                                    }
+                                                                                                                                                    style={{
+                                                                                                                                                        width: 45,
+                                                                                                                                                        fontSize:
+                                                                                                                                                            '0.78rem',
+                                                                                                                                                        height: 26,
+                                                                                                                                                        padding:
+                                                                                                                                                            '2px 4px',
+                                                                                                                                                    }}
+                                                                                                                                                    title="Max points for this sub-item"
+                                                                                                                                                />
+                                                                                                                                            </div>
+                                                                                                                                            <div
+                                                                                                                                                style={{
+                                                                                                                                                    flex: 1,
+                                                                                                                                                }}
+                                                                                                                                            />
+                                                                                                                                            <button
+                                                                                                                                                className="btn btn-ghost btn-icon btn-sm"
+                                                                                                                                                style={{
+                                                                                                                                                    color: 'var(--accent)',
+                                                                                                                                                    height: 26,
+                                                                                                                                                    width: 26,
+                                                                                                                                                }}
+                                                                                                                                                onClick={() =>
+                                                                                                                                                    setPickingStandardFor(
+                                                                                                                                                        {
+                                                                                                                                                            type: 'subitem',
+                                                                                                                                                            cid: criterion.id,
+                                                                                                                                                            lid: level.id,
+                                                                                                                                                            sid: si.id,
+                                                                                                                                                        }
+                                                                                                                                                    )
+                                                                                                                                                }
+                                                                                                                                                title="Link standard to this sub-item"
+                                                                                                                                            >
+                                                                                                                                                <Link2
+                                                                                                                                                    size={
+                                                                                                                                                        11
+                                                                                                                                                    }
+                                                                                                                                                />
+                                                                                                                                            </button>
+                                                                                                                                            <button
+                                                                                                                                                className="btn btn-ghost btn-icon btn-sm"
+                                                                                                                                                style={{
+                                                                                                                                                    color: 'var(--red)',
+                                                                                                                                                    height: 26,
+                                                                                                                                                    width: 26,
+                                                                                                                                                }}
+                                                                                                                                                onClick={() =>
+                                                                                                                                                    deleteSubItem(
+                                                                                                                                                        criterion.id,
+                                                                                                                                                        level.id,
+                                                                                                                                                        si.id
+                                                                                                                                                    )
+                                                                                                                                                }
+                                                                                                                                                title="Delete sub-item"
+                                                                                                                                            >
+                                                                                                                                                <Trash2
+                                                                                                                                                    size={
+                                                                                                                                                        11
+                                                                                                                                                    }
+                                                                                                                                                />
+                                                                                                                                            </button>
+                                                                                                                                        </div>
+                                                                                                                                    </div>
+                                                                                                                                    {si.linkedStandards &&
+                                                                                                                                        si
+                                                                                                                                            .linkedStandards
+                                                                                                                                            .length >
+                                                                                                                                            0 && (
+                                                                                                                                            <div
+                                                                                                                                                style={{
+                                                                                                                                                    display:
+                                                                                                                                                        'flex',
+                                                                                                                                                    flexWrap:
+                                                                                                                                                        'wrap',
+                                                                                                                                                    gap: 4,
+                                                                                                                                                }}
+                                                                                                                                            >
+                                                                                                                                                {si.linkedStandards.map(
+                                                                                                                                                    (
+                                                                                                                                                        std,
+                                                                                                                                                        idx
+                                                                                                                                                    ) => (
+                                                                                                                                                        <div
+                                                                                                                                                            key={
+                                                                                                                                                                std.guid +
+                                                                                                                                                                idx
+                                                                                                                                                            }
+                                                                                                                                                            style={{
+                                                                                                                                                                display:
+                                                                                                                                                                    'inline-flex',
+                                                                                                                                                                alignItems:
+                                                                                                                                                                    'center',
+                                                                                                                                                                gap: 4,
+                                                                                                                                                                background:
+                                                                                                                                                                    'var(--accent-soft)',
+                                                                                                                                                                borderRadius: 4,
+                                                                                                                                                                padding:
+                                                                                                                                                                    '2px 6px',
+                                                                                                                                                                fontSize:
+                                                                                                                                                                    '0.65rem',
+                                                                                                                                                            }}
+                                                                                                                                                        >
+                                                                                                                                                            <span
+                                                                                                                                                                style={{
+                                                                                                                                                                    color: 'var(--accent)',
+                                                                                                                                                                    fontWeight: 600,
+                                                                                                                                                                }}
+                                                                                                                                                            >
+                                                                                                                                                                {std.statementNotation ??
+                                                                                                                                                                    std.guid}
+                                                                                                                                                            </span>
+                                                                                                                                                            <button
+                                                                                                                                                                className="btn btn-ghost btn-icon"
+                                                                                                                                                                style={{
+                                                                                                                                                                    padding: 0,
+                                                                                                                                                                    height: 'auto',
+                                                                                                                                                                    minHeight: 0,
+                                                                                                                                                                    color: 'var(--text-muted)',
+                                                                                                                                                                }}
+                                                                                                                                                                onClick={() =>
+                                                                                                                                                                    unlinkStandard(
+                                                                                                                                                                        {
+                                                                                                                                                                            type: 'subitem',
+                                                                                                                                                                            cid: criterion.id,
+                                                                                                                                                                            lid: level.id,
+                                                                                                                                                                            sid: si.id,
+                                                                                                                                                                        },
+                                                                                                                                                                        idx
+                                                                                                                                                                    )
+                                                                                                                                                                }
+                                                                                                                                                            >
+                                                                                                                                                                <X
+                                                                                                                                                                    size={
+                                                                                                                                                                        10
+                                                                                                                                                                    }
+                                                                                                                                                                />
+                                                                                                                                                            </button>
+                                                                                                                                                        </div>
+                                                                                                                                                    )
+                                                                                                                                                )}
+                                                                                                                                            </div>
+                                                                                                                                        )}
+                                                                                                                                </div>
+                                                                                                                            )
+                                                                                                                        )}
+                                                                                                                        <button
+                                                                                                                            className="btn btn-ghost btn-sm"
+                                                                                                                            style={{
+                                                                                                                                fontSize:
+                                                                                                                                    '0.78rem',
+                                                                                                                            }}
+                                                                                                                            onClick={() =>
+                                                                                                                                addSubItem(
+                                                                                                                                    criterion.id,
+                                                                                                                                    level.id
+                                                                                                                                )
+                                                                                                                            }
+                                                                                                                        >
+                                                                                                                            <Plus
+                                                                                                                                size={
+                                                                                                                                    12
+                                                                                                                                }
+                                                                                                                            />{' '}
+                                                                                                                            {t(
+                                                                                                                                'rubricBuilder.action_add_sub_item'
+                                                                                                                            )}
+                                                                                                                        </button>
+                                                                                                                    </div>
+                                                                                                                )}
+                                                                                                            </div>
+                                                                                                        );
+                                                                                                    })()}
+                                                                                                </div>
                                                                                             )}
-                                                                                            <button
-                                                                                                className="btn btn-ghost btn-sm"
-                                                                                                style={{
-                                                                                                    fontSize: '0.78rem',
-                                                                                                }}
-                                                                                                onClick={() =>
-                                                                                                    addSubItem(
-                                                                                                        criterion.id,
-                                                                                                        level.id
-                                                                                                    )
-                                                                                                }
-                                                                                            >
-                                                                                                <Plus size={12} />{' '}
-                                                                                                {t(
-                                                                                                    'rubricBuilder.action_add_sub_item'
-                                                                                                )}
-                                                                                            </button>
-                                                                                        </div>
-                                                                                    )}
+                                                                                        </Draggable>
+                                                                                    )
+                                                                                )}
+                                                                                {levelProvided.placeholder}
+                                                                                <div
+                                                                                    style={{
+                                                                                        width: 210,
+                                                                                        flexShrink: 0,
+                                                                                        display: 'flex',
+                                                                                        alignItems: 'center',
+                                                                                        justifyContent: 'center',
+                                                                                    }}
+                                                                                >
+                                                                                    <button
+                                                                                        className="btn btn-ghost btn-sm"
+                                                                                        onClick={() =>
+                                                                                            addLevel(criterion.id)
+                                                                                        }
+                                                                                    >
+                                                                                        <Plus size={14} />{' '}
+                                                                                        {t(
+                                                                                            'rubricBuilder.action_add_level'
+                                                                                        )}
+                                                                                    </button>
                                                                                 </div>
-                                                                            );
-                                                                        })}
-                                                                        <div
-                                                                            style={{
-                                                                                width: 210,
-                                                                                flexShrink: 0,
-                                                                                display: 'flex',
-                                                                                alignItems: 'center',
-                                                                                justifyContent: 'center',
-                                                                            }}
-                                                                        >
-                                                                            <button
-                                                                                className="btn btn-ghost btn-sm"
-                                                                                onClick={() => addLevel(criterion.id)}
-                                                                            >
-                                                                                <Plus size={14} />{' '}
-                                                                                {t('rubricBuilder.action_add_level')}
-                                                                            </button>
-                                                                        </div>
-                                                                    </div>
+                                                                            </div>
+                                                                        )}
+                                                                    </Droppable>
                                                                 </div>
                                                             )}
                                                     </div>

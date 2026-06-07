@@ -1,5 +1,16 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { X, Upload, CheckCircle, Database, RefreshCw, FileText, Trash2 } from 'lucide-react';
+import {
+    X,
+    Upload,
+    CheckCircle,
+    Database,
+    RefreshCw,
+    FileText,
+    Trash2,
+    AlertTriangle,
+    TrendingDown,
+} from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { decodeEssaySubmission } from '../../utils/essaySubmissionCode';
 import Modal from '../ui/Modal';
 import type { Attachment } from '../../types';
@@ -11,6 +22,7 @@ interface DbSubmission {
     id: string;
     studentEmail: string | null;
     wordCount: number;
+    wordLimitStatus: 'ok' | 'under' | 'over' | null;
     submittedAt: string;
     storagePath: string;
 }
@@ -39,6 +51,7 @@ export default function EssayImportModal({
     onGetSignedUrl,
     onDeleteSubmission,
 }: Props) {
+    const { t } = useTranslation();
     const dbStatus = useDbStatus();
     const hasDb = dbStatus.isConnected && !!teacherKey && !!onFetchSubmissions;
 
@@ -46,7 +59,11 @@ export default function EssayImportModal({
     const [code, setCode] = useState('');
     const [error, setError] = useState('');
     const [imported, setImported] = useState(false);
-    const [meta, setMeta] = useState<{ wordCount: number; submittedAt: string } | null>(null);
+    const [meta, setMeta] = useState<{
+        wordCount: number;
+        submittedAt: string;
+        wordLimitStatus?: 'ok' | 'under' | 'over' | null;
+    } | null>(null);
 
     // DB tab state
     const [submissions, setSubmissions] = useState<DbSubmission[]>([]);
@@ -97,7 +114,11 @@ export default function EssayImportModal({
             studentId,
             size: submission.contentHtml.length,
         });
-        setMeta({ wordCount: submission.wordCount, submittedAt: submission.submittedAt });
+        setMeta({
+            wordCount: submission.wordCount,
+            submittedAt: submission.submittedAt,
+            wordLimitStatus: submission.wordLimitStatus,
+        });
         setImported(true);
     }, [code, rubricId, studentId, studentName, onImport]);
 
@@ -122,7 +143,11 @@ export default function EssayImportModal({
                 const filename = `Essay – ${who} – ${dateStr}.html`;
                 const dataUrl = `data:text/html;base64,${btoa(unescape(encodeURIComponent(html)))}`;
                 onImport({ name: filename, mimeType: 'text/html', dataUrl, rubricId, studentId, size: html.length });
-                setMeta({ wordCount: sub.wordCount, submittedAt: sub.submittedAt });
+                setMeta({
+                    wordCount: sub.wordCount,
+                    submittedAt: sub.submittedAt,
+                    wordLimitStatus: sub.wordLimitStatus,
+                });
                 setImported(true);
             } catch {
                 setDbError('Failed to download essay. Check your connection and try again.');
@@ -191,6 +216,42 @@ export default function EssayImportModal({
                     <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
                         {meta.wordCount} words · submitted {new Date(meta.submittedAt).toLocaleString()}
                     </div>
+                    {meta.wordLimitStatus === 'over' && (
+                        <div
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                fontSize: '0.8rem',
+                                fontWeight: 600,
+                                color: 'var(--red)',
+                                background: 'color-mix(in srgb, var(--red) 10%, transparent)',
+                                border: '1px solid var(--red)',
+                                borderRadius: 6,
+                                padding: '4px 10px',
+                            }}
+                        >
+                            <AlertTriangle size={13} /> {t('essay.word_limit_over')}
+                        </div>
+                    )}
+                    {meta.wordLimitStatus === 'under' && (
+                        <div
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                fontSize: '0.8rem',
+                                fontWeight: 600,
+                                color: 'var(--yellow)',
+                                background: 'color-mix(in srgb, var(--yellow) 10%, transparent)',
+                                border: '1px solid var(--yellow)',
+                                borderRadius: 6,
+                                padding: '4px 10px',
+                            }}
+                        >
+                            <TrendingDown size={13} /> {t('essay.word_limit_under')}
+                        </div>
+                    )}
                     <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)', margin: 0 }}>
                         The essay has been added as an attachment. You can view and analyse it in the Attachments panel.
                     </p>
@@ -345,8 +406,55 @@ export default function EssayImportModal({
                                             >
                                                 {sub.studentEmail ?? 'Anonymous'}
                                             </div>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                                {sub.wordCount} words · {new Date(sub.submittedAt).toLocaleString()}
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 6,
+                                                    flexWrap: 'wrap',
+                                                    fontSize: '0.75rem',
+                                                    color: 'var(--text-muted)',
+                                                }}
+                                            >
+                                                <span>
+                                                    {sub.wordCount} words · {new Date(sub.submittedAt).toLocaleString()}
+                                                </span>
+                                                {sub.wordLimitStatus === 'over' && (
+                                                    <span
+                                                        style={{
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: 3,
+                                                            fontWeight: 600,
+                                                            color: 'var(--red)',
+                                                            background:
+                                                                'color-mix(in srgb, var(--red) 10%, transparent)',
+                                                            border: '1px solid var(--red)',
+                                                            borderRadius: 4,
+                                                            padding: '1px 6px',
+                                                        }}
+                                                    >
+                                                        <AlertTriangle size={10} /> {t('essay.word_limit_over')}
+                                                    </span>
+                                                )}
+                                                {sub.wordLimitStatus === 'under' && (
+                                                    <span
+                                                        style={{
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: 3,
+                                                            fontWeight: 600,
+                                                            color: 'var(--yellow)',
+                                                            background:
+                                                                'color-mix(in srgb, var(--yellow) 10%, transparent)',
+                                                            border: '1px solid var(--yellow)',
+                                                            borderRadius: 4,
+                                                            padding: '1px 6px',
+                                                        }}
+                                                    >
+                                                        <TrendingDown size={10} /> {t('essay.word_limit_under')}
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
                                         <button

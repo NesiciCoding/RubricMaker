@@ -635,6 +635,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
         root.style.setProperty('--accent-glow', `${accent}66`);
     }, [state.settings.accentColor]);
 
+    useEffect(() => {
+        const fontKey = state.settings.uiFontFamily || 'Inter';
+        const GOOGLE_FONTS: Record<string, string> = {
+            Nunito: 'Nunito:wght@400;500;600;700',
+            'Source Sans 3': 'Source+Sans+3:wght@400;500;600;700',
+            Lato: 'Lato:wght@400;700',
+            Roboto: 'Roboto:wght@400;500;700',
+        };
+        document.documentElement.style.setProperty('--font', `'${fontKey}', system-ui, sans-serif`);
+        if (GOOGLE_FONTS[fontKey]) {
+            let link = document.getElementById('app-gfont') as HTMLLinkElement | null;
+            if (!link) {
+                link = document.createElement('link');
+                link.id = 'app-gfont';
+                link.rel = 'stylesheet';
+                document.head.appendChild(link);
+            }
+            link.href = `https://fonts.googleapis.com/css2?family=${GOOGLE_FONTS[fontKey]}&display=swap`;
+        }
+    }, [state.settings.uiFontFamily]);
+
     // ── Startup: detect local mode / existing session / OAuth callback ────────
     useEffect(() => {
         if (localStorage.getItem(LOCAL_MODE_KEY) === 'true') {
@@ -661,6 +682,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 return;
             }
             storageSync.setToastFn(showToast);
+            if (!navigator.onLine) {
+                showToast(t('toast.sync_offline_cache'), 'info');
+                setLandingState('hide');
+                return;
+            }
             const { data: fresh, error: hydrateError } = await storageSync.hydrate();
             if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
             if (fresh) {
@@ -1159,7 +1185,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const newState = loadStore();
             dispatch({ type: 'SET_ALL', payload: newState });
             if (storageSync.isConnected()) {
-                await storageSync.pushAll(newState);
+                // pushAll returns SyncResult (never rejects on normal failures).
+                // Log the error but let the caller receive true (restore succeeded).
+                // The pending-queue will retry the cloud push on reconnect.
+                const result = await storageSync.pushAll(newState);
+                if (!result.success) {
+                    console.warn('[importBackup] local restore succeeded; cloud sync failed', result.error);
+                }
             }
         }
         return ok;

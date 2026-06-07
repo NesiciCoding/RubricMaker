@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { Clock, CheckCircle, Copy, AlertTriangle, Mail, Loader2, Save } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import EssayEditor from '../components/Editor/EssayEditor';
+import EssayTTSControls from '../components/Essay/EssayTTSControls';
 import { decodeEssayAssignment } from '../utils/essayShareCode';
 import { encodeEssaySubmission } from '../utils/essaySubmissionCode';
 import { countWords } from '../utils/essayUtils';
 import { nanoid } from '../utils/nanoid';
-import type { EssaySubmission } from '../types';
+import type { EssayAssignmentContent, EssaySubmission } from '../types';
 import { EssayAdapter } from '../services/database/EssayAdapter';
 
 const DRAFT_KEY_PREFIX = 'rm_essay_draft_';
@@ -45,6 +47,7 @@ interface EmailGateProps {
 }
 
 function EmailGate({ adapter, onAuthenticated }: EmailGateProps) {
+    const { t } = useTranslation();
     const [email, setEmail] = useState('');
     const [busy, setBusy] = useState(false);
     const [sessionChecking, setSessionChecking] = useState(true);
@@ -124,10 +127,10 @@ function EmailGate({ adapter, onAuthenticated }: EmailGateProps) {
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <Mail size={22} style={{ color: 'var(--accent)' }} />
-                    <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>Enter your school email</h2>
+                    <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>{t('essay.email_gate_title')}</h2>
                 </div>
                 <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                    Your email is used to link your essay to your account. No password or code needed.
+                    {t('essay.email_gate_desc')}
                 </p>
                 <input
                     type="email"
@@ -137,7 +140,7 @@ function EmailGate({ adapter, onAuthenticated }: EmailGateProps) {
                         setError('');
                     }}
                     onKeyDown={(e) => e.key === 'Enter' && handleStart()}
-                    placeholder="student@school.nl"
+                    placeholder={t('essay.email_placeholder')}
                     style={{
                         padding: '10px 14px',
                         borderRadius: 8,
@@ -170,10 +173,10 @@ function EmailGate({ adapter, onAuthenticated }: EmailGateProps) {
                 >
                     {busy ? (
                         <>
-                            <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Starting…
+                            <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> {t('essay.starting')}
                         </>
                     ) : (
-                        'Start essay'
+                        t('essay.start_btn')
                     )}
                 </button>
             </div>
@@ -181,13 +184,54 @@ function EmailGate({ adapter, onAuthenticated }: EmailGateProps) {
     );
 }
 
+// Detect a short-code link: bare nanoid (21 URL-safe chars), no base64 JSON.
+// These are generated when the app has Supabase configured; all content is
+// fetched from the get-essay-assignment edge function after authentication.
+function isShortCode(code: string): boolean {
+    return /^[A-Za-z0-9_-]{10,40}$/.test(code);
+}
+
 export default function StudentEssayPage() {
+    const { t, i18n } = useTranslation();
     const { code } = useParams<{ code: string }>();
-    const assignment = code ? decodeEssayAssignment(code) : null;
+
+    // Legacy format: full JSON base64 — try to decode first.
+    const legacyAssignment = code ? decodeEssayAssignment(code) : null;
+
+    // Short-code format: bare teacherKey — credentials come from the app's env vars, or from
+    // the rm_supabase_config localStorage entry set by the teacher app on the same origin.
+    const savedConfig = (() => {
+        try {
+            return JSON.parse(localStorage.getItem('rm_supabase_config') ?? '{}') as {
+                supabaseUrl?: string;
+                supabaseAnonKey?: string;
+            };
+        } catch {
+            return {};
+        }
+    })();
+    const envUrl = (import.meta.env.VITE_SUPABASE_URL as string | undefined) || savedConfig.supabaseUrl || undefined;
+    const envKey =
+        (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) || savedConfig.supabaseAnonKey || undefined;
+    const shortCodeActive = !legacyAssignment && !!code && !!envUrl && !!envKey && isShortCode(code);
+
+    const assignment =
+        legacyAssignment ??
+        (shortCodeActive
+            ? {
+                  teacherKey: code!,
+                  rubricId: '',
+                  studentId: '',
+                  title: '',
+                  readOnlyAfterSubmit: true,
+                  createdAt: new Date().toISOString(),
+                  supabaseUrl: envUrl,
+                  supabaseAnonKey: envKey,
+              }
+            : null);
 
     // Determine if this assignment uses Supabase DB submission.
-    // useMemo keeps the adapter instance stable for the component's lifetime
-    // (assignment comes from the URL and never changes mid-session).
+    // useMemo keeps the adapter instance stable for the component's lifetime.
     const hasDb = !!(assignment?.supabaseUrl && assignment?.supabaseAnonKey);
     const adapter = useMemo<EssayAdapter | null>(() => {
         if (!assignment?.supabaseUrl || !assignment?.supabaseAnonKey) return null;
@@ -206,7 +250,33 @@ export default function StudentEssayPage() {
     const [studentUserId, setStudentUserId] = useState<string | null>(null);
     const [studentEmail, setStudentEmail] = useState<string | null>(null);
 
-    const [html, setHtml] = useState<string>(() => sessionStorage.getItem(draftKey) ?? '');
+    // Tracks an 'expired' result from the edge function so the expiry guard fires
+    // even for short-code links that have no expiresAt embedded in the URL.
+    const [contentExpired, setContentExpired] = useState(false);
+
+    // Content resolved from the edge function after authentication.
+    // For legacy links the content is already in the URL; for short codes everything
+    // is fetched here. undefined = not yet fetched; null = fetch complete, no data.
+    const [resolvedContent, setResolvedContent] = useState<EssayAssignmentContent | null | undefined>(
+        legacyAssignment
+            ? {
+                  rubricId: legacyAssignment.rubricId,
+                  studentId: legacyAssignment.studentId,
+                  title: legacyAssignment.title,
+                  prompt: legacyAssignment.prompt ?? null,
+                  minWords: legacyAssignment.minWords ?? null,
+                  maxWords: legacyAssignment.maxWords ?? null,
+                  timeLimitMinutes: legacyAssignment.timeLimitMinutes ?? null,
+                  requireSEB: legacyAssignment.requireSEB ?? false,
+                  expiresAt: legacyAssignment.expiresAt ?? null,
+                  readOnlyAfterSubmit: legacyAssignment.readOnlyAfterSubmit,
+              }
+            : undefined
+    );
+    const contentReady = resolvedContent !== undefined;
+
+    const [html, setHtml] = useState<string>(() => localStorage.getItem(draftKey) ?? '');
+    const [draftRestored, setDraftRestored] = useState<boolean>(() => !!localStorage.getItem(draftKey));
     const [submitted, setSubmitted] = useState(false);
     const [submissionCode, setSubmissionCode] = useState('');
     const [copied, setCopied] = useState(false);
@@ -214,30 +284,52 @@ export default function StudentEssayPage() {
     const [submitError, setSubmitError] = useState('');
     const [draftSavedAt, setDraftSavedAt] = useState<Date | null>(null);
 
-    // Timer
+    // Timer — initialised from the URL (legacy) or from resolved content (short code).
     const [secondsLeft, setSecondsLeft] = useState<number | null>(() => {
-        if (!assignment?.timeLimitMinutes) return null;
+        const minutes = legacyAssignment?.timeLimitMinutes ?? null;
+        if (!minutes) return null;
         const stored = sessionStorage.getItem(timerKey);
         if (stored) return Math.max(0, parseInt(stored, 10));
-        return assignment.timeLimitMinutes * 60;
+        return minutes * 60;
     });
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-    // Set document title to assignment name
+    // After the student authenticates, fetch full assignment content from the edge function.
+    // For legacy links this is a no-op (content already in URL, resolvedContent pre-filled).
+    // For short-code links this is the only way to get title, prompt, limits, etc.
     useEffect(() => {
-        if (!assignment) return;
+        if (!studentUserId || !hasDb || !adapter || contentReady) return;
+        adapter.fetchAssignmentContent(assignment!.teacherKey).then((result) => {
+            if (result.ok) {
+                setResolvedContent(result.data);
+                // Start timer if the assignment has a time limit and it hasn't started yet.
+                if (result.data.timeLimitMinutes && secondsLeft === null) {
+                    const stored = sessionStorage.getItem(timerKey);
+                    setSecondsLeft(stored ? Math.max(0, parseInt(stored, 10)) : result.data.timeLimitMinutes * 60);
+                }
+            } else {
+                if (result.reason === 'expired') setContentExpired(true);
+                setResolvedContent(null);
+            }
+        });
+    }, [studentUserId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Set document title once we have the resolved title
+    useEffect(() => {
+        const title = resolvedContent?.title || assignment?.title;
+        if (!title) return;
         const prev = document.title;
-        document.title = assignment.title;
+        document.title = title;
         return () => {
             document.title = prev;
         };
-    }, [assignment?.title]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [resolvedContent?.title, assignment?.title]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Auto-save draft every 30 s and record timestamp for the indicator
     useEffect(() => {
         if (submitted) return;
         const interval = setInterval(() => {
-            sessionStorage.setItem(draftKey, html);
+            localStorage.setItem(draftKey, html);
             setDraftSavedAt(new Date());
         }, 30_000);
         return () => clearInterval(interval);
@@ -245,22 +337,32 @@ export default function StudentEssayPage() {
 
     const handleSubmit = useCallback(async () => {
         if (!assignment) return;
-        sessionStorage.setItem(draftKey, html);
+        localStorage.setItem(draftKey, html);
         if (timerRef.current) clearInterval(timerRef.current);
 
         const submissionId = nanoid();
         const wordCount = countWords(html);
         const now = new Date().toISOString();
 
+        const hasLimits = !!(assignment.minWords || assignment.maxWords);
+        const wordLimitStatus: EssaySubmission['wordLimitStatus'] = hasLimits
+            ? assignment.maxWords && wordCount > assignment.maxWords
+                ? 'over'
+                : assignment.minWords && wordCount < assignment.minWords
+                  ? 'under'
+                  : 'ok'
+            : undefined;
+
         // Always generate the legacy code as a fallback / receipt
         const submissionObj: EssaySubmission = {
             id: submissionId,
-            assignmentRubricId: assignment.rubricId,
-            assignmentStudentId: assignment.studentId,
+            assignmentRubricId: resolvedContent?.rubricId ?? assignment.rubricId,
+            assignmentStudentId: resolvedContent?.studentId ?? assignment.studentId,
             teacherKey: assignment.teacherKey,
             contentHtml: html,
             wordCount,
             submittedAt: now,
+            wordLimitStatus,
         };
         const legacyCode = encodeEssaySubmission(submissionObj);
 
@@ -284,6 +386,7 @@ export default function StudentEssayPage() {
         }
 
         setSubmissionCode(legacyCode);
+        localStorage.removeItem(draftKey);
         setSubmitted(true);
         if (isInSEB) {
             copyText(legacyCode);
@@ -349,23 +452,24 @@ export default function StudentEssayPage() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    background: '#f8fafc',
+                    background: 'var(--bg)',
                     padding: 24,
                 }}
             >
                 <div style={{ maxWidth: 480, textAlign: 'center' }}>
                     <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
-                    <h2 style={{ marginBottom: 8 }}>Invalid or expired link</h2>
-                    <p style={{ color: '#64748b' }}>
-                        This essay link is not valid. Please ask your teacher for a new link.
-                    </p>
+                    <h2 style={{ marginBottom: 8, color: 'var(--text)' }}>{t('essay.invalid_link_title')}</h2>
+                    <p style={{ color: 'var(--text-muted)' }}>{t('essay.invalid_link_desc')}</p>
                 </div>
             </div>
         );
     }
 
     // ── Guard: assignment expired ─────────────────────────────────────────────
-    if (assignment.expiresAt && new Date(assignment.expiresAt) < new Date()) {
+    // contentExpired is set when the edge function returns 410 for a short-code link.
+    // effectiveExpiresAt covers legacy links where expiresAt is embedded in the URL.
+    const effectiveExpiresAt = resolvedContent?.expiresAt ?? assignment.expiresAt ?? null;
+    if (contentExpired || (effectiveExpiresAt && new Date(effectiveExpiresAt) < new Date())) {
         return (
             <div
                 style={{
@@ -373,15 +477,17 @@ export default function StudentEssayPage() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    background: '#f8fafc',
+                    background: 'var(--bg)',
                     padding: 24,
                 }}
             >
                 <div style={{ maxWidth: 480, textAlign: 'center' }}>
                     <div style={{ fontSize: 48, marginBottom: 16 }}>⏰</div>
-                    <h2 style={{ marginBottom: 8 }}>Assignment deadline has passed</h2>
-                    <p style={{ color: '#64748b' }}>
-                        The deadline was {new Date(assignment.expiresAt).toLocaleString()}. Please contact your teacher.
+                    <h2 style={{ marginBottom: 8, color: 'var(--text)' }}>{t('essay.expired_title')}</h2>
+                    <p style={{ color: 'var(--text-muted)' }}>
+                        {effectiveExpiresAt
+                            ? t('essay.expired_desc', { date: new Date(effectiveExpiresAt).toLocaleString() })
+                            : t('essay.expired_desc_no_date')}
                     </p>
                 </div>
             </div>
@@ -401,24 +507,77 @@ export default function StudentEssayPage() {
         );
     }
 
+    // ── Guard: waiting for assignment content from edge function ─────────────
+    if (hasDb && studentUserId && !contentReady) {
+        return (
+            <div
+                style={{
+                    minHeight: '100vh',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: '#f8fafc',
+                }}
+            >
+                <Loader2 size={28} style={{ color: '#6366f1', animation: 'spin 1s linear infinite' }} />
+            </div>
+        );
+    }
+
     const wordCount = countWords(html);
-    const isOverLimit = assignment.maxWords ? wordCount > assignment.maxWords : false;
-    const isBelowMin = assignment.minWords ? wordCount < assignment.minWords : false;
+    const effectiveMaxWords = resolvedContent?.maxWords ?? null;
+    const effectiveMinWords = resolvedContent?.minWords ?? null;
+    const isOverLimit = effectiveMaxWords ? wordCount > effectiveMaxWords : false;
+    const isBelowMin = effectiveMinWords ? wordCount < effectiveMinWords : false;
     const timedOut = secondsLeft !== null && secondsLeft <= 0;
-    const sebBlocked = !!(assignment.requireSEB && !isInSEB);
-    const canSubmit = !isOverLimit && !timedOut && !submitted && !submitting && !sebBlocked;
+    const sebBlocked = !!(resolvedContent?.requireSEB && !isInSEB);
+    // Manual submit is blocked when over the word limit. The timer auto-submits
+    // unconditionally when it expires, setting submitted = true.
+    const canSubmit = !isOverLimit && !submitted && !submitting && !sebBlocked;
     const wordCountColor = isOverLimit ? '#ef4444' : isBelowMin ? '#f59e0b' : '#10b981';
 
     return (
         <div
             style={{
                 minHeight: '100vh',
-                background: '#f8fafc',
-                fontFamily: 'Inter, system-ui, sans-serif',
-                colorScheme: 'light',
-                color: '#1e293b',
+                background: 'var(--bg)',
+                fontFamily: 'var(--font, Inter, system-ui, sans-serif)',
+                color: 'var(--text)',
             }}
         >
+            {/* Draft restored banner */}
+            {draftRestored && !submitted && (
+                <div
+                    style={{
+                        background: 'color-mix(in srgb, var(--accent) 10%, transparent)',
+                        borderBottom: '1px solid color-mix(in srgb, var(--accent) 30%, transparent)',
+                        padding: '10px 20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        fontSize: '0.875rem',
+                        color: 'var(--accent)',
+                    }}
+                >
+                    <Save size={14} style={{ flexShrink: 0 }} />
+                    {t('essay.draft_restored')}
+                    <button
+                        onClick={() => setDraftRestored(false)}
+                        style={{
+                            marginLeft: 'auto',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: 'var(--accent)',
+                            fontSize: '0.8rem',
+                            textDecoration: 'underline',
+                        }}
+                    >
+                        {t('essay.dismiss')}
+                    </button>
+                </div>
+            )}
+
             {/* SEB blocking banner */}
             {sebBlocked && (
                 <div
@@ -435,16 +594,15 @@ export default function StudentEssayPage() {
                     }}
                 >
                     <AlertTriangle size={16} style={{ flexShrink: 0 }} />
-                    This exam must be opened in Safe Exam Browser. Submission is blocked until you reopen this link
-                    inside SEB.
+                    {t('essay.seb_blocked')}
                 </div>
             )}
 
             {/* Header */}
             <div
                 style={{
-                    background: '#fff',
-                    borderBottom: '1px solid #e2e8f0',
+                    background: 'var(--bg-elevated)',
+                    borderBottom: '1px solid var(--border)',
                     padding: '14px 28px',
                     display: 'flex',
                     alignItems: 'center',
@@ -454,12 +612,12 @@ export default function StudentEssayPage() {
                 }}
             >
                 <div>
-                    <h1 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#1e293b' }}>
-                        {assignment.title}
+                    <h1 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: 'var(--text)' }}>
+                        {resolvedContent?.title || assignment.title}
                     </h1>
                     {studentEmail && (
-                        <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 2 }}>
-                            Signed in as {studentEmail}
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                            {t('essay.signed_in_as', { email: studentEmail })}
                         </div>
                     )}
                 </div>
@@ -471,11 +629,13 @@ export default function StudentEssayPage() {
                                 alignItems: 'center',
                                 gap: 4,
                                 fontSize: '0.75rem',
-                                color: '#64748b',
+                                color: 'var(--text-muted)',
                             }}
                         >
                             <Save size={12} />
-                            Saved {draftSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {t('essay.draft_saved_at', {
+                                time: draftSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                            })}
                         </div>
                     )}
                     {secondsLeft !== null && (
@@ -487,36 +647,43 @@ export default function StudentEssayPage() {
                                 fontWeight: 700,
                                 fontSize: '1.05rem',
                                 fontVariantNumeric: 'tabular-nums',
-                                color: secondsLeft < 120 ? '#ef4444' : '#374151',
+                                color: secondsLeft < 120 ? '#ef4444' : 'var(--text)',
                             }}
                         >
                             <Clock size={17} />
-                            {timedOut ? 'Time up' : formatTime(secondsLeft)}
+                            {timedOut ? t('essay.time_up_countdown') : formatTime(secondsLeft)}
                         </div>
                     )}
                     <div style={{ fontSize: '0.875rem', fontWeight: 600, color: wordCountColor }}>
-                        {wordCount} words
-                        {(assignment.minWords || assignment.maxWords) && (
-                            <span style={{ color: '#94a3b8', fontWeight: 400, marginLeft: 4 }}>
-                                ({assignment.minWords ?? 0}–{assignment.maxWords ?? '∞'})
+                        {t('essay.words_count', { count: wordCount })}
+                        {(effectiveMinWords || effectiveMaxWords) && (
+                            <span style={{ color: 'var(--text-dim)', fontWeight: 400, marginLeft: 4 }}>
+                                ({effectiveMinWords ?? 0}–{effectiveMaxWords ?? '∞'})
                             </span>
                         )}
                     </div>
+                    {!submitted && (
+                        <EssayTTSControls
+                            promptText={resolvedContent?.prompt ?? assignment.prompt}
+                            contentHtml={html}
+                            lang={i18n.language}
+                        />
+                    )}
                 </div>
             </div>
 
             <div style={{ maxWidth: 860, margin: '0 auto', padding: '24px 20px' }}>
-                {/* Prompt */}
-                {assignment.prompt && (
+                {/* Prompt — fetched from edge function after auth when Supabase is configured */}
+                {resolvedContent?.prompt && (
                     <div
                         style={{
-                            background: '#eff6ff',
-                            border: '1px solid #bfdbfe',
+                            background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
+                            border: '1px solid color-mix(in srgb, var(--accent) 25%, transparent)',
                             borderRadius: 10,
                             padding: '14px 18px',
                             marginBottom: 20,
                             fontSize: '0.95rem',
-                            color: '#1e40af',
+                            color: 'var(--text)',
                             lineHeight: 1.6,
                         }}
                     >
@@ -525,14 +692,14 @@ export default function StudentEssayPage() {
                                 fontSize: '0.7rem',
                                 fontWeight: 700,
                                 textTransform: 'uppercase',
-                                color: '#3b82f6',
+                                color: 'var(--accent)',
                                 marginBottom: 6,
                                 letterSpacing: '0.05em',
                             }}
                         >
-                            Assignment prompt
+                            {t('essay.prompt_label')}
                         </div>
-                        {assignment.prompt}
+                        {resolvedContent?.prompt}
                     </div>
                 )}
 
@@ -571,17 +738,16 @@ export default function StudentEssayPage() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                             <CheckCircle size={20} style={{ color: '#16a34a', flexShrink: 0 }} />
                             <span style={{ fontWeight: 700, fontSize: '1rem', color: '#15803d' }}>
-                                {hasDb && !submitError ? 'Essay submitted to your teacher!' : 'Essay submitted!'}
+                                {hasDb && !submitError ? t('essay.submitted_title_db') : t('essay.submitted_title')}
                             </span>
                         </div>
                         {hasDb && !submitError ? (
                             <p style={{ margin: '0 0 12px', fontSize: '0.875rem', color: '#166534' }}>
-                                Your teacher can see your submission in RubricMaker. Keep the backup code below just in
-                                case.
+                                {t('essay.submitted_desc_db')}
                             </p>
                         ) : (
                             <p style={{ margin: '0 0 12px', fontSize: '0.875rem', color: '#166534' }}>
-                                Copy the submission code below and send it to your teacher.
+                                {t('essay.submitted_desc_code')}
                             </p>
                         )}
                         <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
@@ -594,11 +760,11 @@ export default function StudentEssayPage() {
                                     fontFamily: 'monospace',
                                     fontSize: '0.72rem',
                                     resize: 'vertical',
-                                    background: '#fff',
+                                    background: 'var(--bg-elevated)',
                                     border: '1px solid #86efac',
                                     borderRadius: 8,
                                     padding: 10,
-                                    color: '#374151',
+                                    color: 'var(--text)',
                                 }}
                             />
                             <button
@@ -619,7 +785,7 @@ export default function StudentEssayPage() {
                                 }}
                             >
                                 <Copy size={14} />
-                                {copied ? 'Copied!' : 'Copy'}
+                                {copied ? t('essay.copied') : t('essay.copy')}
                             </button>
                         </div>
                     </div>
@@ -629,8 +795,8 @@ export default function StudentEssayPage() {
                 <EssayEditor
                     content={html}
                     onChange={setHtml}
-                    editable={!submitted || !assignment.readOnlyAfterSubmit}
-                    placeholder="Start writing your essay here…"
+                    editable={!submitted || !(resolvedContent?.readOnlyAfterSubmit ?? assignment.readOnlyAfterSubmit)}
+                    placeholder={t('essay.editor_placeholder')}
                 />
 
                 {/* Submit row */}
@@ -644,14 +810,21 @@ export default function StudentEssayPage() {
                             marginTop: 16,
                         }}
                     >
-                        {timedOut && (
+                        {timedOut && !isOverLimit && (
                             <span style={{ fontSize: '0.875rem', color: '#ef4444', fontWeight: 600 }}>
-                                Time is up — your essay was submitted automatically.
+                                {t('essay.time_up_auto')}
                             </span>
                         )}
-                        {isOverLimit && (
+                        {timedOut && isOverLimit && (
+                            <span style={{ fontSize: '0.875rem', color: '#ef4444', fontWeight: 600 }}>
+                                {t('essay.time_up_over_submitted', {
+                                    count: wordCount - (effectiveMaxWords ?? 0),
+                                })}
+                            </span>
+                        )}
+                        {!timedOut && isOverLimit && (
                             <span style={{ fontSize: '0.875rem', color: '#ef4444' }}>
-                                Over limit by {wordCount - (assignment.maxWords ?? 0)} words.
+                                {t('essay.over_limit', { count: wordCount - (effectiveMaxWords ?? 0) })}
                             </span>
                         )}
                         <button
@@ -660,11 +833,15 @@ export default function StudentEssayPage() {
                             style={{
                                 padding: '10px 32px',
                                 borderRadius: 8,
-                                border: 'none',
+                                border: isOverLimit ? '1.5px solid #fca5a5' : 'none',
                                 fontWeight: 700,
                                 fontSize: '0.95rem',
-                                background: canSubmit ? '#6366f1' : '#e2e8f0',
-                                color: canSubmit ? '#fff' : '#94a3b8',
+                                background: isOverLimit
+                                    ? '#fef2f2'
+                                    : canSubmit
+                                      ? 'var(--accent)'
+                                      : 'var(--bg-elevated)',
+                                color: isOverLimit ? '#dc2626' : canSubmit ? '#fff' : 'var(--text-dim)',
                                 cursor: canSubmit ? 'pointer' : 'not-allowed',
                                 display: 'flex',
                                 alignItems: 'center',
@@ -673,10 +850,15 @@ export default function StudentEssayPage() {
                         >
                             {submitting ? (
                                 <>
-                                    <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Submitting…
+                                    <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />{' '}
+                                    {t('essay.submitting')}
+                                </>
+                            ) : isOverLimit ? (
+                                <>
+                                    <AlertTriangle size={16} /> {t('essay.too_many_words')}
                                 </>
                             ) : (
-                                'Submit essay'
+                                t('essay.submit_btn')
                             )}
                         </button>
                     </div>

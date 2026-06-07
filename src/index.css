@@ -946,6 +946,11 @@ select.input-error {
 
 /* ─── Print styles ───────────────────────────────────────────────────────────── */
 @media print {
+    /* When the slip sheet is portalled to body, hide the main app entirely */
+    body:has(.slip-sheet-overlay) #root {
+        display: none !important;
+    }
+
     .sidebar,
     .topbar,
     .grade-footer,
@@ -1008,6 +1013,36 @@ select.input-error {
     /* RubricBuilder: hide format-panel column */
     .rubric-builder-layout {
         grid-template-columns: 1fr !important;
+    }
+
+    /* Statistics page: hide filter/control bar */
+    .statistics-controls {
+        display: none !important;
+    }
+
+    /* Comparative grading: hide action buttons */
+    .comparative-actions {
+        display: none !important;
+    }
+
+    /* Student profile: hide action strip */
+    .student-profile-actions {
+        display: none !important;
+    }
+
+    /* Force white background for all pages */
+    body,
+    .app-layout,
+    .main-area,
+    .page-content,
+    .card {
+        background: #ffffff !important;
+        color: #111111 !important;
+    }
+
+    /* Recharts SVGs: ensure they fill the page width */
+    .recharts-responsive-container {
+        width: 100% !important;
     }
 }
 
@@ -1123,18 +1158,24 @@ select.input-error {
     gap: 4px;
     border-bottom: 1px solid var(--border);
     margin-bottom: 24px;
+    /* Stays visible while the user scrolls long sections */
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bg);
+    padding-top: 4px;
 }
 
 .settings-tab {
     display: flex;
     align-items: center;
     gap: 7px;
-    padding: 10px 16px;
+    padding: 10px 18px;
     border: none;
     background: transparent;
     color: var(--text-muted);
-    font-size: 0.875rem;
-    font-weight: 500;
+    font-size: 0.9rem;
+    font-weight: 600;
     cursor: pointer;
     border-bottom: 2px solid transparent;
     margin-bottom: -1px;
@@ -1143,6 +1184,7 @@ select.input-error {
         color 0.15s,
         border-color 0.15s,
         background 0.15s;
+    letter-spacing: -0.01em;
 }
 
 .settings-tab:hover {
@@ -1153,6 +1195,8 @@ select.input-error {
 .settings-tab.active {
     color: var(--accent);
     border-bottom-color: var(--accent);
+    /* Subtle tinted background makes the active tab immediately scannable */
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
 }
 
 .settings-tab.tab-locked {
@@ -1161,6 +1205,16 @@ select.input-error {
 
 .settings-tab.tab-locked:hover {
     color: var(--text-muted);
+}
+
+/* Section headings inside cards need more weight than body text so the eye
+   can jump directly to a section without reading every line first. */
+.card > h3,
+.card > div > h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    color: var(--text);
 }
 
 /* Role badge */

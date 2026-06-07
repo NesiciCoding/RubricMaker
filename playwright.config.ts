@@ -23,17 +23,17 @@ export default defineConfig({
         {
             name: 'chromium',
             use: { ...devices['Desktop Chrome'] },
-            testIgnore: ['**/14-supabase-sync.spec.ts'],
+            testIgnore: ['**/14-supabase-sync.spec.ts', '**/15-offline-startup.spec.ts', '**/16-rls-anon.spec.ts'],
         },
         {
             name: 'firefox',
             use: { ...devices['Desktop Firefox'] },
-            testIgnore: ['**/14-supabase-sync.spec.ts'],
+            testIgnore: ['**/14-supabase-sync.spec.ts', '**/15-offline-startup.spec.ts', '**/16-rls-anon.spec.ts'],
         },
         {
             name: 'webkit',
             use: { ...devices['Desktop Safari'] },
-            testIgnore: ['**/14-supabase-sync.spec.ts'],
+            testIgnore: ['**/14-supabase-sync.spec.ts', '**/15-offline-startup.spec.ts', '**/16-rls-anon.spec.ts'],
         },
         {
             name: 'mobile-chrome',
@@ -45,7 +45,7 @@ export default defineConfig({
         {
             name: 'supabase',
             use: { ...devices['Desktop Chrome'] },
-            testMatch: ['**/14-supabase-sync.spec.ts'],
+            testMatch: ['**/14-supabase-sync.spec.ts', '**/15-offline-startup.spec.ts', '**/16-rls-anon.spec.ts'],
         },
     ],
     webServer: {

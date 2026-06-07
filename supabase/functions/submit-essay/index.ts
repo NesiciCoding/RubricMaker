@@ -70,6 +70,24 @@ serve(async (req) => {
         return json({ error: 'Missing required field: studentEmail' }, 400);
     }
 
+    // Rate limit: allow at most 5 successful submissions per user per 60 seconds.
+    // This is an early, cheap guard before the expensive storage upload.
+    // Failed-attempt spamming (word-count / expiry errors) cannot be counted here
+    // without a dedicated attempts table, but the UNIQUE constraint is the final
+    // backstop for duplicate successful submissions.
+    const sixtySecondsAgo = new Date(Date.now() - 60_000).toISOString();
+    const { count: recentCount, error: rateErr } = await admin
+        .from('essay_submissions')
+        .select('id', { count: 'exact', head: true })
+        .eq('student_user_id', user.id)
+        .gte('submitted_at', sixtySecondsAgo);
+    if (rateErr) {
+        return json({ error: 'Rate limit check failed. Please try again.' }, 503);
+    }
+    if ((recentCount ?? 0) >= 5) {
+        return json({ error: 'Too many submission attempts. Please wait before trying again.' }, 429);
+    }
+
     // Fetch assignment for server-side validation (include student_id for roster check below)
     const { data: assignment, error: assignErr } = await admin
         .from('essay_assignments')
@@ -101,9 +119,16 @@ serve(async (req) => {
         return json({ error: 'Assignment deadline has passed' }, 403);
     }
 
-    // Word-count bounds
-    if (assignment.max_words && wordCount > assignment.max_words) {
-        return json({ error: `Word count ${wordCount} exceeds the limit of ${assignment.max_words}` }, 422);
+    // Compute word-limit status for the teacher's view; do not reject over/under submissions.
+    let wordLimitStatus: 'ok' | 'under' | 'over' | null = null;
+    if (assignment.min_words !== null || assignment.max_words !== null) {
+        if (assignment.max_words !== null && wordCount > assignment.max_words) {
+            wordLimitStatus = 'over';
+        } else if (assignment.min_words !== null && wordCount < assignment.min_words) {
+            wordLimitStatus = 'under';
+        } else {
+            wordLimitStatus = 'ok';
+        }
     }
 
     // Upload HTML to Storage
@@ -126,6 +151,7 @@ serve(async (req) => {
             student_email: studentEmail ?? null,
             student_user_id: user.id,
             word_count: wordCount,
+            word_limit_status: wordLimitStatus,
             submitted_at: new Date().toISOString(),
             storage_path: storagePath,
         });

@@ -34,6 +34,7 @@ export default function StudentPortalPage() {
         classes,
         rubrics,
         studentRubrics,
+        peerReviews,
         gradeScales,
         settings,
         selfAssessments,
@@ -391,6 +392,60 @@ export default function StudentPortalPage() {
                         )}
                     </>
                 ) : null}
+
+                {/* Peer reviews received */}
+                {(() => {
+                    const received = peerReviews.filter((pr) => pr.studentId === studentId && pr.gradedAt);
+                    if (received.length === 0) return null;
+                    return (
+                        <Section title={t('studentPortal.peer_reviews_received', 'Peer Reviews')}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                {received.map((pr) => {
+                                    const rubric = rubrics.find((r) => r.id === pr.rubricId);
+                                    if (!rubric) return null;
+                                    const hasComment = pr.entries.some((e) => e.comment) || pr.overallComment;
+                                    return (
+                                        <div
+                                            key={pr.id}
+                                            style={{
+                                                background: 'var(--bg)',
+                                                border: '1px solid var(--border)',
+                                                borderRadius: 10,
+                                                padding: '12px 14px',
+                                            }}
+                                        >
+                                            <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: 4 }}>
+                                                {rubric.name}
+                                            </div>
+                                            <div
+                                                style={{
+                                                    fontSize: '0.78rem',
+                                                    color: 'var(--text-muted)',
+                                                    marginBottom: 6,
+                                                }}
+                                            >
+                                                {pr.gradedAt && new Date(pr.gradedAt).toLocaleDateString()}
+                                            </div>
+                                            {hasComment && (
+                                                <div
+                                                    style={{
+                                                        fontSize: '0.82rem',
+                                                        color: 'var(--text)',
+                                                        fontStyle: 'italic',
+                                                    }}
+                                                >
+                                                    {pr.overallComment ||
+                                                        pr.entries.find((e) => e.comment)?.comment ||
+                                                        ''}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </Section>
+                    );
+                })()}
 
                 {/* Rubric grades list */}
                 {history.length > 0 && (

@@ -27,30 +27,17 @@ function timeAgo(iso: string): string {
 
 const USER_TEMPLATES_KEY = 'rm_user_templates';
 
-type UserTemplate = {
-    id: string;
-    name: string;
-    subject: string;
-    description: string;
-    criteria: unknown[];
-    savedAt: string;
-};
-
 export default function Dashboard() {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { rubrics, students, studentRubrics, gradeScales, settings } = useApp();
 
-    const [userTemplates, setUserTemplates] = useState<UserTemplate[]>([]);
-
+    const [userTemplates, setUserTemplates] = useState<{ id: string; name: string; subject: string }[]>([]);
     useEffect(() => {
-        const raw = localStorage.getItem(USER_TEMPLATES_KEY);
-        if (raw) {
-            try {
-                setUserTemplates(JSON.parse(raw));
-            } catch {
-                setUserTemplates([]);
-            }
+        try {
+            setUserTemplates(JSON.parse(localStorage.getItem(USER_TEMPLATES_KEY) ?? '[]'));
+        } catch {
+            /* ignore */
         }
     }, []);
 
@@ -402,60 +389,73 @@ export default function Dashboard() {
 
                         <div className="card">
                             <h3 style={{ marginBottom: 16 }}>{t('dashboard.quick_start_templates')}</h3>
-
                             {userTemplates.length > 0 && (
                                 <>
                                     <div
                                         style={{
-                                            fontSize: '0.72rem',
-                                            fontWeight: 700,
-                                            color: 'var(--text-dim)',
+                                            fontSize: '0.75rem',
+                                            fontWeight: 600,
                                             textTransform: 'uppercase',
-                                            letterSpacing: '0.06em',
+                                            color: 'var(--text-muted)',
                                             marginBottom: 8,
+                                            letterSpacing: '0.04em',
                                         }}
                                     >
-                                        My Templates
+                                        {t('dashboard.my_templates', 'My Templates')}
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
                                         {userTemplates.map((tpl) => (
                                             <div
                                                 key={tpl.id}
                                                 style={{
-                                                    padding: '10px 14px',
-                                                    background: 'var(--accent-soft)',
-                                                    borderRadius: 10,
-                                                    border: '1px solid var(--accent)',
+                                                    padding: '10px 12px',
+                                                    background: 'color-mix(in srgb, var(--accent) 6%, transparent)',
+                                                    border: '1px solid color-mix(in srgb, var(--accent) 25%, transparent)',
+                                                    borderRadius: 8,
                                                     cursor: 'pointer',
-                                                    transition: 'all 0.2s',
                                                     display: 'flex',
                                                     justifyContent: 'space-between',
                                                     alignItems: 'center',
-                                                    gap: 8,
+                                                    gap: 10,
                                                 }}
                                                 onClick={() => {
-                                                    navigate('/rubrics/new', { state: { template: tpl } });
+                                                    const stored = JSON.parse(
+                                                        localStorage.getItem(USER_TEMPLATES_KEY) ?? '[]'
+                                                    );
+                                                    const found = stored.find((t: { id: string }) => t.id === tpl.id);
+                                                    if (found) navigate('/rubrics/new', { state: { template: found } });
                                                 }}
                                                 className="hoverable"
                                             >
                                                 <div>
-                                                    <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: 2 }}>
+                                                    <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>
                                                         {tpl.name}
                                                     </div>
-                                                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                                                        {tpl.subject || 'No subject'}
-                                                    </div>
+                                                    {tpl.subject && (
+                                                        <div
+                                                            style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}
+                                                        >
+                                                            {tpl.subject}
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <button
-                                                    className="btn btn-ghost btn-sm"
-                                                    style={{ fontSize: '0.7rem', padding: '2px 6px', flexShrink: 0, color: 'var(--text-dim)' }}
+                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                    style={{ color: 'var(--red)', flexShrink: 0 }}
+                                                    title={t('common.delete')}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        const updated = userTemplates.filter((t) => t.id !== tpl.id);
-                                                        setUserTemplates(updated);
-                                                        localStorage.setItem(USER_TEMPLATES_KEY, JSON.stringify(updated));
+                                                        const existing = JSON.parse(
+                                                            localStorage.getItem(USER_TEMPLATES_KEY) ?? '[]'
+                                                        );
+                                                        localStorage.setItem(
+                                                            USER_TEMPLATES_KEY,
+                                                            JSON.stringify(
+                                                                existing.filter((t: { id: string }) => t.id !== tpl.id)
+                                                            )
+                                                        );
+                                                        setUserTemplates((prev) => prev.filter((t) => t.id !== tpl.id));
                                                     }}
-                                                    title="Remove template"
                                                 >
                                                     ✕
                                                 </button>
@@ -464,19 +464,18 @@ export default function Dashboard() {
                                     </div>
                                     <div
                                         style={{
-                                            fontSize: '0.72rem',
-                                            fontWeight: 700,
-                                            color: 'var(--text-dim)',
+                                            fontSize: '0.75rem',
+                                            fontWeight: 600,
                                             textTransform: 'uppercase',
-                                            letterSpacing: '0.06em',
+                                            color: 'var(--text-muted)',
                                             marginBottom: 8,
+                                            letterSpacing: '0.04em',
                                         }}
                                     >
-                                        Built-in Templates
+                                        {t('dashboard.built_in_templates', 'Built-in Templates')}
                                     </div>
                                 </>
                             )}
-
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                                 {QUICK_START_TEMPLATES.map((tpl, i) => (
                                     <div
@@ -490,6 +489,7 @@ export default function Dashboard() {
                                             transition: 'all 0.2s',
                                         }}
                                         onClick={() => {
+                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                             const newRubric = {
                                                 ...tpl,
                                                 id: undefined,

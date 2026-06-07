@@ -18,6 +18,7 @@ import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { calcGradeSummary } from '../utils/gradeCalc';
+import { getStudentGoalScores } from '../utils/learningGoalsAggregator';
 import { encodeFeedbackCode } from '../utils/studentShareCode';
 
 export default function ExportPage() {
@@ -281,6 +282,7 @@ export default function ExportPage() {
                     className: cls?.name ?? '',
                     entries,
                     periodLabel: reportPeriodLabel || undefined,
+                    goals: getStudentGoalScores(student.id, srs, rubrics),
                 };
             });
 

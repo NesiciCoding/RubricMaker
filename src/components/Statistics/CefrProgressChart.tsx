@@ -59,41 +59,66 @@ export default function CefrProgressChart({ entries }: Props) {
             <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: 8 }}>
                 {t('cefr.progress_chart_title')}
             </div>
-            <ResponsiveContainer width="100%" height={300}>
-                <RadarChart data={data} margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
-                    <PolarGrid strokeOpacity={0.3} />
-                    <PolarAngleAxis dataKey="skill" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} />
-                    <PolarRadiusAxis
-                        domain={[0, 100]}
-                        tick={{ fill: 'var(--text-dim)', fontSize: 10 }}
-                        tickCount={5}
-                        tickFormatter={(v: number) => `${v}%`}
-                    />
-                    <Tooltip
-                        contentStyle={{
-                            background: 'var(--bg-card)',
-                            border: '1px solid var(--border)',
-                            borderRadius: 8,
-                        }}
-                        formatter={(value: unknown) => (value != null ? `${value}%` : '')}
-                    />
-                    {levelsPresent.map((lvl) => {
-                        const hasAchieved = entries.some((e) => e.level === lvl && e.achieved);
-                        return (
-                            <Radar
-                                key={lvl}
-                                name={lvl}
-                                dataKey={lvl}
-                                stroke={CEFR_LEVEL_COLORS[lvl] ?? 'var(--accent)'}
-                                fill={CEFR_LEVEL_COLORS[lvl] ?? 'var(--accent)'}
-                                fillOpacity={hasAchieved ? 0.3 : 0.1}
-                                strokeDasharray={hasAchieved ? undefined : '4 2'}
-                            />
-                        );
-                    })}
-                    {levelsPresent.length > 1 && <Legend />}
-                </RadarChart>
-            </ResponsiveContainer>
+            <div role="img" aria-label={t('cefr.progress_chart_aria_label')}>
+                <ResponsiveContainer width="100%" height={300}>
+                    <RadarChart data={data} margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
+                        <PolarGrid strokeOpacity={0.3} />
+                        <PolarAngleAxis dataKey="skill" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} />
+                        <PolarRadiusAxis
+                            domain={[0, 100]}
+                            tick={{ fill: 'var(--text-dim)', fontSize: 10 }}
+                            tickCount={5}
+                            tickFormatter={(v: number) => `${v}%`}
+                        />
+                        <Tooltip
+                            contentStyle={{
+                                background: 'var(--bg-card)',
+                                border: '1px solid var(--border)',
+                                borderRadius: 8,
+                            }}
+                            formatter={(value: unknown) => (value != null ? `${value}%` : '')}
+                        />
+                        {levelsPresent.map((lvl) => {
+                            const hasAchieved = entries.some((e) => e.level === lvl && e.achieved);
+                            return (
+                                <Radar
+                                    key={lvl}
+                                    name={lvl}
+                                    dataKey={lvl}
+                                    stroke={CEFR_LEVEL_COLORS[lvl] ?? 'var(--accent)'}
+                                    fill={CEFR_LEVEL_COLORS[lvl] ?? 'var(--accent)'}
+                                    fillOpacity={hasAchieved ? 0.3 : 0.1}
+                                    strokeDasharray={hasAchieved ? undefined : '4 2'}
+                                />
+                            );
+                        })}
+                        {levelsPresent.length > 1 && <Legend />}
+                    </RadarChart>
+                </ResponsiveContainer>
+            </div>
+            <table className="sr-only">
+                <caption>{t('cefr.progress_chart_aria_label')}</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">{t('cefr.skill')}</th>
+                        {levelsPresent.map((lvl) => (
+                            <th key={lvl} scope="col">
+                                {lvl}
+                            </th>
+                        ))}
+                    </tr>
+                </thead>
+                <tbody>
+                    {data.map((row) => (
+                        <tr key={String(row.skill)}>
+                            <td>{row.skill}</td>
+                            {levelsPresent.map((lvl) => (
+                                <td key={lvl}>{row[lvl] != null ? `${row[lvl]}%` : '—'}</td>
+                            ))}
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
         </div>
     );
 }
