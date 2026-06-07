@@ -502,7 +502,9 @@ describe('LoginButtons', () => {
         fireEvent.change(otpInput, { target: { value: '12345678' } });
         fireEvent.click(screen.getByRole('button', { name: /verify code/i }));
 
-        await waitFor(() => expect(storageSync.adapter.verifyOtp).toHaveBeenCalledWith('teacher@school.com', '12345678'));
+        await waitFor(() =>
+            expect(storageSync.adapter.verifyOtp).toHaveBeenCalledWith('teacher@school.com', '12345678')
+        );
         await waitFor(() => expect(screen.getByText(/signed in/i)).toBeInTheDocument());
         expect(onEmailSuccess).toHaveBeenCalled();
     });

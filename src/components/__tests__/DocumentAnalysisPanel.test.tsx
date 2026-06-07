@@ -59,7 +59,16 @@ const mockCriterion: RubricCriterion = {
     title: 'Vocabulary',
     description: '',
     weight: 100,
-    levels: [{ id: 'l1', label: 'Excellent', minPoints: 90, maxPoints: 100, description: '', subItems: [{ id: 'sub1', label: 'Uses varied phrases' }] }],
+    levels: [
+        {
+            id: 'l1',
+            label: 'Excellent',
+            minPoints: 90,
+            maxPoints: 100,
+            description: '',
+            subItems: [{ id: 'sub1', label: 'Uses varied phrases' }],
+        },
+    ],
 };
 
 const mockVocabItem: VocabularyItem = {
@@ -160,7 +169,12 @@ describe('DocumentAnalysisPanel', () => {
     });
 
     it('shows a note and disables analysis for audio/video attachments', () => {
-        const avAttachment: Attachment = { ...mockAttachment, id: 'att2', name: 'recording.mp3', mimeType: 'audio/mpeg' };
+        const avAttachment: Attachment = {
+            ...mockAttachment,
+            id: 'att2',
+            name: 'recording.mp3',
+            mimeType: 'audio/mpeg',
+        };
         render(<DocumentAnalysisPanel {...baseProps} studentAttachments={[avAttachment]} />);
         expect(screen.getByText(/Audio and video files cannot be automatically transcribed/i)).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /extract & analyse/i })).toBeDisabled();
@@ -193,7 +207,12 @@ describe('DocumentAnalysisPanel', () => {
         expect(mockAnalyseVocabulary).toHaveBeenCalledWith('sample text', baseProps.vocabularyItems);
         expect(mockCheckGrammar).toHaveBeenCalledWith('sample text');
         expect(baseProps.onSaveResult).toHaveBeenCalledWith(
-            expect.objectContaining({ studentId: 's1', rubricId: 'r1', attachmentId: 'att1', extractedText: 'sample text' })
+            expect.objectContaining({
+                studentId: 's1',
+                rubricId: 'r1',
+                attachmentId: 'att1',
+                extractedText: 'sample text',
+            })
         );
         expect(screen.getByText('1')).toBeInTheDocument();
         expect(screen.getByText(/\/ 2 items found/i)).toBeInTheDocument();
@@ -259,7 +278,9 @@ describe('DocumentAnalysisPanel', () => {
 
     it('applies a found item with a linked sub-item and marks it as applied', async () => {
         const onApplyToEntry = vi.fn();
-        render(<DocumentAnalysisPanel {...baseProps} onApplyToEntry={onApplyToEntry} existingResult={existingResult} />);
+        render(
+            <DocumentAnalysisPanel {...baseProps} onApplyToEntry={onApplyToEntry} existingResult={existingResult} />
+        );
 
         const applyBtn = screen.getByRole('button', { name: /^apply$/i });
         fireEvent.click(applyBtn);
@@ -270,7 +291,9 @@ describe('DocumentAnalysisPanel', () => {
 
     it('applies all eligible found items via the "Apply all found" button', () => {
         const onApplyToEntry = vi.fn();
-        render(<DocumentAnalysisPanel {...baseProps} onApplyToEntry={onApplyToEntry} existingResult={existingResult} />);
+        render(
+            <DocumentAnalysisPanel {...baseProps} onApplyToEntry={onApplyToEntry} existingResult={existingResult} />
+        );
 
         fireEvent.click(screen.getByRole('button', { name: /apply all found/i }));
         expect(onApplyToEntry).toHaveBeenCalledWith('c1', 'sub1');

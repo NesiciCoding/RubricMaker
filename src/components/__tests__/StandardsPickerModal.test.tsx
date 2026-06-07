@@ -118,7 +118,9 @@ describe('StandardsPickerModal', () => {
         await waitFor(() => expect(screen.getByText('Cite textual evidence')).toBeInTheDocument());
 
         const row = screen.getByText('Cite textual evidence').closest('div[style*="border-bottom"]') as HTMLElement;
-        const linkBtn = within(row).getAllByRole('button').find((b) => b.querySelector('.lucide-link-2'));
+        const linkBtn = within(row)
+            .getAllByRole('button')
+            .find((b) => b.querySelector('.lucide-link-2'));
         fireEvent.click(linkBtn!);
 
         expect(onSelect).toHaveBeenCalledWith(
@@ -136,7 +138,9 @@ describe('StandardsPickerModal', () => {
     it('toggles a standard as a favorite without navigating', async () => {
         await goToStandardsStep();
         const row = screen.getByText('Cite textual evidence').closest('div[style*="border-bottom"]') as HTMLElement;
-        const starBtn = within(row).getAllByRole('button').find((b) => b.querySelector('.lucide-star'));
+        const starBtn = within(row)
+            .getAllByRole('button')
+            .find((b) => b.querySelector('.lucide-star'));
         fireEvent.click(starBtn!);
         expect(mockAddFavorite).toHaveBeenCalledWith(
             expect.objectContaining({ guid: 'a1', description: 'Cite textual evidence' })
@@ -147,7 +151,9 @@ describe('StandardsPickerModal', () => {
         mockIsFavorite.mockReturnValue(true);
         await goToStandardsStep();
         const row = screen.getByText('Cite textual evidence').closest('div[style*="border-bottom"]') as HTMLElement;
-        const starBtn = within(row).getAllByRole('button').find((b) => b.querySelector('.lucide-star'));
+        const starBtn = within(row)
+            .getAllByRole('button')
+            .find((b) => b.querySelector('.lucide-star'));
         fireEvent.click(starBtn!);
         expect(mockRemoveFavorite).toHaveBeenCalledWith('a1');
     });
@@ -164,7 +170,9 @@ describe('StandardsPickerModal', () => {
         await goToStandardsStep();
         const sortSelect = screen.getByRole('combobox');
         fireEvent.change(sortSelect, { target: { value: 'alpha-desc' } });
-        const descriptions = screen.getAllByText(/Cite textual evidence|Determine central ideas/).map((el) => el.textContent);
+        const descriptions = screen
+            .getAllByText(/Cite textual evidence|Determine central ideas/)
+            .map((el) => el.textContent);
         expect(descriptions[0]).toBe('Determine central ideas');
     });
 
@@ -205,7 +213,9 @@ describe('StandardsPickerModal', () => {
         expect(onClose).toHaveBeenCalled();
 
         const favRow = screen.getByText('Favorited standard text').closest('.standard-row') as HTMLElement;
-        const removeBtn = within(favRow).getAllByRole('button').find((b) => b.querySelector('.lucide-star'));
+        const removeBtn = within(favRow)
+            .getAllByRole('button')
+            .find((b) => b.querySelector('.lucide-star'));
         fireEvent.click(removeBtn!);
         expect(mockRemoveFavorite).toHaveBeenCalledWith('fav1');
     });

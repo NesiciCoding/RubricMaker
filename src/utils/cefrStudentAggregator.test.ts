@@ -252,7 +252,15 @@ describe('getCefrStudentOverview', () => {
                     weight: 100,
                     cefrSkill: 'reading',
                     levels: [
-                        { id: 'l1', label: 'Strong', minPoints: 80, maxPoints: 100, description: '', subItems: [], cefrLevel: 'B1' },
+                        {
+                            id: 'l1',
+                            label: 'Strong',
+                            minPoints: 80,
+                            maxPoints: 100,
+                            description: '',
+                            subItems: [],
+                            cefrLevel: 'B1',
+                        },
                         { id: 'l2', label: 'Weak', minPoints: 0, maxPoints: 50, description: '', subItems: [] },
                     ],
                 },
@@ -278,7 +286,17 @@ describe('getCefrStudentOverview', () => {
                     title: 'Listening',
                     description: '',
                     weight: 100,
-                    levels: [{ id: 'l1', label: 'Strong', minPoints: 80, maxPoints: 100, description: '', subItems: [], cefrLevel: 'A2' }],
+                    levels: [
+                        {
+                            id: 'l1',
+                            label: 'Strong',
+                            minPoints: 80,
+                            maxPoints: 100,
+                            description: '',
+                            subItems: [],
+                            cefrLevel: 'A2',
+                        },
+                    ],
                 },
             ],
         });
@@ -295,7 +313,17 @@ describe('getCefrStudentOverview', () => {
                     title: 'Untagged',
                     description: '',
                     weight: 100,
-                    levels: [{ id: 'l1', label: 'Strong', minPoints: 80, maxPoints: 100, description: '', subItems: [], cefrLevel: 'A2' }],
+                    levels: [
+                        {
+                            id: 'l1',
+                            label: 'Strong',
+                            minPoints: 80,
+                            maxPoints: 100,
+                            description: '',
+                            subItems: [],
+                            cefrLevel: 'A2',
+                        },
+                    ],
                 },
             ],
         });
@@ -311,7 +339,9 @@ describe('getCefrStudentOverview', () => {
                     title: 'Writing Quality',
                     description: '',
                     weight: 50,
-                    levels: [{ id: 'l1', label: 'Untagged', minPoints: 80, maxPoints: 100, description: '', subItems: [] }],
+                    levels: [
+                        { id: 'l1', label: 'Untagged', minPoints: 80, maxPoints: 100, description: '', subItems: [] },
+                    ],
                 },
                 {
                     id: 'c2',
@@ -325,7 +355,13 @@ describe('getCefrStudentOverview', () => {
         const sr = makeSr({
             entries: [
                 { criterionId: 'c1', levelId: '', selectedPoints: 85, checkedSubItems: [], comment: '' },
-                { criterionId: 'missing-criterion', levelId: 'l1', selectedPoints: 85, checkedSubItems: [], comment: '' },
+                {
+                    criterionId: 'missing-criterion',
+                    levelId: 'l1',
+                    selectedPoints: 85,
+                    checkedSubItems: [],
+                    comment: '',
+                },
                 { criterionId: 'c1', levelId: 'l1', selectedPoints: 85, checkedSubItems: [], comment: '' },
             ],
         });

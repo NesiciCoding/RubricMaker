@@ -53,7 +53,10 @@ describe('VocabularyListEditor', () => {
     });
 
     it('filters items by category', () => {
-        const items = [makeItem({ id: 'v1', phrase: 'good morning', category: 'vocabulary' }), makeItem({ id: 'v2', phrase: 'past tense', category: 'grammar' })];
+        const items = [
+            makeItem({ id: 'v1', phrase: 'good morning', category: 'vocabulary' }),
+            makeItem({ id: 'v2', phrase: 'past tense', category: 'grammar' }),
+        ];
         render(<VocabularyListEditor {...baseProps} items={items} />);
         expect(screen.getByText('good morning')).toBeInTheDocument();
         expect(screen.getByText('past tense')).toBeInTheDocument();

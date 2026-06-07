@@ -233,7 +233,7 @@ describe('EssayImportModal', () => {
         });
 
         it('shows a loading indicator while submissions are being fetched', async () => {
-            let resolveFetch: (rows: typeof dbSubmission[]) => void = () => {};
+            let resolveFetch: (rows: (typeof dbSubmission)[]) => void = () => {};
             const onFetchSubmissions = vi.fn(
                 () =>
                     new Promise<(typeof dbSubmission)[]>((resolve) => {
@@ -284,11 +284,19 @@ describe('EssayImportModal', () => {
         });
 
         it('shows over and under word-limit badges in the submission list', async () => {
-            const overSub = { ...dbSubmission, id: 'db-2', studentEmail: 'bob@school.com', wordLimitStatus: 'over' as const };
-            const underSub = { ...dbSubmission, id: 'db-3', studentEmail: 'cara@school.com', wordLimitStatus: 'under' as const };
-            render(
-                <EssayImportModal {...dbProps({ onFetchSubmissions: vi.fn(async () => [overSub, underSub]) })} />
-            );
+            const overSub = {
+                ...dbSubmission,
+                id: 'db-2',
+                studentEmail: 'bob@school.com',
+                wordLimitStatus: 'over' as const,
+            };
+            const underSub = {
+                ...dbSubmission,
+                id: 'db-3',
+                studentEmail: 'cara@school.com',
+                wordLimitStatus: 'under' as const,
+            };
+            render(<EssayImportModal {...dbProps({ onFetchSubmissions: vi.fn(async () => [overSub, underSub]) })} />);
             expect(await screen.findByText('essay.word_limit_over')).toBeInTheDocument();
             expect(screen.getByText('essay.word_limit_under')).toBeInTheDocument();
         });
@@ -381,7 +389,9 @@ describe('EssayImportModal', () => {
             expect(confirmSpy).toHaveBeenCalledWith(
                 'Delete this submission from alice@school.com? This cannot be undone.'
             );
-            await vi.waitFor(() => expect(props.onDeleteSubmission).toHaveBeenCalledWith('db-1', 'submissions/db-1.html'));
+            await vi.waitFor(() =>
+                expect(props.onDeleteSubmission).toHaveBeenCalledWith('db-1', 'submissions/db-1.html')
+            );
             await vi.waitFor(() => expect(screen.queryByText('alice@school.com')).not.toBeInTheDocument());
             confirmSpy.mockRestore();
         });

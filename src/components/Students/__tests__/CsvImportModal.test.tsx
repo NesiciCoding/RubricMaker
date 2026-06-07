@@ -101,7 +101,9 @@ describe('CsvImportModal', () => {
 
     it('lets the teacher change the email column mapping', () => {
         parseImpl = (_file, opts) =>
-            opts.complete({ data: [{ Name: 'Alice Anderson', PrimaryEmail: 'alice@new.com', BackupEmail: 'alice@old.com' }] });
+            opts.complete({
+                data: [{ Name: 'Alice Anderson', PrimaryEmail: 'alice@new.com', BackupEmail: 'alice@old.com' }],
+            });
         render(<CsvImportModal {...baseProps} />);
         const [, emailSelect] = screen.getAllByRole('combobox');
         fireEvent.change(emailSelect, { target: { value: 'BackupEmail' } });
@@ -110,15 +112,13 @@ describe('CsvImportModal', () => {
     });
 
     it('shows the correct singular/plural label on the import button', () => {
-        parseImpl = (_file, opts) =>
-            opts.complete({ data: [{ Name: 'A' }, { Name: 'B' }] });
+        parseImpl = (_file, opts) => opts.complete({ data: [{ Name: 'A' }, { Name: 'B' }] });
         render(<CsvImportModal {...baseProps} />);
         expect(screen.getByRole('button', { name: /import 2 students/i })).toBeInTheDocument();
     });
 
     it('maps first/last name columns and disables full-name when used together', () => {
-        parseImpl = (_file, opts) =>
-            opts.complete({ data: [{ First: 'Alice', Last: 'Anderson', Other: 'x' }] });
+        parseImpl = (_file, opts) => opts.complete({ data: [{ First: 'Alice', Last: 'Anderson', Other: 'x' }] });
         render(<CsvImportModal {...baseProps} />);
 
         const [fullNameSelect, , firstSelect, lastSelect] = screen.getAllByRole('combobox');
@@ -141,14 +141,17 @@ describe('CsvImportModal', () => {
         render(<CsvImportModal {...baseProps} />);
         fireEvent.click(screen.getByRole('button', { name: /import 1 student/i }));
 
-        expect(mockAddStudent).toHaveBeenCalledWith({ name: 'Alice Anderson', email: 'alice@school.com', classId: 'class-1' });
+        expect(mockAddStudent).toHaveBeenCalledWith({
+            name: 'Alice Anderson',
+            email: 'alice@school.com',
+            classId: 'class-1',
+        });
         expect(mockAddClass).not.toHaveBeenCalled();
         expect(baseProps.onSuccess).toHaveBeenCalled();
     });
 
     it('creates new classes for unmatched class names', () => {
-        parseImpl = (_file, opts) =>
-            opts.complete({ data: [{ Name: 'Bob Brown', Email: '', Class: 'New Class' }] });
+        parseImpl = (_file, opts) => opts.complete({ data: [{ Name: 'Bob Brown', Email: '', Class: 'New Class' }] });
         render(<CsvImportModal {...baseProps} />);
         fireEvent.click(screen.getByRole('button', { name: /import 1 student/i }));
 
@@ -177,13 +180,16 @@ describe('CsvImportModal', () => {
         const classSelect = selects[selects.length - 1];
         fireEvent.change(classSelect, { target: { value: '' } });
         fireEvent.click(screen.getByRole('button', { name: /import 1 student/i }));
-        expect(mockAddStudent).toHaveBeenCalledWith({ name: 'Alice Anderson', email: 'alice@school.com', classId: 'class-1' });
+        expect(mockAddStudent).toHaveBeenCalledWith({
+            name: 'Alice Anderson',
+            email: 'alice@school.com',
+            classId: 'class-1',
+        });
     });
 
     it('does not import students when no class can be resolved and there are no existing classes', () => {
         mockClasses = [];
-        parseImpl = (_file, opts) =>
-            opts.complete({ data: [{ Name: 'Dana Doe', Email: '', Class: '' }] });
+        parseImpl = (_file, opts) => opts.complete({ data: [{ Name: 'Dana Doe', Email: '', Class: '' }] });
         render(<CsvImportModal {...baseProps} />);
         fireEvent.click(screen.getByRole('button', { name: /import 1 student/i }));
         expect(mockAddStudent).not.toHaveBeenCalled();
@@ -192,8 +198,7 @@ describe('CsvImportModal', () => {
 
     it('matches an existing class case-insensitively and does not create a duplicate', () => {
         mockClasses = [{ id: 'class-1', name: 'class a' }];
-        parseImpl = (_file, opts) =>
-            opts.complete({ data: [{ Name: 'Eve Evans', Email: '', Class: 'CLASS A' }] });
+        parseImpl = (_file, opts) => opts.complete({ data: [{ Name: 'Eve Evans', Email: '', Class: 'CLASS A' }] });
         render(<CsvImportModal {...baseProps} />);
         fireEvent.click(screen.getByRole('button', { name: /import 1 student/i }));
         expect(mockAddClass).not.toHaveBeenCalled();
@@ -201,8 +206,7 @@ describe('CsvImportModal', () => {
     });
 
     it('builds the name from first/last name fields when full name is not mapped', () => {
-        parseImpl = (_file, opts) =>
-            opts.complete({ data: [{ First: 'Frank', Last: 'Foster', Class: 'Class A' }] });
+        parseImpl = (_file, opts) => opts.complete({ data: [{ First: 'Frank', Last: 'Foster', Class: 'Class A' }] });
         render(<CsvImportModal {...baseProps} />);
         const [, , firstSelect, lastSelect] = screen.getAllByRole('combobox');
         fireEvent.change(firstSelect, { target: { value: 'First' } });

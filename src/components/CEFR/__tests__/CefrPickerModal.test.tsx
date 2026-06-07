@@ -33,7 +33,8 @@ function levelHeader(text: string) {
 }
 
 const A1_LEVEL_DESC = 'Breakthrough – Can understand and use very basic familiar expressions.';
-const B1_LEVEL_DESC = 'Threshold – Can deal with most situations likely to arise while travelling and can express personal opinions.';
+const B1_LEVEL_DESC =
+    'Threshold – Can deal with most situations likely to arise while travelling and can express personal opinions.';
 
 const linkedCefr: LinkedCefrDescriptor = {
     descriptorId: 'r-a1-1',
@@ -101,7 +102,9 @@ describe('CefrPickerModal', () => {
         expect(screen.getByRole('button', { name: 'Lezen' })).toBeInTheDocument();
         fireEvent.change(search, { target: { value: 'vertrouwde namen' } });
         fireEvent.click(
-            screen.getByText('Doorbraak – Kan elementaire vertrouwde uitdrukkingen begrijpen en gebruiken.').closest('button')!
+            screen
+                .getByText('Doorbraak – Kan elementaire vertrouwde uitdrukkingen begrijpen en gebruiken.')
+                .closest('button')!
         );
         expect(
             screen.getByText(
@@ -161,7 +164,9 @@ describe('CefrPickerModal', () => {
                 expect.objectContaining({ descriptorId: 'r-a1-1', level: 'A1', skill: 'reading' })
             );
 
-            rerender(<CefrPickerModal {...baseProps} linkedDescriptors={[linkedCefr]} onAdd={onAdd} onRemove={onRemove} />);
+            rerender(
+                <CefrPickerModal {...baseProps} linkedDescriptors={[linkedCefr]} onAdd={onAdd} onRemove={onRemove} />
+            );
             const linkedRow = screen.getByText(linkedCefr.descriptionEn).closest('button')!;
             fireEvent.click(linkedRow);
             expect(onRemove).toHaveBeenCalledWith('r-a1-1');
@@ -234,7 +239,9 @@ describe('CefrPickerModal', () => {
             const inquirersHeader = screen.getByRole('button', { name: /Inquirers/i });
             fireEvent.click(inquirersHeader);
 
-            const row = screen.getByText('Nurtures curiosity and asks meaningful questions to deepen understanding.').closest('button')!;
+            const row = screen
+                .getByText('Nurtures curiosity and asks meaningful questions to deepen understanding.')
+                .closest('button')!;
             fireEvent.click(row);
             expect(onAddFramework).toHaveBeenCalledWith(
                 expect.objectContaining({ descriptorId: 'ib-inq-1', framework: 'ib', categoryId: 'inquirers' })
@@ -265,7 +272,9 @@ describe('CefrPickerModal', () => {
             const inquirersHeader = screen.getByRole('button', { name: /Inquirers/i });
             expect(within(inquirersHeader).getByText('1')).toBeInTheDocument();
             fireEvent.click(inquirersHeader);
-            const row = screen.getByText('Nurtures curiosity and asks meaningful questions to deepen understanding.').closest('button')!;
+            const row = screen
+                .getByText('Nurtures curiosity and asks meaningful questions to deepen understanding.')
+                .closest('button')!;
             fireEvent.click(row);
             expect(onRemoveFramework).toHaveBeenCalledWith('ib-inq-1');
         });
@@ -346,7 +355,9 @@ describe('CefrPickerModal', () => {
             const rememberHeader = screen.getByRole('button', { name: /1\. Remember/i });
             expect(within(rememberHeader).getByText('1')).toBeInTheDocument();
             fireEvent.click(rememberHeader);
-            const row = screen.getByText('Can recall key terms, facts, and definitions from memory.').closest('button')!;
+            const row = screen
+                .getByText('Can recall key terms, facts, and definitions from memory.')
+                .closest('button')!;
             fireEvent.click(row);
             expect(onRemoveFramework).toHaveBeenCalledWith('bl-rem-1');
         });
