@@ -15,6 +15,7 @@ import {
     Shield,
     X,
     GraduationCap,
+    HelpCircle,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
@@ -61,6 +62,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
         { to: '/export', icon: Download, label: t('navigation.export') },
         { to: '/statistics', icon: BarChart3, label: t('navigation.statistics') },
         { to: '/comments', icon: MessageSquare, label: t('navigation.comment_bank') },
+        { to: '/docs', icon: HelpCircle, label: t('navigation.docs') },
     ];
 
     const renderNavLink = ({

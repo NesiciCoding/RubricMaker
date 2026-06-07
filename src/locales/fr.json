@@ -139,7 +139,8 @@
         "export": "Exporter",
         "attachments": "Pièces jointes",
         "localization": "Localisation",
-        "cefr_overview": "Aperçu CECR"
+        "cefr_overview": "Aperçu CECR",
+        "docs": "Documentation"
     },
     "dashboard": {
         "title": "Tableau de bord",

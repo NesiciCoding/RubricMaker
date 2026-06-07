@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import Topbar from '../components/Layout/Topbar';
-import { ArrowLeft, Check, Equal, ChevronRight, ChevronLeft, MessageSquare, Shuffle } from 'lucide-react';
+import { ArrowLeft, Check, Equal, ChevronRight, ChevronLeft, MessageSquare, Shuffle, ChevronDown, ChevronUp } from 'lucide-react';
 import { nanoid } from '../utils/nanoid';
 import { useTranslation } from 'react-i18next';
 import { calcGradeSummary } from '../utils/gradeCalc';
@@ -189,6 +189,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
 
     // Which criterion comment panels are open
     const [openComments, setOpenComments] = useState<Set<string>>(new Set());
+    const [progressOpen, setProgressOpen] = useState(false);
 
     useEffect(() => {
         if (!rubric) return;
@@ -464,22 +465,39 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
     if (!rubric) return <div className="page-content">Rubric not found</div>;
     if (error)
         return (
-            <div
-                className="page-content"
-                style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 16,
-                    minHeight: 200,
-                }}
-            >
-                <p className="text-muted">{error}</p>
-                <button className="btn btn-secondary" onClick={() => navigate(-1)}>
-                    <ArrowLeft size={15} /> {t('comparativeGrading.action_back')}
-                </button>
-            </div>
+            <>
+                <Topbar
+                    title={rubric?.name ?? t('comparativeGrading.title')}
+                    actions={
+                        <button className="btn btn-ghost btn-sm" onClick={() => navigate(-1)}>
+                            <ArrowLeft size={15} /> {t('comparativeGrading.action_back')}
+                        </button>
+                    }
+                />
+                <div
+                    className="page-content fade-in"
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300 }}
+                >
+                    <div
+                        className="card"
+                        style={{ textAlign: 'center', padding: '40px 32px', maxWidth: 380 }}
+                    >
+                        <Equal size={36} style={{ color: 'var(--text-dim)', marginBottom: 16 }} />
+                        <h3 style={{ marginBottom: 8 }}>{t('comparativeGrading.not_enough_students')}</h3>
+                        <p className="text-muted text-sm" style={{ marginBottom: 24 }}>
+                            Comparative grading requires at least two students in the same class. Add another student to this class to get started.
+                        </p>
+                        <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+                            <button className="btn btn-primary btn-sm" onClick={() => navigate('/students')}>
+                                Go to Students
+                            </button>
+                            <button className="btn btn-secondary btn-sm" onClick={() => navigate(-1)}>
+                                <ArrowLeft size={14} /> {t('comparativeGrading.action_back')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </>
         );
     if (!studentA || !studentB || !srA || !srB)
         return <div className="page-content">{t('comparativeGrading.loading')}</div>;
@@ -646,7 +664,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                         overflow: 'hidden',
                     }}
                 >
-                    {/* Left Column (progress + Student A attachments) */}
+                    {/* Left Column (Student A attachments + collapsible progress) */}
                     <div
                         style={{
                             display: 'flex',
@@ -656,71 +674,91 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                             paddingRight: 4,
                         }}
                     >
-                        {/* Per-student progress */}
-                        <div className="card" style={{ background: 'var(--bg-elevated)', padding: '14px 16px' }}>
-                            <h3 style={{ marginBottom: 10, fontSize: '0.9rem' }}>Student Progress</h3>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                                {[...classStudents]
-                                    .sort((a, b) => (perStudentDone[a.id] ?? 0) - (perStudentDone[b.id] ?? 0))
-                                    .map((s) => {
-                                        const done = perStudentDone[s.id] ?? 0;
-                                        const pct = maxPerStudent > 0 ? (done / maxPerStudent) * 100 : 0;
-                                        const isCurrent = s.id === studentA?.id || s.id === studentB?.id;
-                                        return (
-                                            <div key={s.id}>
-                                                <div
-                                                    style={{
-                                                        display: 'flex',
-                                                        justifyContent: 'space-between',
-                                                        fontSize: '0.78rem',
-                                                        marginBottom: 2,
-                                                    }}
-                                                >
-                                                    <span
-                                                        style={{
-                                                            fontWeight: isCurrent ? 600 : 400,
-                                                            color: isCurrent ? 'var(--accent)' : 'var(--text)',
-                                                        }}
-                                                    >
-                                                        {s.name}
-                                                    </span>
-                                                    <span className="text-muted">
-                                                        {done} / {maxPerStudent}
-                                                    </span>
-                                                </div>
-                                                <div
-                                                    style={{
-                                                        background: 'var(--bg-body)',
-                                                        borderRadius: 3,
-                                                        height: 4,
-                                                        overflow: 'hidden',
-                                                    }}
-                                                >
-                                                    <div
-                                                        style={{
-                                                            width: `${pct}%`,
-                                                            height: '100%',
-                                                            background: isCurrent
-                                                                ? 'var(--accent)'
-                                                                : 'var(--text-muted)',
-                                                            borderRadius: 3,
-                                                            transition: 'width 0.3s ease',
-                                                        }}
-                                                    />
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                            </div>
-                        </div>
-
-                        {/* Student A attachments */}
+                        {/* Student A attachments — shown first */}
                         <div className="card" style={{ background: 'var(--bg-elevated)' }}>
                             <h3 style={{ marginBottom: 12 }}>Attachments</h3>
                             {attA.length === 0 ? (
                                 <p className="text-muted text-sm">No attachments uploaded.</p>
                             ) : (
                                 attA.map((a) => <AttachmentViewer key={a.id} attachment={a} />)
+                            )}
+                        </div>
+
+                        {/* Per-student progress — collapsible */}
+                        <div className="card" style={{ background: 'var(--bg-elevated)', padding: 0, overflow: 'hidden' }}>
+                            <button
+                                onClick={() => setProgressOpen((o) => !o)}
+                                style={{
+                                    width: '100%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    padding: '12px 16px',
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    color: 'var(--text)',
+                                    fontSize: '0.9rem',
+                                    fontWeight: 600,
+                                }}
+                            >
+                                <span>Student Progress ({classStudents.length})</span>
+                                {progressOpen ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                            </button>
+                            {progressOpen && (
+                                <div style={{ padding: '0 16px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                    {[...classStudents]
+                                        .sort((a, b) => (perStudentDone[a.id] ?? 0) - (perStudentDone[b.id] ?? 0))
+                                        .map((s) => {
+                                            const done = perStudentDone[s.id] ?? 0;
+                                            const pct = maxPerStudent > 0 ? (done / maxPerStudent) * 100 : 0;
+                                            const isCurrent = s.id === studentA?.id || s.id === studentB?.id;
+                                            return (
+                                                <div key={s.id}>
+                                                    <div
+                                                        style={{
+                                                            display: 'flex',
+                                                            justifyContent: 'space-between',
+                                                            fontSize: '0.78rem',
+                                                            marginBottom: 2,
+                                                        }}
+                                                    >
+                                                        <span
+                                                            style={{
+                                                                fontWeight: isCurrent ? 600 : 400,
+                                                                color: isCurrent ? 'var(--accent)' : 'var(--text)',
+                                                            }}
+                                                        >
+                                                            {s.name}
+                                                        </span>
+                                                        <span className="text-muted">
+                                                            {done} / {maxPerStudent}
+                                                        </span>
+                                                    </div>
+                                                    <div
+                                                        style={{
+                                                            background: 'var(--bg-body)',
+                                                            borderRadius: 3,
+                                                            height: 4,
+                                                            overflow: 'hidden',
+                                                        }}
+                                                    >
+                                                        <div
+                                                            style={{
+                                                                width: `${pct}%`,
+                                                                height: '100%',
+                                                                background: isCurrent
+                                                                    ? 'var(--accent)'
+                                                                    : 'var(--text-muted)',
+                                                                borderRadius: 3,
+                                                                transition: 'width 0.3s ease',
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                </div>
                             )}
                         </div>
                     </div>

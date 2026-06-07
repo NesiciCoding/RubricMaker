@@ -148,7 +148,8 @@
         "export": "Export",
         "attachments": "Attachments",
         "localization": "Localization",
-        "cefr_overview": "CEFR Overview"
+        "cefr_overview": "CEFR Overview",
+        "docs": "Docs"
     },
     "dashboard": {
         "title": "Dashboard",

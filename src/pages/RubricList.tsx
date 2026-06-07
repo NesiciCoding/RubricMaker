@@ -15,6 +15,7 @@ import {
     Check,
     Layers,
     Eye,
+    Mic,
 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useTranslation } from 'react-i18next';
@@ -401,7 +402,6 @@ export default function RubricList() {
                                                         : "You'll choose a class on the next screen"
                                                 }
                                                 onClick={() => {
-                                                    // Prefer the active class; if none, the ComparativeGrading page shows a class picker
                                                     const activeClass = classes.find(
                                                         (c) => c.id === settings.activeClassId
                                                     );
@@ -412,6 +412,38 @@ export default function RubricList() {
                                             >
                                                 <GitCompare size={14} /> {t('rubricList.action_compare')}
                                             </button>
+                                            {/* Speaking session launcher */}
+                                            {(() => {
+                                                const classStudents = settings.activeClassId
+                                                    ? students.filter((s) => s.classId === settings.activeClassId)
+                                                    : students;
+                                                if (classStudents.length === 0) return null;
+                                                return (
+                                                    <div style={{ position: 'relative', flex: '1 1 auto' }}>
+                                                        <select
+                                                            value=""
+                                                            onChange={(e) => {
+                                                                if (e.target.value) navigate(`/speaking/${r.id}/${e.target.value}`);
+                                                            }}
+                                                            style={{
+                                                                width: '100%',
+                                                                padding: '5px 8px',
+                                                                borderRadius: 6,
+                                                                border: '1px solid var(--border)',
+                                                                background: 'var(--bg-elevated)',
+                                                                color: 'var(--text)',
+                                                                fontSize: '0.8rem',
+                                                                cursor: 'pointer',
+                                                            }}
+                                                        >
+                                                            <option value="" disabled>🎙 Speaking…</option>
+                                                            {classStudents.map((s) => (
+                                                                <option key={s.id} value={s.id}>{s.name}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
                                     </div>
                                 </div>

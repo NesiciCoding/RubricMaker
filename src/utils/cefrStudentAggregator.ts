@@ -149,6 +149,29 @@ export function getCefrStudentOverview(
             acc.thresholds.push(rubric.cefrAchieveThreshold ?? 70);
         }
 
+        // ── Per-criterion/level CEFR aggregation ──────────────────────────────
+        // If individual RubricLevels carry a cefrLevel tag, use that directly.
+        // Being graded at a tagged level counts as "achieved" for that cell.
+        for (const entry of sr.entries) {
+            if (!entry.levelId) continue;
+            const criterion = rubric.criteria.find((c) => c.id === entry.criterionId);
+            if (!criterion) continue;
+            const selectedLevel = criterion.levels.find((l) => l.id === entry.levelId);
+            if (!selectedLevel?.cefrLevel) continue;
+
+            const skill: CefrSkill = criterion.cefrSkill ?? rubric.cefrSkill ?? 'writing';
+            const level: CefrLevel = selectedLevel.cefrLevel;
+            const key = `${skill}__${level}`;
+
+            if (!cellAccMap.has(key)) {
+                cellAccMap.set(key, { skill, level, scores: [], thresholds: [], confidenceByDescriptor: new Map() });
+            }
+            const acc = cellAccMap.get(key)!;
+            // Score 100 = "achieved this level directly" — threshold stays at 100 so achieved iff the level was selected
+            acc.scores.push(100);
+            acc.thresholds.push(100);
+        }
+
         // Standards aggregation (mirrors learningGoalsAggregator pattern)
         const pointsEarned = new Map<string, number>();
         const pointsMax = new Map<string, number>();

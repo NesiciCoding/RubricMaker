@@ -329,6 +329,30 @@ export default function RubricBuilder() {
         peerReviews,
     ]);
 
+    // ── Save as Template ────────────────────────────────────────────────────────
+    const USER_TEMPLATES_KEY = 'rm_user_templates';
+
+    const [savedAsTemplate, setSavedAsTemplate] = useState(false);
+
+    function handleSaveAsTemplate() {
+        if (!name.trim()) return;
+        const raw = localStorage.getItem(USER_TEMPLATES_KEY);
+        const existing: Array<{ id: string; name: string; subject: string; description: string; criteria: typeof criteria; savedAt: string }> =
+            raw ? JSON.parse(raw) : [];
+        const entry = {
+            id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2),
+            name: name.trim(),
+            subject,
+            description,
+            criteria,
+            savedAt: new Date().toISOString(),
+        };
+        const filtered = existing.filter((t) => t.name !== entry.name);
+        localStorage.setItem(USER_TEMPLATES_KEY, JSON.stringify([entry, ...filtered].slice(0, 20)));
+        setSavedAsTemplate(true);
+        setTimeout(() => setSavedAsTemplate(false), 2000);
+    }
+
     // ── Criterion operations ────────────────────────────────────────────────────
     function moveCriterion(idx: number, dir: -1 | 1) {
         const next = [...criteria];
@@ -704,6 +728,14 @@ export default function RubricBuilder() {
                                 <Clock size={15} /> {t('rubricBuilder.version_history')}
                             </button>
                         )}
+                        <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={handleSaveAsTemplate}
+                            title="Save current rubric as a reusable template"
+                        >
+                            <Copy size={15} />{' '}
+                            {savedAsTemplate ? 'Saved!' : 'Save as Template'}
+                        </button>
                         <button className="btn btn-primary btn-sm" onClick={handleSave}>
                             <Save size={15} />{' '}
                             {saved ? t('rubricBuilder.action_saved') : t('rubricBuilder.action_save')}
@@ -1359,6 +1391,29 @@ export default function RubricBuilder() {
                                                                     </button>
                                                                 </div>
 
+                                                                {/* Per-criterion CEFR skill override */}
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                                                                    <span className="text-xs text-muted" style={{ whiteSpace: 'nowrap' }}>CEFR skill:</span>
+                                                                    <select
+                                                                        value={criterion.cefrSkill ?? ''}
+                                                                        onChange={(e) =>
+                                                                            setCriteria((c) =>
+                                                                                c.map((x) =>
+                                                                                    x.id === criterion.id
+                                                                                        ? { ...x, cefrSkill: (e.target.value as CefrSkill) || undefined }
+                                                                                        : x
+                                                                                )
+                                                                            )
+                                                                        }
+                                                                        style={{ fontSize: '0.78rem', padding: '2px 6px', borderRadius: 5, border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text)', maxWidth: 180 }}
+                                                                    >
+                                                                        <option value="">— inherit from rubric —</option>
+                                                                        {CEFR_SKILLS.map((sk) => (
+                                                                            <option key={sk} value={sk}>{CEFR_SKILL_LABELS[sk].en}</option>
+                                                                        ))}
+                                                                    </select>
+                                                                </div>
+
                                                                 {/* CEFR descriptors display */}
                                                                 {(criterion.cefrDescriptors || []).length > 0 && (
                                                                     <div
@@ -1863,6 +1918,34 @@ export default function RubricBuilder() {
                                                                                                 support each claim")
                                                                                             </div>
                                                                                         )}
+
+                                                                                    {/* CEFR level tag */}
+                                                                                    <div style={{ marginBottom: 8 }}>
+                                                                                        <div className="text-xs text-muted" style={{ marginBottom: 4 }}>CEFR level</div>
+                                                                                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                                                                                            {(['A1','A2','B1','B2','C1','C2'] as const).map((lvl) => {
+                                                                                                const active = level.cefrLevel === lvl;
+                                                                                                return (
+                                                                                                    <button
+                                                                                                        key={lvl}
+                                                                                                        type="button"
+                                                                                                        onClick={() => updateLevel(criterion.id, level.id, { cefrLevel: active ? undefined : lvl })}
+                                                                                                        style={{
+                                                                                                            padding: '2px 8px',
+                                                                                                            borderRadius: 4,
+                                                                                                            border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
+                                                                                                            background: active ? 'var(--accent)' : 'var(--bg-elevated)',
+                                                                                                            color: active ? '#fff' : 'var(--text-muted)',
+                                                                                                            fontSize: '0.72rem',
+                                                                                                            fontWeight: 700,
+                                                                                                            cursor: 'pointer',
+                                                                                                            letterSpacing: '0.02em',
+                                                                                                        }}
+                                                                                                    >{lvl}</button>
+                                                                                                );
+                                                                                            })}
+                                                                                        </div>
+                                                                                    </div>
 
                                                                                     {/* Sub-items toggle */}
                                                                                     <button
@@ -3404,6 +3487,17 @@ function RubricWysiwygEditor({
                                         style={{ ...textareaStyle, textAlign: 'center', fontWeight: 'bold' }}
                                         className="hover-border"
                                     />
+                                    {/* CEFR badge — shown if any criterion has this level tagged */}
+                                    {(() => {
+                                        const tagged = criteria.map((c) => c.levels[i]?.cefrLevel).find(Boolean);
+                                        if (!tagged) return null;
+                                        const allSame = criteria.every((c) => c.levels[i]?.cefrLevel === tagged);
+                                        return (
+                                            <div style={{ marginTop: 4, fontSize: '0.7rem', fontWeight: 700, padding: '1px 7px', borderRadius: 4, background: 'var(--accent)', color: '#fff', display: 'inline-block' }}>
+                                                {allSame ? tagged : '~'}
+                                            </div>
+                                        );
+                                    })()}
                                     {format.showPoints && (
                                         <div
                                             style={{

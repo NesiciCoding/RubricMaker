@@ -139,7 +139,8 @@
         "export": "Exportieren",
         "attachments": "Anhänge",
         "localization": "Lokalisierung",
-        "cefr_overview": "GER-Übersicht"
+        "cefr_overview": "GER-Übersicht",
+        "docs": "Dokumentation"
     },
     "dashboard": {
         "title": "Dashboard",

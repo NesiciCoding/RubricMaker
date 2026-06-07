@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     BookOpen,
@@ -25,10 +25,34 @@ function timeAgo(iso: string): string {
     return `${Math.floor(diff / 86400)}d ago`;
 }
 
+const USER_TEMPLATES_KEY = 'rm_user_templates';
+
+type UserTemplate = {
+    id: string;
+    name: string;
+    subject: string;
+    description: string;
+    criteria: unknown[];
+    savedAt: string;
+};
+
 export default function Dashboard() {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { rubrics, students, studentRubrics, gradeScales, settings } = useApp();
+
+    const [userTemplates, setUserTemplates] = useState<UserTemplate[]>([]);
+
+    useEffect(() => {
+        const raw = localStorage.getItem(USER_TEMPLATES_KEY);
+        if (raw) {
+            try {
+                setUserTemplates(JSON.parse(raw));
+            } catch {
+                setUserTemplates([]);
+            }
+        }
+    }, []);
 
     const scale = useMemo(
         () => gradeScales.find((g) => g.id === settings.defaultGradeScaleId) ?? gradeScales[0],
@@ -378,6 +402,81 @@ export default function Dashboard() {
 
                         <div className="card">
                             <h3 style={{ marginBottom: 16 }}>{t('dashboard.quick_start_templates')}</h3>
+
+                            {userTemplates.length > 0 && (
+                                <>
+                                    <div
+                                        style={{
+                                            fontSize: '0.72rem',
+                                            fontWeight: 700,
+                                            color: 'var(--text-dim)',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.06em',
+                                            marginBottom: 8,
+                                        }}
+                                    >
+                                        My Templates
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+                                        {userTemplates.map((tpl) => (
+                                            <div
+                                                key={tpl.id}
+                                                style={{
+                                                    padding: '10px 14px',
+                                                    background: 'var(--accent-soft)',
+                                                    borderRadius: 10,
+                                                    border: '1px solid var(--accent)',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s',
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    gap: 8,
+                                                }}
+                                                onClick={() => {
+                                                    navigate('/rubrics/new', { state: { template: tpl } });
+                                                }}
+                                                className="hoverable"
+                                            >
+                                                <div>
+                                                    <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: 2 }}>
+                                                        {tpl.name}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                                                        {tpl.subject || 'No subject'}
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    className="btn btn-ghost btn-sm"
+                                                    style={{ fontSize: '0.7rem', padding: '2px 6px', flexShrink: 0, color: 'var(--text-dim)' }}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        const updated = userTemplates.filter((t) => t.id !== tpl.id);
+                                                        setUserTemplates(updated);
+                                                        localStorage.setItem(USER_TEMPLATES_KEY, JSON.stringify(updated));
+                                                    }}
+                                                    title="Remove template"
+                                                >
+                                                    ✕
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div
+                                        style={{
+                                            fontSize: '0.72rem',
+                                            fontWeight: 700,
+                                            color: 'var(--text-dim)',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.06em',
+                                            marginBottom: 8,
+                                        }}
+                                    >
+                                        Built-in Templates
+                                    </div>
+                                </>
+                            )}
+
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                                 {QUICK_START_TEMPLATES.map((tpl, i) => (
                                     <div

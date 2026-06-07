@@ -148,7 +148,8 @@
         "export": "Exportar",
         "attachments": "Archivos adjuntos",
         "localization": "Localización",
-        "cefr_overview": "Resumen MCER"
+        "cefr_overview": "Resumen MCER",
+        "docs": "Documentación"
     },
     "dashboard": {
         "title": "Panel",

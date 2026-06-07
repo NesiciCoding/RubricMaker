@@ -34,6 +34,7 @@ const CefrOverviewPage = lazy(() => import('./pages/CefrOverviewPage'));
 const StudentPortalPage = lazy(() => import('./pages/StudentPortalPage'));
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
+const DocsPage = lazy(() => import('./pages/DocsPage'));
 
 // Forces GradeStudent to remount when studentId changes so useState re-initialises.
 function GradeStudentRoute() {
@@ -191,6 +192,7 @@ export default function App() {
                                         settings.userRole === 'admin' ? <AdminPage /> : <Navigate to="/" replace />
                                     }
                                 />
+                                <Route path="/docs" element={<DocsPage />} />
                                 <Route path="/privacy" element={<PrivacyPage />} />
                                 <Route path="*" element={<NotFoundPage />} />
                             </Routes>

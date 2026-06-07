@@ -150,7 +150,8 @@
         "export": "Exporteren",
         "attachments": "Bijlagen",
         "localization": "Localisatie",
-        "cefr_overview": "CEFR Overzicht"
+        "cefr_overview": "CEFR Overzicht",
+        "docs": "Documentatie"
     },
     "dashboard": {
         "title": "Dashboard",

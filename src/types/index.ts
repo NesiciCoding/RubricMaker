@@ -77,6 +77,8 @@ export interface RubricLevel {
     maxPoints: number; // maximum points for this level
     description: string; // descriptor text in the cell
     subItems: SubItem[]; // optional fine-grain checklist (alongside range)
+    /** CEFR level this performance level maps to. Used for per-criterion CEFR aggregation. */
+    cefrLevel?: CefrLevel;
 }
 
 export interface LinkedStandard {
@@ -102,6 +104,8 @@ export interface RubricCriterion {
     cefrDescriptors?: LinkedCefrDescriptor[];
     /** IB Learner Profile or Bloom's Taxonomy descriptors linked to this criterion */
     frameworkDescriptors?: LinkedFrameworkDescriptor[];
+    /** Which CEFR skill this criterion assesses. Overrides the rubric-level cefrSkill for per-level CEFR aggregation. */
+    cefrSkill?: CefrSkill;
 }
 
 export type GradeScaleType = 'letter' | 'percentage' | 'points' | 'pass-fail' | 'custom';

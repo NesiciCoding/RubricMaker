@@ -342,7 +342,7 @@ export default function StudentPortalPage() {
                 )}
 
                 {/* ── Essay assignments ────────────────────────────────────── */}
-                {essayLoadError && (
+                {essayLoadError && dbConfig && (
                     <div
                         style={{
                             background: 'var(--bg-raised)',

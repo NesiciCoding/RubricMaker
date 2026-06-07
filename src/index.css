@@ -936,7 +936,7 @@ select.input-error {
 }
 
 .fade-in {
-    animation: fadeIn 0.25s ease;
+    animation: fadeIn 0.25s ease forwards;
 }
 
 /* ─── Print-only elements (hidden on screen) ────────────────────────────────── */
