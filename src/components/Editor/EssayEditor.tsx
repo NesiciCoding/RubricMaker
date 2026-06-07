@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useEditor, EditorContent } from '@tiptap/react';
 import { Extension } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
@@ -36,6 +37,7 @@ import {
     Redo2,
     RemoveFormatting,
     Unlink,
+    FileText,
 } from 'lucide-react';
 
 // ── Custom: FontSize ────────────────────────────────────────────────────────
@@ -224,6 +226,7 @@ interface EssayEditorProps {
     onChange: (html: string) => void;
     editable?: boolean;
     placeholder?: string;
+    defaultPageMode?: boolean;
 }
 
 function Divider() {
@@ -275,10 +278,18 @@ const selectStyle: React.CSSProperties = {
     height: 28,
 };
 
-export default function EssayEditor({ content, onChange, editable = true, placeholder }: EssayEditorProps) {
+export default function EssayEditor({
+    content,
+    onChange,
+    editable = true,
+    placeholder,
+    defaultPageMode = false,
+}: EssayEditorProps) {
+    const { t } = useTranslation();
     const colorInputRef = useRef<HTMLInputElement>(null);
     const highlightInputRef = useRef<HTMLInputElement>(null);
     const [showInvisibles, setShowInvisibles] = useState(false);
+    const [pageMode, setPageMode] = useState(defaultPageMode);
 
     const editor = useEditor({
         extensions: [
@@ -699,13 +710,54 @@ export default function EssayEditor({ content, onChange, editable = true, placeh
                     >
                         <span style={{ fontSize: 14, lineHeight: 1, fontFamily: 'serif', fontWeight: 400 }}>¶</span>
                     </ToolbarBtn>
+
+                    <Divider />
+
+                    {/* ── A4 page mode ── */}
+                    <ToolbarBtn
+                        active={pageMode}
+                        onClick={() => setPageMode((v) => !v)}
+                        title={pageMode ? t('editor.switchToCompactView') : t('editor.switchToPageView')}
+                    >
+                        <FileText size={15} />
+                    </ToolbarBtn>
                 </div>
             )}
 
             {/* ── Editor area ── */}
-            <div style={{ padding: '18px 22px', minHeight: 420 }} className={showInvisibles ? 'show-invisibles' : ''}>
-                <EditorContent editor={editor} placeholder={placeholder} />
-            </div>
+            {pageMode ? (
+                <div
+                    style={{
+                        background: 'var(--bg-elevated)',
+                        padding: '32px 24px',
+                        minHeight: 500,
+                    }}
+                    className={showInvisibles ? 'show-invisibles' : ''}
+                >
+                    <div
+                        style={{
+                            width: '100%',
+                            maxWidth: 794,
+                            minHeight: 1123,
+                            margin: '0 auto',
+                            background: 'var(--bg-raised)',
+                            boxShadow: '0 4px 24px rgba(0,0,0,0.14)',
+                            borderRadius: 2,
+                            padding: '96px 96px 96px',
+                            boxSizing: 'border-box',
+                        }}
+                    >
+                        <EditorContent editor={editor} placeholder={placeholder} />
+                    </div>
+                </div>
+            ) : (
+                <div
+                    style={{ padding: '18px 22px', minHeight: 420 }}
+                    className={showInvisibles ? 'show-invisibles' : ''}
+                >
+                    <EditorContent editor={editor} placeholder={placeholder} />
+                </div>
+            )}
 
             {/* ── Table context controls (shown when cursor is inside a table) ── */}
             {editable && editor.isActive('table') && (

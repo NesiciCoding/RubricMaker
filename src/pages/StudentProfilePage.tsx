@@ -15,6 +15,8 @@ import {
     ClipboardCheck,
     ExternalLink,
     Printer,
+    Mic,
+    ChevronDown,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
@@ -35,6 +37,7 @@ export default function StudentProfilePage() {
         useApp();
     const [exportingId, setExportingId] = useState<string | null>(null);
     const [copiedSALink, setCopiedSALink] = useState<string | null>(null);
+    const [showSpeakingPicker, setShowSpeakingPicker] = useState(false);
     const { t, i18n } = useTranslation();
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
 
@@ -178,6 +181,71 @@ export default function StudentProfilePage() {
                 title="Student Profile"
                 actions={
                     <>
+                        {/* Speaking session launcher */}
+                        <div style={{ position: 'relative' }} className="no-print">
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => {
+                                    if (rubrics.length === 1) {
+                                        navigate(`/speaking/${rubrics[0].id}/${student.id}`);
+                                    } else {
+                                        setShowSpeakingPicker((o) => !o);
+                                    }
+                                }}
+                            >
+                                <Mic size={14} /> {t('speaking.launch_session')}
+                                {rubrics.length !== 1 && <ChevronDown size={12} />}
+                            </button>
+                            {showSpeakingPicker && rubrics.length > 1 && (
+                                <>
+                                    <div
+                                        style={{ position: 'fixed', inset: 0, zIndex: 5 }}
+                                        onClick={() => setShowSpeakingPicker(false)}
+                                    />
+                                    <div
+                                        className="card"
+                                        style={{
+                                            position: 'absolute',
+                                            top: '100%',
+                                            right: 0,
+                                            marginTop: 4,
+                                            minWidth: 220,
+                                            padding: 4,
+                                            zIndex: 10,
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: 2,
+                                        }}
+                                    >
+                                        <div
+                                            style={{
+                                                padding: '4px 10px 6px',
+                                                fontSize: '0.72rem',
+                                                fontWeight: 700,
+                                                color: 'var(--text-dim)',
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.06em',
+                                            }}
+                                        >
+                                            {t('speaking.choose_rubric')}
+                                        </div>
+                                        {rubrics.map((r) => (
+                                            <button
+                                                key={r.id}
+                                                className="btn btn-ghost btn-sm"
+                                                style={{ justifyContent: 'flex-start' }}
+                                                onClick={() => {
+                                                    setShowSpeakingPicker(false);
+                                                    navigate(`/speaking/${r.id}/${student.id}`);
+                                                }}
+                                            >
+                                                <Mic size={13} /> {r.name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+                        </div>
                         <button className="btn btn-ghost btn-sm no-print" onClick={() => window.print()}>
                             <Printer size={14} /> {t('common.print')}
                         </button>
@@ -748,12 +816,54 @@ export default function StudentProfilePage() {
                 {/* ── Speaking Sessions ── */}
                 {(() => {
                     const studentSessions = speakingSessions.filter((s) => s.studentId === student.id);
-                    if (studentSessions.length === 0) return null;
                     return (
                         <div className="card" style={{ marginTop: 24 }}>
-                            <h3 style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <span style={{ fontSize: 18 }}>🎙</span> {t('speaking.sessions_history')}
-                            </h3>
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    marginBottom: 16,
+                                }}
+                            >
+                                <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <Mic size={16} style={{ color: 'var(--accent)' }} />{' '}
+                                    {t('speaking.sessions_history')}
+                                </h3>
+                                <button
+                                    className="btn btn-secondary btn-sm no-print"
+                                    onClick={() => {
+                                        if (rubrics.length === 1) {
+                                            navigate(`/speaking/${rubrics[0].id}/${student.id}`);
+                                        } else {
+                                            setShowSpeakingPicker((o) => !o);
+                                        }
+                                    }}
+                                >
+                                    <Mic size={13} /> {t('speaking.new_session')}
+                                </button>
+                            </div>
+                            {studentSessions.length === 0 && (
+                                <div
+                                    style={{
+                                        textAlign: 'center',
+                                        padding: '24px 16px',
+                                        color: 'var(--text-muted)',
+                                        fontSize: '0.88rem',
+                                    }}
+                                >
+                                    <Mic
+                                        size={28}
+                                        style={{
+                                            opacity: 0.3,
+                                            marginBottom: 8,
+                                            display: 'block',
+                                            margin: '0 auto 8px',
+                                        }}
+                                    />
+                                    {t('speaking.empty_state_no_sessions')}
+                                </div>
+                            )}
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                                 {studentSessions
                                     .slice()

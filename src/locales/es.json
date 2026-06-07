@@ -171,7 +171,8 @@
         "export": "Exportar",
         "attachments": "Archivos adjuntos",
         "localization": "Localización",
-        "cefr_overview": "Resumen MCER"
+        "cefr_overview": "Resumen MCER",
+        "docs": "Documentación"
     },
     "dashboard": {
         "title": "Panel",
@@ -200,7 +201,9 @@
         "action_open": "Abrir",
         "quick_start_templates": "Plantillas de inicio rápido",
         "my_templates": "Mis plantillas",
-        "built_in_templates": "Plantillas integradas"
+        "built_in_templates": "Plantillas integradas",
+        "builtin_templates": "Plantillas integradas",
+        "remove_template": "Eliminar plantilla"
     },
     "rubricList": {
         "title": "Rúbricas",
@@ -236,7 +239,8 @@
         "share_success": "¡Rúbrica compartida con éxito!",
         "share_notfound": "No se encontró ninguna cuenta para {{email}}. Pídales que inicien sesión en RubricMaker primero.",
         "share_shared_with": "Compartido con",
-        "share_btn": "Compartir"
+        "share_btn": "Compartir",
+        "speaking_select_student": "🎙 Expresión oral…"
     },
     "studentsPage": {
         "title": "Estudiantes y Clases",
@@ -458,7 +462,8 @@
         "weight_total_label": "Peso total:",
         "weight_total_hint": "(debe ser 100%)",
         "weight_total_warning": "Los pesos totalizan {{total}}% (esperado 100%). Puede guardar igualmente — el motor de calificación los normaliza.",
-        "weight_distribute_evenly": "Distribuir uniformemente"
+        "weight_distribute_evenly": "Distribuir uniformemente",
+        "cefr_skill_inherit": "— heredar de la rúbrica —"
     },
     "peerReview": {
         "round_label": "Ronda",
@@ -515,7 +520,28 @@
         "progress_chart_title": "Radar de Habilidades MCER",
         "no_chart_data": "Datos de habilidades insuficientes para un gráfico.",
         "progress_chart_aria_label": "Gráfico de radar de habilidades MCER con puntuaciones medias por habilidad y nivel",
-        "skill": "Habilidad"
+        "skill": "Habilidad",
+        "skills": {
+            "reading": "Lectura",
+            "reading_short": "Leer",
+            "writing": "Escritura",
+            "writing_short": "Escr.",
+            "speaking_production": "Hablar (Prod.)",
+            "speaking_production_short": "Habl↑",
+            "speaking_interaction": "Hablar (Int.)",
+            "speaking_interaction_short": "Habl↔",
+            "listening": "Escucha",
+            "listening_short": "Escucha"
+        },
+        "view_class": "Vista de clase",
+        "view_student": "Detalles del estudiante",
+        "empty_no_students": "No se encontraron estudiantes. Agregue estudiantes y vincule rúbricas con niveles MCER objetivo.",
+        "table_header_student": "Estudiante",
+        "table_header_detail": "Detalles",
+        "legend_achieved": "Logrado",
+        "legend_developing": "En desarrollo",
+        "legend_not_started": "No iniciado",
+        "legend_target_level": "Nivel objetivo"
     },
     "framework": {
         "picker_title": "Descriptores del Marco de Evaluación",
@@ -580,7 +606,14 @@
         "matchups_done": "{{done}} / {{max}} comparaciones realizadas",
         "per_student_limit": "Límite por estudiante:",
         "per_student_limit_hint": "Máx. comparaciones por estudiante (0 = ilimitado)",
-        "student_progress": "Progreso de los estudiantes"
+        "student_progress": "Progreso de los estudiantes",
+        "go_to_students": "Ir a alumnos",
+        "not_enough_explanation": "La evaluación comparativa requiere al menos dos alumnos en la misma clase.",
+        "student_progress_label": "Progreso de alumnos",
+        "student_progress_count": "Progreso del alumno ({{count}})",
+        "overall_comments_title": "Comentarios generales",
+        "rubric_not_found": "Rúbrica no encontrada",
+        "overall_feedback_placeholder": "Comentarios generales…"
     },
     "studentPortal": {
         "not_found": "Estudiante no encontrado.",
@@ -814,7 +847,11 @@
         "no_marks": "Aún no hay marcas — toca un tipo de error arriba.",
         "auto_lock": "Bloquear automáticamente cuando termina el temporizador",
         "time_up": "¡Se acabó el tiempo!",
-        "clear_marks": "Borrar marcas"
+        "clear_marks": "Borrar marcas",
+        "launch_session": "Sesión oral",
+        "new_session": "Nueva sesión",
+        "choose_rubric": "Elegir rúbrica",
+        "empty_state_no_sessions": "Aún no hay sesiones orales. Haga clic en \"Nueva sesión\" para comenzar."
     },
     "cefrOverview": {
         "page_title": "Resumen MCER",
@@ -845,7 +882,15 @@
         "target_level_label": "Nivel Objetivo",
         "empty_no_cefr": "Aún no hay datos MCER. Califica rúbricas con un nivel objetivo MCER o pide al estudiante que complete una autoevaluación.",
         "student_not_found": "Estudiante no encontrado.",
-        "select_student_prompt": "Selecciona una clase y un estudiante para ver su resumen MCER."
+        "select_student_prompt": "Selecciona una clase y un estudiante para ver su resumen MCER.",
+        "class_view": "Vista clase",
+        "student_detail": "Detalle alumno",
+        "class_empty": "No se encontraron alumnos. Añada alumnos y vincule rúbricas con niveles MCER.",
+        "table_student_header": "Estudiante",
+        "table_detail_header": "Detalle",
+        "cell_tooltip": "{{name}} — {{skill}} {{level}}: {{state}}",
+        "open_student_detail": "Abrir detalle CEFR de {{name}}",
+        "legend_target_level": "Nivel objetivo"
     },
     "analysis": {
         "add_to_bank": "Añadir al banco",
@@ -1031,5 +1076,20 @@
         "show_essay": "Mostrar redacción",
         "hide_essay": "Ocultar redacción",
         "expired_desc_no_date": "Esta tarea ha caducado. Por favor, contacte con su profesor."
+    },
+    "editor": {
+        "switchToCompactView": "Vista compacta",
+        "switchToPageView": "Vista página A4"
+    },
+    "docs": {
+        "section_title": "Documentación",
+        "tab_route_map": "Mapa de rutas",
+        "tab_getting_started": "Primeros pasos",
+        "tab_rubrics": "Constructor de rúbricas",
+        "tab_grading": "Calificación",
+        "tab_cefr": "MCER & Expresión",
+        "tab_essays": "Redacción de ensayos",
+        "tab_analytics": "Análisis y exportación",
+        "tab_data": "Gestión de datos"
     }
 }

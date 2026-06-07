@@ -224,13 +224,15 @@ describe('CefrOverviewPage', () => {
     it('renders student dropdown', async () => {
         const { default: CefrOverviewPage } = await import('../CefrOverviewPage');
         renderPage(<CefrOverviewPage />);
+        fireEvent.click(screen.getByText('cefr.view_student'));
         expect(screen.getByText('statistics.label_student')).toBeInTheDocument();
     });
 
     it('shows the class name in the class filter when classes exist', async () => {
         const { default: CefrOverviewPage } = await import('../CefrOverviewPage');
         renderPage(<CefrOverviewPage />);
-        expect(screen.getByText('Class A')).toBeInTheDocument();
+        // The class-view heatmap also shows each student's class name, so this can appear more than once.
+        expect(screen.getAllByText('Class A').length).toBeGreaterThan(0);
     });
 
     it('shows the student name in the student dropdown when a student exists', async () => {
@@ -242,12 +244,14 @@ describe('CefrOverviewPage', () => {
     it('shows a prompt to select a student when none is selected', async () => {
         const { default: CefrOverviewPage } = await import('../CefrOverviewPage');
         renderPage(<CefrOverviewPage />);
+        fireEvent.click(screen.getByText('cefr.view_student'));
         expect(screen.getByText('cefrOverview.select_student_prompt')).toBeInTheDocument();
     });
 
     it('selecting a student reveals the student header', async () => {
         const { default: CefrOverviewPage } = await import('../CefrOverviewPage');
         renderPage(<CefrOverviewPage />);
+        fireEvent.click(screen.getByText('cefr.view_student'));
         const studentSelect = screen.getByDisplayValue('statistics.select_student_placeholder') as HTMLSelectElement;
         fireEvent.change(studentSelect, { target: { value: 's1' } });
         expect(screen.getByText('cefrOverview.stat_skills_assessed')).toBeInTheDocument();
@@ -256,6 +260,9 @@ describe('CefrOverviewPage', () => {
     it('changing the class filter resets the student selection', async () => {
         const { default: CefrOverviewPage } = await import('../CefrOverviewPage');
         renderPage(<CefrOverviewPage />);
+        fireEvent.click(screen.getByText('cefr.view_student'));
+        const studentSelect = screen.getByDisplayValue('statistics.select_student_placeholder') as HTMLSelectElement;
+        fireEvent.change(studentSelect, { target: { value: 's1' } });
         const classSelect = screen.getByDisplayValue('statistics.all_classes') as HTMLSelectElement;
         fireEvent.change(classSelect, { target: { value: 'c1' } });
         // Student select should reset to placeholder

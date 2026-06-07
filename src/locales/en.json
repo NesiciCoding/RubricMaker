@@ -171,7 +171,8 @@
         "export": "Export",
         "attachments": "Attachments",
         "localization": "Localization",
-        "cefr_overview": "CEFR Overview"
+        "cefr_overview": "CEFR Overview",
+        "docs": "Docs"
     },
     "dashboard": {
         "title": "Dashboard",
@@ -200,7 +201,9 @@
         "action_open": "Open",
         "quick_start_templates": "Quick Start Templates",
         "my_templates": "My Templates",
-        "built_in_templates": "Built-in Templates"
+        "built_in_templates": "Built-in Templates",
+        "builtin_templates": "Built-in Templates",
+        "remove_template": "Remove template"
     },
     "rubricList": {
         "title": "Rubrics",
@@ -236,7 +239,8 @@
         "share_success": "Rubric shared successfully!",
         "share_notfound": "No account found for {{email}}. Ask them to sign in to RubricMaker first.",
         "share_shared_with": "Shared with",
-        "share_btn": "Share"
+        "share_btn": "Share",
+        "speaking_select_student": "🎙 Speaking…"
     },
     "studentsPage": {
         "title": "Students & Classes",
@@ -458,7 +462,8 @@
         "weight_total_label": "Total weight:",
         "weight_total_hint": "(should be 100%)",
         "weight_total_warning": "Weights total {{total}}% (expected 100%). You can still save — the grade engine normalises them.",
-        "weight_distribute_evenly": "Distribute evenly"
+        "weight_distribute_evenly": "Distribute evenly",
+        "cefr_skill_inherit": "— inherit from rubric —"
     },
     "peerReview": {
         "round_label": "Round",
@@ -515,7 +520,28 @@
         "progress_chart_title": "CEFR Skills Radar",
         "no_chart_data": "Not enough skill data for a chart.",
         "progress_chart_aria_label": "CEFR skills radar chart showing average scores per skill and level",
-        "skill": "Skill"
+        "skill": "Skill",
+        "skills": {
+            "reading": "Reading",
+            "reading_short": "Read",
+            "writing": "Writing",
+            "writing_short": "Write",
+            "speaking_production": "Speaking (Prod.)",
+            "speaking_production_short": "Spk↑",
+            "speaking_interaction": "Speaking (Int.)",
+            "speaking_interaction_short": "Spk↔",
+            "listening": "Listening",
+            "listening_short": "Listen"
+        },
+        "view_class": "Class View",
+        "view_student": "Student Detail",
+        "empty_no_students": "No students found. Add students and link rubrics with CEFR target levels.",
+        "table_header_student": "Student",
+        "table_header_detail": "Detail",
+        "legend_achieved": "Achieved",
+        "legend_developing": "Developing",
+        "legend_not_started": "Not started",
+        "legend_target_level": "Target level"
     },
     "framework": {
         "picker_title": "Assessment Framework Descriptors",
@@ -580,7 +606,14 @@
         "matchups_done": "{{done}} / {{max}} matchups done",
         "per_student_limit": "Per-student limit:",
         "per_student_limit_hint": "Max comparisons per student (0 = unlimited)",
-        "student_progress": "Student Progress"
+        "student_progress": "Student Progress",
+        "go_to_students": "Go to Students",
+        "not_enough_explanation": "Comparative grading requires at least two students in the same class. Add another student to this class to get started.",
+        "student_progress_label": "Student Progress",
+        "student_progress_count": "Student Progress ({{count}})",
+        "overall_comments_title": "Overall Comments",
+        "rubric_not_found": "Rubric not found",
+        "overall_feedback_placeholder": "Overall feedback…"
     },
     "studentPortal": {
         "not_found": "Student not found.",
@@ -814,7 +847,11 @@
         "no_marks": "No marks yet — tap an error type above.",
         "auto_lock": "Auto-lock when timer ends",
         "time_up": "Time's up!",
-        "clear_marks": "Clear marks"
+        "clear_marks": "Clear marks",
+        "launch_session": "Speaking Session",
+        "new_session": "New Session",
+        "choose_rubric": "Choose rubric",
+        "empty_state_no_sessions": "No speaking sessions yet. Click \"New Session\" above to start one."
     },
     "cefrOverview": {
         "page_title": "CEFR Overview",
@@ -845,7 +882,15 @@
         "target_level_label": "Target Level",
         "empty_no_cefr": "No CEFR data yet. Grade rubrics with a CEFR target level or have the student complete a self-assessment.",
         "student_not_found": "Student not found.",
-        "select_student_prompt": "Select a class and student to view their CEFR overview."
+        "select_student_prompt": "Select a class and student to view their CEFR overview.",
+        "class_view": "Class View",
+        "student_detail": "Student Detail",
+        "class_empty": "No students found. Add students and link rubrics with CEFR target levels.",
+        "table_student_header": "Student",
+        "table_detail_header": "Detail",
+        "cell_tooltip": "{{name}} — {{skill}} {{level}}: {{state}}",
+        "open_student_detail": "Open {{name}}'s CEFR detail",
+        "legend_target_level": "Target level"
     },
     "analysis": {
         "add_to_bank": "Add to bank",
@@ -1031,5 +1076,20 @@
         "show_essay": "Show essay",
         "hide_essay": "Hide essay",
         "expired_desc_no_date": "This assignment has expired. Please contact your teacher."
+    },
+    "editor": {
+        "switchToCompactView": "Switch to compact view",
+        "switchToPageView": "Switch to A4 page view"
+    },
+    "docs": {
+        "section_title": "Documentation",
+        "tab_route_map": "Route Map",
+        "tab_getting_started": "Getting Started",
+        "tab_rubrics": "Rubric Builder",
+        "tab_grading": "Grading",
+        "tab_cefr": "CEFR & Speaking",
+        "tab_essays": "Essay Writing",
+        "tab_analytics": "Analytics & Export",
+        "tab_data": "Data Management"
     }
 }

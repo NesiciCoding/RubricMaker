@@ -78,6 +78,8 @@ interface CellAccumulator {
     level: CefrLevel;
     scores: number[];
     thresholds: number[];
+    /** True when at least one graded rubric level was directly tagged with this CEFR level. Overrides percentage averaging for achieved status. */
+    directlyAchieved: boolean;
     // descriptorId → confident (last-write wins across multiple self-assessments)
     confidenceByDescriptor: Map<string, boolean>;
 }
@@ -141,12 +143,41 @@ export function getCefrStudentOverview(
                     level,
                     scores: [],
                     thresholds: [],
+                    directlyAchieved: false,
                     confidenceByDescriptor: new Map(),
                 });
             }
             const acc = cellAccMap.get(key)!;
             acc.scores.push(summary.modifiedPercentage);
             acc.thresholds.push(rubric.cefrAchieveThreshold ?? 70);
+        }
+
+        // ── Per-criterion/level CEFR aggregation ──────────────────────────────
+        // If individual RubricLevels carry a cefrLevel tag, use that directly.
+        // Being graded at a tagged level is unconditionally "achieved" regardless of score averaging.
+        for (const entry of sr.entries) {
+            if (!entry.levelId) continue;
+            const criterion = rubric.criteria.find((c) => c.id === entry.criterionId);
+            if (!criterion) continue;
+            const selectedLevel = criterion.levels.find((l) => l.id === entry.levelId);
+            if (!selectedLevel?.cefrLevel) continue;
+
+            const skill: CefrSkill = criterion.cefrSkill ?? rubric.cefrSkill ?? 'writing';
+            const level: CefrLevel = selectedLevel.cefrLevel;
+            const key = `${skill}__${level}`;
+
+            if (!cellAccMap.has(key)) {
+                cellAccMap.set(key, {
+                    skill,
+                    level,
+                    scores: [],
+                    thresholds: [],
+                    directlyAchieved: false,
+                    confidenceByDescriptor: new Map(),
+                });
+            }
+            // Flag this cell as directly achieved — not subject to percentage averaging.
+            cellAccMap.get(key)!.directlyAchieved = true;
         }
 
         // Standards aggregation (mirrors learningGoalsAggregator pattern)
@@ -240,6 +271,7 @@ export function getCefrStudentOverview(
                     level: rating.level,
                     scores: [],
                     thresholds: [],
+                    directlyAchieved: false,
                     confidenceByDescriptor: new Map(),
                 });
             }
@@ -288,7 +320,8 @@ export function getCefrStudentOverview(
         const avgScore = rubricCount > 0 ? acc.scores.reduce((a, b) => a + b, 0) / rubricCount : 0;
         const threshold =
             acc.thresholds.length > 0 ? acc.thresholds.reduce((a, b) => a + b, 0) / acc.thresholds.length : 70;
-        const rubricAchieved = rubricCount > 0 && avgScore >= threshold;
+        // directlyAchieved overrides score averaging — being graded at a tagged level always counts as achieved.
+        const rubricAchieved = acc.directlyAchieved || (rubricCount > 0 && avgScore >= threshold);
 
         const descriptors: CefrCellDescriptor[] = Array.from(acc.confidenceByDescriptor.entries()).map(
             ([descriptorId, confident]) => {

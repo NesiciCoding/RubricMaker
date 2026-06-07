@@ -16,6 +16,8 @@ import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
 import { QUICK_START_TEMPLATES } from '../data/templates';
 import { calcGradeSummary } from '../utils/gradeCalc';
+import { loadUserTemplates, saveUserTemplates } from '../store/storage';
+import type { UserTemplate } from '../types';
 
 function timeAgo(iso: string): string {
     const diff = (Date.now() - new Date(iso).getTime()) / 1000;
@@ -25,17 +27,15 @@ function timeAgo(iso: string): string {
     return `${Math.floor(diff / 86400)}d ago`;
 }
 
-const USER_TEMPLATES_KEY = 'rm_user_templates';
-
 export default function Dashboard() {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { rubrics, students, studentRubrics, gradeScales, settings } = useApp();
 
-    const [userTemplates, setUserTemplates] = useState<{ id: string; name: string; subject: string }[]>([]);
+    const [userTemplates, setUserTemplates] = useState<UserTemplate[]>([]);
     useEffect(() => {
         try {
-            setUserTemplates(JSON.parse(localStorage.getItem(USER_TEMPLATES_KEY) ?? '[]'));
+            setUserTemplates(loadUserTemplates());
         } catch {
             /* ignore */
         }
@@ -418,13 +418,7 @@ export default function Dashboard() {
                                                     alignItems: 'center',
                                                     gap: 10,
                                                 }}
-                                                onClick={() => {
-                                                    const stored = JSON.parse(
-                                                        localStorage.getItem(USER_TEMPLATES_KEY) ?? '[]'
-                                                    );
-                                                    const found = stored.find((t: { id: string }) => t.id === tpl.id);
-                                                    if (found) navigate('/rubrics/new', { state: { template: found } });
-                                                }}
+                                                onClick={() => navigate('/rubrics/new', { state: { template: tpl } })}
                                                 className="hoverable"
                                             >
                                                 <div>
@@ -435,26 +429,19 @@ export default function Dashboard() {
                                                         <div
                                                             style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}
                                                         >
-                                                            {tpl.subject}
+                                                            {tpl.subject || t('dashboard.no_subject')}
                                                         </div>
                                                     )}
                                                 </div>
                                                 <button
                                                     className="btn btn-ghost btn-icon btn-sm"
                                                     style={{ color: 'var(--red)', flexShrink: 0 }}
-                                                    title={t('common.delete')}
+                                                    title={t('dashboard.remove_template')}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        const existing = JSON.parse(
-                                                            localStorage.getItem(USER_TEMPLATES_KEY) ?? '[]'
-                                                        );
-                                                        localStorage.setItem(
-                                                            USER_TEMPLATES_KEY,
-                                                            JSON.stringify(
-                                                                existing.filter((t: { id: string }) => t.id !== tpl.id)
-                                                            )
-                                                        );
-                                                        setUserTemplates((prev) => prev.filter((t) => t.id !== tpl.id));
+                                                        const updated = userTemplates.filter((ut) => ut.id !== tpl.id);
+                                                        saveUserTemplates(updated);
+                                                        setUserTemplates(updated);
                                                     }}
                                                 >
                                                     ✕
@@ -472,7 +459,7 @@ export default function Dashboard() {
                                             letterSpacing: '0.04em',
                                         }}
                                     >
-                                        {t('dashboard.built_in_templates', 'Built-in Templates')}
+                                        {t('dashboard.builtin_templates')}
                                     </div>
                                 </>
                             )}

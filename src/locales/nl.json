@@ -171,7 +171,8 @@
         "export": "Exporteren",
         "attachments": "Bijlagen",
         "localization": "Localisatie",
-        "cefr_overview": "CEFR Overzicht"
+        "cefr_overview": "CEFR Overzicht",
+        "docs": "Documentatie"
     },
     "dashboard": {
         "title": "Dashboard",
@@ -200,7 +201,9 @@
         "action_open": "Openen",
         "quick_start_templates": "Snelstart Sjablonen",
         "my_templates": "Mijn sjablonen",
-        "built_in_templates": "Ingebouwde sjablonen"
+        "built_in_templates": "Ingebouwde sjablonen",
+        "builtin_templates": "Ingebouwde sjablonen",
+        "remove_template": "Sjabloon verwijderen"
     },
     "rubricList": {
         "title": "Rubrieken",
@@ -236,7 +239,8 @@
         "share_success": "Rubriek succesvol gedeeld!",
         "share_notfound": "Geen account gevonden voor {{email}}. Vraag hen eerst in te loggen bij RubricMaker.",
         "share_shared_with": "Gedeeld met",
-        "share_btn": "Delen"
+        "share_btn": "Delen",
+        "speaking_select_student": "🎙 Spreken…"
     },
     "studentsPage": {
         "title": "Leerlingen & Klassen",
@@ -458,7 +462,8 @@
         "weight_total_label": "Totaal gewicht:",
         "weight_total_hint": "(moet 100% zijn)",
         "weight_total_warning": "Gewichten totaal {{total}}% (verwacht 100%). U kunt toch opslaan — het beoordelingssysteem normaliseert ze.",
-        "weight_distribute_evenly": "Gelijk verdelen"
+        "weight_distribute_evenly": "Gelijk verdelen",
+        "cefr_skill_inherit": "— overnemen van rubriek —"
     },
     "peerReview": {
         "round_label": "Ronde",
@@ -515,7 +520,28 @@
         "progress_chart_title": "ERK Vaardigheden Radar",
         "no_chart_data": "Onvoldoende vaardigheidsdata voor een grafiek.",
         "progress_chart_aria_label": "ERK vaardigheden radargrafiek met gemiddelde scores per vaardigheid en niveau",
-        "skill": "Vaardigheid"
+        "skill": "Vaardigheid",
+        "skills": {
+            "reading": "Lezen",
+            "reading_short": "Lezen",
+            "writing": "Schrijven",
+            "writing_short": "Schrijf",
+            "speaking_production": "Spreken (Prod.)",
+            "speaking_production_short": "Spr↑",
+            "speaking_interaction": "Spreken (Int.)",
+            "speaking_interaction_short": "Spr↔",
+            "listening": "Luisteren",
+            "listening_short": "Luister"
+        },
+        "view_class": "Klasoverzicht",
+        "view_student": "Leerlingdetails",
+        "empty_no_students": "Geen leerlingen gevonden. Voeg leerlingen toe en koppel rubrieken met ERK-doelniveaus.",
+        "table_header_student": "Leerling",
+        "table_header_detail": "Details",
+        "legend_achieved": "Behaald",
+        "legend_developing": "In ontwikkeling",
+        "legend_not_started": "Niet gestart",
+        "legend_target_level": "Doelniveau"
     },
     "framework": {
         "picker_title": "Beoordelingskader Uitspraken",
@@ -580,7 +606,14 @@
         "matchups_done": "{{done}} / {{max}} vergelijkingen gedaan",
         "per_student_limit": "Limiet per leerling:",
         "per_student_limit_hint": "Maximale vergelijkingen per leerling (0 = onbeperkt)",
-        "student_progress": "Voortgang leerlingen"
+        "student_progress": "Voortgang leerlingen",
+        "go_to_students": "Naar leerlingen",
+        "not_enough_explanation": "Vergelijkend beoordelen vereist minimaal twee leerlingen in dezelfde klas.",
+        "student_progress_label": "Voortgang leerlingen",
+        "student_progress_count": "Voortgang leerlingen ({{count}})",
+        "overall_comments_title": "Algemene opmerkingen",
+        "rubric_not_found": "Rubric niet gevonden",
+        "overall_feedback_placeholder": "Algemene feedback…"
     },
     "studentPortal": {
         "not_found": "Leerling niet gevonden.",
@@ -814,7 +847,11 @@
         "no_marks": "Nog geen aantekeningen — tik hierboven een fouttype aan.",
         "auto_lock": "Automatisch vergrendelen als timer afloopt",
         "time_up": "Tijd is om!",
-        "clear_marks": "Aantekeningen wissen"
+        "clear_marks": "Aantekeningen wissen",
+        "launch_session": "Spreeksessie",
+        "new_session": "Nieuwe sessie",
+        "choose_rubric": "Kies rubriek",
+        "empty_state_no_sessions": "Nog geen spreeksessies. Klik op \"Nieuwe sessie\" hierboven om te beginnen."
     },
     "cefrOverview": {
         "page_title": "ERK Overzicht",
@@ -845,7 +882,15 @@
         "target_level_label": "Doelniveau",
         "empty_no_cefr": "Nog geen ERK-data. Beoordeel rubrieken met een ERK-doelniveau of laat de leerling een zelfbeoordeling invullen.",
         "student_not_found": "Leerling niet gevonden.",
-        "select_student_prompt": "Selecteer een klas en leerling om het CEFR-overzicht te bekijken."
+        "select_student_prompt": "Selecteer een klas en leerling om het CEFR-overzicht te bekijken.",
+        "class_view": "Klasoverzicht",
+        "student_detail": "Leerlingdetail",
+        "class_empty": "Geen leerlingen gevonden. Voeg leerlingen toe en koppel rubrieken met ERK-doelniveaus.",
+        "table_student_header": "Leerling",
+        "table_detail_header": "Detail",
+        "cell_tooltip": "{{name}} — {{skill}} {{level}}: {{state}}",
+        "open_student_detail": "Open CEFR-detail van {{name}}",
+        "legend_target_level": "Doelniveau"
     },
     "analysis": {
         "add_to_bank": "Voeg toe aan bank",
@@ -1031,5 +1076,20 @@
         "show_essay": "Opstel tonen",
         "hide_essay": "Opstel verbergen",
         "expired_desc_no_date": "Deze opdracht is verlopen. Neem contact op met uw docent."
+    },
+    "editor": {
+        "switchToCompactView": "Compact weergave",
+        "switchToPageView": "A4-paginaweergave"
+    },
+    "docs": {
+        "section_title": "Documentatie",
+        "tab_route_map": "Routekaart",
+        "tab_getting_started": "Aan de slag",
+        "tab_rubrics": "Rubrieksmaker",
+        "tab_grading": "Beoordelen",
+        "tab_cefr": "ERK & Spreken",
+        "tab_essays": "Essays schrijven",
+        "tab_analytics": "Analyse & Export",
+        "tab_data": "Gegevensbeheer"
     }
 }

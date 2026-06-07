@@ -15,6 +15,7 @@ import type {
     SpeakingSession,
     DocumentAnalysisResult,
     RubricCriterion,
+    UserTemplate,
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 import { nanoid } from '../utils/nanoid';
@@ -212,6 +213,7 @@ const KEYS = {
     selfAssessments: 'rm_self_assessments',
     speakingSessions: 'rm_speaking_sessions',
     analysisResults: 'rm_analysis_results',
+    userTemplates: 'rm_user_templates',
 };
 
 // ─── Generic helpers ───────────────────────────────────────────────────────────
@@ -253,6 +255,7 @@ export interface StoreData {
     selfAssessments: SelfAssessment[];
     speakingSessions: SpeakingSession[];
     analysisResults: DocumentAnalysisResult[];
+    userTemplates: UserTemplate[];
 }
 
 export function loadStore(): StoreData {
@@ -272,6 +275,7 @@ export function loadStore(): StoreData {
         selfAssessments: load<SelfAssessment[]>(KEYS.selfAssessments, []),
         speakingSessions: load<SpeakingSession[]>(KEYS.speakingSessions, []),
         analysisResults: load<DocumentAnalysisResult[]>(KEYS.analysisResults, []),
+        userTemplates: load<UserTemplate[]>(KEYS.userTemplates, []),
     };
 }
 
@@ -437,6 +441,19 @@ export function importFullBackup(json: string): boolean {
                 saveAnalysisResults(data.analysisResults as DocumentAnalysisResult[]);
             else console.warn('[importFullBackup] analysisResults failed validation — skipped');
         }
+        if (data.userTemplates !== undefined) {
+            if (
+                Array.isArray(data.userTemplates) &&
+                data.userTemplates.every(
+                    (t) =>
+                        isPlainObject(t) &&
+                        typeof (t as Record<string, unknown>).id === 'string' &&
+                        Array.isArray((t as UserTemplate).criteria)
+                )
+            )
+                saveUserTemplates(data.userTemplates as UserTemplate[]);
+            else console.warn('[importFullBackup] userTemplates failed validation — skipped');
+        }
         return true;
     } catch (e) {
         console.error('Import failed', e);
@@ -515,4 +532,14 @@ export function removePendingWrites(ids: string[]): void {
     } catch {
         // ignore
     }
+}
+
+// ─── User templates ────────────────────────────────────────────────────────────
+
+export function loadUserTemplates(): UserTemplate[] {
+    return load<UserTemplate[]>(KEYS.userTemplates, []);
+}
+
+export function saveUserTemplates(templates: UserTemplate[]): void {
+    save(KEYS.userTemplates, templates);
 }

@@ -154,6 +154,36 @@ When both are unset, all sync is disabled and the app runs fully offline.
 
 The build uses `base: './'` in `vite.config.ts` so the app works from any sub-path without server-side routing config.
 
+## Documentation maintenance
+
+When you add, change, or remove any user-facing functionality, you **must** update all three of the following in the same task — not as a follow-up:
+
+### 1. `src/pages/DocsPage.tsx` (in-app docs)
+
+The docs page is the primary user-facing reference. For any feature change:
+
+- **New feature** — add it to the relevant tab (`RubricsTab`, `GradingTab`, `CefrTab`, `EssaysTab`, `AnalyticsTab`, `DataTab`, or `GettingStartedTab`). Include what the feature does, how to reach it, and any relevant notes for teachers or students.
+- **New route** — add an entry to the `ROUTE_TREE` array in `RouteMapTab` with the correct `path`, `label`, `description`, `color`, and optional `badge` (`'Public'`, `'Student'`, `'Admin only'`). Nest it under its parent node if applicable.
+- **Removed feature** — delete or update the corresponding entry.
+
+### 2. `README.md` (developer/deployment reference)
+
+- Keep the **Routes** table in sync with `App.tsx`. Add or remove rows when routes change.
+- Update the **Features** section if a major capability is added or significantly changed.
+- Update **Key utility modules** if new utility files are introduced.
+
+### 3. `src/pages/LandingPage.tsx` (public landing page)
+
+The landing page's feature grid targets both teachers and students. Update it when:
+
+- A significant new teacher feature is added → update or add a card in `TEACHER_FEATURES`.
+- A significant new student-facing feature is added → update or add a card in `STUDENT_FEATURES`.
+- A feature is removed → remove the corresponding card.
+
+Keep card descriptions short (one sentence, no jargon) and written from the user's perspective.
+
+---
+
 ## Key utility modules
 
 | File | Purpose |
