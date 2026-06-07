@@ -201,7 +201,8 @@
         "action_open": "Openen",
         "quick_start_templates": "Snelstart Sjablonen",
         "my_templates": "Mijn sjablonen",
-        "built_in_templates": "Ingebouwde sjablonen"
+        "builtin_templates": "Ingebouwde sjablonen",
+        "remove_template": "Sjabloon verwijderen"
     },
     "rubricList": {
         "title": "Rubrieken",
@@ -237,7 +238,8 @@
         "share_success": "Rubriek succesvol gedeeld!",
         "share_notfound": "Geen account gevonden voor {{email}}. Vraag hen eerst in te loggen bij RubricMaker.",
         "share_shared_with": "Gedeeld met",
-        "share_btn": "Delen"
+        "share_btn": "Delen",
+        "speaking_select_student": "🎙 Spreken…"
     },
     "studentsPage": {
         "title": "Leerlingen & Klassen",
@@ -516,7 +518,28 @@
         "progress_chart_title": "ERK Vaardigheden Radar",
         "no_chart_data": "Onvoldoende vaardigheidsdata voor een grafiek.",
         "progress_chart_aria_label": "ERK vaardigheden radargrafiek met gemiddelde scores per vaardigheid en niveau",
-        "skill": "Vaardigheid"
+        "skill": "Vaardigheid",
+        "skills": {
+            "reading": "Lezen",
+            "reading_short": "Lezen",
+            "writing": "Schrijven",
+            "writing_short": "Schrijf",
+            "speaking_production": "Spreken (Prod.)",
+            "speaking_production_short": "Spr↑",
+            "speaking_interaction": "Spreken (Int.)",
+            "speaking_interaction_short": "Spr↔",
+            "listening": "Luisteren",
+            "listening_short": "Luister"
+        },
+        "view_class": "Klasoverzicht",
+        "view_student": "Leerlingdetails",
+        "empty_no_students": "Geen leerlingen gevonden. Voeg leerlingen toe en koppel rubrieken met ERK-doelniveaus.",
+        "table_header_student": "Leerling",
+        "table_header_detail": "Details",
+        "legend_achieved": "Behaald",
+        "legend_developing": "In ontwikkeling",
+        "legend_not_started": "Niet gestart",
+        "legend_target_level": "Doelniveau"
     },
     "framework": {
         "picker_title": "Beoordelingskader Uitspraken",
@@ -815,7 +838,11 @@
         "no_marks": "Nog geen aantekeningen — tik hierboven een fouttype aan.",
         "auto_lock": "Automatisch vergrendelen als timer afloopt",
         "time_up": "Tijd is om!",
-        "clear_marks": "Aantekeningen wissen"
+        "clear_marks": "Aantekeningen wissen",
+        "launch_session": "Spreeksessie",
+        "choose_rubric": "Kies rubriek",
+        "empty_state_no_sessions": "Nog geen spreeksessies.",
+        "new_session": "Nieuwe sessie"
     },
     "cefrOverview": {
         "page_title": "ERK Overzicht",
@@ -994,6 +1021,10 @@
         "resume": "Hervatten",
         "stop": "Stop",
         "progress": "Leesvoortgang"
+    },
+    "editor": {
+        "switchToCompactView": "Naar compacte weergave",
+        "switchToPageView": "Naar A4-paginaweergave"
     },
     "essay": {
         "email_gate_title": "Voer je schoole-mailadres in",

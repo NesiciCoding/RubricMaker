@@ -193,7 +193,7 @@ export default function StudentProfilePage() {
                                     }
                                 }}
                             >
-                                <Mic size={14} /> Speaking Session
+                                <Mic size={14} /> {t('speaking.launch_session')}
                                 {rubrics.length !== 1 && <ChevronDown size={12} />}
                             </button>
                             {showSpeakingPicker && rubrics.length > 1 && (
@@ -227,7 +227,7 @@ export default function StudentProfilePage() {
                                                 letterSpacing: '0.06em',
                                             }}
                                         >
-                                            Choose rubric
+                                            {t('speaking.choose_rubric')}
                                         </div>
                                         {rubrics.map((r) => (
                                             <button

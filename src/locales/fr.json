@@ -201,7 +201,8 @@
         "action_open": "Ouvrir",
         "quick_start_templates": "Modèles de démarrage rapide",
         "my_templates": "Mes modèles",
-        "built_in_templates": "Modèles intégrés"
+        "builtin_templates": "Modèles intégrés",
+        "remove_template": "Supprimer le modèle"
     },
     "rubricList": {
         "title": "Rubriques",
@@ -237,7 +238,8 @@
         "share_success": "Grille partagée avec succès !",
         "share_notfound": "Aucun compte trouvé pour {{email}}. Demandez-leur de se connecter à RubricMaker d'abord.",
         "share_shared_with": "Partagé avec",
-        "share_btn": "Partager"
+        "share_btn": "Partager",
+        "speaking_select_student": "🎙 Parler…"
     },
     "studentsPage": {
         "title": "Élèves et Classes",
@@ -516,7 +518,28 @@
         "progress_chart_title": "Radar des compétences CECR",
         "no_chart_data": "Données de compétences insuffisantes pour le graphique.",
         "progress_chart_aria_label": "Graphique radar des compétences CECR avec scores moyens par compétence et niveau",
-        "skill": "Compétence"
+        "skill": "Compétence",
+        "skills": {
+            "reading": "Lecture",
+            "reading_short": "Lire",
+            "writing": "Écriture",
+            "writing_short": "Écr.",
+            "speaking_production": "Parler (Prod.)",
+            "speaking_production_short": "Parl↑",
+            "speaking_interaction": "Parler (Int.)",
+            "speaking_interaction_short": "Parl↔",
+            "listening": "Écoute",
+            "listening_short": "Écoute"
+        },
+        "view_class": "Vue de classe",
+        "view_student": "Détails de l'élève",
+        "empty_no_students": "Aucun élève trouvé. Ajoutez des élèves et associez des rubriques avec des niveaux CECR cibles.",
+        "table_header_student": "Élève",
+        "table_header_detail": "Détails",
+        "legend_achieved": "Atteint",
+        "legend_developing": "En développement",
+        "legend_not_started": "Non commencé",
+        "legend_target_level": "Niveau cible"
     },
     "framework": {
         "picker_title": "Descripteurs du cadre d'évaluation",
@@ -815,7 +838,11 @@
         "no_marks": "Aucune marque — appuyez sur un type d'erreur ci-dessus.",
         "auto_lock": "Verrouillage automatique à la fin du chronomètre",
         "time_up": "Temps écoulé !",
-        "clear_marks": "Effacer les marques"
+        "clear_marks": "Effacer les marques",
+        "launch_session": "Session de parole",
+        "choose_rubric": "Choisir une rubrique",
+        "empty_state_no_sessions": "Aucune session de parole pour le moment.",
+        "new_session": "Nouvelle session"
     },
     "cefrOverview": {
         "page_title": "Aperçu CECR",
@@ -994,6 +1021,10 @@
         "anon_auth_title": "Connexion anonyme (devoirs de rédaction)",
         "anon_auth_desc": "Les élèves utilisant Safe Exam Browser ne peuvent pas se connecter par OTP. La connexion anonyme leur permet d'accéder aux devoirs sans mot de passe.",
         "anon_auth_hint": "Activez « Autoriser les connexions anonymes » dans votre projet Supabase sous Authentification → Configuration."
+    },
+    "editor": {
+        "switchToCompactView": "Basculer vers la vue compacte",
+        "switchToPageView": "Basculer vers la vue page A4"
     },
     "essay": {
         "email_gate_title": "Entrez votre adresse email scolaire",

@@ -15,6 +15,7 @@ import type {
     SpeakingSession,
     DocumentAnalysisResult,
     RubricCriterion,
+    UserTemplate,
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 import { nanoid } from '../utils/nanoid';
@@ -514,5 +515,26 @@ export function removePendingWrites(ids: string[]): void {
         localStorage.setItem(PENDING_SYNC_KEY, JSON.stringify(queue));
     } catch {
         // ignore
+    }
+}
+
+// ── User Templates ──────────────────────────────────────────────────────────────
+
+const USER_TEMPLATES_KEY = 'rm_user_templates';
+
+export function getUserTemplates(): UserTemplate[] {
+    try {
+        const raw = localStorage.getItem(USER_TEMPLATES_KEY);
+        return raw ? (JSON.parse(raw) as UserTemplate[]) : [];
+    } catch {
+        return [];
+    }
+}
+
+export function setUserTemplates(templates: UserTemplate[]): void {
+    try {
+        localStorage.setItem(USER_TEMPLATES_KEY, JSON.stringify(templates));
+    } catch {
+        // quota errors are non-fatal
     }
 }

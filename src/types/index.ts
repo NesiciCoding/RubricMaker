@@ -323,6 +323,15 @@ export interface Rubric {
     vocabularyItems?: VocabularyItem[];
 }
 
+export interface UserTemplate {
+    id: string;
+    name: string;
+    subject: string;
+    description?: string;
+    criteria: RubricCriterion[];
+    savedAt: string;
+}
+
 export interface Student {
     id: string;
     name: string;

@@ -52,7 +52,7 @@ import type {
     LinkedFrameworkDescriptor,
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
-import { saveCriterionClipboard, loadCriterionClipboard } from '../store/storage';
+import { saveCriterionClipboard, loadCriterionClipboard, getUserTemplates, setUserTemplates } from '../store/storage';
 import { nanoid } from '../utils/nanoid';
 import StandardsPickerModal from '../components/Standards/StandardsPickerModal';
 import CefrPickerModal from '../components/CEFR/CefrPickerModal';
@@ -282,8 +282,6 @@ export default function RubricBuilder() {
         }
     };
 
-    const USER_TEMPLATES_KEY = 'rm_user_templates';
-
     function handleSaveAsTemplate() {
         const rubric = getRubricData();
         const template = {
@@ -292,15 +290,12 @@ export default function RubricBuilder() {
             subject: rubric.subject,
             description: rubric.description,
             criteria: rubric.criteria,
-            scoringMode: rubric.scoringMode,
-            totalMaxPoints: rubric.totalMaxPoints,
-            format: rubric.format,
             savedAt: new Date().toISOString(),
         };
         try {
-            const existing = JSON.parse(localStorage.getItem(USER_TEMPLATES_KEY) ?? '[]');
-            const filtered = existing.filter((t: { id: string }) => t.id !== template.id);
-            localStorage.setItem(USER_TEMPLATES_KEY, JSON.stringify([template, ...filtered].slice(0, 20)));
+            const existing = getUserTemplates();
+            const filtered = existing.filter((t) => t.id !== template.id);
+            setUserTemplates([template, ...filtered].slice(0, 20));
             showToast(t('rubricBuilder.save_as_template_success', `"${rubric.name}" saved as template`), 'success');
         } catch {
             showToast(t('toast.export_error'), 'error');
