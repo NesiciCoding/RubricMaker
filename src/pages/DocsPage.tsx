@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -181,16 +182,18 @@ const ROUTE_TREE: RouteNode[] = [
 
 // ── Docs sections ──────────────────────────────────────────────────────────────
 
-const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
-    { id: 'route-map', label: 'Route Map', icon: Map },
-    { id: 'getting-started', label: 'Getting Started', icon: CheckCircle },
-    { id: 'rubrics', label: 'Rubric Builder', icon: BookOpen },
-    { id: 'grading', label: 'Grading', icon: PenLine },
-    { id: 'cefr', label: 'CEFR & Speaking', icon: GraduationCap },
-    { id: 'essays', label: 'Essay Writing', icon: FileText },
-    { id: 'analytics', label: 'Analytics & Export', icon: BarChart3 },
-    { id: 'data', label: 'Data Management', icon: Database },
-];
+function getTabs(t: TFunction): { id: TabId; label: string; icon: React.ElementType }[] {
+    return [
+        { id: 'route-map', label: t('docs.tab_route_map'), icon: Map },
+        { id: 'getting-started', label: t('docs.tab_getting_started'), icon: CheckCircle },
+        { id: 'rubrics', label: t('docs.tab_rubrics'), icon: BookOpen },
+        { id: 'grading', label: t('docs.tab_grading'), icon: PenLine },
+        { id: 'cefr', label: t('docs.tab_cefr'), icon: GraduationCap },
+        { id: 'essays', label: t('docs.tab_essays'), icon: FileText },
+        { id: 'analytics', label: t('docs.tab_analytics'), icon: BarChart3 },
+        { id: 'data', label: t('docs.tab_data'), icon: Database },
+    ];
+}
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
@@ -837,6 +840,7 @@ const TAB_CONTENT: Record<TabId, React.ReactNode> = {
 export default function DocsPage() {
     const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState<TabId>('getting-started');
+    const tabs = getTabs(t);
 
     return (
         <>
@@ -872,9 +876,9 @@ export default function DocsPage() {
                                 letterSpacing: '0.06em',
                             }}
                         >
-                            Documentation
+                            {t('docs.section_title')}
                         </div>
-                        {TABS.map(({ id, label, icon: Icon }) => (
+                        {tabs.map(({ id, label, icon: Icon }) => (
                             <button
                                 key={id}
                                 onClick={() => setActiveTab(id)}
@@ -908,7 +912,7 @@ export default function DocsPage() {
                             <span style={{ fontSize: '0.78rem', color: 'var(--text-dim)' }}>Docs</span>
                             <ArrowRight size={12} style={{ color: 'var(--text-dim)' }} />
                             <span style={{ fontSize: '0.78rem', color: 'var(--text)' }}>
-                                {TABS.find((t) => t.id === activeTab)?.label}
+                                {tabs.find((tab) => tab.id === activeTab)?.label}
                             </span>
                         </div>
                         {TAB_CONTENT[activeTab]}

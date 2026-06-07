@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useEditor, EditorContent } from '@tiptap/react';
 import { Extension } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
@@ -284,6 +285,7 @@ export default function EssayEditor({
     placeholder,
     defaultPageMode = false,
 }: EssayEditorProps) {
+    const { t } = useTranslation();
     const colorInputRef = useRef<HTMLInputElement>(null);
     const highlightInputRef = useRef<HTMLInputElement>(null);
     const [showInvisibles, setShowInvisibles] = useState(false);
@@ -715,7 +717,7 @@ export default function EssayEditor({
                     <ToolbarBtn
                         active={pageMode}
                         onClick={() => setPageMode((v) => !v)}
-                        title={pageMode ? 'Switch to compact view' : 'Switch to A4 page view'}
+                        title={pageMode ? t('editor.switchToCompactView') : t('editor.switchToPageView')}
                     >
                         <FileText size={15} />
                     </ToolbarBtn>
@@ -726,7 +728,7 @@ export default function EssayEditor({
             {pageMode ? (
                 <div
                     style={{
-                        background: '#e8eaf0',
+                        background: 'var(--bg-elevated)',
                         padding: '32px 24px',
                         minHeight: 500,
                     }}
@@ -738,7 +740,7 @@ export default function EssayEditor({
                             maxWidth: 794,
                             minHeight: 1123,
                             margin: '0 auto',
-                            background: '#fff',
+                            background: 'var(--bg-raised)',
                             boxShadow: '0 4px 24px rgba(0,0,0,0.14)',
                             borderRadius: 2,
                             padding: '96px 96px 96px',

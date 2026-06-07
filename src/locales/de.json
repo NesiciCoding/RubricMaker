@@ -201,7 +201,8 @@
         "action_open": "Öffnen",
         "quick_start_templates": "Schnellstart-Vorlagen",
         "my_templates": "Meine Vorlagen",
-        "built_in_templates": "Eingebaute Vorlagen"
+        "built_in_templates": "Eingebaute Vorlagen",
+        "builtin_templates": "Integrierte Vorlagen"
     },
     "rubricList": {
         "title": "Rubriken",
@@ -237,7 +238,8 @@
         "share_success": "Rubrik erfolgreich geteilt!",
         "share_notfound": "Kein Konto für {{email}} gefunden. Bitten Sie sie, sich zuerst bei RubricMaker anzumelden.",
         "share_shared_with": "Geteilt mit",
-        "share_btn": "Teilen"
+        "share_btn": "Teilen",
+        "speaking_select_student": "🎙 Sprechen…"
     },
     "studentsPage": {
         "title": "Schüler und Klassen",
@@ -459,7 +461,8 @@
         "weight_total_label": "Gesamtgewicht:",
         "weight_total_hint": "(sollte 100% sein)",
         "weight_total_warning": "Gewichte ergeben {{total}}% (erwartet 100%). Sie können trotzdem speichern — das Bewertungssystem normalisiert sie.",
-        "weight_distribute_evenly": "Gleichmäßig verteilen"
+        "weight_distribute_evenly": "Gleichmäßig verteilen",
+        "cefr_skill_inherit": "— von Rubrik übernehmen —"
     },
     "peerReview": {
         "round_label": "Runde",
@@ -581,7 +584,14 @@
         "matchups_done": "{{done}} / {{max}} Vergleiche durchgeführt",
         "per_student_limit": "Limit pro Schüler:",
         "per_student_limit_hint": "Max. Vergleiche pro Schüler (0 = unbegrenzt)",
-        "student_progress": "Schülerfortschritt"
+        "student_progress": "Schülerfortschritt",
+        "go_to_students": "Zu Schülern",
+        "not_enough_explanation": "Vergleichende Bewertung erfordert mindestens zwei Schüler in derselben Klasse.",
+        "student_progress_label": "Schülerfortschritt",
+        "student_progress_count": "Schülerfortschritt ({{count}})",
+        "overall_comments_title": "Allgemeine Kommentare",
+        "rubric_not_found": "Rubrik nicht gefunden",
+        "overall_feedback_placeholder": "Allgemeines Feedback…"
     },
     "studentPortal": {
         "not_found": "Schüler nicht gefunden.",
@@ -815,7 +825,11 @@
         "no_marks": "Noch keine Markierungen — tippen Sie auf einen Fehlertyp oben.",
         "auto_lock": "Automatisch sperren wenn Timer endet",
         "time_up": "Zeit abgelaufen!",
-        "clear_marks": "Markierungen löschen"
+        "clear_marks": "Markierungen löschen",
+        "launch_session": "Sprechsitzung",
+        "new_session": "Neue Sitzung",
+        "choose_rubric": "Rubrik wählen",
+        "empty_state_no_sessions": "Noch keine Sprechsitzungen. Klicken Sie oben auf \"Neue Sitzung\"."
     },
     "cefrOverview": {
         "page_title": "GER-Übersicht",
@@ -846,7 +860,15 @@
         "target_level_label": "Zielniveau",
         "empty_no_cefr": "Noch keine GER-Daten. Benoten Sie Rubriken mit einem GER-Zielniveau oder lassen Sie den Schüler eine Selbstbewertung ausfüllen.",
         "student_not_found": "Schüler nicht gefunden.",
-        "select_student_prompt": "Wählen Sie eine Klasse und einen Schüler, um deren GER-Übersicht anzuzeigen."
+        "select_student_prompt": "Wählen Sie eine Klasse und einen Schüler, um deren GER-Übersicht anzuzeigen.",
+        "class_view": "Klassenansicht",
+        "student_detail": "Schülerdetail",
+        "class_empty": "Keine Schüler gefunden. Fügen Sie Schüler hinzu und verknüpfen Sie Rubriken mit GER-Zielniveaus.",
+        "table_student_header": "Schüler",
+        "table_detail_header": "Detail",
+        "cell_tooltip": "{{name}} — {{skill}} {{level}}: {{state}}",
+        "open_student_detail": "CEFR-Detail von {{name}} öffnen",
+        "legend_target_level": "Zielniveau"
     },
     "analysis": {
         "add_to_bank": "Zur Bank hinzufügen",
@@ -1032,5 +1054,20 @@
         "show_essay": "Aufsatz anzeigen",
         "hide_essay": "Aufsatz ausblenden",
         "expired_desc_no_date": "Diese Aufgabe ist abgelaufen. Bitte kontaktieren Sie Ihren Lehrer."
+    },
+    "editor": {
+        "switchToCompactView": "Kompaktansicht",
+        "switchToPageView": "A4-Seitenansicht"
+    },
+    "docs": {
+        "section_title": "Dokumentation",
+        "tab_route_map": "Routenübersicht",
+        "tab_getting_started": "Erste Schritte",
+        "tab_rubrics": "Rubriken-Editor",
+        "tab_grading": "Bewertung",
+        "tab_cefr": "GER & Sprechen",
+        "tab_essays": "Aufsatzschreiben",
+        "tab_analytics": "Analyse & Export",
+        "tab_data": "Datenverwaltung"
     }
 }

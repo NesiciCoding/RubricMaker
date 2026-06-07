@@ -116,6 +116,16 @@ export interface RubricCriterion {
     cefrSkill?: CefrSkill;
 }
 
+/** A user-saved rubric template stored locally. */
+export interface UserTemplate {
+    id: string;
+    name: string;
+    subject: string;
+    description: string;
+    criteria: RubricCriterion[];
+    savedAt: string;
+}
+
 export type GradeScaleType = 'letter' | 'percentage' | 'points' | 'pass-fail' | 'custom';
 
 export interface GradeRange {

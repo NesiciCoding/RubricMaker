@@ -14,6 +14,7 @@ import {
     ChevronUp,
     Printer,
 } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import { nanoid } from '../utils/nanoid';
 import { useTranslation } from 'react-i18next';
 import { calcGradeSummary } from '../utils/gradeCalc';
@@ -183,7 +184,8 @@ function EssayPanel({ attachment, label }: { attachment: Attachment; label: stri
     const html = React.useMemo(() => {
         try {
             const base64 = attachment.dataUrl.split(',')[1];
-            return decodeURIComponent(escape(atob(base64)));
+            const decoded = decodeURIComponent(escape(atob(base64)));
+            return DOMPurify.sanitize(decoded);
         } catch {
             return '';
         }
@@ -539,7 +541,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
         return counts;
     }, [matchups]);
 
-    if (!rubric) return <div className="page-content">Rubric not found</div>;
+    if (!rubric) return <div className="page-content">{t('comparativeGrading.rubric_not_found')}</div>;
     if (error)
         return (
             <>
@@ -559,12 +561,11 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                         <Equal size={36} style={{ color: 'var(--text-dim)', marginBottom: 16 }} />
                         <h3 style={{ marginBottom: 8 }}>{t('comparativeGrading.not_enough_students')}</h3>
                         <p className="text-muted text-sm" style={{ marginBottom: 24 }}>
-                            Comparative grading requires at least two students in the same class. Add another student to
-                            this class to get started.
+                            {t('comparativeGrading.not_enough_explanation')}
                         </p>
                         <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
                             <button className="btn btn-primary btn-sm" onClick={() => navigate('/students')}>
-                                Go to Students
+                                {t('comparativeGrading.go_to_students')}
                             </button>
                             <button className="btn btn-secondary btn-sm" onClick={() => navigate(-1)}>
                                 <ArrowLeft size={14} /> {t('comparativeGrading.action_back')}
@@ -794,7 +795,11 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                     fontWeight: 600,
                                 }}
                             >
-                                <span>Student Progress ({classStudents.length})</span>
+                                <span>
+                                    {t('comparativeGrading.student_progress_count', {
+                                        count: classStudents.length,
+                                    })}
+                                </span>
                                 {progressOpen ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
                             </button>
                             {progressOpen && (
@@ -897,7 +902,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                         <button
                                             className="btn btn-ghost btn-icon btn-sm"
                                             onClick={() => toggleComment(c.id)}
-                                            title="Toggle comments"
+                                            title={t('comparativeGrading.toggle_comments')}
                                             style={{
                                                 color: hasComment ? 'var(--accent)' : 'var(--text-dim)',
                                                 flexShrink: 0,
@@ -1342,7 +1347,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                         {/* Overall comments */}
                         <div className="card" style={{ padding: '16px 20px' }}>
                             <div style={{ fontWeight: 600, fontSize: '1rem', marginBottom: 12, textAlign: 'center' }}>
-                                Overall Comments
+                                {t('comparativeGrading.overall_comments_title')}
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                                 <div>
@@ -1351,7 +1356,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                     </label>
                                     <textarea
                                         rows={3}
-                                        placeholder="Overall feedback…"
+                                        placeholder={t('comparativeGrading.overall_feedback_placeholder')}
                                         value={srA.overallComment || ''}
                                         onChange={(e) =>
                                             setSrA((prev) =>
@@ -1367,7 +1372,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                     </label>
                                     <textarea
                                         rows={3}
-                                        placeholder="Overall feedback…"
+                                        placeholder={t('comparativeGrading.overall_feedback_placeholder')}
                                         value={srB.overallComment || ''}
                                         onChange={(e) =>
                                             setSrB((prev) =>
@@ -1389,7 +1394,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                 onClick={handleSaveAndNext}
                                 style={{ padding: '12px 30px', fontSize: '1.1rem' }}
                             >
-                                <Check size={18} /> Save & Next Matchup
+                                <Check size={18} /> {t('comparativeGrading.action_save_next')}
                             </button>
                         </div>
                     </div>
@@ -1424,8 +1429,9 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
 // Decides whether to show the class picker or jump straight into grading.
 export default function ComparativeGrading() {
     const { classId, rubricId } = useParams();
+    const { t } = useTranslation();
 
-    if (!rubricId) return <div className="page-content">Rubric not found</div>;
+    if (!rubricId) return <div className="page-content">{t('comparativeGrading.rubric_not_found')}</div>;
 
     if (!classId || classId === 'all') {
         return <ClassPicker rubricId={rubricId} />;

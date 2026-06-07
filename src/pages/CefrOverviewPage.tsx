@@ -11,7 +11,7 @@ import { useApp } from '../context/AppContext';
 import { getCefrStudentOverview } from '../utils/cefrStudentAggregator';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
 import { VO_TRACK_LABELS, VO_TRACK_COLORS, VO_TRACK_DEFAULT_CEFR } from '../data/voTracks';
-import type { CefrLevel, CefrSkill } from '../types';
+import type { CefrSkill } from '../types';
 
 const SKILLS: { key: CefrSkill; label: string; short: string }[] = [
     { key: 'reading', label: 'Reading', short: 'Read' },
@@ -20,8 +20,6 @@ const SKILLS: { key: CefrSkill; label: string; short: string }[] = [
     { key: 'speaking_interaction', label: 'Speaking (Int.)', short: 'Spk↔' },
     { key: 'listening', label: 'Listening', short: 'Listen' },
 ];
-
-const LEVEL_ORDER: Record<CefrLevel, number> = { A1: 1, A2: 2, B1: 3, B2: 4, C1: 5, C2: 6 };
 
 export default function CefrOverviewPage() {
     const { students, classes, rubrics, studentRubrics, selfAssessments, analysisResults } = useApp();
@@ -41,7 +39,6 @@ export default function CefrOverviewPage() {
         [students, selectedClassId]
     );
 
-    // Compute per-student overviews for the class heatmap
     const studentOverviews = useMemo(
         () =>
             filteredStudents.map((s) => ({
@@ -52,7 +49,6 @@ export default function CefrOverviewPage() {
         [filteredStudents, studentRubrics, rubrics, selfAssessments, analysisResults, classes]
     );
 
-    // Individual student detail
     const student = students.find((s) => s.id === selectedStudentId);
     const cls = classes.find((c) => c.id === student?.classId);
     const targetLevel = cls?.voTrack ? VO_TRACK_DEFAULT_CEFR[cls.voTrack] : undefined;
@@ -81,7 +77,6 @@ export default function CefrOverviewPage() {
         <>
             <Topbar title={t('cefrOverview.page_title')} />
             <div className="page-content fade-in">
-                {/* Controls row */}
                 <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap', alignItems: 'flex-end' }}>
                     <div className="form-group" style={{ flex: '0 0 auto', minWidth: 180, marginBottom: 0 }}>
                         <label>{t('statistics.label_class_filter')}</label>
@@ -101,7 +96,6 @@ export default function CefrOverviewPage() {
                         </select>
                     </div>
 
-                    {/* View mode toggle */}
                     <div
                         style={{
                             display: 'flex',
@@ -116,25 +110,24 @@ export default function CefrOverviewPage() {
                             style={{ border: 'none' }}
                             onClick={() => setViewMode('class')}
                         >
-                            <Users size={14} /> Class View
+                            <Users size={14} /> {t('cefrOverview.class_view')}
                         </button>
                         <button
                             className={`btn btn-sm ${viewMode === 'student' ? 'btn-secondary' : 'btn-ghost'}`}
                             style={{ border: 'none' }}
                             onClick={() => setViewMode('student')}
                         >
-                            <BookOpen size={14} /> Student Detail
+                            <BookOpen size={14} /> {t('cefrOverview.student_detail')}
                         </button>
                     </div>
                 </div>
 
-                {/* ── CLASS VIEW: whole-class heatmap ── */}
                 {viewMode === 'class' && (
                     <>
                         {filteredStudents.length === 0 ? (
                             <div className="empty-state">
                                 <Users size={36} />
-                                <p>No students found. Add students and link rubrics with CEFR target levels.</p>
+                                <p>{t('cefrOverview.class_empty')}</p>
                             </div>
                         ) : (
                             <div className="card" style={{ overflowX: 'auto', padding: 0 }}>
@@ -154,7 +147,7 @@ export default function CefrOverviewPage() {
                                                     zIndex: 1,
                                                 }}
                                             >
-                                                Student
+                                                {t('cefrOverview.table_student_header')}
                                             </th>
                                             {SKILLS.map((sk) => (
                                                 <th
@@ -181,7 +174,7 @@ export default function CefrOverviewPage() {
                                                     whiteSpace: 'nowrap',
                                                 }}
                                             >
-                                                Detail
+                                                {t('cefrOverview.table_detail_header')}
                                             </th>
                                         </tr>
                                         <tr
@@ -234,7 +227,6 @@ export default function CefrOverviewPage() {
                                                             i % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-elevated)',
                                                     }}
                                                 >
-                                                    {/* Student name */}
                                                     <td
                                                         style={{
                                                             padding: '8px 14px',
@@ -297,7 +289,6 @@ export default function CefrOverviewPage() {
                                                         </div>
                                                     </td>
 
-                                                    {/* Skill × level cells */}
                                                     {SKILLS.map((sk) =>
                                                         CEFR_LEVELS.map((lvl) => {
                                                             const cell = ov.cells.find(
@@ -336,12 +327,24 @@ export default function CefrOverviewPage() {
                                                                 );
                                                             }
 
+                                                            const stateLabel =
+                                                                state === 'achieved'
+                                                                    ? t('cefrOverview.cell_achieved')
+                                                                    : state === 'developing'
+                                                                      ? t('cefrOverview.cell_developing')
+                                                                      : t('cefrOverview.cell_not_started');
+
                                                             return (
                                                                 <td
                                                                     key={`${sk.key}-${lvl}`}
                                                                     title={
                                                                         hasData
-                                                                            ? `${s.name} — ${sk.label} ${lvl}: ${state}`
+                                                                            ? t('cefrOverview.cell_tooltip', {
+                                                                                  name: s.name,
+                                                                                  skill: sk.label,
+                                                                                  level: lvl,
+                                                                                  state: stateLabel,
+                                                                              })
                                                                             : undefined
                                                                     }
                                                                     style={{
@@ -374,7 +377,6 @@ export default function CefrOverviewPage() {
                                                         })
                                                     )}
 
-                                                    {/* Link to detail */}
                                                     <td
                                                         style={{
                                                             padding: '8px 10px',
@@ -386,7 +388,12 @@ export default function CefrOverviewPage() {
                                                             className="btn btn-ghost btn-sm"
                                                             style={{ padding: '3px 8px', fontSize: '0.75rem' }}
                                                             onClick={() => navigate(`/students/${s.id}/cefr-overview`)}
-                                                            title={`Open ${s.name}'s CEFR detail`}
+                                                            aria-label={t('cefrOverview.open_student_detail', {
+                                                                name: s.name,
+                                                            })}
+                                                            title={t('cefrOverview.open_student_detail', {
+                                                                name: s.name,
+                                                            })}
                                                         >
                                                             <ChevronRight size={13} />
                                                         </button>
@@ -397,7 +404,6 @@ export default function CefrOverviewPage() {
                                     </tbody>
                                 </table>
 
-                                {/* Legend */}
                                 <div
                                     style={{
                                         display: 'flex',
@@ -408,16 +414,24 @@ export default function CefrOverviewPage() {
                                     }}
                                 >
                                     {[
-                                        { color: '#22c55e', label: 'Achieved', bg: 'rgba(34,197,94,0.25)' },
-                                        { color: '#eab308', label: 'Developing', bg: 'rgba(234,179,8,0.25)' },
+                                        {
+                                            color: '#22c55e',
+                                            label: t('cefrOverview.cell_achieved'),
+                                            bg: 'rgba(34,197,94,0.25)',
+                                        },
+                                        {
+                                            color: '#eab308',
+                                            label: t('cefrOverview.cell_developing'),
+                                            bg: 'rgba(234,179,8,0.25)',
+                                        },
                                         {
                                             color: 'var(--text-dim)',
-                                            label: 'Not started',
+                                            label: t('cefrOverview.cell_not_started'),
                                             bg: 'rgba(148,163,184,0.12)',
                                         },
                                         {
                                             color: 'var(--accent)',
-                                            label: 'Target level',
+                                            label: t('cefrOverview.legend_target_level'),
                                             bg: 'transparent',
                                             outline: true,
                                         },
@@ -464,10 +478,8 @@ export default function CefrOverviewPage() {
                     </>
                 )}
 
-                {/* ── STUDENT DETAIL VIEW ── */}
                 {viewMode === 'student' && (
                     <>
-                        {/* Student picker */}
                         <div className="form-group" style={{ maxWidth: 320, marginBottom: 24 }}>
                             <label>{t('statistics.label_student')}</label>
                             <select value={selectedStudentId} onChange={(e) => setSelectedStudentId(e.target.value)}>
@@ -489,7 +501,6 @@ export default function CefrOverviewPage() {
                             </div>
                         ) : (
                             <>
-                                {/* Student header */}
                                 {student && (
                                     <div
                                         className="card"

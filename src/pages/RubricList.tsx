@@ -527,7 +527,7 @@ export default function RubricList() {
                                                             }}
                                                         >
                                                             <option value="" disabled>
-                                                                🎙 Speaking…
+                                                                {t('rubricList.speaking_select_student')}
                                                             </option>
                                                             {classStudents.map((s) => (
                                                                 <option key={s.id} value={s.id}>

@@ -172,7 +172,7 @@ export default function GradeStudent() {
                 });
             }
         }
-    }, [sr, rubric, saveStudentRubric, settings.notifyStudentsOnGrade, student, studentId]);
+    }, [sr, rubric, saveStudentRubric, feedbackOnly, isAnchor, settings.notifyStudentsOnGrade, student, studentId]);
 
     // Find next student; scope is configurable: stay in current class or span all rubric-linked classes
     const navScope = settings.gradeNavigationScope ?? 'rubric-classes';

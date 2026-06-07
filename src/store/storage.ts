@@ -212,6 +212,7 @@ const KEYS = {
     selfAssessments: 'rm_self_assessments',
     speakingSessions: 'rm_speaking_sessions',
     analysisResults: 'rm_analysis_results',
+    userTemplates: 'rm_user_templates',
 };
 
 // ─── Generic helpers ───────────────────────────────────────────────────────────
@@ -512,6 +513,20 @@ export function removePendingWrites(ids: string[]): void {
         const idSet = new Set(ids);
         const queue = loadPendingQueue().filter((q) => !idSet.has(q.id));
         localStorage.setItem(PENDING_SYNC_KEY, JSON.stringify(queue));
+    } catch {
+        // ignore
+    }
+}
+
+// ─── User templates ────────────────────────────────────────────────────────────
+
+export function loadUserTemplates(): import('../types').UserTemplate[] {
+    return load<import('../types').UserTemplate[]>(KEYS.userTemplates, []);
+}
+
+export function saveUserTemplates(templates: import('../types').UserTemplate[]): void {
+    try {
+        localStorage.setItem(KEYS.userTemplates, JSON.stringify(templates));
     } catch {
         // ignore
     }

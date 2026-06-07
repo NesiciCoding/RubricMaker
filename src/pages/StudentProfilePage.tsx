@@ -193,7 +193,7 @@ export default function StudentProfilePage() {
                                     }
                                 }}
                             >
-                                <Mic size={14} /> Speaking Session
+                                <Mic size={14} /> {t('speaking.launch_session')}
                                 {rubrics.length !== 1 && <ChevronDown size={12} />}
                             </button>
                             {showSpeakingPicker && rubrics.length > 1 && (
@@ -227,7 +227,7 @@ export default function StudentProfilePage() {
                                                 letterSpacing: '0.06em',
                                             }}
                                         >
-                                            Choose rubric
+                                            {t('speaking.choose_rubric')}
                                         </div>
                                         {rubrics.map((r) => (
                                             <button
@@ -840,7 +840,7 @@ export default function StudentProfilePage() {
                                         }
                                     }}
                                 >
-                                    <Mic size={13} /> New Session
+                                    <Mic size={13} /> {t('speaking.new_session')}
                                 </button>
                             </div>
                             {studentSessions.length === 0 && (
@@ -861,7 +861,7 @@ export default function StudentProfilePage() {
                                             margin: '0 auto 8px',
                                         }}
                                     />
-                                    No speaking sessions yet. Click <strong>New Session</strong> above to start one.
+                                    {t('speaking.empty_state_no_sessions')}
                                 </div>
                             )}
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

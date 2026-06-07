@@ -201,7 +201,8 @@
         "action_open": "Ouvrir",
         "quick_start_templates": "Modèles de démarrage rapide",
         "my_templates": "Mes modèles",
-        "built_in_templates": "Modèles intégrés"
+        "built_in_templates": "Modèles intégrés",
+        "builtin_templates": "Modèles intégrés"
     },
     "rubricList": {
         "title": "Rubriques",
@@ -237,7 +238,8 @@
         "share_success": "Grille partagée avec succès !",
         "share_notfound": "Aucun compte trouvé pour {{email}}. Demandez-leur de se connecter à RubricMaker d'abord.",
         "share_shared_with": "Partagé avec",
-        "share_btn": "Partager"
+        "share_btn": "Partager",
+        "speaking_select_student": "🎙 Expression orale…"
     },
     "studentsPage": {
         "title": "Élèves et Classes",
@@ -459,7 +461,8 @@
         "weight_total_label": "Poids total :",
         "weight_total_hint": "(doit être 100%)",
         "weight_total_warning": "Le poids total est de {{total}}% (attendu 100%). Vous pouvez quand même enregistrer — le moteur de notation normalise les valeurs.",
-        "weight_distribute_evenly": "Distribuer uniformément"
+        "weight_distribute_evenly": "Distribuer uniformément",
+        "cefr_skill_inherit": "— hériter de la rubrique —"
     },
     "peerReview": {
         "round_label": "Tour",
@@ -581,7 +584,14 @@
         "matchups_done": "{{done}} / {{max}} comparaisons effectuées",
         "per_student_limit": "Limite par élève :",
         "per_student_limit_hint": "Comparaisons max par élève (0 = illimité)",
-        "student_progress": "Progression des élèves"
+        "student_progress": "Progression des élèves",
+        "go_to_students": "Aller aux élèves",
+        "not_enough_explanation": "La notation comparative nécessite au moins deux élèves dans la même classe.",
+        "student_progress_label": "Progrès des élèves",
+        "student_progress_count": "Progression des élèves ({{count}})",
+        "overall_comments_title": "Commentaires généraux",
+        "rubric_not_found": "Grille non trouvée",
+        "overall_feedback_placeholder": "Retour général…"
     },
     "studentPortal": {
         "not_found": "Élève introuvable.",
@@ -815,7 +825,11 @@
         "no_marks": "Aucune marque — appuyez sur un type d'erreur ci-dessus.",
         "auto_lock": "Verrouillage automatique à la fin du chronomètre",
         "time_up": "Temps écoulé !",
-        "clear_marks": "Effacer les marques"
+        "clear_marks": "Effacer les marques",
+        "launch_session": "Session orale",
+        "new_session": "Nouvelle session",
+        "choose_rubric": "Choisir une rubrique",
+        "empty_state_no_sessions": "Aucune session orale. Cliquez sur \"Nouvelle session\" pour commencer."
     },
     "cefrOverview": {
         "page_title": "Aperçu CECR",
@@ -846,7 +860,15 @@
         "target_level_label": "Niveau cible",
         "empty_no_cefr": "Pas encore de données CECR. Notez des rubriques avec un niveau CECR cible ou demandez à l'élève de faire une auto-évaluation.",
         "student_not_found": "Élève introuvable.",
-        "select_student_prompt": "Sélectionnez une classe et un élève pour voir leur aperçu CECR."
+        "select_student_prompt": "Sélectionnez une classe et un élève pour voir leur aperçu CECR.",
+        "class_view": "Vue classe",
+        "student_detail": "Détail élève",
+        "class_empty": "Aucun élève trouvé. Ajoutez des élèves et liez des rubriques avec des niveaux CECRL.",
+        "table_student_header": "Élève",
+        "table_detail_header": "Détail",
+        "cell_tooltip": "{{name}} — {{skill}} {{level}} : {{state}}",
+        "open_student_detail": "Ouvrir le détail CECR de {{name}}",
+        "legend_target_level": "Niveau cible"
     },
     "analysis": {
         "add_to_bank": "Ajouter à la banque",
@@ -1032,5 +1054,20 @@
         "show_essay": "Afficher la dissertation",
         "hide_essay": "Masquer la dissertation",
         "expired_desc_no_date": "Ce devoir a expiré. Veuillez contacter votre enseignant."
+    },
+    "editor": {
+        "switchToCompactView": "Vue compacte",
+        "switchToPageView": "Vue page A4"
+    },
+    "docs": {
+        "section_title": "Documentation",
+        "tab_route_map": "Plan des routes",
+        "tab_getting_started": "Démarrage",
+        "tab_rubrics": "Créateur de rubriques",
+        "tab_grading": "Notation",
+        "tab_cefr": "CECRL & Expression",
+        "tab_essays": "Rédaction d'essais",
+        "tab_analytics": "Analyses & Export",
+        "tab_data": "Gestion des données"
     }
 }
