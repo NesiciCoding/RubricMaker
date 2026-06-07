@@ -67,7 +67,7 @@ const STUDENT_FEATURES = [
     {
         icon: MessageSquare,
         title: 'Peer Review',
-        desc: 'Leave structured feedback on a classmate\'s work using the same rubric your teacher uses.',
+        desc: "Leave structured feedback on a classmate's work using the same rubric your teacher uses.",
         color: '#8b5cf6',
     },
 ];
@@ -179,10 +179,19 @@ export default function LandingPage() {
                         lineHeight: 1.6,
                     }}
                 >
-                    Teachers build rubrics and grade efficiently. Students view feedback, submit essays, and
-                    track their own progress — all without needing an account.
+                    Teachers build rubrics and grade efficiently. Students view feedback, submit essays, and track their
+                    own progress — all without needing an account.
                 </p>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, flexWrap: 'wrap', marginTop: 8 }}>
+                <div
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 16,
+                        flexWrap: 'wrap',
+                        marginTop: 8,
+                    }}
+                >
                     {[
                         { icon: CheckCircle, label: 'No student account needed' },
                         { icon: CheckCircle, label: 'CEFR proficiency tracking' },
@@ -190,7 +199,13 @@ export default function LandingPage() {
                     ].map(({ icon: Icon, label }) => (
                         <span
                             key={label}
-                            style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.82rem', color: '#64748b' }}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 5,
+                                fontSize: '0.82rem',
+                                color: '#64748b',
+                            }}
                         >
                             <Icon size={13} style={{ color: '#10b981' }} />
                             {label}
@@ -219,8 +234,8 @@ export default function LandingPage() {
                     accentBg="#f1f5f9"
                 >
                     <p style={{ color: '#64748b', fontSize: '0.88rem', lineHeight: 1.6, margin: '0 0 20px' }}>
-                        All rubrics and grades stay in this browser. Nothing is sent to a server. You can connect
-                        an account later in Settings.
+                        All rubrics and grades stay in this browser. Nothing is sent to a server. You can connect an
+                        account later in Settings.
                     </p>
                     <button className="btn btn-secondary" style={{ width: '100%' }} onClick={enterLocalMode}>
                         Continue without account
@@ -285,18 +300,10 @@ export default function LandingPage() {
                 </h2>
 
                 {/* For teachers */}
-                <FeatureGroup
-                    label="For teachers"
-                    labelColor="#6366f1"
-                    features={TEACHER_FEATURES}
-                />
+                <FeatureGroup label="For teachers" labelColor="#6366f1" features={TEACHER_FEATURES} />
 
                 {/* For students */}
-                <FeatureGroup
-                    label="For students"
-                    labelColor="#0891b2"
-                    features={STUDENT_FEATURES}
-                />
+                <FeatureGroup label="For students" labelColor="#0891b2" features={STUDENT_FEATURES} />
             </div>
 
             {/* ── Offline notice + privacy ── */}

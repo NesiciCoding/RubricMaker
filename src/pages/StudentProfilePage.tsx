@@ -198,13 +198,47 @@ export default function StudentProfilePage() {
                             </button>
                             {showSpeakingPicker && rubrics.length > 1 && (
                                 <>
-                                    <div style={{ position: 'fixed', inset: 0, zIndex: 5 }} onClick={() => setShowSpeakingPicker(false)} />
-                                    <div className="card" style={{ position: 'absolute', top: '100%', right: 0, marginTop: 4, minWidth: 220, padding: 4, zIndex: 10, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                        <div style={{ padding: '4px 10px 6px', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                                    <div
+                                        style={{ position: 'fixed', inset: 0, zIndex: 5 }}
+                                        onClick={() => setShowSpeakingPicker(false)}
+                                    />
+                                    <div
+                                        className="card"
+                                        style={{
+                                            position: 'absolute',
+                                            top: '100%',
+                                            right: 0,
+                                            marginTop: 4,
+                                            minWidth: 220,
+                                            padding: 4,
+                                            zIndex: 10,
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: 2,
+                                        }}
+                                    >
+                                        <div
+                                            style={{
+                                                padding: '4px 10px 6px',
+                                                fontSize: '0.72rem',
+                                                fontWeight: 700,
+                                                color: 'var(--text-dim)',
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.06em',
+                                            }}
+                                        >
                                             Choose rubric
                                         </div>
                                         {rubrics.map((r) => (
-                                            <button key={r.id} className="btn btn-ghost btn-sm" style={{ justifyContent: 'flex-start' }} onClick={() => { setShowSpeakingPicker(false); navigate(`/speaking/${r.id}/${student.id}`); }}>
+                                            <button
+                                                key={r.id}
+                                                className="btn btn-ghost btn-sm"
+                                                style={{ justifyContent: 'flex-start' }}
+                                                onClick={() => {
+                                                    setShowSpeakingPicker(false);
+                                                    navigate(`/speaking/${r.id}/${student.id}`);
+                                                }}
+                                            >
                                                 <Mic size={13} /> {r.name}
                                             </button>
                                         ))}
@@ -784,9 +818,17 @@ export default function StudentProfilePage() {
                     const studentSessions = speakingSessions.filter((s) => s.studentId === student.id);
                     return (
                         <div className="card" style={{ marginTop: 24 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    marginBottom: 16,
+                                }}
+                            >
                                 <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <Mic size={16} style={{ color: 'var(--accent)' }} /> {t('speaking.sessions_history')}
+                                    <Mic size={16} style={{ color: 'var(--accent)' }} />{' '}
+                                    {t('speaking.sessions_history')}
                                 </h3>
                                 <button
                                     className="btn btn-secondary btn-sm no-print"
@@ -802,8 +844,23 @@ export default function StudentProfilePage() {
                                 </button>
                             </div>
                             {studentSessions.length === 0 && (
-                                <div style={{ textAlign: 'center', padding: '24px 16px', color: 'var(--text-muted)', fontSize: '0.88rem' }}>
-                                    <Mic size={28} style={{ opacity: 0.3, marginBottom: 8, display: 'block', margin: '0 auto 8px' }} />
+                                <div
+                                    style={{
+                                        textAlign: 'center',
+                                        padding: '24px 16px',
+                                        color: 'var(--text-muted)',
+                                        fontSize: '0.88rem',
+                                    }}
+                                >
+                                    <Mic
+                                        size={28}
+                                        style={{
+                                            opacity: 0.3,
+                                            marginBottom: 8,
+                                            display: 'block',
+                                            margin: '0 auto 8px',
+                                        }}
+                                    />
                                     No speaking sessions yet. Click <strong>New Session</strong> above to start one.
                                 </div>
                             )}

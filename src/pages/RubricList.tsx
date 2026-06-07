@@ -512,7 +512,8 @@ export default function RubricList() {
                                                         <select
                                                             value=""
                                                             onChange={(e) => {
-                                                                if (e.target.value) navigate(`/speaking/${r.id}/${e.target.value}`);
+                                                                if (e.target.value)
+                                                                    navigate(`/speaking/${r.id}/${e.target.value}`);
                                                             }}
                                                             style={{
                                                                 width: '100%',
@@ -525,9 +526,13 @@ export default function RubricList() {
                                                                 cursor: 'pointer',
                                                             }}
                                                         >
-                                                            <option value="" disabled>🎙 Speaking…</option>
+                                                            <option value="" disabled>
+                                                                🎙 Speaking…
+                                                            </option>
                                                             {classStudents.map((s) => (
-                                                                <option key={s.id} value={s.id}>{s.name}</option>
+                                                                <option key={s.id} value={s.id}>
+                                                                    {s.name}
+                                                                </option>
                                                             ))}
                                                         </select>
                                                     </div>

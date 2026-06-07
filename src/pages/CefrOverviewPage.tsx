@@ -23,14 +23,20 @@ const SKILLS: { key: CefrSkill; label: string; short: string }[] = [
 
 const LEVEL_ORDER: Record<CefrLevel, number> = { A1: 1, A2: 2, B1: 3, B2: 4, C1: 5, C2: 6 };
 
-function highestAchievedLevel(cells: ReturnType<typeof getCefrStudentOverview>['cells'], skill: CefrSkill): CefrLevel | null {
+function highestAchievedLevel(
+    cells: ReturnType<typeof getCefrStudentOverview>['cells'],
+    skill: CefrSkill
+): CefrLevel | null {
     const achieved = cells
         .filter((c) => c.skill === skill && c.state === 'achieved')
         .sort((a, b) => (LEVEL_ORDER[b.level] ?? 0) - (LEVEL_ORDER[a.level] ?? 0));
     return achieved[0]?.level ?? null;
 }
 
-function developingLevel(cells: ReturnType<typeof getCefrStudentOverview>['cells'], skill: CefrSkill): CefrLevel | null {
+function developingLevel(
+    cells: ReturnType<typeof getCefrStudentOverview>['cells'],
+    skill: CefrSkill
+): CefrLevel | null {
     const developing = cells
         .filter((c) => c.skill === skill && c.state === 'developing')
         .sort((a, b) => (LEVEL_ORDER[a.level] ?? 0) - (LEVEL_ORDER[b.level] ?? 0));
@@ -108,13 +114,23 @@ export default function CefrOverviewPage() {
                         >
                             <option value="all">{t('statistics.all_classes')}</option>
                             {classes.map((c) => (
-                                <option key={c.id} value={c.id}>{c.name}</option>
+                                <option key={c.id} value={c.id}>
+                                    {c.name}
+                                </option>
                             ))}
                         </select>
                     </div>
 
                     {/* View mode toggle */}
-                    <div style={{ display: 'flex', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 8, padding: 2 }}>
+                    <div
+                        style={{
+                            display: 'flex',
+                            background: 'var(--bg-elevated)',
+                            border: '1px solid var(--border)',
+                            borderRadius: 8,
+                            padding: 2,
+                        }}
+                    >
                         <button
                             className={`btn btn-sm ${viewMode === 'class' ? 'btn-secondary' : 'btn-ghost'}`}
                             style={{ border: 'none' }}
@@ -145,23 +161,78 @@ export default function CefrOverviewPage() {
                                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
                                     <thead>
                                         <tr style={{ borderBottom: '2px solid var(--border)' }}>
-                                            <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 700, color: 'var(--text-muted)', whiteSpace: 'nowrap', position: 'sticky', left: 0, background: 'var(--bg-card)', zIndex: 1 }}>
+                                            <th
+                                                style={{
+                                                    padding: '10px 14px',
+                                                    textAlign: 'left',
+                                                    fontWeight: 700,
+                                                    color: 'var(--text-muted)',
+                                                    whiteSpace: 'nowrap',
+                                                    position: 'sticky',
+                                                    left: 0,
+                                                    background: 'var(--bg-card)',
+                                                    zIndex: 1,
+                                                }}
+                                            >
                                                 Student
                                             </th>
                                             {SKILLS.map((sk) => (
-                                                <th key={sk.key} colSpan={6} style={{ padding: '10px 6px', textAlign: 'center', fontWeight: 600, color: 'var(--text-muted)', borderLeft: '2px solid var(--border)' }}>
+                                                <th
+                                                    key={sk.key}
+                                                    colSpan={6}
+                                                    style={{
+                                                        padding: '10px 6px',
+                                                        textAlign: 'center',
+                                                        fontWeight: 600,
+                                                        color: 'var(--text-muted)',
+                                                        borderLeft: '2px solid var(--border)',
+                                                    }}
+                                                >
                                                     {sk.label}
                                                 </th>
                                             ))}
-                                            <th style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 600, color: 'var(--text-muted)', borderLeft: '2px solid var(--border)', whiteSpace: 'nowrap' }}>
+                                            <th
+                                                style={{
+                                                    padding: '10px 14px',
+                                                    textAlign: 'center',
+                                                    fontWeight: 600,
+                                                    color: 'var(--text-muted)',
+                                                    borderLeft: '2px solid var(--border)',
+                                                    whiteSpace: 'nowrap',
+                                                }}
+                                            >
                                                 Detail
                                             </th>
                                         </tr>
-                                        <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-elevated)' }}>
-                                            <th style={{ padding: '4px 14px', position: 'sticky', left: 0, background: 'var(--bg-elevated)', zIndex: 1 }} />
+                                        <tr
+                                            style={{
+                                                borderBottom: '1px solid var(--border)',
+                                                background: 'var(--bg-elevated)',
+                                            }}
+                                        >
+                                            <th
+                                                style={{
+                                                    padding: '4px 14px',
+                                                    position: 'sticky',
+                                                    left: 0,
+                                                    background: 'var(--bg-elevated)',
+                                                    zIndex: 1,
+                                                }}
+                                            />
                                             {SKILLS.map((sk) =>
                                                 CEFR_LEVELS.map((lvl) => (
-                                                    <th key={`${sk.key}-${lvl}`} style={{ padding: '4px 3px', textAlign: 'center', fontSize: '0.7rem', color: 'var(--text-dim)', borderLeft: lvl === 'A1' ? '2px solid var(--border)' : undefined, minWidth: 30 }}>
+                                                    <th
+                                                        key={`${sk.key}-${lvl}`}
+                                                        style={{
+                                                            padding: '4px 3px',
+                                                            textAlign: 'center',
+                                                            fontSize: '0.7rem',
+                                                            color: 'var(--text-dim)',
+                                                            borderLeft:
+                                                                lvl === 'A1' ? '2px solid var(--border)' : undefined,
+                                                            minWidth: 30,
+                                                        }}
+                                                    >
                                                         {lvl}
                                                     </th>
                                                 ))
@@ -171,25 +242,72 @@ export default function CefrOverviewPage() {
                                     </thead>
                                     <tbody>
                                         {studentOverviews.map(({ student: s, overview: ov, cls: sc }, i) => {
-                                            const rowTarget = sc?.voTrack ? VO_TRACK_DEFAULT_CEFR[sc.voTrack] : undefined;
+                                            const rowTarget = sc?.voTrack
+                                                ? VO_TRACK_DEFAULT_CEFR[sc.voTrack]
+                                                : undefined;
                                             return (
                                                 <tr
                                                     key={s.id}
-                                                    style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-elevated)' }}
+                                                    style={{
+                                                        borderBottom: '1px solid var(--border)',
+                                                        background:
+                                                            i % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-elevated)',
+                                                    }}
                                                 >
                                                     {/* Student name */}
-                                                    <td style={{ padding: '8px 14px', fontWeight: 600, whiteSpace: 'nowrap', position: 'sticky', left: 0, background: i % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-elevated)', zIndex: 1 }}>
+                                                    <td
+                                                        style={{
+                                                            padding: '8px 14px',
+                                                            fontWeight: 600,
+                                                            whiteSpace: 'nowrap',
+                                                            position: 'sticky',
+                                                            left: 0,
+                                                            background:
+                                                                i % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-elevated)',
+                                                            zIndex: 1,
+                                                        }}
+                                                    >
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                            <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'var(--accent-soft)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700, flexShrink: 0 }}>
+                                                            <div
+                                                                style={{
+                                                                    width: 26,
+                                                                    height: 26,
+                                                                    borderRadius: '50%',
+                                                                    background: 'var(--accent-soft)',
+                                                                    color: 'var(--accent)',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    fontSize: '0.75rem',
+                                                                    fontWeight: 700,
+                                                                    flexShrink: 0,
+                                                                }}
+                                                            >
                                                                 {s.name.charAt(0).toUpperCase()}
                                                             </div>
                                                             <div>
                                                                 <div style={{ fontSize: '0.85rem' }}>{s.name}</div>
                                                                 {sc && (
-                                                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>
+                                                                    <div
+                                                                        style={{
+                                                                            fontSize: '0.7rem',
+                                                                            color: 'var(--text-dim)',
+                                                                        }}
+                                                                    >
                                                                         {sc.name}
                                                                         {sc.voTrack && (
-                                                                            <span style={{ marginLeft: 4, padding: '0 4px', borderRadius: 3, background: VO_TRACK_COLORS[sc.voTrack], color: '#fff', fontSize: '0.65rem', fontWeight: 700 }}>
+                                                                            <span
+                                                                                style={{
+                                                                                    marginLeft: 4,
+                                                                                    padding: '0 4px',
+                                                                                    borderRadius: 3,
+                                                                                    background:
+                                                                                        VO_TRACK_COLORS[sc.voTrack],
+                                                                                    color: '#fff',
+                                                                                    fontSize: '0.65rem',
+                                                                                    fontWeight: 700,
+                                                                                }}
+                                                                            >
                                                                                 {VO_TRACK_LABELS[sc.voTrack]}
                                                                             </span>
                                                                         )}
@@ -202,50 +320,88 @@ export default function CefrOverviewPage() {
                                                     {/* Skill × level cells */}
                                                     {SKILLS.map((sk) =>
                                                         CEFR_LEVELS.map((lvl) => {
-                                                            const cell = ov.cells.find((c) => c.skill === sk.key && c.level === lvl);
+                                                            const cell = ov.cells.find(
+                                                                (c) => c.skill === sk.key && c.level === lvl
+                                                            );
                                                             const state = cell?.state ?? 'not_started';
                                                             const isTarget = rowTarget === lvl;
-                                                            const hasData = (cell?.rubricCount ?? 0) > 0 || (cell?.totalDescriptors ?? 0) > 0;
+                                                            const hasData =
+                                                                (cell?.rubricCount ?? 0) > 0 ||
+                                                                (cell?.totalDescriptors ?? 0) > 0;
 
                                                             let bg = 'transparent';
                                                             let dot = null;
 
                                                             if (hasData) {
                                                                 if (state === 'achieved') bg = 'rgba(34,197,94,0.25)';
-                                                                else if (state === 'developing') bg = 'rgba(234,179,8,0.25)';
+                                                                else if (state === 'developing')
+                                                                    bg = 'rgba(234,179,8,0.25)';
                                                                 else bg = 'rgba(148,163,184,0.12)';
 
                                                                 dot = (
-                                                                    <div style={{
-                                                                        width: 8, height: 8, borderRadius: '50%',
-                                                                        background: state === 'achieved' ? '#22c55e' : state === 'developing' ? '#eab308' : 'var(--text-dim)',
-                                                                        margin: '0 auto',
-                                                                    }} />
+                                                                    <div
+                                                                        style={{
+                                                                            width: 8,
+                                                                            height: 8,
+                                                                            borderRadius: '50%',
+                                                                            background:
+                                                                                state === 'achieved'
+                                                                                    ? '#22c55e'
+                                                                                    : state === 'developing'
+                                                                                      ? '#eab308'
+                                                                                      : 'var(--text-dim)',
+                                                                            margin: '0 auto',
+                                                                        }}
+                                                                    />
                                                                 );
                                                             }
 
                                                             return (
                                                                 <td
                                                                     key={`${sk.key}-${lvl}`}
-                                                                    title={hasData ? `${s.name} — ${sk.label} ${lvl}: ${state}` : undefined}
+                                                                    title={
+                                                                        hasData
+                                                                            ? `${s.name} — ${sk.label} ${lvl}: ${state}`
+                                                                            : undefined
+                                                                    }
                                                                     style={{
                                                                         padding: '6px 3px',
                                                                         textAlign: 'center',
                                                                         background: bg,
-                                                                        borderLeft: lvl === 'A1' ? '2px solid var(--border)' : undefined,
-                                                                        outline: isTarget ? '2px solid var(--accent)' : undefined,
+                                                                        borderLeft:
+                                                                            lvl === 'A1'
+                                                                                ? '2px solid var(--border)'
+                                                                                : undefined,
+                                                                        outline: isTarget
+                                                                            ? '2px solid var(--accent)'
+                                                                            : undefined,
                                                                         outlineOffset: -1,
                                                                         position: 'relative',
                                                                     }}
                                                                 >
-                                                                    {dot ?? <span style={{ color: 'var(--border)', fontSize: '0.7rem' }}>·</span>}
+                                                                    {dot ?? (
+                                                                        <span
+                                                                            style={{
+                                                                                color: 'var(--border)',
+                                                                                fontSize: '0.7rem',
+                                                                            }}
+                                                                        >
+                                                                            ·
+                                                                        </span>
+                                                                    )}
                                                                 </td>
                                                             );
                                                         })
                                                     )}
 
                                                     {/* Link to detail */}
-                                                    <td style={{ padding: '8px 10px', textAlign: 'center', borderLeft: '2px solid var(--border)' }}>
+                                                    <td
+                                                        style={{
+                                                            padding: '8px 10px',
+                                                            textAlign: 'center',
+                                                            borderLeft: '2px solid var(--border)',
+                                                        }}
+                                                    >
                                                         <button
                                                             className="btn btn-ghost btn-sm"
                                                             style={{ padding: '3px 8px', fontSize: '0.75rem' }}
@@ -262,16 +418,62 @@ export default function CefrOverviewPage() {
                                 </table>
 
                                 {/* Legend */}
-                                <div style={{ display: 'flex', gap: 16, padding: '10px 14px', borderTop: '1px solid var(--border)', flexWrap: 'wrap' }}>
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        gap: 16,
+                                        padding: '10px 14px',
+                                        borderTop: '1px solid var(--border)',
+                                        flexWrap: 'wrap',
+                                    }}
+                                >
                                     {[
                                         { color: '#22c55e', label: 'Achieved', bg: 'rgba(34,197,94,0.25)' },
                                         { color: '#eab308', label: 'Developing', bg: 'rgba(234,179,8,0.25)' },
-                                        { color: 'var(--text-dim)', label: 'Not started', bg: 'rgba(148,163,184,0.12)' },
-                                        { color: 'var(--accent)', label: 'Target level', bg: 'transparent', outline: true },
+                                        {
+                                            color: 'var(--text-dim)',
+                                            label: 'Not started',
+                                            bg: 'rgba(148,163,184,0.12)',
+                                        },
+                                        {
+                                            color: 'var(--accent)',
+                                            label: 'Target level',
+                                            bg: 'transparent',
+                                            outline: true,
+                                        },
                                     ].map(({ color, label, bg, outline }) => (
-                                        <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                            <div style={{ width: 14, height: 14, borderRadius: 3, background: bg, border: outline ? `2px solid ${color}` : undefined, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                {!outline && <div style={{ width: 6, height: 6, borderRadius: '50%', background: color }} />}
+                                        <div
+                                            key={label}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 6,
+                                                fontSize: '0.75rem',
+                                                color: 'var(--text-muted)',
+                                            }}
+                                        >
+                                            <div
+                                                style={{
+                                                    width: 14,
+                                                    height: 14,
+                                                    borderRadius: 3,
+                                                    background: bg,
+                                                    border: outline ? `2px solid ${color}` : undefined,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                }}
+                                            >
+                                                {!outline && (
+                                                    <div
+                                                        style={{
+                                                            width: 6,
+                                                            height: 6,
+                                                            borderRadius: '50%',
+                                                            background: color,
+                                                        }}
+                                                    />
+                                                )}
                                             </div>
                                             {label}
                                         </div>
@@ -288,13 +490,14 @@ export default function CefrOverviewPage() {
                         {/* Student picker */}
                         <div className="form-group" style={{ maxWidth: 320, marginBottom: 24 }}>
                             <label>{t('statistics.label_student')}</label>
-                            <select
-                                value={selectedStudentId}
-                                onChange={(e) => setSelectedStudentId(e.target.value)}
-                            >
-                                <option value="" disabled>{t('statistics.select_student_placeholder')}</option>
+                            <select value={selectedStudentId} onChange={(e) => setSelectedStudentId(e.target.value)}>
+                                <option value="" disabled>
+                                    {t('statistics.select_student_placeholder')}
+                                </option>
                                 {filteredStudents.map((s) => (
-                                    <option key={s.id} value={s.id}>{s.name}</option>
+                                    <option key={s.id} value={s.id}>
+                                        {s.name}
+                                    </option>
                                 ))}
                             </select>
                         </div>
@@ -308,22 +511,68 @@ export default function CefrOverviewPage() {
                             <>
                                 {/* Student header */}
                                 {student && (
-                                    <div className="card" style={{ marginBottom: 24, display: 'flex', gap: 20, alignItems: 'center' }}>
-                                        <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--accent-soft)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', fontWeight: 700, flexShrink: 0 }}>
+                                    <div
+                                        className="card"
+                                        style={{ marginBottom: 24, display: 'flex', gap: 20, alignItems: 'center' }}
+                                    >
+                                        <div
+                                            style={{
+                                                width: 48,
+                                                height: 48,
+                                                borderRadius: '50%',
+                                                background: 'var(--accent-soft)',
+                                                color: 'var(--accent)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                fontSize: '1.2rem',
+                                                fontWeight: 700,
+                                                flexShrink: 0,
+                                            }}
+                                        >
                                             {student.name.charAt(0).toUpperCase()}
                                         </div>
                                         <div style={{ flex: 1, minWidth: 0 }}>
                                             <h2 style={{ margin: '0 0 4px', fontSize: '1.2rem' }}>{student.name}</h2>
-                                            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-                                                {cls && <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{cls.name}</span>}
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    gap: 12,
+                                                    flexWrap: 'wrap',
+                                                    alignItems: 'center',
+                                                }}
+                                            >
+                                                {cls && (
+                                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                                                        {cls.name}
+                                                    </span>
+                                                )}
                                                 {cls?.voTrack && (
-                                                    <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: VO_TRACK_COLORS[cls.voTrack], color: '#fff' }}>
+                                                    <span
+                                                        style={{
+                                                            fontSize: 10,
+                                                            fontWeight: 700,
+                                                            padding: '2px 6px',
+                                                            borderRadius: 4,
+                                                            background: VO_TRACK_COLORS[cls.voTrack],
+                                                            color: '#fff',
+                                                        }}
+                                                    >
                                                         {VO_TRACK_LABELS[cls.voTrack]}
                                                     </span>
                                                 )}
                                                 {targetLevel && (
-                                                    <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                                                        {t('cefrOverview.target_level_label')}: <CefrBadge level={targetLevel} size="sm" />
+                                                    <span
+                                                        style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: 5,
+                                                            fontSize: '0.82rem',
+                                                            color: 'var(--text-muted)',
+                                                        }}
+                                                    >
+                                                        {t('cefrOverview.target_level_label')}:{' '}
+                                                        <CefrBadge level={targetLevel} size="sm" />
                                                     </span>
                                                 )}
                                             </div>
@@ -334,19 +583,51 @@ export default function CefrOverviewPage() {
                                 {overview && (
                                     <div className="grid-3" style={{ marginBottom: 24 }}>
                                         <div className="card" style={{ borderTop: '3px solid var(--accent)' }}>
-                                            <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--accent)' }}>{overview.skillsWithRubricData}</div>
-                                            <div style={{ fontWeight: 600, fontSize: '0.9rem', marginTop: 4 }}>{t('cefrOverview.stat_skills_assessed')}</div>
-                                            <div className="text-muted text-xs" style={{ marginTop: 2 }}>{t('cefrOverview.stat_skills_subtitle')}</div>
+                                            <div
+                                                style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--accent)' }}
+                                            >
+                                                {overview.skillsWithRubricData}
+                                            </div>
+                                            <div style={{ fontWeight: 600, fontSize: '0.9rem', marginTop: 4 }}>
+                                                {t('cefrOverview.stat_skills_assessed')}
+                                            </div>
+                                            <div className="text-muted text-xs" style={{ marginTop: 2 }}>
+                                                {t('cefrOverview.stat_skills_subtitle')}
+                                            </div>
                                         </div>
                                         <div className="card" style={{ borderTop: '3px solid var(--green, #22c55e)' }}>
-                                            <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--green, #22c55e)' }}>{Math.round(overview.overallConfidenceRate)}%</div>
-                                            <div style={{ fontWeight: 600, fontSize: '0.9rem', marginTop: 4 }}>{t('cefrOverview.stat_confidence_rate')}</div>
-                                            <div className="text-muted text-xs" style={{ marginTop: 2 }}>{t('cefrOverview.stat_confidence_subtitle')}</div>
+                                            <div
+                                                style={{
+                                                    fontSize: '1.6rem',
+                                                    fontWeight: 700,
+                                                    color: 'var(--green, #22c55e)',
+                                                }}
+                                            >
+                                                {Math.round(overview.overallConfidenceRate)}%
+                                            </div>
+                                            <div style={{ fontWeight: 600, fontSize: '0.9rem', marginTop: 4 }}>
+                                                {t('cefrOverview.stat_confidence_rate')}
+                                            </div>
+                                            <div className="text-muted text-xs" style={{ marginTop: 2 }}>
+                                                {t('cefrOverview.stat_confidence_subtitle')}
+                                            </div>
                                         </div>
                                         <div className="card" style={{ borderTop: '3px solid var(--purple, #8b5cf6)' }}>
-                                            <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--purple, #8b5cf6)' }}>{overview.standardsCovered}</div>
-                                            <div style={{ fontWeight: 600, fontSize: '0.9rem', marginTop: 4 }}>{t('cefrOverview.stat_standards_covered')}</div>
-                                            <div className="text-muted text-xs" style={{ marginTop: 2 }}>{t('cefrOverview.stat_standards_subtitle')}</div>
+                                            <div
+                                                style={{
+                                                    fontSize: '1.6rem',
+                                                    fontWeight: 700,
+                                                    color: 'var(--purple, #8b5cf6)',
+                                                }}
+                                            >
+                                                {overview.standardsCovered}
+                                            </div>
+                                            <div style={{ fontWeight: 600, fontSize: '0.9rem', marginTop: 4 }}>
+                                                {t('cefrOverview.stat_standards_covered')}
+                                            </div>
+                                            <div className="text-muted text-xs" style={{ marginTop: 2 }}>
+                                                {t('cefrOverview.stat_standards_subtitle')}
+                                            </div>
                                         </div>
                                     </div>
                                 )}
@@ -363,14 +644,20 @@ export default function CefrOverviewPage() {
                                             <BookOpen size={18} style={{ color: 'var(--accent)' }} />
                                             {t('cefrOverview.grid_title')}
                                         </h3>
-                                        <p className="text-muted text-sm" style={{ marginBottom: 16 }}>{t('cefrOverview.grid_subtitle')}</p>
+                                        <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
+                                            {t('cefrOverview.grid_subtitle')}
+                                        </p>
                                         {!hasAnyData ? (
                                             <div className="empty-state" style={{ padding: '32px 20px' }}>
                                                 <BookOpen size={28} style={{ opacity: 0.4 }} />
                                                 <p>{t('cefrOverview.empty_no_cefr')}</p>
                                             </div>
                                         ) : (
-                                            <CefrOverviewGrid cells={overview.cells} targetLevel={targetLevel} lang={lang} />
+                                            <CefrOverviewGrid
+                                                cells={overview.cells}
+                                                targetLevel={targetLevel}
+                                                lang={lang}
+                                            />
                                         )}
                                     </div>
                                 )}

@@ -607,36 +607,115 @@ export default function StatisticsPage() {
                             <>
                                 {/* Stat cards */}
                                 {(() => {
-                                    const totalEnrolled = selectedClassId === 'all'
-                                        ? students.length
-                                        : students.filter((s) => s.classId === selectedClassId).length;
-                                    const completionPct = totalEnrolled > 0 ? Math.round((summaries.length / totalEnrolled) * 100) : 0;
+                                    const totalEnrolled =
+                                        selectedClassId === 'all'
+                                            ? students.length
+                                            : students.filter((s) => s.classId === selectedClassId).length;
+                                    const completionPct =
+                                        totalEnrolled > 0 ? Math.round((summaries.length / totalEnrolled) * 100) : 0;
                                     return (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                gap: 12,
+                                                marginBottom: 24,
+                                            }}
+                                        >
                                             {/* Completion banner */}
-                                            <div className="card" style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 16 }}>
+                                            <div
+                                                className="card"
+                                                style={{
+                                                    padding: '10px 16px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 16,
+                                                }}
+                                            >
                                                 <div style={{ flex: 1 }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 4 }}>
+                                                    <div
+                                                        style={{
+                                                            display: 'flex',
+                                                            justifyContent: 'space-between',
+                                                            fontSize: '0.8rem',
+                                                            color: 'var(--text-muted)',
+                                                            marginBottom: 4,
+                                                        }}
+                                                    >
                                                         <span>{t('statistics.stat_students_graded')}</span>
-                                                        <span style={{ fontWeight: 600, color: 'var(--text)' }}>{summaries.length} / {totalEnrolled}</span>
+                                                        <span style={{ fontWeight: 600, color: 'var(--text)' }}>
+                                                            {summaries.length} / {totalEnrolled}
+                                                        </span>
                                                     </div>
-                                                    <div style={{ height: 6, background: 'var(--bg-elevated)', borderRadius: 3, overflow: 'hidden' }}>
-                                                        <div style={{ width: `${completionPct}%`, height: '100%', background: 'var(--accent)', borderRadius: 3, transition: 'width 0.4s ease' }} />
+                                                    <div
+                                                        style={{
+                                                            height: 6,
+                                                            background: 'var(--bg-elevated)',
+                                                            borderRadius: 3,
+                                                            overflow: 'hidden',
+                                                        }}
+                                                    >
+                                                        <div
+                                                            style={{
+                                                                width: `${completionPct}%`,
+                                                                height: '100%',
+                                                                background: 'var(--accent)',
+                                                                borderRadius: 3,
+                                                                transition: 'width 0.4s ease',
+                                                            }}
+                                                        />
                                                     </div>
                                                 </div>
-                                                <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--accent)', minWidth: 42, textAlign: 'right' }}>{completionPct}%</span>
+                                                <span
+                                                    style={{
+                                                        fontSize: '1.1rem',
+                                                        fontWeight: 700,
+                                                        color: 'var(--accent)',
+                                                        minWidth: 42,
+                                                        textAlign: 'right',
+                                                    }}
+                                                >
+                                                    {completionPct}%
+                                                </span>
                                             </div>
                                             {/* Compact metric row */}
                                             <div className="grid-4">
                                                 {[
-                                                    { label: t('statistics.stat_average'), value: `${stats.average.toFixed(1)}%`, color: 'var(--green)' },
-                                                    { label: t('statistics.stat_median'), value: `${stats.median.toFixed(1)}%`, color: 'var(--purple)' },
-                                                    { label: t('statistics.stat_highest'), value: `${stats.highest.toFixed(1)}%`, color: 'var(--teal, #14b8a6)' },
-                                                    { label: t('statistics.stat_lowest'), value: `${stats.lowest.toFixed(1)}%`, color: 'var(--yellow)' },
+                                                    {
+                                                        label: t('statistics.stat_average'),
+                                                        value: `${stats.average.toFixed(1)}%`,
+                                                        color: 'var(--green)',
+                                                    },
+                                                    {
+                                                        label: t('statistics.stat_median'),
+                                                        value: `${stats.median.toFixed(1)}%`,
+                                                        color: 'var(--purple)',
+                                                    },
+                                                    {
+                                                        label: t('statistics.stat_highest'),
+                                                        value: `${stats.highest.toFixed(1)}%`,
+                                                        color: 'var(--teal, #14b8a6)',
+                                                    },
+                                                    {
+                                                        label: t('statistics.stat_lowest'),
+                                                        value: `${stats.lowest.toFixed(1)}%`,
+                                                        color: 'var(--yellow)',
+                                                    },
                                                 ].map(({ label, value, color }) => (
-                                                    <div key={label} className="card" style={{ borderTop: `3px solid ${color}`, padding: '10px 14px' }}>
-                                                        <div style={{ fontSize: '1.35rem', fontWeight: 700, color }}>{value}</div>
-                                                        <div className="text-muted text-sm" style={{ marginTop: 2 }}>{label}</div>
+                                                    <div
+                                                        key={label}
+                                                        className="card"
+                                                        style={{
+                                                            borderTop: `3px solid ${color}`,
+                                                            padding: '10px 14px',
+                                                        }}
+                                                    >
+                                                        <div style={{ fontSize: '1.35rem', fontWeight: 700, color }}>
+                                                            {value}
+                                                        </div>
+                                                        <div className="text-muted text-sm" style={{ marginTop: 2 }}>
+                                                            {label}
+                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>

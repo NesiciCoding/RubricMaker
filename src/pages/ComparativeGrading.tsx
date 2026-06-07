@@ -2,7 +2,18 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import Topbar from '../components/Layout/Topbar';
-import { ArrowLeft, Check, Equal, ChevronRight, ChevronLeft, MessageSquare, Shuffle, ChevronDown, ChevronUp, Printer } from 'lucide-react';
+import {
+    ArrowLeft,
+    Check,
+    Equal,
+    ChevronRight,
+    ChevronLeft,
+    MessageSquare,
+    Shuffle,
+    ChevronDown,
+    ChevronUp,
+    Printer,
+} from 'lucide-react';
 import { nanoid } from '../utils/nanoid';
 import { useTranslation } from 'react-i18next';
 import { calcGradeSummary } from '../utils/gradeCalc';
@@ -544,14 +555,12 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                     className="page-content fade-in"
                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300 }}
                 >
-                    <div
-                        className="card"
-                        style={{ textAlign: 'center', padding: '40px 32px', maxWidth: 380 }}
-                    >
+                    <div className="card" style={{ textAlign: 'center', padding: '40px 32px', maxWidth: 380 }}>
                         <Equal size={36} style={{ color: 'var(--text-dim)', marginBottom: 16 }} />
                         <h3 style={{ marginBottom: 8 }}>{t('comparativeGrading.not_enough_students')}</h3>
                         <p className="text-muted text-sm" style={{ marginBottom: 24 }}>
-                            Comparative grading requires at least two students in the same class. Add another student to this class to get started.
+                            Comparative grading requires at least two students in the same class. Add another student to
+                            this class to get started.
                         </p>
                         <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
                             <button className="btn btn-primary btn-sm" onClick={() => navigate('/students')}>
@@ -765,7 +774,10 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                         </div>
 
                         {/* Per-student progress — collapsible */}
-                        <div className="card" style={{ background: 'var(--bg-elevated)', padding: 0, overflow: 'hidden' }}>
+                        <div
+                            className="card"
+                            style={{ background: 'var(--bg-elevated)', padding: 0, overflow: 'hidden' }}
+                        >
                             <button
                                 onClick={() => setProgressOpen((o) => !o)}
                                 style={{
@@ -786,7 +798,9 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                 {progressOpen ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
                             </button>
                             {progressOpen && (
-                                <div style={{ padding: '0 16px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                <div
+                                    style={{ padding: '0 16px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}
+                                >
                                     {[...classStudents]
                                         .sort((a, b) => (perStudentDone[a.id] ?? 0) - (perStudentDone[b.id] ?? 0))
                                         .map((s) => {

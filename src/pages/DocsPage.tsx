@@ -235,8 +235,18 @@ function RouteCard({ node, depth = 0 }: { node: RouteNode; depth?: number }) {
                                     fontSize: '0.68rem',
                                     padding: '1px 7px',
                                     borderRadius: 20,
-                                    background: node.badge === 'Admin only' ? '#fee2e2' : node.badge === 'Student' ? '#d1fae5' : '#dbeafe',
-                                    color: node.badge === 'Admin only' ? '#dc2626' : node.badge === 'Student' ? '#065f46' : '#1d4ed8',
+                                    background:
+                                        node.badge === 'Admin only'
+                                            ? '#fee2e2'
+                                            : node.badge === 'Student'
+                                              ? '#d1fae5'
+                                              : '#dbeafe',
+                                    color:
+                                        node.badge === 'Admin only'
+                                            ? '#dc2626'
+                                            : node.badge === 'Student'
+                                              ? '#065f46'
+                                              : '#1d4ed8',
                                     fontWeight: 600,
                                 }}
                             >
@@ -343,7 +353,10 @@ function FeatureList({ items }: { items: string[] }) {
     return (
         <ul style={{ margin: '0 0 16px', paddingLeft: 20 }}>
             {items.map((item, i) => (
-                <li key={i} style={{ marginBottom: 6, color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.5 }}>
+                <li
+                    key={i}
+                    style={{ marginBottom: 6, color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.5 }}
+                >
                     {item}
                 </li>
             ))}
@@ -377,8 +390,8 @@ function RouteMapTab() {
         <div>
             <p style={{ color: 'var(--text-muted)', marginBottom: 24, fontSize: '0.9rem', lineHeight: 1.6 }}>
                 All application routes and their parent-child relationships. Routes marked{' '}
-                <strong style={{ color: '#1d4ed8' }}>Public</strong> are accessible without logging in.
-                Routes marked <strong style={{ color: '#dc2626' }}>Admin only</strong> require the admin role.
+                <strong style={{ color: '#1d4ed8' }}>Public</strong> are accessible without logging in. Routes marked{' '}
+                <strong style={{ color: '#dc2626' }}>Admin only</strong> require the admin role.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 {ROUTE_TREE.map((node) => (
@@ -404,8 +417,7 @@ function GettingStartedTab() {
                 </Step>
                 <Step number={2} title="Create your first rubric">
                     Go to <strong>Rubrics → New Rubric</strong>. Pick a quick-start template or start from scratch. Give
-                    it a name, subject, and description. Add criteria and levels, then click{' '}
-                    <strong>Save</strong>.
+                    it a name, subject, and description. Add criteria and levels, then click <strong>Save</strong>.
                 </Step>
                 <Step number={3} title="Add students">
                     Go to <strong>Students</strong>. Click <strong>+ Add Student</strong> and fill in their name. Group
@@ -510,7 +522,7 @@ function RubricsTab() {
                 <FeatureList
                     items={[
                         'CEFR Can-Do descriptors — attach specific descriptors per criterion.',
-                        'IB Learner Profile attributes and Bloom\'s Taxonomy levels.',
+                        "IB Learner Profile attributes and Bloom's Taxonomy levels.",
                         'CCSS, NGSS, and state standards via the Common Standards Project API.',
                     ]}
                 />
@@ -572,7 +584,7 @@ function GradingTab() {
                 <FeatureList
                     items={[
                         'Comment Bank — insert reusable snippets by tag. Build the bank from the Comment Bank page.',
-                        'Voice grading — dictate comments hands-free using the browser\'s speech recognition API.',
+                        "Voice grading — dictate comments hands-free using the browser's speech recognition API.",
                         'Per-criterion notes in addition to the overall feedback field.',
                         'File attachments — upload evidence files (images, PDFs) per graded rubric.',
                     ]}
@@ -592,7 +604,7 @@ function GradingTab() {
                 </h3>
                 <FeatureList
                     items={[
-                        'Peer Review — share a URL with a student to review a classmate\'s work.',
+                        "Peer Review — share a URL with a student to review a classmate's work.",
                         'Self-Assessment — students rate themselves against CEFR Can-Do statements. Results are stored alongside teacher scores.',
                     ]}
                 />
@@ -601,8 +613,8 @@ function GradingTab() {
             <FeatureSection icon={MessageSquare} title="Comment Bank" color="#06b6d4">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
                     Go to <strong>Comment Bank</strong> in the sidebar to manage your snippets. Organise them with tags
-                    (e.g. "writing", "grammar", "effort"). During grading, click the comment icon to open the bank
-                    and insert any snippet into the feedback field with one click.
+                    (e.g. "writing", "grammar", "effort"). During grading, click the comment icon to open the bank and
+                    insert any snippet into the feedback field with one click.
                 </p>
             </FeatureSection>
         </div>
@@ -640,7 +652,7 @@ function CefrTab() {
                         'Rubrics → find a rubric card → "Speaking…" dropdown at the bottom — select a student to jump straight into the session.',
                         'Past sessions appear in a "Speaking Sessions" card on the Student Profile, each with a link to reopen and extend it.',
                         'Inside the session: set a timer, mark pronunciation quick-marks (word stress, th-sound, etc.), score the linked rubric criteria, and add an overall comment.',
-                        'Results are saved to the student\'s CEFR history and are visible on the CEFR Overview heatmap.',
+                        "Results are saved to the student's CEFR history and are visible on the CEFR Overview heatmap.",
                     ]}
                 />
             </FeatureSection>
@@ -681,9 +693,9 @@ function EssaysTab() {
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
                     Students write in a TipTap-powered editor with a full formatting toolbar: bold, italic, headings,
-                    lists, tables, text colour, highlight, superscript, and more. Toggle{' '}
-                    <strong>Page view</strong> in the toolbar to switch to an A4-sized paper layout with realistic
-                    margins — ideal for essay writing practice.
+                    lists, tables, text colour, highlight, superscript, and more. Toggle <strong>Page view</strong> in
+                    the toolbar to switch to an A4-sized paper layout with realistic margins — ideal for essay writing
+                    practice.
                 </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
@@ -702,8 +714,8 @@ function EssaysTab() {
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
                     Students visit the essay URL or enter the submission code in the Student Portal. After an optional
                     email verification gate, they write and submit. Drafts are auto-saved to localStorage every few
-                    seconds. After submission, teachers see the text in the student's profile and can grade against
-                    the linked rubric.
+                    seconds. After submission, teachers see the text in the student's profile and can grade against the
+                    linked rubric.
                 </p>
             </FeatureSection>
         </div>
@@ -736,13 +748,13 @@ function AnalyticsTab() {
                     items={[
                         'PDF — individual student reports or bulk class export in one PDF.',
                         'DOCX — raw export or mail-merge template with field substitution ({{student_name}}, {{score}}, etc.).',
-                        'CSV — raw grade data for Excel or your school\'s gradebook.',
+                        "CSV — raw grade data for Excel or your school's gradebook.",
                         'Period report — aggregated CEFR progress report for a class over a date range.',
                     ]}
                 />
                 <InfoBox color="#10b981">
-                    Mail-merge DOCX templates support custom fields. Upload a .docx file with placeholder fields and
-                    the app will substitute them with student data.
+                    Mail-merge DOCX templates support custom fields. Upload a .docx file with placeholder fields and the
+                    app will substitute them with student data.
                 </InfoBox>
             </FeatureSection>
         </div>
@@ -892,10 +904,7 @@ export default function DocsPage() {
                     </nav>
 
                     {/* ── Content ── */}
-                    <div
-                        className="card"
-                        style={{ minHeight: 600 }}
-                    >
+                    <div className="card" style={{ minHeight: 600 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24 }}>
                             <LayoutDashboard size={14} style={{ color: 'var(--text-dim)' }} />
                             <span style={{ fontSize: '0.78rem', color: 'var(--text-dim)' }}>Docs</span>

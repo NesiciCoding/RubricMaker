@@ -929,7 +929,9 @@ export default function GradeStudent() {
                                                                     fontWeight: 700,
                                                                     padding: '1px 5px',
                                                                     borderRadius: 3,
-                                                                    background: isSelected ? 'rgba(255,255,255,0.25)' : 'var(--accent-soft)',
+                                                                    background: isSelected
+                                                                        ? 'rgba(255,255,255,0.25)'
+                                                                        : 'var(--accent-soft)',
                                                                     color: isSelected ? '#fff' : 'var(--accent)',
                                                                     flexShrink: 0,
                                                                     letterSpacing: '0.03em',

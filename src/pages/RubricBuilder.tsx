@@ -1494,24 +1494,54 @@ export default function RubricBuilder() {
                                                                 </div>
 
                                                                 {/* Per-criterion CEFR skill override */}
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-                                                                    <span className="text-xs text-muted" style={{ whiteSpace: 'nowrap' }}>CEFR skill:</span>
+                                                                <div
+                                                                    style={{
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: 8,
+                                                                        marginTop: 8,
+                                                                    }}
+                                                                >
+                                                                    <span
+                                                                        className="text-xs text-muted"
+                                                                        style={{ whiteSpace: 'nowrap' }}
+                                                                    >
+                                                                        CEFR skill:
+                                                                    </span>
                                                                     <select
                                                                         value={criterion.cefrSkill ?? ''}
                                                                         onChange={(e) =>
                                                                             setCriteria((c) =>
                                                                                 c.map((x) =>
                                                                                     x.id === criterion.id
-                                                                                        ? { ...x, cefrSkill: (e.target.value as CefrSkill) || undefined }
+                                                                                        ? {
+                                                                                              ...x,
+                                                                                              cefrSkill:
+                                                                                                  (e.target
+                                                                                                      .value as CefrSkill) ||
+                                                                                                  undefined,
+                                                                                          }
                                                                                         : x
                                                                                 )
                                                                             )
                                                                         }
-                                                                        style={{ fontSize: '0.78rem', padding: '2px 6px', borderRadius: 5, border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text)', maxWidth: 180 }}
+                                                                        style={{
+                                                                            fontSize: '0.78rem',
+                                                                            padding: '2px 6px',
+                                                                            borderRadius: 5,
+                                                                            border: '1px solid var(--border)',
+                                                                            background: 'var(--bg-elevated)',
+                                                                            color: 'var(--text)',
+                                                                            maxWidth: 180,
+                                                                        }}
                                                                     >
-                                                                        <option value="">— inherit from rubric —</option>
+                                                                        <option value="">
+                                                                            — inherit from rubric —
+                                                                        </option>
                                                                         {CEFR_SKILLS.map((sk) => (
-                                                                            <option key={sk} value={sk}>{CEFR_SKILL_LABELS[sk].en}</option>
+                                                                            <option key={sk} value={sk}>
+                                                                                {CEFR_SKILL_LABELS[sk].en}
+                                                                            </option>
                                                                         ))}
                                                                     </select>
                                                                 </div>
@@ -2127,30 +2157,90 @@ export default function RubricBuilder() {
                                                                                                                     )}
 
                                                                                                                 {/* CEFR level tag */}
-                                                                                                                <div style={{ marginBottom: 8 }}>
-                                                                                                                    <div className="text-xs text-muted" style={{ marginBottom: 4 }}>CEFR level</div>
-                                                                                                                    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                                                                                                                        {(['A1','A2','B1','B2','C1','C2'] as const).map((lvl) => {
-                                                                                                                            const active = level.cefrLevel === lvl;
-                                                                                                                            return (
-                                                                                                                                <button
-                                                                                                                                    key={lvl}
-                                                                                                                                    type="button"
-                                                                                                                                    onClick={() => updateLevel(criterion.id, level.id, { cefrLevel: active ? undefined : lvl })}
-                                                                                                                                    style={{
-                                                                                                                                        padding: '2px 8px',
-                                                                                                                                        borderRadius: 4,
-                                                                                                                                        border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
-                                                                                                                                        background: active ? 'var(--accent)' : 'var(--bg-elevated)',
-                                                                                                                                        color: active ? '#fff' : 'var(--text-muted)',
-                                                                                                                                        fontSize: '0.72rem',
-                                                                                                                                        fontWeight: 700,
-                                                                                                                                        cursor: 'pointer',
-                                                                                                                                        letterSpacing: '0.02em',
-                                                                                                                                    }}
-                                                                                                                                >{lvl}</button>
-                                                                                                                            );
-                                                                                                                        })}
+                                                                                                                <div
+                                                                                                                    style={{
+                                                                                                                        marginBottom: 8,
+                                                                                                                    }}
+                                                                                                                >
+                                                                                                                    <div
+                                                                                                                        className="text-xs text-muted"
+                                                                                                                        style={{
+                                                                                                                            marginBottom: 4,
+                                                                                                                        }}
+                                                                                                                    >
+                                                                                                                        CEFR
+                                                                                                                        level
+                                                                                                                    </div>
+                                                                                                                    <div
+                                                                                                                        style={{
+                                                                                                                            display:
+                                                                                                                                'flex',
+                                                                                                                            gap: 4,
+                                                                                                                            flexWrap:
+                                                                                                                                'wrap',
+                                                                                                                        }}
+                                                                                                                    >
+                                                                                                                        {(
+                                                                                                                            [
+                                                                                                                                'A1',
+                                                                                                                                'A2',
+                                                                                                                                'B1',
+                                                                                                                                'B2',
+                                                                                                                                'C1',
+                                                                                                                                'C2',
+                                                                                                                            ] as const
+                                                                                                                        ).map(
+                                                                                                                            (
+                                                                                                                                lvl
+                                                                                                                            ) => {
+                                                                                                                                const active =
+                                                                                                                                    level.cefrLevel ===
+                                                                                                                                    lvl;
+                                                                                                                                return (
+                                                                                                                                    <button
+                                                                                                                                        key={
+                                                                                                                                            lvl
+                                                                                                                                        }
+                                                                                                                                        type="button"
+                                                                                                                                        onClick={() =>
+                                                                                                                                            updateLevel(
+                                                                                                                                                criterion.id,
+                                                                                                                                                level.id,
+                                                                                                                                                {
+                                                                                                                                                    cefrLevel:
+                                                                                                                                                        active
+                                                                                                                                                            ? undefined
+                                                                                                                                                            : lvl,
+                                                                                                                                                }
+                                                                                                                                            )
+                                                                                                                                        }
+                                                                                                                                        style={{
+                                                                                                                                            padding:
+                                                                                                                                                '2px 8px',
+                                                                                                                                            borderRadius: 4,
+                                                                                                                                            border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
+                                                                                                                                            background:
+                                                                                                                                                active
+                                                                                                                                                    ? 'var(--accent)'
+                                                                                                                                                    : 'var(--bg-elevated)',
+                                                                                                                                            color: active
+                                                                                                                                                ? '#fff'
+                                                                                                                                                : 'var(--text-muted)',
+                                                                                                                                            fontSize:
+                                                                                                                                                '0.72rem',
+                                                                                                                                            fontWeight: 700,
+                                                                                                                                            cursor: 'pointer',
+                                                                                                                                            letterSpacing:
+                                                                                                                                                '0.02em',
+                                                                                                                                        }}
+                                                                                                                                    >
+                                                                                                                                        {
+                                                                                                                                            lvl
+                                                                                                                                        }
+                                                                                                                                    </button>
+                                                                                                                                );
+                                                                                                                            }
+                                                                                                                        )}
                                                                                                                     </div>
                                                                                                                 </div>
 
@@ -3738,7 +3828,18 @@ function RubricWysiwygEditor({
                                         if (!tagged) return null;
                                         const allSame = criteria.every((c) => c.levels[i]?.cefrLevel === tagged);
                                         return (
-                                            <div style={{ marginTop: 4, fontSize: '0.7rem', fontWeight: 700, padding: '1px 7px', borderRadius: 4, background: 'var(--accent)', color: '#fff', display: 'inline-block' }}>
+                                            <div
+                                                style={{
+                                                    marginTop: 4,
+                                                    fontSize: '0.7rem',
+                                                    fontWeight: 700,
+                                                    padding: '1px 7px',
+                                                    borderRadius: 4,
+                                                    background: 'var(--accent)',
+                                                    color: '#fff',
+                                                    display: 'inline-block',
+                                                }}
+                                            >
                                                 {allSame ? tagged : '~'}
                                             </div>
                                         );

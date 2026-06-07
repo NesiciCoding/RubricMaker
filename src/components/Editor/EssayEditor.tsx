@@ -277,7 +277,13 @@ const selectStyle: React.CSSProperties = {
     height: 28,
 };
 
-export default function EssayEditor({ content, onChange, editable = true, placeholder, defaultPageMode = false }: EssayEditorProps) {
+export default function EssayEditor({
+    content,
+    onChange,
+    editable = true,
+    placeholder,
+    defaultPageMode = false,
+}: EssayEditorProps) {
     const colorInputRef = useRef<HTMLInputElement>(null);
     const highlightInputRef = useRef<HTMLInputElement>(null);
     const [showInvisibles, setShowInvisibles] = useState(false);
@@ -743,7 +749,10 @@ export default function EssayEditor({ content, onChange, editable = true, placeh
                     </div>
                 </div>
             ) : (
-                <div style={{ padding: '18px 22px', minHeight: 420 }} className={showInvisibles ? 'show-invisibles' : ''}>
+                <div
+                    style={{ padding: '18px 22px', minHeight: 420 }}
+                    className={showInvisibles ? 'show-invisibles' : ''}
+                >
                     <EditorContent editor={editor} placeholder={placeholder} />
                 </div>
             )}
