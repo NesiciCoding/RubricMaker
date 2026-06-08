@@ -10,11 +10,15 @@ done
 echo "Database is ready."
 
 # Migration tracking table (idempotent)
+# RLS enabled with no policies — internal bookkeeping only, never exposed to
+# anon/authenticated clients (Supabase grants them default privileges on
+# public schema tables, so RLS-off here would let clients read/write it).
 psql "$DATABASE_URL" -c "
     CREATE TABLE IF NOT EXISTS public._migrations (
         name        TEXT        PRIMARY KEY,
         applied_at  TIMESTAMPTZ NOT NULL DEFAULT now()
     );
+    ALTER TABLE public._migrations ENABLE ROW LEVEL SECURITY;
 "
 
 for f in $(ls /migrations/*.sql | sort); do

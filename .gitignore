@@ -21,6 +21,10 @@ test-results/
 # Backup output
 backups/
 
+# Cloud → self-hosted migration exports (contain real student/teacher data)
+cloud-export/
+roles.sql
+
 # Logs
 logs
 *.log
