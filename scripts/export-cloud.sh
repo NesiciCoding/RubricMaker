@@ -26,6 +26,9 @@ read -rsp "Connection string (postgresql://postgres.xxxx:password@...pooler.supa
 echo ""
 [ -n "$DB_URL" ] || { echo "No connection string entered, aborting."; exit 1; }
 
+# Dumps contain real student/teacher data — keep them readable only by us.
+umask 077
+
 OUT="./cloud-export/$(date +%Y%m%d_%H%M%S)"
 mkdir -p "$OUT"
 
@@ -38,12 +41,14 @@ pg_dump "${CONN[@]}" \
     --data-only --no-owner --no-acl --disable-triggers \
     --table='auth.users' --table='auth.identities' \
     > "$OUT/auth-data.sql"
+chmod 600 "$OUT/auth-data.sql"
 echo "   ✓ auth-data.sql"
 
 echo "▶  Dumping application data (public schema)..."
 pg_dump "${CONN[@]}" \
     --schema=public --data-only --no-owner --no-acl --disable-triggers \
     > "$OUT/public-data.sql"
+chmod 600 "$OUT/public-data.sql"
 echo "   ✓ public-data.sql"
 
 echo ""

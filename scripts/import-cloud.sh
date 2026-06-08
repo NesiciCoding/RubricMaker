@@ -24,11 +24,11 @@ read -rp "Continue? [y/N] " confirm
 echo ""
 
 echo "▶  Importing auth users..."
-docker-compose exec -T db psql -U supabase_admin postgres < "$EXPORT_DIR/auth-data.sql"
+docker-compose exec -T db psql -v ON_ERROR_STOP=1 -U supabase_admin postgres < "$EXPORT_DIR/auth-data.sql"
 echo "   ✓ Auth users imported"
 
 echo "▶  Importing application data..."
-docker-compose exec -T db psql -U supabase_admin postgres < "$EXPORT_DIR/public-data.sql"
+docker-compose exec -T db psql -v ON_ERROR_STOP=1 -U supabase_admin postgres < "$EXPORT_DIR/public-data.sql"
 echo "   ✓ Application data imported"
 
 echo ""
