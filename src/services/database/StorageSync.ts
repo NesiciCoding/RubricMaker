@@ -25,7 +25,11 @@ const CONFIG_KEY = 'rm_supabase_config';
 const LAST_SYNC_KEY = 'rm_last_sync_at';
 
 function normalizeSupabaseUrl(url: string): string {
-    return url.replace(/^http:\/\//i, 'https://').replace(/\/+$/, '');
+    let normalized = url.trim();
+    if (!/^https?:\/\//i.test(normalized)) {
+        normalized = 'https://' + normalized;
+    }
+    return normalized.replace(/^http:\/\//i, 'https://').replace(/\/+$/, '');
 }
 
 export function loadSupabaseConfig(): DatabaseConfig | null {
