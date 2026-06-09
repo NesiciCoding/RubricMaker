@@ -26,10 +26,17 @@ const LAST_SYNC_KEY = 'rm_last_sync_at';
 
 function normalizeSupabaseUrl(url: string): string {
     let normalized = url.trim();
+    if (/^[a-z][a-z\d+\-.]*:\/\//i.test(normalized) && !/^https?:\/\//i.test(normalized)) {
+        throw new Error(`Invalid protocol: only http:// and https:// are supported`);
+    }
     if (!/^https?:\/\//i.test(normalized)) {
         normalized = 'https://' + normalized;
     }
-    return normalized.replace(/^http:\/\//i, 'https://').replace(/\/+$/, '');
+    // Preserve http:// for localhost/127.0.0.1 (local dev); upgrade everything else to https://
+    if (!/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?([/?#]|$)/i.test(normalized)) {
+        normalized = normalized.replace(/^http:\/\//i, 'https://');
+    }
+    return normalized.replace(/\/+$/, '');
 }
 
 export function loadSupabaseConfig(): DatabaseConfig | null {
