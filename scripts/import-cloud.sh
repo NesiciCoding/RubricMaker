@@ -40,7 +40,7 @@ if [[ "$SKIP_AUTH" == "--skip-auth" ]]; then
   echo "▶  Skipping auth import (--skip-auth)"
 else
   echo "▶  Importing auth users..."
-  grep -Ev "$FILTER_REGEX" "$EXPORT_DIR/auth-data.sql" | docker compose exec -T db psql -v ON_ERROR_STOP=1 -U supabase_admin postgres
+  grep -Ev "$FILTER_REGEX" "$EXPORT_DIR/auth-data.sql" | docker compose exec -T db psql -1 -v ON_ERROR_STOP=1 -U supabase_admin postgres
   echo "   ✓ Auth users imported"
 fi
 
