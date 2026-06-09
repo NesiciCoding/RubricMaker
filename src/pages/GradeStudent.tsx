@@ -1500,7 +1500,7 @@ export default function GradeStudent() {
 
             {/* Sticky grade footer */}
             {summary && rubric.format.showCalculatedGrade !== false && (
-                <div className="grade-footer" role="status" aria-live="polite" aria-label="Grade summary">
+                <div className="grade-footer" role="status" aria-live="polite" aria-label={t('gradeStudent.aria_grade_summary')}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1 }}>
                         {scale && (
                             <span

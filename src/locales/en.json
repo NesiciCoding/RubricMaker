@@ -346,7 +346,8 @@
         "action_print": "Print",
         "action_essay": "Essay",
         "action_import_essay": "Import essay",
-        "anchor_help_text": "Anchor papers are reference submissions used to calibrate your grading. Marking a submission as an anchor lets you compare it side-by-side with new submissions in the grade footer."
+        "anchor_help_text": "Anchor papers are reference submissions used to calibrate your grading. Marking a submission as an anchor lets you compare it side-by-side with new submissions in the grade footer.",
+        "aria_grade_summary": "Grade summary"
     },
     "rubricBuilder": {
         "action_back": "Back",
@@ -463,7 +464,20 @@
         "weight_total_hint": "(should be 100%)",
         "weight_total_warning": "Weights total {{total}}% (expected 100%). You can still save — the grade engine normalises them.",
         "weight_distribute_evenly": "Distribute evenly",
-        "cefr_skill_inherit": "— inherit from rubric —"
+        "cefr_skill_inherit": "— inherit from rubric —",
+        "label_subject": "Subject",
+        "label_description": "Description",
+        "label_grade_scale": "Grade Scale",
+        "grade_scale_none": "None (raw points only)",
+        "action_move_criterion_up": "Move criterion up",
+        "action_move_criterion_down": "Move criterion down",
+        "action_expand_criterion": "Expand",
+        "action_collapse_criterion": "Collapse",
+        "action_delete_criterion": "Delete criterion",
+        "sub_item_min_title": "Min points for this sub-item",
+        "sub_item_max_title": "Max points for this sub-item",
+        "sub_item_link_standard_title": "Link standard to this sub-item",
+        "sub_item_delete_title": "Delete sub-item"
     },
     "peerReview": {
         "round_label": "Round",
@@ -613,7 +627,12 @@
         "student_progress_count": "Student Progress ({{count}})",
         "overall_comments_title": "Overall Comments",
         "rubric_not_found": "Rubric not found",
-        "overall_feedback_placeholder": "Overall feedback…"
+        "overall_feedback_placeholder": "Overall feedback…",
+        "sub_criteria": "Sub-criteria",
+        "a_better_on_sub": "A better on this sub-criterion",
+        "equal_on_sub": "Equal on this sub-criterion",
+        "b_better_on_sub": "B better on this sub-criterion",
+        "performed_better": "{{name}} performed better"
     },
     "studentPortal": {
         "not_found": "Student not found.",
@@ -1075,7 +1094,9 @@
         "essay_text_label": "Essay",
         "show_essay": "Show essay",
         "hide_essay": "Hide essay",
-        "expired_desc_no_date": "This assignment has expired. Please contact your teacher."
+        "expired_desc_no_date": "This assignment has expired. Please contact your teacher.",
+        "email_invalid": "Enter a valid school email address.",
+        "session_error": "Could not start session. Ask your teacher to enable anonymous sign-ins in Supabase."
     },
     "editor": {
         "switchToCompactView": "Switch to compact view",

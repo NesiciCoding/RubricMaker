@@ -346,7 +346,8 @@
         "action_print": "Drucken",
         "action_essay": "Aufsatz",
         "action_import_essay": "Aufsatz importieren",
-        "anchor_help_text": "Ankerarbeiten sind Referenzeinreichungen, die zur Kalibrierung Ihrer Bewertung verwendet werden. Durch das Markieren einer Einreichung als Anker können Sie sie in der Bewertungsfußzeile neben neuen Einreichungen vergleichen."
+        "anchor_help_text": "Ankerarbeiten sind Referenzeinreichungen, die zur Kalibrierung Ihrer Bewertung verwendet werden. Durch das Markieren einer Einreichung als Anker können Sie sie in der Bewertungsfußzeile neben neuen Einreichungen vergleichen.",
+        "aria_grade_summary": "Notenübersicht"
     },
     "rubricBuilder": {
         "action_back": "Zurück",
@@ -463,7 +464,20 @@
         "weight_total_hint": "(sollte 100% sein)",
         "weight_total_warning": "Gewichte ergeben {{total}}% (erwartet 100%). Sie können trotzdem speichern — das Bewertungssystem normalisiert sie.",
         "weight_distribute_evenly": "Gleichmäßig verteilen",
-        "cefr_skill_inherit": "— von Rubrik übernehmen —"
+        "cefr_skill_inherit": "— von Rubrik übernehmen —",
+        "label_subject": "Fach",
+        "label_description": "Beschreibung",
+        "label_grade_scale": "Notenskala",
+        "grade_scale_none": "Keine (nur Rohpunkte)",
+        "action_move_criterion_up": "Kriterium nach oben",
+        "action_move_criterion_down": "Kriterium nach unten",
+        "action_expand_criterion": "Ausklappen",
+        "action_collapse_criterion": "Einklappen",
+        "action_delete_criterion": "Kriterium löschen",
+        "sub_item_min_title": "Mindestpunkte für dieses Unterelement",
+        "sub_item_max_title": "Maximale Punkte für dieses Unterelement",
+        "sub_item_link_standard_title": "Standard mit diesem Unterelement verknüpfen",
+        "sub_item_delete_title": "Unterelement löschen"
     },
     "peerReview": {
         "round_label": "Runde",
@@ -613,7 +627,12 @@
         "student_progress_count": "Schülerfortschritt ({{count}})",
         "overall_comments_title": "Allgemeine Kommentare",
         "rubric_not_found": "Rubrik nicht gefunden",
-        "overall_feedback_placeholder": "Allgemeines Feedback…"
+        "overall_feedback_placeholder": "Allgemeines Feedback…",
+        "sub_criteria": "Unterkriterien",
+        "a_better_on_sub": "A besser auf diesem Unterkriterium",
+        "equal_on_sub": "Gleich auf diesem Unterkriterium",
+        "b_better_on_sub": "B besser auf diesem Unterkriterium",
+        "performed_better": "{{name}} hat besser abgeschnitten"
     },
     "studentPortal": {
         "not_found": "Schüler nicht gefunden.",
@@ -1075,7 +1094,9 @@
         "essay_text_label": "Aufsatz",
         "show_essay": "Aufsatz anzeigen",
         "hide_essay": "Aufsatz ausblenden",
-        "expired_desc_no_date": "Diese Aufgabe ist abgelaufen. Bitte kontaktieren Sie Ihren Lehrer."
+        "expired_desc_no_date": "Diese Aufgabe ist abgelaufen. Bitte kontaktieren Sie Ihren Lehrer.",
+        "email_invalid": "Geben Sie eine gültige Schul-E-Mail-Adresse ein.",
+        "session_error": "Sitzung konnte nicht gestartet werden. Bitten Sie Ihren Lehrer, anonyme Anmeldungen in Supabase zu aktivieren."
     },
     "editor": {
         "switchToCompactView": "Kompaktansicht",

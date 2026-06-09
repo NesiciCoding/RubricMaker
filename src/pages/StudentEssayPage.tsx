@@ -87,7 +87,7 @@ function EmailGate({ adapter, onAuthenticated }: EmailGateProps) {
     const handleStart = async () => {
         const trimmed = email.trim();
         if (!trimmed || !trimmed.includes('@')) {
-            setError('Enter a valid school email address.');
+            setError(t('essay.email_invalid'));
             return;
         }
         setBusy(true);
@@ -97,7 +97,7 @@ function EmailGate({ adapter, onAuthenticated }: EmailGateProps) {
         if (userId) {
             onAuthenticated(userId, trimmed);
         } else {
-            setError(e ?? 'Could not start session. Ask your teacher to enable anonymous sign-ins in Supabase.');
+            setError(e ?? t('essay.session_error'));
         }
     };
 

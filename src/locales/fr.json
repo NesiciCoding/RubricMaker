@@ -346,7 +346,8 @@
         "action_print": "Imprimer",
         "action_essay": "Dissertation",
         "action_import_essay": "Importer la dissertation",
-        "anchor_help_text": "Les copies de référence sont des travaux utilisés pour calibrer votre évaluation. Marquer une copie comme référence vous permet de la comparer côte à côte avec de nouvelles copies dans le pied de page de notation."
+        "anchor_help_text": "Les copies de référence sont des travaux utilisés pour calibrer votre évaluation. Marquer une copie comme référence vous permet de la comparer côte à côte avec de nouvelles copies dans le pied de page de notation.",
+        "aria_grade_summary": "Résumé de la note"
     },
     "rubricBuilder": {
         "action_back": "Retour",
@@ -463,7 +464,20 @@
         "weight_total_hint": "(doit être 100%)",
         "weight_total_warning": "Le poids total est de {{total}}% (attendu 100%). Vous pouvez quand même enregistrer — le moteur de notation normalise les valeurs.",
         "weight_distribute_evenly": "Distribuer uniformément",
-        "cefr_skill_inherit": "— hériter de la rubrique —"
+        "cefr_skill_inherit": "— hériter de la rubrique —",
+        "label_subject": "Matière",
+        "label_description": "Description",
+        "label_grade_scale": "Barème de notes",
+        "grade_scale_none": "Aucune (points bruts uniquement)",
+        "action_move_criterion_up": "Déplacer le critère vers le haut",
+        "action_move_criterion_down": "Déplacer le critère vers le bas",
+        "action_expand_criterion": "Développer",
+        "action_collapse_criterion": "Réduire",
+        "action_delete_criterion": "Supprimer le critère",
+        "sub_item_min_title": "Points minimum pour cet élément",
+        "sub_item_max_title": "Points maximum pour cet élément",
+        "sub_item_link_standard_title": "Lier le standard à cet élément",
+        "sub_item_delete_title": "Supprimer l'élément"
     },
     "peerReview": {
         "round_label": "Tour",
@@ -613,7 +627,12 @@
         "student_progress_count": "Progression des élèves ({{count}})",
         "overall_comments_title": "Commentaires généraux",
         "rubric_not_found": "Grille non trouvée",
-        "overall_feedback_placeholder": "Retour général…"
+        "overall_feedback_placeholder": "Retour général…",
+        "sub_criteria": "Sous-critères",
+        "a_better_on_sub": "A mieux sur ce sous-critère",
+        "equal_on_sub": "Égal sur ce sous-critère",
+        "b_better_on_sub": "B mieux sur ce sous-critère",
+        "performed_better": "{{name}} a mieux performé"
     },
     "studentPortal": {
         "not_found": "Élève introuvable.",
@@ -1075,7 +1094,9 @@
         "essay_text_label": "Dissertation",
         "show_essay": "Afficher la dissertation",
         "hide_essay": "Masquer la dissertation",
-        "expired_desc_no_date": "Ce devoir a expiré. Veuillez contacter votre enseignant."
+        "expired_desc_no_date": "Ce devoir a expiré. Veuillez contacter votre enseignant.",
+        "email_invalid": "Saisissez une adresse e-mail scolaire valide.",
+        "session_error": "Impossible de démarrer la session. Demandez à votre enseignant d'activer les connexions anonymes dans Supabase."
     },
     "editor": {
         "switchToCompactView": "Vue compacte",
