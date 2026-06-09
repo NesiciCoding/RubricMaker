@@ -13,9 +13,20 @@ set -euo pipefail
 
 EXPORT_DIR="${1:-}"
 SKIP_AUTH="${2:-}"
+
 [ -d "$EXPORT_DIR" ] || { echo "Usage: $0 <export-dir> [--skip-auth]"; exit 1; }
-[ -f "$EXPORT_DIR/auth-data.sql" ] || { echo "Error: $EXPORT_DIR/auth-data.sql not found"; exit 1; }
+[[ -z "$SKIP_AUTH" || "$SKIP_AUTH" == "--skip-auth" ]] || {
+  echo "Usage: $0 <export-dir> [--skip-auth]"
+  exit 1
+}
+if [[ "$SKIP_AUTH" != "--skip-auth" ]]; then
+  [ -f "$EXPORT_DIR/auth-data.sql" ] || { echo "Error: $EXPORT_DIR/auth-data.sql not found"; exit 1; }
+fi
 [ -f "$EXPORT_DIR/public-data.sql" ] || { echo "Error: $EXPORT_DIR/public-data.sql not found"; exit 1; }
+
+# Matches only the Supabase pooler directives and the injected SET line —
+# anchored so user data containing these substrings is never dropped.
+FILTER_REGEX='^(\\(un)?restrict|SET[[:space:]]+transaction_timeout[[:space:]]*=)'
 
 echo "RubricMaker — import cloud export from: $EXPORT_DIR"
 echo ""
@@ -29,13 +40,15 @@ if [[ "$SKIP_AUTH" == "--skip-auth" ]]; then
   echo "▶  Skipping auth import (--skip-auth)"
 else
   echo "▶  Importing auth users..."
-  grep -v '^\\restrict\|^\\unrestrict\|transaction_timeout' "$EXPORT_DIR/auth-data.sql" | docker compose exec -T db psql -v ON_ERROR_STOP=1 -U supabase_admin postgres
+  grep -Ev "$FILTER_REGEX" "$EXPORT_DIR/auth-data.sql" | docker compose exec -T db psql -v ON_ERROR_STOP=1 -U supabase_admin postgres
   echo "   ✓ Auth users imported"
 fi
 
 echo "▶  Importing application data..."
-docker compose exec -T db psql -U supabase_admin postgres -c "DELETE FROM public.site_config;"
-grep -v '^\\restrict\|^\\unrestrict\|transaction_timeout' "$EXPORT_DIR/public-data.sql" | docker compose exec -T db psql -v ON_ERROR_STOP=1 -U supabase_admin postgres
+{
+  printf '%s\n' 'DELETE FROM public.site_config;'
+  grep -Ev "$FILTER_REGEX" "$EXPORT_DIR/public-data.sql"
+} | docker compose exec -T db psql -1 -v ON_ERROR_STOP=1 -U supabase_admin postgres
 echo "   ✓ Application data imported"
 
 echo ""
