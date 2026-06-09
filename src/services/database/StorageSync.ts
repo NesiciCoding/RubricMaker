@@ -45,10 +45,13 @@ export function loadSupabaseConfig(): DatabaseConfig | null {
 }
 
 export function saveSupabaseConfig(config: DatabaseConfig) {
-    localStorage.setItem(CONFIG_KEY, JSON.stringify({
-        ...config,
-        supabaseUrl: normalizeSupabaseUrl(config.supabaseUrl),
-    }));
+    localStorage.setItem(
+        CONFIG_KEY,
+        JSON.stringify({
+            ...config,
+            supabaseUrl: normalizeSupabaseUrl(config.supabaseUrl),
+        })
+    );
 }
 
 export function clearSupabaseConfig() {
