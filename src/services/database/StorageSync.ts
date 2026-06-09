@@ -24,13 +24,20 @@ import type {
 const CONFIG_KEY = 'rm_supabase_config';
 const LAST_SYNC_KEY = 'rm_last_sync_at';
 
+function normalizeSupabaseUrl(url: string): string {
+    return url.replace(/^http:\/\//i, 'https://').replace(/\/+$/, '');
+}
+
 export function loadSupabaseConfig(): DatabaseConfig | null {
     try {
         const envUrl = import.meta.env.VITE_SUPABASE_URL;
         const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
         const raw = localStorage.getItem(CONFIG_KEY);
-        if (raw) return JSON.parse(raw) as DatabaseConfig;
-        if (envUrl && envKey) return { supabaseUrl: envUrl, supabaseAnonKey: envKey };
+        if (raw) {
+            const parsed = JSON.parse(raw) as DatabaseConfig;
+            return { ...parsed, supabaseUrl: normalizeSupabaseUrl(parsed.supabaseUrl) };
+        }
+        if (envUrl && envKey) return { supabaseUrl: normalizeSupabaseUrl(envUrl), supabaseAnonKey: envKey };
         return null;
     } catch {
         return null;
@@ -38,7 +45,10 @@ export function loadSupabaseConfig(): DatabaseConfig | null {
 }
 
 export function saveSupabaseConfig(config: DatabaseConfig) {
-    localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+    localStorage.setItem(CONFIG_KEY, JSON.stringify({
+        ...config,
+        supabaseUrl: normalizeSupabaseUrl(config.supabaseUrl),
+    }));
 }
 
 export function clearSupabaseConfig() {
