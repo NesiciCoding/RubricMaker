@@ -32,6 +32,7 @@ import { useDbStatus } from '../hooks/useDbStatus';
 import type { GradeScale, GradeRange, UserRole } from '../types';
 import { exportFullBackup } from '../store/storage';
 import { hashPin, verifyPin, isHashed } from '../utils/pinHash';
+import { THEME_BUNDLES, ACCENT_PRESETS } from '../data/themes';
 
 type Tab = 'general' | 'teaching' | 'administration';
 
@@ -485,39 +486,94 @@ export default function SettingsPage() {
                                             </div>
                                         )}
                                         <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
-                                            {[
-                                                { label: 'Ocean', color: '#3b82f6' },
-                                                { label: 'Forest', color: '#16a34a' },
-                                                { label: 'Indigo', color: '#6366f1' },
-                                                { label: 'Sunset', color: '#ea580c' },
-                                                { label: 'Rose', color: '#e11d48' },
-                                                { label: 'Slate', color: '#64748b' },
-                                                { label: 'Teal', color: '#0d9488' },
-                                                { label: 'Gold', color: '#d97706' },
-                                            ].map(({ label, color }) => (
+                                            {ACCENT_PRESETS.map(({ id, color }) => (
                                                 <button
-                                                    key={color}
-                                                    title={label}
-                                                    aria-label={`${t('settings.accent_color_label')}: ${label}`}
-                                                    onClick={() => handleAccentChange(color)}
+                                                    key={id}
+                                                    title={t(`settings.preset_${id}`, id)}
+                                                    aria-label={`${t('settings.accent_color_label')}: ${t(`settings.preset_${id}`, id)}`}
+                                                    onClick={() => {
+                                                        handleAccentChange(color);
+                                                        updateSettings({ colorPreset: undefined });
+                                                    }}
                                                     style={{
                                                         width: 22,
                                                         height: 22,
                                                         borderRadius: '50%',
                                                         background: color,
                                                         border:
-                                                            accentInput === color
+                                                            accentInput === color && !settings.colorPreset
                                                                 ? '2.5px solid var(--text)'
                                                                 : '2px solid transparent',
                                                         cursor: 'pointer',
                                                         padding: 0,
                                                         outline: 'none',
                                                         boxShadow:
-                                                            accentInput === color ? `0 0 0 1px ${color}` : 'none',
+                                                            accentInput === color && !settings.colorPreset
+                                                                ? `0 0 0 1px ${color}`
+                                                                : 'none',
                                                         transition: 'border 0.15s',
                                                     }}
                                                 />
                                             ))}
+                                        </div>
+                                    </div>
+                                )}
+                                {isUserPlus && (
+                                    <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                                        <label>{t('settings.theme_bundles_label', 'Theme bundles')}</label>
+                                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
+                                            {THEME_BUNDLES.map((bundle) => {
+                                                const active = settings.colorPreset === bundle.id;
+                                                return (
+                                                    <button
+                                                        key={bundle.id}
+                                                        title={t(`settings.theme_bundle_${bundle.id}`, bundle.id)}
+                                                        onClick={() => {
+                                                            updateSettings({
+                                                                accentColor: bundle.accentColor,
+                                                                uiFontFamily: bundle.uiFontFamily,
+                                                                colorPreset: bundle.id,
+                                                                defaultFormat: {
+                                                                    ...settings.defaultFormat,
+                                                                    fontFamily: bundle.exportFontFamily,
+                                                                    headerColor: bundle.exportHeaderColor,
+                                                                },
+                                                            });
+                                                            setAccentInput(bundle.accentColor);
+                                                        }}
+                                                        style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: 8,
+                                                            padding: '6px 12px',
+                                                            borderRadius: 8,
+                                                            border: active
+                                                                ? `2px solid ${bundle.accentColor}`
+                                                                : '2px solid var(--border)',
+                                                            background: active
+                                                                ? `${bundle.accentColor}15`
+                                                                : 'var(--bg-elevated)',
+                                                            cursor: 'pointer',
+                                                            fontFamily: `'${bundle.uiFontFamily}', system-ui, sans-serif`,
+                                                            fontSize: '0.85rem',
+                                                            fontWeight: active ? 700 : 500,
+                                                            color: active ? bundle.accentColor : 'var(--text)',
+                                                            transition: 'all 0.15s',
+                                                        }}
+                                                    >
+                                                        <span
+                                                            style={{
+                                                                width: 12,
+                                                                height: 12,
+                                                                borderRadius: '50%',
+                                                                background: bundle.accentColor,
+                                                                flexShrink: 0,
+                                                            }}
+                                                        />
+                                                        {t(`settings.theme_bundle_${bundle.id}`, bundle.id.charAt(0).toUpperCase() + bundle.id.slice(1))}
+                                                    </button>
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                 )}
@@ -803,6 +859,7 @@ export default function SettingsPage() {
                                         </button>
                                         <button
                                             className="btn btn-ghost btn-icon btn-sm"
+                                            aria-label={t('common.delete')}
                                             style={{ color: 'var(--red)' }}
                                             onClick={() => {
                                                 if (gs.id !== settings.defaultGradeScaleId) setDeleteScaleId(gs.id);
@@ -907,6 +964,7 @@ export default function SettingsPage() {
                                                             <td>
                                                                 <button
                                                                     className="btn btn-ghost btn-icon btn-sm"
+                                                                    aria-label={t('common.delete')}
                                                                     style={{ color: 'var(--red)' }}
                                                                     onClick={() => removeRange(gs.id, idx)}
                                                                 >
@@ -1039,6 +1097,7 @@ export default function SettingsPage() {
                                                 </button>
                                                 <button
                                                     className="btn btn-ghost btn-icon btn-sm"
+                                                    aria-label={t('common.delete')}
                                                     style={{ color: 'var(--red)' }}
                                                     onClick={() => {
                                                         deleteExportTemplate(tmpl.id);

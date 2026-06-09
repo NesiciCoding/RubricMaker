@@ -440,6 +440,7 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
                             >
                                 <button
                                     className="btn btn-ghost btn-icon btn-sm"
+                                    aria-label="Remove favourite standard"
                                     onClick={() => removeFavoriteStandard(std.guid)}
                                     style={{ flexShrink: 0, marginTop: 2, color: 'var(--yellow)' }}
                                 >
@@ -612,6 +613,7 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
 
                                             <button
                                                 className="btn btn-ghost btn-icon btn-sm text-accent"
+                                                aria-label="Link standard"
                                                 onClick={() => pickCspStandard(std)}
                                             >
                                                 <Link2 size={16} />

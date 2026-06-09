@@ -1453,7 +1453,7 @@ export default function GradeStudent() {
                             <h3 style={{ margin: 0, flex: 1 }}>
                                 {t('gradeStudent.shortcuts_title', 'Keyboard Shortcuts')}
                             </h3>
-                            <button className="btn btn-ghost btn-icon" onClick={() => setShowShortcuts(false)}>
+                            <button className="btn btn-ghost btn-icon" aria-label={t('common.close')} onClick={() => setShowShortcuts(false)}>
                                 <X size={18} />
                             </button>
                         </div>

@@ -630,6 +630,7 @@ export default function ExportPage() {
                                         </button>
                                         <button
                                             className="btn btn-ghost btn-icon btn-sm"
+                                            aria-label={t('common.close')}
                                             onClick={() => setShowBulkComment(false)}
                                         >
                                             <X size={13} />

@@ -187,6 +187,7 @@ export default function CommentBankPage() {
                                             <div style={{ display: 'flex', gap: 4 }}>
                                                 <button
                                                     className="btn btn-ghost btn-icon btn-sm"
+                                                    aria-label="Edit comment snippet"
                                                     onClick={() => {
                                                         setEditingId(snip.id);
                                                         setEditText(snip.text);
@@ -197,6 +198,7 @@ export default function CommentBankPage() {
                                                 </button>
                                                 <button
                                                     className="btn btn-ghost btn-icon btn-sm"
+                                                    aria-label="Delete comment snippet"
                                                     style={{ color: 'var(--red)' }}
                                                     onClick={() => deleteCommentSnippet(snip.id)}
                                                 >

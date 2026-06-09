@@ -36,7 +36,8 @@
         "settings": "Instellingen",
         "language": "Taal",
         "toggle_theme": "Thema wisselen",
-        "print": "Afdrukken"
+        "print": "Afdrukken",
+        "view": "Bekijken"
     },
     "sidebar": {
         "main_section": "Hoofdmenu",
@@ -118,6 +119,21 @@
         "delete_scale_confirm": "Weet je zeker dat je deze beoordelingsschaal wilt verwijderen? Dit kan niet ongedaan worden gemaakt.",
         "accent_color_label": "Accentkleur",
         "accent_color_invalid": "Voer een geldige 6-cijferige hex-kleur in (bijv. #3b82f6).",
+        "preset_ocean": "Oceaan",
+        "preset_forest": "Bos",
+        "preset_indigo": "Indigo",
+        "preset_sunset": "Zonsondergang",
+        "preset_rose": "Roos",
+        "preset_slate": "Leisteen",
+        "preset_teal": "Teal",
+        "preset_gold": "Goud",
+        "theme_bundles_label": "Themapakketten",
+        "theme_bundle_academy": "Academie",
+        "theme_bundle_nature": "Natuur",
+        "theme_bundle_midnight": "Middernacht",
+        "theme_bundle_warm": "Warm",
+        "theme_bundle_slate": "Leisteen",
+        "theme_bundle_rose": "Roos",
         "ui_font_label": "Interfacelettertype",
         "cloud_sync": "Cloud Synchronisatie (Microsoft 365)",
         "cloud_sync_help": "Verbind je Microsoft-account om rubrics over apparaten te synchroniseren via OneDrive of SharePoint.",
@@ -240,7 +256,8 @@
         "share_notfound": "Geen account gevonden voor {{email}}. Vraag hen eerst in te loggen bij RubricMaker.",
         "share_shared_with": "Gedeeld met",
         "share_btn": "Delen",
-        "speaking_select_student": "🎙 Spreken…"
+        "speaking_select_student": "🎙 Spreken…",
+        "action_unshare": "Delen opheffen"
     },
     "studentsPage": {
         "title": "Leerlingen & Klassen",
@@ -288,7 +305,10 @@
         "merge_confirm_description": "Alle leerlingen uit <strong>{{source}}</strong> worden verplaatst naar <strong>{{target}}</strong>. De bronklas wordt verwijderd. Dit kan niet ongedaan worden gemaakt.",
         "merge_confirm_action": "Samenvoegen",
         "action_export_summaries": "Samenvattingen Exporteren",
-        "back_to_roster": "Terug naar Leerlingenlijst"
+        "back_to_roster": "Terug naar Leerlingenlijst",
+        "action_class_menu": "Klas opties",
+        "action_edit_student": "Leerling bewerken",
+        "action_delete_student": "Leerling verwijderen"
     },
     "gradeStudent": {
         "title_prefix": "Beoordeling:",
@@ -477,7 +497,12 @@
         "sub_item_min_title": "Minimale punten voor dit subonderdeel",
         "sub_item_max_title": "Maximale punten voor dit subonderdeel",
         "sub_item_link_standard_title": "Standaard koppelen aan dit subonderdeel",
-        "sub_item_delete_title": "Subonderdeel verwijderen"
+        "sub_item_delete_title": "Subonderdeel verwijderen",
+        "action_unlink_standard": "Standaard loskoppelen",
+        "action_remove_descriptor": "Descriptor verwijderen",
+        "action_delete_level": "Niveau verwijderen",
+        "action_move_level_left": "Niveau naar links verplaatsen",
+        "action_move_level_right": "Niveau naar rechts verplaatsen"
     },
     "peerReview": {
         "round_label": "Ronde",
@@ -1112,5 +1137,12 @@
         "tab_essays": "Essays schrijven",
         "tab_analytics": "Analyse & Export",
         "tab_data": "Gegevensbeheer"
+    },
+    "studentProfile": {
+        "tab_overview": "Overzicht",
+        "tab_portfolio": "Portfolio",
+        "portfolio_empty": "Nog geen activiteit voor deze leerling.",
+        "portfolio_kind_grade": "Rubricbeoordeling",
+        "no_grades_yet": "Nog geen beoordeelde rubrieken voor deze leerling."
     }
 }

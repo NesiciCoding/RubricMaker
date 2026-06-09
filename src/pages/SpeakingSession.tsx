@@ -364,6 +364,7 @@ export default function SpeakingSession() {
                                         </div>
                                         <button
                                             className="btn btn-ghost btn-icon btn-sm"
+                                            aria-label={t('common.delete')}
                                             onClick={() => removeMark(idx)}
                                         >
                                             <X size={13} />

@@ -154,7 +154,7 @@ export default function EssaySlipSheet({ baseAssignment, students, onClose }: Pr
                             <button className="btn btn-primary btn-sm" onClick={() => window.print()}>
                                 <Printer size={14} /> Print
                             </button>
-                            <button className="btn btn-ghost btn-icon btn-sm" onClick={onClose}>
+                            <button className="btn btn-ghost btn-icon btn-sm" aria-label="Close" onClick={onClose}>
                                 <X size={16} />
                             </button>
                         </div>

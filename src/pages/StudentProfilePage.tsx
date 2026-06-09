@@ -38,6 +38,7 @@ export default function StudentProfilePage() {
     const [exportingId, setExportingId] = useState<string | null>(null);
     const [copiedSALink, setCopiedSALink] = useState<string | null>(null);
     const [showSpeakingPicker, setShowSpeakingPicker] = useState(false);
+    const [activeTab, setActiveTab] = useState<'overview' | 'portfolio'>('overview');
     const { t, i18n } = useTranslation();
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
 
@@ -134,6 +135,60 @@ export default function StudentProfilePage() {
             })
             .sort((a, b) => CEFR_LEVELS.indexOf(a.level) - CEFR_LEVELS.indexOf(b.level));
     }, [student, history]);
+
+    const portfolioTimeline = useMemo(() => {
+        if (!student) return [];
+        type TimelineEntry =
+            | { kind: 'grade'; date: Date; dateStr: string; rubricName: string; score: number; letterGrade: string; gradeColor: string; srId: string; rubricId: string }
+            | { kind: 'speaking'; date: Date; dateStr: string; rubricName: string; score: number | null; letterGrade: string | null; gradeColor: string | null; sessionId: string; rubricId: string }
+            | { kind: 'selfAssess'; date: Date; dateStr: string; rubricName: string; confidentPct: number; saId: string; rubricId: string };
+
+        const entries: TimelineEntry[] = [];
+        for (const h of history) {
+            entries.push({
+                kind: 'grade',
+                date: new Date(h.sr.gradedAt!),
+                dateStr: h.dateStr,
+                rubricName: h.rubric.name,
+                score: h.score,
+                letterGrade: h.summary.letterGrade,
+                gradeColor: h.summary.gradeColor,
+                srId: h.sr.id,
+                rubricId: h.rubric.id,
+            });
+        }
+        for (const s of speakingSessions.filter((s) => s.studentId === student.id)) {
+            const rubric = rubrics.find((r) => r.id === s.rubricId) ?? s.rubricSnapshot;
+            const scale = gradeScales.find((g) => g.id === (rubric?.gradeScaleId ?? settings.defaultGradeScaleId)) ?? gradeScales[0];
+            const summary = rubric ? calcGradeSummary({ id: s.id, rubricId: s.rubricId, studentId: s.studentId, entries: s.entries, overallComment: s.overallComment, isPeerReview: false }, rubric.criteria, scale, rubric) : null;
+            entries.push({
+                kind: 'speaking',
+                date: new Date(s.gradedAt),
+                dateStr: new Date(s.gradedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
+                rubricName: rubric?.name ?? s.rubricId,
+                score: summary ? parseFloat(summary.modifiedPercentage.toFixed(1)) : null,
+                letterGrade: summary?.letterGrade ?? null,
+                gradeColor: summary?.gradeColor ?? null,
+                sessionId: s.id,
+                rubricId: s.rubricId,
+            });
+        }
+        for (const sa of selfAssessments.filter((sa) => sa.studentId === student.id)) {
+            const rubricName = rubrics.find((r) => r.id === sa.rubricId)?.name ?? sa.rubricId;
+            const total = sa.ratings.length;
+            const confidentPct = total > 0 ? (sa.ratings.filter((r) => r.confident).length / total) * 100 : 0;
+            entries.push({
+                kind: 'selfAssess',
+                date: new Date(sa.submittedAt),
+                dateStr: new Date(sa.submittedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
+                rubricName,
+                confidentPct,
+                saId: sa.id,
+                rubricId: sa.rubricId,
+            });
+        }
+        return entries.sort((a, b) => b.date.getTime() - a.date.getTime());
+    }, [student, history, speakingSessions, selfAssessments, rubrics, gradeScales, settings]);
 
     if (!student) {
         return (
@@ -307,10 +362,137 @@ export default function StudentProfilePage() {
                     </div>
                 </div>
 
-                {history.length === 0 ? (
+                {/* Tab navigation */}
+                <div role="tablist" style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: '2px solid var(--border)', paddingBottom: 0 }}>
+                    {(['overview', 'portfolio'] as const).map((tab) => (
+                        <button
+                            key={tab}
+                            role="tab"
+                            aria-selected={activeTab === tab}
+                            onClick={() => setActiveTab(tab)}
+                            style={{
+                                padding: '8px 18px',
+                                fontSize: '0.9rem',
+                                fontWeight: activeTab === tab ? 700 : 500,
+                                color: activeTab === tab ? 'var(--accent)' : 'var(--text-muted)',
+                                background: 'none',
+                                border: 'none',
+                                borderBottom: activeTab === tab ? '2px solid var(--accent)' : '2px solid transparent',
+                                marginBottom: -2,
+                                cursor: 'pointer',
+                                transition: 'all 0.15s',
+                            }}
+                        >
+                            {t(`studentProfile.tab_${tab}`, tab.charAt(0).toUpperCase() + tab.slice(1))}
+                        </button>
+                    ))}
+                </div>
+
+                {activeTab === 'portfolio' && (
+                    <div>
+                        {portfolioTimeline.length === 0 ? (
+                            <div className="empty-state">
+                                <TrendingUp size={36} />
+                                <p>{t('studentProfile.portfolio_empty', 'No activity yet for this student.')}</p>
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 0, position: 'relative' }}>
+                                <div style={{ position: 'absolute', left: 19, top: 0, bottom: 0, width: 2, background: 'var(--border)', zIndex: 0 }} />
+                                {portfolioTimeline.map((entry, idx) => {
+                                    const icon = entry.kind === 'grade' ? (
+                                        <FileText size={16} style={{ color: 'var(--accent)' }} />
+                                    ) : entry.kind === 'speaking' ? (
+                                        <Mic size={16} style={{ color: 'var(--purple, #a855f7)' }} />
+                                    ) : (
+                                        <ClipboardCheck size={16} style={{ color: 'var(--green)' }} />
+                                    );
+                                    const kindLabel = entry.kind === 'grade'
+                                        ? t('studentProfile.portfolio_kind_grade', 'Rubric Grade')
+                                        : entry.kind === 'speaking'
+                                        ? t('speaking.sessions_history')
+                                        : t('selfAssess.comparison_title');
+
+                                    return (
+                                        <div key={`${entry.kind}-${idx}`} style={{ display: 'flex', gap: 16, paddingBottom: 16, position: 'relative' }}>
+                                            <div style={{
+                                                width: 40,
+                                                height: 40,
+                                                borderRadius: '50%',
+                                                background: 'var(--bg-elevated)',
+                                                border: '2px solid var(--border)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                flexShrink: 0,
+                                                zIndex: 1,
+                                            }}>
+                                                {icon}
+                                            </div>
+                                            <div className="card" style={{ flex: 1, padding: '12px 16px', marginTop: 0 }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, flexWrap: 'wrap', marginBottom: 6 }}>
+                                                    <div>
+                                                        <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-dim)', marginRight: 8 }}>
+                                                            {kindLabel}
+                                                        </span>
+                                                        <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>
+                                                            {entry.rubricName}
+                                                        </span>
+                                                    </div>
+                                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', flexShrink: 0 }}>
+                                                        {entry.dateStr}
+                                                    </span>
+                                                </div>
+                                                <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+                                                    {entry.kind === 'grade' && (
+                                                        <>
+                                                            <span className="grade-chip" style={{ background: entry.gradeColor + '22', color: entry.gradeColor, border: `1.5px solid ${entry.gradeColor}` }}>
+                                                                {entry.letterGrade}
+                                                            </span>
+                                                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{entry.score.toFixed(1)}%</span>
+                                                            <button className="btn btn-ghost btn-sm no-print" onClick={() => navigate(`/rubrics/${entry.rubricId}/grade/${student.id}`)}>
+                                                                <ExternalLink size={12} /> {t('common.view')}
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                    {entry.kind === 'speaking' && (
+                                                        <>
+                                                            {entry.letterGrade && entry.gradeColor && (
+                                                                <span className="grade-chip" style={{ background: entry.gradeColor + '22', color: entry.gradeColor, border: `1.5px solid ${entry.gradeColor}` }}>
+                                                                    {entry.letterGrade}
+                                                                </span>
+                                                            )}
+                                                            {entry.score !== null && (
+                                                                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{entry.score.toFixed(1)}%</span>
+                                                            )}
+                                                            <button className="btn btn-ghost btn-sm no-print" onClick={() => navigate(`/speaking/${entry.rubricId}/${student.id}`)}>
+                                                                <ExternalLink size={12} /> {t('common.view')}
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                    {entry.kind === 'selfAssess' && (
+                                                        <>
+                                                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                                                {t('selfAssess.confident_short')}: {entry.confidentPct.toFixed(0)}%
+                                                            </span>
+                                                            <button className="btn btn-ghost btn-sm no-print" onClick={() => navigate(`/rubrics/${entry.rubricId}/self-assess/${student.id}`)}>
+                                                                <ExternalLink size={12} /> {t('common.view')}
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {activeTab === 'overview' && (history.length === 0 ? (
                     <div className="empty-state">
                         <TrendingUp size={36} />
-                        <p>No graded rubrics yet for this student.</p>
+                        <p>{t('studentProfile.no_grades_yet', 'No graded rubrics yet for this student.')}</p>
                     </div>
                 ) : (
                     <>
@@ -811,10 +993,9 @@ export default function StudentProfilePage() {
                             </table>
                         </div>
                     </>
-                )}
+                ))}
 
-                {/* ── Speaking Sessions ── */}
-                {(() => {
+                {activeTab === 'overview' && (() => {
                     const studentSessions = speakingSessions.filter((s) => s.studentId === student.id);
                     return (
                         <div className="card" style={{ marginTop: 24 }}>

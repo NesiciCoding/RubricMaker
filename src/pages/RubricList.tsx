@@ -631,7 +631,7 @@ export default function RubricList() {
                                         </div>
                                     </div>
                                 </div>
-                                <button className="btn btn-ghost btn-icon" onClick={() => setDifferentiateId(null)}>
+                                <button className="btn btn-ghost btn-icon" aria-label={t('common.close')} onClick={() => setDifferentiateId(null)}>
                                     ✕
                                 </button>
                             </div>
@@ -726,7 +726,7 @@ export default function RubricList() {
                                 <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                     <ClipboardPaste size={18} /> Import from share code
                                 </h3>
-                                <button className="btn btn-ghost btn-icon" onClick={() => setShowCodeImport(false)}>
+                                <button className="btn btn-ghost btn-icon" aria-label={t('common.close')} onClick={() => setShowCodeImport(false)}>
                                     ✕
                                 </button>
                             </div>
@@ -798,6 +798,7 @@ export default function RubricList() {
                             </h3>
                             <button
                                 className="btn btn-ghost btn-icon"
+                                aria-label={t('common.close')}
                                 onClick={() => {
                                     setShareModal(null);
                                     setShareStatus('idle');
@@ -875,6 +876,7 @@ export default function RubricList() {
                                             <span className="badge">{s.mode}</span>
                                             <button
                                                 className="btn btn-ghost btn-icon btn-sm"
+                                                aria-label={t('rubricList.action_unshare')}
                                                 style={{ color: 'var(--red)' }}
                                                 onClick={() => handleUnshare(s.userId)}
                                             >
@@ -920,7 +922,7 @@ export default function RubricList() {
                                     <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                         <PenLine size={16} /> {t('rubricList.essay_pick_class_title')}
                                     </h3>
-                                    <button className="btn btn-ghost btn-icon" onClick={() => setEssayFlow(null)}>
+                                    <button className="btn btn-ghost btn-icon" aria-label={t('common.close')} onClick={() => setEssayFlow(null)}>
                                         <X size={16} />
                                     </button>
                                 </div>

@@ -215,6 +215,7 @@ export default function CommentBankModal({ onClose, onSelect }: CommentBankModal
                                             <div style={{ display: 'flex', gap: 4 }}>
                                                 <button
                                                     className="btn btn-ghost btn-icon btn-xs"
+                                                    aria-label="Edit comment"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         handleEdit(item);
@@ -224,6 +225,7 @@ export default function CommentBankModal({ onClose, onSelect }: CommentBankModal
                                                 </button>
                                                 <button
                                                     className="btn btn-ghost btn-icon btn-xs"
+                                                    aria-label="Delete comment"
                                                     style={{ color: 'var(--red)' }}
                                                     onClick={(e) => {
                                                         e.stopPropagation();

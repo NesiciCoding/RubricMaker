@@ -1369,6 +1369,7 @@ export default function RubricBuilder() {
                                                                                 </span>
                                                                                 <button
                                                                                     className="btn btn-ghost btn-icon btn-sm"
+                                                                                    aria-label={t('rubricBuilder.action_unlink_standard')}
                                                                                     style={{
                                                                                         color: 'var(--text-muted)',
                                                                                         padding: 2,
@@ -1430,6 +1431,7 @@ export default function RubricBuilder() {
                                                                             </span>
                                                                             <button
                                                                                 className="btn btn-ghost btn-icon btn-sm"
+                                                                                aria-label={t('rubricBuilder.action_unlink_standard')}
                                                                                 style={{
                                                                                     color: 'var(--text-muted)',
                                                                                     padding: 2,
@@ -1596,6 +1598,7 @@ export default function RubricBuilder() {
                                                                                 </span>
                                                                                 <button
                                                                                     className="btn btn-ghost btn-icon btn-sm"
+                                                                                    aria-label={t('rubricBuilder.action_remove_descriptor')}
                                                                                     style={{
                                                                                         color: 'var(--text-muted)',
                                                                                         padding: 2,
@@ -1668,6 +1671,7 @@ export default function RubricBuilder() {
                                                                                 </span>
                                                                                 <button
                                                                                     className="btn btn-ghost btn-icon btn-sm"
+                                                                                    aria-label={t('rubricBuilder.action_remove_descriptor')}
                                                                                     style={{
                                                                                         color: 'var(--text-muted)',
                                                                                         padding: 2,
@@ -1964,6 +1968,7 @@ export default function RubricBuilder() {
                                                                                                                         1 && (
                                                                                                                         <button
                                                                                                                             className="btn btn-ghost btn-icon btn-sm"
+                                                                                                                            aria-label={t('rubricBuilder.action_delete_level')}
                                                                                                                             style={{
                                                                                                                                 color: 'var(--red)',
                                                                                                                             }}
@@ -2596,6 +2601,7 @@ export default function RubricBuilder() {
                                                                                                                                                             </span>
                                                                                                                                                             <button
                                                                                                                                                                 className="btn btn-ghost btn-icon"
+                                                                                                                                                                aria-label={t('rubricBuilder.action_unlink_standard')}
                                                                                                                                                                 style={{
                                                                                                                                                                     padding: 0,
                                                                                                                                                                     height: 'auto',
@@ -3017,7 +3023,7 @@ export default function RubricBuilder() {
                                 <h3>
                                     <BookOpen size={16} /> {t('rubricBuilder.standards_modal_title')}
                                 </h3>
-                                <button className="btn btn-ghost btn-icon" onClick={() => setPickingStandardFor(null)}>
+                                <button className="btn btn-ghost btn-icon" aria-label={t('common.close')} onClick={() => setPickingStandardFor(null)}>
                                     ✕
                                 </button>
                             </div>
@@ -3091,7 +3097,7 @@ export default function RubricBuilder() {
                         <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 400 }}>
                             <div className="modal-header">
                                 <h3>{t('rubricBuilder.md_modal_title')}</h3>
-                                <button className="btn btn-ghost btn-icon" onClick={() => setShowMarkdownHint(false)}>
+                                <button className="btn btn-ghost btn-icon" aria-label={t('common.close')} onClick={() => setShowMarkdownHint(false)}>
                                     ✕
                                 </button>
                             </div>
@@ -3130,7 +3136,7 @@ export default function RubricBuilder() {
                                 <Clock size={16} style={{ marginRight: 6, verticalAlign: 'middle' }} />
                                 {t('rubricBuilder.version_history')}
                             </h3>
-                            <button className="btn btn-ghost btn-icon" onClick={() => setShowVersionHistory(false)}>
+                            <button className="btn btn-ghost btn-icon" aria-label={t('common.close')} onClick={() => setShowVersionHistory(false)}>
                                 ✕
                             </button>
                         </div>
@@ -3235,7 +3241,7 @@ export default function RubricBuilder() {
                     <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 420 }}>
                         <div className="modal-header">
                             <h3>{t('rubricBuilder.sync_dialog_title')}</h3>
-                            <button className="btn btn-ghost btn-icon" onClick={() => setSyncDialogRubric(null)}>
+                            <button className="btn btn-ghost btn-icon" aria-label={t('common.close')} onClick={() => setSyncDialogRubric(null)}>
                                 ✕
                             </button>
                         </div>
@@ -3778,6 +3784,7 @@ function RubricWysiwygEditor({
                                 >
                                     <button
                                         className="btn btn-ghost btn-icon btn-sm"
+                                        aria-label={t('rubricBuilder.action_move_level_left')}
                                         onClick={() => moveLevel(i, -1)}
                                         disabled={i === 0}
                                         style={{ padding: 2, height: 20, width: 20, color: 'inherit' }}
@@ -3786,6 +3793,7 @@ function RubricWysiwygEditor({
                                     </button>
                                     <button
                                         className="btn btn-ghost btn-icon btn-sm"
+                                        aria-label={t('rubricBuilder.action_move_level_right')}
                                         onClick={() => moveLevel(i, 1)}
                                         disabled={i === headers.length - 1}
                                         style={{ padding: 2, height: 20, width: 20, color: 'inherit' }}
@@ -3946,6 +3954,7 @@ function RubricWysiwygEditor({
                                 >
                                     <button
                                         className="btn btn-ghost btn-icon btn-sm"
+                                        aria-label={t('rubricBuilder.action_move_criterion_up')}
                                         onClick={() => moveCriterion(cIdx, -1)}
                                         disabled={cIdx === 0}
                                         style={{ padding: 2, height: 20, width: 20 }}
@@ -3963,6 +3972,7 @@ function RubricWysiwygEditor({
                                     </button>
                                     <button
                                         className="btn btn-ghost btn-icon btn-sm"
+                                        aria-label={t('rubricBuilder.action_delete_criterion')}
                                         onClick={() => deleteCriterionWysiwyg(cIdx)}
                                         style={{ padding: 2, height: 20, width: 20, color: 'var(--red)' }}
                                     >
@@ -3970,6 +3980,7 @@ function RubricWysiwygEditor({
                                     </button>
                                     <button
                                         className="btn btn-ghost btn-icon btn-sm"
+                                        aria-label={t('rubricBuilder.action_move_criterion_down')}
                                         onClick={() => moveCriterion(cIdx, 1)}
                                         disabled={cIdx === criteria.length - 1}
                                         style={{ padding: 2, height: 20, width: 20 }}

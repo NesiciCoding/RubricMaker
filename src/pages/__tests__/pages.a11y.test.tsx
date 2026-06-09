@@ -49,6 +49,8 @@ vi.mock('../../context/AppContext', () => ({
         classes: [mockClass],
         studentRubrics: [] as StudentRubric[],
         selfAssessments: [],
+        speakingSessions: [],
+        gradeScales: [{ id: 'gs1', name: 'Default', ranges: [] }],
         settings: mockSettings,
         updateSettings: vi.fn(),
         enterLocalMode: vi.fn(),
@@ -293,6 +295,39 @@ describe('EssayAssignmentModal — a11y', () => {
             expect(input.id, `input is missing an id or label: ${input.placeholder}`).toBeTruthy();
             expect(label, `label missing for input#${input.id}`).not.toBeNull();
         });
+    });
+});
+
+// ─── StudentProfilePage ───────────────────────────────────────────────────────
+
+vi.mock('../../utils/learningGoalsAggregator', () => ({
+    getStudentGoalScores: vi.fn(() => []),
+}));
+
+vi.mock('../../components/Statistics/LearningGoalChart', () => ({
+    default: () => null,
+}));
+
+vi.mock('../../components/Statistics/CefrProgressChart', () => ({
+    default: () => null,
+}));
+
+vi.mock('../../components/CEFR/CefrBadge', () => ({
+    default: () => null,
+}));
+
+describe('StudentProfilePage — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('tab navigation uses role=tablist and role=tab with aria-selected', async () => {
+        const { default: StudentProfilePage } = await import('../StudentProfilePage');
+        renderPage(<StudentProfilePage />, '/students/s1', '/students/:id');
+        const tablist = document.querySelector('[role="tablist"]');
+        expect(tablist).not.toBeNull();
+        const tabs = document.querySelectorAll('[role="tab"]');
+        expect(tabs.length).toBeGreaterThanOrEqual(2);
+        const selected = Array.from(tabs).find((t) => t.getAttribute('aria-selected') === 'true');
+        expect(selected).not.toBeNull();
     });
 });
 

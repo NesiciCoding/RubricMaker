@@ -516,10 +516,10 @@ export default function StudentEssayPage() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    background: '#f8fafc',
+                    background: 'var(--bg)',
                 }}
             >
-                <Loader2 size={28} style={{ color: '#6366f1', animation: 'spin 1s linear infinite' }} />
+                <Loader2 size={28} style={{ color: 'var(--accent)', animation: 'spin 1s linear infinite' }} />
             </div>
         );
     }
@@ -534,7 +534,7 @@ export default function StudentEssayPage() {
     // Manual submit is blocked when over the word limit. The timer auto-submits
     // unconditionally when it expires, setting submitted = true.
     const canSubmit = !isOverLimit && !submitted && !submitting && !sebBlocked;
-    const wordCountColor = isOverLimit ? '#ef4444' : isBelowMin ? '#f59e0b' : '#10b981';
+    const wordCountColor = isOverLimit ? 'var(--red)' : isBelowMin ? 'var(--yellow)' : 'var(--green)';
 
     return (
         <div

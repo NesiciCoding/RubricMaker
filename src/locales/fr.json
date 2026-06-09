@@ -36,7 +36,8 @@
         "toggle_theme": "Basculer le thème",
         "back": "Retour",
         "close": "Fermer",
-        "print": "Imprimer"
+        "print": "Imprimer",
+        "view": "Voir"
     },
     "sidebar": {
         "main_section": "Principal",
@@ -110,6 +111,21 @@
         "delete_scale_confirm": "Êtes-vous sûr de vouloir supprimer ce barème ? Cette action est irréversible.",
         "accent_color_label": "Couleur d'accentuation",
         "accent_color_invalid": "Entrez une couleur hexadécimale valide à 6 chiffres (ex. #3b82f6).",
+        "preset_ocean": "Océan",
+        "preset_forest": "Forêt",
+        "preset_indigo": "Indigo",
+        "preset_sunset": "Coucher de soleil",
+        "preset_rose": "Rose",
+        "preset_slate": "Ardoise",
+        "preset_teal": "Sarcelle",
+        "preset_gold": "Or",
+        "theme_bundles_label": "Thèmes",
+        "theme_bundle_academy": "Académie",
+        "theme_bundle_nature": "Nature",
+        "theme_bundle_midnight": "Minuit",
+        "theme_bundle_warm": "Chaleureux",
+        "theme_bundle_slate": "Ardoise",
+        "theme_bundle_rose": "Rose",
         "ui_font_label": "Police d'interface",
         "cloud_sync": "Sync Cloud (Microsoft 365)",
         "cloud_sync_help": "Connectez votre compte Microsoft pour synchroniser les rubriques sur vos appareils via OneDrive ou SharePoint.",
@@ -240,7 +256,8 @@
         "share_notfound": "Aucun compte trouvé pour {{email}}. Demandez-leur de se connecter à RubricMaker d'abord.",
         "share_shared_with": "Partagé avec",
         "share_btn": "Partager",
-        "speaking_select_student": "🎙 Expression orale…"
+        "speaking_select_student": "🎙 Expression orale…",
+        "action_unshare": "Supprimer le partage"
     },
     "studentsPage": {
         "title": "Élèves et Classes",
@@ -288,7 +305,10 @@
         "merge_confirm_description": "Tous les élèves de <strong>{{source}}</strong> seront déplacés dans <strong>{{target}}</strong>. La classe source sera supprimée. Cette action est irréversible.",
         "merge_confirm_action": "Fusionner",
         "action_export_summaries": "Exporter les résumés",
-        "back_to_roster": "Retour à la liste"
+        "back_to_roster": "Retour à la liste",
+        "action_class_menu": "Options de classe",
+        "action_edit_student": "Modifier l élève",
+        "action_delete_student": "Supprimer l élève"
     },
     "gradeStudent": {
         "title_prefix": "Notation :",
@@ -477,7 +497,12 @@
         "sub_item_min_title": "Points minimum pour cet élément",
         "sub_item_max_title": "Points maximum pour cet élément",
         "sub_item_link_standard_title": "Lier le standard à cet élément",
-        "sub_item_delete_title": "Supprimer l'élément"
+        "sub_item_delete_title": "Supprimer l'élément",
+        "action_unlink_standard": "Délier le standard",
+        "action_remove_descriptor": "Supprimer le descripteur",
+        "action_delete_level": "Supprimer le niveau",
+        "action_move_level_left": "Déplacer le niveau à gauche",
+        "action_move_level_right": "Déplacer le niveau à droite"
     },
     "peerReview": {
         "round_label": "Tour",
@@ -1112,5 +1137,12 @@
         "tab_essays": "Rédaction d'essais",
         "tab_analytics": "Analyses & Export",
         "tab_data": "Gestion des données"
+    },
+    "studentProfile": {
+        "tab_overview": "Aperçu",
+        "tab_portfolio": "Portfolio",
+        "portfolio_empty": "Aucune activité pour cet élève.",
+        "portfolio_kind_grade": "Note de rubrique",
+        "no_grades_yet": "Aucune rubrique notée pour cet élève."
     }
 }

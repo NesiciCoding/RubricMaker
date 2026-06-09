@@ -39,7 +39,7 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 
 ### 5. Analytics & Reporting
 - **Statistics dashboard**: Class performance with Average, Median, Highest, and Lowest scores; grade distribution charts; per-criterion performance breakdown.
-- **Student profiles**: Individual progress view across all rubrics, CEFR levels, and essays.
+- **Student profiles**: Individual progress view across all rubrics, CEFR levels, and essays. A **Portfolio** tab shows a unified chronological timeline of grades, speaking sessions, and self-assessments.
 - **Overdue tracking**: Highlights students with assignments past due dates.
 - **Export options**:
   - **PDF**: Individual student reports or bulk class export.
@@ -53,7 +53,11 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 - **Submit essays**: Anonymous essay submission via submission codes.
 - **Self-assessment**: Students complete CEFR self-assessments from their portal.
 
-### 7. Data Management
+### 7. Customisation & Accessibility
+- **Theme bundles**: Six named bundles (Academy, Nature, Midnight, Warm, Slate, Rose) set accent colour, UI font, and export header colour in one click. Eight quick accent-colour presets are also available.
+- **WCAG 2.1 AA**: Icon-only buttons carry `aria-label`; tab navigation uses `role="tablist"` / `role="tab"` with `aria-selected`; axe-core audits run in CI on key pages and components.
+
+### 8. Data Management
 - **Offline-first**: All data lives in the browser's `localStorage`. No account required.
 - **Cloud sync** (optional): Supabase backend for multi-device access and multi-teacher collaboration.
 - **Backup & restore**: Export the entire dataset to JSON; restore from any prior backup.
