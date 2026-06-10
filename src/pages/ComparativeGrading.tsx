@@ -1137,6 +1137,9 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                                                                 title={t(
                                                                                     'comparativeGrading.a_better_on_sub'
                                                                                 )}
+                                                                                aria-label={t(
+                                                                                    'comparativeGrading.a_better_on_sub'
+                                                                                )}
                                                                             >
                                                                                 <ChevronLeft size={12} />
                                                                             </button>
@@ -1159,6 +1162,9 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                                                                 title={t(
                                                                                     'comparativeGrading.equal_on_sub'
                                                                                 )}
+                                                                                aria-label={t(
+                                                                                    'comparativeGrading.equal_on_sub'
+                                                                                )}
                                                                             >
                                                                                 <Equal size={12} />
                                                                             </button>
@@ -1179,6 +1185,9 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                                                                     )
                                                                                 }
                                                                                 title={t(
+                                                                                    'comparativeGrading.b_better_on_sub'
+                                                                                )}
+                                                                                aria-label={t(
                                                                                     'comparativeGrading.b_better_on_sub'
                                                                                 )}
                                                                             >

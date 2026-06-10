@@ -1716,6 +1716,13 @@ export default function RubricBuilder() {
                                                                                   'rubricBuilder.action_collapse_criterion'
                                                                               )
                                                                     }
+                                                                    aria-label={
+                                                                        collapsedCriteria.has(criterion.id)
+                                                                            ? t('rubricBuilder.action_expand_criterion')
+                                                                            : t(
+                                                                                  'rubricBuilder.action_collapse_criterion'
+                                                                              )
+                                                                    }
                                                                 >
                                                                     {collapsedCriteria.has(criterion.id) ? (
                                                                         <ChevronDown size={15} />

@@ -517,14 +517,14 @@ export default function SettingsPage() {
                                 )}
                                 {isUserPlus && (
                                     <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                                        <label>{t('settings.theme_bundles_label', 'Theme bundles')}</label>
+                                        <label>{t('settings.theme_bundles_label')}</label>
                                         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
                                             {THEME_BUNDLES.map((bundle) => {
                                                 const active = settings.colorPreset === bundle.id;
                                                 return (
                                                     <button
                                                         key={bundle.id}
-                                                        title={t(`settings.theme_bundle_${bundle.id}`, bundle.id)}
+                                                        title={t(`settings.theme_bundle_${bundle.id}`)}
                                                         onClick={() => {
                                                             updateSettings({
                                                                 accentColor: bundle.accentColor,
@@ -567,10 +567,7 @@ export default function SettingsPage() {
                                                                 flexShrink: 0,
                                                             }}
                                                         />
-                                                        {t(
-                                                            `settings.theme_bundle_${bundle.id}`,
-                                                            bundle.id.charAt(0).toUpperCase() + bundle.id.slice(1)
-                                                        )}
+                                                        {t(`settings.theme_bundle_${bundle.id}`)}
                                                     </button>
                                                 );
                                             })}
