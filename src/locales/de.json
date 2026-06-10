@@ -36,7 +36,8 @@
         "toggle_theme": "Thema wechseln",
         "back": "Zurück",
         "close": "Schließen",
-        "print": "Drucken"
+        "print": "Drucken",
+        "view": "Ansehen"
     },
     "sidebar": {
         "main_section": "Hauptmenü",
@@ -110,6 +111,21 @@
         "delete_scale_confirm": "Sind Sie sicher, dass Sie diese Notenskala löschen möchten? Dies kann nicht rückgängig gemacht werden.",
         "accent_color_label": "Akzentfarbe",
         "accent_color_invalid": "Geben Sie eine gültige 6-stellige Hex-Farbe ein (z. B. #3b82f6).",
+        "preset_ocean": "Ozean",
+        "preset_forest": "Wald",
+        "preset_indigo": "Indigo",
+        "preset_sunset": "Sonnenuntergang",
+        "preset_rose": "Rose",
+        "preset_slate": "Schiefer",
+        "preset_teal": "Blaugrün",
+        "preset_gold": "Gold",
+        "theme_bundles_label": "Themenpakete",
+        "theme_bundle_academy": "Akademie",
+        "theme_bundle_nature": "Natur",
+        "theme_bundle_midnight": "Mitternacht",
+        "theme_bundle_warm": "Warm",
+        "theme_bundle_slate": "Schiefer",
+        "theme_bundle_rose": "Rose",
         "ui_font_label": "Schnittstellenschrift",
         "cloud_sync": "Cloud-Synchronisierung (Microsoft 365)",
         "cloud_sync_help": "Verbinden Sie Ihr Microsoft-Konto, um Rubriken über OneDrive oder SharePoint geräteübergreifend zu synchronisieren.",
@@ -240,7 +256,8 @@
         "share_notfound": "Kein Konto für {{email}} gefunden. Bitten Sie sie, sich zuerst bei RubricMaker anzumelden.",
         "share_shared_with": "Geteilt mit",
         "share_btn": "Teilen",
-        "speaking_select_student": "🎙 Sprechen…"
+        "speaking_select_student": "🎙 Sprechen…",
+        "action_unshare": "Freigabe entfernen"
     },
     "studentsPage": {
         "title": "Schüler und Klassen",
@@ -288,7 +305,10 @@
         "merge_confirm_description": "Alle Schüler aus <strong>{{source}}</strong> werden in <strong>{{target}}</strong> verschoben. Die Quellklasse wird gelöscht. Dies kann nicht rückgängig gemacht werden.",
         "merge_confirm_action": "Zusammenführen",
         "action_export_summaries": "Zusammenfassungen exportieren",
-        "back_to_roster": "Zurück zur Liste"
+        "back_to_roster": "Zurück zur Liste",
+        "action_class_menu": "Klassenoptionen",
+        "action_edit_student": "Schüler bearbeiten",
+        "action_delete_student": "Schüler löschen"
     },
     "gradeStudent": {
         "title_prefix": "Benotung:",
@@ -346,7 +366,8 @@
         "action_print": "Drucken",
         "action_essay": "Aufsatz",
         "action_import_essay": "Aufsatz importieren",
-        "anchor_help_text": "Ankerarbeiten sind Referenzeinreichungen, die zur Kalibrierung Ihrer Bewertung verwendet werden. Durch das Markieren einer Einreichung als Anker können Sie sie in der Bewertungsfußzeile neben neuen Einreichungen vergleichen."
+        "anchor_help_text": "Ankerarbeiten sind Referenzeinreichungen, die zur Kalibrierung Ihrer Bewertung verwendet werden. Durch das Markieren einer Einreichung als Anker können Sie sie in der Bewertungsfußzeile neben neuen Einreichungen vergleichen.",
+        "aria_grade_summary": "Notenübersicht"
     },
     "rubricBuilder": {
         "action_back": "Zurück",
@@ -463,7 +484,25 @@
         "weight_total_hint": "(sollte 100% sein)",
         "weight_total_warning": "Gewichte ergeben {{total}}% (erwartet 100%). Sie können trotzdem speichern — das Bewertungssystem normalisiert sie.",
         "weight_distribute_evenly": "Gleichmäßig verteilen",
-        "cefr_skill_inherit": "— von Rubrik übernehmen —"
+        "cefr_skill_inherit": "— von Rubrik übernehmen —",
+        "label_subject": "Fach",
+        "label_description": "Beschreibung",
+        "label_grade_scale": "Notenskala",
+        "grade_scale_none": "Keine (nur Rohpunkte)",
+        "action_move_criterion_up": "Kriterium nach oben",
+        "action_move_criterion_down": "Kriterium nach unten",
+        "action_expand_criterion": "Ausklappen",
+        "action_collapse_criterion": "Einklappen",
+        "action_delete_criterion": "Kriterium löschen",
+        "sub_item_min_title": "Mindestpunkte für dieses Unterelement",
+        "sub_item_max_title": "Maximale Punkte für dieses Unterelement",
+        "sub_item_link_standard_title": "Standard mit diesem Unterelement verknüpfen",
+        "sub_item_delete_title": "Unterelement löschen",
+        "action_unlink_standard": "Standard trennen",
+        "action_remove_descriptor": "Deskriptor entfernen",
+        "action_delete_level": "Niveau löschen",
+        "action_move_level_left": "Niveau nach links verschieben",
+        "action_move_level_right": "Niveau nach rechts verschieben"
     },
     "peerReview": {
         "round_label": "Runde",
@@ -615,7 +654,12 @@
         "student_progress_count": "Schülerfortschritt ({{count}})",
         "overall_comments_title": "Allgemeine Kommentare",
         "rubric_not_found": "Rubrik nicht gefunden",
-        "overall_feedback_placeholder": "Allgemeines Feedback…"
+        "overall_feedback_placeholder": "Allgemeines Feedback…",
+        "sub_criteria": "Unterkriterien",
+        "a_better_on_sub": "A besser auf diesem Unterkriterium",
+        "equal_on_sub": "Gleich auf diesem Unterkriterium",
+        "b_better_on_sub": "B besser auf diesem Unterkriterium",
+        "performed_better": "{{name}} hat besser abgeschnitten"
     },
     "studentPortal": {
         "not_found": "Schüler nicht gefunden.",
@@ -1077,7 +1121,9 @@
         "essay_text_label": "Aufsatz",
         "show_essay": "Aufsatz anzeigen",
         "hide_essay": "Aufsatz ausblenden",
-        "expired_desc_no_date": "Diese Aufgabe ist abgelaufen. Bitte kontaktieren Sie Ihren Lehrer."
+        "expired_desc_no_date": "Diese Aufgabe ist abgelaufen. Bitte kontaktieren Sie Ihren Lehrer.",
+        "email_invalid": "Geben Sie eine gültige Schul-E-Mail-Adresse ein.",
+        "session_error": "Sitzung konnte nicht gestartet werden. Bitten Sie Ihren Lehrer, anonyme Anmeldungen in Supabase zu aktivieren."
     },
     "editor": {
         "switchToCompactView": "Kompaktansicht",
@@ -1093,5 +1139,16 @@
         "tab_essays": "Aufsatzschreiben",
         "tab_analytics": "Analyse & Export",
         "tab_data": "Datenverwaltung"
+    },
+    "studentProfile": {
+        "tab_overview": "Übersicht",
+        "tab_portfolio": "Portfolio",
+        "portfolio_empty": "Noch keine Aktivitäten für diesen Schüler.",
+        "portfolio_kind_grade": "Rubrikbewertung",
+        "no_grades_yet": "Noch keine bewerteten Rubriken für diesen Schüler."
+    },
+    "standards": {
+        "remove_favorite": "Favorisierten Standard entfernen",
+        "link_standard": "Standard verknüpfen"
     }
 }

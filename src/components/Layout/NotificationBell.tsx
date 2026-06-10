@@ -136,6 +136,7 @@ export default function NotificationBell() {
                             )}
                             <button
                                 className="btn btn-ghost btn-icon btn-sm"
+                                aria-label={t('common.close')}
                                 onClick={() => {
                                     setDismissedIds(new Set());
                                     setOpen(false);

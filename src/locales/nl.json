@@ -36,7 +36,8 @@
         "settings": "Instellingen",
         "language": "Taal",
         "toggle_theme": "Thema wisselen",
-        "print": "Afdrukken"
+        "print": "Afdrukken",
+        "view": "Bekijken"
     },
     "sidebar": {
         "main_section": "Hoofdmenu",
@@ -118,6 +119,21 @@
         "delete_scale_confirm": "Weet je zeker dat je deze beoordelingsschaal wilt verwijderen? Dit kan niet ongedaan worden gemaakt.",
         "accent_color_label": "Accentkleur",
         "accent_color_invalid": "Voer een geldige 6-cijferige hex-kleur in (bijv. #3b82f6).",
+        "preset_ocean": "Oceaan",
+        "preset_forest": "Bos",
+        "preset_indigo": "Indigo",
+        "preset_sunset": "Zonsondergang",
+        "preset_rose": "Roos",
+        "preset_slate": "Leisteen",
+        "preset_teal": "Teal",
+        "preset_gold": "Goud",
+        "theme_bundles_label": "Themapakketten",
+        "theme_bundle_academy": "Academie",
+        "theme_bundle_nature": "Natuur",
+        "theme_bundle_midnight": "Middernacht",
+        "theme_bundle_warm": "Warm",
+        "theme_bundle_slate": "Leisteen",
+        "theme_bundle_rose": "Roos",
         "ui_font_label": "Interfacelettertype",
         "cloud_sync": "Cloud Synchronisatie (Microsoft 365)",
         "cloud_sync_help": "Verbind je Microsoft-account om rubrics over apparaten te synchroniseren via OneDrive of SharePoint.",
@@ -240,7 +256,8 @@
         "share_notfound": "Geen account gevonden voor {{email}}. Vraag hen eerst in te loggen bij RubricMaker.",
         "share_shared_with": "Gedeeld met",
         "share_btn": "Delen",
-        "speaking_select_student": "🎙 Spreken…"
+        "speaking_select_student": "🎙 Spreken…",
+        "action_unshare": "Delen opheffen"
     },
     "studentsPage": {
         "title": "Leerlingen & Klassen",
@@ -288,7 +305,10 @@
         "merge_confirm_description": "Alle leerlingen uit <strong>{{source}}</strong> worden verplaatst naar <strong>{{target}}</strong>. De bronklas wordt verwijderd. Dit kan niet ongedaan worden gemaakt.",
         "merge_confirm_action": "Samenvoegen",
         "action_export_summaries": "Samenvattingen Exporteren",
-        "back_to_roster": "Terug naar Leerlingenlijst"
+        "back_to_roster": "Terug naar Leerlingenlijst",
+        "action_class_menu": "Klas opties",
+        "action_edit_student": "Leerling bewerken",
+        "action_delete_student": "Leerling verwijderen"
     },
     "gradeStudent": {
         "title_prefix": "Beoordeling:",
@@ -346,7 +366,8 @@
         "action_print": "Afdrukken",
         "action_essay": "Opstel",
         "action_import_essay": "Opstel importeren",
-        "anchor_help_text": "Ankerwerkstukken zijn referentie-inzendingen die worden gebruikt om je beoordeling te kalibreren. Door een inzending als anker te markeren, kun je deze naast nieuwe inzendingen vergelijken in de beoordelingsvoettekst."
+        "anchor_help_text": "Ankerwerkstukken zijn referentie-inzendingen die worden gebruikt om je beoordeling te kalibreren. Door een inzending als anker te markeren, kun je deze naast nieuwe inzendingen vergelijken in de beoordelingsvoettekst.",
+        "aria_grade_summary": "Cijferoverzicht"
     },
     "rubricBuilder": {
         "action_back": "Terug",
@@ -463,7 +484,25 @@
         "weight_total_hint": "(moet 100% zijn)",
         "weight_total_warning": "Gewichten totaal {{total}}% (verwacht 100%). U kunt toch opslaan — het beoordelingssysteem normaliseert ze.",
         "weight_distribute_evenly": "Gelijk verdelen",
-        "cefr_skill_inherit": "— overnemen van rubriek —"
+        "cefr_skill_inherit": "— overnemen van rubriek —",
+        "label_subject": "Vak",
+        "label_description": "Omschrijving",
+        "label_grade_scale": "Beoordelingsschaal",
+        "grade_scale_none": "Geen (alleen ruwe punten)",
+        "action_move_criterion_up": "Criterium omhoog",
+        "action_move_criterion_down": "Criterium omlaag",
+        "action_expand_criterion": "Uitvouwen",
+        "action_collapse_criterion": "Inklappen",
+        "action_delete_criterion": "Criterium verwijderen",
+        "sub_item_min_title": "Minimale punten voor dit subonderdeel",
+        "sub_item_max_title": "Maximale punten voor dit subonderdeel",
+        "sub_item_link_standard_title": "Standaard koppelen aan dit subonderdeel",
+        "sub_item_delete_title": "Subonderdeel verwijderen",
+        "action_unlink_standard": "Standaard loskoppelen",
+        "action_remove_descriptor": "Descriptor verwijderen",
+        "action_delete_level": "Niveau verwijderen",
+        "action_move_level_left": "Niveau naar links verplaatsen",
+        "action_move_level_right": "Niveau naar rechts verplaatsen"
     },
     "peerReview": {
         "round_label": "Ronde",
@@ -615,7 +654,12 @@
         "student_progress_count": "Voortgang leerlingen ({{count}})",
         "overall_comments_title": "Algemene opmerkingen",
         "rubric_not_found": "Rubric niet gevonden",
-        "overall_feedback_placeholder": "Algemene feedback…"
+        "overall_feedback_placeholder": "Algemene feedback…",
+        "sub_criteria": "Subcriteria",
+        "a_better_on_sub": "A beter op dit subcriterium",
+        "equal_on_sub": "Gelijk op dit subcriterium",
+        "b_better_on_sub": "B beter op dit subcriterium",
+        "performed_better": "{{name}} presteerde beter"
     },
     "studentPortal": {
         "not_found": "Leerling niet gevonden.",
@@ -1077,7 +1121,9 @@
         "essay_text_label": "Opstel",
         "show_essay": "Opstel tonen",
         "hide_essay": "Opstel verbergen",
-        "expired_desc_no_date": "Deze opdracht is verlopen. Neem contact op met uw docent."
+        "expired_desc_no_date": "Deze opdracht is verlopen. Neem contact op met uw docent.",
+        "email_invalid": "Voer een geldig school-e-mailadres in.",
+        "session_error": "Sessie kon niet worden gestart. Vraag uw docent om anoniem inloggen in Supabase in te schakelen."
     },
     "editor": {
         "switchToCompactView": "Compact weergave",
@@ -1093,5 +1139,16 @@
         "tab_essays": "Essays schrijven",
         "tab_analytics": "Analyse & Export",
         "tab_data": "Gegevensbeheer"
+    },
+    "studentProfile": {
+        "tab_overview": "Overzicht",
+        "tab_portfolio": "Portfolio",
+        "portfolio_empty": "Nog geen activiteit voor deze leerling.",
+        "portfolio_kind_grade": "Rubricbeoordeling",
+        "no_grades_yet": "Nog geen beoordeelde rubrieken voor deze leerling."
+    },
+    "standards": {
+        "remove_favorite": "Favoriete standaard verwijderen",
+        "link_standard": "Standaard koppelen"
     }
 }

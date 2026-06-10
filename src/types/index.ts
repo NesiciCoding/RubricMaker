@@ -473,6 +473,8 @@ export interface AppSettings {
     schoolName?: string;
     /** UI font family for the app chrome. */
     uiFontFamily?: UiFontFamily;
+    /** Active named theme bundle id (e.g. 'academy', 'nature'). Set alongside accentColor. */
+    colorPreset?: string;
     /** Whether to send an email notification to the student when a grade is saved (Supabase mode only). */
     notifyStudentsOnGrade?: boolean;
 }

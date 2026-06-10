@@ -1453,7 +1453,11 @@ export default function GradeStudent() {
                             <h3 style={{ margin: 0, flex: 1 }}>
                                 {t('gradeStudent.shortcuts_title', 'Keyboard Shortcuts')}
                             </h3>
-                            <button className="btn btn-ghost btn-icon" onClick={() => setShowShortcuts(false)}>
+                            <button
+                                className="btn btn-ghost btn-icon"
+                                aria-label={t('common.close')}
+                                onClick={() => setShowShortcuts(false)}
+                            >
                                 <X size={18} />
                             </button>
                         </div>
@@ -1500,7 +1504,12 @@ export default function GradeStudent() {
 
             {/* Sticky grade footer */}
             {summary && rubric.format.showCalculatedGrade !== false && (
-                <div className="grade-footer" role="status" aria-live="polite" aria-label="Grade summary">
+                <div
+                    className="grade-footer"
+                    role="status"
+                    aria-live="polite"
+                    aria-label={t('gradeStudent.aria_grade_summary')}
+                >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1 }}>
                         {scale && (
                             <span

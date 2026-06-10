@@ -233,6 +233,7 @@ export default function AttachmentsPage() {
                                                 )}
                                                 <button
                                                     className="btn btn-ghost btn-icon btn-sm"
+                                                    aria-label={t('attachments.delete_title', 'Delete attachment')}
                                                     style={{ color: 'var(--red)' }}
                                                     onClick={async () => {
                                                         const ok = await confirm({

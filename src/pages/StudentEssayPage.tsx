@@ -87,7 +87,7 @@ function EmailGate({ adapter, onAuthenticated }: EmailGateProps) {
     const handleStart = async () => {
         const trimmed = email.trim();
         if (!trimmed || !trimmed.includes('@')) {
-            setError('Enter a valid school email address.');
+            setError(t('essay.email_invalid'));
             return;
         }
         setBusy(true);
@@ -97,7 +97,7 @@ function EmailGate({ adapter, onAuthenticated }: EmailGateProps) {
         if (userId) {
             onAuthenticated(userId, trimmed);
         } else {
-            setError(e ?? 'Could not start session. Ask your teacher to enable anonymous sign-ins in Supabase.');
+            setError(e ?? t('essay.session_error'));
         }
     };
 
@@ -516,10 +516,10 @@ export default function StudentEssayPage() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    background: '#f8fafc',
+                    background: 'var(--bg)',
                 }}
             >
-                <Loader2 size={28} style={{ color: '#6366f1', animation: 'spin 1s linear infinite' }} />
+                <Loader2 size={28} style={{ color: 'var(--accent)', animation: 'spin 1s linear infinite' }} />
             </div>
         );
     }
@@ -534,7 +534,7 @@ export default function StudentEssayPage() {
     // Manual submit is blocked when over the word limit. The timer auto-submits
     // unconditionally when it expires, setting submitted = true.
     const canSubmit = !isOverLimit && !submitted && !submitting && !sebBlocked;
-    const wordCountColor = isOverLimit ? '#ef4444' : isBelowMin ? '#f59e0b' : '#10b981';
+    const wordCountColor = isOverLimit ? 'var(--red)' : isBelowMin ? 'var(--yellow)' : 'var(--green)';
 
     return (
         <div

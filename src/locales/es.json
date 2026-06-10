@@ -36,7 +36,8 @@
         "settings": "Ajustes",
         "language": "Idioma",
         "toggle_theme": "Cambiar tema",
-        "print": "Imprimir"
+        "print": "Imprimir",
+        "view": "Ver"
     },
     "sidebar": {
         "main_section": "Principal",
@@ -118,6 +119,21 @@
         "delete_scale_confirm": "¿Estás seguro de que quieres eliminar esta escala de calificación? Esta acción no se puede deshacer.",
         "accent_color_label": "Color de Acento",
         "accent_color_invalid": "Introduce un color hexadecimal válido de 6 dígitos (p. ej. #3b82f6).",
+        "preset_ocean": "Océano",
+        "preset_forest": "Bosque",
+        "preset_indigo": "Índigo",
+        "preset_sunset": "Atardecer",
+        "preset_rose": "Rosa",
+        "preset_slate": "Pizarra",
+        "preset_teal": "Verde azulado",
+        "preset_gold": "Oro",
+        "theme_bundles_label": "Temas",
+        "theme_bundle_academy": "Academia",
+        "theme_bundle_nature": "Naturaleza",
+        "theme_bundle_midnight": "Medianoche",
+        "theme_bundle_warm": "Cálido",
+        "theme_bundle_slate": "Pizarra",
+        "theme_bundle_rose": "Rosa",
         "ui_font_label": "Fuente de interfaz",
         "cloud_sync": "Sincronización en la Nube (Microsoft 365)",
         "cloud_sync_help": "Conecta tu cuenta de Microsoft para sincronizar rúbricas entre dispositivos a través de OneDrive o SharePoint.",
@@ -240,7 +256,8 @@
         "share_notfound": "No se encontró ninguna cuenta para {{email}}. Pídales que inicien sesión en RubricMaker primero.",
         "share_shared_with": "Compartido con",
         "share_btn": "Compartir",
-        "speaking_select_student": "🎙 Expresión oral…"
+        "speaking_select_student": "🎙 Expresión oral…",
+        "action_unshare": "Eliminar acceso"
     },
     "studentsPage": {
         "title": "Estudiantes y Clases",
@@ -288,7 +305,10 @@
         "merge_confirm_description": "Todos los estudiantes de <strong>{{source}}</strong> se moverán a <strong>{{target}}</strong>. La clase de origen se eliminará. Esta acción no se puede deshacer.",
         "merge_confirm_action": "Fusionar",
         "action_export_summaries": "Exportar Resúmenes",
-        "back_to_roster": "Volver al listado"
+        "back_to_roster": "Volver al listado",
+        "action_class_menu": "Opciones de clase",
+        "action_edit_student": "Editar estudiante",
+        "action_delete_student": "Eliminar estudiante"
     },
     "gradeStudent": {
         "title_prefix": "Calificando:",
@@ -346,7 +366,8 @@
         "action_print": "Imprimir",
         "action_essay": "Redacción",
         "action_import_essay": "Importar redacción",
-        "anchor_help_text": "Los trabajos de referencia son envíos usados para calibrar su evaluación. Marcar un envío como referencia le permite compararlo junto a nuevos envíos en el pie de página de calificación."
+        "anchor_help_text": "Los trabajos de referencia son envíos usados para calibrar su evaluación. Marcar un envío como referencia le permite compararlo junto a nuevos envíos en el pie de página de calificación.",
+        "aria_grade_summary": "Resumen de calificación"
     },
     "rubricBuilder": {
         "action_back": "Volver",
@@ -463,7 +484,25 @@
         "weight_total_hint": "(debe ser 100%)",
         "weight_total_warning": "Los pesos totalizan {{total}}% (esperado 100%). Puede guardar igualmente — el motor de calificación los normaliza.",
         "weight_distribute_evenly": "Distribuir uniformemente",
-        "cefr_skill_inherit": "— heredar de la rúbrica —"
+        "cefr_skill_inherit": "— heredar de la rúbrica —",
+        "label_subject": "Materia",
+        "label_description": "Descripción",
+        "label_grade_scale": "Escala de calificación",
+        "grade_scale_none": "Ninguna (solo puntos brutos)",
+        "action_move_criterion_up": "Mover criterio arriba",
+        "action_move_criterion_down": "Mover criterio abajo",
+        "action_expand_criterion": "Expandir",
+        "action_collapse_criterion": "Contraer",
+        "action_delete_criterion": "Eliminar criterio",
+        "sub_item_min_title": "Puntos mínimos para este subítem",
+        "sub_item_max_title": "Puntos máximos para este subítem",
+        "sub_item_link_standard_title": "Vincular estándar a este subítem",
+        "sub_item_delete_title": "Eliminar subítem",
+        "action_unlink_standard": "Desvincular estándar",
+        "action_remove_descriptor": "Eliminar descriptor",
+        "action_delete_level": "Eliminar nivel",
+        "action_move_level_left": "Mover nivel a la izquierda",
+        "action_move_level_right": "Mover nivel a la derecha"
     },
     "peerReview": {
         "round_label": "Ronda",
@@ -615,7 +654,12 @@
         "student_progress_count": "Progreso del alumno ({{count}})",
         "overall_comments_title": "Comentarios generales",
         "rubric_not_found": "Rúbrica no encontrada",
-        "overall_feedback_placeholder": "Comentarios generales…"
+        "overall_feedback_placeholder": "Comentarios generales…",
+        "sub_criteria": "Subcriterios",
+        "a_better_on_sub": "A mejor en este subcriterio",
+        "equal_on_sub": "Igual en este subcriterio",
+        "b_better_on_sub": "B mejor en este subcriterio",
+        "performed_better": "{{name}} tuvo mejor desempeño"
     },
     "studentPortal": {
         "not_found": "Estudiante no encontrado.",
@@ -1077,7 +1121,9 @@
         "essay_text_label": "Redacción",
         "show_essay": "Mostrar redacción",
         "hide_essay": "Ocultar redacción",
-        "expired_desc_no_date": "Esta tarea ha caducado. Por favor, contacte con su profesor."
+        "expired_desc_no_date": "Esta tarea ha caducado. Por favor, contacte con su profesor.",
+        "email_invalid": "Ingrese una dirección de correo escolar válida.",
+        "session_error": "No se pudo iniciar la sesión. Pida a su maestro que habilite los inicios de sesión anónimos en Supabase."
     },
     "editor": {
         "switchToCompactView": "Vista compacta",
@@ -1093,5 +1139,16 @@
         "tab_essays": "Redacción de ensayos",
         "tab_analytics": "Análisis y exportación",
         "tab_data": "Gestión de datos"
+    },
+    "studentProfile": {
+        "tab_overview": "Resumen",
+        "tab_portfolio": "Portfolio",
+        "portfolio_empty": "Todavía no hay actividad para este estudiante.",
+        "portfolio_kind_grade": "Calificación de rúbrica",
+        "no_grades_yet": "Aún no hay rúbricas calificadas para este estudiante."
+    },
+    "standards": {
+        "remove_favorite": "Quitar estándar favorito",
+        "link_standard": "Vincular estándar"
     }
 }

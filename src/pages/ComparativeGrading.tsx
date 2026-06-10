@@ -934,7 +934,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                             }}
                                         >
                                             <div className="text-xs text-muted" style={{ marginBottom: 4 }}>
-                                                {studentA.name}'s Score:
+                                                {t('comparativeGrading.label_score', { name: studentA.name })}
                                             </div>
                                             <select
                                                 value={eA?.levelId || ''}
@@ -942,7 +942,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                                 style={{ width: '100%', fontSize: '0.85rem', marginBottom: 8 }}
                                             >
                                                 <option value="" disabled>
-                                                    Select level...
+                                                    {t('comparativeGrading.select_level')}
                                                 </option>
                                                 {c.levels.map((l) => (
                                                     <option key={l.id} value={l.id}>
@@ -1007,7 +1007,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                                                     marginBottom: 2,
                                                                 }}
                                                             >
-                                                                <span>Points</span>
+                                                                <span>{t('comparativeGrading.label_points')}</span>
                                                                 <span style={{ fontWeight: 600 }}>
                                                                     {eA?.selectedPoints ?? lvlA.minPoints}
                                                                 </span>
@@ -1044,22 +1044,26 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                             <button
                                                 className="btn btn-secondary btn-sm"
                                                 onClick={() => compareCriterion(c.id, 'A_BETTER')}
-                                                title={`${studentA.name} performed better`}
+                                                title={t('comparativeGrading.performed_better', {
+                                                    name: studentA.name,
+                                                })}
                                             >
-                                                <ChevronLeft size={16} /> A Better
+                                                <ChevronLeft size={16} /> {t('comparativeGrading.action_a_better')}
                                             </button>
                                             <button
                                                 className="btn btn-secondary btn-sm"
                                                 onClick={() => compareCriterion(c.id, 'EQUAL')}
                                             >
-                                                <Equal size={16} /> Equal
+                                                <Equal size={16} /> {t('comparativeGrading.action_equal')}
                                             </button>
                                             <button
                                                 className="btn btn-secondary btn-sm"
                                                 onClick={() => compareCriterion(c.id, 'B_BETTER')}
-                                                title={`${studentB.name} performed better`}
+                                                title={t('comparativeGrading.performed_better', {
+                                                    name: studentB.name,
+                                                })}
                                             >
-                                                B Better <ChevronRight size={16} />
+                                                {t('comparativeGrading.action_b_better')} <ChevronRight size={16} />
                                             </button>
 
                                             {/* Sub-item comparison buttons (only when sharing the same level) */}
@@ -1087,7 +1091,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                                                     letterSpacing: '0.05em',
                                                                 }}
                                                             >
-                                                                Sub-criteria
+                                                                {t('comparativeGrading.sub_criteria')}
                                                             </div>
                                                             {sharedLevel.subItems.map((si) => {
                                                                 const min = si.minPoints ?? 0;
@@ -1130,7 +1134,12 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                                                                         'A_BETTER'
                                                                                     )
                                                                                 }
-                                                                                title="A better on this sub-criterion"
+                                                                                title={t(
+                                                                                    'comparativeGrading.a_better_on_sub'
+                                                                                )}
+                                                                                aria-label={t(
+                                                                                    'comparativeGrading.a_better_on_sub'
+                                                                                )}
                                                                             >
                                                                                 <ChevronLeft size={12} />
                                                                             </button>
@@ -1150,7 +1159,12 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                                                                         'EQUAL'
                                                                                     )
                                                                                 }
-                                                                                title="Equal on this sub-criterion"
+                                                                                title={t(
+                                                                                    'comparativeGrading.equal_on_sub'
+                                                                                )}
+                                                                                aria-label={t(
+                                                                                    'comparativeGrading.equal_on_sub'
+                                                                                )}
                                                                             >
                                                                                 <Equal size={12} />
                                                                             </button>
@@ -1170,7 +1184,12 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                                                                         'B_BETTER'
                                                                                     )
                                                                                 }
-                                                                                title="B better on this sub-criterion"
+                                                                                title={t(
+                                                                                    'comparativeGrading.b_better_on_sub'
+                                                                                )}
+                                                                                aria-label={t(
+                                                                                    'comparativeGrading.b_better_on_sub'
+                                                                                )}
                                                                             >
                                                                                 <ChevronRight size={12} />
                                                                             </button>
@@ -1194,7 +1213,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                             }}
                                         >
                                             <div className="text-xs text-muted" style={{ marginBottom: 4 }}>
-                                                {studentB.name}'s Score:
+                                                {t('comparativeGrading.label_score', { name: studentB.name })}
                                             </div>
                                             <select
                                                 value={eB?.levelId || ''}
@@ -1202,7 +1221,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                                 style={{ width: '100%', fontSize: '0.85rem', marginBottom: 8 }}
                                             >
                                                 <option value="" disabled>
-                                                    Select level...
+                                                    {t('comparativeGrading.select_level')}
                                                 </option>
                                                 {c.levels.map((l) => (
                                                     <option key={l.id} value={l.id}>
@@ -1267,7 +1286,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                                                     marginBottom: 2,
                                                                 }}
                                                             >
-                                                                <span>Points</span>
+                                                                <span>{t('comparativeGrading.label_points')}</span>
                                                                 <span style={{ fontWeight: 600 }}>
                                                                     {eB?.selectedPoints ?? lvlB.minPoints}
                                                                 </span>
