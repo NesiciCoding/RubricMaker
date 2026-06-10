@@ -657,9 +657,11 @@ function DatabaseTab() {
                                     <div style={{ display: 'flex', gap: 8 }}>
                                         <input
                                             type="text"
+                                            inputMode="numeric"
+                                            autoComplete="one-time-code"
                                             placeholder={t('admin.otp_code_placeholder')}
                                             value={dbOtp}
-                                            onChange={(e) => setDbOtp(e.target.value)}
+                                            onChange={(e) => setDbOtp(e.target.value.replace(/\D/g, ''))}
                                             maxLength={8}
                                             style={{ flex: 1 }}
                                         />
