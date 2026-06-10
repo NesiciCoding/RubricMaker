@@ -1044,7 +1044,9 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                             <button
                                                 className="btn btn-secondary btn-sm"
                                                 onClick={() => compareCriterion(c.id, 'A_BETTER')}
-                                                title={t('comparativeGrading.performed_better', { name: studentA.name })}
+                                                title={t('comparativeGrading.performed_better', {
+                                                    name: studentA.name,
+                                                })}
                                             >
                                                 <ChevronLeft size={16} /> {t('comparativeGrading.action_a_better')}
                                             </button>
@@ -1057,7 +1059,9 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                             <button
                                                 className="btn btn-secondary btn-sm"
                                                 onClick={() => compareCriterion(c.id, 'B_BETTER')}
-                                                title={t('comparativeGrading.performed_better', { name: studentB.name })}
+                                                title={t('comparativeGrading.performed_better', {
+                                                    name: studentB.name,
+                                                })}
                                             >
                                                 {t('comparativeGrading.action_b_better')} <ChevronRight size={16} />
                                             </button>
@@ -1130,7 +1134,9 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                                                                         'A_BETTER'
                                                                                     )
                                                                                 }
-                                                                                title={t('comparativeGrading.a_better_on_sub')}
+                                                                                title={t(
+                                                                                    'comparativeGrading.a_better_on_sub'
+                                                                                )}
                                                                             >
                                                                                 <ChevronLeft size={12} />
                                                                             </button>
@@ -1150,7 +1156,9 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                                                                         'EQUAL'
                                                                                     )
                                                                                 }
-                                                                                title={t('comparativeGrading.equal_on_sub')}
+                                                                                title={t(
+                                                                                    'comparativeGrading.equal_on_sub'
+                                                                                )}
                                                                             >
                                                                                 <Equal size={12} />
                                                                             </button>
@@ -1170,7 +1178,9 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                                                                         'B_BETTER'
                                                                                     )
                                                                                 }
-                                                                                title={t('comparativeGrading.b_better_on_sub')}
+                                                                                title={t(
+                                                                                    'comparativeGrading.b_better_on_sub'
+                                                                                )}
                                                                             >
                                                                                 <ChevronRight size={12} />
                                                                             </button>

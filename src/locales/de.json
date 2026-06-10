@@ -1144,5 +1144,9 @@
         "portfolio_empty": "Noch keine Aktivitäten für diesen Schüler.",
         "portfolio_kind_grade": "Rubrikbewertung",
         "no_grades_yet": "Noch keine bewerteten Rubriken für diesen Schüler."
+    },
+    "standards": {
+        "remove_favorite": "Favorisierten Standard entfernen",
+        "link_standard": "Standard verknüpfen"
     }
 }

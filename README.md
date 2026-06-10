@@ -54,10 +54,12 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 - **Self-assessment**: Students complete CEFR self-assessments from their portal.
 
 ### 7. Customisation & Accessibility
+
 - **Theme bundles**: Six named bundles (Academy, Nature, Midnight, Warm, Slate, Rose) set accent colour, UI font, and export header colour in one click. Eight quick accent-colour presets are also available.
 - **WCAG 2.1 AA**: Icon-only buttons carry `aria-label`; tab navigation uses `role="tablist"` / `role="tab"` with `aria-selected`; axe-core audits run in CI on key pages and components.
 
 ### 8. Data Management
+
 - **Offline-first**: All data lives in the browser's `localStorage`. No account required.
 - **Cloud sync** (optional): Supabase backend for multi-device access and multi-teacher collaboration.
 - **Backup & restore**: Export the entire dataset to JSON; restore from any prior backup.

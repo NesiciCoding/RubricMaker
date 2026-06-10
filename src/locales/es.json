@@ -1144,5 +1144,9 @@
         "portfolio_empty": "Todavía no hay actividad para este estudiante.",
         "portfolio_kind_grade": "Calificación de rúbrica",
         "no_grades_yet": "Aún no hay rúbricas calificadas para este estudiante."
+    },
+    "standards": {
+        "remove_favorite": "Quitar estándar favorito",
+        "link_standard": "Vincular estándar"
     }
 }

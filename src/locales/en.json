@@ -1144,5 +1144,9 @@
         "portfolio_empty": "No activity yet for this student.",
         "portfolio_kind_grade": "Rubric Grade",
         "no_grades_yet": "No graded rubrics yet for this student."
+    },
+    "standards": {
+        "remove_favorite": "Remove favourite standard",
+        "link_standard": "Link standard"
     }
 }

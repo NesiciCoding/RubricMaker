@@ -1144,5 +1144,9 @@
         "portfolio_empty": "Aucune activité pour cet élève.",
         "portfolio_kind_grade": "Note de rubrique",
         "no_grades_yet": "Aucune rubrique notée pour cet élève."
+    },
+    "standards": {
+        "remove_favorite": "Retirer le standard favori",
+        "link_standard": "Lier le standard"
     }
 }

@@ -139,9 +139,37 @@ export default function StudentProfilePage() {
     const portfolioTimeline = useMemo(() => {
         if (!student) return [];
         type TimelineEntry =
-            | { kind: 'grade'; date: Date; dateStr: string; rubricName: string; score: number; letterGrade: string; gradeColor: string; srId: string; rubricId: string }
-            | { kind: 'speaking'; date: Date; dateStr: string; rubricName: string; score: number | null; letterGrade: string | null; gradeColor: string | null; sessionId: string; rubricId: string }
-            | { kind: 'selfAssess'; date: Date; dateStr: string; rubricName: string; confidentPct: number; saId: string; rubricId: string };
+            | {
+                  kind: 'grade';
+                  date: Date;
+                  dateStr: string;
+                  rubricName: string;
+                  score: number;
+                  letterGrade: string;
+                  gradeColor: string;
+                  srId: string;
+                  rubricId: string;
+              }
+            | {
+                  kind: 'speaking';
+                  date: Date;
+                  dateStr: string;
+                  rubricName: string;
+                  score: number | null;
+                  letterGrade: string | null;
+                  gradeColor: string | null;
+                  sessionId: string;
+                  rubricId: string;
+              }
+            | {
+                  kind: 'selfAssess';
+                  date: Date;
+                  dateStr: string;
+                  rubricName: string;
+                  confidentPct: number;
+                  saId: string;
+                  rubricId: string;
+              };
 
         const entries: TimelineEntry[] = [];
         for (const h of history) {
@@ -159,12 +187,32 @@ export default function StudentProfilePage() {
         }
         for (const s of speakingSessions.filter((s) => s.studentId === student.id)) {
             const rubric = rubrics.find((r) => r.id === s.rubricId) ?? s.rubricSnapshot;
-            const scale = gradeScales.find((g) => g.id === (rubric?.gradeScaleId ?? settings.defaultGradeScaleId)) ?? gradeScales[0];
-            const summary = rubric ? calcGradeSummary({ id: s.id, rubricId: s.rubricId, studentId: s.studentId, entries: s.entries, overallComment: s.overallComment, isPeerReview: false }, rubric.criteria, scale, rubric) : null;
+            const scale =
+                gradeScales.find((g) => g.id === (rubric?.gradeScaleId ?? settings.defaultGradeScaleId)) ??
+                gradeScales[0];
+            const summary = rubric
+                ? calcGradeSummary(
+                      {
+                          id: s.id,
+                          rubricId: s.rubricId,
+                          studentId: s.studentId,
+                          entries: s.entries,
+                          overallComment: s.overallComment,
+                          isPeerReview: false,
+                      },
+                      rubric.criteria,
+                      scale,
+                      rubric
+                  )
+                : null;
             entries.push({
                 kind: 'speaking',
                 date: new Date(s.gradedAt),
-                dateStr: new Date(s.gradedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
+                dateStr: new Date(s.gradedAt).toLocaleDateString(undefined, {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                }),
                 rubricName: rubric?.name ?? s.rubricId,
                 score: summary ? parseFloat(summary.modifiedPercentage.toFixed(1)) : null,
                 letterGrade: summary?.letterGrade ?? null,
@@ -180,7 +228,11 @@ export default function StudentProfilePage() {
             entries.push({
                 kind: 'selfAssess',
                 date: new Date(sa.submittedAt),
-                dateStr: new Date(sa.submittedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
+                dateStr: new Date(sa.submittedAt).toLocaleDateString(undefined, {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                }),
                 rubricName,
                 confidentPct,
                 saId: sa.id,
@@ -363,7 +415,16 @@ export default function StudentProfilePage() {
                 </div>
 
                 {/* Tab navigation */}
-                <div role="tablist" style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: '2px solid var(--border)', paddingBottom: 0 }}>
+                <div
+                    role="tablist"
+                    style={{
+                        display: 'flex',
+                        gap: 4,
+                        marginBottom: 20,
+                        borderBottom: '2px solid var(--border)',
+                        paddingBottom: 0,
+                    }}
+                >
                     {(['overview', 'portfolio'] as const).map((tab) => (
                         <button
                             key={tab}
@@ -383,7 +444,7 @@ export default function StudentProfilePage() {
                                 transition: 'all 0.15s',
                             }}
                         >
-                            {t(`studentProfile.tab_${tab}`, tab.charAt(0).toUpperCase() + tab.slice(1))}
+                            {t(`studentProfile.tab_${tab}`)}
                         </button>
                     ))}
                 </div>
@@ -393,63 +454,140 @@ export default function StudentProfilePage() {
                         {portfolioTimeline.length === 0 ? (
                             <div className="empty-state">
                                 <TrendingUp size={36} />
-                                <p>{t('studentProfile.portfolio_empty', 'No activity yet for this student.')}</p>
+                                <p>{t('studentProfile.portfolio_empty')}</p>
                             </div>
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 0, position: 'relative' }}>
-                                <div style={{ position: 'absolute', left: 19, top: 0, bottom: 0, width: 2, background: 'var(--border)', zIndex: 0 }} />
+                                <div
+                                    style={{
+                                        position: 'absolute',
+                                        left: 19,
+                                        top: 0,
+                                        bottom: 0,
+                                        width: 2,
+                                        background: 'var(--border)',
+                                        zIndex: 0,
+                                    }}
+                                />
                                 {portfolioTimeline.map((entry, idx) => {
-                                    const icon = entry.kind === 'grade' ? (
-                                        <FileText size={16} style={{ color: 'var(--accent)' }} />
-                                    ) : entry.kind === 'speaking' ? (
-                                        <Mic size={16} style={{ color: 'var(--purple, #a855f7)' }} />
-                                    ) : (
-                                        <ClipboardCheck size={16} style={{ color: 'var(--green)' }} />
-                                    );
-                                    const kindLabel = entry.kind === 'grade'
-                                        ? t('studentProfile.portfolio_kind_grade', 'Rubric Grade')
-                                        : entry.kind === 'speaking'
-                                        ? t('speaking.sessions_history')
-                                        : t('selfAssess.comparison_title');
+                                    const icon =
+                                        entry.kind === 'grade' ? (
+                                            <FileText size={16} style={{ color: 'var(--accent)' }} />
+                                        ) : entry.kind === 'speaking' ? (
+                                            <Mic size={16} style={{ color: 'var(--purple, #a855f7)' }} />
+                                        ) : (
+                                            <ClipboardCheck size={16} style={{ color: 'var(--green)' }} />
+                                        );
+                                    const kindLabel =
+                                        entry.kind === 'grade'
+                                            ? t('studentProfile.portfolio_kind_grade', 'Rubric Grade')
+                                            : entry.kind === 'speaking'
+                                              ? t('speaking.sessions_history')
+                                              : t('selfAssess.comparison_title');
 
                                     return (
-                                        <div key={`${entry.kind}-${idx}`} style={{ display: 'flex', gap: 16, paddingBottom: 16, position: 'relative' }}>
-                                            <div style={{
-                                                width: 40,
-                                                height: 40,
-                                                borderRadius: '50%',
-                                                background: 'var(--bg-elevated)',
-                                                border: '2px solid var(--border)',
+                                        <div
+                                            key={`${entry.kind}-${idx}`}
+                                            style={{
                                                 display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                flexShrink: 0,
-                                                zIndex: 1,
-                                            }}>
+                                                gap: 16,
+                                                paddingBottom: 16,
+                                                position: 'relative',
+                                            }}
+                                        >
+                                            <div
+                                                style={{
+                                                    width: 40,
+                                                    height: 40,
+                                                    borderRadius: '50%',
+                                                    background: 'var(--bg-elevated)',
+                                                    border: '2px solid var(--border)',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    flexShrink: 0,
+                                                    zIndex: 1,
+                                                }}
+                                            >
                                                 {icon}
                                             </div>
-                                            <div className="card" style={{ flex: 1, padding: '12px 16px', marginTop: 0 }}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, flexWrap: 'wrap', marginBottom: 6 }}>
+                                            <div
+                                                className="card"
+                                                style={{ flex: 1, padding: '12px 16px', marginTop: 0 }}
+                                            >
+                                                <div
+                                                    style={{
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'baseline',
+                                                        gap: 12,
+                                                        flexWrap: 'wrap',
+                                                        marginBottom: 6,
+                                                    }}
+                                                >
                                                     <div>
-                                                        <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-dim)', marginRight: 8 }}>
+                                                        <span
+                                                            style={{
+                                                                fontSize: '0.72rem',
+                                                                fontWeight: 700,
+                                                                textTransform: 'uppercase',
+                                                                letterSpacing: '0.06em',
+                                                                color: 'var(--text-dim)',
+                                                                marginRight: 8,
+                                                            }}
+                                                        >
                                                             {kindLabel}
                                                         </span>
                                                         <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>
                                                             {entry.rubricName}
                                                         </span>
                                                     </div>
-                                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', flexShrink: 0 }}>
+                                                    <span
+                                                        style={{
+                                                            fontSize: '0.8rem',
+                                                            color: 'var(--text-muted)',
+                                                            flexShrink: 0,
+                                                        }}
+                                                    >
                                                         {entry.dateStr}
                                                     </span>
                                                 </div>
-                                                <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+                                                <div
+                                                    style={{
+                                                        display: 'flex',
+                                                        gap: 12,
+                                                        alignItems: 'center',
+                                                        flexWrap: 'wrap',
+                                                    }}
+                                                >
                                                     {entry.kind === 'grade' && (
                                                         <>
-                                                            <span className="grade-chip" style={{ background: entry.gradeColor + '22', color: entry.gradeColor, border: `1.5px solid ${entry.gradeColor}` }}>
+                                                            <span
+                                                                className="grade-chip"
+                                                                style={{
+                                                                    background: entry.gradeColor + '22',
+                                                                    color: entry.gradeColor,
+                                                                    border: `1.5px solid ${entry.gradeColor}`,
+                                                                }}
+                                                            >
                                                                 {entry.letterGrade}
                                                             </span>
-                                                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{entry.score.toFixed(1)}%</span>
-                                                            <button className="btn btn-ghost btn-sm no-print" onClick={() => navigate(`/rubrics/${entry.rubricId}/grade/${student.id}`)}>
+                                                            <span
+                                                                style={{
+                                                                    fontSize: '0.85rem',
+                                                                    color: 'var(--text-muted)',
+                                                                }}
+                                                            >
+                                                                {entry.score.toFixed(1)}%
+                                                            </span>
+                                                            <button
+                                                                className="btn btn-ghost btn-sm no-print"
+                                                                onClick={() =>
+                                                                    navigate(
+                                                                        `/rubrics/${entry.rubricId}/grade/${student.id}`
+                                                                    )
+                                                                }
+                                                            >
                                                                 <ExternalLink size={12} /> {t('common.view')}
                                                             </button>
                                                         </>
@@ -457,24 +595,58 @@ export default function StudentProfilePage() {
                                                     {entry.kind === 'speaking' && (
                                                         <>
                                                             {entry.letterGrade && entry.gradeColor && (
-                                                                <span className="grade-chip" style={{ background: entry.gradeColor + '22', color: entry.gradeColor, border: `1.5px solid ${entry.gradeColor}` }}>
+                                                                <span
+                                                                    className="grade-chip"
+                                                                    style={{
+                                                                        background: entry.gradeColor + '22',
+                                                                        color: entry.gradeColor,
+                                                                        border: `1.5px solid ${entry.gradeColor}`,
+                                                                    }}
+                                                                >
                                                                     {entry.letterGrade}
                                                                 </span>
                                                             )}
                                                             {entry.score !== null && (
-                                                                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{entry.score.toFixed(1)}%</span>
+                                                                <span
+                                                                    style={{
+                                                                        fontSize: '0.85rem',
+                                                                        color: 'var(--text-muted)',
+                                                                    }}
+                                                                >
+                                                                    {entry.score.toFixed(1)}%
+                                                                </span>
                                                             )}
-                                                            <button className="btn btn-ghost btn-sm no-print" onClick={() => navigate(`/speaking/${entry.rubricId}/${student.id}`)}>
+                                                            <button
+                                                                className="btn btn-ghost btn-sm no-print"
+                                                                onClick={() =>
+                                                                    navigate(
+                                                                        `/speaking/${entry.rubricId}/${student.id}`
+                                                                    )
+                                                                }
+                                                            >
                                                                 <ExternalLink size={12} /> {t('common.view')}
                                                             </button>
                                                         </>
                                                     )}
                                                     {entry.kind === 'selfAssess' && (
                                                         <>
-                                                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                                                                {t('selfAssess.confident_short')}: {entry.confidentPct.toFixed(0)}%
+                                                            <span
+                                                                style={{
+                                                                    fontSize: '0.85rem',
+                                                                    color: 'var(--text-muted)',
+                                                                }}
+                                                            >
+                                                                {t('selfAssess.confident_short')}:{' '}
+                                                                {entry.confidentPct.toFixed(0)}%
                                                             </span>
-                                                            <button className="btn btn-ghost btn-sm no-print" onClick={() => navigate(`/rubrics/${entry.rubricId}/self-assess/${student.id}`)}>
+                                                            <button
+                                                                className="btn btn-ghost btn-sm no-print"
+                                                                onClick={() =>
+                                                                    navigate(
+                                                                        `/rubrics/${entry.rubricId}/self-assess/${student.id}`
+                                                                    )
+                                                                }
+                                                            >
                                                                 <ExternalLink size={12} /> {t('common.view')}
                                                             </button>
                                                         </>
@@ -489,306 +661,299 @@ export default function StudentProfilePage() {
                     </div>
                 )}
 
-                {activeTab === 'overview' && (history.length === 0 ? (
-                    <div className="empty-state">
-                        <TrendingUp size={36} />
-                        <p>{t('studentProfile.no_grades_yet', 'No graded rubrics yet for this student.')}</p>
-                    </div>
-                ) : (
-                    <>
-                        <div className="grid-3" style={{ marginBottom: 24 }}>
-                            <div className="card" style={{ borderTop: '3px solid var(--accent)' }}>
-                                <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--accent)' }}>
-                                    {avgScore.toFixed(1)}%
-                                </div>
-                                <div className="text-muted text-sm" style={{ marginTop: 4 }}>
-                                    Average Score
-                                </div>
-                            </div>
-                            <div className="card" style={{ borderTop: '3px solid var(--green)' }}>
-                                <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--green)' }}>
-                                    {highestScore.toFixed(1)}%
-                                </div>
-                                <div className="text-muted text-sm" style={{ marginTop: 4 }}>
-                                    Highest Score
-                                </div>
-                            </div>
-                            <div className="card" style={{ borderTop: '3px solid var(--purple)' }}>
-                                <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--purple)' }}>
-                                    {history.length}
-                                </div>
-                                <div className="text-muted text-sm" style={{ marginTop: 4 }}>
-                                    Rubrics Graded
-                                </div>
-                            </div>
+                {activeTab === 'overview' &&
+                    (history.length === 0 ? (
+                        <div className="empty-state">
+                            <TrendingUp size={36} />
+                            <p>{t('studentProfile.no_grades_yet')}</p>
                         </div>
-
-                        {history.length > 1 && (
-                            <div className="card" style={{ marginBottom: 24 }}>
-                                <h3 style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <TrendingUp size={18} /> Performance Timeline
-                                </h3>
-                                <ResponsiveContainer width="100%" height={260}>
-                                    <LineChart data={history} margin={{ top: 10, right: 10, bottom: 20, left: -20 }}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-                                        <XAxis
-                                            dataKey="dateStr"
-                                            tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
-                                            tickMargin={12}
-                                        />
-                                        <YAxis domain={[0, 100]} tick={{ fill: 'var(--text-muted)', fontSize: 11 }} />
-                                        <Tooltip
-                                            contentStyle={{
-                                                background: 'var(--bg-card)',
-                                                border: '1px solid var(--border)',
-                                                borderRadius: 8,
-                                                fontSize: '0.85rem',
-                                            }}
-                                            labelStyle={{ color: 'var(--text)', fontWeight: 600, marginBottom: 4 }}
-                                            itemStyle={{ color: 'var(--accent)', fontWeight: 600 }}
-                                            formatter={(val: unknown, _name: unknown, props: any) => [
-                                                `${typeof val === 'number' ? val : 0}%`,
-                                                props.payload.rubric.name,
-                                            ]}
-                                        />
-                                        <Line
-                                            type="monotone"
-                                            dataKey="score"
-                                            stroke="var(--accent)"
-                                            strokeWidth={3}
-                                            dot={{
-                                                fill: 'var(--bg-card)',
-                                                stroke: 'var(--accent)',
-                                                strokeWidth: 2,
-                                                r: 4,
-                                            }}
-                                            activeDot={{ r: 6, fill: 'var(--accent)' }}
-                                        />
-                                    </LineChart>
-                                </ResponsiveContainer>
-                            </div>
-                        )}
-
-                        {goals.length > 0 && <LearningGoalChart goals={goals} />}
-
-                        {/* CEFR / ERK Progress */}
-                        {cefrProgress.length > 0 && (
-                            <div className="card" style={{ marginBottom: 24 }}>
-                                <h3 style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <BookOpen size={18} style={{ color: 'var(--accent)' }} />
-                                    {t('cefr.student_progress_title')}
-                                    <span
-                                        style={{
-                                            fontSize: 12,
-                                            fontWeight: 400,
-                                            color: 'var(--text-muted)',
-                                            marginLeft: 4,
-                                        }}
-                                    >
-                                        {t('cefr.student_progress_subtitle', { threshold: 70 })}
-                                    </span>
-                                </h3>
-
-                                {cefrProgress.length >= 3 && <CefrProgressChart entries={cefrProgress} />}
-                                <div
-                                    style={{
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        gap: 10,
-                                        marginTop: cefrProgress.length >= 3 ? 16 : 0,
-                                    }}
-                                >
-                                    {cefrProgress.map((entry) => {
-                                        const skillLabel = CEFR_SKILL_LABELS[entry.skill]?.[lang] ?? entry.skill;
-                                        return (
-                                            <div
-                                                key={`${entry.skill}__${entry.level}`}
-                                                style={{ display: 'flex', alignItems: 'center', gap: 12 }}
-                                            >
-                                                {/* Level badge */}
-                                                <CefrBadge level={entry.level} size="md" style={{ minWidth: 36 }} />
-
-                                                {/* Skill label */}
-                                                <span
-                                                    style={{ fontSize: 13, color: 'var(--text-muted)', minWidth: 140 }}
-                                                >
-                                                    {skillLabel}
-                                                </span>
-
-                                                {/* Progress bar */}
-                                                <div
-                                                    style={{
-                                                        flex: 1,
-                                                        height: 8,
-                                                        background: 'var(--bg-elevated)',
-                                                        borderRadius: 4,
-                                                        overflow: 'hidden',
-                                                    }}
-                                                >
-                                                    <div
-                                                        style={{
-                                                            width: `${Math.min(entry.avgScore, 100)}%`,
-                                                            height: '100%',
-                                                            background: CEFR_LEVEL_COLORS[entry.level],
-                                                            borderRadius: 4,
-                                                            opacity: entry.achieved ? 1 : 0.45,
-                                                            transition: 'width 0.4s ease',
-                                                        }}
-                                                    />
-                                                </div>
-
-                                                {/* Score + status */}
-                                                <span
-                                                    style={{
-                                                        fontSize: 13,
-                                                        fontWeight: 600,
-                                                        minWidth: 44,
-                                                        textAlign: 'right',
-                                                        color: entry.achieved
-                                                            ? CEFR_LEVEL_COLORS[entry.level]
-                                                            : 'var(--text-muted)',
-                                                    }}
-                                                >
-                                                    {entry.avgScore.toFixed(0)}%
-                                                </span>
-                                                <span
-                                                    style={{
-                                                        fontSize: 11,
-                                                        fontWeight: 600,
-                                                        padding: '2px 8px',
-                                                        borderRadius: 10,
-                                                        background: entry.achieved
-                                                            ? `${CEFR_LEVEL_COLORS[entry.level]}22`
-                                                            : 'var(--bg-elevated)',
-                                                        color: entry.achieved
-                                                            ? CEFR_LEVEL_COLORS[entry.level]
-                                                            : 'var(--text-muted)',
-                                                        border: `1px solid ${entry.achieved ? CEFR_LEVEL_COLORS[entry.level] : 'var(--border)'}`,
-                                                        minWidth: 72,
-                                                        textAlign: 'center',
-                                                    }}
-                                                >
-                                                    {entry.achieved ? t('cefr.achieved') : t('cefr.developing')}
-                                                </span>
-                                                <span
-                                                    style={{ fontSize: 11, color: 'var(--text-muted)', minWidth: 60 }}
-                                                >
-                                                    {t('cefr.n_assessments', { count: entry.count })}
-                                                </span>
-                                            </div>
-                                        );
-                                    })}
+                    ) : (
+                        <>
+                            <div className="grid-3" style={{ marginBottom: 24 }}>
+                                <div className="card" style={{ borderTop: '3px solid var(--accent)' }}>
+                                    <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--accent)' }}>
+                                        {avgScore.toFixed(1)}%
+                                    </div>
+                                    <div className="text-muted text-sm" style={{ marginTop: 4 }}>
+                                        Average Score
+                                    </div>
                                 </div>
-                                <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end' }}>
-                                    <button
-                                        className="btn btn-primary btn-sm"
-                                        onClick={() => navigate(`/students/${student.id}/cefr-overview`)}
-                                        style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-                                    >
-                                        <ExternalLink size={14} />
-                                        {t('cefrOverview.view_button')}
-                                    </button>
+                                <div className="card" style={{ borderTop: '3px solid var(--green)' }}>
+                                    <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--green)' }}>
+                                        {highestScore.toFixed(1)}%
+                                    </div>
+                                    <div className="text-muted text-sm" style={{ marginTop: 4 }}>
+                                        Highest Score
+                                    </div>
+                                </div>
+                                <div className="card" style={{ borderTop: '3px solid var(--purple)' }}>
+                                    <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--purple)' }}>
+                                        {history.length}
+                                    </div>
+                                    <div className="text-muted text-sm" style={{ marginTop: 4 }}>
+                                        Rubrics Graded
+                                    </div>
                                 </div>
                             </div>
-                        )}
 
-                        {/* Self-Assessment Comparison */}
-                        {(() => {
-                            const studentSAs = selfAssessments.filter((sa) => sa.studentId === student.id);
-                            if (studentSAs.length === 0) return null;
-                            return (
+                            {history.length > 1 && (
                                 <div className="card" style={{ marginBottom: 24 }}>
                                     <h3 style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                                        <ClipboardCheck size={18} style={{ color: 'var(--accent)' }} />
-                                        {t('selfAssess.comparison_title')}
+                                        <TrendingUp size={18} /> Performance Timeline
                                     </h3>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                                        {studentSAs.map((sa) => {
-                                            const matchingHistory = history.find((h) => h.rubric.id === sa.rubricId);
-                                            const rubricName =
-                                                rubrics.find((r) => r.id === sa.rubricId)?.name ?? sa.rubricId;
-                                            const total = sa.ratings.length;
-                                            const confidentCount = sa.ratings.filter((r) => r.confident).length;
-                                            const confidentPct = total > 0 ? (confidentCount / total) * 100 : 0;
-                                            const rubricThreshold = matchingHistory?.rubric?.cefrAchieveThreshold ?? 70;
-                                            const teacherAchieved = matchingHistory
-                                                ? matchingHistory.score >= rubricThreshold
-                                                : null;
-                                            const studentConfident = confidentPct >= rubricThreshold;
+                                    <ResponsiveContainer width="100%" height={260}>
+                                        <LineChart
+                                            data={history}
+                                            margin={{ top: 10, right: 10, bottom: 20, left: -20 }}
+                                        >
+                                            <CartesianGrid
+                                                strokeDasharray="3 3"
+                                                vertical={false}
+                                                stroke="var(--border)"
+                                            />
+                                            <XAxis
+                                                dataKey="dateStr"
+                                                tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
+                                                tickMargin={12}
+                                            />
+                                            <YAxis
+                                                domain={[0, 100]}
+                                                tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
+                                            />
+                                            <Tooltip
+                                                contentStyle={{
+                                                    background: 'var(--bg-card)',
+                                                    border: '1px solid var(--border)',
+                                                    borderRadius: 8,
+                                                    fontSize: '0.85rem',
+                                                }}
+                                                labelStyle={{ color: 'var(--text)', fontWeight: 600, marginBottom: 4 }}
+                                                itemStyle={{ color: 'var(--accent)', fontWeight: 600 }}
+                                                formatter={(val: unknown, _name: unknown, props: any) => [
+                                                    `${typeof val === 'number' ? val : 0}%`,
+                                                    props.payload.rubric.name,
+                                                ]}
+                                            />
+                                            <Line
+                                                type="monotone"
+                                                dataKey="score"
+                                                stroke="var(--accent)"
+                                                strokeWidth={3}
+                                                dot={{
+                                                    fill: 'var(--bg-card)',
+                                                    stroke: 'var(--accent)',
+                                                    strokeWidth: 2,
+                                                    r: 4,
+                                                }}
+                                                activeDot={{ r: 6, fill: 'var(--accent)' }}
+                                            />
+                                        </LineChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            )}
 
-                                            // Mismatch detection
-                                            const mismatch =
-                                                teacherAchieved !== null && teacherAchieved !== studentConfident;
-                                            const overestimate = !teacherAchieved && studentConfident;
-                                            const underestimate = teacherAchieved && !studentConfident;
+                            {goals.length > 0 && <LearningGoalChart goals={goals} />}
 
+                            {/* CEFR / ERK Progress */}
+                            {cefrProgress.length > 0 && (
+                                <div className="card" style={{ marginBottom: 24 }}>
+                                    <h3 style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <BookOpen size={18} style={{ color: 'var(--accent)' }} />
+                                        {t('cefr.student_progress_title')}
+                                        <span
+                                            style={{
+                                                fontSize: 12,
+                                                fontWeight: 400,
+                                                color: 'var(--text-muted)',
+                                                marginLeft: 4,
+                                            }}
+                                        >
+                                            {t('cefr.student_progress_subtitle', { threshold: 70 })}
+                                        </span>
+                                    </h3>
+
+                                    {cefrProgress.length >= 3 && <CefrProgressChart entries={cefrProgress} />}
+                                    <div
+                                        style={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: 10,
+                                            marginTop: cefrProgress.length >= 3 ? 16 : 0,
+                                        }}
+                                    >
+                                        {cefrProgress.map((entry) => {
+                                            const skillLabel = CEFR_SKILL_LABELS[entry.skill]?.[lang] ?? entry.skill;
                                             return (
                                                 <div
-                                                    key={sa.id}
-                                                    style={{
-                                                        padding: '14px 16px',
-                                                        borderRadius: 10,
-                                                        border: `1px solid ${mismatch ? 'var(--border)' : 'var(--border)'}`,
-                                                        background: 'var(--bg-elevated)',
-                                                    }}
+                                                    key={`${entry.skill}__${entry.level}`}
+                                                    style={{ display: 'flex', alignItems: 'center', gap: 12 }}
                                                 >
-                                                    <div
+                                                    {/* Level badge */}
+                                                    <CefrBadge level={entry.level} size="md" style={{ minWidth: 36 }} />
+
+                                                    {/* Skill label */}
+                                                    <span
                                                         style={{
-                                                            display: 'flex',
-                                                            justifyContent: 'space-between',
-                                                            alignItems: 'flex-start',
-                                                            gap: 12,
-                                                            flexWrap: 'wrap',
+                                                            fontSize: 13,
+                                                            color: 'var(--text-muted)',
+                                                            minWidth: 140,
                                                         }}
                                                     >
-                                                        <div>
-                                                            <div
-                                                                style={{
-                                                                    fontWeight: 600,
-                                                                    fontSize: '0.95rem',
-                                                                    marginBottom: 4,
-                                                                }}
-                                                            >
-                                                                {rubricName}
-                                                            </div>
-                                                            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                                                                {t('selfAssess.submitted_on')}{' '}
-                                                                {new Date(sa.submittedAt).toLocaleDateString()}
-                                                            </div>
-                                                        </div>
-                                                        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                                                            {/* Student self-score */}
-                                                            <div style={{ textAlign: 'center' }}>
+                                                        {skillLabel}
+                                                    </span>
+
+                                                    {/* Progress bar */}
+                                                    <div
+                                                        style={{
+                                                            flex: 1,
+                                                            height: 8,
+                                                            background: 'var(--bg-elevated)',
+                                                            borderRadius: 4,
+                                                            overflow: 'hidden',
+                                                        }}
+                                                    >
+                                                        <div
+                                                            style={{
+                                                                width: `${Math.min(entry.avgScore, 100)}%`,
+                                                                height: '100%',
+                                                                background: CEFR_LEVEL_COLORS[entry.level],
+                                                                borderRadius: 4,
+                                                                opacity: entry.achieved ? 1 : 0.45,
+                                                                transition: 'width 0.4s ease',
+                                                            }}
+                                                        />
+                                                    </div>
+
+                                                    {/* Score + status */}
+                                                    <span
+                                                        style={{
+                                                            fontSize: 13,
+                                                            fontWeight: 600,
+                                                            minWidth: 44,
+                                                            textAlign: 'right',
+                                                            color: entry.achieved
+                                                                ? CEFR_LEVEL_COLORS[entry.level]
+                                                                : 'var(--text-muted)',
+                                                        }}
+                                                    >
+                                                        {entry.avgScore.toFixed(0)}%
+                                                    </span>
+                                                    <span
+                                                        style={{
+                                                            fontSize: 11,
+                                                            fontWeight: 600,
+                                                            padding: '2px 8px',
+                                                            borderRadius: 10,
+                                                            background: entry.achieved
+                                                                ? `${CEFR_LEVEL_COLORS[entry.level]}22`
+                                                                : 'var(--bg-elevated)',
+                                                            color: entry.achieved
+                                                                ? CEFR_LEVEL_COLORS[entry.level]
+                                                                : 'var(--text-muted)',
+                                                            border: `1px solid ${entry.achieved ? CEFR_LEVEL_COLORS[entry.level] : 'var(--border)'}`,
+                                                            minWidth: 72,
+                                                            textAlign: 'center',
+                                                        }}
+                                                    >
+                                                        {entry.achieved ? t('cefr.achieved') : t('cefr.developing')}
+                                                    </span>
+                                                    <span
+                                                        style={{
+                                                            fontSize: 11,
+                                                            color: 'var(--text-muted)',
+                                                            minWidth: 60,
+                                                        }}
+                                                    >
+                                                        {t('cefr.n_assessments', { count: entry.count })}
+                                                    </span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end' }}>
+                                        <button
+                                            className="btn btn-primary btn-sm"
+                                            onClick={() => navigate(`/students/${student.id}/cefr-overview`)}
+                                            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                                        >
+                                            <ExternalLink size={14} />
+                                            {t('cefrOverview.view_button')}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Self-Assessment Comparison */}
+                            {(() => {
+                                const studentSAs = selfAssessments.filter((sa) => sa.studentId === student.id);
+                                if (studentSAs.length === 0) return null;
+                                return (
+                                    <div className="card" style={{ marginBottom: 24 }}>
+                                        <h3 style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                            <ClipboardCheck size={18} style={{ color: 'var(--accent)' }} />
+                                            {t('selfAssess.comparison_title')}
+                                        </h3>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                                            {studentSAs.map((sa) => {
+                                                const matchingHistory = history.find(
+                                                    (h) => h.rubric.id === sa.rubricId
+                                                );
+                                                const rubricName =
+                                                    rubrics.find((r) => r.id === sa.rubricId)?.name ?? sa.rubricId;
+                                                const total = sa.ratings.length;
+                                                const confidentCount = sa.ratings.filter((r) => r.confident).length;
+                                                const confidentPct = total > 0 ? (confidentCount / total) * 100 : 0;
+                                                const rubricThreshold =
+                                                    matchingHistory?.rubric?.cefrAchieveThreshold ?? 70;
+                                                const teacherAchieved = matchingHistory
+                                                    ? matchingHistory.score >= rubricThreshold
+                                                    : null;
+                                                const studentConfident = confidentPct >= rubricThreshold;
+
+                                                // Mismatch detection
+                                                const mismatch =
+                                                    teacherAchieved !== null && teacherAchieved !== studentConfident;
+                                                const overestimate = !teacherAchieved && studentConfident;
+                                                const underestimate = teacherAchieved && !studentConfident;
+
+                                                return (
+                                                    <div
+                                                        key={sa.id}
+                                                        style={{
+                                                            padding: '14px 16px',
+                                                            borderRadius: 10,
+                                                            border: `1px solid ${mismatch ? 'var(--border)' : 'var(--border)'}`,
+                                                            background: 'var(--bg-elevated)',
+                                                        }}
+                                                    >
+                                                        <div
+                                                            style={{
+                                                                display: 'flex',
+                                                                justifyContent: 'space-between',
+                                                                alignItems: 'flex-start',
+                                                                gap: 12,
+                                                                flexWrap: 'wrap',
+                                                            }}
+                                                        >
+                                                            <div>
                                                                 <div
                                                                     style={{
-                                                                        fontSize: 11,
-                                                                        color: 'var(--text-muted)',
-                                                                        marginBottom: 3,
-                                                                    }}
-                                                                >
-                                                                    {t('selfAssess.student_view')}
-                                                                </div>
-                                                                <span
-                                                                    style={{
-                                                                        fontSize: 12,
                                                                         fontWeight: 600,
-                                                                        padding: '3px 10px',
-                                                                        borderRadius: 10,
-                                                                        background: studentConfident
-                                                                            ? '#22c55e22'
-                                                                            : 'var(--bg-elevated)',
-                                                                        color: studentConfident
-                                                                            ? '#22c55e'
-                                                                            : 'var(--text-muted)',
-                                                                        border: `1px solid ${studentConfident ? '#22c55e' : 'var(--border)'}`,
+                                                                        fontSize: '0.95rem',
+                                                                        marginBottom: 4,
                                                                     }}
                                                                 >
-                                                                    {confidentCount}/{total}{' '}
-                                                                    {t('selfAssess.confident_short')}
-                                                                </span>
+                                                                    {rubricName}
+                                                                </div>
+                                                                <div
+                                                                    style={{ fontSize: 12, color: 'var(--text-muted)' }}
+                                                                >
+                                                                    {t('selfAssess.submitted_on')}{' '}
+                                                                    {new Date(sa.submittedAt).toLocaleDateString()}
+                                                                </div>
                                                             </div>
-                                                            {/* Teacher score */}
-                                                            {matchingHistory && (
+                                                            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                                                                {/* Student self-score */}
                                                                 <div style={{ textAlign: 'center' }}>
                                                                     <div
                                                                         style={{
@@ -797,7 +962,7 @@ export default function StudentProfilePage() {
                                                                             marginBottom: 3,
                                                                         }}
                                                                     >
-                                                                        {t('selfAssess.teacher_view')}
+                                                                        {t('selfAssess.student_view')}
                                                                     </div>
                                                                     <span
                                                                         style={{
@@ -805,367 +970,409 @@ export default function StudentProfilePage() {
                                                                             fontWeight: 600,
                                                                             padding: '3px 10px',
                                                                             borderRadius: 10,
-                                                                            background:
-                                                                                matchingHistory.summary.gradeColor +
-                                                                                '22',
-                                                                            color: matchingHistory.summary.gradeColor,
-                                                                            border: `1px solid ${matchingHistory.summary.gradeColor}`,
+                                                                            background: studentConfident
+                                                                                ? '#22c55e22'
+                                                                                : 'var(--bg-elevated)',
+                                                                            color: studentConfident
+                                                                                ? '#22c55e'
+                                                                                : 'var(--text-muted)',
+                                                                            border: `1px solid ${studentConfident ? '#22c55e' : 'var(--border)'}`,
                                                                         }}
                                                                     >
-                                                                        {matchingHistory.score.toFixed(0)}%
+                                                                        {confidentCount}/{total}{' '}
+                                                                        {t('selfAssess.confident_short')}
                                                                     </span>
                                                                 </div>
-                                                            )}
+                                                                {/* Teacher score */}
+                                                                {matchingHistory && (
+                                                                    <div style={{ textAlign: 'center' }}>
+                                                                        <div
+                                                                            style={{
+                                                                                fontSize: 11,
+                                                                                color: 'var(--text-muted)',
+                                                                                marginBottom: 3,
+                                                                            }}
+                                                                        >
+                                                                            {t('selfAssess.teacher_view')}
+                                                                        </div>
+                                                                        <span
+                                                                            style={{
+                                                                                fontSize: 12,
+                                                                                fontWeight: 600,
+                                                                                padding: '3px 10px',
+                                                                                borderRadius: 10,
+                                                                                background:
+                                                                                    matchingHistory.summary.gradeColor +
+                                                                                    '22',
+                                                                                color: matchingHistory.summary
+                                                                                    .gradeColor,
+                                                                                border: `1px solid ${matchingHistory.summary.gradeColor}`,
+                                                                            }}
+                                                                        >
+                                                                            {matchingHistory.score.toFixed(0)}%
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Mismatch flag */}
+                                                        {mismatch && (
+                                                            <div
+                                                                style={{
+                                                                    marginTop: 12,
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: 8,
+                                                                    padding: '8px 12px',
+                                                                    borderRadius: 8,
+                                                                    background: overestimate
+                                                                        ? '#f9731622'
+                                                                        : '#3b82f622',
+                                                                    color: overestimate ? '#f97316' : '#3b82f6',
+                                                                    fontSize: 13,
+                                                                }}
+                                                            >
+                                                                <AlertTriangle size={14} />
+                                                                {overestimate
+                                                                    ? t('selfAssess.mismatch_overestimate')
+                                                                    : t('selfAssess.mismatch_underestimate')}
+                                                            </div>
+                                                        )}
+
+                                                        {/* Student reflection */}
+                                                        {sa.reflection && (
+                                                            <div
+                                                                style={{
+                                                                    marginTop: 12,
+                                                                    padding: '8px 12px',
+                                                                    borderRadius: 8,
+                                                                    background: 'var(--bg-card)',
+                                                                    border: '1px solid var(--border)',
+                                                                    fontSize: 13,
+                                                                    color: 'var(--text-muted)',
+                                                                    fontStyle: 'italic',
+                                                                }}
+                                                            >
+                                                                &ldquo;{sa.reflection}&rdquo;
+                                                            </div>
+                                                        )}
+
+                                                        {/* Navigate to self-assess page */}
+                                                        <div style={{ marginTop: 10 }}>
+                                                            <button
+                                                                className="btn btn-ghost btn-sm"
+                                                                style={{ fontSize: 12 }}
+                                                                onClick={() =>
+                                                                    navigate(
+                                                                        `/rubrics/${sa.rubricId}/self-assess/${student.id}`
+                                                                    )
+                                                                }
+                                                            >
+                                                                <Link size={12} /> {t('selfAssess.view_full')}
+                                                            </button>
                                                         </div>
                                                     </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                );
+                            })()}
 
-                                                    {/* Mismatch flag */}
-                                                    {mismatch && (
-                                                        <div
-                                                            style={{
-                                                                marginTop: 12,
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                gap: 8,
-                                                                padding: '8px 12px',
-                                                                borderRadius: 8,
-                                                                background: overestimate ? '#f9731622' : '#3b82f622',
-                                                                color: overestimate ? '#f97316' : '#3b82f6',
-                                                                fontSize: 13,
-                                                            }}
-                                                        >
-                                                            <AlertTriangle size={14} />
-                                                            {overestimate
-                                                                ? t('selfAssess.mismatch_overestimate')
-                                                                : t('selfAssess.mismatch_underestimate')}
-                                                        </div>
-                                                    )}
-
-                                                    {/* Student reflection */}
-                                                    {sa.reflection && (
-                                                        <div
-                                                            style={{
-                                                                marginTop: 12,
-                                                                padding: '8px 12px',
-                                                                borderRadius: 8,
-                                                                background: 'var(--bg-card)',
-                                                                border: '1px solid var(--border)',
-                                                                fontSize: 13,
-                                                                color: 'var(--text-muted)',
-                                                                fontStyle: 'italic',
-                                                            }}
-                                                        >
-                                                            &ldquo;{sa.reflection}&rdquo;
-                                                        </div>
-                                                    )}
-
-                                                    {/* Navigate to self-assess page */}
-                                                    <div style={{ marginTop: 10 }}>
+                            <div className="card">
+                                <h3 style={{ marginBottom: 14 }}>Rubric History</h3>
+                                <table className="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Rubric</th>
+                                            <th>Score</th>
+                                            <th>Grade</th>
+                                            <th>Comment</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {[...history].reverse().map((h) => (
+                                            <tr key={h.sr.id}>
+                                                <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                                                    {h.dateStr}
+                                                </td>
+                                                <td style={{ fontWeight: 500 }}>{h.rubric.name}</td>
+                                                <td>
+                                                    {h.score.toFixed(1)}%{' '}
+                                                    <span className="text-muted text-xs">
+                                                        ({h.summary.rawScore}/{h.summary.maxRawScore})
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span
+                                                        className="grade-chip"
+                                                        style={{
+                                                            background: h.summary.gradeColor + '22',
+                                                            color: h.summary.gradeColor,
+                                                            border: `1.5px solid ${h.summary.gradeColor}`,
+                                                        }}
+                                                    >
+                                                        {h.summary.letterGrade}
+                                                    </span>
+                                                </td>
+                                                <td
+                                                    style={{
+                                                        color: 'var(--text-muted)',
+                                                        fontSize: '0.85rem',
+                                                        maxWidth: 200,
+                                                    }}
+                                                    className="truncate"
+                                                >
+                                                    {h.sr.overallComment || '—'}
+                                                </td>
+                                                <td>
+                                                    <div className="no-print" style={{ display: 'flex', gap: 6 }}>
                                                         <button
-                                                            className="btn btn-ghost btn-sm"
-                                                            style={{ fontSize: 12 }}
+                                                            className="btn btn-secondary btn-sm"
+                                                            onClick={() => handleExport(h)}
+                                                            disabled={exportingId === h.sr.id}
+                                                        >
+                                                            {exportingId === h.sr.id ? (
+                                                                <Loader size={14} className="spin" />
+                                                            ) : (
+                                                                <Download size={14} />
+                                                            )}{' '}
+                                                            PDF
+                                                        </button>
+                                                        {(h.rubric.cefrTargetLevel ||
+                                                            h.rubric.criteria?.some(
+                                                                (c: any) => c.cefrDescriptors?.length > 0
+                                                            )) && (
+                                                            <button
+                                                                className="btn btn-ghost btn-icon btn-sm"
+                                                                title={t('selfAssess.copy_link')}
+                                                                style={{
+                                                                    color:
+                                                                        copiedSALink === h.rubric.id
+                                                                            ? 'var(--green, #22c55e)'
+                                                                            : undefined,
+                                                                }}
+                                                                onClick={() => handleCopySALink(h.rubric.id)}
+                                                            >
+                                                                {copiedSALink === h.rubric.id ? (
+                                                                    <CheckCircle size={14} />
+                                                                ) : (
+                                                                    <ClipboardCheck size={14} />
+                                                                )}
+                                                            </button>
+                                                        )}
+                                                        <button
+                                                            className="btn btn-ghost btn-icon btn-sm"
                                                             onClick={() =>
                                                                 navigate(
-                                                                    `/rubrics/${sa.rubricId}/self-assess/${student.id}`
+                                                                    `/rubrics/${h.rubric.id}/peer-review/${student.id}`
+                                                                )
+                                                            }
+                                                            title="Self/Peer Review"
+                                                        >
+                                                            <User size={14} />
+                                                        </button>
+                                                        <button
+                                                            className="btn btn-ghost btn-icon btn-sm"
+                                                            onClick={() =>
+                                                                navigate(`/rubrics/${h.rubric.id}/grade/${student.id}`)
+                                                            }
+                                                            title="Edit Grade"
+                                                        >
+                                                            <FileText size={14} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </>
+                    ))}
+
+                {activeTab === 'overview' &&
+                    (() => {
+                        const studentSessions = speakingSessions.filter((s) => s.studentId === student.id);
+                        return (
+                            <div className="card" style={{ marginTop: 24 }}>
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        marginBottom: 16,
+                                    }}
+                                >
+                                    <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <Mic size={16} style={{ color: 'var(--accent)' }} />{' '}
+                                        {t('speaking.sessions_history')}
+                                    </h3>
+                                    <button
+                                        className="btn btn-secondary btn-sm no-print"
+                                        onClick={() => {
+                                            if (rubrics.length === 1) {
+                                                navigate(`/speaking/${rubrics[0].id}/${student.id}`);
+                                            } else {
+                                                setShowSpeakingPicker((o) => !o);
+                                            }
+                                        }}
+                                    >
+                                        <Mic size={13} /> {t('speaking.new_session')}
+                                    </button>
+                                </div>
+                                {studentSessions.length === 0 && (
+                                    <div
+                                        style={{
+                                            textAlign: 'center',
+                                            padding: '24px 16px',
+                                            color: 'var(--text-muted)',
+                                            fontSize: '0.88rem',
+                                        }}
+                                    >
+                                        <Mic
+                                            size={28}
+                                            style={{
+                                                opacity: 0.3,
+                                                marginBottom: 8,
+                                                display: 'block',
+                                                margin: '0 auto 8px',
+                                            }}
+                                        />
+                                        {t('speaking.empty_state_no_sessions')}
+                                    </div>
+                                )}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                    {studentSessions
+                                        .slice()
+                                        .reverse()
+                                        .map((session) => {
+                                            const rubric =
+                                                rubrics.find((r) => r.id === session.rubricId) ??
+                                                session.rubricSnapshot;
+                                            const scale =
+                                                gradeScales.find(
+                                                    (g) =>
+                                                        g.id === (rubric?.gradeScaleId ?? settings.defaultGradeScaleId)
+                                                ) ?? gradeScales[0];
+                                            const summary = rubric
+                                                ? calcGradeSummary(
+                                                      {
+                                                          id: session.id,
+                                                          rubricId: session.rubricId,
+                                                          studentId: session.studentId,
+                                                          entries: session.entries,
+                                                          overallComment: session.overallComment,
+                                                          isPeerReview: false,
+                                                      },
+                                                      rubric.criteria,
+                                                      scale,
+                                                      rubric
+                                                  )
+                                                : null;
+                                            return (
+                                                <div
+                                                    key={session.id}
+                                                    style={{
+                                                        background: 'var(--bg-elevated)',
+                                                        borderRadius: 10,
+                                                        padding: 16,
+                                                        border: '1px solid var(--border)',
+                                                    }}
+                                                >
+                                                    <div
+                                                        style={{
+                                                            display: 'flex',
+                                                            justifyContent: 'space-between',
+                                                            alignItems: 'baseline',
+                                                            marginBottom: 8,
+                                                        }}
+                                                    >
+                                                        <div style={{ fontWeight: 600 }}>
+                                                            {rubric?.name ?? session.rubricId}
+                                                        </div>
+                                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                                            {new Date(session.gradedAt).toLocaleDateString()}
+                                                        </div>
+                                                    </div>
+                                                    <div
+                                                        style={{
+                                                            display: 'flex',
+                                                            gap: 20,
+                                                            flexWrap: 'wrap',
+                                                            marginBottom: 8,
+                                                        }}
+                                                    >
+                                                        {summary && (
+                                                            <>
+                                                                <span
+                                                                    style={{
+                                                                        fontWeight: 700,
+                                                                        color: summary.gradeColor,
+                                                                    }}
+                                                                >
+                                                                    {summary.letterGrade}
+                                                                </span>
+                                                                <span
+                                                                    style={{
+                                                                        color: 'var(--text-muted)',
+                                                                        fontSize: '0.85rem',
+                                                                    }}
+                                                                >
+                                                                    {summary.modifiedPercentage.toFixed(1)}%
+                                                                </span>
+                                                            </>
+                                                        )}
+                                                        <span
+                                                            style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}
+                                                        >
+                                                            {t('speaking.elapsed_time', {
+                                                                elapsed: session.elapsedSeconds,
+                                                                duration: session.durationSeconds,
+                                                            })}
+                                                        </span>
+                                                    </div>
+                                                    {session.pronunciationMarks.length > 0 && (
+                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                                            {session.pronunciationMarks.map((mark, idx) => (
+                                                                <span
+                                                                    key={idx}
+                                                                    style={{
+                                                                        fontSize: '0.75rem',
+                                                                        padding: '2px 8px',
+                                                                        background: 'var(--bg)',
+                                                                        borderRadius: 4,
+                                                                        border: '1px solid var(--border)',
+                                                                        color: 'var(--text-muted)',
+                                                                    }}
+                                                                >
+                                                                    {t(`speaking.error_types.${mark.errorType}`)}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                    <div style={{ marginTop: 8 }}>
+                                                        <button
+                                                            className="btn btn-ghost btn-sm"
+                                                            onClick={() =>
+                                                                navigate(
+                                                                    `/speaking/${session.rubricId}/${session.studentId}`
                                                                 )
                                                             }
                                                         >
-                                                            <Link size={12} /> {t('selfAssess.view_full')}
+                                                            {t('selfAssess.view_full')}
                                                         </button>
                                                     </div>
                                                 </div>
                                             );
                                         })}
-                                    </div>
                                 </div>
-                            );
-                        })()}
-
-                        <div className="card">
-                            <h3 style={{ marginBottom: 14 }}>Rubric History</h3>
-                            <table className="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Rubric</th>
-                                        <th>Score</th>
-                                        <th>Grade</th>
-                                        <th>Comment</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {[...history].reverse().map((h) => (
-                                        <tr key={h.sr.id}>
-                                            <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                                                {h.dateStr}
-                                            </td>
-                                            <td style={{ fontWeight: 500 }}>{h.rubric.name}</td>
-                                            <td>
-                                                {h.score.toFixed(1)}%{' '}
-                                                <span className="text-muted text-xs">
-                                                    ({h.summary.rawScore}/{h.summary.maxRawScore})
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <span
-                                                    className="grade-chip"
-                                                    style={{
-                                                        background: h.summary.gradeColor + '22',
-                                                        color: h.summary.gradeColor,
-                                                        border: `1.5px solid ${h.summary.gradeColor}`,
-                                                    }}
-                                                >
-                                                    {h.summary.letterGrade}
-                                                </span>
-                                            </td>
-                                            <td
-                                                style={{
-                                                    color: 'var(--text-muted)',
-                                                    fontSize: '0.85rem',
-                                                    maxWidth: 200,
-                                                }}
-                                                className="truncate"
-                                            >
-                                                {h.sr.overallComment || '—'}
-                                            </td>
-                                            <td>
-                                                <div className="no-print" style={{ display: 'flex', gap: 6 }}>
-                                                    <button
-                                                        className="btn btn-secondary btn-sm"
-                                                        onClick={() => handleExport(h)}
-                                                        disabled={exportingId === h.sr.id}
-                                                    >
-                                                        {exportingId === h.sr.id ? (
-                                                            <Loader size={14} className="spin" />
-                                                        ) : (
-                                                            <Download size={14} />
-                                                        )}{' '}
-                                                        PDF
-                                                    </button>
-                                                    {(h.rubric.cefrTargetLevel ||
-                                                        h.rubric.criteria?.some(
-                                                            (c: any) => c.cefrDescriptors?.length > 0
-                                                        )) && (
-                                                        <button
-                                                            className="btn btn-ghost btn-icon btn-sm"
-                                                            title={t('selfAssess.copy_link')}
-                                                            style={{
-                                                                color:
-                                                                    copiedSALink === h.rubric.id
-                                                                        ? 'var(--green, #22c55e)'
-                                                                        : undefined,
-                                                            }}
-                                                            onClick={() => handleCopySALink(h.rubric.id)}
-                                                        >
-                                                            {copiedSALink === h.rubric.id ? (
-                                                                <CheckCircle size={14} />
-                                                            ) : (
-                                                                <ClipboardCheck size={14} />
-                                                            )}
-                                                        </button>
-                                                    )}
-                                                    <button
-                                                        className="btn btn-ghost btn-icon btn-sm"
-                                                        onClick={() =>
-                                                            navigate(
-                                                                `/rubrics/${h.rubric.id}/peer-review/${student.id}`
-                                                            )
-                                                        }
-                                                        title="Self/Peer Review"
-                                                    >
-                                                        <User size={14} />
-                                                    </button>
-                                                    <button
-                                                        className="btn btn-ghost btn-icon btn-sm"
-                                                        onClick={() =>
-                                                            navigate(`/rubrics/${h.rubric.id}/grade/${student.id}`)
-                                                        }
-                                                        title="Edit Grade"
-                                                    >
-                                                        <FileText size={14} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </>
-                ))}
-
-                {activeTab === 'overview' && (() => {
-                    const studentSessions = speakingSessions.filter((s) => s.studentId === student.id);
-                    return (
-                        <div className="card" style={{ marginTop: 24 }}>
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    marginBottom: 16,
-                                }}
-                            >
-                                <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <Mic size={16} style={{ color: 'var(--accent)' }} />{' '}
-                                    {t('speaking.sessions_history')}
-                                </h3>
-                                <button
-                                    className="btn btn-secondary btn-sm no-print"
-                                    onClick={() => {
-                                        if (rubrics.length === 1) {
-                                            navigate(`/speaking/${rubrics[0].id}/${student.id}`);
-                                        } else {
-                                            setShowSpeakingPicker((o) => !o);
-                                        }
-                                    }}
-                                >
-                                    <Mic size={13} /> {t('speaking.new_session')}
-                                </button>
                             </div>
-                            {studentSessions.length === 0 && (
-                                <div
-                                    style={{
-                                        textAlign: 'center',
-                                        padding: '24px 16px',
-                                        color: 'var(--text-muted)',
-                                        fontSize: '0.88rem',
-                                    }}
-                                >
-                                    <Mic
-                                        size={28}
-                                        style={{
-                                            opacity: 0.3,
-                                            marginBottom: 8,
-                                            display: 'block',
-                                            margin: '0 auto 8px',
-                                        }}
-                                    />
-                                    {t('speaking.empty_state_no_sessions')}
-                                </div>
-                            )}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                                {studentSessions
-                                    .slice()
-                                    .reverse()
-                                    .map((session) => {
-                                        const rubric =
-                                            rubrics.find((r) => r.id === session.rubricId) ?? session.rubricSnapshot;
-                                        const scale =
-                                            gradeScales.find(
-                                                (g) => g.id === (rubric?.gradeScaleId ?? settings.defaultGradeScaleId)
-                                            ) ?? gradeScales[0];
-                                        const summary = rubric
-                                            ? calcGradeSummary(
-                                                  {
-                                                      id: session.id,
-                                                      rubricId: session.rubricId,
-                                                      studentId: session.studentId,
-                                                      entries: session.entries,
-                                                      overallComment: session.overallComment,
-                                                      isPeerReview: false,
-                                                  },
-                                                  rubric.criteria,
-                                                  scale,
-                                                  rubric
-                                              )
-                                            : null;
-                                        return (
-                                            <div
-                                                key={session.id}
-                                                style={{
-                                                    background: 'var(--bg-elevated)',
-                                                    borderRadius: 10,
-                                                    padding: 16,
-                                                    border: '1px solid var(--border)',
-                                                }}
-                                            >
-                                                <div
-                                                    style={{
-                                                        display: 'flex',
-                                                        justifyContent: 'space-between',
-                                                        alignItems: 'baseline',
-                                                        marginBottom: 8,
-                                                    }}
-                                                >
-                                                    <div style={{ fontWeight: 600 }}>
-                                                        {rubric?.name ?? session.rubricId}
-                                                    </div>
-                                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                                        {new Date(session.gradedAt).toLocaleDateString()}
-                                                    </div>
-                                                </div>
-                                                <div
-                                                    style={{
-                                                        display: 'flex',
-                                                        gap: 20,
-                                                        flexWrap: 'wrap',
-                                                        marginBottom: 8,
-                                                    }}
-                                                >
-                                                    {summary && (
-                                                        <>
-                                                            <span
-                                                                style={{ fontWeight: 700, color: summary.gradeColor }}
-                                                            >
-                                                                {summary.letterGrade}
-                                                            </span>
-                                                            <span
-                                                                style={{
-                                                                    color: 'var(--text-muted)',
-                                                                    fontSize: '0.85rem',
-                                                                }}
-                                                            >
-                                                                {summary.modifiedPercentage.toFixed(1)}%
-                                                            </span>
-                                                        </>
-                                                    )}
-                                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                                                        {t('speaking.elapsed_time', {
-                                                            elapsed: session.elapsedSeconds,
-                                                            duration: session.durationSeconds,
-                                                        })}
-                                                    </span>
-                                                </div>
-                                                {session.pronunciationMarks.length > 0 && (
-                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                                                        {session.pronunciationMarks.map((mark, idx) => (
-                                                            <span
-                                                                key={idx}
-                                                                style={{
-                                                                    fontSize: '0.75rem',
-                                                                    padding: '2px 8px',
-                                                                    background: 'var(--bg)',
-                                                                    borderRadius: 4,
-                                                                    border: '1px solid var(--border)',
-                                                                    color: 'var(--text-muted)',
-                                                                }}
-                                                            >
-                                                                {t(`speaking.error_types.${mark.errorType}`)}
-                                                            </span>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                                <div style={{ marginTop: 8 }}>
-                                                    <button
-                                                        className="btn btn-ghost btn-sm"
-                                                        onClick={() =>
-                                                            navigate(
-                                                                `/speaking/${session.rubricId}/${session.studentId}`
-                                                            )
-                                                        }
-                                                    >
-                                                        {t('selfAssess.view_full')}
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                            </div>
-                        </div>
-                    );
-                })()}
+                        );
+                    })()}
             </div>
         </>
     );

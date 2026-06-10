@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { X, Printer } from 'lucide-react';
 import QRCode from 'qrcode';
+import { useTranslation } from 'react-i18next';
 import { encodeEssayAssignment } from '../../utils/essayShareCode';
 import type { EssayAssignment } from '../../types';
 
@@ -66,6 +67,7 @@ function SlipItem({ student, assignment }: { student: ClassStudent; assignment: 
 }
 
 export default function EssaySlipSheet({ baseAssignment, students, onClose }: Props) {
+    const { t } = useTranslation();
     const [columns, setColumns] = useState<2 | 4>(2);
 
     const content = (
@@ -154,7 +156,11 @@ export default function EssaySlipSheet({ baseAssignment, students, onClose }: Pr
                             <button className="btn btn-primary btn-sm" onClick={() => window.print()}>
                                 <Printer size={14} /> Print
                             </button>
-                            <button className="btn btn-ghost btn-icon btn-sm" aria-label="Close" onClick={onClose}>
+                            <button
+                                className="btn btn-ghost btn-icon btn-sm"
+                                aria-label={t('common.close')}
+                                onClick={onClose}
+                            >
                                 <X size={16} />
                             </button>
                         </div>

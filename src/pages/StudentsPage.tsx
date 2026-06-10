@@ -605,7 +605,10 @@ export default function StudentsPage() {
                                                         </button>
                                                         <button
                                                             className="btn btn-ghost btn-icon btn-sm"
-                                                            aria-label={t('studentsPage.action_edit_student', 'Edit student')}
+                                                            aria-label={t(
+                                                                'studentsPage.action_edit_student',
+                                                                'Edit student'
+                                                            )}
                                                             onClick={() => {
                                                                 setEditStudent({
                                                                     id: s.id,
@@ -622,7 +625,10 @@ export default function StudentsPage() {
                                                         </button>
                                                         <button
                                                             className="btn btn-ghost btn-icon btn-sm"
-                                                            aria-label={t('studentsPage.action_delete_student', 'Delete student')}
+                                                            aria-label={t(
+                                                                'studentsPage.action_delete_student',
+                                                                'Delete student'
+                                                            )}
                                                             style={{ color: 'var(--red)' }}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();

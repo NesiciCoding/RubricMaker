@@ -276,7 +276,6 @@ export const QUICK_START_TEMPLATES: Partial<Rubric>[] = [
         format: { ...DEFAULT_FORMAT, headerColor: '#047857' },
     },
 
-    // ── IB MYP Language Acquisition ─────────────────────────────────────────
     {
         name: 'IB MYP Language Acquisition',
         subject: 'IB / Language',
@@ -322,8 +321,7 @@ export const QUICK_START_TEMPLATES: Partial<Rubric>[] = [
                         label: '1–2',
                         minPoints: 1,
                         maxPoints: 2,
-                        description:
-                            'Identifies a few isolated words or phrases. Requires significant support.',
+                        description: 'Identifies a few isolated words or phrases. Requires significant support.',
                         subItems: [],
                     },
                     {
@@ -366,8 +364,7 @@ export const QUICK_START_TEMPLATES: Partial<Rubric>[] = [
                         label: '3–4',
                         minPoints: 3,
                         maxPoints: 4,
-                        description:
-                            'Identifies some main ideas; has limited awareness of text features.',
+                        description: 'Identifies some main ideas; has limited awareness of text features.',
                         subItems: [],
                     },
                     {
@@ -375,8 +372,7 @@ export const QUICK_START_TEMPLATES: Partial<Rubric>[] = [
                         label: '1–2',
                         minPoints: 1,
                         maxPoints: 2,
-                        description:
-                            'Identifies isolated words or simple phrases with significant support.',
+                        description: 'Identifies isolated words or simple phrases with significant support.',
                         subItems: [],
                     },
                     {
@@ -392,8 +388,7 @@ export const QUICK_START_TEMPLATES: Partial<Rubric>[] = [
             {
                 id: nanoid(),
                 title: 'Criterion C: Speaking',
-                description:
-                    'Spoken communication: range and accuracy of language, fluency, and interaction.',
+                description: 'Spoken communication: range and accuracy of language, fluency, and interaction.',
                 weight: 25,
                 levels: [
                     {
@@ -481,8 +476,7 @@ export const QUICK_START_TEMPLATES: Partial<Rubric>[] = [
                         label: '1–2',
                         minPoints: 1,
                         maxPoints: 2,
-                        description:
-                            'Produces isolated words or simple memorised phrases. Meaning is often unclear.',
+                        description: 'Produces isolated words or simple memorised phrases. Meaning is often unclear.',
                         subItems: [],
                     },
                     {
@@ -499,7 +493,6 @@ export const QUICK_START_TEMPLATES: Partial<Rubric>[] = [
         format: { ...DEFAULT_FORMAT, headerColor: '#1d4ed8' },
     },
 
-    // ── IB DP Language A: Literature ────────────────────────────────────────
     {
         name: 'IB DP Language A: Literature',
         subject: 'IB / Literature',
@@ -526,8 +519,7 @@ export const QUICK_START_TEMPLATES: Partial<Rubric>[] = [
                         label: '4',
                         minPoints: 4,
                         maxPoints: 4,
-                        description:
-                            'Good knowledge and understanding. Mostly thorough engagement with the text.',
+                        description: 'Good knowledge and understanding. Mostly thorough engagement with the text.',
                         subItems: [],
                     },
                     {
@@ -544,8 +536,7 @@ export const QUICK_START_TEMPLATES: Partial<Rubric>[] = [
                         label: '2',
                         minPoints: 2,
                         maxPoints: 2,
-                        description:
-                            'Limited knowledge and understanding. Superficial engagement with the text.',
+                        description: 'Limited knowledge and understanding. Superficial engagement with the text.',
                         subItems: [],
                     },
                     {
@@ -553,8 +544,7 @@ export const QUICK_START_TEMPLATES: Partial<Rubric>[] = [
                         label: '1',
                         minPoints: 1,
                         maxPoints: 1,
-                        description:
-                            'Minimal knowledge and understanding. Little or no engagement with the text.',
+                        description: 'Minimal knowledge and understanding. Little or no engagement with the text.',
                         subItems: [],
                     },
                 ],
@@ -579,8 +569,7 @@ export const QUICK_START_TEMPLATES: Partial<Rubric>[] = [
                         label: '4',
                         minPoints: 4,
                         maxPoints: 4,
-                        description:
-                            'Good understanding of stylistic features. Mostly accurate analysis of effects.',
+                        description: 'Good understanding of stylistic features. Mostly accurate analysis of effects.',
                         subItems: [],
                     },
                     {
@@ -588,8 +577,7 @@ export const QUICK_START_TEMPLATES: Partial<Rubric>[] = [
                         label: '3',
                         minPoints: 3,
                         maxPoints: 3,
-                        description:
-                            'Adequate identification of stylistic features with some analysis of effects.',
+                        description: 'Adequate identification of stylistic features with some analysis of effects.',
                         subItems: [],
                     },
                     {
@@ -597,8 +585,7 @@ export const QUICK_START_TEMPLATES: Partial<Rubric>[] = [
                         label: '2',
                         minPoints: 2,
                         maxPoints: 2,
-                        description:
-                            'Limited identification of stylistic features. Analysis is superficial.',
+                        description: 'Limited identification of stylistic features. Analysis is superficial.',
                         subItems: [],
                     },
                     {
@@ -606,8 +593,7 @@ export const QUICK_START_TEMPLATES: Partial<Rubric>[] = [
                         label: '1',
                         minPoints: 1,
                         maxPoints: 1,
-                        description:
-                            'Minimal or no identification of stylistic features.',
+                        description: 'Minimal or no identification of stylistic features.',
                         subItems: [],
                     },
                 ],
@@ -632,8 +618,7 @@ export const QUICK_START_TEMPLATES: Partial<Rubric>[] = [
                         label: '4',
                         minPoints: 4,
                         maxPoints: 4,
-                        description:
-                            'Ideas are mostly well organised. Argument is generally coherent and developed.',
+                        description: 'Ideas are mostly well organised. Argument is generally coherent and developed.',
                         subItems: [],
                     },
                     {
@@ -650,8 +635,7 @@ export const QUICK_START_TEMPLATES: Partial<Rubric>[] = [
                         label: '2',
                         minPoints: 2,
                         maxPoints: 2,
-                        description:
-                            'Limited organisation. Ideas are underdeveloped or poorly connected.',
+                        description: 'Limited organisation. Ideas are underdeveloped or poorly connected.',
                         subItems: [],
                     },
                     {
@@ -659,8 +643,7 @@ export const QUICK_START_TEMPLATES: Partial<Rubric>[] = [
                         label: '1',
                         minPoints: 1,
                         maxPoints: 1,
-                        description:
-                            'Minimal organisation. Ideas are disjointed or absent.',
+                        description: 'Minimal organisation. Ideas are disjointed or absent.',
                         subItems: [],
                     },
                 ],
@@ -712,8 +695,7 @@ export const QUICK_START_TEMPLATES: Partial<Rubric>[] = [
                         label: '1',
                         minPoints: 1,
                         maxPoints: 1,
-                        description:
-                            'Pervasive errors. Very limited vocabulary; meaning is frequently unclear.',
+                        description: 'Pervasive errors. Very limited vocabulary; meaning is frequently unclear.',
                         subItems: [],
                     },
                 ],
@@ -722,7 +704,6 @@ export const QUICK_START_TEMPLATES: Partial<Rubric>[] = [
         format: { ...DEFAULT_FORMAT, headerColor: '#7c3aed' },
     },
 
-    // ── IB DP Language B ────────────────────────────────────────────────────
     {
         name: 'IB DP Language B',
         subject: 'IB / Language B',
@@ -732,8 +713,7 @@ export const QUICK_START_TEMPLATES: Partial<Rubric>[] = [
             {
                 id: nanoid(),
                 title: 'Criterion A: Language',
-                description:
-                    'Range and accuracy of vocabulary, grammatical structures, and language in context.',
+                description: 'Range and accuracy of vocabulary, grammatical structures, and language in context.',
                 weight: 40,
                 levels: [
                     {
@@ -768,8 +748,7 @@ export const QUICK_START_TEMPLATES: Partial<Rubric>[] = [
                         label: '1–5',
                         minPoints: 1,
                         maxPoints: 5,
-                        description:
-                            'Limited language with many errors that often impede communication.',
+                        description: 'Limited language with many errors that often impede communication.',
                         subItems: [],
                     },
                 ],
@@ -777,8 +756,7 @@ export const QUICK_START_TEMPLATES: Partial<Rubric>[] = [
             {
                 id: nanoid(),
                 title: 'Criterion B: Message',
-                description:
-                    'Development and support of ideas relevant to the task; relevance to the purpose.',
+                description: 'Development and support of ideas relevant to the task; relevance to the purpose.',
                 weight: 40,
                 levels: [
                     {
@@ -804,8 +782,7 @@ export const QUICK_START_TEMPLATES: Partial<Rubric>[] = [
                         label: '6–10',
                         minPoints: 6,
                         maxPoints: 10,
-                        description:
-                            'Ideas are partially developed. Task requirements are partially addressed.',
+                        description: 'Ideas are partially developed. Task requirements are partially addressed.',
                         subItems: [],
                     },
                     {
@@ -840,8 +817,7 @@ export const QUICK_START_TEMPLATES: Partial<Rubric>[] = [
                         label: '4',
                         minPoints: 4,
                         maxPoints: 4,
-                        description:
-                            'Good understanding of text type conventions; mostly applied correctly.',
+                        description: 'Good understanding of text type conventions; mostly applied correctly.',
                         subItems: [],
                     },
                     {
@@ -849,8 +825,7 @@ export const QUICK_START_TEMPLATES: Partial<Rubric>[] = [
                         label: '3',
                         minPoints: 3,
                         maxPoints: 3,
-                        description:
-                            'Adequate awareness of text type conventions; partially applied.',
+                        description: 'Adequate awareness of text type conventions; partially applied.',
                         subItems: [],
                     },
                     {
@@ -858,8 +833,7 @@ export const QUICK_START_TEMPLATES: Partial<Rubric>[] = [
                         label: '1–2',
                         minPoints: 1,
                         maxPoints: 2,
-                        description:
-                            'Limited awareness of text type conventions; rarely applied.',
+                        description: 'Limited awareness of text type conventions; rarely applied.',
                         subItems: [],
                     },
                 ],

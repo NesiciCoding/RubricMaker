@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Search, ChevronRight, ChevronDown, Link2, AlertCircle, Loader, BookOpen, Star } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import Modal from '../ui/Modal';
 import {
     fetchJurisdictions,
@@ -23,6 +24,7 @@ type Step = 'jurisdiction' | 'set' | 'standard';
 type View = 'browse' | 'favorites';
 
 export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Props) {
+    const { t } = useTranslation();
     const { favoriteStandards, addFavoriteStandard, removeFavoriteStandard, isFavoriteStandard } = useApp();
 
     const [view, setView] = useState<View>('browse');
@@ -440,7 +442,7 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
                             >
                                 <button
                                     className="btn btn-ghost btn-icon btn-sm"
-                                    aria-label="Remove favourite standard"
+                                    aria-label={t('standards.remove_favorite')}
                                     onClick={() => removeFavoriteStandard(std.guid)}
                                     style={{ flexShrink: 0, marginTop: 2, color: 'var(--yellow)' }}
                                 >
@@ -613,7 +615,7 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
 
                                             <button
                                                 className="btn btn-ghost btn-icon btn-sm text-accent"
-                                                aria-label="Link standard"
+                                                aria-label={t('standards.link_standard')}
                                                 onClick={() => pickCspStandard(std)}
                                             >
                                                 <Link2 size={16} />

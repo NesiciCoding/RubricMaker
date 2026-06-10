@@ -282,7 +282,7 @@ export default function SettingsPage() {
         setAccentInput(val);
         const valid = /^#[0-9A-Fa-f]{6}$/.test(val);
         setAccentError(!valid);
-        if (valid) updateSettings({ accentColor: val });
+        if (valid) updateSettings({ accentColor: val, colorPreset: undefined });
     }
 
     function confirmDeleteScale() {
@@ -491,10 +491,7 @@ export default function SettingsPage() {
                                                     key={id}
                                                     title={t(`settings.preset_${id}`, id)}
                                                     aria-label={`${t('settings.accent_color_label')}: ${t(`settings.preset_${id}`, id)}`}
-                                                    onClick={() => {
-                                                        handleAccentChange(color);
-                                                        updateSettings({ colorPreset: undefined });
-                                                    }}
+                                                    onClick={() => handleAccentChange(color)}
                                                     style={{
                                                         width: 22,
                                                         height: 22,
@@ -570,7 +567,10 @@ export default function SettingsPage() {
                                                                 flexShrink: 0,
                                                             }}
                                                         />
-                                                        {t(`settings.theme_bundle_${bundle.id}`, bundle.id.charAt(0).toUpperCase() + bundle.id.slice(1))}
+                                                        {t(
+                                                            `settings.theme_bundle_${bundle.id}`,
+                                                            bundle.id.charAt(0).toUpperCase() + bundle.id.slice(1)
+                                                        )}
                                                     </button>
                                                 );
                                             })}

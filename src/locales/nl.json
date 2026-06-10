@@ -1144,5 +1144,9 @@
         "portfolio_empty": "Nog geen activiteit voor deze leerling.",
         "portfolio_kind_grade": "Rubricbeoordeling",
         "no_grades_yet": "Nog geen beoordeelde rubrieken voor deze leerling."
+    },
+    "standards": {
+        "remove_favorite": "Favoriete standaard verwijderen",
+        "link_standard": "Standaard koppelen"
     }
 }

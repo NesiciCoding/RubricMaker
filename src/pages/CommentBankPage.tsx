@@ -1,11 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { Plus, Trash2, MessageSquare, Tag, Edit2, Search } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 
 const TAGS = ['positive', 'improvement', 'structure', 'content', 'creativity', 'general'];
 
 export default function CommentBankPage() {
+    const { t } = useTranslation();
     const { commentSnippets, addCommentSnippet, deleteCommentSnippet, updateCommentSnippet } = useApp();
     const [text, setText] = useState('');
     const [tag, setTag] = useState('general');
@@ -187,7 +189,7 @@ export default function CommentBankPage() {
                                             <div style={{ display: 'flex', gap: 4 }}>
                                                 <button
                                                     className="btn btn-ghost btn-icon btn-sm"
-                                                    aria-label="Edit comment snippet"
+                                                    aria-label={t('common.edit')}
                                                     onClick={() => {
                                                         setEditingId(snip.id);
                                                         setEditText(snip.text);
@@ -198,7 +200,7 @@ export default function CommentBankPage() {
                                                 </button>
                                                 <button
                                                     className="btn btn-ghost btn-icon btn-sm"
-                                                    aria-label="Delete comment snippet"
+                                                    aria-label={t('common.delete')}
                                                     style={{ color: 'var(--red)' }}
                                                     onClick={() => deleteCommentSnippet(snip.id)}
                                                 >

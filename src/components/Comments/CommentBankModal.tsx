@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { X, Plus, Search, Trash2, Edit2, Tag, Check, Save } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
 import { CommentBankItem } from '../../types';
 import Modal from '../ui/Modal';
@@ -10,6 +11,7 @@ interface CommentBankModalProps {
 }
 
 export default function CommentBankModal({ onClose, onSelect }: CommentBankModalProps) {
+    const { t } = useTranslation();
     const { commentBank, addCommentBankItem, updateCommentBankItem, deleteCommentBankItem } = useApp();
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
@@ -87,7 +89,7 @@ export default function CommentBankModal({ onClose, onSelect }: CommentBankModal
         >
             <div className="modal-header">
                 <h3 id="comment-bank-title">Comment Bank</h3>
-                <button className="btn btn-ghost btn-icon" onClick={onClose} aria-label="Close">
+                <button className="btn btn-ghost btn-icon" onClick={onClose} aria-label={t('common.close')}>
                     <X size={18} />
                 </button>
             </div>
@@ -215,7 +217,7 @@ export default function CommentBankModal({ onClose, onSelect }: CommentBankModal
                                             <div style={{ display: 'flex', gap: 4 }}>
                                                 <button
                                                     className="btn btn-ghost btn-icon btn-xs"
-                                                    aria-label="Edit comment"
+                                                    aria-label={t('common.edit')}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         handleEdit(item);
@@ -225,7 +227,7 @@ export default function CommentBankModal({ onClose, onSelect }: CommentBankModal
                                                 </button>
                                                 <button
                                                     className="btn btn-ghost btn-icon btn-xs"
-                                                    aria-label="Delete comment"
+                                                    aria-label={t('common.delete')}
                                                     style={{ color: 'var(--red)' }}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
