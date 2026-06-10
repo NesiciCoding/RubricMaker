@@ -657,10 +657,10 @@ function DatabaseTab() {
                                     <div style={{ display: 'flex', gap: 8 }}>
                                         <input
                                             type="text"
-                                            placeholder="Enter 6-digit code"
+                                            placeholder="Enter 8-digit code"
                                             value={dbOtp}
                                             onChange={(e) => setDbOtp(e.target.value)}
-                                            maxLength={6}
+                                            maxLength={8}
                                             style={{ flex: 1 }}
                                         />
                                         <button

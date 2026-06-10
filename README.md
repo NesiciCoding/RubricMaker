@@ -178,6 +178,8 @@ SMTP_PASS=your-app-password
 docker-compose up -d --force-recreate auth
 ```
 
+Teachers receive an 8-digit sign-in code by email. The bundled GoTrue config sends a code-only template (`public/email-templates/otp-code.html`, served by the `app` container at `/email-templates/otp-code.html`) with no clickable confirmation link — some email security scanners (e.g. Microsoft Safe Links) automatically open links in incoming mail, which would consume the one-time token before the teacher can enter the code, causing "Token has expired or is invalid" errors.
+
 **Backup and restore:**
 
 ```bash
