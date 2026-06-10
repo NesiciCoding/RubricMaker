@@ -483,6 +483,8 @@
         "storage_full": "Opslag is vol — je wijzigingen zijn mogelijk niet opgeslagen.",
         "sync_load_failed": "Clouddata kon niet worden geladen. Lokale data wordt weergegeven.",
         "sync_push_failed": "Wijzigingen zijn mogelijk niet gesynchroniseerd — controleer je verbinding.",
+        "empty_supabase_url": "Supabase-URL mag niet leeg zijn.",
+        "invalid_supabase_url_protocol": "Ongeldig protocol: alleen http:// en https:// worden ondersteund.",
         "sync_queued": "Offline — wijzigingen worden gesynchroniseerd wanneer je weer verbinding hebt.",
         "sync_flushed": "Weer online — alle wijzigingen gesynchroniseerd.",
         "copy_paste_failed": "Kopiëren/plakken mislukt. Probeer het opnieuw.",
