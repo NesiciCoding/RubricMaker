@@ -1210,7 +1210,7 @@ function DatabaseTab() {
                                     <div style={{ display: 'flex', gap: 8 }}>
                                         <button
                                             className="btn btn-secondary btn-sm"
-                                            disabled={!dbUrl || !dbKey || dbConnecting}
+                                            disabled={!dbUrl.trim() || !dbKey.trim() || dbConnecting}
                                             onClick={async () => {
                                                 setDbConnecting(true);
                                                 const ok = await connectForOAuth({
@@ -1237,7 +1237,7 @@ function DatabaseTab() {
                                         </button>
                                         <button
                                             className="btn btn-primary btn-sm"
-                                            disabled={!dbUrl || !dbKey || dbConnecting}
+                                            disabled={!dbUrl.trim() || !dbKey.trim() || dbConnecting}
                                             onClick={async () => {
                                                 setDbConnecting(true);
                                                 const ok = await connectDatabase({

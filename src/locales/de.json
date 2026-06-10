@@ -483,6 +483,8 @@
         "storage_full": "Speicher ist voll — Ihre Änderungen wurden möglicherweise nicht gespeichert.",
         "sync_load_failed": "Cloud-Daten konnten nicht geladen werden. Lokale Daten werden angezeigt.",
         "sync_push_failed": "Änderungen wurden möglicherweise nicht synchronisiert — Verbindung prüfen.",
+        "empty_supabase_url": "Die Supabase-URL darf nicht leer sein.",
+        "invalid_supabase_url_protocol": "Ungültiges Protokoll: Es werden nur http:// und https:// unterstützt.",
         "sync_queued": "Offline — Änderungen werden bei Wiederverbindung synchronisiert.",
         "sync_flushed": "Wieder online — alle Änderungen synchronisiert.",
         "copy_paste_failed": "Kopieren/Einfügen fehlgeschlagen. Bitte versuchen Sie es erneut.",

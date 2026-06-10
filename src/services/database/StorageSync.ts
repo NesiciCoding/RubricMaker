@@ -26,8 +26,11 @@ const LAST_SYNC_KEY = 'rm_last_sync_at';
 
 function normalizeSupabaseUrl(url: string): string {
     let normalized = url.trim();
+    if (!normalized) {
+        throw new Error(i18n.t('toast.empty_supabase_url'));
+    }
     if (/^[a-z][a-z\d+\-.]*:\/\//i.test(normalized) && !/^https?:\/\//i.test(normalized)) {
-        throw new Error(`Invalid protocol: only http:// and https:// are supported`);
+        throw new Error(i18n.t('toast.invalid_supabase_url_protocol'));
     }
     if (!/^https?:\/\//i.test(normalized)) {
         normalized = 'https://' + normalized;
