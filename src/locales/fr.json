@@ -1037,7 +1037,8 @@
         "delete_student_confirm": "Supprimer définitivement cet élève et toutes ses notes ? Cette action est irréversible.",
         "anon_auth_title": "Connexion anonyme (devoirs de rédaction)",
         "anon_auth_desc": "Les élèves utilisant Safe Exam Browser ne peuvent pas se connecter par OTP. La connexion anonyme leur permet d'accéder aux devoirs sans mot de passe.",
-        "anon_auth_hint": "Activez « Autoriser les connexions anonymes » dans votre projet Supabase sous Authentification → Configuration."
+        "anon_auth_hint": "Activez « Autoriser les connexions anonymes » dans votre projet Supabase sous Authentification → Configuration.",
+        "otp_code_placeholder": "Saisissez le code à 8 chiffres"
     },
     "essay": {
         "email_gate_title": "Entrez votre adresse email scolaire",

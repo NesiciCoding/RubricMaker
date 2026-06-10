@@ -657,7 +657,7 @@ function DatabaseTab() {
                                     <div style={{ display: 'flex', gap: 8 }}>
                                         <input
                                             type="text"
-                                            placeholder="Enter 8-digit code"
+                                            placeholder={t('admin.otp_code_placeholder')}
                                             value={dbOtp}
                                             onChange={(e) => setDbOtp(e.target.value)}
                                             maxLength={8}
@@ -665,6 +665,7 @@ function DatabaseTab() {
                                         />
                                         <button
                                             className="btn btn-primary btn-sm"
+                                            disabled={dbOtp.length < 8}
                                             onClick={async () => {
                                                 const { error } = await storageSync.adapter.verifyOtp(dbEmail, dbOtp);
                                                 if (error) showToast(error, 'error');

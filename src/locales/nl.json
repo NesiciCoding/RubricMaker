@@ -995,6 +995,7 @@
         "anon_auth_title": "Anonieme aanmelding (schrijfopdrachten)",
         "anon_auth_desc": "Leerlingen die Safe Exam Browser gebruiken kunnen niet aanmelden via OTP. Anonieme aanmelding stelt hen in staat schrijfopdrachten te openen zonder wachtwoord of e-mailcode.",
         "anon_auth_hint": "Activeer 'Anonieme aanmelding toestaan' in uw Supabase-project onder Authenticatie → Configuratie, en herstart daarna de app.",
+        "otp_code_placeholder": "Voer 8-cijferige code in",
         "users_offline_title": "Gebruikersbeheer vereist een databaseverbinding",
         "users_offline_body": "Verbind een Supabase-database om gebruikersrollen te beheren en alle geregistreerde accounts te bekijken. Zie de implementatiedocumentatie om cloudsynchronisatie te configureren.",
         "schools_offline_title": "Schoolbeheer vereist een databaseverbinding",
