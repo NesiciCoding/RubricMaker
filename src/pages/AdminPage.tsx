@@ -665,9 +665,12 @@ function DatabaseTab() {
                                         />
                                         <button
                                             className="btn btn-primary btn-sm"
-                                            disabled={dbOtp.length < 8}
+                                            disabled={dbOtp.trim().length < 8}
                                             onClick={async () => {
-                                                const { error } = await storageSync.adapter.verifyOtp(dbEmail, dbOtp);
+                                                const { error } = await storageSync.adapter.verifyOtp(
+                                                    dbEmail.trim(),
+                                                    dbOtp.trim()
+                                                );
                                                 if (error) showToast(error, 'error');
                                                 else {
                                                     setOtpSent(false);
