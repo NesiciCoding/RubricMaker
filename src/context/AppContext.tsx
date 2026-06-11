@@ -142,12 +142,13 @@ function reducer(state: StoreData, action: Action): StoreData {
             return { ...state, rubrics: next };
         }
         case 'ADD_STUDENT': {
-            const next = [...state.students, action.payload];
+            const next = [...state.students, { ...action.payload, updatedAt: new Date().toISOString() }];
             saveStudents(next);
             return { ...state, students: next };
         }
         case 'UPDATE_STUDENT': {
-            const next = state.students.map((s) => (s.id === action.payload.id ? action.payload : s));
+            const payload = { ...action.payload, updatedAt: new Date().toISOString() };
+            const next = state.students.map((s) => (s.id === payload.id ? payload : s));
             saveStudents(next);
             return { ...state, students: next };
         }
@@ -165,18 +166,20 @@ function reducer(state: StoreData, action: Action): StoreData {
                     email: undefined,
                     studentNumber: undefined,
                     anonymizedAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
                 };
             });
             saveStudents(next);
             return { ...state, students: next };
         }
         case 'ADD_CLASS': {
-            const next = [...state.classes, action.payload];
+            const next = [...state.classes, { ...action.payload, updatedAt: new Date().toISOString() }];
             saveClasses(next);
             return { ...state, classes: next };
         }
         case 'UPDATE_CLASS': {
-            const next = state.classes.map((c) => (c.id === action.payload.id ? action.payload : c));
+            const payload = { ...action.payload, updatedAt: new Date().toISOString() };
+            const next = state.classes.map((c) => (c.id === payload.id ? payload : c));
             saveClasses(next);
             return { ...state, classes: next };
         }
@@ -186,11 +189,12 @@ function reducer(state: StoreData, action: Action): StoreData {
             return { ...state, classes: next };
         }
         case 'SAVE_STUDENT_RUBRIC': {
-            const exists = state.studentRubrics.findIndex((sr) => sr.id === action.payload.id);
+            const payload = { ...action.payload, updatedAt: new Date().toISOString() };
+            const exists = state.studentRubrics.findIndex((sr) => sr.id === payload.id);
             const next =
                 exists >= 0
-                    ? state.studentRubrics.map((sr) => (sr.id === action.payload.id ? action.payload : sr))
-                    : [...state.studentRubrics, action.payload];
+                    ? state.studentRubrics.map((sr) => (sr.id === payload.id ? payload : sr))
+                    : [...state.studentRubrics, payload];
             saveStudentRubrics(next);
             return { ...state, studentRubrics: next };
         }
@@ -207,6 +211,7 @@ function reducer(state: StoreData, action: Action): StoreData {
                 selfAssessmentLevels: action.levels,
                 selfAssessmentReflection: action.reflection,
                 selfAssessedAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
             };
             const next = state.studentRubrics.map((sr) => (sr.id === action.id ? updated : sr));
             saveStudentRubrics(next);
@@ -223,12 +228,13 @@ function reducer(state: StoreData, action: Action): StoreData {
             return { ...state, attachments: next };
         }
         case 'ADD_GRADE_SCALE': {
-            const next = [...state.gradeScales, action.payload];
+            const next = [...state.gradeScales, { ...action.payload, updatedAt: new Date().toISOString() }];
             saveGradeScales(next);
             return { ...state, gradeScales: next };
         }
         case 'UPDATE_GRADE_SCALE': {
-            const next = state.gradeScales.map((gs) => (gs.id === action.payload.id ? action.payload : gs));
+            const payload = { ...action.payload, updatedAt: new Date().toISOString() };
+            const next = state.gradeScales.map((gs) => (gs.id === payload.id ? payload : gs));
             saveGradeScales(next);
             return { ...state, gradeScales: next };
         }
@@ -238,12 +244,13 @@ function reducer(state: StoreData, action: Action): StoreData {
             return { ...state, gradeScales: next };
         }
         case 'ADD_COMMENT_SNIPPET': {
-            const next = [...state.commentSnippets, action.payload];
+            const next = [...state.commentSnippets, { ...action.payload, updatedAt: new Date().toISOString() }];
             saveCommentSnippets(next);
             return { ...state, commentSnippets: next };
         }
         case 'UPDATE_COMMENT_SNIPPET': {
-            const next = state.commentSnippets.map((cs) => (cs.id === action.payload.id ? action.payload : cs));
+            const payload = { ...action.payload, updatedAt: new Date().toISOString() };
+            const next = state.commentSnippets.map((cs) => (cs.id === payload.id ? payload : cs));
             saveCommentSnippets(next);
             return { ...state, commentSnippets: next };
         }
@@ -269,12 +276,13 @@ function reducer(state: StoreData, action: Action): StoreData {
             return { ...state, favoriteStandards: next };
         }
         case 'ADD_COMMENT_BANK_ITEM': {
-            const next = [...state.commentBank, action.payload];
+            const next = [...state.commentBank, { ...action.payload, updatedAt: new Date().toISOString() }];
             saveCommentBank(next);
             return { ...state, commentBank: next };
         }
         case 'UPDATE_COMMENT_BANK_ITEM': {
-            const next = state.commentBank.map((i) => (i.id === action.payload.id ? action.payload : i));
+            const payload = { ...action.payload, updatedAt: new Date().toISOString() };
+            const next = state.commentBank.map((i) => (i.id === payload.id ? payload : i));
             saveCommentBank(next);
             return { ...state, commentBank: next };
         }
@@ -294,11 +302,12 @@ function reducer(state: StoreData, action: Action): StoreData {
             return { ...state, exportTemplates: next };
         }
         case 'SAVE_PEER_REVIEW': {
-            const exists = state.peerReviews.findIndex((sr) => sr.id === action.payload.id);
+            const payload = { ...action.payload, updatedAt: new Date().toISOString() };
+            const exists = state.peerReviews.findIndex((sr) => sr.id === payload.id);
             const next =
                 exists >= 0
-                    ? state.peerReviews.map((sr) => (sr.id === action.payload.id ? action.payload : sr))
-                    : [...state.peerReviews, action.payload];
+                    ? state.peerReviews.map((sr) => (sr.id === payload.id ? payload : sr))
+                    : [...state.peerReviews, payload];
             savePeerReviews(next);
             return { ...state, peerReviews: next };
         }
@@ -308,11 +317,12 @@ function reducer(state: StoreData, action: Action): StoreData {
             return { ...state, peerReviews: next };
         }
         case 'SAVE_SELF_ASSESSMENT': {
-            const exists = state.selfAssessments.findIndex((sa) => sa.id === action.payload.id);
+            const payload = { ...action.payload, updatedAt: new Date().toISOString() };
+            const exists = state.selfAssessments.findIndex((sa) => sa.id === payload.id);
             const next =
                 exists >= 0
-                    ? state.selfAssessments.map((sa) => (sa.id === action.payload.id ? action.payload : sa))
-                    : [...state.selfAssessments, action.payload];
+                    ? state.selfAssessments.map((sa) => (sa.id === payload.id ? payload : sa))
+                    : [...state.selfAssessments, payload];
             saveSelfAssessments(next);
             return { ...state, selfAssessments: next };
         }
@@ -322,10 +332,11 @@ function reducer(state: StoreData, action: Action): StoreData {
             return { ...state, selfAssessments: next };
         }
         case 'SAVE_SPEAKING_SESSION': {
-            const existing = state.speakingSessions.find((s) => s.id === action.payload.id);
+            const payload = { ...action.payload, updatedAt: new Date().toISOString() };
+            const existing = state.speakingSessions.find((s) => s.id === payload.id);
             const next = existing
-                ? state.speakingSessions.map((s) => (s.id === action.payload.id ? action.payload : s))
-                : [...state.speakingSessions, action.payload];
+                ? state.speakingSessions.map((s) => (s.id === payload.id ? payload : s))
+                : [...state.speakingSessions, payload];
             saveSpeakingSessions(next);
             return { ...state, speakingSessions: next };
         }
@@ -422,11 +433,12 @@ function reducer(state: StoreData, action: Action): StoreData {
             return { ...state, rubrics: next };
         }
         case 'SAVE_ANALYSIS_RESULT': {
-            const exists = state.analysisResults.findIndex((r) => r.id === action.payload.id);
+            const payload = { ...action.payload, updatedAt: new Date().toISOString() };
+            const exists = state.analysisResults.findIndex((r) => r.id === payload.id);
             const next =
                 exists >= 0
-                    ? state.analysisResults.map((r) => (r.id === action.payload.id ? action.payload : r))
-                    : [...state.analysisResults, action.payload];
+                    ? state.analysisResults.map((r) => (r.id === payload.id ? payload : r))
+                    : [...state.analysisResults, payload];
             saveAnalysisResults(next);
             return { ...state, analysisResults: next };
         }
