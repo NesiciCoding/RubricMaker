@@ -7,14 +7,7 @@ import CefrBadge from '../components/CEFR/CefrBadge';
 import { useApp } from '../context/AppContext';
 import { nanoid } from '../utils/nanoid';
 import { getCefrDescriptors, CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
-import type {
-    CefrLevel,
-    CefrSkill,
-    SelfAssessment,
-    SelfAssessmentRating,
-    LinkedCefrDescriptor,
-    ConfidenceLevel,
-} from '../types';
+import type { CefrSkill, SelfAssessment, SelfAssessmentRating, LinkedCefrDescriptor, ConfidenceLevel } from '../types';
 
 export default function SelfAssessPage() {
     const { rubricId, studentId } = useParams();

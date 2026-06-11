@@ -83,9 +83,6 @@ export function getStudentGoalScores(
                 });
             } else if (selectedLevel && selectedLevel.subItems && selectedLevel.subItems.length > 0) {
                 // Sub-items based scoring
-                let levelPoints = 0;
-                let levelMaxPoints = 0;
-
                 selectedLevel.subItems.forEach((si) => {
                     // Check if this sub-item is active
                     const isChecked = entry.checkedSubItems.includes(si.id);
@@ -118,10 +115,6 @@ export function getStudentGoalScores(
                             maxPointsPerStandard.set(std.guid, (maxPointsPerStandard.get(std.guid) || 0) + max);
                         });
                     }
-
-                    // Add to criterion total
-                    levelPoints += earned;
-                    levelMaxPoints += max;
 
                     // If the sub-item didn't have its own standard, let the criterion standard absorb the score
                     if (!hasSubItemStandard && activeStandards.size > 0) {

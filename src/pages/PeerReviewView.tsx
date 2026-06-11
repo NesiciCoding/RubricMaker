@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, Save, AlertCircle, FileText, Download } from 'lucide-react';
+import { Save, AlertCircle, FileText } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { nanoid } from '../utils/nanoid';
 import type { StudentRubric, ScoreEntry } from '../types';

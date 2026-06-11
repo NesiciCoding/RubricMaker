@@ -3,7 +3,7 @@
  * Targets branches that the smoke and first interaction tests don't reach.
  */
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
@@ -357,9 +357,6 @@ describe('SettingsPage deep coverage', () => {
         renderPage(<SettingsPage />);
         const teachingTab = screen.queryByRole('button', { name: /teaching/i });
         if (teachingTab) fireEvent.click(teachingTab);
-        const trashBtns = screen
-            .getAllByRole('button')
-            .filter((b) => b.querySelector('svg') && !b.textContent?.match(/add|new|backup|upload|save/i));
         // Find the delete button for grade scales section
         const deleteBtn = screen
             .getAllByRole('button')
@@ -687,14 +684,6 @@ describe('StudentsPage deep coverage', () => {
 
     it('MoreVertical class menu button opens context menu', () => {
         renderPage(<StudentsPage />);
-        // Small icon buttons alongside class names open context menus
-        const menuBtns = screen
-            .getAllByRole('button')
-            .filter(
-                (b) =>
-                    (b.querySelector('svg') && b.style.position === 'absolute') ||
-                    (b.querySelector('svg') && !b.textContent?.trim())
-            );
         // Find the class context menu button (absolute positioned next to class name)
         const allBtns = screen.getAllByRole('button');
         // The MoreVertical button is a small ghost-icon button without text next to class name

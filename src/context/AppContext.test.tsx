@@ -3,7 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AppProvider, useApp } from './AppContext';
 import * as storage from '../store/storage';
-import type { Rubric, Student, Class, GradeScale } from '../types';
+import type { Rubric, GradeScale } from '../types';
 
 // Mock storage functions so we don't actually write to localStorage/IndexedDB during tests
 vi.mock('../store/storage', () => ({
@@ -228,10 +228,8 @@ describe('AppContext', () => {
             });
         });
 
-        let srId = '';
         act(() => {
-            const sr = result.current.createStudentRubric(result.current.rubrics[0].id, 's1');
-            srId = sr.id;
+            result.current.createStudentRubric(result.current.rubrics[0].id, 's1');
         });
 
         expect(result.current.studentRubrics).toHaveLength(1);

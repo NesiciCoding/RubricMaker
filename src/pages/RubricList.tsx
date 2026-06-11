@@ -15,7 +15,6 @@ import {
     Check,
     Layers,
     Eye,
-    Mic,
     PenLine,
     Users2,
     X,

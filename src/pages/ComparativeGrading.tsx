@@ -258,7 +258,6 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
     const [srA, setSrA] = useState<(typeof studentRubrics)[0] | null>(null);
     const [srB, setSrB] = useState<(typeof studentRubrics)[0] | null>(null);
     const [matchups, setMatchups] = useState<Set<string>>(new Set());
-    const [seenStudentIds, setSeenStudentIds] = useState<Set<string>>(new Set());
     const [error, setError] = useState('');
     const [isDirty, setIsDirty] = useState(false);
     const [sessionDone, setSessionDone] = useState(false);
@@ -366,7 +365,6 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
         setSrA(keepSrA !== undefined ? keepSrA : anchorChanged ? getBlankSR(a.id) : getEmptySR(a.id));
         setSrB(getBlankSR(b.id));
         setMatchups((prev) => new Set([...prev, getMatchKey(a!.id, b.id)]));
-        setSeenStudentIds((prev) => new Set([...prev, a!.id, b.id]));
         setIsDirty(false);
     }
 

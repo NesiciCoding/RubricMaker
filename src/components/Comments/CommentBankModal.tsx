@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { X, Plus, Search, Trash2, Edit2, Tag, Check, Save } from 'lucide-react';
+import { X, Plus, Search, Trash2, Edit2, Tag, Save } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
 import { CommentBankItem } from '../../types';
