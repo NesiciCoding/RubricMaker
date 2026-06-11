@@ -307,8 +307,8 @@
         "action_export_summaries": "Exporter les résumés",
         "back_to_roster": "Retour à la liste",
         "action_class_menu": "Options de classe",
-        "action_edit_student": "Modifier l élève",
-        "action_delete_student": "Supprimer l élève"
+        "action_edit_student": "Modifier l'élève",
+        "action_delete_student": "Supprimer l'élève"
     },
     "gradeStudent": {
         "title_prefix": "Notation :",
@@ -1151,5 +1151,18 @@
     "standards": {
         "remove_favorite": "Retirer le standard favori",
         "link_standard": "Lier le standard"
+    },
+    "cambridge": {
+        "settings_section_title": "Étiquettes Cambridge English",
+        "show_labels_setting": "Afficher les étiquettes d'examen Cambridge",
+        "show_labels_help": "Afficher l'examen Cambridge English correspondant (par ex. « B2 First ») à côté des badges de niveau CECR.",
+        "lookup_button": "Rechercher",
+        "lookup_failed": "Aucune donnée Cambridge trouvée pour ce mot.",
+        "lookup_success": "Détails du mot mis à jour depuis Cambridge Dictionary.",
+        "cefr_level_label": "Niveau CECR",
+        "cefr_level_placeholder": "— Niveau CECR —",
+        "definition_placeholder": "Définition (facultatif)…",
+        "docs_title": "Étiquettes d'examens Cambridge English",
+        "docs_body": "Lorsque cette option est activée dans les paramètres, les badges de niveau CECR affichent l'examen Cambridge English correspondant (par ex. A2 Key, B1 Preliminary, B2 First, C1 Advanced, C2 Proficiency) sous forme d'étiquette secondaire discrète. Dans le panneau de vocabulaire du créateur de grilles, si une clé API Cambridge Dictionary est configurée dans Administration → Intégrations, chaque mot dispose d'un bouton « Rechercher » qui récupère automatiquement son niveau CECR et sa définition."
     }
 }

@@ -49,12 +49,15 @@ import {
     saveSpeakingSessions,
     saveAnalysisResults,
     importFullBackup,
+    loadPendingQueue,
 } from '../store/storage';
+import { mergeStoreData } from '../utils/syncMerge';
 import { useTranslation } from 'react-i18next';
 import { nanoid } from '../utils/nanoid';
 import { storageSync, loadSupabaseConfig, saveSupabaseConfig } from '../services/database';
 import type { DatabaseConfig, DbUser, SyncResult } from '../services/database';
 import { useToast } from '../hooks/useToast';
+import { buildAccentScale, ACCENT_SCALE_STEPS } from '../utils/accentScale';
 
 // ─── Actions ───────────────────────────────────────────────────────────────────
 
@@ -633,6 +636,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         root.style.setProperty('--accent-hover', accent);
         root.style.setProperty('--accent-soft', `${accent}26`);
         root.style.setProperty('--accent-glow', `${accent}66`);
+        const scale = buildAccentScale(accent);
+        for (const step of ACCENT_SCALE_STEPS) {
+            root.style.setProperty(`--accent-${step}`, scale[step]);
+        }
     }, [state.settings.accentColor]);
 
     useEffect(() => {
@@ -690,7 +697,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const { data: fresh, error: hydrateError } = await storageSync.hydrate();
             if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
             if (fresh) {
-                const merged = { ...initialStateRef.current, ...fresh } as StoreData;
+                const merged = mergeStoreData(initialStateRef.current, fresh, loadPendingQueue());
                 dispatch({ type: 'SET_ALL', payload: merged });
                 try {
                     await flushToLocalStorage(merged);
@@ -748,7 +755,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             if (!storageSync.isConnected()) return;
             const { data: fresh } = await storageSync.hydrate();
             if (fresh) {
-                const merged = { ...currentStateRef.current, ...fresh } as StoreData;
+                const merged = mergeStoreData(currentStateRef.current, fresh, loadPendingQueue());
                 dispatch({ type: 'SET_ALL', payload: merged });
                 try {
                     await flushToLocalStorage(merged);
@@ -782,7 +789,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 const { data: fresh, error: hydrateError } = await storageSync.hydrate();
                 if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
                 if (fresh) {
-                    const merged = { ...initialStateRef.current, ...fresh } as StoreData;
+                    const merged = mergeStoreData(initialStateRef.current, fresh, loadPendingQueue());
                     dispatch({ type: 'SET_ALL', payload: merged });
                     try {
                         await flushToLocalStorage(merged);
@@ -1065,7 +1072,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 const { data: fresh, error: hydrateError } = await storageSync.hydrate();
                 if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
                 if (fresh) {
-                    const merged = { ...state, ...fresh } as StoreData;
+                    const merged = mergeStoreData(state, fresh, loadPendingQueue());
                     dispatch({ type: 'SET_ALL', payload: merged });
                     try {
                         await flushToLocalStorage(merged);
@@ -1092,7 +1099,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const { data: fresh, error: hydrateError } = await storageSync.hydrate();
         if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
         if (fresh) {
-            const merged = { ...state, ...fresh } as StoreData;
+            const merged = mergeStoreData(state, fresh, loadPendingQueue());
             dispatch({ type: 'SET_ALL', payload: merged });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps

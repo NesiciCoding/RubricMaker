@@ -1151,5 +1151,18 @@
     "standards": {
         "remove_favorite": "Quitar estándar favorito",
         "link_standard": "Vincular estándar"
+    },
+    "cambridge": {
+        "settings_section_title": "Etiquetas de Cambridge English",
+        "show_labels_setting": "Mostrar etiquetas de exámenes Cambridge",
+        "show_labels_help": "Muestra el examen de Cambridge English correspondiente (p. ej., \"B2 First\") junto a las insignias de nivel MCER.",
+        "lookup_button": "Buscar",
+        "lookup_failed": "No se encontraron datos de Cambridge para esta palabra.",
+        "lookup_success": "Detalles de la palabra actualizados desde Cambridge Dictionary.",
+        "cefr_level_label": "Nivel MCER",
+        "cefr_level_placeholder": "— Nivel MCER —",
+        "definition_placeholder": "Definición (opcional)…",
+        "docs_title": "Etiquetas de exámenes de Cambridge English",
+        "docs_body": "Cuando se activa en Configuración, las insignias de nivel MCER muestran el examen de Cambridge English correspondiente (p. ej., A2 Key, B1 Preliminary, B2 First, C1 Advanced, C2 Proficiency) como una etiqueta secundaria discreta. En el panel de vocabulario del creador de rúbricas, si hay configurada una clave API de Cambridge Dictionary en Administración → Integraciones, cada palabra tiene un botón \"Buscar\" que obtiene automáticamente su nivel MCER y definición."
     }
 }

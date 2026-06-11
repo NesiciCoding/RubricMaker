@@ -1151,5 +1151,18 @@
     "standards": {
         "remove_favorite": "Favorisierten Standard entfernen",
         "link_standard": "Standard verknüpfen"
+    },
+    "cambridge": {
+        "settings_section_title": "Cambridge English-Bezeichnungen",
+        "show_labels_setting": "Cambridge-Prüfungsbezeichnungen anzeigen",
+        "show_labels_help": "Zeigt die passende Cambridge English-Prüfung (z. B. \"B2 First\") neben den GER-Niveau-Badges an.",
+        "lookup_button": "Nachschlagen",
+        "lookup_failed": "Keine Cambridge-Daten für dieses Wort gefunden.",
+        "lookup_success": "Wortdetails von Cambridge Dictionary aktualisiert.",
+        "cefr_level_label": "GER-Niveau",
+        "cefr_level_placeholder": "— GER-Niveau —",
+        "definition_placeholder": "Definition (optional)…",
+        "docs_title": "Cambridge English-Prüfungsbezeichnungen",
+        "docs_body": "Wenn diese Option in den Einstellungen aktiviert ist, zeigen GER-Niveau-Badges die passende Cambridge English-Prüfung (z. B. A2 Key, B1 Preliminary, B2 First, C1 Advanced, C2 Proficiency) als dezente Zusatzbezeichnung an. Im Vokabelbereich des Rubrik-Editors erhält jedes Wort eine Schaltfläche \"Nachschlagen\", sofern unter Verwaltung → Integrationen ein Cambridge Dictionary API-Schlüssel hinterlegt ist; diese ruft automatisch GER-Niveau und Definition ab."
     }
 }

@@ -28,6 +28,7 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 - **Speaking sessions**: Structured speaking assessments with six pre-built dimensions aligned to Dutch VO CEFR targets (VMBO-BB through VWO).
 - **CEFR overview**: Per-student and whole-class proficiency dashboards showing progress across Reading, Writing, Speaking, and Listening.
 - **Student self-assessment**: Students rate themselves against Can-Do descriptors; reflection text is stored alongside teacher scores.
+- **Cambridge English exam mapping**: Optional setting shows the Cambridge English Qualification (A2 Key, B1 Preliminary, B2 First, C1 Advanced, C2 Proficiency) alongside CEFR level badges; vocabulary items can be enriched with CEFR level and definition via an optional Cambridge Dictionary API key.
 
 ### 4. Essay Writing
 - **Essay assignments**: Teachers create prompts with optional CEFR-linked rubrics.
@@ -61,7 +62,7 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 ### 8. Data Management
 
 - **Offline-first**: All data lives in the browser's `localStorage`. No account required.
-- **Cloud sync** (optional): Supabase backend for multi-device access and multi-teacher collaboration.
+- **Cloud sync** (optional): Supabase backend for multi-device access and multi-teacher collaboration. Sync hydrates `localStorage` from Supabase on load and after reconnect; per-record conflicts resolve last-write-wins (newest `updatedAt` wins), and offline edits queued in the pending-sync queue are protected from being clobbered by stale cloud data until they are pushed (see `src/utils/syncMerge.ts`).
 - **Backup & restore**: Export the entire dataset to JSON; restore from any prior backup.
 - **Admin panel**: School-level management — user roles, onboarding, student anonymisation, data-retention policies.
 

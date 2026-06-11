@@ -233,7 +233,25 @@ function buildEmptyRubricHTML(rubric: Rubric): string {
   </div>`;
 }
 
-function printHtml(html: string, orientation?: 'portrait' | 'landscape') {
+/** Google Fonts CSS2 family params for decorative export fonts that need loading before print. */
+const EXPORT_GOOGLE_FONTS: Record<string, string> = {
+    'Playfair Display': 'Playfair+Display:wght@400;700',
+    Oswald: 'Oswald:wght@400;500;700',
+    'Bebas Neue': 'Bebas+Neue',
+    'Special Elite': 'Special+Elite',
+    'Courier Prime': 'Courier+Prime:wght@400;700',
+};
+
+export function googleFontsLinkFor(fontFamily?: string): string {
+    if (!fontFamily) return '';
+    const tokens = new Set(fontFamily.split(',').map((part) => part.trim().replace(/^['"]|['"]$/g, '')));
+    const families = Object.keys(EXPORT_GOOGLE_FONTS).filter((name) => tokens.has(name));
+    if (families.length === 0) return '';
+    const familyParams = families.map((name) => `family=${EXPORT_GOOGLE_FONTS[name]}`).join('&');
+    return `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?${familyParams}&display=swap">`;
+}
+
+function printHtml(html: string, orientation?: 'portrait' | 'landscape', fontFamily?: string) {
     return new Promise<void>((resolve) => {
         const iframe = document.createElement('iframe');
         iframe.style.position = 'fixed';
@@ -246,11 +264,13 @@ function printHtml(html: string, orientation?: 'portrait' | 'landscape') {
 
         const doc = iframe.contentWindow?.document;
         if (doc) {
+            const fontLink = googleFontsLinkFor(fontFamily);
             doc.open();
             doc.write(`
                 <!DOCTYPE html>
                 <html>
                 <head>
+                    ${fontLink}
                     <style>
                         @page { size: ${orientation === 'landscape' ? 'landscape' : 'portrait'}; margin: 10mm; }
                         body { margin: 0; }
@@ -263,14 +283,17 @@ function printHtml(html: string, orientation?: 'portrait' | 'landscape') {
             `);
             doc.close();
 
-            setTimeout(() => {
-                iframe.contentWindow?.focus();
-                iframe.contentWindow?.print();
-                setTimeout(() => {
-                    document.body.removeChild(iframe);
-                    resolve();
-                }, 100);
-            }, 500);
+            setTimeout(
+                () => {
+                    iframe.contentWindow?.focus();
+                    iframe.contentWindow?.print();
+                    setTimeout(() => {
+                        document.body.removeChild(iframe);
+                        resolve();
+                    }, 100);
+                },
+                fontLink ? 800 : 500
+            );
         } else {
             resolve();
         }
@@ -285,7 +308,7 @@ export async function exportSinglePdf(
     options: { orientation?: 'portrait' | 'landscape' } = {}
 ): Promise<void> {
     const htmlStr = buildRubricHTML(sr, rubric, student, scale);
-    await printHtml(htmlStr, options.orientation || rubric.format.orientation || 'portrait');
+    await printHtml(htmlStr, options.orientation || rubric.format.orientation || 'portrait', rubric.format.fontFamily);
 }
 
 export async function exportBatchPdf(
@@ -299,10 +322,14 @@ export async function exportBatchPdf(
         // page only when needed so each student always starts on the front of a sheet.
         return buildRubricHTML(sr, rubric, student, scale, options.padForDoubleSided === true && index > 0);
     });
-    await printHtml(htmlParts.join(''), options.orientation || rubric.format.orientation || 'portrait');
+    await printHtml(
+        htmlParts.join(''),
+        options.orientation || rubric.format.orientation || 'portrait',
+        rubric.format.fontFamily
+    );
 }
 
 export async function exportRubricGridPdf(rubric: Rubric): Promise<void> {
     const htmlStr = buildEmptyRubricHTML(rubric);
-    await printHtml(htmlStr, rubric.format.orientation || 'portrait');
+    await printHtml(htmlStr, rubric.format.orientation || 'portrait', rubric.format.fontFamily);
 }

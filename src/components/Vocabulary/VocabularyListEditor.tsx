@@ -10,8 +10,13 @@ import {
     SpellCheck,
     MessagesSquare,
     Tag,
+    Search,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { lookupWord } from '../../services/cambridgeApi';
+import { useToast } from '../../hooks/useToast';
+import { CEFR_LEVELS } from '../../data/cefrDescriptors';
+import CefrBadge from '../CEFR/CefrBadge';
 import type { VocabularyItem, VocabularyCategory, RubricCriterion } from '../../types';
 
 interface Props {
@@ -22,6 +27,8 @@ interface Props {
     onUpdate: (item: VocabularyItem) => void;
     onDelete: (itemId: string) => void;
     onDeleteMultiple: (itemIds: string[]) => void;
+    /** Cambridge Dictionary API key — when set, shows a per-word "Look up" affordance */
+    cambridgeApiKey?: string;
 }
 
 const CATEGORIES: VocabularyCategory[] = ['vocabulary', 'grammar', 'discourse', 'other'];
@@ -48,8 +55,10 @@ export default function VocabularyListEditor({
     onUpdate,
     onDelete,
     onDeleteMultiple,
+    cambridgeApiKey,
 }: Props) {
     const { t } = useTranslation();
+    const { showToast } = useToast();
     const [filterCat, setFilterCat] = useState<VocabularyCategory | 'all'>('all');
     const [editingId, setEditingId] = useState<string | null>(null);
     const [newPhrase, setNewPhrase] = useState('');
@@ -59,6 +68,30 @@ export default function VocabularyListEditor({
     const csvRef = useRef<HTMLInputElement>(null);
     const [selectionMode, setSelectionMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [lookingUpId, setLookingUpId] = useState<string | null>(null);
+
+    async function handleLookup(item: VocabularyItem) {
+        if (!cambridgeApiKey || !item.phrase.trim()) return;
+        setLookingUpId(item.id);
+        try {
+            const result = await lookupWord(item.phrase.trim(), cambridgeApiKey);
+            if (!result || (!result.level && !result.definition)) {
+                showToast(t('cambridge.lookup_failed'), 'error');
+                return;
+            }
+            onUpdate({
+                ...item,
+                cefrLevel: item.cefrLevel ?? result.level ?? undefined,
+                definition: item.definition ?? result.definition ?? undefined,
+            });
+            showToast(t('cambridge.lookup_success'), 'success');
+        } catch (e) {
+            console.error('[cambridge] lookup failed', e);
+            showToast(t('cambridge.lookup_failed'), 'error');
+        } finally {
+            setLookingUpId(null);
+        }
+    }
 
     function handleAdd() {
         const phrase = newPhrase.trim();
@@ -282,6 +315,46 @@ export default function VocabularyListEditor({
                                         {t('common.done', 'Done')}
                                     </button>
                                 </div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <select
+                                        className="input"
+                                        style={{ width: 100 }}
+                                        value={item.cefrLevel ?? ''}
+                                        onChange={(e) =>
+                                            handleInlineUpdate(item, {
+                                                cefrLevel: (e.target.value || undefined) as VocabularyItem['cefrLevel'],
+                                            })
+                                        }
+                                        aria-label={t('cambridge.cefr_level_label')}
+                                    >
+                                        <option value="">{t('cambridge.cefr_level_placeholder')}</option>
+                                        {CEFR_LEVELS.map((lvl) => (
+                                            <option key={lvl} value={lvl}>
+                                                {lvl}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <input
+                                        className="input"
+                                        style={{ flex: 1, minWidth: 160 }}
+                                        value={item.definition ?? ''}
+                                        onChange={(e) =>
+                                            handleInlineUpdate(item, { definition: e.target.value || undefined })
+                                        }
+                                        placeholder={t('cambridge.definition_placeholder')}
+                                    />
+                                    {cambridgeApiKey && (
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            onClick={() => handleLookup(item)}
+                                            disabled={lookingUpId === item.id || !item.phrase.trim()}
+                                            title={t('cambridge.lookup_button')}
+                                        >
+                                            <Search size={14} />
+                                            {t('cambridge.lookup_button')}
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         ) : (
                             <div className="flex items-center" style={{ gap: 10 }}>
@@ -295,6 +368,7 @@ export default function VocabularyListEditor({
                                     />
                                 )}
                                 <span style={{ fontWeight: 600, flex: 1 }}>{item.phrase}</span>
+                                {item.cefrLevel && <CefrBadge level={item.cefrLevel} size="sm" />}
                                 <span
                                     className="text-xs"
                                     style={{

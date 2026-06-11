@@ -501,68 +501,78 @@ class StorageSyncService {
 
     async pushOne(entity: string, action: 'upsert' | 'delete', payload: unknown, id?: string): Promise<void> {
         if (!this.adapter.isConnected()) return;
+        let result: SyncResult | undefined;
         try {
             switch (entity) {
                 case 'rubric':
-                    if (action === 'upsert') await this.adapter.upsertRubric(payload as Rubric);
-                    else if (id) await this.adapter.deleteRubric(id);
+                    if (action === 'upsert') result = await this.adapter.upsertRubric(payload as Rubric);
+                    else if (id) result = await this.adapter.deleteRubric(id);
                     break;
                 case 'class':
-                    if (action === 'upsert') await this.adapter.upsertClass(payload as Class);
-                    else if (id) await this.adapter.deleteClass(id);
+                    if (action === 'upsert') result = await this.adapter.upsertClass(payload as Class);
+                    else if (id) result = await this.adapter.deleteClass(id);
                     break;
                 case 'student':
-                    if (action === 'upsert') await this.adapter.upsertStudent(payload as Student);
-                    else if (id) await this.adapter.deleteStudent(id);
+                    if (action === 'upsert') result = await this.adapter.upsertStudent(payload as Student);
+                    else if (id) result = await this.adapter.deleteStudent(id);
                     break;
                 case 'studentRubric':
-                    if (action === 'upsert') await this.adapter.upsertStudentRubric(payload as StudentRubric);
-                    else if (id) await this.adapter.deleteStudentRubric(id);
+                    if (action === 'upsert') result = await this.adapter.upsertStudentRubric(payload as StudentRubric);
+                    else if (id) result = await this.adapter.deleteStudentRubric(id);
                     break;
                 case 'peerReview':
-                    if (action === 'upsert') await this.adapter.upsertPeerReview(payload as StudentRubric);
-                    else if (id) await this.adapter.deletePeerReview(id);
+                    if (action === 'upsert') result = await this.adapter.upsertPeerReview(payload as StudentRubric);
+                    else if (id) result = await this.adapter.deletePeerReview(id);
                     break;
                 case 'attachment':
                     if (action === 'upsert') await this.attachmentSync.pushAttachment(payload as Attachment);
-                    else if (id) await this.adapter.deleteAttachment(id);
+                    else if (id) result = await this.adapter.deleteAttachment(id);
                     break;
                 case 'gradeScale':
-                    if (action === 'upsert') await this.adapter.upsertGradeScale(payload as GradeScale);
-                    else if (id) await this.adapter.deleteGradeScale(id);
+                    if (action === 'upsert') result = await this.adapter.upsertGradeScale(payload as GradeScale);
+                    else if (id) result = await this.adapter.deleteGradeScale(id);
                     break;
                 case 'commentSnippet':
-                    if (action === 'upsert') await this.adapter.upsertCommentSnippet(payload as CommentSnippet);
-                    else if (id) await this.adapter.deleteCommentSnippet(id);
+                    if (action === 'upsert')
+                        result = await this.adapter.upsertCommentSnippet(payload as CommentSnippet);
+                    else if (id) result = await this.adapter.deleteCommentSnippet(id);
                     break;
                 case 'commentBankItem':
-                    if (action === 'upsert') await this.adapter.upsertCommentBankItem(payload as CommentBankItem);
-                    else if (id) await this.adapter.deleteCommentBankItem(id);
+                    if (action === 'upsert')
+                        result = await this.adapter.upsertCommentBankItem(payload as CommentBankItem);
+                    else if (id) result = await this.adapter.deleteCommentBankItem(id);
                     break;
                 case 'exportTemplate':
                     if (action === 'upsert') await this.attachmentSync.pushExportTemplate(payload as ExportTemplate);
-                    else if (id) await this.adapter.deleteExportTemplate(id);
+                    else if (id) result = await this.adapter.deleteExportTemplate(id);
                     break;
                 case 'favoriteStandard':
-                    if (action === 'upsert') await this.adapter.upsertFavoriteStandard(payload as LinkedStandard);
-                    else if (id) await this.adapter.removeFavoriteStandard(id);
+                    if (action === 'upsert')
+                        result = await this.adapter.upsertFavoriteStandard(payload as LinkedStandard);
+                    else if (id) result = await this.adapter.removeFavoriteStandard(id);
                     break;
                 case 'selfAssessment':
-                    if (action === 'upsert') await this.adapter.upsertSelfAssessment(payload as SelfAssessment);
-                    else if (id) await this.adapter.deleteSelfAssessment(id);
+                    if (action === 'upsert')
+                        result = await this.adapter.upsertSelfAssessment(payload as SelfAssessment);
+                    else if (id) result = await this.adapter.deleteSelfAssessment(id);
                     break;
                 case 'speakingSession':
-                    if (action === 'upsert') await this.adapter.upsertSpeakingSession(payload as SpeakingSession);
-                    else if (id) await this.adapter.deleteSpeakingSession(id);
+                    if (action === 'upsert')
+                        result = await this.adapter.upsertSpeakingSession(payload as SpeakingSession);
+                    else if (id) result = await this.adapter.deleteSpeakingSession(id);
                     break;
                 case 'analysisResult':
-                    if (action === 'upsert') await this.adapter.upsertAnalysisResult(payload as DocumentAnalysisResult);
-                    else if (id) await this.adapter.deleteAnalysisResult(id);
+                    if (action === 'upsert')
+                        result = await this.adapter.upsertAnalysisResult(payload as DocumentAnalysisResult);
+                    else if (id) result = await this.adapter.deleteAnalysisResult(id);
                     break;
                 case 'settings':
                     if (action === 'upsert')
-                        await this.adapter.saveSettings(payload as import('../../types').AppSettings);
+                        result = await this.adapter.saveSettings(payload as import('../../types').AppSettings);
                     break;
+            }
+            if (result && !result.success) {
+                throw new Error(result.error || `sync ${entity} ${action} rejected`);
             }
             this.pushOneFailCount = 0;
         } catch (e) {

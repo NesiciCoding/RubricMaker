@@ -1151,5 +1151,18 @@
     "standards": {
         "remove_favorite": "Remove favorite standard",
         "link_standard": "Link standard"
+    },
+    "cambridge": {
+        "settings_section_title": "Cambridge English Labels",
+        "show_labels_setting": "Show Cambridge exam labels",
+        "show_labels_help": "Display the matching Cambridge English Qualification (e.g. \"B2 First\") next to CEFR level badges.",
+        "lookup_button": "Look up",
+        "lookup_failed": "Couldn't find Cambridge data for this word.",
+        "lookup_success": "Word details updated from Cambridge Dictionary.",
+        "cefr_level_label": "CEFR level",
+        "cefr_level_placeholder": "— CEFR level —",
+        "definition_placeholder": "Definition (optional)…",
+        "docs_title": "Cambridge English exam labels",
+        "docs_body": "When enabled in Settings, CEFR level badges show the matching Cambridge English Qualification (e.g. A2 Key, B1 Preliminary, B2 First, C1 Advanced, C2 Proficiency) as a subtle secondary label. In the Rubric Builder's vocabulary panel, if a Cambridge Dictionary API key is configured in Admin → Integrations, each word gets a \"Look up\" button that fetches its CEFR level and definition automatically."
     }
 }

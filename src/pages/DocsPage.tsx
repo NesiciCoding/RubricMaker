@@ -18,6 +18,7 @@ import {
     FileSearch,
     LayoutDashboard,
     ArrowRight,
+    Award,
 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useTranslation } from 'react-i18next';
@@ -478,6 +479,20 @@ function GettingStartedTab() {
                     ))}
                 </div>
             </FeatureSection>
+
+            <FeatureSection icon={Settings} title="Themes & appearance" color="#ec4899">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 12 }}>
+                    Personalise the look of the app and your exported rubrics from <strong>Settings → General</strong>.
+                </p>
+                <FeatureList
+                    items={[
+                        'Accent color — pick a custom hex color or one of 8 preset swatches.',
+                        'Interface font — choose the typeface used throughout the app (Inter, Nunito, Source Sans 3, Lato, Roboto).',
+                        'Theme bundles — Academy, Nature, Midnight, Warm, Slate, and Rose apply a matching accent color, interface font, and rubric header color in one click.',
+                        'Rubric export font — in the Rubric Builder formatting panel, choose the font used for headings in PDF and Word exports, including decorative options like Playfair Display, Oswald, Bebas Neue, Special Elite, and Courier Prime.',
+                    ]}
+                />
+            </FeatureSection>
         </div>
     );
 }
@@ -665,6 +680,22 @@ function CefrTab() {
                     alongside the teacher's scores and are visible on the Student Profile and CEFR Overview pages.
                 </p>
             </FeatureSection>
+
+            <FeatureSection icon={Award} title="Cambridge English Exam Labels" color="#f59e0b">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    Enable "Show Cambridge exam labels" in Settings → General to display the Cambridge English
+                    Qualification that maps to each CEFR level (A2 Key, B1 Preliminary, B2 First, C1 Advanced, C2
+                    Proficiency) as a subtle secondary label next to CEFR badges on the Student CEFR Overview and
+                    Student Profile pages. A1 has no main-suite Cambridge exam, so no label is shown for it.
+                </p>
+                <FeatureList
+                    items={[
+                        'Rubric Builder vocabulary panel — when a Cambridge Dictionary API key is set in Admin → Integrations, each word gets a "Look up" button that fetches its CEFR level and definition.',
+                        'Lookups only fill in empty CEFR level / definition fields and never overwrite values you already entered.',
+                        'Without an API key, the lookup button is hidden and the app continues to work fully offline using the bundled CEFR-J vocabulary data.',
+                    ]}
+                />
+            </FeatureSection>
         </div>
     );
 }
@@ -798,6 +829,7 @@ function DataTab() {
                         'LocalStorage stays the source of truth; Supabase is a sync layer.',
                         'Multi-teacher collaboration: share rubrics between accounts in the same Supabase project.',
                         'Email OTP login — optional; requires SMTP configuration in Docker.',
+                        'Conflict resolution: when local and cloud data differ, the newest change wins. Edits made while offline are protected and never overwritten by older cloud data until they have synced.',
                     ]}
                 />
             </FeatureSection>

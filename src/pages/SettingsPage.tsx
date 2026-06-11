@@ -537,6 +537,7 @@ export default function SettingsPage() {
                                                                 },
                                                             });
                                                             setAccentInput(bundle.accentColor);
+                                                            setAccentError(false);
                                                         }}
                                                         style={{
                                                             display: 'flex',
@@ -631,6 +632,36 @@ export default function SettingsPage() {
                             <p className="text-muted text-sm" style={{ marginTop: 12 }}>
                                 {t('settings.language_help')}
                             </p>
+                        </div>
+
+                        {/* Cambridge English exam labels */}
+                        <div className="card" style={{ marginBottom: 24 }}>
+                            <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
+                                <GraduationCap size={20} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                                <h3 style={{ margin: 0 }}>{t('cambridge.settings_section_title')}</h3>
+                            </div>
+                            <label
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 10,
+                                    cursor: 'pointer',
+                                    userSelect: 'none',
+                                }}
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={!!settings.showCambridgeLabels}
+                                    onChange={(e) => updateSettings({ showCambridgeLabels: e.target.checked })}
+                                    style={{ accentColor: 'var(--accent)' }}
+                                />
+                                <div>
+                                    <div style={{ fontWeight: 500 }}>{t('cambridge.show_labels_setting')}</div>
+                                    <div className="text-xs text-muted" style={{ marginTop: 2 }}>
+                                        {t('cambridge.show_labels_help')}
+                                    </div>
+                                </div>
+                            </label>
                         </div>
 
                         {/* Guided tour */}
