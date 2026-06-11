@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { mergeCollection, mergeStoreData } from './syncMerge';
 import type { StoreData, PendingWrite } from '../store/storage';
-import type { Rubric, Student, LinkedStandard } from '../types';
+import type { Rubric, Student, LinkedStandard, StudentRubric } from '../types';
 
 interface Item {
     id: string;
@@ -173,6 +173,18 @@ function makeStudent(id: string, name: string): Student {
     return { id, name, classId: 'default' };
 }
 
+function makeStudentRubric(id: string, updatedAt?: string, isPeerReview = false): StudentRubric {
+    return {
+        id,
+        rubricId: 'r1',
+        studentId: 's1',
+        entries: [],
+        overallComment: '',
+        isPeerReview,
+        updatedAt,
+    };
+}
+
 function makeStandard(guid: string, title: string): LinkedStandard {
     return {
         guid,
@@ -298,6 +310,36 @@ describe('mergeStoreData', () => {
 
         const result = mergeStoreData(local, remote, []);
         expect(result.rubrics).toEqual([remoteRubric]);
+    });
+
+    it('studentRubric (grade) LWW works end-to-end via updatedAt: local newer wins', () => {
+        const localSr = makeStudentRubric('sr1', '2024-02-01T00:00:00.000Z');
+        const remoteSr = makeStudentRubric('sr1', '2024-01-01T00:00:00.000Z');
+        const local = baseStoreData({ studentRubrics: [localSr] });
+        const remote: Partial<StoreData> = { studentRubrics: [remoteSr] };
+
+        const result = mergeStoreData(local, remote, []);
+        expect(result.studentRubrics).toEqual([localSr]);
+    });
+
+    it('studentRubric (grade) LWW works end-to-end via updatedAt: remote newer wins', () => {
+        const localSr = makeStudentRubric('sr1', '2024-01-01T00:00:00.000Z');
+        const remoteSr = makeStudentRubric('sr1', '2024-02-01T00:00:00.000Z');
+        const local = baseStoreData({ studentRubrics: [localSr] });
+        const remote: Partial<StoreData> = { studentRubrics: [remoteSr] };
+
+        const result = mergeStoreData(local, remote, []);
+        expect(result.studentRubrics).toEqual([remoteSr]);
+    });
+
+    it('peerReview LWW works end-to-end via updatedAt: local newer wins', () => {
+        const localPr = makeStudentRubric('pr1', '2024-02-01T00:00:00.000Z', true);
+        const remotePr = makeStudentRubric('pr1', '2024-01-01T00:00:00.000Z', true);
+        const local = baseStoreData({ peerReviews: [localPr] });
+        const remote: Partial<StoreData> = { peerReviews: [remotePr] };
+
+        const result = mergeStoreData(local, remote, []);
+        expect(result.peerReviews).toEqual([localPr]);
     });
 
     it('non-LWW collection (students) only keeps local-only records when pending', () => {

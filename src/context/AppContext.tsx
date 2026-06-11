@@ -186,11 +186,12 @@ function reducer(state: StoreData, action: Action): StoreData {
             return { ...state, classes: next };
         }
         case 'SAVE_STUDENT_RUBRIC': {
-            const exists = state.studentRubrics.findIndex((sr) => sr.id === action.payload.id);
+            const payload = { ...action.payload, updatedAt: new Date().toISOString() };
+            const exists = state.studentRubrics.findIndex((sr) => sr.id === payload.id);
             const next =
                 exists >= 0
-                    ? state.studentRubrics.map((sr) => (sr.id === action.payload.id ? action.payload : sr))
-                    : [...state.studentRubrics, action.payload];
+                    ? state.studentRubrics.map((sr) => (sr.id === payload.id ? payload : sr))
+                    : [...state.studentRubrics, payload];
             saveStudentRubrics(next);
             return { ...state, studentRubrics: next };
         }
@@ -207,6 +208,7 @@ function reducer(state: StoreData, action: Action): StoreData {
                 selfAssessmentLevels: action.levels,
                 selfAssessmentReflection: action.reflection,
                 selfAssessedAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
             };
             const next = state.studentRubrics.map((sr) => (sr.id === action.id ? updated : sr));
             saveStudentRubrics(next);
@@ -294,11 +296,12 @@ function reducer(state: StoreData, action: Action): StoreData {
             return { ...state, exportTemplates: next };
         }
         case 'SAVE_PEER_REVIEW': {
-            const exists = state.peerReviews.findIndex((sr) => sr.id === action.payload.id);
+            const payload = { ...action.payload, updatedAt: new Date().toISOString() };
+            const exists = state.peerReviews.findIndex((sr) => sr.id === payload.id);
             const next =
                 exists >= 0
-                    ? state.peerReviews.map((sr) => (sr.id === action.payload.id ? action.payload : sr))
-                    : [...state.peerReviews, action.payload];
+                    ? state.peerReviews.map((sr) => (sr.id === payload.id ? payload : sr))
+                    : [...state.peerReviews, payload];
             savePeerReviews(next);
             return { ...state, peerReviews: next };
         }

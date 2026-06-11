@@ -388,6 +388,8 @@ export interface StudentRubric {
     submittedAt?: string;
     gradedAt?: string;
     gradedBy?: string;
+    /** ISO timestamp of the last local edit; used for last-write-wins sync conflict resolution */
+    updatedAt?: string;
     isPeerReview: boolean;
     /** When true the student did not hand in the work */
     notHandedIn?: boolean;
