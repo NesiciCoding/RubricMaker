@@ -32,6 +32,7 @@ import { useDbStatus } from '../hooks/useDbStatus';
 import type { GradeScale, GradeRange, UserRole } from '../types';
 import { exportFullBackup } from '../store/storage';
 import { hashPin, verifyPin, isHashed } from '../utils/pinHash';
+import { THEME_BUNDLES } from '../data/themes';
 
 type Tab = 'general' | 'teaching' | 'administration';
 
@@ -282,6 +283,21 @@ export default function SettingsPage() {
         const valid = /^#[0-9A-Fa-f]{6}$/.test(val);
         setAccentError(!valid);
         if (valid) updateSettings({ accentColor: val });
+    }
+
+    function applyTheme(theme: (typeof THEME_BUNDLES)[number]) {
+        setAccentInput(theme.accent);
+        setAccentError(false);
+        updateSettings({
+            accentColor: theme.accent,
+            uiFontFamily: theme.font,
+            colorPreset: theme.id,
+            defaultFormat: {
+                ...settings.defaultFormat,
+                fontFamily: theme.exportFont,
+                headerColor: theme.headerColor,
+            },
+        });
     }
 
     function confirmDeleteScale() {
@@ -552,6 +568,76 @@ export default function SettingsPage() {
                                         </select>
                                     </div>
                                 )}
+                                {/* ─── Theme bundles ─────────────────────────────────────────────── */}
+                                {isUserPlus && (
+                                    <div className="form-group">
+                                        <label>{t('themes.section_title')}</label>
+                                        <div
+                                            style={{
+                                                display: 'grid',
+                                                gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+                                                gap: 10,
+                                                marginTop: 6,
+                                            }}
+                                        >
+                                            {THEME_BUNDLES.map((theme) => {
+                                                const active = settings.colorPreset === theme.id;
+                                                return (
+                                                    <button
+                                                        key={theme.id}
+                                                        type="button"
+                                                        onClick={() => applyTheme(theme)}
+                                                        aria-pressed={active}
+                                                        style={{
+                                                            display: 'flex',
+                                                            flexDirection: 'column',
+                                                            gap: 8,
+                                                            padding: 10,
+                                                            borderRadius: 8,
+                                                            border: active
+                                                                ? `2px solid ${theme.accent}`
+                                                                : '1px solid var(--border)',
+                                                            background: 'var(--bg-elevated)',
+                                                            cursor: 'pointer',
+                                                            textAlign: 'left',
+                                                            boxShadow: active ? `0 0 0 1px ${theme.accent}` : 'none',
+                                                        }}
+                                                    >
+                                                        <div
+                                                            style={{
+                                                                display: 'flex',
+                                                                height: 28,
+                                                                borderRadius: 5,
+                                                                overflow: 'hidden',
+                                                            }}
+                                                        >
+                                                            <div style={{ flex: 1, background: theme.headerColor }} />
+                                                            <div style={{ flex: 1, background: theme.accent }} />
+                                                        </div>
+                                                        <div
+                                                            style={{
+                                                                fontFamily: `'${theme.font}', system-ui, sans-serif`,
+                                                                fontSize: 13,
+                                                                fontWeight: 600,
+                                                                color: 'var(--text)',
+                                                            }}
+                                                        >
+                                                            {t(theme.labelKey)}
+                                                        </div>
+                                                        <div
+                                                            style={{
+                                                                fontSize: 11,
+                                                                color: 'var(--text-muted)',
+                                                            }}
+                                                        >
+                                                            {theme.font}
+                                                        </div>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -578,6 +664,36 @@ export default function SettingsPage() {
                             <p className="text-muted text-sm" style={{ marginTop: 12 }}>
                                 {t('settings.language_help')}
                             </p>
+                        </div>
+
+                        {/* Cambridge English exam labels */}
+                        <div className="card" style={{ marginBottom: 24 }}>
+                            <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
+                                <GraduationCap size={20} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                                <h3 style={{ margin: 0 }}>{t('cambridge.settings_section_title')}</h3>
+                            </div>
+                            <label
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 10,
+                                    cursor: 'pointer',
+                                    userSelect: 'none',
+                                }}
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={!!settings.showCambridgeLabels}
+                                    onChange={(e) => updateSettings({ showCambridgeLabels: e.target.checked })}
+                                    style={{ accentColor: 'var(--accent)' }}
+                                />
+                                <div>
+                                    <div style={{ fontWeight: 500 }}>{t('cambridge.show_labels_setting')}</div>
+                                    <div className="text-xs text-muted" style={{ marginTop: 2 }}>
+                                        {t('cambridge.show_labels_help')}
+                                    </div>
+                                </div>
+                            </label>
                         </div>
 
                         {/* Guided tour */}

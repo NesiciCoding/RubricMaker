@@ -202,6 +202,27 @@ export default function RubricBuilder() {
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, [isDirty]);
 
+    useEffect(() => {
+        const EXPORT_GOOGLE_FONTS: Record<string, string> = {
+            'Playfair Display': 'Playfair+Display:wght@400;700',
+            Oswald: 'Oswald:wght@400;500;700',
+            'Bebas Neue': 'Bebas+Neue',
+            'Special Elite': 'Special+Elite',
+            'Courier Prime': 'Courier+Prime:wght@400;700',
+        };
+        const families = Object.keys(EXPORT_GOOGLE_FONTS).filter((name) => format.fontFamily.includes(name));
+        if (families.length === 0) return;
+        let link = document.getElementById('rubric-export-gfont') as HTMLLinkElement | null;
+        if (!link) {
+            link = document.createElement('link');
+            link.id = 'rubric-export-gfont';
+            link.rel = 'stylesheet';
+            document.head.appendChild(link);
+        }
+        const familyParams = families.map((name) => `family=${EXPORT_GOOGLE_FONTS[name]}`).join('&');
+        link.href = `https://fonts.googleapis.com/css2?${familyParams}&display=swap`;
+    }, [format.fontFamily]);
+
     const getRubricData = useCallback(
         (): Rubric => ({
             id: existing?.id ?? 'temp',
@@ -1074,6 +1095,7 @@ export default function RubricBuilder() {
                                         onUpdate={(item) => updateVocabularyItem(id, item)}
                                         onDelete={(itemId) => deleteVocabularyItem(id, itemId)}
                                         onDeleteMultiple={(itemIds) => deleteVocabularyItems(id, itemIds)}
+                                        cambridgeApiKey={settings.cambridgeApiKey}
                                     />
                                 </div>
                             )}
@@ -2800,6 +2822,11 @@ export default function RubricBuilder() {
                                         <option value='"Times New Roman", Times, serif'>Times New Roman</option>
                                         <option value="Georgia, serif">Georgia</option>
                                         <option value='"Courier New", Courier, monospace'>Monospace (Courier)</option>
+                                        <option value="'Playfair Display', Georgia, serif">Playfair Display</option>
+                                        <option value="'Oswald', Arial, sans-serif">Oswald</option>
+                                        <option value="'Bebas Neue', Arial, sans-serif">Bebas Neue</option>
+                                        <option value="'Special Elite', 'Courier New', monospace">Special Elite</option>
+                                        <option value="'Courier Prime', 'Courier New', monospace">Courier Prime</option>
                                     </select>
                                 </div>
                                 <div className="form-group">

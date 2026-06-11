@@ -1091,5 +1091,26 @@
         "tab_essays": "Rédaction d'essais",
         "tab_analytics": "Analyses & Export",
         "tab_data": "Gestion des données"
+    },
+    "themes": {
+        "section_title": "Thèmes prédéfinis",
+        "academy": "Académie",
+        "nature": "Nature",
+        "midnight": "Minuit",
+        "warm": "Chaleureux",
+        "slate": "Ardoise"
+    },
+    "cambridge": {
+        "settings_section_title": "Étiquettes Cambridge English",
+        "show_labels_setting": "Afficher les étiquettes d'examen Cambridge",
+        "show_labels_help": "Afficher l'examen Cambridge English correspondant (par ex. « B2 First ») à côté des badges de niveau CECR.",
+        "lookup_button": "Rechercher",
+        "lookup_failed": "Aucune donnée Cambridge trouvée pour ce mot.",
+        "lookup_success": "Détails du mot mis à jour depuis Cambridge Dictionary.",
+        "cefr_level_label": "Niveau CECR",
+        "cefr_level_placeholder": "— Niveau CECR —",
+        "definition_placeholder": "Définition (facultatif)…",
+        "docs_title": "Étiquettes d'examens Cambridge English",
+        "docs_body": "Lorsque cette option est activée dans les paramètres, les badges de niveau CECR affichent l'examen Cambridge English correspondant (par ex. A2 Key, B1 Preliminary, B2 First, C1 Advanced, C2 Proficiency) sous forme d'étiquette secondaire discrète. Dans le panneau de vocabulaire du créateur de grilles, si une clé API Cambridge Dictionary est configurée dans Administration → Intégrations, chaque mot dispose d'un bouton « Rechercher » qui récupère automatiquement son niveau CECR et sa définition."
     }
 }

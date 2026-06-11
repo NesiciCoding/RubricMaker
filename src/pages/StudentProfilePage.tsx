@@ -424,7 +424,12 @@ export default function StudentProfilePage() {
                                                 style={{ display: 'flex', alignItems: 'center', gap: 12 }}
                                             >
                                                 {/* Level badge */}
-                                                <CefrBadge level={entry.level} size="md" style={{ minWidth: 36 }} />
+                                                <CefrBadge
+                                                    level={entry.level}
+                                                    size="md"
+                                                    showCambridgeLabel={settings.showCambridgeLabels}
+                                                    style={{ minWidth: 36 }}
+                                                />
 
                                                 {/* Skill label */}
                                                 <span

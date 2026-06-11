@@ -1091,5 +1091,26 @@
         "tab_essays": "Essays schrijven",
         "tab_analytics": "Analyse & Export",
         "tab_data": "Gegevensbeheer"
+    },
+    "themes": {
+        "section_title": "Themabundels",
+        "academy": "Academie",
+        "nature": "Natuur",
+        "midnight": "Middernacht",
+        "warm": "Warm",
+        "slate": "Leisteen"
+    },
+    "cambridge": {
+        "settings_section_title": "Cambridge English-labels",
+        "show_labels_setting": "Cambridge-examenlabels tonen",
+        "show_labels_help": "Toon het bijbehorende Cambridge English-examen (bijv. \"B2 First\") naast CEFR-niveaubadges.",
+        "lookup_button": "Opzoeken",
+        "lookup_failed": "Geen Cambridge-gegevens gevonden voor dit woord.",
+        "lookup_success": "Woordgegevens bijgewerkt vanuit Cambridge Dictionary.",
+        "cefr_level_label": "ERK-niveau",
+        "cefr_level_placeholder": "— ERK-niveau —",
+        "definition_placeholder": "Definitie (optioneel)…",
+        "docs_title": "Cambridge English-examenlabels",
+        "docs_body": "Wanneer dit in Instellingen is ingeschakeld, tonen ERK-niveaubadges het bijbehorende Cambridge English-examen (bijv. A2 Key, B1 Preliminary, B2 First, C1 Advanced, C2 Proficiency) als subtiel extra label. In het woordenschatpaneel van de Rubricbouwer krijgt elk woord, als er een Cambridge Dictionary API-sleutel is ingesteld bij Beheer → Integraties, een knop \"Opzoeken\" die automatisch het ERK-niveau en de definitie ophaalt."
     }
 }

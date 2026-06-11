@@ -265,6 +265,10 @@ export interface VocabularyItem {
     linkedCriterionId?: string;
     linkedSubItemId?: string;
     notes?: string;
+    /** CEFR level, optionally filled via Cambridge Dictionary lookup */
+    cefrLevel?: CefrLevel;
+    /** Plain-text definition, optionally filled via Cambridge Dictionary lookup */
+    definition?: string;
 }
 
 export interface DetectedItem {
@@ -469,10 +473,14 @@ export interface AppSettings {
     schoolId?: string;
     /** Optional Cambridge Dictionary API key for online CEFR word-level enrichment */
     cambridgeApiKey?: string;
+    /** Show Cambridge English exam labels (e.g. "B2 First") alongside CEFR level badges */
+    showCambridgeLabels?: boolean;
     /** Display name of the user's school (populated on login). */
     schoolName?: string;
     /** UI font family for the app chrome. */
     uiFontFamily?: UiFontFamily;
+    /** ID of the active theme bundle from src/data/themes.ts, if a full theme preset was applied. */
+    colorPreset?: string;
     /** Whether to send an email notification to the student when a grade is saved (Supabase mode only). */
     notifyStudentsOnGrade?: boolean;
 }

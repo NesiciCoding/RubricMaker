@@ -1,11 +1,16 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import VocabularyListEditor from '../Vocabulary/VocabularyListEditor';
+import { lookupWord } from '../../services/cambridgeApi';
 import type { VocabularyItem, RubricCriterion } from '../../types';
 
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key }),
+}));
+
+vi.mock('../../services/cambridgeApi', () => ({
+    lookupWord: vi.fn(),
 }));
 
 const mockCriteria: RubricCriterion[] = [
@@ -263,5 +268,70 @@ describe('VocabularyListEditor', () => {
         await vi.waitFor(() => expect(onAdd).toHaveBeenCalled());
         expect(onAdd).toHaveBeenCalledWith({ phrase: 'hello', category: 'vocabulary' });
         expect(onAdd).toHaveBeenCalledWith({ phrase: 'world', category: 'vocabulary' });
+    });
+
+    describe('Cambridge lookup', () => {
+        function enterEditMode(items: VocabularyItem[], extraProps: Record<string, unknown> = {}) {
+            render(<VocabularyListEditor {...baseProps} items={items} {...extraProps} />);
+            const editBtns = screen.getAllByRole('button');
+            const editBtn = editBtns.find((b) => b.querySelector('.lucide-chevron-down'));
+            fireEvent.click(editBtn!);
+        }
+
+        it('does not show the Look up button when no cambridgeApiKey is set', () => {
+            enterEditMode([makeItem()]);
+            expect(screen.queryByRole('button', { name: 'cambridge.lookup_button' })).toBeNull();
+        });
+
+        it('shows the Look up button when cambridgeApiKey is set', () => {
+            enterEditMode([makeItem()], { cambridgeApiKey: 'key123' });
+            expect(screen.getByRole('button', { name: 'cambridge.lookup_button' })).toBeInTheDocument();
+        });
+
+        it('fills empty cefrLevel and definition fields from a successful lookup', async () => {
+            const onUpdate = vi.fn();
+            (lookupWord as ReturnType<typeof vi.fn>).mockResolvedValue({ level: 'B2', definition: 'a friendly greeting' });
+            const items = [makeItem()];
+            enterEditMode(items, { cambridgeApiKey: 'key123', onUpdate });
+
+            fireEvent.click(screen.getByRole('button', { name: 'cambridge.lookup_button' }));
+
+            await waitFor(() =>
+                expect(onUpdate).toHaveBeenCalledWith({
+                    ...items[0],
+                    cefrLevel: 'B2',
+                    definition: 'a friendly greeting',
+                })
+            );
+        });
+
+        it('does not overwrite an existing cefrLevel or definition', async () => {
+            const onUpdate = vi.fn();
+            (lookupWord as ReturnType<typeof vi.fn>).mockResolvedValue({ level: 'B2', definition: 'a friendly greeting' });
+            const items = [makeItem({ cefrLevel: 'A1', definition: 'existing definition' })];
+            enterEditMode(items, { cambridgeApiKey: 'key123', onUpdate });
+
+            fireEvent.click(screen.getByRole('button', { name: 'cambridge.lookup_button' }));
+
+            await waitFor(() =>
+                expect(onUpdate).toHaveBeenCalledWith({
+                    ...items[0],
+                    cefrLevel: 'A1',
+                    definition: 'existing definition',
+                })
+            );
+        });
+
+        it('shows an error toast when the lookup fails', async () => {
+            const onUpdate = vi.fn();
+            (lookupWord as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+            const items = [makeItem()];
+            enterEditMode(items, { cambridgeApiKey: 'key123', onUpdate });
+
+            fireEvent.click(screen.getByRole('button', { name: 'cambridge.lookup_button' }));
+
+            await waitFor(() => expect(lookupWord).toHaveBeenCalledWith('good morning', 'key123'));
+            expect(onUpdate).not.toHaveBeenCalled();
+        });
     });
 });

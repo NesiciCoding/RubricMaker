@@ -22,7 +22,7 @@ import { VO_TRACK_LABELS, VO_TRACK_COLORS, VO_TRACK_DEFAULT_CEFR } from '../data
 export default function StudentCefrOverviewPage() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { students, classes, rubrics, studentRubrics, selfAssessments, analysisResults } = useApp();
+    const { students, classes, rubrics, studentRubrics, selfAssessments, analysisResults, settings } = useApp();
     const { t, i18n } = useTranslation();
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
     const [copiedLink, setCopiedLink] = useState(false);
@@ -150,7 +150,7 @@ export default function StudentCefrOverviewPage() {
                                     }}
                                 >
                                     {t('cefrOverview.target_level_label')}:
-                                    <CefrBadge level={targetLevel} size="sm" />
+                                    <CefrBadge level={targetLevel} size="sm" showCambridgeLabel={settings.showCambridgeLabels} />
                                 </span>
                             )}
                         </div>

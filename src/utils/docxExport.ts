@@ -16,6 +16,26 @@ import { saveAs } from 'file-saver';
 import type { Rubric, RubricCriterion, StudentRubric, Student, GradeScale } from '../types';
 import { calcGradeSummary } from './gradeCalc';
 
+/** Extracts the first font name from a CSS font-family stack (e.g. "'Playfair Display', Georgia, serif" -> "Playfair Display"). */
+export function extractDocxFontName(fontFamily?: string): string | undefined {
+    if (!fontFamily) return undefined;
+    const first = fontFamily.split(',')[0]?.trim().replace(/^['"]|['"]$/g, '');
+    return first || undefined;
+}
+
+/** Default document styles honoring the rubric's chosen export font, applied to body text and headings. */
+export function buildDocxStyles(fontFamily?: string) {
+    const font = extractDocxFontName(fontFamily);
+    if (!font) return undefined;
+    return {
+        default: {
+            document: { run: { font } },
+            heading1: { run: { font } },
+            heading2: { run: { font } },
+        },
+    };
+}
+
 export async function exportRubricToDocx(rubric: Rubric) {
     const fmt = rubric.format;
 
@@ -186,6 +206,7 @@ export async function exportRubricToDocx(rubric: Rubric) {
     });
 
     const doc = new Document({
+        styles: buildDocxStyles(fmt.fontFamily),
         sections: [
             {
                 properties: {
@@ -428,6 +449,7 @@ export async function exportBatchDocx(
     });
 
     const doc = new Document({
+        styles: buildDocxStyles(fmt.fontFamily),
         sections: [
             {
                 properties: {
