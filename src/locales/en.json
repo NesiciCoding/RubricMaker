@@ -36,7 +36,8 @@
         "settings": "Settings",
         "language": "Language",
         "toggle_theme": "Toggle theme",
-        "print": "Print"
+        "print": "Print",
+        "view": "View"
     },
     "sidebar": {
         "main_section": "Main",
@@ -118,6 +119,21 @@
         "delete_scale_confirm": "Are you sure you want to delete this grade scale? This cannot be undone.",
         "accent_color_label": "Accent Color",
         "accent_color_invalid": "Enter a valid 6-digit hex color (e.g. #3b82f6).",
+        "preset_ocean": "Ocean",
+        "preset_forest": "Forest",
+        "preset_indigo": "Indigo",
+        "preset_sunset": "Sunset",
+        "preset_rose": "Rose",
+        "preset_slate": "Slate",
+        "preset_teal": "Teal",
+        "preset_gold": "Gold",
+        "theme_bundles_label": "Theme bundles",
+        "theme_bundle_academy": "Academy",
+        "theme_bundle_nature": "Nature",
+        "theme_bundle_midnight": "Midnight",
+        "theme_bundle_warm": "Warm",
+        "theme_bundle_slate": "Slate",
+        "theme_bundle_rose": "Rose",
         "ui_font_label": "Interface Font",
         "cloud_sync": "Cloud Sync (Microsoft 365)",
         "cloud_sync_help": "Connect your Microsoft account to sync rubrics across devices via OneDrive or SharePoint.",
@@ -240,7 +256,8 @@
         "share_notfound": "No account found for {{email}}. Ask them to sign in to RubricMaker first.",
         "share_shared_with": "Shared with",
         "share_btn": "Share",
-        "speaking_select_student": "🎙 Speaking…"
+        "speaking_select_student": "🎙 Speaking…",
+        "action_unshare": "Remove share"
     },
     "studentsPage": {
         "title": "Students & Classes",
@@ -288,7 +305,10 @@
         "merge_confirm_description": "All students from <strong>{{source}}</strong> will be moved into <strong>{{target}}</strong>. The source class will be deleted. This cannot be undone.",
         "merge_confirm_action": "Merge",
         "action_export_summaries": "Export Summaries",
-        "back_to_roster": "Back to Roster"
+        "back_to_roster": "Back to Roster",
+        "action_class_menu": "Class options",
+        "action_edit_student": "Edit student",
+        "action_delete_student": "Delete student"
     },
     "gradeStudent": {
         "title_prefix": "Grading:",
@@ -346,7 +366,8 @@
         "action_print": "Print",
         "action_essay": "Essay",
         "action_import_essay": "Import essay",
-        "anchor_help_text": "Anchor papers are reference submissions used to calibrate your grading. Marking a submission as an anchor lets you compare it side-by-side with new submissions in the grade footer."
+        "anchor_help_text": "Anchor papers are reference submissions used to calibrate your grading. Marking a submission as an anchor lets you compare it side-by-side with new submissions in the grade footer.",
+        "aria_grade_summary": "Grade summary"
     },
     "rubricBuilder": {
         "action_back": "Back",
@@ -463,7 +484,25 @@
         "weight_total_hint": "(should be 100%)",
         "weight_total_warning": "Weights total {{total}}% (expected 100%). You can still save — the grade engine normalises them.",
         "weight_distribute_evenly": "Distribute evenly",
-        "cefr_skill_inherit": "— inherit from rubric —"
+        "cefr_skill_inherit": "— inherit from rubric —",
+        "label_subject": "Subject",
+        "label_description": "Description",
+        "label_grade_scale": "Grade Scale",
+        "grade_scale_none": "None (raw points only)",
+        "action_move_criterion_up": "Move criterion up",
+        "action_move_criterion_down": "Move criterion down",
+        "action_expand_criterion": "Expand",
+        "action_collapse_criterion": "Collapse",
+        "action_delete_criterion": "Delete criterion",
+        "sub_item_min_title": "Min points for this sub-item",
+        "sub_item_max_title": "Max points for this sub-item",
+        "sub_item_link_standard_title": "Link standard to this sub-item",
+        "sub_item_delete_title": "Delete sub-item",
+        "action_unlink_standard": "Unlink standard",
+        "action_remove_descriptor": "Remove descriptor",
+        "action_delete_level": "Delete level",
+        "action_move_level_left": "Move level left",
+        "action_move_level_right": "Move level right"
     },
     "peerReview": {
         "round_label": "Round",
@@ -483,6 +522,8 @@
         "storage_full": "Storage is full — your changes may not have been saved.",
         "sync_load_failed": "Could not load your cloud data. Showing local data instead.",
         "sync_push_failed": "Changes may not be synced — check your connection.",
+        "empty_supabase_url": "Supabase URL cannot be empty.",
+        "invalid_supabase_url_protocol": "Invalid protocol: only http:// and https:// are supported.",
         "sync_queued": "Offline — changes will sync when you reconnect.",
         "sync_flushed": "Back online — all changes synced.",
         "copy_paste_failed": "Copy/paste failed. Please try again.",
@@ -613,7 +654,12 @@
         "student_progress_count": "Student Progress ({{count}})",
         "overall_comments_title": "Overall Comments",
         "rubric_not_found": "Rubric not found",
-        "overall_feedback_placeholder": "Overall feedback…"
+        "overall_feedback_placeholder": "Overall feedback…",
+        "sub_criteria": "Sub-criteria",
+        "a_better_on_sub": "A better on this sub-criterion",
+        "equal_on_sub": "Equal on this sub-criterion",
+        "b_better_on_sub": "B better on this sub-criterion",
+        "performed_better": "{{name}} performed better"
     },
     "studentPortal": {
         "not_found": "Student not found.",
@@ -995,6 +1041,7 @@
         "anon_auth_title": "Anonymous Sign-Ins (Essay Workflow)",
         "anon_auth_desc": "Students using Safe Exam Browser cannot sign in with OTP. Anonymous sign-ins let them access essay assignments without a password or email code.",
         "anon_auth_hint": "Enable 'Allow anonymous sign-ins' in your Supabase project under Authentication → Configuration, then redeploy.",
+        "otp_code_placeholder": "Enter 8-digit code",
         "users_offline_title": "User management requires a database connection",
         "users_offline_body": "Connect a Supabase database to manage user roles and view all registered accounts. See the Deployment documentation to configure cloud sync.",
         "schools_offline_title": "School management requires a database connection",
@@ -1075,7 +1122,9 @@
         "essay_text_label": "Essay",
         "show_essay": "Show essay",
         "hide_essay": "Hide essay",
-        "expired_desc_no_date": "This assignment has expired. Please contact your teacher."
+        "expired_desc_no_date": "This assignment has expired. Please contact your teacher.",
+        "email_invalid": "Enter a valid school email address.",
+        "session_error": "Could not start session. Ask your teacher to enable anonymous sign-ins in Supabase."
     },
     "editor": {
         "switchToCompactView": "Switch to compact view",
@@ -1092,13 +1141,16 @@
         "tab_analytics": "Analytics & Export",
         "tab_data": "Data Management"
     },
-    "themes": {
-        "section_title": "Theme bundles",
-        "academy": "Academy",
-        "nature": "Nature",
-        "midnight": "Midnight",
-        "warm": "Warm",
-        "slate": "Slate"
+    "studentProfile": {
+        "tab_overview": "Overview",
+        "tab_portfolio": "Portfolio",
+        "portfolio_empty": "No activity yet for this student.",
+        "portfolio_kind_grade": "Rubric Grade",
+        "no_grades_yet": "No graded rubrics yet for this student."
+    },
+    "standards": {
+        "remove_favorite": "Remove favorite standard",
+        "link_standard": "Link standard"
     },
     "cambridge": {
         "settings_section_title": "Cambridge English Labels",

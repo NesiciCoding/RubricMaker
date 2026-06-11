@@ -489,7 +489,7 @@ function GettingStartedTab() {
                     items={[
                         'Accent color — pick a custom hex color or one of 8 preset swatches.',
                         'Interface font — choose the typeface used throughout the app (Inter, Nunito, Source Sans 3, Lato, Roboto).',
-                        'Theme bundles — Academy, Nature, Midnight, Warm, and Slate apply a matching accent color, interface font, and rubric header color in one click.',
+                        'Theme bundles — Academy, Nature, Midnight, Warm, Slate, and Rose apply a matching accent color, interface font, and rubric header color in one click.',
                         'Rubric export font — in the Rubric Builder formatting panel, choose the font used for headings in PDF and Word exports, including decorative options like Playfair Display, Oswald, Bebas Neue, Special Elite, and Courier Prime.',
                     ]}
                 />
@@ -758,6 +758,15 @@ function EssaysTab() {
 function AnalyticsTab() {
     return (
         <div>
+            <FeatureSection icon={BookOpen} title="Student portfolio view" color="#8b5cf6">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    Open a student from the <strong>Students</strong> page. The <strong>Portfolio</strong> tab shows a
+                    chronological timeline that combines rubric grades, speaking sessions, and self-assessments in one
+                    scrollable view. Each entry shows the date, type, rubric name, and score with a direct link to view
+                    or edit the full record.
+                </p>
+            </FeatureSection>
+
             <FeatureSection icon={BarChart3} title="Statistics dashboard" color="#3b82f6">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     Go to <strong>Statistics</strong> in the sidebar. Filter by class and rubric.
@@ -845,7 +854,7 @@ function DataTab() {
             <FeatureSection icon={Settings} title="Settings" color="#64748b">
                 <FeatureList
                     items={[
-                        'Theme — dark / light, accent colour picker.',
+                        'Theme — dark / light, accent colour picker, 8 quick presets, or choose a named theme bundle (Academy, Nature, Midnight, Warm, Slate, Rose) that sets font, accent, and export colour in one click.',
                         'Grade scales — create custom scales (1–10, A–F, etc.) and set a default.',
                         'Language — English, Dutch, French, German, Spanish.',
                         'Guided tour — restart the onboarding walkthrough.',

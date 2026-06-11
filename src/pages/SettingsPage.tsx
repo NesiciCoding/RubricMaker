@@ -32,7 +32,7 @@ import { useDbStatus } from '../hooks/useDbStatus';
 import type { GradeScale, GradeRange, UserRole } from '../types';
 import { exportFullBackup } from '../store/storage';
 import { hashPin, verifyPin, isHashed } from '../utils/pinHash';
-import { THEME_BUNDLES } from '../data/themes';
+import { THEME_BUNDLES, ACCENT_PRESETS } from '../data/themes';
 
 type Tab = 'general' | 'teaching' | 'administration';
 
@@ -282,22 +282,7 @@ export default function SettingsPage() {
         setAccentInput(val);
         const valid = /^#[0-9A-Fa-f]{6}$/.test(val);
         setAccentError(!valid);
-        if (valid) updateSettings({ accentColor: val });
-    }
-
-    function applyTheme(theme: (typeof THEME_BUNDLES)[number]) {
-        setAccentInput(theme.accent);
-        setAccentError(false);
-        updateSettings({
-            accentColor: theme.accent,
-            uiFontFamily: theme.font,
-            colorPreset: theme.id,
-            defaultFormat: {
-                ...settings.defaultFormat,
-                fontFamily: theme.exportFont,
-                headerColor: theme.headerColor,
-            },
-        });
+        if (valid) updateSettings({ accentColor: val, colorPreset: undefined });
     }
 
     function confirmDeleteScale() {
@@ -501,20 +486,11 @@ export default function SettingsPage() {
                                             </div>
                                         )}
                                         <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
-                                            {[
-                                                { label: 'Ocean', color: '#3b82f6' },
-                                                { label: 'Forest', color: '#16a34a' },
-                                                { label: 'Indigo', color: '#6366f1' },
-                                                { label: 'Sunset', color: '#ea580c' },
-                                                { label: 'Rose', color: '#e11d48' },
-                                                { label: 'Slate', color: '#64748b' },
-                                                { label: 'Teal', color: '#0d9488' },
-                                                { label: 'Gold', color: '#d97706' },
-                                            ].map(({ label, color }) => (
+                                            {ACCENT_PRESETS.map(({ id, color }) => (
                                                 <button
-                                                    key={color}
-                                                    title={label}
-                                                    aria-label={`${t('settings.accent_color_label')}: ${label}`}
+                                                    key={id}
+                                                    title={t(`settings.preset_${id}`, id)}
+                                                    aria-label={`${t('settings.accent_color_label')}: ${t(`settings.preset_${id}`, id)}`}
                                                     onClick={() => handleAccentChange(color)}
                                                     style={{
                                                         width: 22,
@@ -522,18 +498,79 @@ export default function SettingsPage() {
                                                         borderRadius: '50%',
                                                         background: color,
                                                         border:
-                                                            accentInput === color
+                                                            accentInput === color && !settings.colorPreset
                                                                 ? '2.5px solid var(--text)'
                                                                 : '2px solid transparent',
                                                         cursor: 'pointer',
                                                         padding: 0,
                                                         outline: 'none',
                                                         boxShadow:
-                                                            accentInput === color ? `0 0 0 1px ${color}` : 'none',
+                                                            accentInput === color && !settings.colorPreset
+                                                                ? `0 0 0 1px ${color}`
+                                                                : 'none',
                                                         transition: 'border 0.15s',
                                                     }}
                                                 />
                                             ))}
+                                        </div>
+                                    </div>
+                                )}
+                                {isUserPlus && (
+                                    <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                                        <label>{t('settings.theme_bundles_label')}</label>
+                                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
+                                            {THEME_BUNDLES.map((bundle) => {
+                                                const active = settings.colorPreset === bundle.id;
+                                                return (
+                                                    <button
+                                                        key={bundle.id}
+                                                        title={t(`settings.theme_bundle_${bundle.id}`)}
+                                                        onClick={() => {
+                                                            updateSettings({
+                                                                accentColor: bundle.accentColor,
+                                                                uiFontFamily: bundle.uiFontFamily,
+                                                                colorPreset: bundle.id,
+                                                                defaultFormat: {
+                                                                    ...settings.defaultFormat,
+                                                                    fontFamily: bundle.exportFontFamily,
+                                                                    headerColor: bundle.exportHeaderColor,
+                                                                },
+                                                            });
+                                                            setAccentInput(bundle.accentColor);
+                                                        }}
+                                                        style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: 8,
+                                                            padding: '6px 12px',
+                                                            borderRadius: 8,
+                                                            border: active
+                                                                ? `2px solid ${bundle.accentColor}`
+                                                                : '2px solid var(--border)',
+                                                            background: active
+                                                                ? `${bundle.accentColor}15`
+                                                                : 'var(--bg-elevated)',
+                                                            cursor: 'pointer',
+                                                            fontFamily: `'${bundle.uiFontFamily}', system-ui, sans-serif`,
+                                                            fontSize: '0.85rem',
+                                                            fontWeight: active ? 700 : 500,
+                                                            color: active ? bundle.accentColor : 'var(--text)',
+                                                            transition: 'all 0.15s',
+                                                        }}
+                                                    >
+                                                        <span
+                                                            style={{
+                                                                width: 12,
+                                                                height: 12,
+                                                                borderRadius: '50%',
+                                                                background: bundle.accentColor,
+                                                                flexShrink: 0,
+                                                            }}
+                                                        />
+                                                        {t(`settings.theme_bundle_${bundle.id}`)}
+                                                    </button>
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                 )}
@@ -566,76 +603,6 @@ export default function SettingsPage() {
                                                 </option>
                                             ))}
                                         </select>
-                                    </div>
-                                )}
-                                {/* ─── Theme bundles ─────────────────────────────────────────────── */}
-                                {isUserPlus && (
-                                    <div className="form-group">
-                                        <label>{t('themes.section_title')}</label>
-                                        <div
-                                            style={{
-                                                display: 'grid',
-                                                gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
-                                                gap: 10,
-                                                marginTop: 6,
-                                            }}
-                                        >
-                                            {THEME_BUNDLES.map((theme) => {
-                                                const active = settings.colorPreset === theme.id;
-                                                return (
-                                                    <button
-                                                        key={theme.id}
-                                                        type="button"
-                                                        onClick={() => applyTheme(theme)}
-                                                        aria-pressed={active}
-                                                        style={{
-                                                            display: 'flex',
-                                                            flexDirection: 'column',
-                                                            gap: 8,
-                                                            padding: 10,
-                                                            borderRadius: 8,
-                                                            border: active
-                                                                ? `2px solid ${theme.accent}`
-                                                                : '1px solid var(--border)',
-                                                            background: 'var(--bg-elevated)',
-                                                            cursor: 'pointer',
-                                                            textAlign: 'left',
-                                                            boxShadow: active ? `0 0 0 1px ${theme.accent}` : 'none',
-                                                        }}
-                                                    >
-                                                        <div
-                                                            style={{
-                                                                display: 'flex',
-                                                                height: 28,
-                                                                borderRadius: 5,
-                                                                overflow: 'hidden',
-                                                            }}
-                                                        >
-                                                            <div style={{ flex: 1, background: theme.headerColor }} />
-                                                            <div style={{ flex: 1, background: theme.accent }} />
-                                                        </div>
-                                                        <div
-                                                            style={{
-                                                                fontFamily: `'${theme.font}', system-ui, sans-serif`,
-                                                                fontSize: 13,
-                                                                fontWeight: 600,
-                                                                color: 'var(--text)',
-                                                            }}
-                                                        >
-                                                            {t(theme.labelKey)}
-                                                        </div>
-                                                        <div
-                                                            style={{
-                                                                fontSize: 11,
-                                                                color: 'var(--text-muted)',
-                                                            }}
-                                                        >
-                                                            {theme.font}
-                                                        </div>
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -919,6 +886,7 @@ export default function SettingsPage() {
                                         </button>
                                         <button
                                             className="btn btn-ghost btn-icon btn-sm"
+                                            aria-label={t('common.delete')}
                                             style={{ color: 'var(--red)' }}
                                             onClick={() => {
                                                 if (gs.id !== settings.defaultGradeScaleId) setDeleteScaleId(gs.id);
@@ -1023,6 +991,7 @@ export default function SettingsPage() {
                                                             <td>
                                                                 <button
                                                                     className="btn btn-ghost btn-icon btn-sm"
+                                                                    aria-label={t('common.delete')}
                                                                     style={{ color: 'var(--red)' }}
                                                                     onClick={() => removeRange(gs.id, idx)}
                                                                 >
@@ -1155,6 +1124,7 @@ export default function SettingsPage() {
                                                 </button>
                                                 <button
                                                     className="btn btn-ghost btn-icon btn-sm"
+                                                    aria-label={t('common.delete')}
                                                     style={{ color: 'var(--red)' }}
                                                     onClick={() => {
                                                         deleteExportTemplate(tmpl.id);

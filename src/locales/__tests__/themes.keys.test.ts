@@ -9,30 +9,21 @@ import { THEME_BUNDLES } from '../../data/themes';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const locales: Record<string, any> = { en, nl, fr, de, es };
 
-describe('themes namespace locale parity', () => {
-    const referenceKeys = Object.keys(en.themes).sort();
+describe('theme bundle locale parity', () => {
+    const referenceKeys = ['theme_bundles_label', ...THEME_BUNDLES.map((b) => `theme_bundle_${b.id}`)].sort();
 
-    it('the en.json themes namespace is non-empty', () => {
-        expect(referenceKeys.length).toBeGreaterThan(0);
-    });
-
-    it('the en.json themes namespace has a key for every THEME_BUNDLES id plus section_title', () => {
-        const expectedKeys = ['section_title', ...THEME_BUNDLES.map((b) => b.id)].sort();
-        expect(referenceKeys).toEqual(expectedKeys);
+    it('en.json settings has a label key for every THEME_BUNDLES id plus theme_bundles_label', () => {
+        for (const key of referenceKeys) {
+            expect(typeof en.settings[key as keyof typeof en.settings], `en.settings.${key}`).toBe('string');
+        }
     });
 
     for (const lang of ['nl', 'fr', 'de', 'es']) {
-        it(`${lang}.json has the same themes keys as en.json`, () => {
-            expect(locales[lang].themes, `${lang}.themes is missing`).toBeDefined();
-            const keys = Object.keys(locales[lang].themes).sort();
-            expect(keys).toEqual(referenceKeys);
-        });
-
-        it(`${lang}.json themes values are non-empty strings`, () => {
+        it(`${lang}.json has the same theme bundle keys as en.json with non-empty values`, () => {
             for (const key of referenceKeys) {
-                const value = locales[lang].themes[key];
-                expect(typeof value, `${lang}.themes.${key} should be a string`).toBe('string');
-                expect(value.length, `${lang}.themes.${key} should be non-empty`).toBeGreaterThan(0);
+                const value = locales[lang].settings[key];
+                expect(typeof value, `${lang}.settings.${key} should be a string`).toBe('string');
+                expect(value.length, `${lang}.settings.${key} should be non-empty`).toBeGreaterThan(0);
             }
         });
     }

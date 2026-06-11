@@ -18,6 +18,7 @@ import {
     Star,
     MessageSquare,
     Eye,
+    Palette,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { loadSupabaseConfig } from '../services/database';
@@ -41,6 +42,12 @@ const TEACHER_FEATURES = [
         title: 'Analytics & Export',
         desc: 'Grade distributions, per-criterion breakdowns, CEFR progress reports, PDF/Word/CSV export.',
         color: '#06b6d4',
+    },
+    {
+        icon: Palette,
+        title: 'Theme bundles',
+        desc: 'Six named themes (Academy, Nature, Midnight…) set accent colour, font, and export style in one click.',
+        color: '#8b5cf6',
     },
 ];
 

@@ -29,9 +29,29 @@ const newRubricBuilderKeys = [
     'single_point_descriptor_label',
     'single_point_meets_points',
     'level_quality_tip',
+    // Added in Tier 12 pass 2
+    'label_subject',
+    'label_description',
+    'label_grade_scale',
+    'grade_scale_none',
+    'action_move_criterion_up',
+    'action_move_criterion_down',
+    'action_expand_criterion',
+    'action_collapse_criterion',
+    'action_delete_criterion',
+    'sub_item_min_title',
+    'sub_item_max_title',
+    'sub_item_link_standard_title',
+    'sub_item_delete_title',
 ];
 
-const newGradeStudentKeys = ['action_essay', 'action_import_essay', 'anchor_help_text'];
+const newGradeStudentKeys = [
+    'action_essay',
+    'action_import_essay',
+    'anchor_help_text',
+    // Added in Tier 12 pass 2
+    'aria_grade_summary',
+];
 
 const newComparativeGradingKeys = [
     'title_compare',
@@ -43,9 +63,27 @@ const newComparativeGradingKeys = [
     'progress_matchups',
     'per_student_limit',
     'student_progress',
+    // Added in Tier 12 pass 2
+    'label_score',
+    'label_points',
+    'select_level',
+    'action_a_better',
+    'action_equal',
+    'action_b_better',
+    'sub_criteria',
+    'a_better_on_sub',
+    'equal_on_sub',
+    'b_better_on_sub',
+    'performed_better',
 ];
 
 const newAdminKeys = ['users_offline_title', 'users_offline_body', 'schools_offline_title', 'schools_offline_body'];
+
+const newEssayKeys = [
+    // Added in Tier 12 pass 2
+    'email_invalid',
+    'session_error',
+];
 
 describe('#26 – new i18n keys present in all locales', () => {
     for (const lang of ['en', 'nl', 'fr', 'de', 'es']) {
@@ -74,6 +112,12 @@ describe('#26 – new i18n keys present in all locales', () => {
             it('has all new admin offline keys', () => {
                 for (const key of newAdminKeys) {
                     expect(locales[lang].admin, `${lang}.admin.${key} missing`).toHaveProperty(key);
+                }
+            });
+
+            it('has all new essay keys', () => {
+                for (const key of newEssayKeys) {
+                    expect(locales[lang].essay, `${lang}.essay.${key} missing`).toHaveProperty(key);
                 }
             });
         });

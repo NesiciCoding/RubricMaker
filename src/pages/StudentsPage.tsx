@@ -364,6 +364,8 @@ export default function StudentsPage() {
 
                                 <button
                                     className="btn btn-ghost btn-icon btn-sm"
+                                    aria-label={t('studentsPage.action_class_menu')}
+                                    aria-expanded={classMenuOpen === c.id}
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         setClassMenuOpen(classMenuOpen === c.id ? null : c.id);
@@ -603,6 +605,7 @@ export default function StudentsPage() {
                                                         </button>
                                                         <button
                                                             className="btn btn-ghost btn-icon btn-sm"
+                                                            aria-label={t('studentsPage.action_edit_student')}
                                                             onClick={() => {
                                                                 setEditStudent({
                                                                     id: s.id,
@@ -619,6 +622,7 @@ export default function StudentsPage() {
                                                         </button>
                                                         <button
                                                             className="btn btn-ghost btn-icon btn-sm"
+                                                            aria-label={t('studentsPage.action_delete_student')}
                                                             style={{ color: 'var(--red)' }}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();

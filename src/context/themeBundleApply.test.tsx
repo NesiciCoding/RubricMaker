@@ -76,13 +76,13 @@ function applyTheme(
     theme: (typeof THEME_BUNDLES)[number]
 ) {
     updateSettings({
-        accentColor: theme.accent,
-        uiFontFamily: theme.font,
+        accentColor: theme.accentColor,
+        uiFontFamily: theme.uiFontFamily,
         colorPreset: theme.id,
         defaultFormat: {
             ...settings.defaultFormat,
-            fontFamily: theme.exportFont,
-            headerColor: theme.headerColor,
+            fontFamily: theme.exportFontFamily,
+            headerColor: theme.exportHeaderColor,
         },
     });
 }
@@ -101,11 +101,11 @@ describe('Theme bundle application', () => {
             applyTheme(result.current.updateSettings, result.current.settings, theme);
         });
 
-        expect(result.current.settings.accentColor).toBe(theme.accent);
-        expect(result.current.settings.uiFontFamily).toBe(theme.font);
+        expect(result.current.settings.accentColor).toBe(theme.accentColor);
+        expect(result.current.settings.uiFontFamily).toBe(theme.uiFontFamily);
         expect(result.current.settings.colorPreset).toBe(theme.id);
-        expect(result.current.settings.defaultFormat.fontFamily).toBe(theme.exportFont);
-        expect(result.current.settings.defaultFormat.headerColor).toBe(theme.headerColor);
+        expect(result.current.settings.defaultFormat.fontFamily).toBe(theme.exportFontFamily);
+        expect(result.current.settings.defaultFormat.headerColor).toBe(theme.exportHeaderColor);
         expect(storage.saveSettings).toHaveBeenCalled();
     });
 
@@ -134,8 +134,8 @@ describe('Theme bundle application', () => {
         expect(after.orientation).toBe(before.orientation);
 
         // Only fontFamily and headerColor should have changed.
-        expect(after.fontFamily).toBe(theme.exportFont);
-        expect(after.headerColor).toBe(theme.headerColor);
+        expect(after.fontFamily).toBe(theme.exportFontFamily);
+        expect(after.headerColor).toBe(theme.exportHeaderColor);
     });
 
     it('switching between two bundles updates settings to the latest bundle', () => {
@@ -152,9 +152,9 @@ describe('Theme bundle application', () => {
         });
 
         expect(result.current.settings.colorPreset).toBe(second.id);
-        expect(result.current.settings.accentColor).toBe(second.accent);
-        expect(result.current.settings.uiFontFamily).toBe(second.font);
-        expect(result.current.settings.defaultFormat.fontFamily).toBe(second.exportFont);
-        expect(result.current.settings.defaultFormat.headerColor).toBe(second.headerColor);
+        expect(result.current.settings.accentColor).toBe(second.accentColor);
+        expect(result.current.settings.uiFontFamily).toBe(second.uiFontFamily);
+        expect(result.current.settings.defaultFormat.fontFamily).toBe(second.exportFontFamily);
+        expect(result.current.settings.defaultFormat.headerColor).toBe(second.exportHeaderColor);
     });
 });

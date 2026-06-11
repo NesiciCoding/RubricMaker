@@ -6,14 +6,27 @@
 # and db_migrate has applied all migrations to a FRESH database.
 #
 # Usage:
-#   ./scripts/import-cloud.sh ~/cloud-export/20260608_120000
+#   ./scripts/import-cloud.sh <export-dir>
+#   ./scripts/import-cloud.sh <export-dir> --skip-auth   # if auth was already imported
 
 set -euo pipefail
 
 EXPORT_DIR="${1:-}"
-[ -d "$EXPORT_DIR" ] || { echo "Usage: $0 <export-dir>"; exit 1; }
-[ -f "$EXPORT_DIR/auth-data.sql" ] || { echo "Error: $EXPORT_DIR/auth-data.sql not found"; exit 1; }
+SKIP_AUTH="${2:-}"
+
+[ -d "$EXPORT_DIR" ] || { echo "Usage: $0 <export-dir> [--skip-auth]"; exit 1; }
+[[ -z "$SKIP_AUTH" || "$SKIP_AUTH" == "--skip-auth" ]] || {
+  echo "Usage: $0 <export-dir> [--skip-auth]"
+  exit 1
+}
+if [[ "$SKIP_AUTH" != "--skip-auth" ]]; then
+  [ -f "$EXPORT_DIR/auth-data.sql" ] || { echo "Error: $EXPORT_DIR/auth-data.sql not found"; exit 1; }
+fi
 [ -f "$EXPORT_DIR/public-data.sql" ] || { echo "Error: $EXPORT_DIR/public-data.sql not found"; exit 1; }
+
+# Matches only the Supabase pooler directives and the injected SET line —
+# anchored so user data containing these substrings is never dropped.
+FILTER_REGEX='^(\\(un)?restrict|SET[[:space:]]+transaction_timeout[[:space:]]*=)'
 
 echo "RubricMaker — import cloud export from: $EXPORT_DIR"
 echo ""
@@ -23,17 +36,24 @@ read -rp "Continue? [y/N] " confirm
 [[ "$confirm" =~ ^[Yy]$ ]] || { echo "Aborted."; exit 0; }
 echo ""
 
-echo "▶  Importing auth users..."
-docker-compose exec -T db psql -v ON_ERROR_STOP=1 -U supabase_admin postgres < "$EXPORT_DIR/auth-data.sql"
-echo "   ✓ Auth users imported"
+if [[ "$SKIP_AUTH" == "--skip-auth" ]]; then
+  echo "▶  Skipping auth import (--skip-auth)"
+else
+  echo "▶  Importing auth users..."
+  grep -Ev "$FILTER_REGEX" "$EXPORT_DIR/auth-data.sql" | docker compose exec -T db psql -1 -v ON_ERROR_STOP=1 -U supabase_admin postgres
+  echo "   ✓ Auth users imported"
+fi
 
 echo "▶  Importing application data..."
-docker-compose exec -T db psql -v ON_ERROR_STOP=1 -U supabase_admin postgres < "$EXPORT_DIR/public-data.sql"
+{
+  printf '%s\n' 'DELETE FROM public.site_config;'
+  grep -Ev "$FILTER_REGEX" "$EXPORT_DIR/public-data.sql"
+} | docker compose exec -T db psql -1 -v ON_ERROR_STOP=1 -U supabase_admin postgres
 echo "   ✓ Application data imported"
 
 echo ""
 echo "▶  Restarting auth so GoTrue picks up the imported users..."
-docker-compose restart auth
+docker compose restart auth
 echo ""
 echo "✓ Import complete. Teachers can now sign in on the new instance with"
 echo "  the same email they used on Supabase Cloud (a fresh OTP code will be sent)."

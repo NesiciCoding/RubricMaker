@@ -1,56 +1,65 @@
 import type { UiFontFamily } from '../types';
 
-/** A full theme bundle: applied atomically via a single updateSettings call. */
 export interface ThemeBundle {
     id: string;
-    /** i18n key under "themes" for the display name */
-    labelKey: string;
-    accent: string;
-    font: UiFontFamily;
-    headerColor: string;
-    /** CSS font stack used for rubric.format.fontFamily */
-    exportFont: string;
+    accentColor: string;
+    uiFontFamily: UiFontFamily;
+    exportFontFamily: string;
+    exportHeaderColor: string;
 }
 
 export const THEME_BUNDLES: ThemeBundle[] = [
     {
         id: 'academy',
-        labelKey: 'themes.academy',
-        accent: '#3b82f6',
-        font: 'Inter',
-        headerColor: '#1e3a5f',
-        exportFont: 'Inter, system-ui, sans-serif',
+        accentColor: '#1d4ed8',
+        uiFontFamily: 'Inter',
+        exportFontFamily: 'Calibri',
+        exportHeaderColor: '#1d4ed8',
     },
     {
         id: 'nature',
-        labelKey: 'themes.nature',
-        accent: '#16a34a',
-        font: 'Nunito',
-        headerColor: '#14532d',
-        exportFont: "Georgia, serif",
+        accentColor: '#16a34a',
+        uiFontFamily: 'Nunito',
+        exportFontFamily: 'Calibri',
+        exportHeaderColor: '#166534',
     },
     {
         id: 'midnight',
-        labelKey: 'themes.midnight',
-        accent: '#6366f1',
-        font: 'Source Sans 3',
-        headerColor: '#1e1b4b',
-        exportFont: 'Inter, system-ui, sans-serif',
+        accentColor: '#6366f1',
+        uiFontFamily: 'Source Sans 3',
+        exportFontFamily: 'Calibri',
+        exportHeaderColor: '#4338ca',
     },
     {
         id: 'warm',
-        labelKey: 'themes.warm',
-        accent: '#ea580c',
-        font: 'Lato',
-        headerColor: '#7c2d12',
-        exportFont: "Georgia, serif",
+        accentColor: '#ea580c',
+        uiFontFamily: 'Lato',
+        exportFontFamily: 'Calibri',
+        exportHeaderColor: '#9a3412',
     },
     {
         id: 'slate',
-        labelKey: 'themes.slate',
-        accent: '#64748b',
-        font: 'Roboto',
-        headerColor: '#334155',
-        exportFont: '"Courier New", Courier, monospace',
+        accentColor: '#0d9488',
+        uiFontFamily: 'Roboto',
+        exportFontFamily: 'Calibri',
+        exportHeaderColor: '#0f766e',
     },
+    {
+        id: 'rose',
+        accentColor: '#e11d48',
+        uiFontFamily: 'Inter',
+        exportFontFamily: 'Calibri',
+        exportHeaderColor: '#9f1239',
+    },
+];
+
+export const ACCENT_PRESETS = [
+    { id: 'ocean', color: '#3b82f6' },
+    { id: 'forest', color: '#16a34a' },
+    { id: 'indigo', color: '#6366f1' },
+    { id: 'sunset', color: '#ea580c' },
+    { id: 'rose', color: '#e11d48' },
+    { id: 'slate', color: '#64748b' },
+    { id: 'teal', color: '#0d9488' },
+    { id: 'gold', color: '#d97706' },
 ];
