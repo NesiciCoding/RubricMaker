@@ -1041,6 +1041,7 @@
         "anon_auth_title": "Anonymous Sign-Ins (Essay Workflow)",
         "anon_auth_desc": "Students using Safe Exam Browser cannot sign in with OTP. Anonymous sign-ins let them access essay assignments without a password or email code.",
         "anon_auth_hint": "Enable 'Allow anonymous sign-ins' in your Supabase project under Authentication → Configuration, then redeploy.",
+        "otp_code_placeholder": "Enter 8-digit code",
         "users_offline_title": "User management requires a database connection",
         "users_offline_body": "Connect a Supabase database to manage user roles and view all registered accounts. See the Deployment documentation to configure cloud sync.",
         "schools_offline_title": "School management requires a database connection",

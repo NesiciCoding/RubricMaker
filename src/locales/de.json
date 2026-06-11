@@ -1083,7 +1083,8 @@
         "delete_student_confirm": "Diesen Schüler und alle zugehörigen Noten dauerhaft löschen? Dies kann nicht rückgängig gemacht werden.",
         "anon_auth_title": "Anonyme Anmeldung (Schreibaufgaben)",
         "anon_auth_desc": "Schüler, die Safe Exam Browser verwenden, können sich nicht per OTP anmelden. Die anonyme Anmeldung ermöglicht ihnen den Zugriff auf Schreibaufgaben ohne Passwort.",
-        "anon_auth_hint": "Aktivieren Sie 'Anonyme Anmeldung erlauben' in Ihrem Supabase-Projekt unter Authentifizierung → Konfiguration."
+        "anon_auth_hint": "Aktivieren Sie 'Anonyme Anmeldung erlauben' in Ihrem Supabase-Projekt unter Authentifizierung → Konfiguration.",
+        "otp_code_placeholder": "8-stelligen Code eingeben"
     },
     "essay": {
         "email_gate_title": "Geben Sie Ihre Schul-E-Mail-Adresse ein",

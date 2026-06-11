@@ -1041,6 +1041,7 @@
         "anon_auth_title": "Inicio de Sesión Anónimo (Ensayos)",
         "anon_auth_desc": "Los estudiantes que usan Safe Exam Browser no pueden iniciar sesión con OTP. El inicio de sesión anónimo les permite acceder a los ensayos sin contraseña.",
         "anon_auth_hint": "Activa 'Permitir inicio de sesión anónimo' en tu proyecto de Supabase en Autenticación → Configuración.",
+        "otp_code_placeholder": "Introduce el código de 8 dígitos",
         "users_offline_title": "La administración de usuarios requiere una conexión a la base de datos",
         "users_offline_body": "Conecte una base de datos Supabase para gestionar los roles de usuarios y ver todas las cuentas registradas.",
         "schools_offline_title": "La administración de escuelas requiere una conexión a la base de datos",

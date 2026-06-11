@@ -657,16 +657,22 @@ function DatabaseTab() {
                                     <div style={{ display: 'flex', gap: 8 }}>
                                         <input
                                             type="text"
-                                            placeholder="Enter 6-digit code"
+                                            inputMode="numeric"
+                                            autoComplete="one-time-code"
+                                            placeholder={t('admin.otp_code_placeholder')}
                                             value={dbOtp}
-                                            onChange={(e) => setDbOtp(e.target.value)}
-                                            maxLength={6}
+                                            onChange={(e) => setDbOtp(e.target.value.replace(/\D/g, ''))}
+                                            maxLength={8}
                                             style={{ flex: 1 }}
                                         />
                                         <button
                                             className="btn btn-primary btn-sm"
+                                            disabled={dbOtp.trim().length < 8}
                                             onClick={async () => {
-                                                const { error } = await storageSync.adapter.verifyOtp(dbEmail, dbOtp);
+                                                const { error } = await storageSync.adapter.verifyOtp(
+                                                    dbEmail.trim(),
+                                                    dbOtp.trim()
+                                                );
                                                 if (error) showToast(error, 'error');
                                                 else {
                                                     setOtpSent(false);

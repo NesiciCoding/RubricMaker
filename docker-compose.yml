@@ -77,11 +77,22 @@ services:
       # Email confirmation — set MAILER_AUTOCONFIRM=false and configure SMTP for production
       GOTRUE_MAILER_AUTOCONFIRM: "${MAILER_AUTOCONFIRM:-true}"
       GOTRUE_MAILER_OTP_EXP: "3600"
-      GOTRUE_MAILER_OTP_LENGTH: "6"
+      GOTRUE_MAILER_OTP_LENGTH: "8"
       GOTRUE_MAILER_URLPATHS_CONFIRMATION: "${SITE_URL:-http://localhost:8080}/auth/v1/verify"
       GOTRUE_MAILER_URLPATHS_INVITE: "${SITE_URL:-http://localhost:8080}/auth/v1/verify"
       GOTRUE_MAILER_URLPATHS_RECOVERY: "${SITE_URL:-http://localhost:8080}/auth/v1/verify"
       GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE: "${SITE_URL:-http://localhost:8080}/auth/v1/verify"
+      # Custom templates that show only the OTP code (no clickable confirmation
+      # link). Email security scanners (e.g. Microsoft Safe Links) auto-visit
+      # links in incoming mail, which would consume the one-time token before
+      # the teacher can type the code in — leaving them with "Token has expired
+      # or is invalid". Fetched by this container from the app's nginx.
+      GOTRUE_MAILER_TEMPLATES_CONFIRMATION: "http://app/email-templates/otp-code.html"
+      GOTRUE_MAILER_TEMPLATES_MAGIC_LINK: "http://app/email-templates/otp-code.html"
+      GOTRUE_MAILER_TEMPLATES_RECOVERY: "http://app/email-templates/otp-code.html"
+      GOTRUE_MAILER_SUBJECTS_CONFIRMATION: "Your RubricMaker sign-in code"
+      GOTRUE_MAILER_SUBJECTS_MAGIC_LINK: "Your RubricMaker sign-in code"
+      GOTRUE_MAILER_SUBJECTS_RECOVERY: "Your RubricMaker sign-in code"
       GOTRUE_SMTP_HOST: "${SMTP_HOST:-}"
       GOTRUE_SMTP_PORT: "${SMTP_PORT:-587}"
       GOTRUE_SMTP_USER: "${SMTP_USER:-}"
