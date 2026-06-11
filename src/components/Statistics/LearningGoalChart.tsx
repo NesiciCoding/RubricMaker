@@ -1,15 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import {
-    LineChart,
-    Line,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    Legend,
-    ResponsiveContainer,
-    ReferenceArea,
-} from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import type { LearningGoalAggregate } from '../../utils/learningGoalsAggregator';
 
 interface Props {
@@ -32,7 +22,7 @@ export default function LearningGoalChart({ goals, className }: Props) {
 
     const chartData = useMemo(() => {
         if (!activeGoal) return [];
-        return activeGoal.history.map((h, i) => {
+        return activeGoal.history.map((h) => {
             const dateStr = new Date(h.gradedAt).toLocaleDateString(undefined, {
                 month: 'short',
                 day: 'numeric',

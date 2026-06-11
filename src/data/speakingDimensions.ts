@@ -7,8 +7,6 @@ import { nanoid } from '../utils/nanoid';
  * Track-specific phrasing is applied for VMBO vs. HAVO/VWO.
  */
 
-type Lang = 'en' | 'nl';
-
 interface LevelDef {
     label_en: string;
     label_nl: string;

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { TrendingUp, Users, BookOpen, Download, Maximize2, Printer } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -1060,7 +1060,7 @@ export default function StatisticsPage() {
                                                     {t('statistics.compare_with')}
                                                 </div>
                                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                                                    {rubricPeers.map((peer, i) => {
+                                                    {rubricPeers.map((peer) => {
                                                         const isSelected = comparedStudentIds.includes(peer.id);
                                                         const colorIdx = comparedStudentIds.indexOf(peer.id) + 1;
                                                         const color = isSelected ? STUDENT_COLORS[colorIdx] : undefined;

@@ -3,7 +3,7 @@
  * Each test exercises real UI interactions beyond initial render.
  */
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';

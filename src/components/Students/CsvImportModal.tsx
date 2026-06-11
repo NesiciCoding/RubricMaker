@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Papa from 'papaparse';
-import { Upload, ChevronRight, CheckCircle, X, AlertTriangle, Table } from 'lucide-react';
+import { Upload, CheckCircle, X, AlertTriangle, Table } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import Modal from '../ui/Modal';
 
@@ -100,8 +100,6 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
     };
 
     const handleImport = () => {
-        let importedCount = 0;
-        let createdClasses = 0;
         // Cache existing classes by name for quick lookup
         const classMap = new Map<string, string>(); // name (lowercase) -> id
         classes.forEach((c) => classMap.set(c.name.toLowerCase().trim(), c.id));
@@ -135,13 +133,11 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                     const newClass = addClass({ name: classNameToMap });
                     classMap.set(lowerName, newClass.id);
                     targetClassId = newClass.id;
-                    createdClasses++;
                 }
             }
 
             if (targetClassId) {
                 addStudent({ name, email, classId: targetClassId });
-                importedCount++;
             }
         });
 

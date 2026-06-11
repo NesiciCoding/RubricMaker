@@ -919,7 +919,6 @@ export default function StudentProfilePage() {
                                                 const mismatch =
                                                     teacherAchieved !== null && teacherAchieved !== studentConfident;
                                                 const overestimate = !teacherAchieved && studentConfident;
-                                                const underestimate = teacherAchieved && !studentConfident;
 
                                                 return (
                                                     <div

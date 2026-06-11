@@ -11,7 +11,7 @@ export interface DbStatus {
 }
 
 export function useDbStatus(): DbStatus {
-    const [tick, setTick] = useState(0);
+    const [_tick, setTick] = useState(0);
     const [currentUser, setCurrentUser] = useState<DbUser | null>(null);
 
     useEffect(() => {

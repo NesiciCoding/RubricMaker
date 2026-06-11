@@ -619,7 +619,7 @@ export default function RubricBuilder() {
         setCriteria((c) =>
             c.map((x) => {
                 if (x.id !== cid) return x;
-                const { linkedStandard, ...rest } = x;
+                const { linkedStandard: _linkedStandard, ...rest } = x;
                 return rest;
             })
         );

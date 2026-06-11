@@ -59,7 +59,7 @@ import { renderWithRouter } from '../../test-utils/renderWithProviders';
 
 describe('renderWithRouter', () => {
     it('renders element wrapped in MemoryRouter', () => {
-        const { container } = renderWithRouter(<div data-testid="test">Hello</div>);
+        renderWithRouter(<div data-testid="test">Hello</div>);
         expect(screen.getByTestId('test')).toBeInTheDocument();
     });
 

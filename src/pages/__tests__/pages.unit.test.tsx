@@ -269,8 +269,6 @@ describe('CommentBankPage', () => {
             commentSnippets: [{ id: 's1', text: 'Well done!', tag: 'positive' }],
         });
         renderPage(<CommentBankPage />);
-        const btns = screen.getAllByRole('button');
-        const deleteBtn = btns.find((b) => b.style?.color?.includes('red') || b.querySelector('svg'));
         // find delete button specifically by proximity
         const allBtns = screen.getAllByRole('button');
         // The delete button is the last icon button in the snippet card
@@ -284,8 +282,6 @@ describe('CommentBankPage', () => {
         });
         renderPage(<CommentBankPage />);
         const editBtns = screen.getAllByRole('button');
-        // Edit button is the second-to-last in the card
-        const editBtn = editBtns.find((b) => b.querySelector('svg[class*="edit"]') || b.title === '');
         // Just fire on 2nd-to-last button
         fireEvent.click(editBtns[editBtns.length - 2]);
         // Should show cancel/save buttons
