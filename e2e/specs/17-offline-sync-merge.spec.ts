@@ -147,13 +147,14 @@ test.describe('Offline grading queue and reconnect flush', () => {
         const rubricId = await page.evaluate(() => window.location.hash.split('/').pop());
         expect(rubricId).toBeTruthy();
 
-        // Seed a class + student directly via storage write helpers, then push
-        // them to Supabase the same way the app would (dispatch through
-        // localStorage + a reload re-hydrates from cache, but since we're
-        // online the simplest reliable path is to seed localStorage and let
-        // the app's own delta-sync push them on the next mutation). To keep
-        // this deterministic we seed both collections and the studentRubric
-        // queue entry will be pushed once we grade through the UI below.
+        // Seed a class + student into localStorage TOGETHER WITH matching
+        // pending-queue upsert entries. Seeded-only data would be wiped on the
+        // post-reload hydration (local-only records without a pending write are
+        // treated as remotely deleted by mergeStoreData), and the delta-sync
+        // effect never pushes initial state — it only diffs subsequent
+        // mutations. The queue entries make the app's own startup flush push
+        // the records to Supabase, and until that happens the pending-queue
+        // protection keeps them in state.
         const cls = buildClass({ id: `offline-class-${Date.now()}`, name: 'Offline Class' });
         const student = buildStudent(cls.id, { id: `offline-student-${Date.now()}`, name: 'Offline Student' });
         await page.evaluate(
@@ -165,13 +166,25 @@ test.describe('Offline grading queue and reconnect flush', () => {
                 const students = JSON.parse(localStorage.getItem('rm_students') ?? '[]') as unknown[];
                 students.push(studentData);
                 localStorage.setItem('rm_students', JSON.stringify(students));
+
+                const queue = JSON.parse(localStorage.getItem('rm_pending_sync') ?? '[]') as unknown[];
+                const queuedAt = new Date().toISOString();
+                queue.push({ id: 'seed-class-op', entity: 'class', action: 'upsert', payload: classData, queuedAt });
+                queue.push({
+                    id: 'seed-student-op',
+                    entity: 'student',
+                    action: 'upsert',
+                    payload: studentData,
+                    queuedAt,
+                });
+                localStorage.setItem('rm_pending_sync', JSON.stringify(queue));
             },
             { classData: cls, studentData: student }
         );
 
-        // Reload (online) so the freshly-seeded class/student are picked up by
-        // the app's in-memory state and pushed to Supabase via the delta-sync
-        // effect on the next render.
+        // Reload (online): startup flushes the seeded queue entries to Supabase
+        // and the class/student survive hydration via the pending-queue
+        // protection in mergeStoreData.
         await page.reload();
         await page.waitForSelector('.main-area', { timeout: 20_000 });
         await page.waitForLoadState('networkidle', { timeout: 15_000 });
