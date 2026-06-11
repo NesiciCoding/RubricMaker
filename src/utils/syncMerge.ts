@@ -61,7 +61,8 @@ function pendingIdsFor(queue: PendingWrite[], entity: string): PendingIndex {
     const deletes = new Set<string>();
     for (const op of queue) {
         if (op.entity !== entity) continue;
-        const payloadId = (op.payload as { id?: string; guid?: string } | null)?.id ?? (op.payload as { guid?: string } | null)?.guid;
+        const payloadId =
+            (op.payload as { id?: string; guid?: string } | null)?.id ?? (op.payload as { guid?: string } | null)?.guid;
         const id = op.action === 'delete' ? op.entityId : payloadId;
         if (!id) continue;
         if (op.action === 'delete') deletes.add(id);
@@ -80,7 +81,12 @@ interface CollectionSpec {
 }
 
 const COLLECTIONS: CollectionSpec[] = [
-    { key: 'rubrics', entity: 'rubric', getId: (r: { id: string }) => r.id, getUpdatedAt: (r: { updatedAt?: string }) => r.updatedAt },
+    {
+        key: 'rubrics',
+        entity: 'rubric',
+        getId: (r: { id: string }) => r.id,
+        getUpdatedAt: (r: { updatedAt?: string }) => r.updatedAt,
+    },
     { key: 'classes', entity: 'class', getId: (c: { id: string }) => c.id },
     { key: 'students', entity: 'student', getId: (s: { id: string }) => s.id },
     { key: 'studentRubrics', entity: 'studentRubric', getId: (sr: { id: string }) => sr.id },
@@ -96,27 +102,19 @@ const COLLECTIONS: CollectionSpec[] = [
     { key: 'analysisResults', entity: 'analysisResult', getId: (ar: { id: string }) => ar.id },
 ] as CollectionSpec[];
 
-export function mergeStoreData(
-    local: StoreData,
-    remote: Partial<StoreData>,
-    pendingQueue: PendingWrite[],
-): StoreData {
+export function mergeStoreData(local: StoreData, remote: Partial<StoreData>, pendingQueue: PendingWrite[]): StoreData {
     const merged: StoreData = { ...local };
 
     for (const spec of COLLECTIONS) {
         const remoteCollection = remote[spec.key];
         if (remoteCollection === undefined) continue;
         const { upserts, deletes } = pendingIdsFor(pendingQueue, spec.entity);
-        (merged[spec.key] as unknown) = mergeCollection(
-            local[spec.key] as unknown[],
-            remoteCollection as unknown[],
-            {
-                getId: spec.getId as (x: unknown) => string,
-                getUpdatedAt: spec.getUpdatedAt as ((x: unknown) => string | undefined) | undefined,
-                pendingIds: upserts,
-                deletedIds: deletes,
-            },
-        );
+        (merged[spec.key] as unknown) = mergeCollection(local[spec.key] as unknown[], remoteCollection as unknown[], {
+            getId: spec.getId as (x: unknown) => string,
+            getUpdatedAt: spec.getUpdatedAt as ((x: unknown) => string | undefined) | undefined,
+            pendingIds: upserts,
+            deletedIds: deletes,
+        });
     }
 
     if (remote.settings !== undefined) {

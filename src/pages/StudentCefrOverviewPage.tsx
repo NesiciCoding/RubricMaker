@@ -150,7 +150,11 @@ export default function StudentCefrOverviewPage() {
                                     }}
                                 >
                                     {t('cefrOverview.target_level_label')}:
-                                    <CefrBadge level={targetLevel} size="sm" showCambridgeLabel={settings.showCambridgeLabels} />
+                                    <CefrBadge
+                                        level={targetLevel}
+                                        size="sm"
+                                        showCambridgeLabel={settings.showCambridgeLabels}
+                                    />
                                 </span>
                             )}
                         </div>

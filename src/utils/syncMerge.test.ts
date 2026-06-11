@@ -110,7 +110,11 @@ describe('mergeCollection', () => {
     it('deletedIds also drops a local-only pending id (delete wins over pending-add)', () => {
         const local = [item('a', 'local-a')];
         const remote: Item[] = [];
-        const result = mergeCollection(local, remote, { ...idOpts, pendingIds: new Set(['a']), deletedIds: new Set(['a']) });
+        const result = mergeCollection(local, remote, {
+            ...idOpts,
+            pendingIds: new Set(['a']),
+            deletedIds: new Set(['a']),
+        });
         // 'a' is not in remote, so the local-only loop applies; deletedIds only filters the remote loop.
         // The pendingIds check still applies for local-only records.
         expect(result).toEqual([item('a', 'local-a')]);
@@ -222,9 +226,7 @@ describe('mergeStoreData', () => {
         const localRubric = makeRubric('r1', '2024-01-01T00:00:00.000Z');
         const local = baseStoreData({ rubrics: [localRubric] });
         const remote: Partial<StoreData> = { rubrics: [] };
-        const queue: PendingWrite[] = [
-            pendingWrite({ entity: 'rubric', action: 'upsert', payload: localRubric }),
-        ];
+        const queue: PendingWrite[] = [pendingWrite({ entity: 'rubric', action: 'upsert', payload: localRubric })];
 
         const result = mergeStoreData(local, remote, queue);
         expect(result.rubrics).toEqual([localRubric]);
@@ -277,9 +279,7 @@ describe('mergeStoreData', () => {
 
         const result = mergeStoreData(local, remote, queue);
         // s2 dropped (local-only, not pending); s3 remote wins (no LWW for students); s4 remote-only kept; s1 kept (pending local-only)
-        expect(result.students).toEqual(
-            expect.arrayContaining([remoteBoth, remoteOnly, localOnlyPending]),
-        );
+        expect(result.students).toEqual(expect.arrayContaining([remoteBoth, remoteOnly, localOnlyPending]));
         expect(result.students).toHaveLength(3);
         expect(result.students.find((s) => s.id === 's2')).toBeUndefined();
     });

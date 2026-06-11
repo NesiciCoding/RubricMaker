@@ -282,14 +282,17 @@ function printHtml(html: string, orientation?: 'portrait' | 'landscape', fontFam
             `);
             doc.close();
 
-            setTimeout(() => {
-                iframe.contentWindow?.focus();
-                iframe.contentWindow?.print();
-                setTimeout(() => {
-                    document.body.removeChild(iframe);
-                    resolve();
-                }, 100);
-            }, fontLink ? 800 : 500);
+            setTimeout(
+                () => {
+                    iframe.contentWindow?.focus();
+                    iframe.contentWindow?.print();
+                    setTimeout(() => {
+                        document.body.removeChild(iframe);
+                        resolve();
+                    }, 100);
+                },
+                fontLink ? 800 : 500
+            );
         } else {
             resolve();
         }

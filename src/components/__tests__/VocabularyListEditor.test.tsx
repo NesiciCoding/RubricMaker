@@ -290,7 +290,10 @@ describe('VocabularyListEditor', () => {
 
         it('fills empty cefrLevel and definition fields from a successful lookup', async () => {
             const onUpdate = vi.fn();
-            (lookupWord as ReturnType<typeof vi.fn>).mockResolvedValue({ level: 'B2', definition: 'a friendly greeting' });
+            (lookupWord as ReturnType<typeof vi.fn>).mockResolvedValue({
+                level: 'B2',
+                definition: 'a friendly greeting',
+            });
             const items = [makeItem()];
             enterEditMode(items, { cambridgeApiKey: 'key123', onUpdate });
 
@@ -307,7 +310,10 @@ describe('VocabularyListEditor', () => {
 
         it('does not overwrite an existing cefrLevel or definition', async () => {
             const onUpdate = vi.fn();
-            (lookupWord as ReturnType<typeof vi.fn>).mockResolvedValue({ level: 'B2', definition: 'a friendly greeting' });
+            (lookupWord as ReturnType<typeof vi.fn>).mockResolvedValue({
+                level: 'B2',
+                definition: 'a friendly greeting',
+            });
             const items = [makeItem({ cefrLevel: 'A1', definition: 'existing definition' })];
             enterEditMode(items, { cambridgeApiKey: 'key123', onUpdate });
 

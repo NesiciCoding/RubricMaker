@@ -19,7 +19,10 @@ import { calcGradeSummary } from './gradeCalc';
 /** Extracts the first font name from a CSS font-family stack (e.g. "'Playfair Display', Georgia, serif" -> "Playfair Display"). */
 export function extractDocxFontName(fontFamily?: string): string | undefined {
     if (!fontFamily) return undefined;
-    const first = fontFamily.split(',')[0]?.trim().replace(/^['"]|['"]$/g, '');
+    const first = fontFamily
+        .split(',')[0]
+        ?.trim()
+        .replace(/^['"]|['"]$/g, '');
     return first || undefined;
 }
 

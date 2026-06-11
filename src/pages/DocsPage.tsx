@@ -482,8 +482,7 @@ function GettingStartedTab() {
 
             <FeatureSection icon={Settings} title="Themes & appearance" color="#ec4899">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 12 }}>
-                    Personalise the look of the app and your exported rubrics from{' '}
-                    <strong>Settings → General</strong>.
+                    Personalise the look of the app and your exported rubrics from <strong>Settings → General</strong>.
                 </p>
                 <FeatureList
                     items={[
