@@ -42,6 +42,8 @@ export interface SelfAssessment {
     /** Free-text student reflection */
     reflection?: string;
     submittedAt: string;
+    /** ISO timestamp of the last local edit; used for last-write-wins sync conflict resolution */
+    updatedAt?: string;
 }
 
 /** A CEFR Can-Do statement linked to a rubric criterion */
@@ -130,6 +132,8 @@ export interface GradeScale {
     name: string;
     type: GradeScaleType;
     ranges: GradeRange[];
+    /** ISO timestamp of the last local edit; used for last-write-wins sync conflict resolution */
+    updatedAt?: string;
 }
 
 export type ModifierType = 'percentage' | 'points' | 'level';
@@ -298,6 +302,8 @@ export interface DocumentAnalysisResult {
     grammarErrors: GrammarError[];
     grammarCheckerUsed: 'languagetool' | 'compromise' | 'none';
     grammarTextTruncated?: boolean;
+    /** ISO timestamp of the last local edit; used for last-write-wins sync conflict resolution */
+    updatedAt?: string;
 }
 
 export interface Rubric {
@@ -345,6 +351,8 @@ export interface Student {
     classId: string;
     /** ISO timestamp set when PII was anonymized; presence means the record is anonymized. */
     anonymizedAt?: string;
+    /** ISO timestamp of the last local edit; used for last-write-wins sync conflict resolution */
+    updatedAt?: string;
 }
 
 export type VoTrack = 'vmbo-bb' | 'vmbo-kb' | 'vmbo-tl' | 'havo' | 'vwo';
@@ -358,6 +366,8 @@ export interface Class {
     rubricIds?: string[];
     /** Dutch VO track (VMBO-BB/KB/TL, HAVO, VWO) */
     voTrack?: VoTrack;
+    /** ISO timestamp of the last local edit; used for last-write-wins sync conflict resolution */
+    updatedAt?: string;
 }
 
 export interface ScoreEntry {
@@ -413,6 +423,8 @@ export interface CommentSnippet {
     id: string;
     text: string;
     tag: string;
+    /** ISO timestamp of the last local edit; used for last-write-wins sync conflict resolution */
+    updatedAt?: string;
 }
 
 /** Role controlling which settings a user can access */
@@ -508,6 +520,8 @@ export interface CommentBankItem {
     text: string;
     tags: string[];
     createdAt: string;
+    /** ISO timestamp of the last local edit; used for last-write-wins sync conflict resolution */
+    updatedAt?: string;
 }
 
 // ─── Speaking / Oral Assessment Types ────────────────────────────────────────
@@ -552,6 +566,8 @@ export interface SpeakingSession {
     overallComment: string;
     gradedAt: string;
     rubricSnapshot?: Rubric;
+    /** ISO timestamp of the last local edit; used for last-write-wins sync conflict resolution */
+    updatedAt?: string;
 }
 
 // ─── Essay Assignment / Submission ───────────────────────────────────────────

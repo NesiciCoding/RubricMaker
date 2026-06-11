@@ -1,7 +1,19 @@
 import { describe, it, expect } from 'vitest';
 import { mergeCollection, mergeStoreData } from './syncMerge';
 import type { StoreData, PendingWrite } from '../store/storage';
-import type { Rubric, Student, LinkedStandard, StudentRubric } from '../types';
+import type {
+    Rubric,
+    Student,
+    LinkedStandard,
+    StudentRubric,
+    Class,
+    GradeScale,
+    CommentSnippet,
+    CommentBankItem,
+    SelfAssessment,
+    SpeakingSession,
+    DocumentAnalysisResult,
+} from '../types';
 
 interface Item {
     id: string;
@@ -185,6 +197,56 @@ function makeStudentRubric(id: string, updatedAt?: string, isPeerReview = false)
     };
 }
 
+function makeClass(id: string, name: string, updatedAt?: string): Class {
+    return { id, name, updatedAt };
+}
+
+function makeGradeScale(id: string, name: string, updatedAt?: string): GradeScale {
+    return { id, name, type: 'percentage', ranges: [], updatedAt };
+}
+
+function makeCommentSnippet(id: string, text: string, updatedAt?: string): CommentSnippet {
+    return { id, text, tag: 'general', updatedAt };
+}
+
+function makeCommentBankItem(id: string, text: string, updatedAt?: string): CommentBankItem {
+    return { id, text, tags: [], createdAt: '2024-01-01T00:00:00.000Z', updatedAt };
+}
+
+function makeSelfAssessment(id: string, updatedAt?: string): SelfAssessment {
+    return { id, rubricId: 'r1', studentId: 's1', ratings: [], submittedAt: '2024-01-01T00:00:00.000Z', updatedAt };
+}
+
+function makeSpeakingSession(id: string, updatedAt?: string): SpeakingSession {
+    return {
+        id,
+        rubricId: 'r1',
+        studentId: 's1',
+        durationSeconds: 120,
+        elapsedSeconds: 100,
+        pronunciationMarks: [],
+        entries: [],
+        overallComment: '',
+        gradedAt: '2024-01-01T00:00:00.000Z',
+        updatedAt,
+    };
+}
+
+function makeAnalysisResult(id: string, updatedAt?: string): DocumentAnalysisResult {
+    return {
+        id,
+        studentId: 's1',
+        rubricId: 'r1',
+        attachmentId: 'a1',
+        extractedText: '',
+        analyzedAt: '2024-01-01T00:00:00.000Z',
+        detectedItems: [],
+        grammarErrors: [],
+        grammarCheckerUsed: 'none',
+        updatedAt,
+    };
+}
+
 function makeStandard(guid: string, title: string): LinkedStandard {
     return {
         guid,
@@ -340,6 +402,86 @@ describe('mergeStoreData', () => {
 
         const result = mergeStoreData(local, remote, []);
         expect(result.peerReviews).toEqual([localPr]);
+    });
+
+    it('class LWW: local newer wins', () => {
+        const localClass = makeClass('c1', 'Local Name', '2024-02-01T00:00:00.000Z');
+        const remoteClass = makeClass('c1', 'Remote Name', '2024-01-01T00:00:00.000Z');
+        const local = baseStoreData({ classes: [localClass] });
+        const remote: Partial<StoreData> = { classes: [remoteClass] };
+
+        const result = mergeStoreData(local, remote, []);
+        expect(result.classes).toEqual([localClass]);
+    });
+
+    it('student LWW: remote newer wins', () => {
+        const localStudent = { ...makeStudent('s1', 'Local Name'), updatedAt: '2024-01-01T00:00:00.000Z' };
+        const remoteStudent = { ...makeStudent('s1', 'Remote Name'), updatedAt: '2024-02-01T00:00:00.000Z' };
+        const local = baseStoreData({ students: [localStudent] });
+        const remote: Partial<StoreData> = { students: [remoteStudent] };
+
+        const result = mergeStoreData(local, remote, []);
+        expect(result.students).toEqual([remoteStudent]);
+    });
+
+    it('gradeScale LWW: local newer wins', () => {
+        const localGs = makeGradeScale('gs1', 'Local Scale', '2024-02-01T00:00:00.000Z');
+        const remoteGs = makeGradeScale('gs1', 'Remote Scale', '2024-01-01T00:00:00.000Z');
+        const local = baseStoreData({ gradeScales: [localGs] });
+        const remote: Partial<StoreData> = { gradeScales: [remoteGs] };
+
+        const result = mergeStoreData(local, remote, []);
+        expect(result.gradeScales).toEqual([localGs]);
+    });
+
+    it('commentSnippet LWW: remote newer wins', () => {
+        const localCs = makeCommentSnippet('cs1', 'Local text', '2024-01-01T00:00:00.000Z');
+        const remoteCs = makeCommentSnippet('cs1', 'Remote text', '2024-02-01T00:00:00.000Z');
+        const local = baseStoreData({ commentSnippets: [localCs] });
+        const remote: Partial<StoreData> = { commentSnippets: [remoteCs] };
+
+        const result = mergeStoreData(local, remote, []);
+        expect(result.commentSnippets).toEqual([remoteCs]);
+    });
+
+    it('commentBank item LWW: local newer wins', () => {
+        const localCb = makeCommentBankItem('cb1', 'Local text', '2024-02-01T00:00:00.000Z');
+        const remoteCb = makeCommentBankItem('cb1', 'Remote text', '2024-01-01T00:00:00.000Z');
+        const local = baseStoreData({ commentBank: [localCb] });
+        const remote: Partial<StoreData> = { commentBank: [remoteCb] };
+
+        const result = mergeStoreData(local, remote, []);
+        expect(result.commentBank).toEqual([localCb]);
+    });
+
+    it('selfAssessment LWW: remote newer wins', () => {
+        const localSa = makeSelfAssessment('sa1', '2024-01-01T00:00:00.000Z');
+        const remoteSa = makeSelfAssessment('sa1', '2024-02-01T00:00:00.000Z');
+        const local = baseStoreData({ selfAssessments: [localSa] });
+        const remote: Partial<StoreData> = { selfAssessments: [remoteSa] };
+
+        const result = mergeStoreData(local, remote, []);
+        expect(result.selfAssessments).toEqual([remoteSa]);
+    });
+
+    it('speakingSession LWW: local newer wins', () => {
+        const localSs = makeSpeakingSession('ss1', '2024-02-01T00:00:00.000Z');
+        const remoteSs = makeSpeakingSession('ss1', '2024-01-01T00:00:00.000Z');
+        const local = baseStoreData({ speakingSessions: [localSs] });
+        const remote: Partial<StoreData> = { speakingSessions: [remoteSs] };
+
+        const result = mergeStoreData(local, remote, []);
+        expect(result.speakingSessions).toEqual([localSs]);
+    });
+
+    it('analysisResult LWW: remote newer wins', () => {
+        const localAr = makeAnalysisResult('ar1', '2024-01-01T00:00:00.000Z');
+        const remoteAr = makeAnalysisResult('ar1', '2024-02-01T00:00:00.000Z');
+        const local = baseStoreData({ analysisResults: [localAr] });
+        const remote: Partial<StoreData> = { analysisResults: [remoteAr] };
+
+        const result = mergeStoreData(local, remote, []);
+        expect(result.analysisResults).toEqual([remoteAr]);
     });
 
     it('non-LWW collection (students) only keeps local-only records when pending', () => {

@@ -93,8 +93,18 @@ const COLLECTIONS: CollectionSpec[] = [
         getId: (r: { id: string }) => r.id,
         getUpdatedAt: (r: { updatedAt?: string }) => r.updatedAt,
     },
-    { key: 'classes', entity: 'class', getId: (c: { id: string }) => c.id },
-    { key: 'students', entity: 'student', getId: (s: { id: string }) => s.id },
+    {
+        key: 'classes',
+        entity: 'class',
+        getId: (c: { id: string }) => c.id,
+        getUpdatedAt: (c: { updatedAt?: string }) => c.updatedAt,
+    },
+    {
+        key: 'students',
+        entity: 'student',
+        getId: (s: { id: string }) => s.id,
+        getUpdatedAt: (s: { updatedAt?: string }) => s.updatedAt,
+    },
     {
         key: 'studentRubrics',
         entity: 'studentRubric',
@@ -108,14 +118,44 @@ const COLLECTIONS: CollectionSpec[] = [
         getUpdatedAt: (sr: { updatedAt?: string }) => sr.updatedAt,
     },
     { key: 'attachments', entity: 'attachment', getId: (a: { id: string }) => a.id },
-    { key: 'gradeScales', entity: 'gradeScale', getId: (gs: { id: string }) => gs.id },
-    { key: 'commentSnippets', entity: 'commentSnippet', getId: (cs: { id: string }) => cs.id },
-    { key: 'commentBank', entity: 'commentBankItem', getId: (cb: { id: string }) => cb.id },
+    {
+        key: 'gradeScales',
+        entity: 'gradeScale',
+        getId: (gs: { id: string }) => gs.id,
+        getUpdatedAt: (gs: { updatedAt?: string }) => gs.updatedAt,
+    },
+    {
+        key: 'commentSnippets',
+        entity: 'commentSnippet',
+        getId: (cs: { id: string }) => cs.id,
+        getUpdatedAt: (cs: { updatedAt?: string }) => cs.updatedAt,
+    },
+    {
+        key: 'commentBank',
+        entity: 'commentBankItem',
+        getId: (cb: { id: string }) => cb.id,
+        getUpdatedAt: (cb: { updatedAt?: string }) => cb.updatedAt,
+    },
     { key: 'exportTemplates', entity: 'exportTemplate', getId: (et: { id: string }) => et.id },
     { key: 'favoriteStandards', entity: 'favoriteStandard', getId: (fs: { guid: string }) => fs.guid },
-    { key: 'selfAssessments', entity: 'selfAssessment', getId: (sa: { id: string }) => sa.id },
-    { key: 'speakingSessions', entity: 'speakingSession', getId: (ss: { id: string }) => ss.id },
-    { key: 'analysisResults', entity: 'analysisResult', getId: (ar: { id: string }) => ar.id },
+    {
+        key: 'selfAssessments',
+        entity: 'selfAssessment',
+        getId: (sa: { id: string }) => sa.id,
+        getUpdatedAt: (sa: { updatedAt?: string }) => sa.updatedAt,
+    },
+    {
+        key: 'speakingSessions',
+        entity: 'speakingSession',
+        getId: (ss: { id: string }) => ss.id,
+        getUpdatedAt: (ss: { updatedAt?: string }) => ss.updatedAt,
+    },
+    {
+        key: 'analysisResults',
+        entity: 'analysisResult',
+        getId: (ar: { id: string }) => ar.id,
+        getUpdatedAt: (ar: { updatedAt?: string }) => ar.updatedAt,
+    },
 ] as CollectionSpec[];
 
 export function mergeStoreData(local: StoreData, remote: Partial<StoreData>, pendingQueue: PendingWrite[]): StoreData {
