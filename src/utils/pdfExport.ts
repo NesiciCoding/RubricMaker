@@ -244,7 +244,8 @@ const EXPORT_GOOGLE_FONTS: Record<string, string> = {
 
 export function googleFontsLinkFor(fontFamily?: string): string {
     if (!fontFamily) return '';
-    const families = Object.keys(EXPORT_GOOGLE_FONTS).filter((name) => fontFamily.includes(name));
+    const tokens = new Set(fontFamily.split(',').map((part) => part.trim().replace(/^['"]|['"]$/g, '')));
+    const families = Object.keys(EXPORT_GOOGLE_FONTS).filter((name) => tokens.has(name));
     if (families.length === 0) return '';
     const familyParams = families.map((name) => `family=${EXPORT_GOOGLE_FONTS[name]}`).join('&');
     return `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?${familyParams}&display=swap">`;

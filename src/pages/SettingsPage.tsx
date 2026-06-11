@@ -537,6 +537,7 @@ export default function SettingsPage() {
                                                                 },
                                                             });
                                                             setAccentInput(bundle.accentColor);
+                                                            setAccentError(false);
                                                         }}
                                                         style={{
                                                             display: 'flex',

@@ -74,7 +74,7 @@ export default function VocabularyListEditor({
         if (!cambridgeApiKey || !item.phrase.trim()) return;
         setLookingUpId(item.id);
         try {
-            const result = await lookupWord(item.phrase, cambridgeApiKey);
+            const result = await lookupWord(item.phrase.trim(), cambridgeApiKey);
             if (!result || (!result.level && !result.definition)) {
                 showToast(t('cambridge.lookup_failed'), 'error');
                 return;
@@ -85,6 +85,9 @@ export default function VocabularyListEditor({
                 definition: item.definition ?? result.definition ?? undefined,
             });
             showToast(t('cambridge.lookup_success'), 'success');
+        } catch (e) {
+            console.error('[cambridge] lookup failed', e);
+            showToast(t('cambridge.lookup_failed'), 'error');
         } finally {
             setLookingUpId(null);
         }

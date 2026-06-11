@@ -1072,7 +1072,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 const { data: fresh, error: hydrateError } = await storageSync.hydrate();
                 if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
                 if (fresh) {
-                    const merged = { ...state, ...fresh } as StoreData;
+                    const merged = mergeStoreData(state, fresh, loadPendingQueue());
                     dispatch({ type: 'SET_ALL', payload: merged });
                     try {
                         await flushToLocalStorage(merged);
@@ -1099,7 +1099,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const { data: fresh, error: hydrateError } = await storageSync.hydrate();
         if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
         if (fresh) {
-            const merged = { ...state, ...fresh } as StoreData;
+            const merged = mergeStoreData(state, fresh, loadPendingQueue());
             dispatch({ type: 'SET_ALL', payload: merged });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -68,7 +68,7 @@ async function saveAndSync(page: Page, builder: RubricBuilderPage): Promise<void
     expect(
         nameValue.trim(),
         `Name input empty before save — URL: ${page.url()}, ` +
-            `body classes: ${await page.evaluate(() => document.body.className)}`,
+            `body classes: ${await page.evaluate(() => document.body.className)}`
     ).not.toBe('');
 
     await builder.save();
@@ -176,13 +176,23 @@ test.describe('Offline grading queue and reconnect flush', () => {
         await page.waitForSelector('.main-area', { timeout: 20_000 });
         await page.waitForLoadState('networkidle', { timeout: 15_000 });
 
+        // Warm the lazily-loaded GradeStudent route chunk WHILE STILL ONLINE.
+        // The page is code-split (React.lazy); navigating to it for the first
+        // time triggers a dynamic import of GradeStudent.tsx. If that import is
+        // first requested after going offline, Vite cannot fetch the chunk and
+        // the route renders the "Something went wrong" error boundary instead of
+        // the grading UI, so .level-btn never appears. Loading it here primes
+        // the module cache so the subsequent offline visit is a no-fetch render.
+        const grader = new GradeStudentPage(page);
+        await gotoGradePage(page, rubricId!, student.id);
+        await grader.getLevelBtn('Excellent', 0).waitFor({ timeout: 15_000 });
+
         // ── Go offline ────────────────────────────────────────────────────────
         await page.context().setOffline(true);
 
-        // Navigate to the grade page (same-document hash nav — no reload while offline)
+        // Re-enter the grade page (same-document hash nav — chunk already cached).
         await gotoGradePage(page, rubricId!, student.id);
 
-        const grader = new GradeStudentPage(page);
         await grader.selectLevel(0, 'Excellent');
         await grader.fillCriterionComment(0, 'Great work, offline-graded');
         await grader.save();
@@ -198,18 +208,27 @@ test.describe('Offline grading queue and reconnect flush', () => {
         await page.context().setOffline(false);
 
         // Wait for the queue to drain (online listener → flushPendingQueue)
-        await expect.poll(async () => (await getPendingQueue(page)).length, { timeout: 20_000, intervals: [500] }).toBe(0);
+        await expect
+            .poll(async () => (await getPendingQueue(page)).length, { timeout: 20_000, intervals: [500] })
+            .toBe(0);
 
         // Wait for the reconnect re-hydration to settle
         await page.waitForLoadState('networkidle', { timeout: 15_000 });
 
         // ── Verify the grade reached Supabase ────────────────────────────────
         const dbStudentRubrics = await fetchStudentRubricsFromDb(testUserEmail);
-        const dbEntry = dbStudentRubrics.find((sr) => sr.data.id && queueWhileOffline.some((op) => {
-            const payload = op.payload as { id?: string } | null;
-            return payload?.id === sr.data.id;
-        }));
-        expect(dbEntry, `expected the offline-graded studentRubric in Supabase, got: ${JSON.stringify(dbStudentRubrics)}`).toBeTruthy();
+        const dbEntry = dbStudentRubrics.find(
+            (sr) =>
+                sr.data.id &&
+                queueWhileOffline.some((op) => {
+                    const payload = op.payload as { id?: string } | null;
+                    return payload?.id === sr.data.id;
+                })
+        );
+        expect(
+            dbEntry,
+            `expected the offline-graded studentRubric in Supabase, got: ${JSON.stringify(dbStudentRubrics)}`
+        ).toBeTruthy();
 
         // ── Cloud-persistence check: wipe local cache, reload, grade survives ──
         await page.evaluate(() => localStorage.removeItem('rm_student_rubrics'));
@@ -282,10 +301,15 @@ test.describe('Reconnect-hydration protects offline edits (LWW)', () => {
         await page.waitForLoadState('networkidle', { timeout: 15_000 });
 
         // The pending entry must still be queued (flush blocked by our route).
-        await expect.poll(async () => {
-            const queue = await getPendingQueue(page);
-            return queue.some((op) => op.entity === 'rubric');
-        }, { timeout: 10_000 }).toBe(true);
+        await expect
+            .poll(
+                async () => {
+                    const queue = await getPendingQueue(page);
+                    return queue.some((op) => op.entity === 'rubric');
+                },
+                { timeout: 10_000 }
+            )
+            .toBe(true);
 
         // The local rename must have survived the reconnect-hydration merge.
         await gotoEditRubric(page, rubricId!);
@@ -299,10 +323,15 @@ test.describe('Reconnect-hydration protects offline edits (LWW)', () => {
         await page.unroute(`${SUPABASE_URL}/rest/v1/rubrics*`);
         await page.evaluate(() => window.dispatchEvent(new Event('online')));
 
-        await expect.poll(async () => {
-            const queue = await getPendingQueue(page);
-            return queue.some((op) => op.entity === 'rubric');
-        }, { timeout: 15_000, intervals: [500] }).toBe(false);
+        await expect
+            .poll(
+                async () => {
+                    const queue = await getPendingQueue(page);
+                    return queue.some((op) => op.entity === 'rubric');
+                },
+                { timeout: 15_000, intervals: [500] }
+            )
+            .toBe(false);
 
         const dbAfter = await fetchRubricsFromDb(testUserEmail);
         const dbRubric = dbAfter.find((r) => r.id === rubricId);

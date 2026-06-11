@@ -107,7 +107,7 @@ describe('mergeCollection', () => {
         expect(result).toEqual([]);
     });
 
-    it('deletedIds also drops a local-only pending id (delete wins over pending-add)', () => {
+    it('deletedIds does NOT drop a local-only pending record (it only filters the remote loop)', () => {
         const local = [item('a', 'local-a')];
         const remote: Item[] = [];
         const result = mergeCollection(local, remote, {
@@ -242,6 +242,42 @@ describe('mergeStoreData', () => {
 
         const result = mergeStoreData(local, remote, queue);
         expect(result.rubrics).toEqual([]);
+    });
+
+    it('a delete followed by a re-add of the same id counts as a pending upsert (last action wins)', () => {
+        const readded = makeRubric('r1', '2024-01-01T00:00:00.000Z');
+        const local = baseStoreData({ rubrics: [readded] });
+        const remote: Partial<StoreData> = { rubrics: [] };
+        const queue: PendingWrite[] = [
+            pendingWrite({ entity: 'rubric', action: 'delete', payload: null, entityId: 'r1' }),
+            pendingWrite({ entity: 'rubric', action: 'upsert', payload: readded }),
+        ];
+
+        const result = mergeStoreData(local, remote, queue);
+        expect(result.rubrics).toEqual([readded]);
+    });
+
+    it('an upsert followed by a delete of the same id counts as a pending delete (last action wins)', () => {
+        const remoteRubric = makeRubric('r1', '2024-01-01T00:00:00.000Z');
+        const local = baseStoreData({ rubrics: [] });
+        const remote: Partial<StoreData> = { rubrics: [remoteRubric] };
+        const queue: PendingWrite[] = [
+            pendingWrite({ entity: 'rubric', action: 'upsert', payload: remoteRubric }),
+            pendingWrite({ entity: 'rubric', action: 'delete', payload: null, entityId: 'r1' }),
+        ];
+
+        const result = mergeStoreData(local, remote, queue);
+        expect(result.rubrics).toEqual([]);
+    });
+
+    it('keeps local settings when a settings upsert is queued (offline change not stomped)', () => {
+        const local = baseStoreData();
+        const remoteSettings = { ...local.settings, theme: 'dark' as const };
+        const remote: Partial<StoreData> = { settings: remoteSettings };
+        const queue: PendingWrite[] = [pendingWrite({ entity: 'settings', action: 'upsert', payload: local.settings })];
+
+        const result = mergeStoreData(local, remote, queue);
+        expect(result.settings).toEqual(local.settings);
     });
 
     it('rubric LWW works end-to-end via updatedAt: local newer wins', () => {

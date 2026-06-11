@@ -21,11 +21,12 @@ describe('THEME_BUNDLES', () => {
         expect(ids).toEqual(['academy', 'midnight', 'nature', 'rose', 'slate', 'warm']);
     });
 
+    const VALID_UI_FONTS = ['Inter', 'Nunito', 'Source Sans 3', 'Lato', 'Roboto'];
+
     it.each(THEME_BUNDLES)('bundle "$id" has valid, non-empty fields', (bundle) => {
         expect(bundle.accentColor).toMatch(HEX_RE);
         expect(bundle.exportHeaderColor).toMatch(HEX_RE);
-        expect(typeof bundle.uiFontFamily).toBe('string');
-        expect(bundle.uiFontFamily.length).toBeGreaterThan(0);
+        expect(VALID_UI_FONTS).toContain(bundle.uiFontFamily);
         expect(typeof bundle.exportFontFamily).toBe('string');
         expect(bundle.exportFontFamily.length).toBeGreaterThan(0);
     });

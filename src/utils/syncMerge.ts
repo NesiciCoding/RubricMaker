@@ -57,15 +57,21 @@ interface PendingIndex {
 }
 
 function pendingIdsFor(queue: PendingWrite[], entity: string): PendingIndex {
-    const upserts = new Set<string>();
-    const deletes = new Set<string>();
+    // Only the last queued action per id reflects the user's current intent
+    // (e.g. a delete followed by a re-add must count as an upsert).
+    const lastActionById = new Map<string, PendingWrite['action']>();
     for (const op of queue) {
         if (op.entity !== entity) continue;
         const payloadId =
             (op.payload as { id?: string; guid?: string } | null)?.id ?? (op.payload as { guid?: string } | null)?.guid;
         const id = op.action === 'delete' ? op.entityId : payloadId;
         if (!id) continue;
-        if (op.action === 'delete') deletes.add(id);
+        lastActionById.set(id, op.action);
+    }
+    const upserts = new Set<string>();
+    const deletes = new Set<string>();
+    for (const [id, action] of lastActionById) {
+        if (action === 'delete') deletes.add(id);
         else upserts.add(id);
     }
     return { upserts, deletes };
@@ -117,7 +123,8 @@ export function mergeStoreData(local: StoreData, remote: Partial<StoreData>, pen
         });
     }
 
-    if (remote.settings !== undefined) {
+    const hasPendingSettingsWrite = pendingQueue.some((op) => op.entity === 'settings' && op.action === 'upsert');
+    if (remote.settings !== undefined && !hasPendingSettingsWrite) {
         merged.settings = remote.settings;
     }
 

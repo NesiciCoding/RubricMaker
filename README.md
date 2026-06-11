@@ -65,7 +65,6 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 - **Cloud sync** (optional): Supabase backend for multi-device access and multi-teacher collaboration. Sync hydrates `localStorage` from Supabase on load and after reconnect; per-record conflicts resolve last-write-wins (newest `updatedAt` wins), and offline edits queued in the pending-sync queue are protected from being clobbered by stale cloud data until they are pushed (see `src/utils/syncMerge.ts`).
 - **Backup & restore**: Export the entire dataset to JSON; restore from any prior backup.
 - **Admin panel**: School-level management — user roles, onboarding, student anonymisation, data-retention policies.
-- **Theme bundles**: One-click presets (Academy, Nature, Midnight, Warm, Slate) apply a matching accent color, interface font, and rubric export header color/font from Settings → General.
 
 ---
 

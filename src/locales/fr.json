@@ -307,8 +307,8 @@
         "action_export_summaries": "Exporter les résumés",
         "back_to_roster": "Retour à la liste",
         "action_class_menu": "Options de classe",
-        "action_edit_student": "Modifier l élève",
-        "action_delete_student": "Supprimer l élève"
+        "action_edit_student": "Modifier l'élève",
+        "action_delete_student": "Supprimer l'élève"
     },
     "gradeStudent": {
         "title_prefix": "Notation :",
