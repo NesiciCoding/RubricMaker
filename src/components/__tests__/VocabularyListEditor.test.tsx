@@ -342,17 +342,20 @@ describe('VocabularyListEditor', () => {
 
         it('shows an error toast and does not update when the lookup throws', async () => {
             const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
-            const onUpdate = vi.fn();
-            (lookupWord as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Network error'));
-            const items = [makeItem()];
-            enterEditMode(items, { cambridgeApiKey: 'key123', onUpdate });
+            try {
+                const onUpdate = vi.fn();
+                (lookupWord as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Network error'));
+                const items = [makeItem()];
+                enterEditMode(items, { cambridgeApiKey: 'key123', onUpdate });
 
-            fireEvent.click(screen.getByRole('button', { name: 'cambridge.lookup_button' }));
+                fireEvent.click(screen.getByRole('button', { name: 'cambridge.lookup_button' }));
 
-            await waitFor(() => expect(lookupWord).toHaveBeenCalledWith('good morning', 'key123'));
-            await waitFor(() => expect(consoleError).toHaveBeenCalled());
-            expect(onUpdate).not.toHaveBeenCalled();
-            consoleError.mockRestore();
+                await waitFor(() => expect(lookupWord).toHaveBeenCalledWith('good morning', 'key123'));
+                await waitFor(() => expect(consoleError).toHaveBeenCalled());
+                expect(onUpdate).not.toHaveBeenCalled();
+            } finally {
+                consoleError.mockRestore();
+            }
         });
     });
 });
