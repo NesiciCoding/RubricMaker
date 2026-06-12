@@ -137,6 +137,7 @@ export default function EssayImportModal({
                     return;
                 }
                 const res = await fetch(url);
+                if (!res.ok) throw new Error(`Failed to download essay: ${res.status}`);
                 const html = await res.text();
                 const dateStr = new Date(sub.submittedAt).toLocaleDateString();
                 const who = sub.studentEmail ?? studentName;

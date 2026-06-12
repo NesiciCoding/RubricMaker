@@ -36,7 +36,7 @@ import { exportSinglePdf } from '../utils/pdfExport';
 import { loadSupabaseConfig } from '../services/database';
 
 export default function GradeStudent() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { rubricId, studentId } = useParams();
     const navigate = useNavigate();
     const {
@@ -411,7 +411,8 @@ export default function GradeStudent() {
         const level = criterion.levels.find((l) => l.id === levelId);
         return level ? [{ criterion, level }] : [];
     });
-    const hasSelfAssessment = selfAssessmentEntries.length > 0 || !!sr?.selfAssessmentReflection;
+    const hasSelfAssessment =
+        selfAssessmentEntries.length > 0 || !!sr?.selfAssessmentReflection?.trim() || !!sr?.selfAssessedAt;
 
     // Helper to set a sub-item score
     function setSubItemScore(entry: ScoreEntry, subItemId: string, score: number) {
@@ -1371,14 +1372,13 @@ export default function GradeStudent() {
                                     className="text-xs text-muted"
                                     style={{ margin: '12px 0 8px', fontWeight: 600, textTransform: 'uppercase' }}
                                 >
-                                    {t('gradeStudent.self_assessment_title', 'Student self-assessment')}
+                                    {t('gradeStudent.self_assessment_title')}
                                     {sr?.selfAssessedAt && (
                                         <span style={{ textTransform: 'none', fontWeight: 400 }}>
                                             {' '}
                                             &middot;{' '}
                                             {t('gradeStudent.self_assessed_on', {
-                                                date: new Date(sr.selfAssessedAt).toLocaleDateString(),
-                                                defaultValue: 'Self-assessed {{date}}',
+                                                date: new Date(sr.selfAssessedAt).toLocaleDateString(i18n.language),
                                             })}
                                         </span>
                                     )}
@@ -1398,7 +1398,7 @@ export default function GradeStudent() {
                                             className="text-xs text-muted"
                                             style={{ margin: '0 0 4px', fontWeight: 600, textTransform: 'uppercase' }}
                                         >
-                                            {t('gradeStudent.self_assessment_reflection_label', 'Student reflection')}
+                                            {t('gradeStudent.self_assessment_reflection_label')}
                                         </p>
                                         <p style={{ fontSize: '0.85rem', whiteSpace: 'pre-wrap' }}>
                                             {sr.selfAssessmentReflection}

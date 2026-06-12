@@ -63,10 +63,16 @@ test.describe('Essay import → grading views (Supabase-backed)', () => {
     }) => {
         const ownerId = await resolveUserId(testUserEmail);
 
-        const cls = buildClass({ id: 'db-essay-class', name: 'DB Essay Class' });
-        const rubric = buildRubric({ id: 'db-essay-rubric', name: 'DB Essay Rubric' });
-        const student = buildStudent(cls.id, { id: 'db-essay-student', name: 'DB Essay Student' });
-        const otherStudent = buildStudent(cls.id, { id: 'db-essay-other-student', name: 'Other DB Student' });
+        // Unique per run so retries / parallel workers don't collide on primary keys.
+        const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+        const cls = buildClass({ id: `db-essay-class-${runId}`, name: 'DB Essay Class' });
+        const rubric = buildRubric({ id: `db-essay-rubric-${runId}`, name: 'DB Essay Rubric' });
+        const student = buildStudent(cls.id, { id: `db-essay-student-${runId}`, name: 'DB Essay Student' });
+        const otherStudent = buildStudent(cls.id, {
+            id: `db-essay-other-student-${runId}`,
+            name: 'Other DB Student',
+        });
 
         // Seed the rubric/class/students this teacher owns, so the grading
         // page has something to render once Supabase is hydrated.
@@ -88,9 +94,12 @@ test.describe('Essay import → grading views (Supabase-backed)', () => {
             }),
         ]);
 
+        const studentEmail = `db-essay-student-${runId}@school.nl`;
+        const otherStudentEmail = `other-db-essay-student-${runId}@school.nl`;
+
         // An essay assignment for this rubric + student, with a submission
         // already handed in — mirrors what `submit-essay` persists.
-        const assignmentId = 'db-essay-assignment';
+        const assignmentId = `db-essay-assignment-${runId}`;
         await insertRow('essay_assignments', {
             id: assignmentId,
             owner_id: ownerId,
@@ -101,7 +110,7 @@ test.describe('Essay import → grading views (Supabase-backed)', () => {
 
         // A second assignment for the OTHER student — its submission must
         // NOT show up when grading `student`.
-        const otherAssignmentId = 'db-essay-other-assignment';
+        const otherAssignmentId = `db-essay-other-assignment-${runId}`;
         await insertRow('essay_assignments', {
             id: otherAssignmentId,
             owner_id: ownerId,
@@ -110,26 +119,26 @@ test.describe('Essay import → grading views (Supabase-backed)', () => {
             title: 'DB Essay Assignment (other student)',
         });
 
-        const submissionId = 'db-essay-submission';
+        const submissionId = `db-essay-submission-${runId}`;
         const storagePath = `${assignmentId}/${submissionId}.html`;
         const contentHtml = '<p>This essay was handed in through the Supabase-backed flow.</p>';
         await uploadEssayHtml(storagePath, contentHtml);
         await insertRow('essay_submissions', {
             id: submissionId,
             assignment_id: assignmentId,
-            student_email: 'db-essay-student@school.nl',
+            student_email: studentEmail,
             word_count: 9,
             word_limit_status: 'ok',
             storage_path: storagePath,
         });
 
-        const otherSubmissionId = 'db-essay-other-submission';
+        const otherSubmissionId = `db-essay-other-submission-${runId}`;
         const otherStoragePath = `${otherAssignmentId}/${otherSubmissionId}.html`;
         await uploadEssayHtml(otherStoragePath, '<p>A different student\'s essay.</p>');
         await insertRow('essay_submissions', {
             id: otherSubmissionId,
             assignment_id: otherAssignmentId,
-            student_email: 'other-db-essay-student@school.nl',
+            student_email: otherStudentEmail,
             word_count: 4,
             word_limit_status: 'ok',
             storage_path: otherStoragePath,
@@ -146,16 +155,17 @@ test.describe('Essay import → grading views (Supabase-backed)', () => {
         await expect(supabasePage.getByText('From database')).toBeVisible({ timeout: 10_000 });
 
         // Only the submission for THIS rubric + student is listed.
-        await expect(supabasePage.getByText('db-essay-student@school.nl')).toBeVisible({ timeout: 10_000 });
+        await expect(supabasePage.getByText(studentEmail)).toBeVisible({ timeout: 10_000 });
         await expect(supabasePage.getByText(/9 words/i)).toBeVisible();
-        await expect(supabasePage.getByText('other-db-essay-student@school.nl')).not.toBeVisible();
+        await expect(supabasePage.getByText(otherStudentEmail)).not.toBeVisible();
 
         await supabasePage.getByRole('button', { name: /^import$/i }).click();
 
         // The modal closes immediately on import and the Attachments panel
         // opens, showing the essay as an HTML attachment for this student.
+        const escapedEmail = studentEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         await expect(
-            supabasePage.getByText(/essay – db-essay-student@school\.nl/i).first()
+            supabasePage.getByText(new RegExp(`essay – ${escapedEmail}`, 'i')).first()
         ).toBeVisible({ timeout: 10_000 });
     });
 });
