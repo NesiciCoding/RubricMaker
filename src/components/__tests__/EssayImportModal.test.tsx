@@ -385,7 +385,10 @@ describe('EssayImportModal', () => {
         });
 
         it('shows an error when the download response is not ok', async () => {
-            vi.stubGlobal('fetch', vi.fn(async () => ({ ok: false, status: 404, text: async () => '' })));
+            vi.stubGlobal(
+                'fetch',
+                vi.fn(async () => ({ ok: false, status: 404, text: async () => '' }))
+            );
             const props = dbProps();
             render(<EssayImportModal {...props} />);
             fireEvent.click(await screen.findByRole('button', { name: /^import$/i }));
