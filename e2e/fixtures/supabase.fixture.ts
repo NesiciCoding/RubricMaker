@@ -289,14 +289,14 @@ export const test = base.extend<SupabaseFixtures>({
             void supabasePage;
 
             const context = await browser.newContext();
-            const page = await context.newPage();
-
-            const magicLink = await generateMagicLinkForExistingUser(testUserEmail);
-            await signInViaMagicLink(page, magicLink);
-
-            await use(page);
-
-            await context.close();
+            try {
+                const page = await context.newPage();
+                const magicLink = await generateMagicLinkForExistingUser(testUserEmail);
+                await signInViaMagicLink(page, magicLink);
+                await use(page);
+            } finally {
+                await context.close();
+            }
         },
         { scope: 'test' },
     ],
