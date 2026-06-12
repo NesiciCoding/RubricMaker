@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('file-saver', () => ({ saveAs: vi.fn() }));
 
@@ -26,6 +26,10 @@ describe('buildSebConfigXml', () => {
 });
 
 describe('downloadSebConfig', () => {
+    beforeEach(() => {
+        vi.mocked(saveAs).mockClear();
+    });
+
     it('saves a .seb file with a slugified, lowercased file name', () => {
         downloadSebConfig('https://example.com/#/essay/abc123', 'Essay For Alice');
 
@@ -39,14 +43,14 @@ describe('downloadSebConfig', () => {
     it('strips diacritics and punctuation from the file name', () => {
         downloadSebConfig('https://example.com/#/essay/abc123', "Café — Élève's Essay!");
 
-        const [, filename] = vi.mocked(saveAs).mock.calls[1];
+        const [, filename] = vi.mocked(saveAs).mock.calls[0];
         expect(filename).toBe('cafe-eleve-s-essay.seb');
     });
 
     it('falls back to "essay" when the name has no usable characters', () => {
         downloadSebConfig('https://example.com/#/essay/abc123', '!!!');
 
-        const [, filename] = vi.mocked(saveAs).mock.calls[2];
+        const [, filename] = vi.mocked(saveAs).mock.calls[0];
         expect(filename).toBe('essay.seb');
     });
 });

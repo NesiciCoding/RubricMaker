@@ -213,6 +213,7 @@ describe('EssayImportModal', () => {
         });
 
         afterEach(() => {
+            vi.restoreAllMocks();
             vi.unstubAllGlobals();
         });
 
