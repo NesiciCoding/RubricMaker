@@ -29,6 +29,7 @@ export default defineConfig({
                 '**/16-rls-anon.spec.ts',
                 '**/17-offline-sync-merge.spec.ts',
                 '**/18-multi-device-sync.spec.ts',
+                '**/20-essay-import-db.spec.ts',
             ],
         },
         {
@@ -40,6 +41,7 @@ export default defineConfig({
                 '**/16-rls-anon.spec.ts',
                 '**/17-offline-sync-merge.spec.ts',
                 '**/18-multi-device-sync.spec.ts',
+                '**/20-essay-import-db.spec.ts',
             ],
         },
         {
@@ -51,6 +53,7 @@ export default defineConfig({
                 '**/16-rls-anon.spec.ts',
                 '**/17-offline-sync-merge.spec.ts',
                 '**/18-multi-device-sync.spec.ts',
+                '**/20-essay-import-db.spec.ts',
             ],
         },
         {
@@ -69,6 +72,7 @@ export default defineConfig({
                 '**/16-rls-anon.spec.ts',
                 '**/17-offline-sync-merge.spec.ts',
                 '**/18-multi-device-sync.spec.ts',
+                '**/20-essay-import-db.spec.ts',
             ],
         },
     ],

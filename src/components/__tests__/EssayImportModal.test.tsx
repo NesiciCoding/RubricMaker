@@ -219,9 +219,12 @@ describe('EssayImportModal', () => {
             expect(screen.queryByText('From database')).not.toBeInTheDocument();
         });
 
-        it('does not show the database tab when teacherKey is missing', () => {
-            render(<EssayImportModal {...dbProps({ teacherKey: undefined })} />);
-            expect(screen.queryByText('From database')).not.toBeInTheDocument();
+        it('still shows the database tab when teacherKey is missing', async () => {
+            const props = dbProps({ teacherKey: undefined });
+            render(<EssayImportModal {...props} />);
+            expect(screen.getByText('From database')).toBeInTheDocument();
+            expect(props.onFetchSubmissions).toHaveBeenCalledWith('');
+            expect(await screen.findByText('alice@school.com')).toBeInTheDocument();
         });
 
         it('defaults to the database tab and loads submissions', async () => {

@@ -717,6 +717,7 @@ function EssaysTab() {
                         'Enable "Read-only after submit" to lock essays once submitted.',
                         'Link a rubric for structured feedback after grading.',
                         'Generate a submission code — share it with students so they can submit without accounts.',
+                        'Enable "Require Safe Exam Browser (SEB)" to lock the assignment to the SEB app — download the .seb config from the assignment modal to distribute to students.',
                     ]}
                 />
 
@@ -743,11 +744,18 @@ function EssaysTab() {
             </FeatureSection>
 
             <FeatureSection icon={FileSearch} title="Submission flow" color="#3b82f6">
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     Students visit the essay URL or enter the submission code in the Student Portal. After an optional
                     email verification gate, they write and submit. Drafts are auto-saved to localStorage every few
-                    seconds. After submission, teachers see the text in the student's profile and can grade against the
-                    linked rubric.
+                    seconds. After submission, teachers open the linked rubric's grading view and click{' '}
+                    <strong>Import Essay</strong> to pull the submission from the database (or paste the student's
+                    submission code if no database is connected) — the essay text is then added as an attachment,
+                    visible in both the normal and comparative grading views.
+                </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    If an assignment requires Safe Exam Browser and the student opens the link outside of SEB,
+                    submission is blocked and a banner offers a <strong>Download .seb config</strong> button so the
+                    student can get the right config file and reopen the assignment inside SEB.
                 </p>
             </FeatureSection>
         </div>

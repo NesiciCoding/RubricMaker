@@ -53,7 +53,7 @@ export default function EssayImportModal({
 }: Props) {
     const { t } = useTranslation();
     const dbStatus = useDbStatus();
-    const hasDb = dbStatus.isConnected && !!teacherKey && !!onFetchSubmissions;
+    const hasDb = dbStatus.isConnected && !!onFetchSubmissions;
 
     const [tab, setTab] = useState<Tab>(hasDb ? 'database' : 'code');
     const [code, setCode] = useState('');
@@ -73,11 +73,11 @@ export default function EssayImportModal({
     const [dbError, setDbError] = useState('');
 
     const loadSubmissions = useCallback(async () => {
-        if (!hasDb || !teacherKey || !onFetchSubmissions) return;
+        if (!hasDb || !onFetchSubmissions) return;
         setLoadingDb(true);
         setDbError('');
         try {
-            const rows = await onFetchSubmissions(teacherKey);
+            const rows = await onFetchSubmissions(teacherKey ?? '');
             setSubmissions(rows);
         } catch {
             setDbError('Failed to load submissions. Make sure you are connected to the database.');
