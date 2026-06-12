@@ -139,7 +139,16 @@ async function createUserAndGetMagicLink(email: string): Promise<string> {
     });
     // Non-fatal if this fails; tests may see the tutorial but core behaviour still works
 
-    // Generate magic link directly — Supabase returns the verify URL without sending email
+    return generateMagicLinkForExistingUser(email);
+}
+
+/**
+ * Generate a fresh magic-link sign-in URL for an EXISTING user — does not
+ * create a user. The admin `generate_link` API can be called repeatedly for
+ * the same email, so this is safe to use for additional "devices" signing in
+ * as the same account (see `secondSupabasePage`).
+ */
+async function generateMagicLinkForExistingUser(email: string): Promise<string> {
     const linkRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/generate_link`, {
         method: 'POST',
         headers: adminHeaders,
@@ -273,11 +282,16 @@ export const test = base.extend<SupabaseFixtures>({
     ],
 
     secondSupabasePage: [
-        async ({ browser, testUserEmail }, use) => {
+        // Depends on `supabasePage` purely for ordering: it creates `testUserEmail`
+        // in Supabase, which must happen before we can generate a second magic
+        // link for that user.
+        async ({ browser, testUserEmail, supabasePage }, use) => {
+            void supabasePage;
+
             const context = await browser.newContext();
             const page = await context.newPage();
 
-            const magicLink = await createUserAndGetMagicLink(testUserEmail);
+            const magicLink = await generateMagicLinkForExistingUser(testUserEmail);
             await signInViaMagicLink(page, magicLink);
 
             await use(page);

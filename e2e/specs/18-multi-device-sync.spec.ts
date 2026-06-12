@@ -240,14 +240,15 @@ test.describe('Simultaneous edits (race / LWW)', () => {
             .toBe(0);
         await pageB.waitForLoadState('networkidle', { timeout: 15_000 });
 
-        // The whole record reflects B's later save: B's name change is present,
-        // AND B's payload (built from B's pre-edit state, which already had
-        // subject "Mathematics" from A's earlier save) carries A's subject too —
-        // record-level LWW means B's full record (name + subject) wins.
+        // The whole record reflects B's later save. B went offline BEFORE A's
+        // subject edit, so B's queued payload was built from B's pre-edit state
+        // and still carries subject "English" — record-level LWW means B's full
+        // record (name "Renamed By Device B" + subject "English") wins outright,
+        // silently discarding A's concurrent "Mathematics" edit.
         const dbAfterB = await fetchRubricsFromDb(testUserEmail);
         const dbRubricAfterB = dbAfterB.find((r) => r.id === rubricId);
         expect(dbRubricAfterB?.data.name).toBe('Renamed By Device B');
-        expect(dbRubricAfterB?.data.subject).toBe('Mathematics');
+        expect(dbRubricAfterB?.data.subject).toBe('English');
 
         // ── A reconnects/reloads and converges on B's version (later updatedAt) ──
         await reloadAndSettle(pageA);
@@ -255,7 +256,7 @@ test.describe('Simultaneous edits (race / LWW)', () => {
         await expect(pageA.getByPlaceholder('Rubric Name...')).toHaveValue('Renamed By Device B', {
             timeout: 10_000,
         });
-        await expect(pageA.getByPlaceholder('Subject / Grade...')).toHaveValue('Mathematics', { timeout: 10_000 });
+        await expect(pageA.getByPlaceholder('Subject / Grade...')).toHaveValue('English', { timeout: 10_000 });
 
         const localRubricsA = await readLocalStorage<{ id: string; name: string; subject?: string }[]>(
             pageA,
@@ -263,7 +264,7 @@ test.describe('Simultaneous edits (race / LWW)', () => {
         );
         const localRubricA = localRubricsA?.find((r) => r.id === rubricId);
         expect(localRubricA?.name).toBe('Renamed By Device B');
-        expect(localRubricA?.subject).toBe('Mathematics');
+        expect(localRubricA?.subject).toBe('English');
     });
 });
 
