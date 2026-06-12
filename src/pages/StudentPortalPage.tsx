@@ -41,7 +41,7 @@ export default function StudentPortalPage() {
         saveRubricSelfAssessment,
         fetchMyEssayAssignments,
     } = useApp();
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const [linkCopied, setLinkCopied] = useState(false);
     const [openSelfAssessId, setOpenSelfAssessId] = useState<string | null>(null);
 
@@ -56,7 +56,7 @@ export default function StudentPortalPage() {
 
     const tourKey = `rm_portal_tour_seen_${studentId}`;
     const [tourRun, setTourRun] = useState(() => localStorage.getItem(tourKey) !== 'true');
-    const tourSteps = useMemo(() => getStudentPortalTutorialSteps(t), [t, i18n.language]);
+    const tourSteps = useMemo(() => getStudentPortalTutorialSteps(t), [t]);
 
     const handleTourCallback = (data: EventData) => {
         if (data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED) {

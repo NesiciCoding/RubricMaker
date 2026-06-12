@@ -86,7 +86,6 @@ export default function EssayAssignmentModal({
             expiresAt,
             embedDb,
             dbStatus.isConnected,
-            dbStatus.userId,
             config,
         ]
     );

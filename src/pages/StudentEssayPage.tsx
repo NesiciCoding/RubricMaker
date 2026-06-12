@@ -323,7 +323,7 @@ export default function StudentEssayPage() {
         return () => {
             document.title = prev;
         };
-    }, [resolvedContent?.title, assignment?.title]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [resolvedContent?.title, assignment?.title]);
 
     // Auto-save draft every 30 s and record timestamp for the indicator
     useEffect(() => {
