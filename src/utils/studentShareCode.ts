@@ -1,4 +1,5 @@
 import type { StudentRubric, Rubric, Student, GradeScale } from '../types';
+import { encodeUrlSafeBase64, decodeUrlSafeBase64 } from './urlSafeBase64';
 
 export interface SharedFeedback {
     sr: StudentRubric;
@@ -14,7 +15,7 @@ export function encodeFeedbackCode(data: SharedFeedback): string {
             // Always encode the frozen snapshot so the link is self-contained
             rubric: (data.sr.rubricSnapshot ?? data.rubric) as Rubric,
         };
-        return btoa(encodeURIComponent(JSON.stringify(payload)));
+        return encodeUrlSafeBase64(JSON.stringify(payload));
     } catch {
         return '';
     }
@@ -22,7 +23,7 @@ export function encodeFeedbackCode(data: SharedFeedback): string {
 
 export function decodeFeedbackCode(code: string): SharedFeedback | null {
     try {
-        const json = decodeURIComponent(atob(code.trim()));
+        const json = decodeUrlSafeBase64(code);
         const data = JSON.parse(json) as SharedFeedback;
         if (!data.sr || !data.rubric || !data.student) return null;
         return data;

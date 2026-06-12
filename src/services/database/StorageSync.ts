@@ -401,7 +401,12 @@ class StorageSyncService {
                 : (settings ?? undefined);
 
             if (mergedSettings && profileFull) {
-                if (!profileFull.schoolId) {
+                if (profileFull.role === 'student') {
+                    // Students don't create/join a school during onboarding — their
+                    // profile.role being set is enough to consider onboarding complete,
+                    // and it persists in the DB so re-logging in never re-prompts them.
+                    mergedSettings = { ...mergedSettings, needsOnboarding: false };
+                } else if (!profileFull.schoolId) {
                     mergedSettings = { ...mergedSettings, needsOnboarding: true };
                 } else {
                     // Fetch school name to store alongside the id

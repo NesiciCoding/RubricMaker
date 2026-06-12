@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { X, Copy, Download, Check, FileText, Database, AlertCircle } from 'lucide-react';
-import { saveAs } from 'file-saver';
 import { useTranslation } from 'react-i18next';
 import { encodeEssayAssignment } from '../../utils/essayShareCode';
+import { downloadSebConfig } from '../../utils/sebConfig';
 import { nanoid } from '../../utils/nanoid';
 import Modal from '../ui/Modal';
 import type { EssayAssignment } from '../../types';
@@ -120,39 +120,7 @@ export default function EssayAssignmentModal({
     }, [onSaveAssignment, buildAssignment, studentId, t]);
 
     const handleDownloadSEB = useCallback(() => {
-        const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-\t<key>startURL</key>
-\t<string>${essayUrl}</string>
-\t<key>allowQuit</key>
-\t<false/>
-\t<key>quitURL</key>
-\t<string>${window.location.origin}/#/seb-done</string>
-\t<key>quitURLConfirm</key>
-\t<false/>
-\t<key>browserWindowAllowAddressBar</key>
-\t<false/>
-\t<key>URLFilterEnable</key>
-\t<true/>
-\t<key>URLFilterRules</key>
-\t<array>
-\t\t<dict>
-\t\t\t<key>action</key>
-\t\t\t<integer>1</integer>
-\t\t\t<key>active</key>
-\t\t\t<true/>
-\t\t\t<key>expression</key>
-\t\t\t<string>${window.location.origin}.*</string>
-\t\t\t<key>regex</key>
-\t\t\t<false/>
-\t\t</dict>
-\t</array>
-</dict>
-</plist>`;
-        const blob = new Blob([xml], { type: 'application/xml' });
-        saveAs(blob, `essay-${studentName.replace(/\s+/g, '-').toLowerCase()}.seb`);
+        downloadSebConfig(essayUrl, `essay-${studentName}`);
     }, [essayUrl, studentName]);
 
     const handlePrintSlips = useCallback(() => {

@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { Clock, CheckCircle, Copy, AlertTriangle, Mail, Loader2, Save } from 'lucide-react';
+import { Clock, CheckCircle, Copy, AlertTriangle, Mail, Loader2, Save, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import EssayEditor from '../components/Editor/EssayEditor';
 import EssayTTSControls from '../components/Essay/EssayTTSControls';
 import { decodeEssayAssignment } from '../utils/essayShareCode';
 import { encodeEssaySubmission } from '../utils/essaySubmissionCode';
+import { downloadSebConfig } from '../utils/sebConfig';
 import { countWords } from '../utils/essayUtils';
 import { nanoid } from '../utils/nanoid';
 import type { EssayAssignmentContent, EssaySubmission } from '../types';
@@ -588,6 +589,7 @@ export default function StudentEssayPage() {
                         display: 'flex',
                         alignItems: 'center',
                         gap: 8,
+                        flexWrap: 'wrap',
                         fontSize: '0.875rem',
                         color: '#991b1b',
                         fontWeight: 600,
@@ -595,6 +597,28 @@ export default function StudentEssayPage() {
                 >
                     <AlertTriangle size={16} style={{ flexShrink: 0 }} />
                     {t('essay.seb_blocked')}
+                    <button
+                        onClick={() =>
+                            downloadSebConfig(window.location.href, resolvedContent?.title || assignment.title)
+                        }
+                        style={{
+                            marginLeft: 'auto',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            background: '#fff',
+                            border: '1px solid #fca5a5',
+                            borderRadius: 6,
+                            padding: '6px 10px',
+                            color: '#991b1b',
+                            fontWeight: 600,
+                            fontSize: '0.8rem',
+                            cursor: 'pointer',
+                        }}
+                    >
+                        <Download size={14} />
+                        {t('essay.download_seb')}
+                    </button>
                 </div>
             )}
 
