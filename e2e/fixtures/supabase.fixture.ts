@@ -237,6 +237,16 @@ export type SupabaseFixtures = {
     supabasePage: Page;
     /** Email of the active test user (for direct DB queries in tests). */
     testUserEmail: string;
+    /**
+     * A second page, in its own browser context, signed in as the SAME test
+     * user as `supabasePage`. Represents a second device/browser for the same
+     * account: independent localStorage/session, shared Supabase account.
+     *
+     * Obtained via a second admin `generate_link` magic-link sign-in for
+     * `testUserEmail` — the admin API can mint a fresh magic link for an
+     * existing user repeatedly, so no second user is created.
+     */
+    secondSupabasePage: Page;
 };
 
 // ── Fixture implementation ────────────────────────────────────────────────────
@@ -258,6 +268,21 @@ export const test = base.extend<SupabaseFixtures>({
             await use(page);
 
             await deleteTestUser(testUserEmail);
+        },
+        { scope: 'test' },
+    ],
+
+    secondSupabasePage: [
+        async ({ browser, testUserEmail }, use) => {
+            const context = await browser.newContext();
+            const page = await context.newPage();
+
+            const magicLink = await createUserAndGetMagicLink(testUserEmail);
+            await signInViaMagicLink(page, magicLink);
+
+            await use(page);
+
+            await context.close();
         },
         { scope: 'test' },
     ],
