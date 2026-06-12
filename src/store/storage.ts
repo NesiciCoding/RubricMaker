@@ -16,6 +16,8 @@ import type {
     DocumentAnalysisResult,
     RubricCriterion,
     UserTemplate,
+    Test,
+    StudentTest,
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 import { nanoid } from '../utils/nanoid';
@@ -214,6 +216,8 @@ const KEYS = {
     speakingSessions: 'rm_speaking_sessions',
     analysisResults: 'rm_analysis_results',
     userTemplates: 'rm_user_templates',
+    tests: 'rm_tests',
+    studentTests: 'rm_student_tests',
 };
 
 // ─── Generic helpers ───────────────────────────────────────────────────────────
@@ -256,6 +260,8 @@ export interface StoreData {
     speakingSessions: SpeakingSession[];
     analysisResults: DocumentAnalysisResult[];
     userTemplates: UserTemplate[];
+    tests: Test[];
+    studentTests: StudentTest[];
 }
 
 export function loadStore(): StoreData {
@@ -276,6 +282,8 @@ export function loadStore(): StoreData {
         speakingSessions: load<SpeakingSession[]>(KEYS.speakingSessions, []),
         analysisResults: load<DocumentAnalysisResult[]>(KEYS.analysisResults, []),
         userTemplates: load<UserTemplate[]>(KEYS.userTemplates, []),
+        tests: load<Test[]>(KEYS.tests, []),
+        studentTests: load<StudentTest[]>(KEYS.studentTests, []),
     };
 }
 
@@ -323,6 +331,12 @@ export function saveSpeakingSessions(sessions: SpeakingSession[]) {
 }
 export function saveAnalysisResults(results: DocumentAnalysisResult[]) {
     save(KEYS.analysisResults, results);
+}
+export function saveTests(tests: Test[]) {
+    save(KEYS.tests, tests);
+}
+export function saveStudentTests(studentTests: StudentTest[]) {
+    save(KEYS.studentTests, studentTests);
 }
 
 // ─── Full Backup / Restore ─────────────────────────────────────────────────────
@@ -440,6 +454,14 @@ export function importFullBackup(json: string): boolean {
             if (isObjectArray(data.analysisResults))
                 saveAnalysisResults(data.analysisResults as DocumentAnalysisResult[]);
             else console.warn('[importFullBackup] analysisResults failed validation — skipped');
+        }
+        if (data.tests !== undefined) {
+            if (isObjectArray(data.tests)) saveTests(data.tests as Test[]);
+            else console.warn('[importFullBackup] tests failed validation — skipped');
+        }
+        if (data.studentTests !== undefined) {
+            if (isObjectArray(data.studentTests)) saveStudentTests(data.studentTests as StudentTest[]);
+            else console.warn('[importFullBackup] studentTests failed validation — skipped');
         }
         if (data.userTemplates !== undefined) {
             if (

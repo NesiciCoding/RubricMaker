@@ -16,6 +16,8 @@ import type {
     DocumentAnalysisResult,
     EssayAssignment,
     StudentEssayAssignmentSummary,
+    Test,
+    StudentTest,
 } from '../../types';
 import type { DatabaseConfig, DbUser, SyncResult } from './types';
 
@@ -893,6 +895,62 @@ export class SupabaseAdapter {
         return error ? { success: false, error: error.message } : { success: true };
     }
 
+    // ── Tests ─────────────────────────────────────────────────────────────────
+
+    async fetchTests(): Promise<Test[]> {
+        const { data, error } = await this.db().from('tests').select('data');
+        if (error) {
+            console.error('fetchTests', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as Test);
+    }
+
+    async upsertTest(t: Test): Promise<SyncResult> {
+        const { error } = await this.db().from('tests').upsert(
+            {
+                id: t.id,
+                owner_id: this.uid(),
+                data: t,
+            },
+            { onConflict: 'id' }
+        );
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteTest(id: string): Promise<SyncResult> {
+        const { error } = await this.db().from('tests').delete().eq('id', id).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    // ── Student Tests ─────────────────────────────────────────────────────────
+
+    async fetchStudentTests(): Promise<StudentTest[]> {
+        const { data, error } = await this.db().from('student_tests').select('data');
+        if (error) {
+            console.error('fetchStudentTests', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as StudentTest);
+    }
+
+    async upsertStudentTest(st: StudentTest): Promise<SyncResult> {
+        const { error } = await this.db().from('student_tests').upsert(
+            {
+                id: st.id,
+                owner_id: this.uid(),
+                data: st,
+            },
+            { onConflict: 'id' }
+        );
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteStudentTest(id: string): Promise<SyncResult> {
+        const { error } = await this.db().from('student_tests').delete().eq('id', id).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
     // ── Analysis Results ──────────────────────────────────────────────────────
 
     async fetchAnalysisResults(): Promise<DocumentAnalysisResult[]> {
@@ -1288,6 +1346,8 @@ export class SupabaseAdapter {
             'self_assessments',
             'speaking_sessions',
             'analysis_results',
+            'tests',
+            'student_tests',
             'user_settings',
             'essay_assignments',
         ];

@@ -93,4 +93,36 @@ describe('profileText', () => {
         const upper = profileText('ABANDON');
         expect(lower.estimatedLevel).toBe(upper.estimatedLevel);
     });
+
+    describe('merged open vocabulary', () => {
+        it('recognizes words present only in the open supplementary list', () => {
+            expect(profileText('paradigm').levelCounts.C1).toBe(1);
+            expect(profileText('selfie').levelCounts.A2).toBe(1);
+        });
+
+        it('takes the lowest level when CEFR-J is lower than the open list', () => {
+            const result = profileText('inevitable');
+            expect(result.levelCounts.B1).toBe(1);
+            expect(result.levelCounts.C2).toBe(0);
+        });
+
+        it('takes the lowest level when the open list is lower than CEFR-J', () => {
+            const result = profileText('embody');
+            expect(result.levelCounts.C1).toBe(1);
+            expect(result.levelCounts.C2).toBe(0);
+        });
+
+        it('keeps CEFR-J levels for words absent from the open list', () => {
+            const result = profileText('abandon');
+            expect(result.levelCounts.B1).toBe(1);
+        });
+
+        it('counts open-list words towards estimatedLevel and highlightWords', () => {
+            const result = profileText(
+                'paradigm heuristic dichotomy nuance caveat salient mitigate extrapolate corroborate elucidate'
+            );
+            expect(['C1', 'C2']).toContain(result.estimatedLevel);
+            expect(result.highlightWords.some(({ word }) => word === 'paradigm')).toBe(true);
+        });
+    });
 });

@@ -29,6 +29,7 @@ import EssaySlipSheet from '../components/Essay/EssaySlipSheet';
 import { useApp } from '../context/AppContext';
 import { useTranslation } from 'react-i18next';
 import { useVoiceGrading } from '../hooks/useVoiceGrading';
+import { useMediaRecorder } from '../hooks/useMediaRecorder';
 import TiptapEditor, { type TiptapEditorHandle } from '../components/Editor/TiptapEditor';
 import type { ScoreEntry, Modifier, EssayAssignment } from '../types';
 import { calcGradeSummary } from '../utils/gradeCalc';
@@ -94,9 +95,7 @@ export default function GradeStudent() {
     const [feedbackOnly, setFeedbackOnly] = useState<boolean>(existingSR?.feedbackOnly ?? false);
     const [isAnchor, setIsAnchor] = useState<boolean>(existingSR?.isAnchor ?? false);
     const [showAnchorPanel, setShowAnchorPanel] = useState(false);
-    const [recordingCritId, setRecordingCritId] = useState<string | null>(null);
-    const mediaRecorderRef = useRef<Record<string, MediaRecorder>>({});
-    const audioChunksRef = useRef<Record<string, BlobPart[]>>({});
+    const audioRecorder = useMediaRecorder();
     const [activeCommentCrit, setActiveCommentCrit] = useState<string | null>(null);
     const [showCommentBankFor, setShowCommentBankFor] = useState<string | null>(null);
     const commentEditorRef = useRef<TiptapEditorHandle>(null);
@@ -329,35 +328,23 @@ export default function GradeStudent() {
     }, [studentRubrics, rubricId, existingSR?.id]);
 
     const startAudioRecording = useCallback(
-        async (criterionId: string) => {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                const mr = new MediaRecorder(stream);
-                audioChunksRef.current[criterionId] = [];
-                mr.ondataavailable = (e) => {
-                    audioChunksRef.current[criterionId].push(e.data);
-                };
-                mr.onstop = () => {
-                    const blob = new Blob(audioChunksRef.current[criterionId], { type: 'audio/webm' });
-                    const reader = new FileReader();
-                    reader.onload = () => updateEntry(criterionId, { audioDataUrl: reader.result as string });
-                    reader.readAsDataURL(blob);
-                    stream.getTracks().forEach((t) => t.stop());
-                };
-                mr.start();
-                mediaRecorderRef.current[criterionId] = mr;
-                setRecordingCritId(criterionId);
-            } catch {
-                // getUserMedia denied — silently ignore
-            }
+        (criterionId: string) => {
+            // getUserMedia denial surfaces as hook error state — silently ignored here, as before
+            void audioRecorder.start({ key: criterionId });
         },
-        [updateEntry]
+        [audioRecorder]
     );
 
-    const stopAudioRecording = useCallback((criterionId: string) => {
-        mediaRecorderRef.current[criterionId]?.stop();
-        setRecordingCritId(null);
-    }, []);
+    const stopAudioRecording = useCallback(
+        async (criterionId: string) => {
+            const result = await audioRecorder.stop(criterionId);
+            if (!result) return;
+            const reader = new FileReader();
+            reader.onload = () => updateEntry(criterionId, { audioDataUrl: reader.result as string });
+            reader.readAsDataURL(result.blob);
+        },
+        [audioRecorder, updateEntry]
+    );
 
     const voice = useVoiceGrading(
         (critIdx, lvlIdx) => {
@@ -1205,7 +1192,7 @@ export default function GradeStudent() {
                                         </div>
                                         {/* Audio feedback */}
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-                                            {recordingCritId === c.id ? (
+                                            {audioRecorder.recordingKey === c.id ? (
                                                 <button
                                                     className="btn btn-danger btn-sm pulse"
                                                     onClick={() => stopAudioRecording(c.id)}

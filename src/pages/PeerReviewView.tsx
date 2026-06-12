@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Save, AlertCircle, FileText } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -10,6 +10,10 @@ import TiptapEditor from '../components/Editor/TiptapEditor';
 
 export default function PeerReviewView() {
     const { rubricId, studentId } = useParams();
+    const [searchParams] = useSearchParams();
+    // The reviewer arrives via ?reviewerId= when a peer reviews someone else;
+    // without it the review is a self-review by the route student.
+    const reviewerId = searchParams.get('reviewerId') ?? studentId;
     const navigate = useNavigate();
     const { t } = useTranslation();
     const { rubrics, students, peerReviews, savePeerReview } = useApp();
@@ -77,7 +81,7 @@ export default function PeerReviewView() {
     }
 
     const handleSave = () => {
-        savePeerReview({ ...entry, round: activeRound });
+        savePeerReview({ ...entry, round: activeRound, gradedBy: reviewerId });
         setIsSaved(true);
         setIsDirty(false);
         setTimeout(() => setIsSaved(false), 2000);

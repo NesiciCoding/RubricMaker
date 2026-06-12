@@ -1,7 +1,19 @@
 import { CEFRJ_VOCABULARY } from '../data/cefrjVocabulary';
+import { OPEN_CEFR_VOCABULARY } from '../data/openCefrVocabulary';
 import type { CefrLevel, CefrVocabProfile, CefrWordHit } from '../types';
 
 const LEVEL_ORDER: CefrLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+
+const MERGED_VOCABULARY: Record<string, CefrLevel> = (() => {
+    const merged: Record<string, CefrLevel> = { ...OPEN_CEFR_VOCABULARY };
+    for (const [word, level] of Object.entries(CEFRJ_VOCABULARY)) {
+        const existing = merged[word];
+        if (!existing || LEVEL_ORDER.indexOf(level) < LEVEL_ORDER.indexOf(existing)) {
+            merged[word] = level;
+        }
+    }
+    return merged;
+})();
 
 const SKIP_WORDS = new Set([
     'a',
@@ -124,7 +136,7 @@ function normalise(word: string): string[] {
  */
 function lookupLevel(word: string): CefrLevel | null {
     for (const form of normalise(word)) {
-        const level = CEFRJ_VOCABULARY[form];
+        const level = MERGED_VOCABULARY[form];
         if (level) return level as CefrLevel;
     }
     return null;

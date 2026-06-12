@@ -19,6 +19,8 @@ import type {
     SpeakingSession,
     DocumentAnalysisResult,
     EssayAssignment,
+    Test,
+    StudentTest,
 } from '../../types';
 
 const CONFIG_KEY = 'rm_supabase_config';
@@ -366,6 +368,8 @@ class StorageSyncService {
                 selfAssessments,
                 speakingSessions,
                 analysisResults,
+                tests,
+                studentTests,
                 attachments,
                 settings,
                 profile,
@@ -383,6 +387,8 @@ class StorageSyncService {
                 this.adapter.fetchSelfAssessments(),
                 this.adapter.fetchSpeakingSessions(),
                 this.adapter.fetchAnalysisResults(),
+                this.adapter.fetchTests(),
+                this.adapter.fetchStudentTests(),
                 this.attachmentSync.hydrateAttachments(),
                 this.adapter.fetchSettings(),
                 this.adapter.fetchMyProfile(),
@@ -430,6 +436,8 @@ class StorageSyncService {
                 selfAssessments,
                 speakingSessions,
                 analysisResults,
+                tests,
+                studentTests,
                 attachments,
                 ...(mergedSettings ? { settings: mergedSettings as StoreData['settings'] } : {}),
             };
@@ -474,6 +482,8 @@ class StorageSyncService {
                 ...state.selfAssessments.map((sa) => this.adapter.upsertSelfAssessment(sa)),
                 ...state.speakingSessions.map((ss) => this.adapter.upsertSpeakingSession(ss)),
                 ...state.analysisResults.map((ar) => this.adapter.upsertAnalysisResult(ar)),
+                ...state.tests.map((t) => this.adapter.upsertTest(t)),
+                ...state.studentTests.map((st) => this.adapter.upsertStudentTest(st)),
                 this.adapter.saveSettings(state.settings),
             ];
             await Promise.all(ups);
@@ -565,6 +575,14 @@ class StorageSyncService {
                     if (action === 'upsert')
                         result = await this.adapter.upsertAnalysisResult(payload as DocumentAnalysisResult);
                     else if (id) result = await this.adapter.deleteAnalysisResult(id);
+                    break;
+                case 'test':
+                    if (action === 'upsert') result = await this.adapter.upsertTest(payload as Test);
+                    else if (id) result = await this.adapter.deleteTest(id);
+                    break;
+                case 'studentTest':
+                    if (action === 'upsert') result = await this.adapter.upsertStudentTest(payload as StudentTest);
+                    else if (id) result = await this.adapter.deleteStudentTest(id);
                     break;
                 case 'settings':
                     if (action === 'upsert')

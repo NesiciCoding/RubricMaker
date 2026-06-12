@@ -2124,6 +2124,41 @@ ALTER TABLE public.essay_submissions
     ADD COLUMN IF NOT EXISTS word_limit_status TEXT
         CHECK (word_limit_status IN ('ok', 'under', 'over'));
 
+-- ── 033_tests_tables.sql ──────────────────────────────────────────────────────────────
+
+-- Testing environment: teacher-built tests and student test attempts.
+-- Same jsonb-document pattern as speaking_sessions (001_initial_schema.sql):
+-- real columns only for identity/ownership, everything else in `data`.
+
+create table if not exists public.tests (
+  id text primary key,
+  owner_id uuid not null references public.profiles(id) on delete cascade,
+  data jsonb not null
+);
+create index if not exists tests_owner_id_idx on public.tests(owner_id);
+
+create table if not exists public.student_tests (
+  id text primary key,
+  owner_id uuid not null references public.profiles(id) on delete cascade,
+  data jsonb not null
+);
+create index if not exists student_tests_owner_id_idx on public.student_tests(owner_id);
+
+alter table public.tests enable row level security;
+alter table public.student_tests enable row level security;
+
+drop policy if exists "tests_own" on public.tests;
+create policy "tests_own"
+  on public.tests for all
+  using (auth.uid() = owner_id)
+  with check (auth.uid() = owner_id);
+
+drop policy if exists "student_tests_own" on public.student_tests;
+create policy "student_tests_own"
+  on public.student_tests for all
+  using (auth.uid() = owner_id)
+  with check (auth.uid() = owner_id);
+
 -- ── record applied migrations ──────────────────────────────────────────
 
 create table if not exists public._migrations (
@@ -2168,5 +2203,6 @@ insert into public._migrations (name) values
     ('029_remove_anon_essay_select.sql'),
     ('030_allow_self_student_role.sql'),
     ('031_restrict_anon_profiles_read.sql'),
-    ('032_essay_word_limit_status.sql')
+    ('032_essay_word_limit_status.sql'),
+    ('033_tests_tables.sql')
 on conflict (name) do nothing;
