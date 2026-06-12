@@ -774,7 +774,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 }
             }
         });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // ── Handle in-page OTP login (no page reload, so startup effect won't re-run) ──

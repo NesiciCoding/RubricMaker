@@ -163,7 +163,7 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
                     )}
                     <span>
                         Sign in with Microsoft{' '}
-                        <span style={{ fontSize: '0.78rem', fontWeight: 400, color: '#3b82f6' }}>(school / work)</span>
+                        <span style={{ fontSize: '0.78rem', fontWeight: 400, color: '#2563eb' }}>(school / work)</span>
                     </span>
                 </button>
             )}

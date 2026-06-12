@@ -105,7 +105,7 @@ export default function LandingPage() {
     }
 
     return (
-        <div
+        <main
             style={{
                 minHeight: '100vh',
                 display: 'flex',
@@ -179,7 +179,7 @@ export default function LandingPage() {
                 <p
                     style={{
                         fontSize: '1.1rem',
-                        color: '#64748b',
+                        color: '#475569',
                         maxWidth: 580,
                         margin: '0 auto 12px',
                         lineHeight: 1.6,
@@ -210,7 +210,7 @@ export default function LandingPage() {
                                 alignItems: 'center',
                                 gap: 5,
                                 fontSize: '0.82rem',
-                                color: '#64748b',
+                                color: '#475569',
                             }}
                         >
                             <Icon size={13} style={{ color: '#10b981' }} />
@@ -233,13 +233,13 @@ export default function LandingPage() {
             >
                 {/* Try-out / Offline */}
                 <LoginCard
-                    icon={<Laptop size={22} style={{ color: '#64748b' }} />}
+                    icon={<Laptop size={22} style={{ color: '#475569' }} />}
                     title="Try-out / Offline"
                     subtitle="Work locally, no account needed"
-                    accentColor="#64748b"
+                    accentColor="#475569"
                     accentBg="#f1f5f9"
                 >
-                    <p style={{ color: '#64748b', fontSize: '0.88rem', lineHeight: 1.6, margin: '0 0 20px' }}>
+                    <p style={{ color: '#475569', fontSize: '0.88rem', lineHeight: 1.6, margin: '0 0 20px' }}>
                         All rubrics and grades stay in this browser. Nothing is sent to a server. You can connect an
                         account later in Settings.
                     </p>
@@ -253,7 +253,7 @@ export default function LandingPage() {
                     icon={<LogIn size={22} style={{ color: '#6366f1' }} />}
                     title="Teacher Login"
                     subtitle="Sync across devices, share with colleagues"
-                    accentColor="#6366f1"
+                    accentColor="#4f46e5"
                     accentBg="#eef2ff"
                     highlighted
                 >
@@ -279,10 +279,10 @@ export default function LandingPage() {
                     accentColor="#0891b2"
                     accentBg="#ecfeff"
                 >
-                    <p style={{ color: '#64748b', fontSize: '0.88rem', lineHeight: 1.6, margin: '0 0 16px' }}>
+                    <p style={{ color: '#475569', fontSize: '0.88rem', lineHeight: 1.6, margin: '0 0 16px' }}>
                         Sign in to keep a history of your essays and assessments.
                         <br />
-                        <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
                             Your teacher will give you the assignment link — you don't need an account to submit.
                         </span>
                     </p>
@@ -306,10 +306,10 @@ export default function LandingPage() {
                 </h2>
 
                 {/* For teachers */}
-                <FeatureGroup label="For teachers" labelColor="#6366f1" features={TEACHER_FEATURES} />
+                <FeatureGroup label="For teachers" labelColor="#4f46e5" features={TEACHER_FEATURES} />
 
                 {/* For students */}
-                <FeatureGroup label="For students" labelColor="#0891b2" features={STUDENT_FEATURES} />
+                <FeatureGroup label="For students" labelColor="#0e7490" features={STUDENT_FEATURES} />
             </div>
 
             {/* ── Offline notice + privacy ── */}
@@ -325,20 +325,20 @@ export default function LandingPage() {
                     marginBottom: 16,
                 }}
             >
-                <Shield size={13} style={{ color: '#64748b' }} />
-                <span style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                <Shield size={13} style={{ color: '#475569' }} />
+                <span style={{ fontSize: '0.78rem', color: '#475569' }}>
                     Your data never leaves your device in offline mode.
                 </span>
-                <Globe size={11} style={{ color: '#94a3b8' }} />
-                <a href="#/privacy" style={{ fontSize: '0.78rem', color: '#94a3b8', textDecoration: 'underline' }}>
+                <Globe size={11} style={{ color: '#475569' }} />
+                <a href="#/privacy" style={{ fontSize: '0.78rem', color: '#475569', textDecoration: 'underline' }}>
                     Privacy statement
                 </a>
             </div>
 
-            <p style={{ marginBottom: 48, fontSize: '0.72rem', color: '#cbd5e1', textAlign: 'center' }}>
+            <p style={{ marginBottom: 48, fontSize: '0.72rem', color: '#475569', textAlign: 'center' }}>
                 RubricMaker is open-source software for educators.
             </p>
-        </div>
+        </main>
     );
 }
 
@@ -416,7 +416,7 @@ function FeatureGroup({ label, labelColor, features }: { label: string; labelCol
                             <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#0f172a', marginBottom: 2 }}>
                                 {title}
                             </div>
-                            <div style={{ fontSize: '0.79rem', color: '#64748b', lineHeight: 1.5 }}>{desc}</div>
+                            <div style={{ fontSize: '0.79rem', color: '#475569', lineHeight: 1.5 }}>{desc}</div>
                         </div>
                     </div>
                 ))}
@@ -485,7 +485,7 @@ function LoginCard({ icon, title, subtitle, accentColor, accentBg, highlighted, 
                 {icon}
                 <div>
                     <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#1e293b' }}>{title}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 1 }}>{subtitle}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#475569', marginTop: 1 }}>{subtitle}</div>
                 </div>
             </div>
             {children}
@@ -527,7 +527,7 @@ function AdvancedConfig({
                     background: 'none',
                     border: 'none',
                     cursor: 'pointer',
-                    color: '#94a3b8',
+                    color: '#64748b',
                     fontSize: '0.78rem',
                     padding: '4px 0',
                 }}
@@ -538,13 +538,13 @@ function AdvancedConfig({
 
             {open && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
-                    <p style={{ margin: 0, fontSize: '0.78rem', color: '#94a3b8', lineHeight: 1.5 }}>
+                    <p style={{ margin: 0, fontSize: '0.78rem', color: '#64748b', lineHeight: 1.5 }}>
                         Run your own Supabase instance or use a custom project.{' '}
                         <a
                             href="https://supabase.com"
                             target="_blank"
                             rel="noopener noreferrer"
-                            style={{ color: '#94a3b8' }}
+                            style={{ color: '#64748b' }}
                         >
                             supabase.com <ExternalLink size={9} />
                         </a>

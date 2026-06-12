@@ -70,9 +70,9 @@ const Spinner = () => {
 
 export default function App() {
     const { settings, students, updateSettings, showLanding, isCheckingSession, signOutFromDatabase } = useApp();
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const steps = useMemo(() => getTutorialSteps(t), [t, i18n.language]);
+    const steps = useMemo(() => getTutorialSteps(t), [t]);
 
     if (isCheckingSession) {
         return (

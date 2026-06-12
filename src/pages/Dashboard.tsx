@@ -476,12 +476,12 @@ export default function Dashboard() {
                                             transition: 'all 0.2s',
                                         }}
                                         onClick={() => {
-                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                             const newRubric = {
                                                 ...tpl,
                                                 id: undefined,
                                                 createdAt: undefined,
                                                 updatedAt: undefined,
+                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                             } as any;
                                             navigate('/rubrics/new', { state: { template: newRubric } });
                                         }}
