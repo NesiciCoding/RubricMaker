@@ -139,7 +139,16 @@ async function createUserAndGetMagicLink(email: string): Promise<string> {
     });
     // Non-fatal if this fails; tests may see the tutorial but core behaviour still works
 
-    // Generate magic link directly — Supabase returns the verify URL without sending email
+    return generateMagicLinkForExistingUser(email);
+}
+
+/**
+ * Generate a fresh magic-link sign-in URL for an EXISTING user — does not
+ * create a user. The admin `generate_link` API can be called repeatedly for
+ * the same email, so this is safe to use for additional "devices" signing in
+ * as the same account (see `secondSupabasePage`).
+ */
+async function generateMagicLinkForExistingUser(email: string): Promise<string> {
     const linkRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/generate_link`, {
         method: 'POST',
         headers: adminHeaders,
@@ -237,6 +246,16 @@ export type SupabaseFixtures = {
     supabasePage: Page;
     /** Email of the active test user (for direct DB queries in tests). */
     testUserEmail: string;
+    /**
+     * A second page, in its own browser context, signed in as the SAME test
+     * user as `supabasePage`. Represents a second device/browser for the same
+     * account: independent localStorage/session, shared Supabase account.
+     *
+     * Obtained via a second admin `generate_link` magic-link sign-in for
+     * `testUserEmail` — the admin API can mint a fresh magic link for an
+     * existing user repeatedly, so no second user is created.
+     */
+    secondSupabasePage: Page;
 };
 
 // ── Fixture implementation ────────────────────────────────────────────────────
@@ -258,6 +277,26 @@ export const test = base.extend<SupabaseFixtures>({
             await use(page);
 
             await deleteTestUser(testUserEmail);
+        },
+        { scope: 'test' },
+    ],
+
+    secondSupabasePage: [
+        // Depends on `supabasePage` purely for ordering: it creates `testUserEmail`
+        // in Supabase, which must happen before we can generate a second magic
+        // link for that user.
+        async ({ browser, testUserEmail, supabasePage }, use) => {
+            void supabasePage;
+
+            const context = await browser.newContext();
+            try {
+                const page = await context.newPage();
+                const magicLink = await generateMagicLinkForExistingUser(testUserEmail);
+                await signInViaMagicLink(page, magicLink);
+                await use(page);
+            } finally {
+                await context.close();
+            }
         },
         { scope: 'test' },
     ],

@@ -11,6 +11,10 @@
  *     stale remote data when reconnect-hydration runs before the queued
  *     write has flushed (LWW / pending-record protection in mergeStoreData).
  *
+ * Multi-device propagation, simultaneous-edit (LWW) races, and
+ * network-partition resilience across two signed-in contexts for the same
+ * user are covered in 18-multi-device-sync.spec.ts (Phase 2.1).
+ *
  * Requires a running local Supabase stack:
  *   npm run db:start
  *   npm run e2e:supabase
@@ -349,26 +353,5 @@ test.describe('Reconnect-hydration protects offline edits (LWW)', () => {
         const dbAfter = await fetchRubricsFromDb(testUserEmail);
         const dbRubric = dbAfter.find((r) => r.id === rubricId);
         expect(dbRubric?.data.name).toBe('Renamed Offline');
-    });
-});
-
-test.describe('Multi-device propagation', () => {
-    test.skip(
-        true,
-        'Skipped: the supabase fixture provisions one signed-in page per test via a fresh ' +
-            'magic-link user. Standing up a second authenticated browser context for the SAME ' +
-            'user would require either (a) extracting and re-injecting the sb-*-auth-token ' +
-            'localStorage entry into a second context — fragile across supabase-js versions and ' +
-            'not exercised anywhere else in this suite — or (b) a second magic-link sign-in ' +
-            'flow per test, which doubles runtime and admin-API calls for every test in this ' +
-            'file. Given items 1 and 2 above already cover the merge logic end-to-end (queue, ' +
-            'flush, reconnect-hydration, LWW protection), a dedicated cross-context propagation ' +
-            'test is disproportionate to the marginal coverage it adds. If desired, this should ' +
-            'be a small follow-up that adds a `secondSupabasePage` fixture to ' +
-            'e2e/fixtures/supabase.fixture.ts (sharing testUserEmail) rather than ad-hoc auth ' +
-            'token copying inside this spec.'
-    );
-    test('context A edits a rubric, context B reconnects and sees the change', async () => {
-        // intentionally empty — see test.skip reason above
     });
 });
