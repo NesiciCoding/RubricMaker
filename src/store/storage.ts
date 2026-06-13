@@ -236,7 +236,7 @@ function save<T>(key: string, value: T): void {
     try {
         localStorage.setItem(key, JSON.stringify(value));
     } catch (e) {
-        console.error(`[storage] write failed for "${key}" (quota exceeded?)`, e);
+        console.error('[storage] write failed (quota exceeded?):', key, e);
         throw e;
     }
 }
