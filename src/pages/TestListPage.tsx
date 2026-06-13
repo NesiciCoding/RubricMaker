@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit2, Trash2, Copy, ClipboardCheck, Send } from 'lucide-react';
+import { Plus, Edit2, Trash2, Copy, ClipboardCheck, Send, BarChart3, Upload, Radio } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
@@ -8,13 +8,17 @@ import { nanoid } from '../utils/nanoid';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
 import TestAssignmentModal from '../components/Tests/TestAssignmentModal';
+import TestSubmissionImportModal from '../components/Tests/TestSubmissionImportModal';
+import ClassAverageAdjuster from '../components/Tests/ClassAverageAdjuster';
 
 export default function TestListPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { tests, addTest, deleteTest } = useApp();
+    const { tests, addTest, deleteTest, studentTests, saveStudentTest, students } = useApp();
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
     const [assigningTestId, setAssigningTestId] = useState<string | null>(null);
+    const [importingTestId, setImportingTestId] = useState<string | null>(null);
+    const [resultsTestId, setResultsTestId] = useState<string | null>(null);
 
     function handleDuplicate(testId: string) {
         const test = tests.find((tst) => tst.id === testId);
@@ -159,7 +163,63 @@ export default function TestListPage() {
                                         >
                                             <Send size={14} /> {t('tests.action_assign')}
                                         </button>
+                                        <button
+                                            className="btn btn-secondary btn-sm"
+                                            disabled={studentTests.filter((st) => st.testId === test.id).length === 0}
+                                            onClick={() => setResultsTestId(resultsTestId === test.id ? null : test.id)}
+                                        >
+                                            <BarChart3 size={14} /> {t('tests.results.action_results')}
+                                        </button>
+                                        <button
+                                            className="btn btn-secondary btn-sm"
+                                            onClick={() => setImportingTestId(test.id)}
+                                        >
+                                            <Upload size={14} /> {t('tests.results.action_import')}
+                                        </button>
+                                        <button
+                                            className="btn btn-secondary btn-sm"
+                                            onClick={() => navigate(`/tests/${test.id}/monitor`)}
+                                        >
+                                            <Radio size={14} /> {t('tests.monitor.action_monitor')}
+                                        </button>
                                     </div>
+
+                                    {resultsTestId === test.id && (
+                                        <div
+                                            style={{
+                                                marginTop: 14,
+                                                paddingTop: 14,
+                                                borderTop: '1px solid var(--border)',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                gap: 10,
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                                {studentTests
+                                                    .filter((st) => st.testId === test.id)
+                                                    .map((st) => {
+                                                        const stStudent = students.find((s) => s.id === st.studentId);
+                                                        return (
+                                                            <button
+                                                                key={st.id}
+                                                                className="btn btn-ghost btn-sm"
+                                                                style={{ justifyContent: 'flex-start' }}
+                                                                onClick={() => navigate(`/tests/${test.id}/results/${st.id}`)}
+                                                            >
+                                                                {stStudent?.name ?? st.studentId}
+                                                            </button>
+                                                        );
+                                                    })}
+                                            </div>
+                                            <ClassAverageAdjuster
+                                                test={test}
+                                                studentTests={studentTests.filter((st) => st.testId === test.id)}
+                                                students={students}
+                                                onSaveStudentTest={saveStudentTest}
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                             );
                         })}
@@ -173,6 +233,20 @@ export default function TestListPage() {
                         const test = tests.find((tst) => tst.id === assigningTestId);
                         if (!test) return null;
                         return <TestAssignmentModal test={test} onClose={() => setAssigningTestId(null)} />;
+                    })()}
+
+                {importingTestId &&
+                    (() => {
+                        const test = tests.find((tst) => tst.id === importingTestId);
+                        if (!test) return null;
+                        return (
+                            <TestSubmissionImportModal
+                                test={test}
+                                studentTests={studentTests.filter((st) => st.testId === test.id)}
+                                onSave={saveStudentTest}
+                                onClose={() => setImportingTestId(null)}
+                            />
+                        );
                     })()}
             </div>
         </>

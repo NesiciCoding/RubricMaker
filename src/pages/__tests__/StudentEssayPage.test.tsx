@@ -41,6 +41,17 @@ vi.mock('../../utils/essaySubmissionCode', () => ({
 
 vi.mock('../../utils/nanoid', () => ({ nanoid: () => 'test-submission-id' }));
 
+// Default: telemetry disabled (no DB) so existing offline-path tests are unaffected.
+const mockFlush = vi.fn().mockReturnValue([]);
+let mockIsBroadcasting = false;
+vi.mock('../../hooks/useLiveSessionTelemetry', () => ({
+    useLiveSessionTelemetry: () => ({
+        events: [],
+        flush: mockFlush,
+        isBroadcasting: mockIsBroadcasting,
+    }),
+}));
+
 import { encodeEssaySubmission } from '../../utils/essaySubmissionCode';
 import StudentEssayPage from '../StudentEssayPage';
 
@@ -200,5 +211,56 @@ describe('StudentEssayPage — timer auto-submit', () => {
         // Submission must fire; word limit affects the button only, not the countdown
         expect(mockEncode).toHaveBeenCalled();
         expect(mockEncode).toHaveBeenCalledWith(expect.objectContaining({ wordLimitStatus: 'over' }));
+    });
+});
+
+describe('StudentEssayPage — live monitoring telemetry', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        sessionStorage.clear();
+        localStorage.clear();
+        mockIsBroadcasting = false;
+        mockFlush.mockReturnValue([]);
+    });
+
+    it('does not show the live-monitoring disclosure when telemetry is not broadcasting', () => {
+        mockIsBroadcasting = false;
+        renderPage(makeAssignment());
+        setContent(10);
+        expect(screen.queryByText('tests.monitor.liveDisclosure')).not.toBeInTheDocument();
+    });
+
+    it('shows the live-monitoring disclosure when telemetry is broadcasting', () => {
+        mockIsBroadcasting = true;
+        renderPage(makeAssignment());
+        setContent(10);
+        expect(screen.getByText('tests.monitor.liveDisclosure')).toBeInTheDocument();
+    });
+
+    it('hides the live-monitoring disclosure once the essay is submitted', async () => {
+        mockIsBroadcasting = true;
+        renderPage(makeAssignment());
+        setContent(10);
+        expect(screen.getByText('tests.monitor.liveDisclosure')).toBeInTheDocument();
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /essay\.submit_btn/i }));
+        });
+
+        expect(screen.queryByText('tests.monitor.liveDisclosure')).not.toBeInTheDocument();
+    });
+
+    it('flushes telemetry events into the submission', async () => {
+        const flushedEvents = [{ type: 'tab_switch' as const, at: '2026-06-13T10:00:00.000Z' }];
+        mockFlush.mockReturnValue(flushedEvents);
+        renderPage(makeAssignment());
+        setContent(10);
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /essay\.submit_btn/i }));
+        });
+
+        expect(mockFlush).toHaveBeenCalled();
+        expect(mockEncode).toHaveBeenCalledWith(expect.objectContaining({ events: flushedEvents }));
     });
 });

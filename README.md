@@ -13,6 +13,7 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 - **Framework descriptors**: Link criteria to IB Learner Profile attributes or Bloom's Taxonomy levels.
 - **Rubric versioning**: Automatic snapshots on save; restore any previous version.
 - **Tests & quizzes**: Build multiple-choice, short-answer, and open-question tests with a duration, optional Safe Exam Browser requirement, and grade scale. Link standards and CEFR descriptors per question, then assign tests to a class — each student gets a unique share link.
+- **Live monitoring**: While a test or essay is in progress (cloud sync enabled), watch a live presence/progress view per student — response grid for tests, live word count and draft preview for essays, plus advisory proctoring flags (tab switches, copy/paste, battery, Safe Exam Browser status).
 
 ### 2. Grading Interface
 - **Student management**: Manage students and organise them into classes, with Dutch VO track (VMBO/HAVO/VWO) support.
@@ -122,11 +123,14 @@ npm run db:reset     # Reset and re-apply all migrations
 | `/rubrics/:rubricId/peer-review/:studentId` | Peer review view |
 | `/peer-analytics/:rubricId` | Peer review analytics (consistency, feedback heatmap, reviewer trends) |
 | `/rubrics/:rubricId/self-assess/:studentId` | Student self-assessment |
+| `/essays/:assignmentId/monitor` | Live essay monitor (presence, live word counts, draft preview) |
 | `/speaking/:rubricId/:studentId` | Speaking session |
 | `/grade-comparative/:classId/:rubricId` | Comparative grading |
 | `/tests` | Test list |
 | `/tests/new` | New test |
 | `/tests/:id` | Test builder |
+| `/tests/:testId/results/:studentTestId` | Test results, manual grading, and class-average adjustment |
+| `/tests/:testId/monitor` | Live test monitor (presence, response grid, proctoring flags) |
 | `/students` | Students list |
 | `/students/:id` | Student profile |
 | `/students/:id/cefr-overview` | Per-student CEFR overview |

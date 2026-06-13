@@ -1241,6 +1241,17 @@ export class SupabaseAdapter {
         });
     }
 
+    /** Fetch a single essay assignment owned by this teacher, by its teacherKey (= row id). */
+    async fetchEssayAssignmentByKey(teacherKey: string): Promise<{ rubricId: string; studentId: string; title: string } | null> {
+        const { data, error } = await this.db()
+            .from('essay_assignments')
+            .select('rubric_id, student_id, title')
+            .eq('id', teacherKey)
+            .maybeSingle();
+        if (error || !data) return null;
+        return { rubricId: data.rubric_id, studentId: data.student_id, title: data.title };
+    }
+
     async deleteEssaySubmission(submissionId: string, storagePath: string): Promise<SyncResult> {
         // Remove the file first (best-effort)
         await this.db()

@@ -20,6 +20,7 @@ import {
     Eye,
     Palette,
     Languages,
+    Radio,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { loadSupabaseConfig } from '../services/database';
@@ -55,6 +56,12 @@ const TEACHER_FEATURES = [
         title: 'Vocabulary Profile',
         desc: 'See each class and student’s CEFR vocabulary range (A1–C2) from their analysed work, and export word lists by level.',
         color: '#f59e0b',
+    },
+    {
+        icon: Radio,
+        title: 'Live Monitoring',
+        desc: 'Watch tests and essays as students work — who’s online, their progress, and live drafts, updated in real time.',
+        color: '#ef4444',
     },
 ];
 

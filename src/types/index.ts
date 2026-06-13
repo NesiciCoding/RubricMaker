@@ -695,6 +695,12 @@ export interface StudentTest {
     rawTotalPoints?: number;
     /** Uniform class-wide point adjustment applied on top of rawTotalPoints */
     adjustmentPoints?: number;
+    /** Audit record of the class-average adjustment applied to this submission; clearing it reverts to raw points */
+    adjustment?: {
+        points: number;
+        appliedAt: string;
+        note?: string;
+    };
     /** Proctoring events captured while the student took the test */
     events?: ProctorEvent[];
     /** ISO timestamp of the last local edit; used for last-write-wins sync conflict resolution */
@@ -741,4 +747,6 @@ export interface EssaySubmission {
     submittedAt: string;
     /** Present when the assignment defined word limits; null/absent means no limits were set */
     wordLimitStatus?: 'ok' | 'under' | 'over' | null;
+    /** Proctoring events captured while the student wrote this essay */
+    events?: ProctorEvent[];
 }

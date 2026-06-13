@@ -35,6 +35,8 @@ const CefrOverviewPage = lazy(() => import('./pages/CefrOverviewPage'));
 const VocabularyDashboardPage = lazy(() => import('./pages/VocabularyDashboardPage'));
 const TestListPage = lazy(() => import('./pages/TestListPage'));
 const TestBuilderPage = lazy(() => import('./pages/TestBuilderPage'));
+const TestResultsPage = lazy(() => import('./pages/TestResultsPage'));
+const LiveMonitorPage = lazy(() => import('./pages/LiveMonitorPage'));
 const StudentPortalPage = lazy(() => import('./pages/StudentPortalPage'));
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
@@ -204,6 +206,9 @@ export default function App() {
                                 <Route path="/tests" element={<TestListPage />} />
                                 <Route path="/tests/new" element={<TestBuilderPage />} />
                                 <Route path="/tests/:id" element={<TestBuilderPage />} />
+                                <Route path="/tests/:testId/results/:studentTestId" element={<TestResultsPage />} />
+                                <Route path="/tests/:testId/monitor" element={<LiveMonitorPage kind="test" />} />
+                                <Route path="/essays/:assignmentId/monitor" element={<LiveMonitorPage kind="essay" />} />
                                 <Route path="/portal/:studentId" element={<StudentPortalPage />} />
                                 <Route path="/attachments" element={<AttachmentsPage />} />
                                 <Route path="/export" element={<ExportPage />} />

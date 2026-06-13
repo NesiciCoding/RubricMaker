@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import { X, Copy, Download, Check, FileText, Database, AlertCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { X, Copy, Download, Check, FileText, Database, AlertCircle, Radio } from 'lucide-react';
 import { saveAs } from 'file-saver';
 import { useTranslation } from 'react-i18next';
 import { encodeEssayAssignment } from '../../utils/essayShareCode';
@@ -426,6 +427,13 @@ export default function EssayAssignmentModal({
                         </button>
                     </div>
                 </div>
+
+                {/* Live monitor — only meaningful once the assignment is saved to the DB */}
+                {saved && (
+                    <Link to={`/essays/${teacherKey}/monitor`} className="btn btn-secondary btn-sm" style={{ alignSelf: 'flex-start' }}>
+                        <Radio size={14} /> {t('tests.monitor.action_monitor')}
+                    </Link>
+                )}
             </div>
 
             {/* Footer */}

@@ -59,10 +59,12 @@ const mockUseApp = {
     classes: [mockClass],
     gradeScales: [mockGradeScale],
     studentRubrics: [],
+    studentTests: [],
     settings: mockSettings,
     addTest: mockAddTest,
     updateTest: mockUpdateTest,
     deleteTest: mockDeleteTest,
+    saveStudentTest: noop,
     updateSettings: noop,
 };
 

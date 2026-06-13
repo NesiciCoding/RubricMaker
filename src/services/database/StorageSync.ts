@@ -314,6 +314,10 @@ class StorageSyncService {
         return this.adapter.fetchMyEssayAssignments();
     }
 
+    async fetchEssayAssignmentByKey(teacherKey: string) {
+        return this.adapter.fetchEssayAssignmentByKey(teacherKey);
+    }
+
     async deleteEssaySubmission(submissionId: string, storagePath: string): Promise<SyncResult> {
         return this.adapter.deleteEssaySubmission(submissionId, storagePath);
     }

@@ -21,6 +21,7 @@ import {
     Award,
     Languages,
     ClipboardCheck,
+    Radio,
 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useTranslation } from 'react-i18next';
@@ -93,6 +94,13 @@ const ROUTE_TREE: RouteNode[] = [
                         color: '#8b5cf6',
                         badge: 'Student',
                     },
+                    {
+                        path: '/essays/:assignmentId/monitor',
+                        label: 'Live Essay Monitor',
+                        description:
+                            'Watch students write in real time: presence, live word counts, last-activity timestamps, and an expandable draft preview.',
+                        color: '#8b5cf6',
+                    },
                 ],
             },
             {
@@ -120,6 +128,20 @@ const ROUTE_TREE: RouteNode[] = [
                 label: 'Test Builder',
                 description:
                     'Edit test settings (duration, shuffle, Safe Exam Browser requirement, grade scale) and questions, including standards and CEFR linking.',
+                color: '#3b82f6',
+            },
+            {
+                path: '/tests/:testId/results/:studentTestId',
+                label: 'Test Results',
+                description:
+                    "Review a student's submission: auto-scored answers, manual grading for open questions, grade mapping, standards/CEFR breakdowns, and a session integrity panel.",
+                color: '#3b82f6',
+            },
+            {
+                path: '/tests/:testId/monitor',
+                label: 'Live Test Monitor',
+                description:
+                    'Watch a running test in real time: who is online, their progress on each question, and proctoring signals (tab switches, copy/paste, battery, Safe Exam Browser status).',
                 color: '#3b82f6',
             },
         ],
@@ -624,6 +646,24 @@ function RubricsTab() {
                     unique share link to complete it.
                 </p>
             </FeatureSection>
+
+            <FeatureSection icon={Radio} title="Live monitoring" color="#ef4444">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    While a test or essay is in progress, click <strong>Monitor</strong> (from the Tests page for a
+                    test, or from the assignment dialog for an essay) to open a live view of the session. This
+                    requires cloud sync to be enabled — without it, the page explains that you can review progress
+                    after the fact from each student's saved answers or draft instead.
+                </p>
+                <FeatureList
+                    items={[
+                        'Presence — a coloured dot shows whether each student is active, idle, or disconnected, based on how recently their browser checked in.',
+                        'Response grid (tests) — a students-by-questions matrix, colour-coded as students answer. Click a question header to open a gallery of every answer to that question.',
+                        'Live draft preview (essays) — a card per student with a live word count, last-activity timestamp, and an expandable preview of what they are currently writing.',
+                        'Hide names — toggle to anonymise the view, useful when sharing your screen.',
+                        'Proctoring flags — counts of tab switches, copy/paste/cut, battery level, and Safe Exam Browser status. These are advisory signals only: a determined student can spoof them, so use them to prompt a conversation, not as definitive proof.',
+                    ]}
+                />
+            </FeatureSection>
         </div>
     );
 }
@@ -686,6 +726,42 @@ function GradingTab() {
                     Go to <strong>Comment Bank</strong> in the sidebar to manage your snippets. Organise them with tags
                     (e.g. "writing", "grammar", "effort"). During grading, click the comment icon to open the bank and
                     insert any snippet into the feedback field with one click.
+                </p>
+            </FeatureSection>
+
+            <FeatureSection icon={ClipboardCheck} title="Test results &amp; grading" color="#3b82f6">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    From the <strong>Tests</strong> list, click <strong>Results</strong> on a test to see every student's
+                    submission and open the results page at <code>/tests/:testId/results/:studentTestId</code>.
+                </p>
+                <FeatureList
+                    items={[
+                        'Multiple-choice and exact-match short-answer questions are auto-scored and marked correct/incorrect.',
+                        'Open questions (and short-answer questions without a model answer) get a manual points input — clamped to the question\'s max — plus a feedback field.',
+                        "Total points, percentage, and a letter/scale grade (from the test's grade scale) are shown at the top of the page.",
+                        'Standards and CEFR breakdowns roll up points earned per linked standard or Can-Do descriptor, mirroring the Learning Goals view.',
+                        'A "Session integrity" panel summarises proctoring events (tab switches, copy/paste, battery, SEB status) captured while the student took the test.',
+                    ]}
+                />
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    Class average adjustment
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    Open <strong>Results</strong> on a test to see the Class average adjustment tool. Enter a target
+                    average percentage, preview how each student's points and percentage would change with a uniform
+                    point adjustment, then <strong>Apply adjustment</strong>. Raw answer scores are never overwritten —
+                    the adjustment is stored separately and is fully reversible with <strong>Revert adjustment</strong>,
+                    and the audit trail records when it was applied.
+                </p>
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    Importing offline submissions
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    If a student submits a test as a code instead of online (e.g. when offline), click{' '}
+                    <strong>Import submission code</strong> on the Tests list, paste the code, and the submission is
+                    created or updated automatically — ready for grading and results.
                 </p>
             </FeatureSection>
         </div>
