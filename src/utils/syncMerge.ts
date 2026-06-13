@@ -156,6 +156,18 @@ const COLLECTIONS: CollectionSpec[] = [
         getId: (ar: { id: string }) => ar.id,
         getUpdatedAt: (ar: { updatedAt?: string }) => ar.updatedAt,
     },
+    {
+        key: 'tests',
+        entity: 'test',
+        getId: (t: { id: string }) => t.id,
+        getUpdatedAt: (t: { updatedAt?: string }) => t.updatedAt,
+    },
+    {
+        key: 'studentTests',
+        entity: 'studentTest',
+        getId: (st: { id: string }) => st.id,
+        getUpdatedAt: (st: { updatedAt?: string }) => st.updatedAt,
+    },
 ] as CollectionSpec[];
 
 export function mergeStoreData(local: StoreData, remote: Partial<StoreData>, pendingQueue: PendingWrite[]): StoreData {

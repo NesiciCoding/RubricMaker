@@ -13,9 +13,12 @@ import type {
     ExportTemplate,
     SelfAssessment,
     SpeakingSession,
+    SessionRecording,
     DocumentAnalysisResult,
     EssayAssignment,
     StudentEssayAssignmentSummary,
+    Test,
+    StudentTest,
 } from '../../types';
 import type { DatabaseConfig, DbUser, SyncResult } from './types';
 
@@ -893,6 +896,133 @@ export class SupabaseAdapter {
         return error ? { success: false, error: error.message } : { success: true };
     }
 
+    // ── Session Recordings ────────────────────────────────────────────────────
+
+    async fetchRecordingMetadata(): Promise<Array<SessionRecording & { sessionId: string; storagePath?: string }>> {
+        const { data, error } = await this.db().from('recording_metadata').select('session_id, storage_path, data');
+        if (error) {
+            console.error('fetchRecordingMetadata', error);
+            return [];
+        }
+        return (data ?? []).map((r) => ({
+            ...(r.data as SessionRecording),
+            sessionId: r.session_id,
+            storagePath: r.storage_path ?? undefined,
+        }));
+    }
+
+    async upsertRecordingMetadata(rec: SessionRecording, sessionId: string, storagePath?: string): Promise<SyncResult> {
+        const { error } = await this.db()
+            .from('recording_metadata')
+            .upsert(
+                {
+                    id: rec.id,
+                    owner_id: this.uid(),
+                    session_id: sessionId,
+                    storage_path: storagePath ?? null,
+                    data: rec,
+                },
+                { onConflict: 'id' }
+            );
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteRecordingMetadata(id: string): Promise<SyncResult> {
+        try {
+            await this.db()
+                .storage.from('recordings')
+                .remove([`${this.uid()}/${id}`]);
+        } catch {
+            /* ignore storage error, still delete metadata */
+        }
+        const { error } = await this.db().from('recording_metadata').delete().eq('id', id).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async uploadRecordingFile(id: string, blob: Blob, mimeType: string): Promise<string | null> {
+        const path = `${this.uid()}/${id}`;
+        const { error } = await this.db().storage.from('recordings').upload(path, blob, {
+            contentType: mimeType,
+            upsert: true,
+        });
+        return error ? null : path;
+    }
+
+    async getRecordingSignedUrl(storagePath: string): Promise<string | null> {
+        const { data, error } = await this.db().storage.from('recordings').createSignedUrl(storagePath, 3600);
+        return error ? null : (data?.signedUrl ?? null);
+    }
+
+    /** Fetch recording ids for a given speaking session, for cascading deletes. */
+    async fetchRecordingIdsForSession(sessionId: string): Promise<string[]> {
+        const { data, error } = await this.db()
+            .from('recording_metadata')
+            .select('id')
+            .eq('session_id', sessionId)
+            .eq('owner_id', this.uid());
+        if (error) {
+            console.error('fetchRecordingIdsForSession', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.id as string);
+    }
+
+    // ── Tests ─────────────────────────────────────────────────────────────────
+
+    async fetchTests(): Promise<Test[]> {
+        const { data, error } = await this.db().from('tests').select('data');
+        if (error) {
+            console.error('fetchTests', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as Test);
+    }
+
+    async upsertTest(t: Test): Promise<SyncResult> {
+        const { error } = await this.db().from('tests').upsert(
+            {
+                id: t.id,
+                owner_id: this.uid(),
+                data: t,
+            },
+            { onConflict: 'id' }
+        );
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteTest(id: string): Promise<SyncResult> {
+        const { error } = await this.db().from('tests').delete().eq('id', id).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    // ── Student Tests ─────────────────────────────────────────────────────────
+
+    async fetchStudentTests(): Promise<StudentTest[]> {
+        const { data, error } = await this.db().from('student_tests').select('data');
+        if (error) {
+            console.error('fetchStudentTests', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as StudentTest);
+    }
+
+    async upsertStudentTest(st: StudentTest): Promise<SyncResult> {
+        const { error } = await this.db().from('student_tests').upsert(
+            {
+                id: st.id,
+                owner_id: this.uid(),
+                data: st,
+            },
+            { onConflict: 'id' }
+        );
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteStudentTest(id: string): Promise<SyncResult> {
+        const { error } = await this.db().from('student_tests').delete().eq('id', id).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
     // ── Analysis Results ──────────────────────────────────────────────────────
 
     async fetchAnalysisResults(): Promise<DocumentAnalysisResult[]> {
@@ -1103,6 +1233,20 @@ export class SupabaseAdapter {
         });
     }
 
+    /** Fetch a single essay assignment owned by this teacher, by its teacherKey (= row id). */
+    async fetchEssayAssignmentByKey(
+        teacherKey: string
+    ): Promise<{ rubricId: string; studentId: string; title: string } | null> {
+        const { data, error } = await this.db()
+            .from('essay_assignments')
+            .select('rubric_id, student_id, title')
+            .eq('id', teacherKey)
+            .eq('owner_id', this.uid())
+            .maybeSingle();
+        if (error || !data) return null;
+        return { rubricId: data.rubric_id, studentId: data.student_id, title: data.title };
+    }
+
     async deleteEssaySubmission(submissionId: string, storagePath: string): Promise<SyncResult> {
         // Remove the file first (best-effort)
         await this.db()
@@ -1287,7 +1431,10 @@ export class SupabaseAdapter {
             'favorite_standards',
             'self_assessments',
             'speaking_sessions',
+            'recording_metadata',
             'analysis_results',
+            'tests',
+            'student_tests',
             'user_settings',
             'essay_assignments',
         ];
@@ -1302,6 +1449,8 @@ export class SupabaseAdapter {
             const { data: tplFiles } = await db.storage.from('export-templates').list(uid);
             if (tplFiles?.length)
                 await db.storage.from('export-templates').remove(tplFiles.map((f) => `${uid}/${f.name}`));
+            const { data: recFiles } = await db.storage.from('recordings').list(uid);
+            if (recFiles?.length) await db.storage.from('recordings').remove(recFiles.map((f) => `${uid}/${f.name}`));
             // essay_assignments cascade-deletes essay_submissions rows via FK;
             // remove the essay files from storage folder-per-assignment
             const { data: assignments } = await db.from('essay_assignments').select('id').eq('owner_id', uid);

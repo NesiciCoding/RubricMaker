@@ -1,6 +1,7 @@
 import i18n from 'i18next';
 import { SupabaseAdapter } from './SupabaseAdapter';
 import { AttachmentSync } from './AttachmentSync';
+import { RecordingSync } from './RecordingSync';
 import type { DatabaseConfig, SyncStatus, SyncResult, DbUser } from './types';
 import type { StoreData } from '../../store/storage';
 import { addToPendingQueue, loadPendingQueue, removePendingWrites } from '../../store/storage';
@@ -19,6 +20,8 @@ import type {
     SpeakingSession,
     DocumentAnalysisResult,
     EssayAssignment,
+    Test,
+    StudentTest,
 } from '../../types';
 
 const CONFIG_KEY = 'rm_supabase_config';
@@ -75,6 +78,7 @@ export function clearSupabaseConfig() {
 class StorageSyncService {
     readonly adapter = new SupabaseAdapter();
     private attachmentSync: AttachmentSync = new AttachmentSync(this.adapter);
+    private recordingSync: RecordingSync = new RecordingSync(this.adapter);
     private status: SyncStatus = 'offline';
     private lastSyncAt: string | null = localStorage.getItem(LAST_SYNC_KEY);
     private listeners: Set<() => void> = new Set();
@@ -310,6 +314,10 @@ class StorageSyncService {
         return this.adapter.fetchMyEssayAssignments();
     }
 
+    async fetchEssayAssignmentByKey(teacherKey: string) {
+        return this.adapter.fetchEssayAssignmentByKey(teacherKey);
+    }
+
     async deleteEssaySubmission(submissionId: string, storagePath: string): Promise<SyncResult> {
         return this.adapter.deleteEssaySubmission(submissionId, storagePath);
     }
@@ -366,6 +374,8 @@ class StorageSyncService {
                 selfAssessments,
                 speakingSessions,
                 analysisResults,
+                tests,
+                studentTests,
                 attachments,
                 settings,
                 profile,
@@ -383,6 +393,8 @@ class StorageSyncService {
                 this.adapter.fetchSelfAssessments(),
                 this.adapter.fetchSpeakingSessions(),
                 this.adapter.fetchAnalysisResults(),
+                this.adapter.fetchTests(),
+                this.adapter.fetchStudentTests(),
                 this.attachmentSync.hydrateAttachments(),
                 this.adapter.fetchSettings(),
                 this.adapter.fetchMyProfile(),
@@ -405,7 +417,17 @@ class StorageSyncService {
                     // Students don't create/join a school during onboarding — their
                     // profile.role being set is enough to consider onboarding complete,
                     // and it persists in the DB so re-logging in never re-prompts them.
-                    mergedSettings = { ...mergedSettings, needsOnboarding: false };
+                    let schoolName: string | undefined;
+                    if (profileFull.schoolId) {
+                        const schools = await this.adapter.fetchSchools();
+                        schoolName = schools.find((s) => s.id === profileFull.schoolId)?.name;
+                    }
+                    mergedSettings = {
+                        ...mergedSettings,
+                        needsOnboarding: false,
+                        schoolId: profileFull.schoolId,
+                        schoolName,
+                    };
                 } else if (!profileFull.schoolId) {
                     mergedSettings = { ...mergedSettings, needsOnboarding: true };
                 } else {
@@ -435,6 +457,8 @@ class StorageSyncService {
                 selfAssessments,
                 speakingSessions,
                 analysisResults,
+                tests,
+                studentTests,
                 attachments,
                 ...(mergedSettings ? { settings: mergedSettings as StoreData['settings'] } : {}),
             };
@@ -479,6 +503,8 @@ class StorageSyncService {
                 ...state.selfAssessments.map((sa) => this.adapter.upsertSelfAssessment(sa)),
                 ...state.speakingSessions.map((ss) => this.adapter.upsertSpeakingSession(ss)),
                 ...state.analysisResults.map((ar) => this.adapter.upsertAnalysisResult(ar)),
+                ...state.tests.map((t) => this.adapter.upsertTest(t)),
+                ...state.studentTests.map((st) => this.adapter.upsertStudentTest(st)),
                 this.adapter.saveSettings(state.settings),
             ];
             await Promise.all(ups);
@@ -489,6 +515,11 @@ class StorageSyncService {
             }
             for (const tpl of state.exportTemplates) {
                 await this.attachmentSync.pushExportTemplate(tpl);
+            }
+            for (const ss of state.speakingSessions) {
+                if (ss.recordings?.length) {
+                    await this.recordingSync.pushSessionRecordings(ss.recordings, ss.id);
+                }
             }
 
             const now = new Date().toISOString();
@@ -562,14 +593,29 @@ class StorageSyncService {
                     else if (id) result = await this.adapter.deleteSelfAssessment(id);
                     break;
                 case 'speakingSession':
-                    if (action === 'upsert')
-                        result = await this.adapter.upsertSpeakingSession(payload as SpeakingSession);
-                    else if (id) result = await this.adapter.deleteSpeakingSession(id);
+                    if (action === 'upsert') {
+                        const session = payload as SpeakingSession;
+                        result = await this.adapter.upsertSpeakingSession(session);
+                        if (session.recordings?.length) {
+                            await this.recordingSync.pushSessionRecordings(session.recordings, session.id);
+                        }
+                    } else if (id) {
+                        await this.recordingSync.deleteSessionRecordingsById(id);
+                        result = await this.adapter.deleteSpeakingSession(id);
+                    }
                     break;
                 case 'analysisResult':
                     if (action === 'upsert')
                         result = await this.adapter.upsertAnalysisResult(payload as DocumentAnalysisResult);
                     else if (id) result = await this.adapter.deleteAnalysisResult(id);
+                    break;
+                case 'test':
+                    if (action === 'upsert') result = await this.adapter.upsertTest(payload as Test);
+                    else if (id) result = await this.adapter.deleteTest(id);
+                    break;
+                case 'studentTest':
+                    if (action === 'upsert') result = await this.adapter.upsertStudentTest(payload as StudentTest);
+                    else if (id) result = await this.adapter.deleteStudentTest(id);
                     break;
                 case 'settings':
                     if (action === 'upsert')

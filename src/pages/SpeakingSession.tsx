@@ -6,10 +6,13 @@ import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import { calcEntryPoints, calcGradeSummary } from '../utils/gradeCalc';
 import { nanoid } from '../utils/nanoid';
+import RecordingControls from '../components/Recordings/RecordingControls';
+import { loadSupabaseConfig } from '../services/database';
 import type {
     ScoreEntry,
     PronunciationErrorType,
     PronunciationMark,
+    SessionRecording,
     SpeakingSession as SpeakingSessionType,
 } from '../types';
 
@@ -59,6 +62,10 @@ export default function SpeakingSession() {
 
     // ── Pronunciation marks ─────────────────────────────────────────────────────
     const [marks, setMarks] = useState<PronunciationMark[]>(existingSession?.pronunciationMarks ?? []);
+
+    // ── Recordings ──────────────────────────────────────────────────────────────
+    const [recordings, setRecordings] = useState<SessionRecording[]>(existingSession?.recordings ?? []);
+    const syncConfigured = loadSupabaseConfig() !== null;
 
     // ── Dirty state ─────────────────────────────────────────────────────────────
     const [isDirty, setIsDirty] = useState(false);
@@ -130,6 +137,12 @@ export default function SpeakingSession() {
         setMarks((prev) => prev.filter((_, i) => i !== idx));
     }
 
+    // ── Recording helpers ───────────────────────────────────────────────────────
+    function handleRecordingsChange(next: SessionRecording[]) {
+        setIsDirty(true);
+        setRecordings(next);
+    }
+
     // ── Save ────────────────────────────────────────────────────────────────────
     function handleSave() {
         if (!rubric || !student) return;
@@ -144,6 +157,7 @@ export default function SpeakingSession() {
             overallComment,
             gradedAt: new Date().toISOString(),
             rubricSnapshot: rubric,
+            recordings,
         };
         saveSpeakingSession(session);
         setIsSaved(true);
@@ -374,6 +388,19 @@ export default function SpeakingSession() {
                             </div>
                         </>
                     )}
+                </div>
+
+                {/* ── Recordings ── */}
+                <div className="card" style={{ marginBottom: 24 }}>
+                    <h3 style={{ marginBottom: 12 }}>{t('recordings.panel_title')}</h3>
+                    <p className="text-sm text-muted" style={{ marginTop: 0, marginBottom: 12 }}>
+                        {t('recordings.student_disclosure')}
+                    </p>
+                    <RecordingControls
+                        recordings={recordings}
+                        onChange={handleRecordingsChange}
+                        syncConfigured={syncConfigured}
+                    />
                 </div>
 
                 {/* ── Rubric Scoring ── */}

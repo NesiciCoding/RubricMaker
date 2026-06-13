@@ -19,6 +19,9 @@ import {
     MessageSquare,
     Eye,
     Palette,
+    Languages,
+    Radio,
+    ClipboardCheck,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { loadSupabaseConfig } from '../services/database';
@@ -34,13 +37,13 @@ const TEACHER_FEATURES = [
     {
         icon: Users,
         title: 'Smart Grading',
-        desc: 'Grade with a comment bank, voice dictation, file attachments, and side-by-side comparative view.',
+        desc: 'Grade with a comment bank, voice dictation, file attachments, audio/video speaking recordings, and side-by-side comparative view.',
         color: '#8b5cf6',
     },
     {
         icon: BarChart3,
         title: 'Analytics & Export',
-        desc: 'Grade distributions, per-criterion breakdowns, CEFR progress reports, PDF/Word/CSV export.',
+        desc: 'Grade distributions, per-criterion breakdowns, CEFR progress reports, peer review consistency analytics, PDF/Word/CSV export.',
         color: '#06b6d4',
     },
     {
@@ -48,6 +51,24 @@ const TEACHER_FEATURES = [
         title: 'Theme bundles',
         desc: 'Six named themes (Academy, Nature, Midnight…) set accent colour, font, and export style in one click.',
         color: '#8b5cf6',
+    },
+    {
+        icon: Languages,
+        title: 'Vocabulary Profile',
+        desc: 'See each class and student’s CEFR vocabulary range (A1–C2) from their analysed work, and export word lists by level.',
+        color: '#f59e0b',
+    },
+    {
+        icon: Radio,
+        title: 'Live Monitoring',
+        desc: 'Watch tests and essays as students work — who’s online, their progress, and live drafts, updated in real time.',
+        color: '#ef4444',
+    },
+    {
+        icon: ClipboardCheck,
+        title: 'Tests & Quizzes',
+        desc: 'Build multiple-choice, short-answer, and open-question tests, assign them with a share link or Safe Exam Browser, then auto-grade and fine-tune the class average.',
+        color: '#3b82f6',
     },
 ];
 
@@ -75,6 +96,12 @@ const STUDENT_FEATURES = [
         title: 'Peer Review',
         desc: "Leave structured feedback on a classmate's work using the same rubric your teacher uses.",
         color: '#8b5cf6',
+    },
+    {
+        icon: ClipboardCheck,
+        title: 'Take a Test',
+        desc: 'Open a test link from your teacher, answer the questions with a countdown timer, and submit — your answers are saved automatically as you go.',
+        color: '#3b82f6',
     },
 ];
 

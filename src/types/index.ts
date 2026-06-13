@@ -258,6 +258,41 @@ export interface CefrTextProfile {
     overallEstimatedLevel: CefrLevel;
 }
 
+// ─── Vocabulary Profile Aggregation Types ─────────────────────────────────────
+
+export interface VocabLevelStat {
+    level: CefrLevel;
+    count: number;
+    percentage: number;
+}
+
+export interface StudentVocabProfile {
+    studentId: string;
+    studentName: string;
+    levelCounts: Record<CefrLevel, number>;
+    levelStats: VocabLevelStat[];
+    totalWords: number;
+    estimatedLevel: CefrLevel;
+    analysisCount: number;
+}
+
+export interface ClassVocabProfile {
+    classId: string;
+    className: string;
+    levelCounts: Record<CefrLevel, number>;
+    levelStats: VocabLevelStat[];
+    totalWords: number;
+    estimatedLevel: CefrLevel;
+    studentProfiles: StudentVocabProfile[];
+}
+
+export interface VocabExportRow {
+    word: string;
+    level: CefrLevel;
+    definition: string;
+    source: 'rubric' | 'analysis';
+}
+
 // ─── Vocabulary & Document Analysis Types ─────────────────────────────────────
 
 export type VocabularyCategory = 'vocabulary' | 'grammar' | 'discourse' | 'other';
@@ -539,6 +574,18 @@ export interface PronunciationMark {
     note?: string;
 }
 
+/** Metadata for an audio/video recording attached to a SpeakingSession. The blob itself lives only in IndexedDB (mediaStore). */
+export interface SessionRecording {
+    id: string;
+    mediaType: 'audio' | 'video';
+    mimeType: string;
+    durationSec: number;
+    sizeBytes: number;
+    createdAt: string;
+    storagePath?: string;
+    synced?: boolean;
+}
+
 /** Payload returned by the get-essay-assignment edge function. */
 export interface EssayAssignmentContent {
     rubricId: string;
@@ -568,6 +615,7 @@ export interface SpeakingSession {
     rubricSnapshot?: Rubric;
     /** ISO timestamp of the last local edit; used for last-write-wins sync conflict resolution */
     updatedAt?: string;
+    recordings?: SessionRecording[];
 }
 
 // ─── Essay Assignment / Submission ───────────────────────────────────────────
@@ -611,6 +659,120 @@ export interface StudentEssayAssignmentSummary {
     submission: { submittedAt: string; wordCount: number } | null;
 }
 
+// ─── Testing Environment ──────────────────────────────────────────────────────
+
+export type TestQuestionType = 'multiple-choice' | 'short-answer' | 'open';
+
+export interface TestOption {
+    id: string;
+    text: string;
+    isCorrect: boolean;
+}
+
+export interface TestQuestion {
+    id: string;
+    prompt: string;
+    type: TestQuestionType;
+    points: number;
+    /** Answer options — only for multiple-choice questions */
+    options?: TestOption[];
+    /** Model answer used for exact-match auto-scoring of short-answer questions */
+    expectedAnswer?: string;
+    linkedStandards?: LinkedStandard[];
+    /** CEFR Can-Do statements linked to this question */
+    linkedCefrDescriptors?: LinkedCefrDescriptor[];
+}
+
+export interface Test {
+    id: string;
+    name: string;
+    description?: string;
+    questions: TestQuestion[];
+    /** Time limit for students taking the test */
+    durationMinutes?: number;
+    /** When true the test can only be taken inside Safe Exam Browser */
+    requireSEB: boolean;
+    shuffleQuestions: boolean;
+    gradeScaleId?: string;
+    createdAt: string;
+    /** ISO timestamp of the last local edit; used for last-write-wins sync conflict resolution */
+    updatedAt?: string;
+}
+
+export type ProctorEventType = 'tab_switch' | 'copy' | 'paste' | 'cut' | 'battery' | 'heartbeat' | 'seb_status';
+
+export interface ProctorEvent {
+    type: ProctorEventType;
+    /** ISO timestamp of when the event occurred */
+    at: string;
+    value?: string | number | boolean;
+}
+
+export interface TestAnswer {
+    questionId: string;
+    /** Selected option id (multiple-choice) or free text (short-answer / open) */
+    response: string;
+    /** Manually awarded points; overrides auto-scoring when present */
+    pointsEarned?: number;
+    feedback?: string;
+}
+
+export interface StudentTest {
+    id: string;
+    testId: string;
+    studentId: string;
+    answers: TestAnswer[];
+    status: 'in_progress' | 'submitted' | 'graded';
+    startedAt: string;
+    submittedAt?: string;
+    gradedAt?: string;
+    /** Total points before any class-wide adjustment */
+    rawTotalPoints?: number;
+    /** Uniform class-wide point adjustment applied on top of rawTotalPoints */
+    adjustmentPoints?: number;
+    /** Audit record of the class-average adjustment applied to this submission; clearing it reverts to raw points */
+    adjustment?: {
+        points: number;
+        appliedAt: string;
+        note?: string;
+    };
+    /** Proctoring events captured while the student took the test */
+    events?: ProctorEvent[];
+    /** ISO timestamp of the last local edit; used for last-write-wins sync conflict resolution */
+    updatedAt?: string;
+}
+
+/** Configuration for a teacher-created test assignment, encoded into the student's share code */
+export interface TestAssignmentPayload {
+    testId: string;
+    studentId: string;
+    /** Opaque teacher identifier written into submissions so the teacher can filter their own rows */
+    teacherKey: string;
+    requireSEB: boolean;
+    durationMinutes?: number;
+    createdAt: string;
+    /** ISO-8601 datetime after which students can no longer submit */
+    expiresAt?: string;
+    // ── Supabase integration (optional) ────────────────────────────────────────
+    /** Teacher's Supabase project URL — when present the student page uses DB submission */
+    supabaseUrl?: string;
+    /** Teacher's Supabase anon key — embedded so the student's browser can connect */
+    supabaseAnonKey?: string;
+    /** Full test content embedded for offline use (no Supabase) — without this, an offline link cannot load its questions */
+    test?: Test;
+}
+
+/** A student's completed test, encoded into a submission code for the teacher to import */
+export interface TestSubmissionPayload {
+    testId: string;
+    studentId: string;
+    teacherKey: string;
+    answers: TestAnswer[];
+    startedAt: string;
+    submittedAt: string;
+    events?: ProctorEvent[];
+}
+
 /** A student's completed essay, encoded into a submission code for the teacher to import */
 export interface EssaySubmission {
     id: string;
@@ -622,4 +784,6 @@ export interface EssaySubmission {
     submittedAt: string;
     /** Present when the assignment defined word limits; null/absent means no limits were set */
     wordLimitStatus?: 'ok' | 'under' | 'over' | null;
+    /** Proctoring events captured while the student wrote this essay */
+    events?: ProctorEvent[];
 }

@@ -19,6 +19,9 @@ import {
     LayoutDashboard,
     ArrowRight,
     Award,
+    Languages,
+    ClipboardCheck,
+    Radio,
 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useTranslation } from 'react-i18next';
@@ -78,11 +81,25 @@ const ROUTE_TREE: RouteNode[] = [
                         badge: 'Student',
                     },
                     {
+                        path: '/peer-analytics/:rubricId',
+                        label: 'Peer Review Analytics',
+                        description:
+                            'Consistency scoring of peer reviews against the teacher baseline, feedback heatmaps, and reviewer trends.',
+                        color: '#8b5cf6',
+                    },
+                    {
                         path: '/rubrics/:rubricId/self-assess/:studentId',
                         label: 'Self-Assessment',
                         description: 'Students self-assess against CEFR Can-Do statements.',
                         color: '#8b5cf6',
                         badge: 'Student',
+                    },
+                    {
+                        path: '/essays/:assignmentId/monitor',
+                        label: 'Live Essay Monitor',
+                        description:
+                            'Watch students write in real time: presence, live word counts, last-activity timestamps, and an expandable draft preview.',
+                        color: '#8b5cf6',
                     },
                 ],
             },
@@ -91,6 +108,41 @@ const ROUTE_TREE: RouteNode[] = [
                 label: 'Comparative Grading',
                 description: 'Grade two students side-by-side for calibration and consistency.',
                 color: '#06b6d4',
+            },
+        ],
+    },
+    {
+        path: '/tests',
+        label: 'Tests',
+        description: 'Browse, create, and manage tests and quizzes for assignment to students.',
+        color: '#3b82f6',
+        children: [
+            {
+                path: '/tests/new',
+                label: 'New Test',
+                description: 'Create a test from scratch with multiple-choice, short-answer, and open questions.',
+                color: '#3b82f6',
+            },
+            {
+                path: '/tests/:id',
+                label: 'Test Builder',
+                description:
+                    'Edit test settings (duration, shuffle, Safe Exam Browser requirement, grade scale) and questions, including standards and CEFR linking.',
+                color: '#3b82f6',
+            },
+            {
+                path: '/tests/:testId/results/:studentTestId',
+                label: 'Test Results',
+                description:
+                    "Review a student's submission: auto-scored answers, manual grading for open questions, grade mapping, standards/CEFR breakdowns, and a session integrity panel.",
+                color: '#3b82f6',
+            },
+            {
+                path: '/tests/:testId/monitor',
+                label: 'Live Test Monitor',
+                description:
+                    'Watch a running test in real time: who is online, their progress on each question, and proctoring signals (tab switches, copy/paste, battery, Safe Exam Browser status).',
+                color: '#3b82f6',
             },
         ],
     },
@@ -123,6 +175,13 @@ const ROUTE_TREE: RouteNode[] = [
         color: '#f59e0b',
     },
     {
+        path: '/vocabulary',
+        label: 'Vocabulary Profile',
+        description:
+            'CEFR vocabulary distribution (A1–C2) per class and student, derived from document analysis, with CSV export of vocabulary lists by band.',
+        color: '#f59e0b',
+    },
+    {
         path: '/speaking/:rubricId/:studentId',
         label: 'Speaking Session',
         description: 'Structured speaking assessments with six CEFR-aligned dimensions.',
@@ -134,6 +193,14 @@ const ROUTE_TREE: RouteNode[] = [
         description: 'Students view feedback, submit essays, and complete self-assessments. No login required.',
         color: '#06b6d4',
         badge: 'Public',
+    },
+    {
+        path: '/test/:code',
+        label: 'Take a Test',
+        description:
+            'Students open a shared link to take a test — answer questions, optional countdown timer, and submit. No login required.',
+        color: '#06b6d4',
+        badge: 'Student',
     },
     {
         path: '/attachments',
@@ -570,6 +637,44 @@ function RubricsTab() {
                     ]}
                 />
             </FeatureSection>
+
+            <FeatureSection icon={ClipboardCheck} title="Tests & quizzes" color="#3b82f6">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    Build tests and quizzes from the <strong>Tests</strong> page. Add multiple-choice, short-answer, and
+                    open questions, set a duration and grade scale, and optionally require Safe Exam Browser. Link
+                    standards and CEFR descriptors per question, then assign the test to a class — each student gets a
+                    unique share link to complete it.
+                </p>
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    What students see
+                </h3>
+                <FeatureList
+                    items={[
+                        'If the test requires Safe Exam Browser, students see a blocking screen until they open the link inside SEB.',
+                        'A countdown timer (when set) shows time remaining and auto-submits the test when it reaches zero.',
+                        'Answers are autosaved to the device as the student works, so a reload or browser crash restores their progress.',
+                        'Submitting produces a confirmation and, when no cloud sync is configured, a submission code for the student to send to their teacher.',
+                    ]}
+                />
+            </FeatureSection>
+
+            <FeatureSection icon={Radio} title="Live monitoring" color="#ef4444">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    While a test or essay is in progress, click <strong>Monitor</strong> (from the Tests page for a
+                    test, or from the assignment dialog for an essay) to open a live view of the session. This requires
+                    cloud sync to be enabled — without it, the page explains that you can review progress after the fact
+                    from each student's saved answers or draft instead.
+                </p>
+                <FeatureList
+                    items={[
+                        'Presence — a coloured dot shows whether each student is active, idle, or disconnected, based on how recently their browser checked in.',
+                        'Response grid (tests) — a students-by-questions matrix, colour-coded as students answer. Click a question header to open a gallery of every answer to that question.',
+                        'Live draft preview (essays) — a card per student with a live word count, last-activity timestamp, and an expandable preview of what they are currently writing.',
+                        'Hide names — toggle to anonymise the view, useful when sharing your screen.',
+                        'Proctoring flags — counts of tab switches, copy/paste/cut, battery level, and Safe Exam Browser status. These are advisory signals only: a determined student can spoof them, so use them to prompt a conversation, not as definitive proof.',
+                    ]}
+                />
+            </FeatureSection>
         </div>
     );
 }
@@ -622,6 +727,7 @@ function GradingTab() {
                     items={[
                         "Peer Review — share a URL with a student to review a classmate's work.",
                         'Self-Assessment — students rate themselves against CEFR Can-Do statements. Results are stored alongside teacher scores.',
+                        'Peer Review Analytics (/peer-analytics/:rubricId) — open from the Peer Review screen to see consistency scores comparing peer grades to your baseline, a feedback heatmap of which criteria get the most comments, and round-over-round trends. Reviews are matched to reviewers via their student ID; older records without one are shown as "Anonymous reviewer".',
                     ]}
                 />
             </FeatureSection>
@@ -631,6 +737,42 @@ function GradingTab() {
                     Go to <strong>Comment Bank</strong> in the sidebar to manage your snippets. Organise them with tags
                     (e.g. "writing", "grammar", "effort"). During grading, click the comment icon to open the bank and
                     insert any snippet into the feedback field with one click.
+                </p>
+            </FeatureSection>
+
+            <FeatureSection icon={ClipboardCheck} title="Test results &amp; grading" color="#3b82f6">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    From the <strong>Tests</strong> list, click <strong>Results</strong> on a test to see every
+                    student's submission and open results at <code>/tests/:testId/results/:studentTestId</code>.
+                </p>
+                <FeatureList
+                    items={[
+                        'Multiple-choice and exact-match short-answer questions are auto-scored and marked correct/incorrect.',
+                        "Open questions (and short-answer questions without a model answer) get a manual points input — clamped to the question's max — plus a feedback field.",
+                        "Total points, percentage, and a letter/scale grade (from the test's grade scale) are shown at the top of the page.",
+                        'Standards and CEFR breakdowns roll up points earned per linked standard or Can-Do descriptor, mirroring the Learning Goals view.',
+                        'A "Session integrity" panel summarises proctoring events (tab switches, copy/paste, battery, SEB status) captured while the student took the test.',
+                    ]}
+                />
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    Class average adjustment
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    Open <strong>Results</strong> on a test to see the Class average adjustment tool. Enter a target
+                    average percentage, preview how each student's points and percentage would change with a uniform
+                    point adjustment, then <strong>Apply adjustment</strong>. Raw answer scores are never overwritten —
+                    the adjustment is stored separately and is fully reversible with <strong>Revert adjustment</strong>,
+                    and the audit trail records when it was applied.
+                </p>
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    Importing offline submissions
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    If a student submits a test as a code instead of online (e.g. when offline), click{' '}
+                    <strong>Import submission code</strong> on the Tests list, paste the code, and the submission is
+                    created or updated automatically — ready for grading and results.
                 </p>
             </FeatureSection>
         </div>
@@ -669,8 +811,15 @@ function CefrTab() {
                         'Past sessions appear in a "Speaking Sessions" card on the Student Profile, each with a link to reopen and extend it.',
                         'Inside the session: set a timer, mark pronunciation quick-marks (word stress, th-sound, etc.), score the linked rubric criteria, and add an overall comment.',
                         "Results are saved to the student's CEFR history and are visible on the CEFR Overview heatmap.",
+                        'Record audio (and, with cloud sync enabled, video) directly inside the session — recordings are saved with the session and play back from the "Portfolio" tab on the Student Profile.',
                     ]}
                 />
+                <InfoBox color="#f59e0b">
+                    Recordings are privacy-first: without cloud sync configured, audio recording is available but files
+                    stay only in this browser's storage (cleared if the user clears browsing data); video recording is
+                    disabled in that case. With cloud sync enabled, both audio and video recordings sync to the
+                    teacher's private storage. A single recording is capped at 50MB.
+                </InfoBox>
             </FeatureSection>
 
             <FeatureSection icon={Globe} title="Student Self-Assessment" color="#10b981">
@@ -804,6 +953,25 @@ function AnalyticsTab() {
                 <InfoBox color="#10b981">
                     Mail-merge DOCX templates support custom fields. Upload a .docx file with placeholder fields and the
                     app will substitute them with student data.
+                </InfoBox>
+            </FeatureSection>
+
+            <FeatureSection icon={Languages} title="Vocabulary Profile dashboard" color="#f59e0b">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    Go to <strong>Vocabulary</strong> in the sidebar (<code>/vocabulary</code>). This dashboard
+                    aggregates CEFR vocabulary levels (A1–C2) detected in students' analysed documents.
+                </p>
+                <FeatureList
+                    items={[
+                        'Per-class stacked bar chart of vocabulary level distribution, with a class selector.',
+                        'Per-student drill-down showing each student’s estimated vocabulary level and profiled word count.',
+                        'CSV export of vocabulary words — filter by a single CEFR band (A1–C2) or export all levels — with word, level, definition, and source columns.',
+                    ]}
+                />
+                <InfoBox color="#f59e0b">
+                    This dashboard is read-only and derives entirely from existing document analysis results (see
+                    Attachments → Analyse) and rubric vocabulary lists — analyse student submissions first to populate
+                    it.
                 </InfoBox>
             </FeatureSection>
         </div>

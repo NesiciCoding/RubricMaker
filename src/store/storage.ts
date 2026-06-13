@@ -16,6 +16,8 @@ import type {
     DocumentAnalysisResult,
     RubricCriterion,
     UserTemplate,
+    Test,
+    StudentTest,
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 import { nanoid } from '../utils/nanoid';
@@ -214,6 +216,8 @@ const KEYS = {
     speakingSessions: 'rm_speaking_sessions',
     analysisResults: 'rm_analysis_results',
     userTemplates: 'rm_user_templates',
+    tests: 'rm_tests',
+    studentTests: 'rm_student_tests',
 };
 
 // ─── Generic helpers ───────────────────────────────────────────────────────────
@@ -232,7 +236,7 @@ function save<T>(key: string, value: T): void {
     try {
         localStorage.setItem(key, JSON.stringify(value));
     } catch (e) {
-        console.error(`[storage] write failed for "${key}" (quota exceeded?)`, e);
+        console.error('[storage] write failed (quota exceeded?):', key, e);
         throw e;
     }
 }
@@ -256,6 +260,8 @@ export interface StoreData {
     speakingSessions: SpeakingSession[];
     analysisResults: DocumentAnalysisResult[];
     userTemplates: UserTemplate[];
+    tests: Test[];
+    studentTests: StudentTest[];
 }
 
 export function loadStore(): StoreData {
@@ -276,6 +282,8 @@ export function loadStore(): StoreData {
         speakingSessions: load<SpeakingSession[]>(KEYS.speakingSessions, []),
         analysisResults: load<DocumentAnalysisResult[]>(KEYS.analysisResults, []),
         userTemplates: load<UserTemplate[]>(KEYS.userTemplates, []),
+        tests: load<Test[]>(KEYS.tests, []),
+        studentTests: load<StudentTest[]>(KEYS.studentTests, []),
     };
 }
 
@@ -323,6 +331,12 @@ export function saveSpeakingSessions(sessions: SpeakingSession[]) {
 }
 export function saveAnalysisResults(results: DocumentAnalysisResult[]) {
     save(KEYS.analysisResults, results);
+}
+export function saveTests(tests: Test[]) {
+    save(KEYS.tests, tests);
+}
+export function saveStudentTests(studentTests: StudentTest[]) {
+    save(KEYS.studentTests, studentTests);
 }
 
 // ─── Full Backup / Restore ─────────────────────────────────────────────────────
@@ -441,6 +455,14 @@ export function importFullBackup(json: string): boolean {
                 saveAnalysisResults(data.analysisResults as DocumentAnalysisResult[]);
             else console.warn('[importFullBackup] analysisResults failed validation — skipped');
         }
+        if (data.tests !== undefined) {
+            if (isObjectArray(data.tests)) saveTests(data.tests as Test[]);
+            else console.warn('[importFullBackup] tests failed validation — skipped');
+        }
+        if (data.studentTests !== undefined) {
+            if (isObjectArray(data.studentTests)) saveStudentTests(data.studentTests as StudentTest[]);
+            else console.warn('[importFullBackup] studentTests failed validation — skipped');
+        }
         if (data.userTemplates !== undefined) {
             if (
                 Array.isArray(data.userTemplates) &&
@@ -542,4 +564,55 @@ export function loadUserTemplates(): UserTemplate[] {
 
 export function saveUserTemplates(templates: UserTemplate[]): void {
     save(KEYS.userTemplates, templates);
+}
+
+// ─── Student test attempt drafts (per-device, not synced) ─────────────────────
+
+export interface TestDraft {
+    answers: Record<string, string>;
+    savedAt: string;
+}
+
+export function loadTestDraft(draftKey: string): TestDraft | null {
+    return load<TestDraft | null>(draftKey, null);
+}
+
+export function saveTestDraft(draftKey: string, data: TestDraft): void {
+    save(draftKey, data);
+}
+
+export function clearTestDraft(draftKey: string): void {
+    try {
+        localStorage.removeItem(draftKey);
+    } catch {
+        // ignore
+    }
+}
+
+export function loadTestTimer(timerKey: string): number | null {
+    try {
+        const raw = sessionStorage.getItem(timerKey);
+        if (!raw) return null;
+        const parsed = Number.parseInt(raw, 10);
+        if (!Number.isFinite(parsed)) return null;
+        return Math.max(0, parsed);
+    } catch {
+        return null;
+    }
+}
+
+export function saveTestTimer(timerKey: string, seconds: number): void {
+    try {
+        sessionStorage.setItem(timerKey, String(seconds));
+    } catch {
+        // ignore
+    }
+}
+
+export function clearTestTimer(timerKey: string): void {
+    try {
+        sessionStorage.removeItem(timerKey);
+    } catch {
+        // ignore
+    }
 }

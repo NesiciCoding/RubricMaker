@@ -24,6 +24,9 @@ import {
     loadPendingQueue,
     addToPendingQueue,
     removePendingWrites,
+    loadTestTimer,
+    saveTestTimer,
+    clearTestTimer,
 } from './storage';
 import type { Rubric, Student, Class, AppSettings, RubricFormat } from '../types';
 import { DEFAULT_FORMAT } from '../types';
@@ -226,6 +229,42 @@ describe('save functions', () => {
             } as any,
         ]);
         expect(loadStore().speakingSessions[0].id).toBe('ss1');
+    });
+
+    it('saveSpeakingSessions persists recording metadata without storing blob data in any rm_* key', () => {
+        saveSpeakingSessions([
+            {
+                id: 'ss2',
+                rubricId: 'r1',
+                studentId: 's1',
+                durationSeconds: 120,
+                elapsedSeconds: 60,
+                pronunciationMarks: [],
+                entries: [],
+                overallComment: '',
+                gradedAt: '2024-01-01',
+                recordings: [
+                    {
+                        id: 'rec1',
+                        mediaType: 'audio',
+                        mimeType: 'audio/webm',
+                        durationSec: 30,
+                        sizeBytes: 12345,
+                        createdAt: '2024-01-01T00:00:00.000Z',
+                    },
+                ],
+            },
+        ]);
+        const saved = loadStore().speakingSessions.find((s) => s.id === 'ss2');
+        expect(saved?.recordings?.[0]?.id).toBe('rec1');
+
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i)!;
+            if (!key.startsWith('rm_')) continue;
+            const value = localStorage.getItem(key) ?? '';
+            expect(value).not.toContain('blob:');
+            expect(value).not.toMatch(/data:(audio|video)\//);
+        }
     });
 
     it('saveAnalysisResults persists', () => {
@@ -441,5 +480,33 @@ describe('pending sync queue', () => {
         const queue = loadPendingQueue();
         expect(queue).toHaveLength(1);
         expect((queue[0].payload as { theme: string }).theme).toBe('light');
+    });
+});
+
+describe('test timer storage', () => {
+    const key = 'rm_test_draft_abc_timer';
+
+    beforeEach(() => {
+        sessionStorage.removeItem(key);
+    });
+
+    it('round-trips a saved timer value', () => {
+        saveTestTimer(key, 120);
+        expect(loadTestTimer(key)).toBe(120);
+    });
+
+    it('returns null when nothing is stored', () => {
+        expect(loadTestTimer(key)).toBeNull();
+    });
+
+    it('returns null for a non-numeric stored value instead of NaN', () => {
+        sessionStorage.setItem(key, 'not-a-number');
+        expect(loadTestTimer(key)).toBeNull();
+    });
+
+    it('clearTestTimer removes the stored value', () => {
+        saveTestTimer(key, 60);
+        clearTestTimer(key);
+        expect(loadTestTimer(key)).toBeNull();
     });
 });

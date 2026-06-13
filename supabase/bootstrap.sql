@@ -2124,6 +2124,79 @@ ALTER TABLE public.essay_submissions
     ADD COLUMN IF NOT EXISTS word_limit_status TEXT
         CHECK (word_limit_status IN ('ok', 'under', 'over'));
 
+-- ── 033_tests_tables.sql ──────────────────────────────────────────────────────────────
+
+-- Testing environment: teacher-built tests and student test attempts.
+-- Same jsonb-document pattern as speaking_sessions (001_initial_schema.sql):
+-- real columns only for identity/ownership, everything else in `data`.
+
+create table if not exists public.tests (
+  id text primary key,
+  owner_id uuid not null references public.profiles(id) on delete cascade,
+  data jsonb not null
+);
+create index if not exists tests_owner_id_idx on public.tests(owner_id);
+
+create table if not exists public.student_tests (
+  id text primary key,
+  owner_id uuid not null references public.profiles(id) on delete cascade,
+  data jsonb not null
+);
+create index if not exists student_tests_owner_id_idx on public.student_tests(owner_id);
+
+alter table public.tests enable row level security;
+alter table public.student_tests enable row level security;
+
+drop policy if exists "tests_own" on public.tests;
+create policy "tests_own"
+  on public.tests for all
+  using ((select auth.uid()) = owner_id)
+  with check ((select auth.uid()) = owner_id);
+
+drop policy if exists "student_tests_own" on public.student_tests;
+create policy "student_tests_own"
+  on public.student_tests for all
+  using ((select auth.uid()) = owner_id)
+  with check ((select auth.uid()) = owner_id);
+
+-- ── 034_recordings_storage.sql ──────────────────────────────────────────────────────────────
+
+-- Audio/video recordings attached to speaking sessions (roadmap 3.1).
+-- Same jsonb-document pattern as attachments (001_initial_schema.sql / 003_storage_buckets.sql):
+-- metadata + storage_path in `recording_metadata`, file bytes in the `recordings` bucket.
+
+create table if not exists public.recording_metadata (
+  id text primary key,
+  owner_id uuid not null references public.profiles(id) on delete cascade,
+  session_id text not null,
+  storage_path text,
+  data jsonb not null
+);
+create index if not exists recording_metadata_owner_id_idx on public.recording_metadata(owner_id);
+create index if not exists recording_metadata_session_id_idx on public.recording_metadata(session_id);
+
+alter table public.recording_metadata enable row level security;
+
+drop policy if exists "recording_metadata_own" on public.recording_metadata;
+create policy "recording_metadata_own"
+  on public.recording_metadata for all
+  using ((select auth.uid()) = owner_id)
+  with check ((select auth.uid()) = owner_id);
+
+-- Storage bucket for recording files
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('recordings', 'recordings', false, 52428800, null) -- 50 MB limit
+on conflict (id) do nothing;
+
+-- Recording storage RLS: owner can read/write their own path ({userId}/{recordingId})
+drop policy if exists "recordings_storage_owner" on storage.objects;
+create policy "recordings_storage_owner"
+  on storage.objects for all
+  using (
+    bucket_id = 'recordings'
+    and (storage.foldername(name))[1] = (select auth.uid())::text
+  );
+
 -- ── record applied migrations ──────────────────────────────────────────
 
 create table if not exists public._migrations (
@@ -2168,5 +2241,7 @@ insert into public._migrations (name) values
     ('029_remove_anon_essay_select.sql'),
     ('030_allow_self_student_role.sql'),
     ('031_restrict_anon_profiles_read.sql'),
-    ('032_essay_word_limit_status.sql')
+    ('032_essay_word_limit_status.sql'),
+    ('033_tests_tables.sql'),
+    ('034_recordings_storage.sql')
 on conflict (name) do nothing;

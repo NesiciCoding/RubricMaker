@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { Clock, CheckCircle, Copy, AlertTriangle, Mail, Loader2, Save, Download } from 'lucide-react';
+import { Clock, CheckCircle, Copy, AlertTriangle, Mail, Loader2, Save, Eye, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import EssayEditor from '../components/Editor/EssayEditor';
 import EssayTTSControls from '../components/Essay/EssayTTSControls';
@@ -9,6 +9,7 @@ import { encodeEssaySubmission } from '../utils/essaySubmissionCode';
 import { downloadSebConfig } from '../utils/sebConfig';
 import { countWords } from '../utils/essayUtils';
 import { nanoid } from '../utils/nanoid';
+import { useLiveSessionTelemetry } from '../hooks/useLiveSessionTelemetry';
 import type { EssayAssignmentContent, EssaySubmission } from '../types';
 import { EssayAdapter } from '../services/database/EssayAdapter';
 
@@ -336,6 +337,22 @@ export default function StudentEssayPage() {
         return () => clearInterval(interval);
     }, [html, draftKey, submitted]);
 
+    const getSnapshot = useCallback(() => ({ text: html, wordCount: countWords(html) }), [html]);
+
+    // assignmentKey matches the derivation LiveMonitorPage uses for essays:
+    // `${teacherKey}:${studentId}` — teacherKey is the persisted essay_assignments.id
+    // (also the /essays/:assignmentId/monitor route param). Held back until the
+    // student id is resolved so we never broadcast on an unstable key.
+    const resolvedStudentId = resolvedContent?.studentId ?? assignment?.studentId ?? '';
+    const telemetry = useLiveSessionTelemetry({
+        kind: 'essay',
+        assignmentKey: resolvedStudentId ? `${assignment?.teacherKey ?? ''}:${resolvedStudentId}` : '',
+        enabled: !!assignment && hasDb && !submitted && !!studentUserId && !!resolvedStudentId,
+        getSnapshot,
+        supabaseUrl: assignment?.supabaseUrl,
+        supabaseAnonKey: assignment?.supabaseAnonKey,
+    });
+
     const handleSubmit = useCallback(async () => {
         if (!assignment) return;
         localStorage.setItem(draftKey, html);
@@ -364,6 +381,7 @@ export default function StudentEssayPage() {
             wordCount,
             submittedAt: now,
             wordLimitStatus,
+            events: telemetry.flush(),
         };
         const legacyCode = encodeEssaySubmission(submissionObj);
 
@@ -395,7 +413,19 @@ export default function StudentEssayPage() {
                 window.location.href = sebQuitUrl;
             }, 1500);
         }
-    }, [assignment, html, draftKey, hasDb, adapter, studentUserId, studentEmail, isInSEB, sebQuitUrl]);
+    }, [
+        assignment,
+        html,
+        draftKey,
+        hasDb,
+        adapter,
+        studentUserId,
+        studentEmail,
+        isInSEB,
+        sebQuitUrl,
+        resolvedContent,
+        telemetry,
+    ]);
 
     // Keep a stable ref to handleSubmit so the timer interval always calls the latest version,
     // avoiding the stale-closure bug where the interval would capture an early draft of the callback.
@@ -576,6 +606,25 @@ export default function StudentEssayPage() {
                     >
                         {t('essay.dismiss')}
                     </button>
+                </div>
+            )}
+
+            {/* Live monitoring disclosure */}
+            {telemetry.isBroadcasting && !submitted && (
+                <div
+                    style={{
+                        background: 'color-mix(in srgb, var(--accent) 6%, transparent)',
+                        borderBottom: '1px solid var(--border)',
+                        padding: '8px 20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        fontSize: '0.8rem',
+                        color: 'var(--text-muted)',
+                    }}
+                >
+                    <Eye size={14} style={{ flexShrink: 0 }} />
+                    {t('tests.monitor.liveDisclosure')}
                 </div>
             )}
 

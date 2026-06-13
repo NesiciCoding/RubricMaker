@@ -27,6 +27,8 @@ import type {
     VocabularyItem,
     DocumentAnalysisResult,
     EssayAssignment,
+    Test,
+    StudentTest,
 } from '../types';
 import {
     loadStore,
@@ -46,6 +48,8 @@ import {
     saveSelfAssessments,
     saveSpeakingSessions,
     saveAnalysisResults,
+    saveTests,
+    saveStudentTests,
     importFullBackup,
     loadPendingQueue,
 } from '../store/storage';
@@ -104,7 +108,12 @@ type Action =
     | { type: 'DELETE_VOCABULARY_ITEM'; rubricId: string; itemId: string }
     | { type: 'DELETE_VOCABULARY_ITEMS_BATCH'; rubricId: string; itemIds: string[] }
     | { type: 'SAVE_ANALYSIS_RESULT'; payload: DocumentAnalysisResult }
-    | { type: 'DELETE_ANALYSIS_RESULT'; id: string };
+    | { type: 'DELETE_ANALYSIS_RESULT'; id: string }
+    | { type: 'ADD_TEST'; payload: Test }
+    | { type: 'UPDATE_TEST'; payload: Test }
+    | { type: 'DELETE_TEST'; id: string }
+    | { type: 'SAVE_STUDENT_TEST'; payload: StudentTest }
+    | { type: 'DELETE_STUDENT_TEST'; id: string };
 
 function reducer(state: StoreData, action: Action): StoreData {
     switch (action.type) {
@@ -445,6 +454,39 @@ function reducer(state: StoreData, action: Action): StoreData {
             saveAnalysisResults(next);
             return { ...state, analysisResults: next };
         }
+        case 'ADD_TEST': {
+            const next = [...state.tests, action.payload];
+            saveTests(next);
+            return { ...state, tests: next };
+        }
+        case 'UPDATE_TEST': {
+            const payload = { ...action.payload, updatedAt: new Date().toISOString() };
+            const next = state.tests.map((t) => (t.id === payload.id ? payload : t));
+            saveTests(next);
+            return { ...state, tests: next };
+        }
+        case 'DELETE_TEST': {
+            const next = state.tests.filter((t) => t.id !== action.id);
+            saveTests(next);
+            const nextStudentTests = state.studentTests.filter((st) => st.testId !== action.id);
+            saveStudentTests(nextStudentTests);
+            return { ...state, tests: next, studentTests: nextStudentTests };
+        }
+        case 'SAVE_STUDENT_TEST': {
+            const payload = { ...action.payload, updatedAt: new Date().toISOString() };
+            const exists = state.studentTests.findIndex((st) => st.id === payload.id);
+            const next =
+                exists >= 0
+                    ? state.studentTests.map((st) => (st.id === payload.id ? payload : st))
+                    : [...state.studentTests, payload];
+            saveStudentTests(next);
+            return { ...state, studentTests: next };
+        }
+        case 'DELETE_STUDENT_TEST': {
+            const next = state.studentTests.filter((st) => st.id !== action.id);
+            saveStudentTests(next);
+            return { ...state, studentTests: next };
+        }
         default:
             return state;
     }
@@ -509,6 +551,12 @@ interface AppContextValue extends StoreData {
     // Document analysis results
     saveAnalysisResult: (result: DocumentAnalysisResult) => void;
     deleteAnalysisResult: (id: string) => void;
+    // Testing environment
+    addTest: (t: Omit<Test, 'id' | 'createdAt' | 'updatedAt'>) => Test;
+    updateTest: (t: Test) => void;
+    deleteTest: (id: string) => void;
+    saveStudentTest: (st: StudentTest) => void;
+    deleteStudentTest: (id: string) => void;
     // Database sync
     connectDatabase: (config: DatabaseConfig) => Promise<boolean>;
     disconnectDatabase: () => void;
@@ -549,6 +597,9 @@ interface AppContextValue extends StoreData {
     ) => Promise<Awaited<ReturnType<typeof storageSync.fetchEssaySubmissionsForStudent>>>;
     fetchAllEssaySubmissions: () => Promise<Awaited<ReturnType<typeof storageSync.fetchAllEssaySubmissions>>>;
     fetchMyEssayAssignments: () => Promise<Awaited<ReturnType<typeof storageSync.fetchMyEssayAssignments>>>;
+    fetchEssayAssignmentByKey: (
+        teacherKey: string
+    ) => Promise<Awaited<ReturnType<typeof storageSync.fetchEssayAssignmentByKey>>>;
     deleteEssaySubmission: (submissionId: string, storagePath: string) => Promise<SyncResult>;
     getEssaySignedUrl: (storagePath: string) => Promise<string | null>;
     // Backup / restore
@@ -595,6 +646,8 @@ async function flushToLocalStorage(merged: StoreData) {
         saveSelfAssessments,
         saveSpeakingSessions,
         saveAnalysisResults,
+        saveTests,
+        saveStudentTests,
     } = await import('../store/storage');
     saveRubrics(merged.rubrics);
     saveStudents(merged.students);
@@ -611,6 +664,8 @@ async function flushToLocalStorage(merged: StoreData) {
     saveSelfAssessments(merged.selfAssessments);
     saveSpeakingSessions(merged.speakingSessions);
     saveAnalysisResults(merged.analysisResults);
+    saveTests(merged.tests);
+    saveStudentTests(merged.studentTests);
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -846,6 +901,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         diff(prev.selfAssessments, state.selfAssessments, 'selfAssessment', (sa) => sa.id);
         diff(prev.speakingSessions, state.speakingSessions, 'speakingSession', (ss) => ss.id);
         diff(prev.analysisResults, state.analysisResults, 'analysisResult', (ar) => ar.id);
+        diff(prev.tests, state.tests, 'test', (t) => t.id);
+        diff(prev.studentTests, state.studentTests, 'studentTest', (st) => st.id);
 
         if (JSON.stringify(prev.settings) !== JSON.stringify(state.settings)) {
             storageSync.pushOne('settings', 'upsert', state.settings);
@@ -1071,6 +1128,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'DELETE_ANALYSIS_RESULT', id });
     }, []);
 
+    const addTest = useCallback((t: Omit<Test, 'id' | 'createdAt' | 'updatedAt'>): Test => {
+        const now = new Date().toISOString();
+        const test: Test = { ...t, id: nanoid(), createdAt: now, updatedAt: now };
+        dispatch({ type: 'ADD_TEST', payload: test });
+        return test;
+    }, []);
+
+    const updateTest = useCallback((t: Test) => {
+        dispatch({ type: 'UPDATE_TEST', payload: t });
+    }, []);
+
+    const deleteTest = useCallback((id: string) => dispatch({ type: 'DELETE_TEST', id }), []);
+
+    const saveStudentTest = useCallback((st: StudentTest) => {
+        dispatch({ type: 'SAVE_STUDENT_TEST', payload: st });
+    }, []);
+
+    const deleteStudentTest = useCallback((id: string) => dispatch({ type: 'DELETE_STUDENT_TEST', id }), []);
+
     // ─── Database sync ────────────────────────────────────────────────
     const connectDatabase = useCallback(
         async (config: DatabaseConfig): Promise<boolean> => {
@@ -1149,6 +1225,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     );
     const fetchAllEssaySubmissions = useCallback(() => storageSync.fetchAllEssaySubmissions(), []);
     const fetchMyEssayAssignments = useCallback(() => storageSync.fetchMyEssayAssignments(), []);
+    const fetchEssayAssignmentByKey = useCallback(
+        (teacherKey: string) => storageSync.fetchEssayAssignmentByKey(teacherKey),
+        []
+    );
     const deleteEssaySubmission = useCallback(
         (id: string, path: string) => storageSync.deleteEssaySubmission(id, path),
         []
@@ -1310,6 +1390,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         deleteVocabularyItems,
         saveAnalysisResult,
         deleteAnalysisResult,
+        addTest,
+        updateTest,
+        deleteTest,
+        saveStudentTest,
+        deleteStudentTest,
         connectDatabase,
         disconnectDatabase,
         pushAllToDatabase,
@@ -1332,6 +1417,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         fetchEssaySubmissionsForStudent,
         fetchAllEssaySubmissions,
         fetchMyEssayAssignments,
+        fetchEssayAssignmentByKey,
         deleteEssaySubmission,
         getEssaySignedUrl,
         importBackup,

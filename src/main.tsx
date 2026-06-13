@@ -11,6 +11,7 @@ import './i18n';
 const StudentFeedbackPage = lazy(() => import('./pages/StudentFeedbackPage'));
 const RubricPreviewPage = lazy(() => import('./pages/RubricPreviewPage'));
 const StudentEssayPage = lazy(() => import('./pages/StudentEssayPage'));
+const StudentTestPage = lazy(() => import('./pages/StudentTestPage'));
 
 function handleUnhandledRejection(event: PromiseRejectionEvent) {
     console.error('[unhandled rejection]', event.reason);
@@ -20,7 +21,7 @@ window.addEventListener('unhandledrejection', handleUnhandledRejection);
 
 const root = ReactDOM.createRoot(document.getElementById('root')!);
 
-const STUDENT_ROUTES = ['/feedback/', '/preview/', '/essay/'];
+const STUDENT_ROUTES = ['/feedback/', '/preview/', '/essay/', '/test/'];
 const TAB_LOCK = 'rubricmaker-active-tab';
 
 function isStudentRoute() {
@@ -37,6 +38,7 @@ function renderApp() {
                         <Route path="/feedback/:code" element={<StudentFeedbackPage />} />
                         <Route path="/preview/:code" element={<RubricPreviewPage />} />
                         <Route path="/essay/:code" element={<StudentEssayPage />} />
+                        <Route path="/test/:code" element={<StudentTestPage />} />
                         <Route
                             path="*"
                             element={

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Save, AlertCircle, FileText } from 'lucide-react';
+import { Save, AlertCircle, FileText, BarChart3 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { nanoid } from '../utils/nanoid';
 import type { StudentRubric, ScoreEntry } from '../types';
@@ -10,6 +10,10 @@ import TiptapEditor from '../components/Editor/TiptapEditor';
 
 export default function PeerReviewView() {
     const { rubricId, studentId } = useParams();
+    const [searchParams] = useSearchParams();
+    // The reviewer arrives via ?reviewerId= when a peer reviews someone else;
+    // without it the review is a self-review by the route student.
+    const reviewerId = searchParams.get('reviewerId') ?? studentId;
     const navigate = useNavigate();
     const { t } = useTranslation();
     const { rubrics, students, peerReviews, savePeerReview } = useApp();
@@ -39,7 +43,11 @@ export default function PeerReviewView() {
         if (!rubric || !student) return;
 
         const existing = peerReviews.find(
-            (pr) => pr.rubricId === rubricId && pr.studentId === studentId && (pr.round ?? 1) === activeRound
+            (pr) =>
+                pr.rubricId === rubricId &&
+                pr.studentId === studentId &&
+                (pr.round ?? 1) === activeRound &&
+                (pr.gradedBy ?? pr.studentId) === reviewerId
         );
         if (existing) {
             setEntry({ ...existing });
@@ -58,9 +66,10 @@ export default function PeerReviewView() {
                 overallComment: '',
                 isPeerReview: true,
                 round: activeRound,
+                gradedBy: reviewerId,
             });
         }
-    }, [rubricId, studentId, rubric, student, peerReviews, activeRound]);
+    }, [rubricId, studentId, rubric, student, peerReviews, activeRound, reviewerId]);
 
     if (!rubric || !student || !entry) {
         return (
@@ -77,7 +86,7 @@ export default function PeerReviewView() {
     }
 
     const handleSave = () => {
-        savePeerReview({ ...entry, round: activeRound });
+        savePeerReview({ ...entry, round: activeRound, gradedBy: reviewerId });
         setIsSaved(true);
         setIsDirty(false);
         setTimeout(() => setIsSaved(false), 2000);
@@ -116,6 +125,13 @@ export default function PeerReviewView() {
                 title={`${t('rubricList.grade_students')} - ${student.name}`}
                 actions={
                     <div style={{ display: 'flex', gap: 8 }}>
+                        <button
+                            className="btn btn-secondary"
+                            onClick={() => navigate(`/peer-analytics/${rubricId}`)}
+                            title={t('peerReview.view_analytics')}
+                        >
+                            <BarChart3 size={18} /> {t('peerReview.view_analytics')}
+                        </button>
                         <button className={`btn ${isSaved ? 'btn-success' : 'btn-primary'}`} onClick={handleSave}>
                             <Save size={18} />{' '}
                             {isSaved ? t('gradeStudent.action_saved') : t('gradeStudent.action_save')}
