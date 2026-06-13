@@ -1150,6 +1150,8 @@
         "too_large_warning": "L'enregistrement dépasse la limite de 50 Mo et a été supprimé. Essayez un enregistrement plus court.",
         "start_error": "Impossible de démarrer l'enregistrement. Vérifiez les autorisations du microphone/de la caméra.",
         "save_error": "Échec de l'enregistrement — veuillez réessayer.",
+        "retry_save": "Réessayer l'enregistrement",
+        "download": "Télécharger",
         "duration_seconds": "{{count}}s",
         "student_disclosure": "L'audio/vidéo enregistré ici peut être conservé avec cette session et visible par votre enseignant.",
         "unavailable": "Enregistrement indisponible sur cet appareil."

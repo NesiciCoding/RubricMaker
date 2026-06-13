@@ -592,7 +592,10 @@ export function clearTestDraft(draftKey: string): void {
 export function loadTestTimer(timerKey: string): number | null {
     try {
         const raw = sessionStorage.getItem(timerKey);
-        return raw ? Math.max(0, parseInt(raw, 10)) : null;
+        if (!raw) return null;
+        const parsed = Number.parseInt(raw, 10);
+        if (!Number.isFinite(parsed)) return null;
+        return Math.max(0, parsed);
     } catch {
         return null;
     }
@@ -601,6 +604,14 @@ export function loadTestTimer(timerKey: string): number | null {
 export function saveTestTimer(timerKey: string, seconds: number): void {
     try {
         sessionStorage.setItem(timerKey, String(seconds));
+    } catch {
+        // ignore
+    }
+}
+
+export function clearTestTimer(timerKey: string): void {
+    try {
+        sessionStorage.removeItem(timerKey);
     } catch {
         // ignore
     }

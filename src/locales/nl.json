@@ -1150,6 +1150,8 @@
         "too_large_warning": "Opname overschrijdt de limiet van 50MB en is verwijderd. Probeer een kortere opname.",
         "start_error": "Opname kon niet starten. Controleer je microfoon-/camerarechten.",
         "save_error": "Opname opslaan is mislukt — probeer het opnieuw.",
+        "retry_save": "Opnieuw opslaan",
+        "download": "Downloaden",
         "duration_seconds": "{{count}}s",
         "student_disclosure": "Audio/video die je hier opneemt, kan bij deze sessie worden opgeslagen en is zichtbaar voor je docent.",
         "unavailable": "Opname niet beschikbaar op dit apparaat."

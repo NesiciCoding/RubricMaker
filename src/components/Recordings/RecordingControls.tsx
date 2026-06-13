@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Mic, Video, Square, Trash2, AlertTriangle } from 'lucide-react';
+import { Mic, Video, Square, Trash2, AlertTriangle, Download, RotateCcw } from 'lucide-react';
 import { useMediaRecorder } from '../../hooks/useMediaRecorder';
 import { putBlob, estimateUsage } from '../../services/mediaStore';
 import { useToast } from '../../hooks/useToast';
@@ -9,6 +9,14 @@ import type { SessionRecording } from '../../types';
 
 const QUOTA_HEADROOM_BYTES = 60 * 1024 * 1024; // 60MB
 const MAX_RECORDING_BYTES = 50 * 1024 * 1024; // 50MB
+
+interface PendingRecording {
+    id: string;
+    blob: Blob;
+    mimeType: string;
+    durationSec: number;
+    mediaType: 'audio' | 'video';
+}
 
 interface Props {
     recordings: SessionRecording[];
@@ -23,8 +31,19 @@ export default function RecordingControls({ recordings, onChange, syncConfigured
     const { status, start, stop } = useMediaRecorder();
     const [pendingVideo, setPendingVideo] = useState(false);
     const [startedAt, setStartedAt] = useState<number | null>(null);
+    const [pendingRecording, setPendingRecording] = useState<PendingRecording | null>(null);
 
     const recording = status === 'recording';
+
+    const pendingUrl = useMemo(
+        () => (pendingRecording ? URL.createObjectURL(pendingRecording.blob) : null),
+        [pendingRecording]
+    );
+    useEffect(() => {
+        return () => {
+            if (pendingUrl) URL.revokeObjectURL(pendingUrl);
+        };
+    }, [pendingUrl]);
 
     async function handleStart(video: boolean) {
         if (video && !syncConfigured) return;
@@ -39,6 +58,26 @@ export default function RecordingControls({ recordings, onChange, syncConfigured
         else showToast(t('recordings.start_error'), 'error');
     }
 
+    async function persistRecording(pending: PendingRecording) {
+        try {
+            await putBlob(pending.id, pending.blob, pending.mimeType);
+            const newRecording: SessionRecording = {
+                id: pending.id,
+                mediaType: pending.mediaType,
+                mimeType: pending.mimeType,
+                durationSec: pending.durationSec,
+                sizeBytes: pending.blob.size,
+                createdAt: new Date().toISOString(),
+                synced: false,
+            };
+            onChange([...recordings, newRecording]);
+            setPendingRecording(null);
+        } catch {
+            setPendingRecording(pending);
+            showToast(t('recordings.save_error'), 'error');
+        }
+    }
+
     async function handleStop() {
         const result = await stop();
         const durationSec = startedAt ? Math.round((Date.now() - startedAt) / 1000) : 0;
@@ -50,22 +89,13 @@ export default function RecordingControls({ recordings, onChange, syncConfigured
             return;
         }
 
-        const id = nanoid();
-        try {
-            await putBlob(id, result.blob, result.mimeType);
-            const newRecording: SessionRecording = {
-                id,
-                mediaType: pendingVideo ? 'video' : 'audio',
-                mimeType: result.mimeType,
-                durationSec,
-                sizeBytes: result.blob.size,
-                createdAt: new Date().toISOString(),
-                synced: false,
-            };
-            onChange([...recordings, newRecording]);
-        } catch {
-            showToast(t('recordings.save_error'), 'error');
-        }
+        await persistRecording({
+            id: nanoid(),
+            blob: result.blob,
+            mimeType: result.mimeType,
+            durationSec,
+            mediaType: pendingVideo ? 'video' : 'audio',
+        });
     }
 
     function handleDiscard(id: string) {
@@ -118,6 +148,52 @@ export default function RecordingControls({ recordings, onChange, syncConfigured
                     </button>
                 )}
             </div>
+
+            {pendingRecording && (
+                <div
+                    role="alert"
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        flexWrap: 'wrap',
+                        padding: '8px 12px',
+                        borderRadius: 8,
+                        background: 'var(--bg-elevated)',
+                        border: '1px solid var(--border)',
+                        color: 'var(--text-muted)',
+                        fontSize: '0.8rem',
+                        marginTop: 10,
+                    }}
+                >
+                    <AlertTriangle size={14} style={{ flexShrink: 0, color: 'var(--orange, #f59e0b)' }} />
+                    <span style={{ flex: 1 }}>{t('recordings.save_error')}</span>
+                    <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => persistRecording(pendingRecording)}
+                    >
+                        <RotateCcw size={14} /> {t('recordings.retry_save')}
+                    </button>
+                    {pendingUrl && (
+                        <a
+                            href={pendingUrl}
+                            download={`recording-${pendingRecording.id}.${pendingRecording.mimeType.split('/')[1]?.split(';')[0] ?? 'webm'}`}
+                            className="btn btn-ghost btn-sm"
+                        >
+                            <Download size={14} /> {t('recordings.download')}
+                        </a>
+                    )}
+                    <button
+                        type="button"
+                        className="btn btn-ghost btn-icon btn-sm"
+                        aria-label={t('recordings.discard')}
+                        onClick={() => setPendingRecording(null)}
+                    >
+                        <Trash2 size={13} />
+                    </button>
+                </div>
+            )}
 
             {recordings.length > 0 && (
                 <ul

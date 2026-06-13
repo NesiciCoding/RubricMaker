@@ -6,7 +6,14 @@ import { useTranslation } from 'react-i18next';
 import { decodeTestAssignment } from '../utils/testShareCode';
 import { encodeTestSubmission } from '../utils/testSubmissionCode';
 import { nanoid } from '../utils/nanoid';
-import { loadTestDraft, saveTestDraft, clearTestDraft, loadTestTimer, saveTestTimer } from '../store/storage';
+import {
+    loadTestDraft,
+    saveTestDraft,
+    clearTestDraft,
+    loadTestTimer,
+    saveTestTimer,
+    clearTestTimer,
+} from '../store/storage';
 import SebGate from '../components/Tests/SebGate';
 import { useLiveSessionTelemetry } from '../hooks/useLiveSessionTelemetry';
 import type { Test, TestAnswer, TestAssignmentPayload, TestQuestion, TestSubmissionPayload } from '../types';
@@ -220,6 +227,7 @@ export default function StudentTestPage() {
 
         setSubmissionCode(legacyCode);
         clearTestDraft(draftKey);
+        clearTestTimer(draftKey + '_timer');
         setSubmitted(true);
         submitInFlightRef.current = false;
     }, [assignment, test, answers, hasDb, testOwnerId, draftKey, telemetry, t, submitted]);

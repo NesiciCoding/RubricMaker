@@ -1150,6 +1150,8 @@
         "too_large_warning": "Recording exceeds the 50MB limit and was discarded. Try a shorter recording.",
         "start_error": "Could not start recording. Check your microphone/camera permissions.",
         "save_error": "Failed to save recording — please try again.",
+        "retry_save": "Retry save",
+        "download": "Download",
         "duration_seconds": "{{count}}s",
         "student_disclosure": "Audio/video recorded here may be saved with this session and visible to your teacher.",
         "unavailable": "Recording unavailable on this device."

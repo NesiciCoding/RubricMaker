@@ -12,12 +12,14 @@ interface Props {
 export default function RecordingPlayer({ recording, cloudUrl }: Props) {
     const { t } = useTranslation();
     const [objectUrl, setObjectUrl] = useState<string | null>(null);
+    const [loadedRecordingId, setLoadedRecordingId] = useState<string | null>(null);
     const [notFound, setNotFound] = useState(false);
 
     useEffect(() => {
         let url: string | null = null;
         let cancelled = false;
         setObjectUrl(null);
+        setLoadedRecordingId(null);
         setNotFound(false);
         (async () => {
             const record = await getBlob(recording.id);
@@ -25,6 +27,7 @@ export default function RecordingPlayer({ recording, cloudUrl }: Props) {
             if (record) {
                 url = URL.createObjectURL(record.blob);
                 setObjectUrl(url);
+                setLoadedRecordingId(recording.id);
             } else {
                 setNotFound(true);
             }
@@ -35,7 +38,7 @@ export default function RecordingPlayer({ recording, cloudUrl }: Props) {
         };
     }, [recording.id]);
 
-    const src = objectUrl ?? (notFound ? cloudUrl : undefined);
+    const src = loadedRecordingId === recording.id ? (objectUrl ?? undefined) : notFound ? cloudUrl : undefined;
 
     if (!src) {
         return notFound ? (

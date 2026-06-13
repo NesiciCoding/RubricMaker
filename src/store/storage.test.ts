@@ -24,6 +24,9 @@ import {
     loadPendingQueue,
     addToPendingQueue,
     removePendingWrites,
+    loadTestTimer,
+    saveTestTimer,
+    clearTestTimer,
 } from './storage';
 import type { Rubric, Student, Class, AppSettings, RubricFormat } from '../types';
 import { DEFAULT_FORMAT } from '../types';
@@ -477,5 +480,33 @@ describe('pending sync queue', () => {
         const queue = loadPendingQueue();
         expect(queue).toHaveLength(1);
         expect((queue[0].payload as { theme: string }).theme).toBe('light');
+    });
+});
+
+describe('test timer storage', () => {
+    const key = 'rm_test_draft_abc_timer';
+
+    beforeEach(() => {
+        sessionStorage.removeItem(key);
+    });
+
+    it('round-trips a saved timer value', () => {
+        saveTestTimer(key, 120);
+        expect(loadTestTimer(key)).toBe(120);
+    });
+
+    it('returns null when nothing is stored', () => {
+        expect(loadTestTimer(key)).toBeNull();
+    });
+
+    it('returns null for a non-numeric stored value instead of NaN', () => {
+        sessionStorage.setItem(key, 'not-a-number');
+        expect(loadTestTimer(key)).toBeNull();
+    });
+
+    it('clearTestTimer removes the stored value', () => {
+        saveTestTimer(key, 60);
+        clearTestTimer(key);
+        expect(loadTestTimer(key)).toBeNull();
     });
 });

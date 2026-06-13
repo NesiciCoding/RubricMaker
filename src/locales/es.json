@@ -1150,6 +1150,8 @@
         "too_large_warning": "La grabación supera el límite de 50MB y fue descartada. Intente una grabación más corta.",
         "start_error": "No se pudo iniciar la grabación. Verifique los permisos de micrófono/cámara.",
         "save_error": "No se pudo guardar la grabación — inténtelo de nuevo.",
+        "retry_save": "Reintentar guardar",
+        "download": "Descargar",
         "duration_seconds": "{{count}}s",
         "student_disclosure": "El audio/video grabado aquí puede guardarse con esta sesión y ser visible para su profesor.",
         "unavailable": "Grabación no disponible en este dispositivo."

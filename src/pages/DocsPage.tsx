@@ -743,8 +743,7 @@ function GradingTab() {
             <FeatureSection icon={ClipboardCheck} title="Test results &amp; grading" color="#3b82f6">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     From the <strong>Tests</strong> list, click <strong>Results</strong> on a test to see every
-                    student's submission and open the results page at <code>/tests/:testId/results/:studentTestId</code>
-                    .
+                    student's submission and open results at <code>/tests/:testId/results/:studentTestId</code>.
                 </p>
                 <FeatureList
                     items={[

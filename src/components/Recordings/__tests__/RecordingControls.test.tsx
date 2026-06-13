@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { SessionRecording } from '../../../types';
 
 vi.mock('react-i18next', () => ({
@@ -39,12 +39,22 @@ vi.mock('../../../services/mediaStore', () => ({
 import RecordingControls from '../RecordingControls';
 
 describe('RecordingControls', () => {
+    const originalCreateObjectURL = URL.createObjectURL;
+    const originalRevokeObjectURL = URL.revokeObjectURL;
+
     beforeEach(() => {
         mockStatusRef.current = 'idle';
         mockStart.mockReset();
         mockStop.mockReset();
         mockPutBlob.mockClear();
         mockEstimateUsage.mockReset().mockResolvedValue({ usage: 0, quota: 1_000_000_000 });
+        URL.createObjectURL = vi.fn(() => 'blob:mock-url');
+        URL.revokeObjectURL = vi.fn();
+    });
+
+    afterEach(() => {
+        URL.createObjectURL = originalCreateObjectURL;
+        URL.revokeObjectURL = originalRevokeObjectURL;
     });
 
     it('renders record buttons and disables video when sync is not configured', () => {
@@ -89,6 +99,26 @@ describe('RecordingControls', () => {
         expect(newRecordings).toHaveLength(1);
         expect(newRecordings[0].mediaType).toBe('audio');
         expect(newRecordings[0].mimeType).toBe('audio/webm');
+    });
+
+    it('keeps the recording available for retry/download when saving fails', async () => {
+        mockStatusRef.current = 'recording';
+        mockStop.mockResolvedValue({ blob: new Blob(['x'], { type: 'audio/webm' }), mimeType: 'audio/webm' });
+        mockPutBlob.mockRejectedValueOnce(new Error('quota exceeded')).mockResolvedValueOnce({});
+        const onChange = vi.fn();
+        render(<RecordingControls recordings={[]} onChange={onChange} syncConfigured={false} />);
+
+        fireEvent.click(screen.getByText('recordings.stop_recording'));
+        await waitFor(() => expect(mockPutBlob).toHaveBeenCalledTimes(1));
+        expect(onChange).not.toHaveBeenCalled();
+
+        const downloadLink = await screen.findByText('recordings.download');
+        expect(downloadLink.closest('a')).toHaveAttribute('href', 'blob:mock-url');
+
+        fireEvent.click(screen.getByText('recordings.retry_save'));
+        await waitFor(() => expect(mockPutBlob).toHaveBeenCalledTimes(2));
+        await waitFor(() => expect(onChange).toHaveBeenCalled());
+        expect(screen.queryByText('recordings.retry_save')).not.toBeInTheDocument();
     });
 
     it('discards a too-large recording without saving', async () => {

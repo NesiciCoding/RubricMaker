@@ -1150,6 +1150,8 @@
         "too_large_warning": "Die Aufnahme überschreitet das 50-MB-Limit und wurde verworfen. Versuchen Sie eine kürzere Aufnahme.",
         "start_error": "Aufnahme konnte nicht gestartet werden. Überprüfen Sie die Mikrofon-/Kameraberechtigungen.",
         "save_error": "Aufnahme konnte nicht gespeichert werden — bitte versuchen Sie es erneut.",
+        "retry_save": "Speichern erneut versuchen",
+        "download": "Herunterladen",
         "duration_seconds": "{{count}}s",
         "student_disclosure": "Hier aufgenommenes Audio/Video kann mit dieser Sitzung gespeichert werden und ist für Ihre Lehrkraft sichtbar.",
         "unavailable": "Aufnahme auf diesem Gerät nicht verfügbar."
