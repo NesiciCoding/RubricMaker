@@ -53,4 +53,22 @@ describe('decodeTestSubmission', () => {
         const noTestId = btoa(encodeURIComponent(JSON.stringify({ studentId: 's1', answers: [] })));
         expect(decodeTestSubmission(noTestId)).toBeNull();
     });
+
+    it('returns null when teacherKey, startedAt, or submittedAt are missing', () => {
+        const base = { testId: 't1', studentId: 's1', answers: [] };
+        expect(decodeTestSubmission(btoa(encodeURIComponent(JSON.stringify(base))))).toBeNull();
+        expect(
+            decodeTestSubmission(
+                btoa(encodeURIComponent(JSON.stringify({ ...base, teacherKey: 'tk1', startedAt: '2026-01-01' })))
+            )
+        ).toBeNull();
+    });
+
+    it('returns null when an answer item is missing a string questionId', () => {
+        const payload = {
+            ...makeSubmission(),
+            answers: [{ response: 'opt-a' }],
+        };
+        expect(decodeTestSubmission(btoa(encodeURIComponent(JSON.stringify(payload))))).toBeNull();
+    });
 });

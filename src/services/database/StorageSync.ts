@@ -417,7 +417,17 @@ class StorageSyncService {
                     // Students don't create/join a school during onboarding — their
                     // profile.role being set is enough to consider onboarding complete,
                     // and it persists in the DB so re-logging in never re-prompts them.
-                    mergedSettings = { ...mergedSettings, needsOnboarding: false };
+                    let schoolName: string | undefined;
+                    if (profileFull.schoolId) {
+                        const schools = await this.adapter.fetchSchools();
+                        schoolName = schools.find((s) => s.id === profileFull.schoolId)?.name;
+                    }
+                    mergedSettings = {
+                        ...mergedSettings,
+                        needsOnboarding: false,
+                        schoolId: profileFull.schoolId,
+                        schoolName,
+                    };
                 } else if (!profileFull.schoolId) {
                     mergedSettings = { ...mergedSettings, needsOnboarding: true };
                 } else {
