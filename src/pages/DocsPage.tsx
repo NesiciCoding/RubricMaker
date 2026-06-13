@@ -645,6 +645,17 @@ function RubricsTab() {
                     standards and CEFR descriptors per question, then assign the test to a class — each student gets a
                     unique share link to complete it.
                 </p>
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    What students see
+                </h3>
+                <FeatureList
+                    items={[
+                        'If the test requires Safe Exam Browser, students see a blocking screen until they open the link inside SEB.',
+                        'A countdown timer (when set) shows time remaining and auto-submits the test when it reaches zero.',
+                        'Answers are autosaved to the device as the student works, so a reload or browser crash restores their progress.',
+                        'Submitting produces a confirmation and, when no cloud sync is configured, a submission code for the student to send to their teacher.',
+                    ]}
+                />
             </FeatureSection>
 
             <FeatureSection icon={Radio} title="Live monitoring" color="#ef4444">

@@ -21,6 +21,7 @@ import {
     Palette,
     Languages,
     Radio,
+    ClipboardCheck,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { loadSupabaseConfig } from '../services/database';
@@ -63,6 +64,12 @@ const TEACHER_FEATURES = [
         desc: 'Watch tests and essays as students work — who’s online, their progress, and live drafts, updated in real time.',
         color: '#ef4444',
     },
+    {
+        icon: ClipboardCheck,
+        title: 'Tests & Quizzes',
+        desc: 'Build multiple-choice, short-answer, and open-question tests, assign them with a share link or Safe Exam Browser, then auto-grade and fine-tune the class average.',
+        color: '#3b82f6',
+    },
 ];
 
 const STUDENT_FEATURES = [
@@ -89,6 +96,12 @@ const STUDENT_FEATURES = [
         title: 'Peer Review',
         desc: "Leave structured feedback on a classmate's work using the same rubric your teacher uses.",
         color: '#8b5cf6',
+    },
+    {
+        icon: ClipboardCheck,
+        title: 'Take a Test',
+        desc: 'Open a test link from your teacher, answer the questions with a countdown timer, and submit — your answers are saved automatically as you go.',
+        color: '#3b82f6',
     },
 ];
 

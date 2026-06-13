@@ -55,18 +55,13 @@ function seededShuffle<T>(items: T[], seed: string): T[] {
     return result;
 }
 
-// Some teacher-side flows may embed the full Test content directly in the
-// share code for offline use. This is optional and forward-compatible —
-// the type is not part of TestAssignmentPayload, so it is read defensively.
-type DecodedTestAssignment = TestAssignmentPayload & { test?: Test };
-
 export default function StudentTestPage() {
     const { t } = useTranslation();
     const { code } = useParams<{ code: string }>();
 
-    const assignment = useMemo<DecodedTestAssignment | null>(() => {
+    const assignment = useMemo<TestAssignmentPayload | null>(() => {
         if (!code) return null;
-        return decodeTestAssignment(code) as DecodedTestAssignment | null;
+        return decodeTestAssignment(code);
     }, [code]);
 
     const hasDb = !!(assignment?.supabaseUrl && assignment?.supabaseAnonKey);

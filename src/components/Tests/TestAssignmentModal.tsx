@@ -47,6 +47,8 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
             if (embedDb && dbStatus.isConnected && config) {
                 base.supabaseUrl = config.supabaseUrl;
                 base.supabaseAnonKey = config.supabaseAnonKey;
+            } else {
+                base.test = test;
             }
             return base;
         },

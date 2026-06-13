@@ -723,6 +723,8 @@ export interface TestAssignmentPayload {
     supabaseUrl?: string;
     /** Teacher's Supabase anon key — embedded so the student's browser can connect */
     supabaseAnonKey?: string;
+    /** Full test content embedded for offline use (no Supabase) — without this, an offline link cannot load its questions */
+    test?: Test;
 }
 
 /** A student's completed test, encoded into a submission code for the teacher to import */
