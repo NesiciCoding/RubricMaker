@@ -50,9 +50,11 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     const [hideNames, setHideNames] = useState(false);
     const [sortMode, setSortMode] = useState<SortMode>('active');
     const [liveStates, setLiveStates] = useState<Record<string, StudentLiveState>>({});
-    const [essayAssignment, setEssayAssignment] = useState<{ rubricId: string; studentId: string; title: string } | null>(
-        null
-    );
+    const [essayAssignment, setEssayAssignment] = useState<{
+        rubricId: string;
+        studentId: string;
+        title: string;
+    } | null>(null);
     const [essayAssignmentLoading, setEssayAssignmentLoading] = useState(kind === 'essay');
 
     const { fetchEssayAssignmentByKey } = useApp();
@@ -84,11 +86,12 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         if (kind === 'test') {
             if (!test) return [];
             const classForTest = classes.find((c) => c.rubricIds?.includes(test.gradeScaleId ?? ''));
-            const candidateStudents = classForTest
-                ? students.filter((s) => s.classId === classForTest.id)
-                : students;
+            const candidateStudents = classForTest ? students.filter((s) => s.classId === classForTest.id) : students;
             const relevantStudentTests = studentTests.filter((st) => st.testId === test.id);
-            const studentIds = new Set([...candidateStudents.map((s) => s.id), ...relevantStudentTests.map((st) => st.studentId)]);
+            const studentIds = new Set([
+                ...candidateStudents.map((s) => s.id),
+                ...relevantStudentTests.map((st) => st.studentId),
+            ]);
             return Array.from(studentIds)
                 .map((studentId) => {
                     const student = students.find((s) => s.id === studentId);
@@ -203,7 +206,9 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
             const mergedAnswers: TestAnswer[] =
                 snapshotAnswers.length > 0
                     ? [
-                          ...row.persistedAnswers.filter((a) => !snapshotAnswers.some((sa) => sa.questionId === a.questionId)),
+                          ...row.persistedAnswers.filter(
+                              (a) => !snapshotAnswers.some((sa) => sa.questionId === a.questionId)
+                          ),
                           ...snapshotAnswers,
                       ]
                     : row.persistedAnswers;
@@ -298,7 +303,13 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
 
     return (
         <>
-            <Topbar title={kind === 'test' ? t('tests.monitor.title_test', { name: test!.name }) : t('tests.monitor.title_essay', { title: essayAssignment!.title })} />
+            <Topbar
+                title={
+                    kind === 'test'
+                        ? t('tests.monitor.title_test', { name: test!.name })
+                        : t('tests.monitor.title_essay', { title: essayAssignment!.title })
+                }
+            />
             <div className="page-content fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {/* Controls */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
@@ -363,13 +374,18 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                                 }}
                                             >
                                                 <AlertTriangle size={11} />
-                                                {t('tests.monitor.flags.tabSwitch', { count: row.flags.tabSwitchCount })}
+                                                {t('tests.monitor.flags.tabSwitch', {
+                                                    count: row.flags.tabSwitchCount,
+                                                })}
                                             </span>
                                         )}
-                                        {(row.flags.copyCount > 0 || row.flags.cutCount > 0 || row.flags.pasteCount > 0) && (
+                                        {(row.flags.copyCount > 0 ||
+                                            row.flags.cutCount > 0 ||
+                                            row.flags.pasteCount > 0) && (
                                             <span className="badge badge-blue">
                                                 {t('tests.monitor.flags.clipboard', {
-                                                    count: row.flags.copyCount + row.flags.cutCount + row.flags.pasteCount,
+                                                    count:
+                                                        row.flags.copyCount + row.flags.cutCount + row.flags.pasteCount,
                                                 })}
                                             </span>
                                         )}
@@ -430,5 +446,8 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
 }
 
 function stripHtml(html: string): string {
-    return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    return html
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
 }

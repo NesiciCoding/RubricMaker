@@ -170,9 +170,23 @@ export default function ResponsesGrid({ test, rows }: ResponsesGridProps) {
                         }}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                        <div
+                            style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'flex-start',
+                                gap: 12,
+                            }}
+                        >
                             <div>
-                                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase' }}>
+                                <div
+                                    style={{
+                                        fontSize: '0.75rem',
+                                        fontWeight: 700,
+                                        color: 'var(--accent)',
+                                        textTransform: 'uppercase',
+                                    }}
+                                >
                                     {t('tests.monitor.grid.gallery_title', {
                                         index: test.questions.findIndex((q) => q.id === galleryQuestion.id) + 1,
                                     })}
@@ -192,11 +206,19 @@ export default function ResponsesGrid({ test, rows }: ResponsesGridProps) {
                                 const answer = row.answers.find((a) => a.questionId === galleryQuestion.id);
                                 const text = answerDisplayText(galleryQuestion, answer);
                                 return (
-                                    <div key={row.studentId} style={{ borderBottom: '1px solid var(--border)', paddingBottom: 8 }}>
+                                    <div
+                                        key={row.studentId}
+                                        style={{ borderBottom: '1px solid var(--border)', paddingBottom: 8 }}
+                                    >
                                         <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text)' }}>
                                             {row.displayName}
                                         </div>
-                                        <div style={{ fontSize: '0.85rem', color: text ? 'var(--text)' : 'var(--text-dim)' }}>
+                                        <div
+                                            style={{
+                                                fontSize: '0.85rem',
+                                                color: text ? 'var(--text)' : 'var(--text-dim)',
+                                            }}
+                                        >
                                             {text || t('tests.monitor.grid.no_answer')}
                                         </div>
                                     </div>

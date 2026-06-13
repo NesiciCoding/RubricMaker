@@ -205,7 +205,9 @@ export default function TestListPage() {
                                                                 key={st.id}
                                                                 className="btn btn-ghost btn-sm"
                                                                 style={{ justifyContent: 'flex-start' }}
-                                                                onClick={() => navigate(`/tests/${test.id}/results/${st.id}`)}
+                                                                onClick={() =>
+                                                                    navigate(`/tests/${test.id}/results/${st.id}`)
+                                                                }
                                                             >
                                                                 {stStudent?.name ?? st.studentId}
                                                             </button>

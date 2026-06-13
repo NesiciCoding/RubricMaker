@@ -82,7 +82,12 @@ describe('ClassAverageAdjuster', () => {
     it('shows the current class average and a preview table', () => {
         const studentTests = makeStudentTests();
         render(
-            <ClassAverageAdjuster test={test} studentTests={studentTests} students={students} onSaveStudentTest={vi.fn()} />
+            <ClassAverageAdjuster
+                test={test}
+                studentTests={studentTests}
+                students={students}
+                onSaveStudentTest={vi.fn()}
+            />
         );
 
         const expectedAvg = (calcTestPercentage(6, 10) + calcTestPercentage(1, 10)) / 2;
@@ -95,7 +100,12 @@ describe('ClassAverageAdjuster', () => {
         const studentTests = makeStudentTests();
         const onSave = vi.fn();
         render(
-            <ClassAverageAdjuster test={test} studentTests={studentTests} students={students} onSaveStudentTest={onSave} />
+            <ClassAverageAdjuster
+                test={test}
+                studentTests={studentTests}
+                students={students}
+                onSaveStudentTest={onSave}
+            />
         );
 
         const targetInput = screen.getByLabelText('tests.results.target_average') as HTMLInputElement;
@@ -126,7 +136,12 @@ describe('ClassAverageAdjuster', () => {
         }));
         const onSave = vi.fn();
         render(
-            <ClassAverageAdjuster test={test} studentTests={studentTests} students={students} onSaveStudentTest={onSave} />
+            <ClassAverageAdjuster
+                test={test}
+                studentTests={studentTests}
+                students={students}
+                onSaveStudentTest={onSave}
+            />
         );
 
         const revertBtn = screen.getByText(/tests.results.revert_adjustment/);

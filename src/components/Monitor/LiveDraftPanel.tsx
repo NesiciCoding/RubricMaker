@@ -35,17 +35,38 @@ export default function LiveDraftPanel({
                 padding: '12px 14px',
             }}
         >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <div
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 12,
+                    flexWrap: 'wrap',
+                }}
+            >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <span style={{ fontWeight: 700, color: 'var(--text)' }}>{displayName}</span>
                     <PresenceBadge presence={presence} status={status} />
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                    {wordCount !== undefined && <span>{t('tests.monitor.draft.word_count', { count: wordCount })}</span>}
+                <div
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        fontSize: '0.8rem',
+                        color: 'var(--text-muted)',
+                    }}
+                >
+                    {wordCount !== undefined && (
+                        <span>{t('tests.monitor.draft.word_count', { count: wordCount })}</span>
+                    )}
                     {lastActivityAt && (
                         <span>
                             {t('tests.monitor.draft.last_activity', {
-                                time: new Date(lastActivityAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                                time: new Date(lastActivityAt).toLocaleTimeString([], {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                }),
                             })}
                         </span>
                     )}

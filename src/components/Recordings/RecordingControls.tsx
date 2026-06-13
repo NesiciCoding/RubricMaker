@@ -94,11 +94,7 @@ export default function RecordingControls({ recordings, onChange, syncConfigured
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                 {!recording ? (
                     <>
-                        <button
-                            type="button"
-                            className="btn btn-secondary btn-sm"
-                            onClick={() => handleStart(false)}
-                        >
+                        <button type="button" className="btn btn-secondary btn-sm" onClick={() => handleStart(false)}>
                             <Mic size={14} /> {t('recordings.record_audio')}
                         </button>
                         <span title={!syncConfigured ? t('recordings.video_requires_db') : undefined}>
@@ -120,7 +116,16 @@ export default function RecordingControls({ recordings, onChange, syncConfigured
             </div>
 
             {recordings.length > 0 && (
-                <ul style={{ listStyle: 'none', padding: 0, margin: '10px 0 0', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <ul
+                    style={{
+                        listStyle: 'none',
+                        padding: 0,
+                        margin: '10px 0 0',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 6,
+                    }}
+                >
                     {recordings.map((rec) => (
                         <li
                             key={rec.id}

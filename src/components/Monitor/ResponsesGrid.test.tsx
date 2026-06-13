@@ -136,14 +136,7 @@ describe('ResponsesGrid', () => {
     });
 
     it('shows the no-answer placeholder in the gallery for a student without a response', () => {
-        render(
-            <ResponsesGrid
-                test={mockTest}
-                rows={[
-                    { studentId: 's1', displayName: 'Alice', answers: [] },
-                ]}
-            />
-        );
+        render(<ResponsesGrid test={mockTest} rows={[{ studentId: 's1', displayName: 'Alice', answers: [] }]} />);
 
         fireEvent.click(screen.getByText('tests.monitor.grid.question_short 1'));
 

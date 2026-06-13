@@ -631,14 +631,8 @@ describe('PeerReviewView — save handler', () => {
     it('saving sets gradedBy from the reviewerId query param', () => {
         const savePeerReview = vi.fn();
         currentApp = makeApp({ savePeerReview });
-        renderPage(
-            <PeerReviewView />,
-            '/peer-review/r1/s1?reviewerId=s2',
-            '/peer-review/:rubricId/:studentId'
-        );
-        const saveBtn = screen
-            .getAllByRole('button')
-            .find((b) => b.textContent?.includes('gradeStudent.action_save'));
+        renderPage(<PeerReviewView />, '/peer-review/r1/s1?reviewerId=s2', '/peer-review/:rubricId/:studentId');
+        const saveBtn = screen.getAllByRole('button').find((b) => b.textContent?.includes('gradeStudent.action_save'));
         fireEvent.click(saveBtn!);
         expect(savePeerReview).toHaveBeenCalledTimes(1);
         expect(savePeerReview.mock.calls[0][0]).toMatchObject({
@@ -652,9 +646,7 @@ describe('PeerReviewView — save handler', () => {
         const savePeerReview = vi.fn();
         currentApp = makeApp({ savePeerReview });
         renderPage(<PeerReviewView />, '/peer-review/r1/s1', '/peer-review/:rubricId/:studentId');
-        const saveBtn = screen
-            .getAllByRole('button')
-            .find((b) => b.textContent?.includes('gradeStudent.action_save'));
+        const saveBtn = screen.getAllByRole('button').find((b) => b.textContent?.includes('gradeStudent.action_save'));
         fireEvent.click(saveBtn!);
         expect(savePeerReview).toHaveBeenCalledTimes(1);
         expect(savePeerReview.mock.calls[0][0]).toMatchObject({

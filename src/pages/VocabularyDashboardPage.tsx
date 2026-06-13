@@ -132,7 +132,9 @@ export default function VocabularyDashboardPage() {
                     <div className="card">
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                             <BookOpen size={16} style={{ color: 'var(--text-muted)' }} />
-                            <h3 style={{ margin: 0, fontSize: '0.95rem' }}>{t('vocabProfile.student_drilldown_title')}</h3>
+                            <h3 style={{ margin: 0, fontSize: '0.95rem' }}>
+                                {t('vocabProfile.student_drilldown_title')}
+                            </h3>
                         </div>
                         <VocabCefrDistributionChart entries={studentChartEntries} />
 
@@ -141,16 +143,40 @@ export default function VocabularyDashboardPage() {
                                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                                     <thead>
                                         <tr style={{ borderBottom: '2px solid var(--border)' }}>
-                                            <th style={{ padding: '8px 10px', textAlign: 'left', color: 'var(--text-muted)' }}>
+                                            <th
+                                                style={{
+                                                    padding: '8px 10px',
+                                                    textAlign: 'left',
+                                                    color: 'var(--text-muted)',
+                                                }}
+                                            >
                                                 {t('vocabProfile.table_header_student')}
                                             </th>
-                                            <th style={{ padding: '8px 10px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                            <th
+                                                style={{
+                                                    padding: '8px 10px',
+                                                    textAlign: 'center',
+                                                    color: 'var(--text-muted)',
+                                                }}
+                                            >
                                                 {t('vocabProfile.table_header_estimated_level')}
                                             </th>
-                                            <th style={{ padding: '8px 10px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                            <th
+                                                style={{
+                                                    padding: '8px 10px',
+                                                    textAlign: 'center',
+                                                    color: 'var(--text-muted)',
+                                                }}
+                                            >
                                                 {t('vocabProfile.table_header_total_words')}
                                             </th>
-                                            <th style={{ padding: '8px 10px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                            <th
+                                                style={{
+                                                    padding: '8px 10px',
+                                                    textAlign: 'center',
+                                                    color: 'var(--text-muted)',
+                                                }}
+                                            >
                                                 {t('vocabProfile.table_header_analyses')}
                                             </th>
                                         </tr>
@@ -162,8 +188,12 @@ export default function VocabularyDashboardPage() {
                                                 <td style={{ padding: '8px 10px', textAlign: 'center' }}>
                                                     <CefrBadge level={sp.estimatedLevel} size="sm" />
                                                 </td>
-                                                <td style={{ padding: '8px 10px', textAlign: 'center' }}>{sp.totalWords}</td>
-                                                <td style={{ padding: '8px 10px', textAlign: 'center' }}>{sp.analysisCount}</td>
+                                                <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                                                    {sp.totalWords}
+                                                </td>
+                                                <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                                                    {sp.analysisCount}
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>

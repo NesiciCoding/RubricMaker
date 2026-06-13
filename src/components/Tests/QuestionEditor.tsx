@@ -1,16 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-    Trash2,
-    ChevronUp,
-    ChevronDown,
-    Plus,
-    X,
-    Check,
-    BookOpen,
-    GraduationCap,
-    AlertCircle,
-} from 'lucide-react';
+import { Trash2, ChevronUp, ChevronDown, Plus, X, Check, BookOpen, GraduationCap, AlertCircle } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { nanoid } from '../../utils/nanoid';
 import StandardsPickerModal from '../Standards/StandardsPickerModal';
@@ -103,9 +93,7 @@ export default function QuestionEditor({ question, index, total, onChange, onRem
         <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span className="badge badge-blue">
-                        {t('tests.question_number', { number: index + 1 })}
-                    </span>
+                    <span className="badge badge-blue">{t('tests.question_number', { number: index + 1 })}</span>
                 </div>
                 <div style={{ display: 'flex', gap: 4 }}>
                     <button

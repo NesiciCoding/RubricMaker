@@ -72,7 +72,10 @@ export function aggregatePeerReviews(
     const criterionDeviationSums = new Map<string, number>();
 
     const reviewerStats = new Map<string | null, ReviewerStat>();
-    const roundStats = new Map<number, { deltaSum: number; absSum: number; comparisonCount: number; reviewCount: number }>();
+    const roundStats = new Map<
+        number,
+        { deltaSum: number; absSum: number; comparisonCount: number; reviewCount: number }
+    >();
 
     for (const pr of relevantPeerReviews) {
         const reviewerKey = pr.gradedBy ?? null;
@@ -170,10 +173,7 @@ export function aggregatePeerReviews(
         }));
 
     const totalComparisons = Array.from(criterionStats.values()).reduce((sum, c) => sum + c.comparisonCount, 0);
-    const totalMissingBaseline = Array.from(reviewerStats.values()).reduce(
-        (sum, r) => sum + r.missingBaselineCount,
-        0
-    );
+    const totalMissingBaseline = Array.from(reviewerStats.values()).reduce((sum, r) => sum + r.missingBaselineCount, 0);
 
     return {
         rubricId: rubric.id,

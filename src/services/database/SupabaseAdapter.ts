@@ -911,11 +911,7 @@ export class SupabaseAdapter {
         }));
     }
 
-    async upsertRecordingMetadata(
-        rec: SessionRecording,
-        sessionId: string,
-        storagePath?: string
-    ): Promise<SyncResult> {
+    async upsertRecordingMetadata(rec: SessionRecording, sessionId: string, storagePath?: string): Promise<SyncResult> {
         const { error } = await this.db()
             .from('recording_metadata')
             .upsert(
@@ -939,11 +935,7 @@ export class SupabaseAdapter {
         } catch {
             /* ignore storage error, still delete metadata */
         }
-        const { error } = await this.db()
-            .from('recording_metadata')
-            .delete()
-            .eq('id', id)
-            .eq('owner_id', this.uid());
+        const { error } = await this.db().from('recording_metadata').delete().eq('id', id).eq('owner_id', this.uid());
         return error ? { success: false, error: error.message } : { success: true };
     }
 
@@ -1242,7 +1234,9 @@ export class SupabaseAdapter {
     }
 
     /** Fetch a single essay assignment owned by this teacher, by its teacherKey (= row id). */
-    async fetchEssayAssignmentByKey(teacherKey: string): Promise<{ rubricId: string; studentId: string; title: string } | null> {
+    async fetchEssayAssignmentByKey(
+        teacherKey: string
+    ): Promise<{ rubricId: string; studentId: string; title: string } | null> {
         const { data, error } = await this.db()
             .from('essay_assignments')
             .select('rubric_id, student_id, title')

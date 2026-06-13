@@ -174,12 +174,8 @@ export default function ClassAverageAdjuster({ test, studentTests, students, onS
                         {preview.map((row) => (
                             <tr key={row.studentTest.id} style={{ borderBottom: '1px solid var(--border)' }}>
                                 <td style={{ padding: '6px 8px' }}>{row.studentName}</td>
-                                <td style={{ textAlign: 'right', padding: '6px 8px' }}>
-                                    {row.rawPoints.toFixed(2)}
-                                </td>
-                                <td style={{ textAlign: 'right', padding: '6px 8px' }}>
-                                    {row.beforePct.toFixed(1)}%
-                                </td>
+                                <td style={{ textAlign: 'right', padding: '6px 8px' }}>{row.rawPoints.toFixed(2)}</td>
+                                <td style={{ textAlign: 'right', padding: '6px 8px' }}>{row.beforePct.toFixed(1)}%</td>
                                 <td style={{ textAlign: 'right', padding: '6px 8px', fontWeight: 700 }}>
                                     {row.afterPoints.toFixed(2)}
                                 </td>

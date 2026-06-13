@@ -223,7 +223,9 @@ export default function TestBuilderPage() {
                 </div>
 
                 {/* Questions */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <div
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}
+                >
                     <h3 style={{ margin: 0, fontSize: '0.95rem' }}>
                         {t('tests.questions_title')}{' '}
                         <span className="text-muted text-sm">

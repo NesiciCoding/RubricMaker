@@ -4,11 +4,7 @@ import { ArrowLeft, CheckCircle2, XCircle, Award, Languages, ShieldAlert } from 
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
-import {
-    calcTestMaxPoints,
-    calcStudentTestRawPoints,
-    calcTestPercentage,
-} from '../utils/testCalc';
+import { calcTestMaxPoints, calcStudentTestRawPoints, calcTestPercentage } from '../utils/testCalc';
 import { calcLetterGrade, calcGradeColor } from '../utils/gradeCalc';
 import type { TestAnswer, TestQuestion, ProctorEventType } from '../types';
 
@@ -36,7 +32,15 @@ function autoScore(question: TestQuestion, answer: TestAnswer | undefined): numb
     return 0;
 }
 
-const PROCTOR_EVENT_TYPES: ProctorEventType[] = ['tab_switch', 'copy', 'paste', 'cut', 'battery', 'heartbeat', 'seb_status'];
+const PROCTOR_EVENT_TYPES: ProctorEventType[] = [
+    'tab_switch',
+    'copy',
+    'paste',
+    'cut',
+    'battery',
+    'heartbeat',
+    'seb_status',
+];
 
 export default function TestResultsPage() {
     const { t } = useTranslation();
@@ -59,7 +63,7 @@ export default function TestResultsPage() {
     }));
 
     const rawPoints =
-        test && studentTest ? studentTest.rawTotalPoints ?? calcStudentTestRawPoints(test, studentTest.answers) : 0;
+        test && studentTest ? (studentTest.rawTotalPoints ?? calcStudentTestRawPoints(test, studentTest.answers)) : 0;
 
     const adjustmentPoints = studentTest?.adjustmentPoints ?? 0;
     const totalPoints = clamp(rawPoints + adjustmentPoints, 0, maxPoints);
@@ -138,7 +142,10 @@ export default function TestResultsPage() {
 
     function handleSaveManualScore(question: TestQuestion) {
         if (!studentTest) return;
-        const draft = getDraft(question.id, studentTest.answers.find((a) => a.questionId === question.id));
+        const draft = getDraft(
+            question.id,
+            studentTest.answers.find((a) => a.questionId === question.id)
+        );
         const pointsEarned = clamp(Number(draft.pointsEarned) || 0, 0, question.points);
         const existingAnswers = studentTest.answers;
         const idx = existingAnswers.findIndex((a) => a.questionId === question.id);
@@ -146,7 +153,10 @@ export default function TestResultsPage() {
             idx >= 0
                 ? { ...existingAnswers[idx], pointsEarned, feedback: draft.feedback }
                 : { questionId: question.id, response: '', pointsEarned, feedback: draft.feedback };
-        const nextAnswers = idx >= 0 ? existingAnswers.map((a, i) => (i === idx ? updatedAnswer : a)) : [...existingAnswers, updatedAnswer];
+        const nextAnswers =
+            idx >= 0
+                ? existingAnswers.map((a, i) => (i === idx ? updatedAnswer : a))
+                : [...existingAnswers, updatedAnswer];
         const nextRaw = test ? calcStudentTestRawPoints(test, nextAnswers) : 0;
         saveStudentTest({
             ...studentTest,
@@ -209,7 +219,9 @@ export default function TestResultsPage() {
                         {gradeLabel && (
                             <div>
                                 <div className="text-muted text-xs">{t('tests.results.grade')}</div>
-                                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: gradeColor }}>{gradeLabel}</div>
+                                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: gradeColor }}>
+                                    {gradeLabel}
+                                </div>
                             </div>
                         )}
                     </div>
@@ -226,11 +238,13 @@ export default function TestResultsPage() {
                         </p>
                     ) : (
                         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                            {PROCTOR_EVENT_TYPES.filter((evType) => (eventCounts.get(evType) ?? 0) > 0).map((evType) => (
-                                <span key={evType} className="badge badge-yellow">
-                                    {t(`tests.results.event_type_${evType}`)}: {eventCounts.get(evType)}
-                                </span>
-                            ))}
+                            {PROCTOR_EVENT_TYPES.filter((evType) => (eventCounts.get(evType) ?? 0) > 0).map(
+                                (evType) => (
+                                    <span key={evType} className="badge badge-yellow">
+                                        {t(`tests.results.event_type_${evType}`)}: {eventCounts.get(evType)}
+                                    </span>
+                                )
+                            )}
                         </div>
                     )}
                 </div>
@@ -242,11 +256,20 @@ export default function TestResultsPage() {
                         const isCorrect = autoScored && earned === question.points;
                         const draft = getDraft(question.id, answer);
                         const allowManual =
-                            question.type === 'open' || question.type === 'short-answer' || question.type === 'multiple-choice';
+                            question.type === 'open' ||
+                            question.type === 'short-answer' ||
+                            question.type === 'multiple-choice';
 
                         return (
                             <div className="card" key={question.id}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginBottom: 8 }}>
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        gap: 12,
+                                        marginBottom: 8,
+                                    }}
+                                >
                                     <div style={{ flex: 1 }}>
                                         <div className="text-muted text-xs">
                                             {t('tests.question_number', { number: index + 1 })} ·{' '}
@@ -275,8 +298,8 @@ export default function TestResultsPage() {
                                         }}
                                     >
                                         {question.type === 'multiple-choice'
-                                            ? question.options?.find((o) => o.id === answer?.response)?.text ??
-                                              t('tests.results.no_response')
+                                            ? (question.options?.find((o) => o.id === answer?.response)?.text ??
+                                              t('tests.results.no_response'))
                                             : answer?.response || t('tests.results.no_response')}
                                     </div>
                                 </div>
@@ -290,28 +313,39 @@ export default function TestResultsPage() {
                                 {allowManual && (
                                     <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
                                         <div className="form-group" style={{ marginBottom: 0 }}>
-                                            <label htmlFor={`points-${question.id}`}>{t('tests.results.manual_points_label')}</label>
+                                            <label htmlFor={`points-${question.id}`}>
+                                                {t('tests.results.manual_points_label')}
+                                            </label>
                                             <input
                                                 id={`points-${question.id}`}
                                                 type="number"
                                                 min={0}
                                                 max={question.points}
                                                 value={draft.pointsEarned}
-                                                onChange={(e) => updateDraft(question.id, answer, { pointsEarned: e.target.value })}
+                                                onChange={(e) =>
+                                                    updateDraft(question.id, answer, { pointsEarned: e.target.value })
+                                                }
                                                 style={{ width: 90 }}
                                             />
                                         </div>
                                         <div className="form-group" style={{ marginBottom: 0, flex: '1 1 240px' }}>
-                                            <label htmlFor={`feedback-${question.id}`}>{t('tests.results.feedback_label')}</label>
+                                            <label htmlFor={`feedback-${question.id}`}>
+                                                {t('tests.results.feedback_label')}
+                                            </label>
                                             <textarea
                                                 id={`feedback-${question.id}`}
                                                 rows={2}
                                                 value={draft.feedback}
-                                                onChange={(e) => updateDraft(question.id, answer, { feedback: e.target.value })}
+                                                onChange={(e) =>
+                                                    updateDraft(question.id, answer, { feedback: e.target.value })
+                                                }
                                                 placeholder={t('tests.results.feedback_placeholder')}
                                             />
                                         </div>
-                                        <button className="btn btn-primary btn-sm" onClick={() => handleSaveManualScore(question)}>
+                                        <button
+                                            className="btn btn-primary btn-sm"
+                                            onClick={() => handleSaveManualScore(question)}
+                                        >
                                             {t('tests.results.save_score')}
                                         </button>
                                     </div>
@@ -331,7 +365,12 @@ export default function TestResultsPage() {
                             {standardsRollup.map((row) => (
                                 <div
                                     key={row.guid}
-                                    style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: '0.85rem' }}
+                                    style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        gap: 12,
+                                        fontSize: '0.85rem',
+                                    }}
                                 >
                                     <span>{row.statementNotation ?? row.description}</span>
                                     <span style={{ fontWeight: 700 }}>
@@ -354,7 +393,12 @@ export default function TestResultsPage() {
                             {cefrRollup.map((row) => (
                                 <div
                                     key={`${row.descriptorId}-${row.skill}`}
-                                    style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: '0.85rem' }}
+                                    style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        gap: 12,
+                                        fontSize: '0.85rem',
+                                    }}
                                 >
                                     <span>
                                         <span className="badge badge-blue" style={{ marginRight: 6 }}>

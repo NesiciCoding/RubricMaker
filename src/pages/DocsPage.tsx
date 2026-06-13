@@ -661,9 +661,9 @@ function RubricsTab() {
             <FeatureSection icon={Radio} title="Live monitoring" color="#ef4444">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     While a test or essay is in progress, click <strong>Monitor</strong> (from the Tests page for a
-                    test, or from the assignment dialog for an essay) to open a live view of the session. This
-                    requires cloud sync to be enabled — without it, the page explains that you can review progress
-                    after the fact from each student's saved answers or draft instead.
+                    test, or from the assignment dialog for an essay) to open a live view of the session. This requires
+                    cloud sync to be enabled — without it, the page explains that you can review progress after the fact
+                    from each student's saved answers or draft instead.
                 </p>
                 <FeatureList
                     items={[
@@ -742,13 +742,14 @@ function GradingTab() {
 
             <FeatureSection icon={ClipboardCheck} title="Test results &amp; grading" color="#3b82f6">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
-                    From the <strong>Tests</strong> list, click <strong>Results</strong> on a test to see every student's
-                    submission and open the results page at <code>/tests/:testId/results/:studentTestId</code>.
+                    From the <strong>Tests</strong> list, click <strong>Results</strong> on a test to see every
+                    student's submission and open the results page at <code>/tests/:testId/results/:studentTestId</code>
+                    .
                 </p>
                 <FeatureList
                     items={[
                         'Multiple-choice and exact-match short-answer questions are auto-scored and marked correct/incorrect.',
-                        'Open questions (and short-answer questions without a model answer) get a manual points input — clamped to the question\'s max — plus a feedback field.',
+                        "Open questions (and short-answer questions without a model answer) get a manual points input — clamped to the question's max — plus a feedback field.",
                         "Total points, percentage, and a letter/scale grade (from the test's grade scale) are shown at the top of the page.",
                         'Standards and CEFR breakdowns roll up points earned per linked standard or Can-Do descriptor, mirroring the Learning Goals view.',
                         'A "Session integrity" panel summarises proctoring events (tab switches, copy/paste, battery, SEB status) captured while the student took the test.',
@@ -815,10 +816,10 @@ function CefrTab() {
                     ]}
                 />
                 <InfoBox color="#f59e0b">
-                    Recordings are privacy-first: without cloud sync configured, audio recording is available but
-                    files stay only in this browser's storage (cleared if the user clears browsing data); video
-                    recording is disabled in that case. With cloud sync enabled, both audio and video recordings sync
-                    to the teacher's private storage. A single recording is capped at 50MB.
+                    Recordings are privacy-first: without cloud sync configured, audio recording is available but files
+                    stay only in this browser's storage (cleared if the user clears browsing data); video recording is
+                    disabled in that case. With cloud sync enabled, both audio and video recordings sync to the
+                    teacher's private storage. A single recording is capped at 50MB.
                 </InfoBox>
             </FeatureSection>
 

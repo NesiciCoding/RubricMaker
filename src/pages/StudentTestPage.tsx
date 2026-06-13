@@ -383,7 +383,10 @@ export default function StudentTestPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
                         {!submitted && (
                             <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-                                {t('tests.taking.progress', { answered: answeredCount, total: orderedQuestions.length })}
+                                {t('tests.taking.progress', {
+                                    answered: answeredCount,
+                                    total: orderedQuestions.length,
+                                })}
                             </div>
                         )}
                         {secondsLeft !== null && (
@@ -514,9 +517,7 @@ export default function StudentTestPage() {
                                     index={currentIndex}
                                     total={orderedQuestions.length}
                                     value={answers[question.id] ?? ''}
-                                    onChange={(value) =>
-                                        setAnswers((prev) => ({ ...prev, [question.id]: value }))
-                                    }
+                                    onChange={(value) => setAnswers((prev) => ({ ...prev, [question.id]: value }))}
                                 />
                             )}
 
@@ -567,7 +568,9 @@ export default function StudentTestPage() {
                                     </button>
                                 ) : (
                                     <button
-                                        onClick={() => setCurrentIndex((i) => Math.min(orderedQuestions.length - 1, i + 1))}
+                                        onClick={() =>
+                                            setCurrentIndex((i) => Math.min(orderedQuestions.length - 1, i + 1))
+                                        }
                                         className="btn btn-primary"
                                     >
                                         {t('tests.taking.next')}
@@ -647,7 +650,9 @@ function QuestionCard({ question, index, total, value, onChange }: QuestionCardP
                                 borderRadius: 8,
                                 border: '1px solid var(--border)',
                                 background:
-                                    value === opt.id ? 'color-mix(in srgb, var(--accent) 10%, transparent)' : 'var(--bg)',
+                                    value === opt.id
+                                        ? 'color-mix(in srgb, var(--accent) 10%, transparent)'
+                                        : 'var(--bg)',
                                 cursor: 'pointer',
                             }}
                         >

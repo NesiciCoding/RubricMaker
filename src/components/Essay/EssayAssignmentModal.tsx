@@ -398,7 +398,11 @@ export default function EssayAssignmentModal({
 
                 {/* Live monitor — only meaningful once the assignment is saved to the DB */}
                 {saved && (
-                    <Link to={`/essays/${teacherKey}/monitor`} className="btn btn-secondary btn-sm" style={{ alignSelf: 'flex-start' }}>
+                    <Link
+                        to={`/essays/${teacherKey}/monitor`}
+                        className="btn btn-secondary btn-sm"
+                        style={{ alignSelf: 'flex-start' }}
+                    >
                         <Radio size={14} /> {t('tests.monitor.action_monitor')}
                     </Link>
                 )}

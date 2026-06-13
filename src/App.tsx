@@ -208,7 +208,10 @@ export default function App() {
                                 <Route path="/tests/:id" element={<TestBuilderPage />} />
                                 <Route path="/tests/:testId/results/:studentTestId" element={<TestResultsPage />} />
                                 <Route path="/tests/:testId/monitor" element={<LiveMonitorPage kind="test" />} />
-                                <Route path="/essays/:assignmentId/monitor" element={<LiveMonitorPage kind="essay" />} />
+                                <Route
+                                    path="/essays/:assignmentId/monitor"
+                                    element={<LiveMonitorPage kind="essay" />}
+                                />
                                 <Route path="/portal/:studentId" element={<StudentPortalPage />} />
                                 <Route path="/attachments" element={<AttachmentsPage />} />
                                 <Route path="/export" element={<ExportPage />} />
