@@ -72,14 +72,14 @@ export default function StudentTestPage() {
     const [loadError, setLoadError] = useState<string | null>(null);
     const [loading, setLoading] = useState(hasDb && !assignment?.test);
 
-    const [answers, setAnswers] = useState<Record<string, string>>(() => {
+    const [answers, setAnswers] = useState<Map<string, string>>(() => {
         try {
             const raw = localStorage.getItem(draftKey);
-            if (!raw) return {};
+            if (!raw) return new Map();
             const parsed = JSON.parse(raw) as { answers?: Record<string, string> };
-            return parsed.answers ?? {};
+            return new Map(Object.entries(parsed.answers ?? {}));
         } catch {
-            return {};
+            return new Map();
         }
     });
     const [draftRestored, setDraftRestored] = useState<boolean>(() => !!localStorage.getItem(draftKey));
@@ -145,13 +145,19 @@ export default function StudentTestPage() {
     // ── Draft autosave ────────────────────────────────────────────────────────
     useEffect(() => {
         if (submitted) return;
-        localStorage.setItem(draftKey, JSON.stringify({ answers, savedAt: new Date().toISOString() }));
+        localStorage.setItem(
+            draftKey,
+            JSON.stringify({ answers: Object.fromEntries(answers), savedAt: new Date().toISOString() })
+        );
     }, [answers, draftKey, submitted]);
 
     const getSnapshot = useCallback(
         () => ({
-            answers,
-            wordCount: Object.values(answers).reduce((sum, a) => sum + a.trim().split(/\s+/).filter(Boolean).length, 0),
+            answers: Object.fromEntries(answers),
+            wordCount: Array.from(answers.values()).reduce(
+                (sum, a) => sum + a.trim().split(/\s+/).filter(Boolean).length,
+                0
+            ),
         }),
         [answers]
     );
@@ -172,7 +178,7 @@ export default function StudentTestPage() {
         const submittedAt = new Date().toISOString();
         const testAnswers: TestAnswer[] = test.questions.map((q) => ({
             questionId: q.id,
-            response: answers[q.id] ?? '',
+            response: answers.get(q.id) ?? '',
         }));
 
         const submissionPayload: TestSubmissionPayload = {
@@ -301,7 +307,7 @@ export default function StudentTestPage() {
     const question = orderedQuestions[currentIndex];
     const isLast = currentIndex === orderedQuestions.length - 1;
     const isFirst = currentIndex === 0;
-    const answeredCount = orderedQuestions.filter((q) => (answers[q.id] ?? '').trim().length > 0).length;
+    const answeredCount = orderedQuestions.filter((q) => (answers.get(q.id) ?? '').trim().length > 0).length;
 
     return (
         <SebGate requireSEB={assignment.requireSEB}>
@@ -516,8 +522,8 @@ export default function StudentTestPage() {
                                     question={question}
                                     index={currentIndex}
                                     total={orderedQuestions.length}
-                                    value={answers[question.id] ?? ''}
-                                    onChange={(value) => setAnswers((prev) => ({ ...prev, [question.id]: value }))}
+                                    value={answers.get(question.id) ?? ''}
+                                    onChange={(value) => setAnswers((prev) => new Map(prev).set(question.id, value))}
                                 />
                             )}
 
