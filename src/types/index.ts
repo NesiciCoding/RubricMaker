@@ -539,6 +539,18 @@ export interface PronunciationMark {
     note?: string;
 }
 
+/** Metadata for an audio/video recording attached to a SpeakingSession. The blob itself lives only in IndexedDB (mediaStore). */
+export interface SessionRecording {
+    id: string;
+    mediaType: 'audio' | 'video';
+    mimeType: string;
+    durationSec: number;
+    sizeBytes: number;
+    createdAt: string;
+    storagePath?: string;
+    synced?: boolean;
+}
+
 /** Payload returned by the get-essay-assignment edge function. */
 export interface EssayAssignmentContent {
     rubricId: string;
@@ -568,6 +580,7 @@ export interface SpeakingSession {
     rubricSnapshot?: Rubric;
     /** ISO timestamp of the last local edit; used for last-write-wins sync conflict resolution */
     updatedAt?: string;
+    recordings?: SessionRecording[];
 }
 
 // ─── Essay Assignment / Submission ───────────────────────────────────────────

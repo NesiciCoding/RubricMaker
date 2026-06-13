@@ -19,6 +19,8 @@ import {
     LayoutDashboard,
     ArrowRight,
     Award,
+    Languages,
+    ClipboardCheck,
 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useTranslation } from 'react-i18next';
@@ -78,6 +80,13 @@ const ROUTE_TREE: RouteNode[] = [
                         badge: 'Student',
                     },
                     {
+                        path: '/peer-analytics/:rubricId',
+                        label: 'Peer Review Analytics',
+                        description:
+                            'Consistency scoring of peer reviews against the teacher baseline, feedback heatmaps, and reviewer trends.',
+                        color: '#8b5cf6',
+                    },
+                    {
                         path: '/rubrics/:rubricId/self-assess/:studentId',
                         label: 'Self-Assessment',
                         description: 'Students self-assess against CEFR Can-Do statements.',
@@ -91,6 +100,27 @@ const ROUTE_TREE: RouteNode[] = [
                 label: 'Comparative Grading',
                 description: 'Grade two students side-by-side for calibration and consistency.',
                 color: '#06b6d4',
+            },
+        ],
+    },
+    {
+        path: '/tests',
+        label: 'Tests',
+        description: 'Browse, create, and manage tests and quizzes for assignment to students.',
+        color: '#3b82f6',
+        children: [
+            {
+                path: '/tests/new',
+                label: 'New Test',
+                description: 'Create a test from scratch with multiple-choice, short-answer, and open questions.',
+                color: '#3b82f6',
+            },
+            {
+                path: '/tests/:id',
+                label: 'Test Builder',
+                description:
+                    'Edit test settings (duration, shuffle, Safe Exam Browser requirement, grade scale) and questions, including standards and CEFR linking.',
+                color: '#3b82f6',
             },
         ],
     },
@@ -123,6 +153,13 @@ const ROUTE_TREE: RouteNode[] = [
         color: '#f59e0b',
     },
     {
+        path: '/vocabulary',
+        label: 'Vocabulary Profile',
+        description:
+            'CEFR vocabulary distribution (A1–C2) per class and student, derived from document analysis, with CSV export of vocabulary lists by band.',
+        color: '#f59e0b',
+    },
+    {
         path: '/speaking/:rubricId/:studentId',
         label: 'Speaking Session',
         description: 'Structured speaking assessments with six CEFR-aligned dimensions.',
@@ -134,6 +171,14 @@ const ROUTE_TREE: RouteNode[] = [
         description: 'Students view feedback, submit essays, and complete self-assessments. No login required.',
         color: '#06b6d4',
         badge: 'Public',
+    },
+    {
+        path: '/test/:code',
+        label: 'Take a Test',
+        description:
+            'Students open a shared link to take a test — answer questions, optional countdown timer, and submit. No login required.',
+        color: '#06b6d4',
+        badge: 'Student',
     },
     {
         path: '/attachments',
@@ -570,6 +615,15 @@ function RubricsTab() {
                     ]}
                 />
             </FeatureSection>
+
+            <FeatureSection icon={ClipboardCheck} title="Tests & quizzes" color="#3b82f6">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    Build tests and quizzes from the <strong>Tests</strong> page. Add multiple-choice, short-answer, and
+                    open questions, set a duration and grade scale, and optionally require Safe Exam Browser. Link
+                    standards and CEFR descriptors per question, then assign the test to a class — each student gets a
+                    unique share link to complete it.
+                </p>
+            </FeatureSection>
         </div>
     );
 }
@@ -622,6 +676,7 @@ function GradingTab() {
                     items={[
                         "Peer Review — share a URL with a student to review a classmate's work.",
                         'Self-Assessment — students rate themselves against CEFR Can-Do statements. Results are stored alongside teacher scores.',
+                        'Peer Review Analytics (/peer-analytics/:rubricId) — open from the Peer Review screen to see consistency scores comparing peer grades to your baseline, a feedback heatmap of which criteria get the most comments, and round-over-round trends. Reviews are matched to reviewers via their student ID; older records without one are shown as "Anonymous reviewer".',
                     ]}
                 />
             </FeatureSection>
@@ -669,8 +724,15 @@ function CefrTab() {
                         'Past sessions appear in a "Speaking Sessions" card on the Student Profile, each with a link to reopen and extend it.',
                         'Inside the session: set a timer, mark pronunciation quick-marks (word stress, th-sound, etc.), score the linked rubric criteria, and add an overall comment.',
                         "Results are saved to the student's CEFR history and are visible on the CEFR Overview heatmap.",
+                        'Record audio (and, with cloud sync enabled, video) directly inside the session — recordings are saved with the session and play back from the "Portfolio" tab on the Student Profile.',
                     ]}
                 />
+                <InfoBox color="#f59e0b">
+                    Recordings are privacy-first: without cloud sync configured, audio recording is available but
+                    files stay only in this browser's storage (cleared if the user clears browsing data); video
+                    recording is disabled in that case. With cloud sync enabled, both audio and video recordings sync
+                    to the teacher's private storage. A single recording is capped at 50MB.
+                </InfoBox>
             </FeatureSection>
 
             <FeatureSection icon={Globe} title="Student Self-Assessment" color="#10b981">
@@ -796,6 +858,25 @@ function AnalyticsTab() {
                 <InfoBox color="#10b981">
                     Mail-merge DOCX templates support custom fields. Upload a .docx file with placeholder fields and the
                     app will substitute them with student data.
+                </InfoBox>
+            </FeatureSection>
+
+            <FeatureSection icon={Languages} title="Vocabulary Profile dashboard" color="#f59e0b">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    Go to <strong>Vocabulary</strong> in the sidebar (<code>/vocabulary</code>). This dashboard
+                    aggregates CEFR vocabulary levels (A1–C2) detected in students' analysed documents.
+                </p>
+                <FeatureList
+                    items={[
+                        'Per-class stacked bar chart of vocabulary level distribution, with a class selector.',
+                        'Per-student drill-down showing each student’s estimated vocabulary level and profiled word count.',
+                        'CSV export of vocabulary words — filter by a single CEFR band (A1–C2) or export all levels — with word, level, definition, and source columns.',
+                    ]}
+                />
+                <InfoBox color="#f59e0b">
+                    This dashboard is read-only and derives entirely from existing document analysis results (see
+                    Attachments → Analyse) and rubric vocabulary lists — analyse student submissions first to populate
+                    it.
                 </InfoBox>
             </FeatureSection>
         </div>

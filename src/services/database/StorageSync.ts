@@ -1,6 +1,7 @@
 import i18n from 'i18next';
 import { SupabaseAdapter } from './SupabaseAdapter';
 import { AttachmentSync } from './AttachmentSync';
+import { RecordingSync } from './RecordingSync';
 import type { DatabaseConfig, SyncStatus, SyncResult, DbUser } from './types';
 import type { StoreData } from '../../store/storage';
 import { addToPendingQueue, loadPendingQueue, removePendingWrites } from '../../store/storage';
@@ -77,6 +78,7 @@ export function clearSupabaseConfig() {
 class StorageSyncService {
     readonly adapter = new SupabaseAdapter();
     private attachmentSync: AttachmentSync = new AttachmentSync(this.adapter);
+    private recordingSync: RecordingSync = new RecordingSync(this.adapter);
     private status: SyncStatus = 'offline';
     private lastSyncAt: string | null = localStorage.getItem(LAST_SYNC_KEY);
     private listeners: Set<() => void> = new Set();
@@ -495,6 +497,11 @@ class StorageSyncService {
             for (const tpl of state.exportTemplates) {
                 await this.attachmentSync.pushExportTemplate(tpl);
             }
+            for (const ss of state.speakingSessions) {
+                if (ss.recordings?.length) {
+                    await this.recordingSync.pushSessionRecordings(ss.recordings, ss.id);
+                }
+            }
 
             const now = new Date().toISOString();
             this.lastSyncAt = now;
@@ -567,9 +574,16 @@ class StorageSyncService {
                     else if (id) result = await this.adapter.deleteSelfAssessment(id);
                     break;
                 case 'speakingSession':
-                    if (action === 'upsert')
-                        result = await this.adapter.upsertSpeakingSession(payload as SpeakingSession);
-                    else if (id) result = await this.adapter.deleteSpeakingSession(id);
+                    if (action === 'upsert') {
+                        const session = payload as SpeakingSession;
+                        result = await this.adapter.upsertSpeakingSession(session);
+                        if (session.recordings?.length) {
+                            await this.recordingSync.pushSessionRecordings(session.recordings, session.id);
+                        }
+                    } else if (id) {
+                        await this.recordingSync.deleteSessionRecordingsById(id);
+                        result = await this.adapter.deleteSpeakingSession(id);
+                    }
                     break;
                 case 'analysisResult':
                     if (action === 'upsert')

@@ -228,6 +228,42 @@ describe('save functions', () => {
         expect(loadStore().speakingSessions[0].id).toBe('ss1');
     });
 
+    it('saveSpeakingSessions persists recording metadata without storing blob data in any rm_* key', () => {
+        saveSpeakingSessions([
+            {
+                id: 'ss2',
+                rubricId: 'r1',
+                studentId: 's1',
+                durationSeconds: 120,
+                elapsedSeconds: 60,
+                pronunciationMarks: [],
+                entries: [],
+                overallComment: '',
+                gradedAt: '2024-01-01',
+                recordings: [
+                    {
+                        id: 'rec1',
+                        mediaType: 'audio',
+                        mimeType: 'audio/webm',
+                        durationSec: 30,
+                        sizeBytes: 12345,
+                        createdAt: '2024-01-01T00:00:00.000Z',
+                    },
+                ],
+            },
+        ]);
+        const saved = loadStore().speakingSessions.find((s) => s.id === 'ss2');
+        expect(saved?.recordings?.[0]?.id).toBe('rec1');
+
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i)!;
+            if (!key.startsWith('rm_')) continue;
+            const value = localStorage.getItem(key) ?? '';
+            expect(value).not.toContain('blob:');
+            expect(value).not.toMatch(/data:(audio|video)\//);
+        }
+    });
+
     it('saveAnalysisResults persists', () => {
         saveAnalysisResults([
             {

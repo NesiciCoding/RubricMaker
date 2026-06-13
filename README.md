@@ -12,6 +12,7 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 - **CEFR descriptors**: Attach CEFR Can-Do statements to individual criteria.
 - **Framework descriptors**: Link criteria to IB Learner Profile attributes or Bloom's Taxonomy levels.
 - **Rubric versioning**: Automatic snapshots on save; restore any previous version.
+- **Tests & quizzes**: Build multiple-choice, short-answer, and open-question tests with a duration, optional Safe Exam Browser requirement, and grade scale. Link standards and CEFR descriptors per question, then assign tests to a class — each student gets a unique share link.
 
 ### 2. Grading Interface
 - **Student management**: Manage students and organise them into classes, with Dutch VO track (VMBO/HAVO/VWO) support.
@@ -22,10 +23,11 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 - **Overall feedback**: Add general comments and file attachments per graded rubric.
 - **Comparative grading**: Grade two students side-by-side for consistency.
 - **Peer review**: Students review each other's work against the same rubric.
+- **Peer review analytics**: Compare peer grades against the teacher baseline (consistency and leniency bias per reviewer), a feedback heatmap of which criteria attract the most peer comments, and round-over-round trends.
 - **Self-assessment**: Students self-assess against CEFR Can-Do statements.
 
 ### 3. CEFR & Language Assessment
-- **Speaking sessions**: Structured speaking assessments with six pre-built dimensions aligned to Dutch VO CEFR targets (VMBO-BB through VWO).
+- **Speaking sessions**: Structured speaking assessments with six pre-built dimensions aligned to Dutch VO CEFR targets (VMBO-BB through VWO). Audio (and, with cloud sync, video) recordings can be attached and play back from the student's portfolio.
 - **CEFR overview**: Per-student and whole-class proficiency dashboards showing progress across Reading, Writing, Speaking, and Listening.
 - **Student self-assessment**: Students rate themselves against Can-Do descriptors; reflection text is stored alongside teacher scores.
 - **Cambridge English exam mapping**: Optional setting shows the Cambridge English Qualification (A2 Key, B1 Preliminary, B2 First, C1 Advanced, C2 Proficiency) alongside CEFR level badges; vocabulary items can be enriched with CEFR level and definition via an optional Cambridge Dictionary API key.
@@ -40,6 +42,7 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 
 ### 5. Analytics & Reporting
 - **Statistics dashboard**: Class performance with Average, Median, Highest, and Lowest scores; grade distribution charts; per-criterion performance breakdown.
+- **Vocabulary Profile dashboard**: Per-class and per-student CEFR vocabulary distribution (A1–C2), aggregated from document analysis results, with CSV export of vocabulary lists filtered by CEFR band.
 - **Student profiles**: Individual progress view across all rubrics, CEFR levels, and essays. A **Portfolio** tab shows a unified chronological timeline of grades, speaking sessions, and self-assessments.
 - **Overdue tracking**: Highlights students with assignments past due dates.
 - **Export options**:
@@ -117,14 +120,20 @@ npm run db:reset     # Reset and re-apply all migrations
 | `/rubrics/:id` | Rubric builder |
 | `/rubrics/:rubricId/grade/:studentId` | Grade a student |
 | `/rubrics/:rubricId/peer-review/:studentId` | Peer review view |
+| `/peer-analytics/:rubricId` | Peer review analytics (consistency, feedback heatmap, reviewer trends) |
 | `/rubrics/:rubricId/self-assess/:studentId` | Student self-assessment |
 | `/speaking/:rubricId/:studentId` | Speaking session |
 | `/grade-comparative/:classId/:rubricId` | Comparative grading |
+| `/tests` | Test list |
+| `/tests/new` | New test |
+| `/tests/:id` | Test builder |
 | `/students` | Students list |
 | `/students/:id` | Student profile |
 | `/students/:id/cefr-overview` | Per-student CEFR overview |
 | `/cefr-overview` | Whole-class CEFR overview |
+| `/vocabulary` | Vocabulary Profile dashboard (CEFR vocabulary distribution per class/student, CSV export) |
 | `/portal/:studentId` | Student portal (public) |
+| `/test/:code` | Take a test (public, no login — answer questions, optional timer, submit) |
 | `/attachments` | Attachment manager |
 | `/comments` | Comment bank |
 | `/statistics` | Statistics dashboard |

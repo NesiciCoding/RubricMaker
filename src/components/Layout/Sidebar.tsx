@@ -16,6 +16,8 @@ import {
     X,
     GraduationCap,
     HelpCircle,
+    Languages,
+    ClipboardCheck,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
@@ -53,6 +55,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
     const navItemsTop = [
         { to: '/', icon: LayoutDashboard, label: t('navigation.dashboard'), end: true },
         { to: '/rubrics', icon: BookOpen, label: t('navigation.rubrics') },
+        { to: '/tests', icon: ClipboardCheck, label: t('navigation.tests') },
         { to: '/students', icon: Users, label: t('navigation.students') },
         { to: '/cefr-overview', icon: GraduationCap, label: t('navigation.cefr_overview') },
     ];
@@ -61,6 +64,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
         { to: '/attachments', icon: FileText, label: t('navigation.attachments') },
         { to: '/export', icon: Download, label: t('navigation.export') },
         { to: '/statistics', icon: BarChart3, label: t('navigation.statistics') },
+        { to: '/vocabulary', icon: Languages, label: t('navigation.vocabulary') },
         { to: '/comments', icon: MessageSquare, label: t('navigation.comment_bank') },
         { to: '/docs', icon: HelpCircle, label: t('navigation.docs') },
     ];

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Save, AlertCircle, FileText } from 'lucide-react';
+import { Save, AlertCircle, FileText, BarChart3 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { nanoid } from '../utils/nanoid';
 import type { StudentRubric, ScoreEntry } from '../types';
@@ -120,6 +120,13 @@ export default function PeerReviewView() {
                 title={`${t('rubricList.grade_students')} - ${student.name}`}
                 actions={
                     <div style={{ display: 'flex', gap: 8 }}>
+                        <button
+                            className="btn btn-secondary"
+                            onClick={() => navigate(`/peer-analytics/${rubricId}`)}
+                            title={t('peerReview.view_analytics')}
+                        >
+                            <BarChart3 size={18} /> {t('peerReview.view_analytics')}
+                        </button>
                         <button className={`btn ${isSaved ? 'btn-success' : 'btn-primary'}`} onClick={handleSave}>
                             <Save size={18} />{' '}
                             {isSaved ? t('gradeStudent.action_saved') : t('gradeStudent.action_save')}

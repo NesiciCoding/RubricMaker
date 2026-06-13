@@ -13,6 +13,7 @@ import type {
     ExportTemplate,
     SelfAssessment,
     SpeakingSession,
+    SessionRecording,
     DocumentAnalysisResult,
     EssayAssignment,
     StudentEssayAssignmentSummary,
@@ -893,6 +894,85 @@ export class SupabaseAdapter {
     async deleteSpeakingSession(id: string): Promise<SyncResult> {
         const { error } = await this.db().from('speaking_sessions').delete().eq('id', id).eq('owner_id', this.uid());
         return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    // ── Session Recordings ────────────────────────────────────────────────────
+
+    async fetchRecordingMetadata(): Promise<Array<SessionRecording & { sessionId: string; storagePath?: string }>> {
+        const { data, error } = await this.db().from('recording_metadata').select('session_id, storage_path, data');
+        if (error) {
+            console.error('fetchRecordingMetadata', error);
+            return [];
+        }
+        return (data ?? []).map((r) => ({
+            ...(r.data as SessionRecording),
+            sessionId: r.session_id,
+            storagePath: r.storage_path ?? undefined,
+        }));
+    }
+
+    async upsertRecordingMetadata(
+        rec: SessionRecording,
+        sessionId: string,
+        storagePath?: string
+    ): Promise<SyncResult> {
+        const { error } = await this.db()
+            .from('recording_metadata')
+            .upsert(
+                {
+                    id: rec.id,
+                    owner_id: this.uid(),
+                    session_id: sessionId,
+                    storage_path: storagePath ?? null,
+                    data: rec,
+                },
+                { onConflict: 'id' }
+            );
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteRecordingMetadata(id: string): Promise<SyncResult> {
+        try {
+            await this.db()
+                .storage.from('recordings')
+                .remove([`${this.uid()}/${id}`]);
+        } catch {
+            /* ignore storage error, still delete metadata */
+        }
+        const { error } = await this.db()
+            .from('recording_metadata')
+            .delete()
+            .eq('id', id)
+            .eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async uploadRecordingFile(id: string, blob: Blob, mimeType: string): Promise<string | null> {
+        const path = `${this.uid()}/${id}`;
+        const { error } = await this.db().storage.from('recordings').upload(path, blob, {
+            contentType: mimeType,
+            upsert: true,
+        });
+        return error ? null : path;
+    }
+
+    async getRecordingSignedUrl(storagePath: string): Promise<string | null> {
+        const { data, error } = await this.db().storage.from('recordings').createSignedUrl(storagePath, 3600);
+        return error ? null : (data?.signedUrl ?? null);
+    }
+
+    /** Fetch recording ids for a given speaking session, for cascading deletes. */
+    async fetchRecordingIdsForSession(sessionId: string): Promise<string[]> {
+        const { data, error } = await this.db()
+            .from('recording_metadata')
+            .select('id')
+            .eq('session_id', sessionId)
+            .eq('owner_id', this.uid());
+        if (error) {
+            console.error('fetchRecordingIdsForSession', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.id as string);
     }
 
     // ── Tests ─────────────────────────────────────────────────────────────────

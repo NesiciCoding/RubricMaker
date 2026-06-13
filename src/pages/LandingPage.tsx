@@ -19,6 +19,7 @@ import {
     MessageSquare,
     Eye,
     Palette,
+    Languages,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { loadSupabaseConfig } from '../services/database';
@@ -34,13 +35,13 @@ const TEACHER_FEATURES = [
     {
         icon: Users,
         title: 'Smart Grading',
-        desc: 'Grade with a comment bank, voice dictation, file attachments, and side-by-side comparative view.',
+        desc: 'Grade with a comment bank, voice dictation, file attachments, audio/video speaking recordings, and side-by-side comparative view.',
         color: '#8b5cf6',
     },
     {
         icon: BarChart3,
         title: 'Analytics & Export',
-        desc: 'Grade distributions, per-criterion breakdowns, CEFR progress reports, PDF/Word/CSV export.',
+        desc: 'Grade distributions, per-criterion breakdowns, CEFR progress reports, peer review consistency analytics, PDF/Word/CSV export.',
         color: '#06b6d4',
     },
     {
@@ -48,6 +49,12 @@ const TEACHER_FEATURES = [
         title: 'Theme bundles',
         desc: 'Six named themes (Academy, Nature, Midnight…) set accent colour, font, and export style in one click.',
         color: '#8b5cf6',
+    },
+    {
+        icon: Languages,
+        title: 'Vocabulary Profile',
+        desc: 'See each class and student’s CEFR vocabulary range (A1–C2) from their analysed work, and export word lists by level.',
+        color: '#f59e0b',
     },
 ];
 

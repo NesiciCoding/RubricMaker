@@ -29,7 +29,8 @@ import CefrProgressChart from '../components/Statistics/CefrProgressChart';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import { CEFR_LEVELS, CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
 import { VO_TRACK_LABELS, VO_TRACK_COLORS } from '../data/voTracks';
-import type { CefrLevel, CefrSkill } from '../types';
+import RecordingPlayer from '../components/Recordings/RecordingPlayer';
+import type { CefrLevel, CefrSkill, SessionRecording } from '../types';
 export default function StudentProfilePage() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -160,6 +161,7 @@ export default function StudentProfilePage() {
                   gradeColor: string | null;
                   sessionId: string;
                   rubricId: string;
+                  recordings: SessionRecording[];
               }
             | {
                   kind: 'selfAssess';
@@ -219,6 +221,7 @@ export default function StudentProfilePage() {
                 gradeColor: summary?.gradeColor ?? null,
                 sessionId: s.id,
                 rubricId: s.rubricId,
+                recordings: s.recordings ?? [],
             });
         }
         for (const sa of selfAssessments.filter((sa) => sa.studentId === student.id)) {
@@ -652,6 +655,20 @@ export default function StudentProfilePage() {
                                                         </>
                                                     )}
                                                 </div>
+                                                {entry.kind === 'speaking' && entry.recordings.length > 0 && (
+                                                    <div
+                                                        style={{
+                                                            display: 'flex',
+                                                            flexDirection: 'column',
+                                                            gap: 8,
+                                                            marginTop: 10,
+                                                        }}
+                                                    >
+                                                        {entry.recordings.map((rec) => (
+                                                            <RecordingPlayer key={rec.id} recording={rec} />
+                                                        ))}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     );
