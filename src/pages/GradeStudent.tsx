@@ -37,7 +37,7 @@ import { exportSinglePdf } from '../utils/pdfExport';
 import { loadSupabaseConfig } from '../services/database';
 
 export default function GradeStudent() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { rubricId, studentId } = useParams();
     const navigate = useNavigate();
     const {
@@ -391,6 +391,15 @@ export default function GradeStudent() {
     const rubricAttachments = attachments.filter((a) => a.rubricId === rubricId);
     const studentAttachments = attachments.filter((a) => a.studentId === studentId);
     const existingAnalysisResult = analysisResults.find((r) => r.rubricId === rubricId && r.studentId === studentId);
+
+    const selfAssessmentEntries = rubric.criteria.flatMap((criterion) => {
+        const levelId = sr?.selfAssessmentLevels?.[criterion.id];
+        if (!levelId) return [];
+        const level = criterion.levels.find((l) => l.id === levelId);
+        return level ? [{ criterion, level }] : [];
+    });
+    const hasSelfAssessment =
+        selfAssessmentEntries.length > 0 || !!sr?.selfAssessmentReflection?.trim() || !!sr?.selfAssessedAt;
 
     // Helper to set a sub-item score
     function setSubItemScore(entry: ScoreEntry, subItemId: string, score: number) {
@@ -1344,7 +1353,48 @@ export default function GradeStudent() {
                                 </div>
                             </>
                         )}
-                        {studentAttachments.length === 0 && rubricAttachments.length === 0 && (
+                        {hasSelfAssessment && (
+                            <>
+                                <p
+                                    className="text-xs text-muted"
+                                    style={{ margin: '12px 0 8px', fontWeight: 600, textTransform: 'uppercase' }}
+                                >
+                                    {t('gradeStudent.self_assessment_title')}
+                                    {sr?.selfAssessedAt && (
+                                        <span style={{ textTransform: 'none', fontWeight: 400 }}>
+                                            {' '}
+                                            &middot;{' '}
+                                            {t('gradeStudent.self_assessed_on', {
+                                                date: new Date(sr.selfAssessedAt).toLocaleDateString(i18n.language),
+                                            })}
+                                        </span>
+                                    )}
+                                </p>
+                                {selfAssessmentEntries.length > 0 && (
+                                    <ul style={{ margin: '0 0 8px', paddingLeft: 20 }}>
+                                        {selfAssessmentEntries.map(({ criterion, level }) => (
+                                            <li key={criterion.id} style={{ fontSize: '0.85rem' }}>
+                                                {criterion.title}: {level.label}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                                {sr?.selfAssessmentReflection && (
+                                    <div style={{ marginTop: 4 }}>
+                                        <p
+                                            className="text-xs text-muted"
+                                            style={{ margin: '0 0 4px', fontWeight: 600, textTransform: 'uppercase' }}
+                                        >
+                                            {t('gradeStudent.self_assessment_reflection_label')}
+                                        </p>
+                                        <p style={{ fontSize: '0.85rem', whiteSpace: 'pre-wrap' }}>
+                                            {sr.selfAssessmentReflection}
+                                        </p>
+                                    </div>
+                                )}
+                            </>
+                        )}
+                        {studentAttachments.length === 0 && rubricAttachments.length === 0 && !hasSelfAssessment && (
                             <p className="text-muted text-sm" style={{ marginTop: 16 }}>
                                 {t('gradeStudent.no_attachments', 'No attachments.')}
                             </p>

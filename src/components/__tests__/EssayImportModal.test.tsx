@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import EssayImportModal from '../Essay/EssayImportModal';
 import type { EssaySubmission } from '../../types';
 
@@ -212,6 +212,11 @@ describe('EssayImportModal', () => {
             mockDbConnected = true;
         });
 
+        afterEach(() => {
+            vi.restoreAllMocks();
+            vi.unstubAllGlobals();
+        });
+
         it('does not show the database tab when db is not connected', () => {
             mockDbConnected = false;
             render(<EssayImportModal {...dbProps()} />);
@@ -219,9 +224,12 @@ describe('EssayImportModal', () => {
             expect(screen.queryByText('From database')).not.toBeInTheDocument();
         });
 
-        it('does not show the database tab when teacherKey is missing', () => {
-            render(<EssayImportModal {...dbProps({ teacherKey: undefined })} />);
-            expect(screen.queryByText('From database')).not.toBeInTheDocument();
+        it('still shows the database tab when teacherKey is missing', async () => {
+            const props = dbProps({ teacherKey: undefined });
+            render(<EssayImportModal {...props} />);
+            expect(screen.getByText('From database')).toBeInTheDocument();
+            expect(props.onFetchSubmissions).toHaveBeenCalledWith('');
+            expect(await screen.findByText('alice@school.com')).toBeInTheDocument();
         });
 
         it('defaults to the database tab and loads submissions', async () => {
@@ -308,7 +316,7 @@ describe('EssayImportModal', () => {
         });
 
         it('imports a submission from the database and shows the success screen', async () => {
-            const fetchMock = vi.fn(async () => ({ text: async () => '<p>Essay body</p>' }));
+            const fetchMock = vi.fn(async () => ({ ok: true, text: async () => '<p>Essay body</p>' }));
             vi.stubGlobal('fetch', fetchMock);
             const props = dbProps();
             render(<EssayImportModal {...props} />);
@@ -320,7 +328,6 @@ describe('EssayImportModal', () => {
             expect(props.onImport).toHaveBeenCalledWith(
                 expect.objectContaining({ mimeType: 'text/html', rubricId: 'r1', studentId: 's1' })
             );
-            vi.unstubAllGlobals();
         });
 
         it('does nothing when clicking import without an onGetSignedUrl handler', async () => {
@@ -332,7 +339,7 @@ describe('EssayImportModal', () => {
         });
 
         it('falls back to the student name when importing an anonymous submission', async () => {
-            const fetchMock = vi.fn(async () => ({ text: async () => '<p>Essay body</p>' }));
+            const fetchMock = vi.fn(async () => ({ ok: true, text: async () => '<p>Essay body</p>' }));
             vi.stubGlobal('fetch', fetchMock);
             const anon = { ...dbSubmission, studentEmail: null };
             const props = dbProps({ onFetchSubmissions: vi.fn(async () => [anon]) });
@@ -342,7 +349,6 @@ describe('EssayImportModal', () => {
             expect(props.onImport).toHaveBeenCalledWith(
                 expect.objectContaining({ name: expect.stringContaining(`Essay – ${baseProps.studentName} –`) })
             );
-            vi.unstubAllGlobals();
         });
 
         it('falls back to a generic label when confirming deletion of an anonymous submission', async () => {
@@ -377,7 +383,20 @@ describe('EssayImportModal', () => {
             expect(
                 await screen.findByText(/Failed to download essay\. Check your connection and try again\./i)
             ).toBeInTheDocument();
-            vi.unstubAllGlobals();
+        });
+
+        it('shows an error when the download response is not ok', async () => {
+            vi.stubGlobal(
+                'fetch',
+                vi.fn(async () => ({ ok: false, status: 404, text: async () => '' }))
+            );
+            const props = dbProps();
+            render(<EssayImportModal {...props} />);
+            fireEvent.click(await screen.findByRole('button', { name: /^import$/i }));
+            expect(
+                await screen.findByText(/Failed to download essay\. Check your connection and try again\./i)
+            ).toBeInTheDocument();
+            expect(props.onImport).not.toHaveBeenCalled();
         });
 
         it('deletes a submission after confirmation', async () => {

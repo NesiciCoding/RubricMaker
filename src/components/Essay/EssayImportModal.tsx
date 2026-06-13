@@ -51,9 +51,9 @@ export default function EssayImportModal({
     onGetSignedUrl,
     onDeleteSubmission,
 }: Props) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const dbStatus = useDbStatus();
-    const hasDb = dbStatus.isConnected && !!teacherKey && !!onFetchSubmissions;
+    const hasDb = dbStatus.isConnected && !!onFetchSubmissions;
 
     const [tab, setTab] = useState<Tab>(hasDb ? 'database' : 'code');
     const [code, setCode] = useState('');
@@ -73,11 +73,11 @@ export default function EssayImportModal({
     const [dbError, setDbError] = useState('');
 
     const loadSubmissions = useCallback(async () => {
-        if (!hasDb || !teacherKey || !onFetchSubmissions) return;
+        if (!hasDb || !onFetchSubmissions) return;
         setLoadingDb(true);
         setDbError('');
         try {
-            const rows = await onFetchSubmissions(teacherKey);
+            const rows = await onFetchSubmissions(teacherKey ?? '');
             setSubmissions(rows);
         } catch {
             setDbError('Failed to load submissions. Make sure you are connected to the database.');
@@ -103,7 +103,7 @@ export default function EssayImportModal({
             setError(`This submission is for a different student or rubric.`);
             return;
         }
-        const dateStr = new Date(submission.submittedAt).toLocaleDateString();
+        const dateStr = new Date(submission.submittedAt).toLocaleDateString(i18n.language);
         const filename = `Essay – ${studentName} – ${dateStr}.html`;
         const dataUrl = `data:text/html;base64,${btoa(unescape(encodeURIComponent(submission.contentHtml)))}`;
         onImport({
@@ -120,7 +120,7 @@ export default function EssayImportModal({
             wordLimitStatus: submission.wordLimitStatus,
         });
         setImported(true);
-    }, [code, rubricId, studentId, studentName, onImport]);
+    }, [code, rubricId, studentId, studentName, onImport, i18n.language]);
 
     // ── DB import ─────────────────────────────────────────────────────────────
 
@@ -137,8 +137,9 @@ export default function EssayImportModal({
                     return;
                 }
                 const res = await fetch(url);
+                if (!res.ok) throw new Error(`Failed to download essay: ${res.status}`);
                 const html = await res.text();
-                const dateStr = new Date(sub.submittedAt).toLocaleDateString();
+                const dateStr = new Date(sub.submittedAt).toLocaleDateString(i18n.language);
                 const who = sub.studentEmail ?? studentName;
                 const filename = `Essay – ${who} – ${dateStr}.html`;
                 const dataUrl = `data:text/html;base64,${btoa(unescape(encodeURIComponent(html)))}`;
@@ -155,7 +156,7 @@ export default function EssayImportModal({
                 setImportingId(null);
             }
         },
-        [onGetSignedUrl, rubricId, studentId, studentName, onImport]
+        [onGetSignedUrl, rubricId, studentId, studentName, onImport, i18n.language]
     );
 
     const handleDelete = useCallback(
@@ -214,7 +215,7 @@ export default function EssayImportModal({
                         Essay imported successfully!
                     </div>
                     <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-                        {meta.wordCount} words · submitted {new Date(meta.submittedAt).toLocaleString()}
+                        {meta.wordCount} words · submitted {new Date(meta.submittedAt).toLocaleString(i18n.language)}
                     </div>
                     {meta.wordLimitStatus === 'over' && (
                         <div
@@ -417,7 +418,8 @@ export default function EssayImportModal({
                                                 }}
                                             >
                                                 <span>
-                                                    {sub.wordCount} words · {new Date(sub.submittedAt).toLocaleString()}
+                                                    {sub.wordCount} words ·{' '}
+                                                    {new Date(sub.submittedAt).toLocaleString(i18n.language)}
                                                 </span>
                                                 {sub.wordLimitStatus === 'over' && (
                                                     <span

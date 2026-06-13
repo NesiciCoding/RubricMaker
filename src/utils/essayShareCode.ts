@@ -1,4 +1,5 @@
 import type { EssayAssignment } from '../types';
+import { encodeUrlSafeBase64, decodeUrlSafeBase64 } from './urlSafeBase64';
 
 export function encodeEssayAssignment(assignment: EssayAssignment): string {
     try {
@@ -12,7 +13,7 @@ export function encodeEssayAssignment(assignment: EssayAssignment): string {
         if (safe.supabaseUrl) {
             return safe.teacherKey;
         }
-        return btoa(encodeURIComponent(JSON.stringify(safe)));
+        return encodeUrlSafeBase64(JSON.stringify(safe));
     } catch {
         return '';
     }
@@ -20,7 +21,7 @@ export function encodeEssayAssignment(assignment: EssayAssignment): string {
 
 export function decodeEssayAssignment(code: string): EssayAssignment | null {
     try {
-        const json = decodeURIComponent(atob(code.trim()));
+        const json = decodeUrlSafeBase64(code);
         const data = JSON.parse(json) as EssayAssignment;
         if (!data.rubricId || !data.studentId || !data.title) return null;
         return data;

@@ -144,6 +144,43 @@ export function buildEssayCode(overrides: TestEssayAssignment = {}): string {
     return btoa(encodeURIComponent(JSON.stringify(assignment)));
 }
 
+// ── Submission-code builder ──────────────────────────────────────────────────
+
+/** Mirrors src/utils/urlSafeBase64.ts#encodeUrlSafeBase64 for use in Node-side test setup. */
+function encodeUrlSafeBase64(input: string): string {
+    const base64 = btoa(encodeURIComponent(input));
+    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+export interface TestEssaySubmission {
+    id?: string;
+    assignmentRubricId?: string;
+    assignmentStudentId?: string;
+    teacherKey?: string;
+    contentHtml?: string;
+    wordCount?: number;
+    submittedAt?: string;
+    wordLimitStatus?: 'ok' | 'under' | 'over';
+}
+
+/**
+ * Builds a submission code as produced by src/utils/essaySubmissionCode.ts#encodeEssaySubmission —
+ * the "Paste code" tab of the Import Essay modal decodes this back into an EssaySubmission.
+ */
+export function buildEssaySubmissionCode(overrides: TestEssaySubmission = {}): string {
+    const submission = {
+        id: 'test-submission-id',
+        assignmentRubricId: 'test-rubric-id',
+        assignmentStudentId: 'test-student-id',
+        teacherKey: 'test-teacher-key',
+        contentHtml: '<p>This is the student\'s handed-in essay.</p>',
+        wordCount: 6,
+        submittedAt: new Date().toISOString(),
+        ...overrides,
+    };
+    return encodeUrlSafeBase64(JSON.stringify(submission));
+}
+
 // ── Short-code builder ────────────────────────────────────────────────────────
 
 /**

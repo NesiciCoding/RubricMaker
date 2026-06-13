@@ -6,6 +6,7 @@
 
 import type { Rubric, RubricCriterion, RubricLevel } from '../types';
 import { nanoid } from './nanoid';
+import { encodeUrlSafeBase64, decodeUrlSafeBase64 } from './urlSafeBase64';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -330,15 +331,14 @@ export function encodeRubricShareCode(rubric: Rubric): string {
         totalMaxPoints: rubric.totalMaxPoints,
         format: rubric.format,
     };
-    // Use encodeURIComponent to safely handle Unicode before btoa
-    return btoa(encodeURIComponent(JSON.stringify(shareable)));
+    return encodeUrlSafeBase64(JSON.stringify(shareable));
 }
 
 /** Decodes a share code back into a ParsedRubric (ready for import). */
 export function decodeRubricShareCode(
     code: string
 ): ParsedRubric & { gradeScaleId?: string; scoringMode?: string; totalMaxPoints?: number; format?: unknown } {
-    const json = decodeURIComponent(atob(code.trim()));
+    const json = decodeUrlSafeBase64(code);
     const data = JSON.parse(json);
     if (!Array.isArray(data.criteria)) throw new Error('Invalid share code: missing criteria');
     return {
