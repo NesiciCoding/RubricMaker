@@ -16,7 +16,12 @@ test.describe('Sidebar navigation', () => {
     });
 
     for (const { tour, url } of navItems) {
-        test(`[data-tour="${tour}"] navigates to ${url}`, async ({ appPage }) => {
+        test(`[data-tour="${tour}"] navigates to ${url}`, async ({ appPage, isMobile }) => {
+            if (isMobile) {
+                // Sidebar is an off-canvas drawer on mobile — open it via the hamburger first.
+                await appPage.locator('.topbar-menu-btn').click();
+                await expect(appPage.locator('.sidebar')).toHaveClass(/mobile-open/);
+            }
             await appPage.click(`[data-tour="${tour}"]`);
             await expect(appPage).toHaveURL(new RegExp(url.replace('/', '\\/') + '($|\\?|#)'), {
                 timeout: 10_000,
@@ -25,14 +30,17 @@ test.describe('Sidebar navigation', () => {
         });
     }
 
-    test('sidebar collapses and labels hide', async ({ appPage }) => {
+    test('sidebar collapses and labels hide', async ({ appPage, isMobile }) => {
+        // The collapse toggle is desktop-only — on mobile the sidebar is an off-canvas drawer instead.
+        test.skip(isMobile, 'Collapse toggle is hidden on mobile');
         const collapseBtn = appPage.locator('.sidebar-collapse-btn');
         await collapseBtn.click();
         const nav = appPage.locator('[data-collapsed="true"]');
         await expect(nav).toBeVisible({ timeout: 3_000 });
     });
 
-    test('sidebar expands after collapsing', async ({ appPage }) => {
+    test('sidebar expands after collapsing', async ({ appPage, isMobile }) => {
+        test.skip(isMobile, 'Collapse toggle is hidden on mobile');
         const collapseBtn = appPage.locator('.sidebar-collapse-btn');
         await collapseBtn.click();
         await appPage.locator('[data-collapsed="true"]').waitFor();
