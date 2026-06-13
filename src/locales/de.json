@@ -262,6 +262,7 @@
         "action_unshare": "Freigabe entfernen"
     },
     "tests": {
+        "not_found": "Test nicht gefunden.",
         "list_title": "Tests",
         "new_test": "Neuer Test",
         "no_tests": "Noch keine Tests",
@@ -1148,6 +1149,8 @@
         "quota_warning": "Nicht genug Speicherplatz auf diesem Gerät für eine neue Aufnahme. Geben Sie Speicherplatz frei oder löschen Sie alte Aufnahmen.",
         "too_large_warning": "Die Aufnahme überschreitet das 50-MB-Limit und wurde verworfen. Versuchen Sie eine kürzere Aufnahme.",
         "start_error": "Aufnahme konnte nicht gestartet werden. Überprüfen Sie die Mikrofon-/Kameraberechtigungen.",
+        "save_error": "Aufnahme konnte nicht gespeichert werden — bitte versuchen Sie es erneut.",
+        "duration_seconds": "{{count}}s",
         "student_disclosure": "Hier aufgenommenes Audio/Video kann mit dieser Sitzung gespeichert werden und ist für Ihre Lehrkraft sichtbar.",
         "unavailable": "Aufnahme auf diesem Gerät nicht verfügbar."
     },

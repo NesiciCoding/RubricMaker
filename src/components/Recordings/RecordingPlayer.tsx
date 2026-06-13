@@ -17,6 +17,8 @@ export default function RecordingPlayer({ recording, cloudUrl }: Props) {
     useEffect(() => {
         let url: string | null = null;
         let cancelled = false;
+        setObjectUrl(null);
+        setNotFound(false);
         (async () => {
             const record = await getBlob(recording.id);
             if (cancelled) return;

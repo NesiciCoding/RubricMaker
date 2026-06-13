@@ -565,3 +565,43 @@ export function loadUserTemplates(): UserTemplate[] {
 export function saveUserTemplates(templates: UserTemplate[]): void {
     save(KEYS.userTemplates, templates);
 }
+
+// ─── Student test attempt drafts (per-device, not synced) ─────────────────────
+
+export interface TestDraft {
+    answers: Record<string, string>;
+    savedAt: string;
+}
+
+export function loadTestDraft(draftKey: string): TestDraft | null {
+    return load<TestDraft | null>(draftKey, null);
+}
+
+export function saveTestDraft(draftKey: string, data: TestDraft): void {
+    save(draftKey, data);
+}
+
+export function clearTestDraft(draftKey: string): void {
+    try {
+        localStorage.removeItem(draftKey);
+    } catch {
+        // ignore
+    }
+}
+
+export function loadTestTimer(timerKey: string): number | null {
+    try {
+        const raw = sessionStorage.getItem(timerKey);
+        return raw ? Math.max(0, parseInt(raw, 10)) : null;
+    } catch {
+        return null;
+    }
+}
+
+export function saveTestTimer(timerKey: string, seconds: number): void {
+    try {
+        sessionStorage.setItem(timerKey, String(seconds));
+    } catch {
+        // ignore
+    }
+}

@@ -79,6 +79,23 @@ describe('RecordingSync', () => {
         expect(adapter.getRecordingSignedUrl).toHaveBeenCalledTimes(1);
     });
 
+    it('pushRecording rejects when upserting metadata fails', async () => {
+        const adapter = makeAdapter();
+        adapter.upsertRecordingMetadata = vi.fn(async () => ({ success: false, error: 'upsert failed' }));
+        const sync = new RecordingSync(adapter);
+
+        await expect(sync.pushRecording(recording, 'session1')).rejects.toThrow('upsert failed');
+    });
+
+    it('deleteRecording rejects when deleting metadata fails', async () => {
+        await putBlob('rec1', new Blob(['x'], { type: 'audio/webm' }), 'audio/webm');
+        const adapter = makeAdapter();
+        adapter.deleteRecordingMetadata = vi.fn(async () => ({ success: false, error: 'delete failed' }));
+        const sync = new RecordingSync(adapter);
+
+        await expect(sync.deleteRecording('rec1')).rejects.toThrow('delete failed');
+    });
+
     it('deleteRecording removes the local blob and cloud metadata', async () => {
         await putBlob('rec1', new Blob(['x'], { type: 'audio/webm' }), 'audio/webm');
         const adapter = makeAdapter();

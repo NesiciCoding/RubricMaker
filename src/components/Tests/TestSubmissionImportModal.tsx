@@ -36,8 +36,16 @@ export default function TestSubmissionImportModal({ test, studentTests, onSave, 
             (st) => st.testId === submission.testId && st.studentId === submission.studentId
         );
         const rawTotalPoints = calcStudentTestRawPoints(test, submission.answers);
+        const base: StudentTest = existing ?? {
+            id: nanoid(),
+            testId: submission.testId,
+            studentId: submission.studentId,
+            answers: [],
+            status: 'submitted',
+            startedAt: submission.startedAt,
+        };
         const next: StudentTest = {
-            id: existing?.id ?? nanoid(),
+            ...base,
             testId: submission.testId,
             studentId: submission.studentId,
             answers: submission.answers,

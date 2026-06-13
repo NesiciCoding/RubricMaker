@@ -3809,10 +3809,22 @@ const LEVELS: ReadonlyArray<readonly [CefrLevel, string[]]> = [
     ['A1', A1_WORDS],
 ];
 
+const CEFR_RANK: Record<CefrLevel, number> = {
+    A1: 1,
+    A2: 2,
+    B1: 3,
+    B2: 4,
+    C1: 5,
+    C2: 6,
+};
+
 const map: Record<string, CefrLevel> = {};
 for (const [level, words] of LEVELS) {
     for (const word of words) {
-        map[word] = level;
+        const existing = map[word];
+        if (!existing || CEFR_RANK[level] > CEFR_RANK[existing]) {
+            map[word] = level;
+        }
     }
 }
 

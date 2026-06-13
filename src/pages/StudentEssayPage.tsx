@@ -341,11 +341,13 @@ export default function StudentEssayPage() {
 
     // assignmentKey matches the derivation LiveMonitorPage uses for essays:
     // `${teacherKey}:${studentId}` — teacherKey is the persisted essay_assignments.id
-    // (also the /essays/:assignmentId/monitor route param).
+    // (also the /essays/:assignmentId/monitor route param). Held back until the
+    // student id is resolved so we never broadcast on an unstable key.
+    const resolvedStudentId = resolvedContent?.studentId ?? assignment?.studentId ?? '';
     const telemetry = useLiveSessionTelemetry({
         kind: 'essay',
-        assignmentKey: `${assignment?.teacherKey ?? ''}:${resolvedContent?.studentId ?? assignment?.studentId ?? ''}`,
-        enabled: !!assignment && hasDb && !submitted,
+        assignmentKey: resolvedStudentId ? `${assignment?.teacherKey ?? ''}:${resolvedStudentId}` : '',
+        enabled: !!assignment && hasDb && !submitted && !!studentUserId && !!resolvedStudentId,
         getSnapshot,
         supabaseUrl: assignment?.supabaseUrl,
         supabaseAnonKey: assignment?.supabaseAnonKey,

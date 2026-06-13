@@ -38,8 +38,9 @@ export function useMediaRecorder(): UseMediaRecorderReturn {
     const start = useCallback(async (opts: StartOptions = {}) => {
         const key = opts.key ?? DEFAULT_KEY;
         if (sessionsRef.current.has(key)) return false;
+        let stream: MediaStream | null = null;
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({
+            stream = await navigator.mediaDevices.getUserMedia({
                 audio: true,
                 video: opts.video ?? false,
             });
@@ -48,7 +49,7 @@ export function useMediaRecorder(): UseMediaRecorderReturn {
                 recorder,
                 stream,
                 chunks: [],
-                mimeType: opts.video ? 'video/webm' : 'audio/webm',
+                mimeType: recorder.mimeType || (opts.video ? 'video/webm' : 'audio/webm'),
             };
             recorder.ondataavailable = (e) => {
                 session.chunks.push(e.data);
@@ -60,6 +61,7 @@ export function useMediaRecorder(): UseMediaRecorderReturn {
             setError(null);
             return true;
         } catch (e) {
+            stream?.getTracks().forEach((t) => t.stop());
             setError(e instanceof Error ? e : new Error(String(e)));
             setStatus('error');
             return false;

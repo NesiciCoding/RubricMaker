@@ -4,7 +4,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { SessionRecording } from '../../../types';
 
 vi.mock('react-i18next', () => ({
-    useTranslation: () => ({ t: (k: string, fb?: string) => fb ?? k }),
+    useTranslation: () => ({
+        t: (k: string, fbOrOpts?: string | { count?: number }) => {
+            if (typeof fbOrOpts === 'string') return fbOrOpts;
+            if (fbOrOpts && typeof fbOrOpts.count === 'number') return `${fbOrOpts.count}s`;
+            return k;
+        },
+    }),
 }));
 
 const { mockStart, mockStop, mockStatusRef, mockPutBlob, mockEstimateUsage } = vi.hoisted(() => ({

@@ -49,7 +49,7 @@ export default function TestResultsPage() {
     const { tests, studentTests, students, gradeScales, settings, saveStudentTest } = useApp();
 
     const test = tests.find((tst) => tst.id === testId);
-    const studentTest = studentTests.find((st) => st.id === studentTestId);
+    const studentTest = studentTests.find((st) => st.id === studentTestId && st.testId === testId);
     const student = students.find((s) => s.id === studentTest?.studentId);
 
     const [drafts, setDrafts] = useState<Record<string, { pointsEarned: string; feedback: string }>>({});

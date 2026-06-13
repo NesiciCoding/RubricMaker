@@ -258,6 +258,41 @@ export interface CefrTextProfile {
     overallEstimatedLevel: CefrLevel;
 }
 
+// ─── Vocabulary Profile Aggregation Types ─────────────────────────────────────
+
+export interface VocabLevelStat {
+    level: CefrLevel;
+    count: number;
+    percentage: number;
+}
+
+export interface StudentVocabProfile {
+    studentId: string;
+    studentName: string;
+    levelCounts: Record<CefrLevel, number>;
+    levelStats: VocabLevelStat[];
+    totalWords: number;
+    estimatedLevel: CefrLevel;
+    analysisCount: number;
+}
+
+export interface ClassVocabProfile {
+    classId: string;
+    className: string;
+    levelCounts: Record<CefrLevel, number>;
+    levelStats: VocabLevelStat[];
+    totalWords: number;
+    estimatedLevel: CefrLevel;
+    studentProfiles: StudentVocabProfile[];
+}
+
+export interface VocabExportRow {
+    word: string;
+    level: CefrLevel;
+    definition: string;
+    source: 'rubric' | 'analysis';
+}
+
 // ─── Vocabulary & Document Analysis Types ─────────────────────────────────────
 
 export type VocabularyCategory = 'vocabulary' | 'grammar' | 'discourse' | 'other';

@@ -93,33 +93,36 @@ test.describe('Testing environment — full lifecycle (offline)', () => {
 
         // ── 3. Student answers the test in a fresh browser context ─────────
         const studentContext = await browser.newContext();
-        const studentPage = await studentContext.newPage();
-        const studentTestPage = new StudentTestPage(studentPage);
+        let submissionCode: string;
+        try {
+            const studentPage = await studentContext.newPage();
+            const studentTestPage = new StudentTestPage(studentPage);
 
-        await studentTestPage.goto(studentCode);
-        await appExpect(studentTestPage.testTitle('E2E Vocabulary Quiz')).toBeVisible({ timeout: 10_000 });
+            await studentTestPage.goto(studentCode);
+            await appExpect(studentTestPage.testTitle('E2E Vocabulary Quiz')).toBeVisible({ timeout: 10_000 });
 
-        // Trigger a tab-switch event early in the session.
-        await studentTestPage.triggerTabSwitch();
+            // Trigger a tab-switch event early in the session.
+            await studentTestPage.triggerTabSwitch();
 
-        // Question 1 — multiple choice
-        await studentTestPage.selectMultipleChoiceOption('Paris');
-        await studentTestPage.clickNext();
+            // Question 1 — multiple choice
+            await studentTestPage.selectMultipleChoiceOption('Paris');
+            await studentTestPage.clickNext();
 
-        // Question 2 — short answer
-        await studentTestPage.fillShortAnswer('4');
-        await studentTestPage.clickNext();
+            // Question 2 — short answer
+            await studentTestPage.fillShortAnswer('4');
+            await studentTestPage.clickNext();
 
-        // Question 3 — open
-        await studentTestPage.fillOpenAnswer('I love autumn because of the colours and cooler weather.');
+            // Question 3 — open
+            await studentTestPage.fillOpenAnswer('I love autumn because of the colours and cooler weather.');
 
-        await studentTestPage.submit();
-        await appExpect(studentTestPage.submittedConfirmation()).toBeVisible({ timeout: 10_000 });
-        await appExpect(studentTestPage.submissionCodeArea()).toBeVisible({ timeout: 5_000 });
-        const submissionCode = await studentTestPage.getSubmissionCode();
-        appExpect(submissionCode.length).toBeGreaterThan(20);
-
-        await studentContext.close();
+            await studentTestPage.submit();
+            await appExpect(studentTestPage.submittedConfirmation()).toBeVisible({ timeout: 10_000 });
+            await appExpect(studentTestPage.submissionCodeArea()).toBeVisible({ timeout: 5_000 });
+            submissionCode = await studentTestPage.getSubmissionCode();
+            appExpect(submissionCode.length).toBeGreaterThan(20);
+        } finally {
+            await studentContext.close();
+        }
 
         // ── 4. Teacher imports the submission code ──────────────────────────
         await list.goto();

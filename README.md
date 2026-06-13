@@ -28,6 +28,7 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 - **Self-assessment**: Students self-assess against CEFR Can-Do statements.
 
 ### 3. CEFR & Language Assessment
+
 - **Speaking sessions**: Structured speaking assessments with six pre-built dimensions aligned to Dutch VO CEFR targets (VMBO-BB through VWO). Audio (and, with cloud sync, video) recordings can be attached and play back from the student's portfolio.
 - **CEFR overview**: Per-student and whole-class proficiency dashboards showing progress across Reading, Writing, Speaking, and Listening.
 - **Student self-assessment**: Students rate themselves against Can-Do descriptors; reflection text is stored alongside teacher scores.

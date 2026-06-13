@@ -468,7 +468,9 @@ function reducer(state: StoreData, action: Action): StoreData {
         case 'DELETE_TEST': {
             const next = state.tests.filter((t) => t.id !== action.id);
             saveTests(next);
-            return { ...state, tests: next };
+            const nextStudentTests = state.studentTests.filter((st) => st.testId !== action.id);
+            saveStudentTests(nextStudentTests);
+            return { ...state, tests: next, studentTests: nextStudentTests };
         }
         case 'SAVE_STUDENT_TEST': {
             const payload = { ...action.payload, updatedAt: new Date().toISOString() };

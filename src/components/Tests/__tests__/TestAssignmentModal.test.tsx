@@ -1,6 +1,7 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
+import { renderWithRouter } from '../../../test-utils/renderWithProviders';
 import { DEFAULT_FORMAT } from '../../../types';
 import type { AppSettings, Class, Student, Test as RmTest } from '../../../types';
 import { decodeTestAssignment } from '../../../utils/testShareCode';
@@ -59,20 +60,24 @@ vi.mock('../../../services/database', () => ({
 describe('TestAssignmentModal', () => {
     it('generates per-student share links that decode back to a valid TestAssignmentPayload', async () => {
         const { default: TestAssignmentModal } = await import('../TestAssignmentModal');
-        render(<TestAssignmentModal test={mockTest} onClose={vi.fn()} />);
+        renderWithRouter(<TestAssignmentModal test={mockTest} onClose={vi.fn()} />);
 
-        const input = screen.getByLabelText('tests.assignment_link_for:{"name":"Alice"}') as HTMLInputElement;
-        const url = input.value;
-        expect(url).toContain('#/test/');
+        for (const student of mockStudents) {
+            const input = screen.getByLabelText(
+                `tests.assignment_link_for:{"name":"${student.name}"}`
+            ) as HTMLInputElement;
+            const url = input.value;
+            expect(url).toContain('#/test/');
 
-        const code = url.split('#/test/')[1];
-        const decoded = decodeTestAssignment(code);
+            const code = url.split('#/test/')[1];
+            const decoded = decodeTestAssignment(code);
 
-        expect(decoded).not.toBeNull();
-        expect(decoded?.testId).toBe('t1');
-        expect(decoded?.studentId).toBe('s1');
-        expect(decoded?.teacherKey).toBeTruthy();
-        expect(decoded?.requireSEB).toBe(true);
-        expect(decoded?.durationMinutes).toBe(30);
+            expect(decoded).not.toBeNull();
+            expect(decoded?.testId).toBe('t1');
+            expect(decoded?.studentId).toBe(student.id);
+            expect(decoded?.teacherKey).toBeTruthy();
+            expect(decoded?.requireSEB).toBe(true);
+            expect(decoded?.durationMinutes).toBe(30);
+        }
     });
 });

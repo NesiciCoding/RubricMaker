@@ -2150,14 +2150,14 @@ alter table public.student_tests enable row level security;
 drop policy if exists "tests_own" on public.tests;
 create policy "tests_own"
   on public.tests for all
-  using (auth.uid() = owner_id)
-  with check (auth.uid() = owner_id);
+  using ((select auth.uid()) = owner_id)
+  with check ((select auth.uid()) = owner_id);
 
 drop policy if exists "student_tests_own" on public.student_tests;
 create policy "student_tests_own"
   on public.student_tests for all
-  using (auth.uid() = owner_id)
-  with check (auth.uid() = owner_id);
+  using ((select auth.uid()) = owner_id)
+  with check ((select auth.uid()) = owner_id);
 
 -- ── 034_recordings_storage.sql ──────────────────────────────────────────────────────────────
 
@@ -2180,8 +2180,8 @@ alter table public.recording_metadata enable row level security;
 drop policy if exists "recording_metadata_own" on public.recording_metadata;
 create policy "recording_metadata_own"
   on public.recording_metadata for all
-  using (auth.uid() = owner_id)
-  with check (auth.uid() = owner_id);
+  using ((select auth.uid()) = owner_id)
+  with check ((select auth.uid()) = owner_id);
 
 -- Storage bucket for recording files
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
@@ -2194,7 +2194,7 @@ create policy "recordings_storage_owner"
   on storage.objects for all
   using (
     bucket_id = 'recordings'
-    and (storage.foldername(name))[1] = auth.uid()::text
+    and (storage.foldername(name))[1] = (select auth.uid())::text
   );
 
 -- ── record applied migrations ──────────────────────────────────────────

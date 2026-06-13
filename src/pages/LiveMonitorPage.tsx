@@ -43,7 +43,7 @@ export interface LiveMonitorPageProps {
 export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     const { t } = useTranslation();
     const params = useParams<{ testId?: string; assignmentId?: string }>();
-    const { tests, studentTests, students, classes } = useApp();
+    const { tests, studentTests, students } = useApp();
     const dbStatus = useDbStatus();
     const config = loadSupabaseConfig();
 
@@ -71,11 +71,17 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         }
         let cancelled = false;
         setEssayAssignmentLoading(true);
-        fetchEssayAssignmentByKey(params.assignmentId).then((result) => {
-            if (cancelled) return;
-            setEssayAssignment(result ?? null);
-            setEssayAssignmentLoading(false);
-        });
+        fetchEssayAssignmentByKey(params.assignmentId)
+            .then((result) => {
+                if (cancelled) return;
+                setEssayAssignment(result ?? null);
+            })
+            .catch(() => {
+                if (!cancelled) setEssayAssignment(null);
+            })
+            .finally(() => {
+                if (!cancelled) setEssayAssignmentLoading(false);
+            });
         return () => {
             cancelled = true;
         };
@@ -85,13 +91,8 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     const monitorStudents = useMemo<MonitorStudent[]>(() => {
         if (kind === 'test') {
             if (!test) return [];
-            const classForTest = classes.find((c) => c.rubricIds?.includes(test.gradeScaleId ?? ''));
-            const candidateStudents = classForTest ? students.filter((s) => s.classId === classForTest.id) : students;
             const relevantStudentTests = studentTests.filter((st) => st.testId === test.id);
-            const studentIds = new Set([
-                ...candidateStudents.map((s) => s.id),
-                ...relevantStudentTests.map((st) => st.studentId),
-            ]);
+            const studentIds = new Set(relevantStudentTests.map((st) => st.studentId));
             return Array.from(studentIds)
                 .map((studentId) => {
                     const student = students.find((s) => s.id === studentId);
@@ -101,7 +102,12 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                         name: student?.name ?? studentId,
                         persistedEvents: st?.events ?? [],
                         persistedAnswers: st?.answers ?? [],
-                        status: st?.status === 'submitted' || st?.status === 'graded' ? 'submitted' : undefined,
+                        status:
+                            st?.status === 'submitted' || st?.status === 'graded'
+                                ? 'submitted'
+                                : st?.status === 'in_progress'
+                                  ? 'opened'
+                                  : undefined,
                     } satisfies MonitorStudent;
                 })
                 .filter((row) => students.some((s) => s.id === row.studentId));
@@ -119,7 +125,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                 persistedAnswers: [],
             },
         ];
-    }, [kind, test, classes, students, studentTests, essayAssignment]);
+    }, [kind, test, students, studentTests, essayAssignment]);
 
     // ── Per-student assignmentKey derivation ──────────────────────────────────────
     // Essays: the route param IS the persisted teacherKey (essay_assignments.id), so

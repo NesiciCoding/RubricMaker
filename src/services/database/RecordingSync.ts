@@ -52,14 +52,16 @@ export class RecordingSync {
             if (path) storagePath = path;
         }
         const synced = !!storagePath;
-        await this.adapter.upsertRecordingMetadata(rec, sessionId, storagePath);
+        const result = await this.adapter.upsertRecordingMetadata(rec, sessionId, storagePath);
+        if (!result.success) throw new Error(result.error ?? 'Failed to upsert recording metadata');
         return { ...rec, storagePath, synced };
     }
 
     /** Delete a recording's local blob and its cloud object + metadata. */
     async deleteRecording(id: string): Promise<void> {
         await deleteBlob(id);
-        await this.adapter.deleteRecordingMetadata(id);
+        const result = await this.adapter.deleteRecordingMetadata(id);
+        if (!result.success) throw new Error(result.error ?? 'Failed to delete recording metadata');
     }
 
     /** Push every recording of a session (sequential to avoid memory spikes). Returns updated recordings with sync state. */

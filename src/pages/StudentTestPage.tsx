@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { decodeTestAssignment } from '../utils/testShareCode';
 import { encodeTestSubmission } from '../utils/testSubmissionCode';
 import { nanoid } from '../utils/nanoid';
+import { loadTestDraft, saveTestDraft, clearTestDraft, loadTestTimer, saveTestTimer } from '../store/storage';
 import SebGate from '../components/Tests/SebGate';
 import { useLiveSessionTelemetry } from '../hooks/useLiveSessionTelemetry';
 import type { Test, TestAnswer, TestAssignmentPayload, TestQuestion, TestSubmissionPayload } from '../types';
@@ -73,16 +74,10 @@ export default function StudentTestPage() {
     const [loading, setLoading] = useState(hasDb && !assignment?.test);
 
     const [answers, setAnswers] = useState<Map<string, string>>(() => {
-        try {
-            const raw = localStorage.getItem(draftKey);
-            if (!raw) return new Map();
-            const parsed = JSON.parse(raw) as { answers?: Record<string, string> };
-            return new Map(Object.entries(parsed.answers ?? {}));
-        } catch {
-            return new Map();
-        }
+        const draft = loadTestDraft(draftKey);
+        return new Map(Object.entries(draft?.answers ?? {}));
     });
-    const [draftRestored, setDraftRestored] = useState<boolean>(() => !!localStorage.getItem(draftKey));
+    const [draftRestored, setDraftRestored] = useState<boolean>(() => !!loadTestDraft(draftKey));
     const [currentIndex, setCurrentIndex] = useState(0);
     const [submitted, setSubmitted] = useState(false);
     const [submissionCode, setSubmissionCode] = useState('');
@@ -91,12 +86,13 @@ export default function StudentTestPage() {
     const [submitError, setSubmitError] = useState('');
 
     const startedAtRef = useRef<string>(new Date().toISOString());
+    const submitInFlightRef = useRef(false);
 
     const [secondsLeft, setSecondsLeft] = useState<number | null>(() => {
         const minutes = assignment?.durationMinutes ?? null;
         if (!minutes) return null;
-        const stored = sessionStorage.getItem(draftKey + '_timer');
-        if (stored) return Math.max(0, parseInt(stored, 10));
+        const stored = loadTestTimer(draftKey + '_timer');
+        if (stored !== null) return stored;
         return minutes * 60;
     });
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -145,10 +141,7 @@ export default function StudentTestPage() {
     // ── Draft autosave ────────────────────────────────────────────────────────
     useEffect(() => {
         if (submitted) return;
-        localStorage.setItem(
-            draftKey,
-            JSON.stringify({ answers: Object.fromEntries(answers), savedAt: new Date().toISOString() })
-        );
+        saveTestDraft(draftKey, { answers: Object.fromEntries(answers), savedAt: new Date().toISOString() });
     }, [answers, draftKey, submitted]);
 
     const getSnapshot = useCallback(
@@ -173,6 +166,8 @@ export default function StudentTestPage() {
 
     const handleSubmit = useCallback(async () => {
         if (!assignment || !test) return;
+        if (submitInFlightRef.current || submitted) return;
+        submitInFlightRef.current = true;
         if (timerRef.current) clearInterval(timerRef.current);
 
         const submittedAt = new Date().toISOString();
@@ -224,9 +219,10 @@ export default function StudentTestPage() {
         }
 
         setSubmissionCode(legacyCode);
-        localStorage.removeItem(draftKey);
+        clearTestDraft(draftKey);
         setSubmitted(true);
-    }, [assignment, test, answers, hasDb, testOwnerId, draftKey, telemetry, t]);
+        submitInFlightRef.current = false;
+    }, [assignment, test, answers, hasDb, testOwnerId, draftKey, telemetry, t, submitted]);
 
     const handleSubmitRef = useRef(handleSubmit);
     useEffect(() => {
@@ -240,7 +236,7 @@ export default function StudentTestPage() {
             setSecondsLeft((prev) => {
                 if (prev === null) return null;
                 const next = prev - 1;
-                sessionStorage.setItem(draftKey + '_timer', String(next));
+                saveTestTimer(draftKey + '_timer', next);
                 if (next <= 0) {
                     if (timerRef.current) clearInterval(timerRef.current);
                     void handleSubmitRef.current();

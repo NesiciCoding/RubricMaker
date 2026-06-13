@@ -100,6 +100,7 @@ export default function TestListPage() {
                                             <button
                                                 className="btn btn-ghost btn-icon btn-sm"
                                                 title={t('tests.action_duplicate')}
+                                                aria-label={t('tests.action_duplicate')}
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     handleDuplicate(test.id);
@@ -110,6 +111,7 @@ export default function TestListPage() {
                                             <button
                                                 className="btn btn-ghost btn-icon btn-sm"
                                                 title={t('tests.action_edit')}
+                                                aria-label={t('tests.action_edit')}
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     navigate(`/tests/${test.id}`);
@@ -120,6 +122,7 @@ export default function TestListPage() {
                                             <button
                                                 className="btn btn-ghost btn-icon btn-sm"
                                                 title={t('tests.action_delete')}
+                                                aria-label={t('tests.action_delete')}
                                                 style={{ color: 'var(--red)' }}
                                                 onClick={(e) => {
                                                     e.stopPropagation();

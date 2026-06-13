@@ -329,6 +329,7 @@ export default function GradeStudent() {
 
     const startAudioRecording = useCallback(
         (criterionId: string) => {
+            if (audioRecorder.recordingKey && audioRecorder.recordingKey !== criterionId) return;
             // getUserMedia denial surfaces as hook error state — silently ignored here, as before
             void audioRecorder.start({ key: criterionId });
         },

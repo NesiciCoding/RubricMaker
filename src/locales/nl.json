@@ -262,6 +262,7 @@
         "action_unshare": "Delen opheffen"
     },
     "tests": {
+        "not_found": "Toets niet gevonden.",
         "list_title": "Toetsen",
         "new_test": "Nieuwe toets",
         "no_tests": "Nog geen toetsen",
@@ -725,8 +726,8 @@
     },
     "peerAnalytics": {
         "title": "Peerreview-analyse — {{rubricName}}",
-        "rubric_not_found": "Rubric niet gevonden.",
-        "empty_state": "Er zijn nog geen peerreviews ingediend voor deze rubric.",
+        "rubric_not_found": "Rubriek niet gevonden.",
+        "empty_state": "Er zijn nog geen peerreviews ingediend voor deze rubriek.",
         "total_reviews": "{{count}} peerreviews",
         "total_comparisons": "{{count}} vergelijkingen met docentbeoordeling",
         "missing_baseline": "{{count}} items zonder docentbeoordeling",
@@ -1148,6 +1149,8 @@
         "quota_warning": "Niet genoeg opslagruimte op dit apparaat om een nieuwe opname te starten. Maak ruimte vrij of verwijder oude opnames.",
         "too_large_warning": "Opname overschrijdt de limiet van 50MB en is verwijderd. Probeer een kortere opname.",
         "start_error": "Opname kon niet starten. Controleer je microfoon-/camerarechten.",
+        "save_error": "Opname opslaan is mislukt — probeer het opnieuw.",
+        "duration_seconds": "{{count}}s",
         "student_disclosure": "Audio/video die je hier opneemt, kan bij deze sessie worden opgeslagen en is zichtbaar voor je docent.",
         "unavailable": "Opname niet beschikbaar op dit apparaat."
     },

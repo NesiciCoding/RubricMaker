@@ -19,7 +19,7 @@ export function scoreShortAnswerExact(question: TestQuestion, response: string):
 }
 
 function scoreAnswer(question: TestQuestion, answer: TestAnswer): number {
-    if (answer.pointsEarned !== undefined) return answer.pointsEarned;
+    if (answer.pointsEarned !== undefined) return clamp(answer.pointsEarned, 0, question.points);
     if (question.type === 'multiple-choice') {
         const selected = question.options?.find((o) => o.id === answer.response);
         return selected?.isCorrect ? question.points : 0;
@@ -33,7 +33,11 @@ function scoreAnswer(question: TestQuestion, answer: TestAnswer): number {
 
 export function calcStudentTestRawPoints(test: Test, answers: TestAnswer[]): number {
     const questionsById = new Map(test.questions.map((q) => [q.id, q]));
-    return answers.reduce((sum, a) => {
+    const latestByQuestionId = new Map<string, TestAnswer>();
+    for (const answer of answers) {
+        latestByQuestionId.set(answer.questionId, answer);
+    }
+    return Array.from(latestByQuestionId.values()).reduce((sum, a) => {
         const question = questionsById.get(a.questionId);
         return question ? sum + scoreAnswer(question, a) : sum;
     }, 0);

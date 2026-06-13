@@ -21,7 +21,7 @@ type CellState = 'correct' | 'incorrect' | 'ungraded' | 'empty';
 function cellState(question: TestQuestion, answer: TestAnswer | undefined): CellState {
     if (!answer || answer.response.trim() === '') return 'empty';
     if (answer.pointsEarned !== undefined) {
-        return answer.pointsEarned >= question.points ? 'correct' : answer.pointsEarned > 0 ? 'ungraded' : 'incorrect';
+        return answer.pointsEarned >= question.points ? 'correct' : 'incorrect';
     }
     if (question.type === 'multiple-choice') {
         const selected = question.options?.find((o) => o.id === answer.response);
@@ -80,13 +80,19 @@ export default function ResponsesGrid({ test, rows }: ResponsesGridProps) {
                                         padding: '6px 10px',
                                         borderBottom: '1px solid var(--border)',
                                         color: 'var(--accent)',
-                                        cursor: 'pointer',
                                         whiteSpace: 'nowrap',
                                     }}
-                                    onClick={() => setGalleryQuestion(q)}
                                     title={q.prompt}
                                 >
-                                    {t('tests.monitor.grid.question_short', { index: i + 1 })}
+                                    <button
+                                        type="button"
+                                        className="btn btn-ghost btn-sm"
+                                        onClick={() => setGalleryQuestion(q)}
+                                        title={q.prompt}
+                                        aria-label={q.prompt}
+                                    >
+                                        {t('tests.monitor.grid.question_short', { index: i + 1 })}
+                                    </button>
                                 </th>
                             ))}
                         </tr>

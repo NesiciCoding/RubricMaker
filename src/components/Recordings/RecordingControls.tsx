@@ -51,17 +51,21 @@ export default function RecordingControls({ recordings, onChange, syncConfigured
         }
 
         const id = nanoid();
-        await putBlob(id, result.blob, result.mimeType);
-        const newRecording: SessionRecording = {
-            id,
-            mediaType: pendingVideo ? 'video' : 'audio',
-            mimeType: result.mimeType,
-            durationSec,
-            sizeBytes: result.blob.size,
-            createdAt: new Date().toISOString(),
-            synced: false,
-        };
-        onChange([...recordings, newRecording]);
+        try {
+            await putBlob(id, result.blob, result.mimeType);
+            const newRecording: SessionRecording = {
+                id,
+                mediaType: pendingVideo ? 'video' : 'audio',
+                mimeType: result.mimeType,
+                durationSec,
+                sizeBytes: result.blob.size,
+                createdAt: new Date().toISOString(),
+                synced: false,
+            };
+            onChange([...recordings, newRecording]);
+        } catch {
+            showToast(t('recordings.save_error'), 'error');
+        }
     }
 
     function handleDiscard(id: string) {
@@ -142,7 +146,8 @@ export default function RecordingControls({ recordings, onChange, syncConfigured
                         >
                             {rec.mediaType === 'video' ? <Video size={14} /> : <Mic size={14} />}
                             <span style={{ flex: 1 }}>
-                                {t(`recordings.type_${rec.mediaType}`)} — {rec.durationSec}s
+                                {t(`recordings.type_${rec.mediaType}`)} —{' '}
+                                {t('recordings.duration_seconds', { count: rec.durationSec })}
                             </span>
                             <button
                                 type="button"

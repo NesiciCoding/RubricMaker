@@ -60,19 +60,25 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
         return `${window.location.origin}${window.location.pathname}#/test/${code}`;
     }
 
-    function handleCopyOne(studentId: string) {
-        navigator.clipboard.writeText(buildUrl(studentId)).then(() => {
+    async function handleCopyOne(studentId: string) {
+        try {
+            await navigator.clipboard.writeText(buildUrl(studentId));
             setCopiedStudentId(studentId);
             setTimeout(() => setCopiedStudentId(null), 2500);
-        });
+        } catch {
+            setCopiedStudentId(null);
+        }
     }
 
-    function handleCopyAll() {
+    async function handleCopyAll() {
         const text = classStudents.map((s) => `${s.name}: ${buildUrl(s.id)}`).join('\n');
-        navigator.clipboard.writeText(text).then(() => {
+        try {
+            await navigator.clipboard.writeText(text);
             setCopiedAll(true);
             setTimeout(() => setCopiedAll(false), 2500);
-        });
+        } catch {
+            setCopiedAll(false);
+        }
     }
 
     return (

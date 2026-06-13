@@ -97,6 +97,28 @@ describe('calcStudentTestRawPoints', () => {
     it('ignores answers to unknown questions', () => {
         expect(calcStudentTestRawPoints(makeTest(), [{ questionId: 'ghost', response: 'x' }])).toBe(0);
     });
+
+    it('only counts the latest answer when a questionId appears more than once', () => {
+        const test = makeTest();
+        expect(
+            calcStudentTestRawPoints(test, [
+                { questionId: 'q-mc', response: 'a' },
+                { questionId: 'q-mc', response: 'b' },
+            ])
+        ).toBe(4);
+        expect(
+            calcStudentTestRawPoints(test, [
+                { questionId: 'q-mc', response: 'b' },
+                { questionId: 'q-mc', response: 'a' },
+            ])
+        ).toBe(0);
+    });
+
+    it('clamps manual pointsEarned to [0, question.points]', () => {
+        const test = makeTest();
+        expect(calcStudentTestRawPoints(test, [{ questionId: 'q-open', response: 'x', pointsEarned: -3 }])).toBe(0);
+        expect(calcStudentTestRawPoints(test, [{ questionId: 'q-open', response: 'x', pointsEarned: 100 }])).toBe(6);
+    });
 });
 
 describe('scoreShortAnswerExact', () => {

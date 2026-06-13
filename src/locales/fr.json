@@ -262,6 +262,7 @@
         "action_unshare": "Supprimer le partage"
     },
     "tests": {
+        "not_found": "Test introuvable.",
         "list_title": "Tests",
         "new_test": "Nouveau test",
         "no_tests": "Aucun test pour le moment",
@@ -1148,6 +1149,8 @@
         "quota_warning": "Espace de stockage insuffisant sur cet appareil pour démarrer un nouvel enregistrement. Libérez de l'espace ou supprimez d'anciens enregistrements.",
         "too_large_warning": "L'enregistrement dépasse la limite de 50 Mo et a été supprimé. Essayez un enregistrement plus court.",
         "start_error": "Impossible de démarrer l'enregistrement. Vérifiez les autorisations du microphone/de la caméra.",
+        "save_error": "Échec de l'enregistrement — veuillez réessayer.",
+        "duration_seconds": "{{count}}s",
         "student_disclosure": "L'audio/vidéo enregistré ici peut être conservé avec cette session et visible par votre enseignant.",
         "unavailable": "Enregistrement indisponible sur cet appareil."
     },

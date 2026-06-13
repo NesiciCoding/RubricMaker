@@ -1241,6 +1241,7 @@ export class SupabaseAdapter {
             .from('essay_assignments')
             .select('rubric_id, student_id, title')
             .eq('id', teacherKey)
+            .eq('owner_id', this.uid())
             .maybeSingle();
         if (error || !data) return null;
         return { rubricId: data.rubric_id, studentId: data.student_id, title: data.title };
@@ -1430,6 +1431,7 @@ export class SupabaseAdapter {
             'favorite_standards',
             'self_assessments',
             'speaking_sessions',
+            'recording_metadata',
             'analysis_results',
             'tests',
             'student_tests',
@@ -1447,6 +1449,8 @@ export class SupabaseAdapter {
             const { data: tplFiles } = await db.storage.from('export-templates').list(uid);
             if (tplFiles?.length)
                 await db.storage.from('export-templates').remove(tplFiles.map((f) => `${uid}/${f.name}`));
+            const { data: recFiles } = await db.storage.from('recordings').list(uid);
+            if (recFiles?.length) await db.storage.from('recordings').remove(recFiles.map((f) => `${uid}/${f.name}`));
             // essay_assignments cascade-deletes essay_submissions rows via FK;
             // remove the essay files from storage folder-per-assignment
             const { data: assignments } = await db.from('essay_assignments').select('id').eq('owner_id', uid);

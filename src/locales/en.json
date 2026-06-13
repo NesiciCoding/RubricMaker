@@ -262,6 +262,7 @@
         "action_unshare": "Remove share"
     },
     "tests": {
+        "not_found": "Test not found.",
         "list_title": "Tests",
         "new_test": "New test",
         "no_tests": "No tests yet",
@@ -1148,6 +1149,8 @@
         "quota_warning": "Not enough storage space on this device to start a new recording. Free up space or delete old recordings first.",
         "too_large_warning": "Recording exceeds the 50MB limit and was discarded. Try a shorter recording.",
         "start_error": "Could not start recording. Check your microphone/camera permissions.",
+        "save_error": "Failed to save recording — please try again.",
+        "duration_seconds": "{{count}}s",
         "student_disclosure": "Audio/video recorded here may be saved with this session and visible to your teacher.",
         "unavailable": "Recording unavailable on this device."
     },

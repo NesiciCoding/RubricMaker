@@ -43,7 +43,11 @@ export default function PeerReviewView() {
         if (!rubric || !student) return;
 
         const existing = peerReviews.find(
-            (pr) => pr.rubricId === rubricId && pr.studentId === studentId && (pr.round ?? 1) === activeRound
+            (pr) =>
+                pr.rubricId === rubricId &&
+                pr.studentId === studentId &&
+                (pr.round ?? 1) === activeRound &&
+                (pr.gradedBy ?? pr.studentId) === reviewerId
         );
         if (existing) {
             setEntry({ ...existing });
@@ -62,9 +66,10 @@ export default function PeerReviewView() {
                 overallComment: '',
                 isPeerReview: true,
                 round: activeRound,
+                gradedBy: reviewerId,
             });
         }
-    }, [rubricId, studentId, rubric, student, peerReviews, activeRound]);
+    }, [rubricId, studentId, rubric, student, peerReviews, activeRound, reviewerId]);
 
     if (!rubric || !student || !entry) {
         return (

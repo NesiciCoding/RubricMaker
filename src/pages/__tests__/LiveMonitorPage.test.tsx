@@ -80,7 +80,17 @@ describe('LiveMonitorPage', () => {
             students: [mockStudent],
             studentRubrics: [],
             tests: [mockTest],
-            studentTests: [],
+            studentTests: [
+                {
+                    id: 'st-1',
+                    testId: 'test-1',
+                    studentId: 'student-1',
+                    answers: [],
+                    status: 'in_progress',
+                    startedAt: '2026-01-01T00:00:00.000Z',
+                    events: [],
+                },
+            ],
             classes: [],
             fetchEssayAssignmentByKey: vi.fn().mockResolvedValue(null),
         };

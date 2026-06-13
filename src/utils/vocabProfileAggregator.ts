@@ -1,4 +1,14 @@
-import type { CefrLevel, Class, DocumentAnalysisResult, Rubric, Student } from '../types';
+import type {
+    CefrLevel,
+    Class,
+    ClassVocabProfile,
+    DocumentAnalysisResult,
+    Rubric,
+    Student,
+    StudentVocabProfile,
+    VocabExportRow,
+    VocabLevelStat,
+} from '../types';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
 import { profileText } from './cefrVocabularyProfiler';
 
@@ -25,32 +35,6 @@ function addCounts(target: Record<CefrLevel, number>, source: Record<CefrLevel, 
     for (const level of LEVEL_ORDER) {
         target[level] += source[level];
     }
-}
-
-export interface VocabLevelStat {
-    level: CefrLevel;
-    count: number;
-    percentage: number;
-}
-
-export interface StudentVocabProfile {
-    studentId: string;
-    studentName: string;
-    levelCounts: Record<CefrLevel, number>;
-    levelStats: VocabLevelStat[];
-    totalWords: number;
-    estimatedLevel: CefrLevel;
-    analysisCount: number;
-}
-
-export interface ClassVocabProfile {
-    classId: string;
-    className: string;
-    levelCounts: Record<CefrLevel, number>;
-    levelStats: VocabLevelStat[];
-    totalWords: number;
-    estimatedLevel: CefrLevel;
-    studentProfiles: StudentVocabProfile[];
 }
 
 /**
@@ -146,13 +130,6 @@ export function getAllClassVocabProfiles(
 }
 
 // ─── Vocabulary list export ────────────────────────────────────────────────────
-
-export interface VocabExportRow {
-    word: string;
-    level: CefrLevel;
-    definition: string;
-    source: 'rubric' | 'analysis';
-}
 
 /**
  * Collect vocabulary words for CSV export, optionally filtered to a single

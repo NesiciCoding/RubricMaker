@@ -5,6 +5,7 @@ import type { ProctorEvent } from '../types';
 const HEARTBEAT_INTERVAL_MS = 20_000;
 const IDLE_THRESHOLD_MS = 60_000;
 const SNAPSHOT_INTERVAL_MS = 5_000;
+const TAB_SWITCH_DEDUPE_MS = 750;
 
 interface BatteryManagerLike {
     level: number;
@@ -69,6 +70,7 @@ export function useLiveSessionTelemetry({
     const [isBroadcasting, setIsBroadcasting] = useState(false);
 
     const lastActivityRef = useRef<number>(Date.now());
+    const lastTabSwitchAtRef = useRef(0);
     const lastSnapshotRef = useRef<LiveSessionSnapshot | null>(null);
     const channelRef = useRef<ReturnType<SupabaseClient['channel']> | null>(null);
     // Mirrors `events` so flush() can read the latest log synchronously —
@@ -114,13 +116,19 @@ export function useLiveSessionTelemetry({
     // ── tab_switch: visibilitychange + window blur ───────────────────────────
     useEffect(() => {
         if (!enabled) return;
+        const emitTabSwitch = () => {
+            const now = Date.now();
+            if (now - lastTabSwitchAtRef.current < TAB_SWITCH_DEDUPE_MS) return;
+            lastTabSwitchAtRef.current = now;
+            pushEvent({ type: 'tab_switch', at: new Date().toISOString() });
+        };
         const onVisibility = () => {
             if (document.visibilityState === 'hidden') {
-                pushEvent({ type: 'tab_switch', at: new Date().toISOString() });
+                emitTabSwitch();
             }
         };
         const onBlur = () => {
-            pushEvent({ type: 'tab_switch', at: new Date().toISOString() });
+            emitTabSwitch();
         };
         document.addEventListener('visibilitychange', onVisibility);
         window.addEventListener('blur', onBlur);
@@ -219,7 +227,7 @@ export function useLiveSessionTelemetry({
 
     // ── throttled work-in-progress snapshots (ephemeral, broadcast only) ─────
     useEffect(() => {
-        if (!enabled || !getSnapshot) return;
+        if (!enabled || !getSnapshot || !hasDb) return;
         const interval = setInterval(() => {
             const snapshot = getSnapshot();
             if (!shallowEqualSnapshot(lastSnapshotRef.current, snapshot)) {
@@ -228,7 +236,7 @@ export function useLiveSessionTelemetry({
             }
         }, SNAPSHOT_INTERVAL_MS);
         return () => clearInterval(interval);
-    }, [enabled, getSnapshot]);
+    }, [enabled, getSnapshot, hasDb]);
 
     return { events, flush, isBroadcasting };
 }

@@ -22,11 +22,11 @@ alter table public.student_tests enable row level security;
 drop policy if exists "tests_own" on public.tests;
 create policy "tests_own"
   on public.tests for all
-  using (auth.uid() = owner_id)
-  with check (auth.uid() = owner_id);
+  using ((select auth.uid()) = owner_id)
+  with check ((select auth.uid()) = owner_id);
 
 drop policy if exists "student_tests_own" on public.student_tests;
 create policy "student_tests_own"
   on public.student_tests for all
-  using (auth.uid() = owner_id)
-  with check (auth.uid() = owner_id);
+  using ((select auth.uid()) = owner_id)
+  with check ((select auth.uid()) = owner_id);

@@ -1,7 +1,7 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
+import { renderWithRouter } from '../../test-utils/renderWithProviders';
 import { DEFAULT_FORMAT } from '../../types';
 import type { AppSettings, Class, DocumentAnalysisResult, Rubric, Student } from '../../types';
 
@@ -78,22 +78,14 @@ vi.mock('react-i18next', () => ({
 describe('VocabularyDashboardPage', () => {
     it('renders without crashing showing class distribution', async () => {
         const { default: VocabularyDashboardPage } = await import('../VocabularyDashboardPage');
-        render(
-            <MemoryRouter>
-                <VocabularyDashboardPage />
-            </MemoryRouter>
-        );
+        renderWithRouter(<VocabularyDashboardPage />);
         expect(screen.getByText('vocabProfile.page_title')).toBeInTheDocument();
         expect(screen.getByText('vocabProfile.class_distribution_title')).toBeInTheDocument();
     });
 
     it('shows the student drill-down when a class is selected', async () => {
         const { default: VocabularyDashboardPage } = await import('../VocabularyDashboardPage');
-        render(
-            <MemoryRouter>
-                <VocabularyDashboardPage />
-            </MemoryRouter>
-        );
+        renderWithRouter(<VocabularyDashboardPage />);
         const select = screen.getByLabelText('vocabProfile.label_class_filter');
         const { fireEvent } = await import('@testing-library/react');
         fireEvent.change(select, { target: { value: 'c1' } });
@@ -104,11 +96,7 @@ describe('VocabularyDashboardPage', () => {
 
     it('renders export button', async () => {
         const { default: VocabularyDashboardPage } = await import('../VocabularyDashboardPage');
-        render(
-            <MemoryRouter>
-                <VocabularyDashboardPage />
-            </MemoryRouter>
-        );
+        renderWithRouter(<VocabularyDashboardPage />);
         expect(screen.getByText('vocabProfile.export_csv')).toBeInTheDocument();
     });
 });

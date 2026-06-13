@@ -52,7 +52,12 @@ export default function QuestionEditor({ question, index, total, onChange, onRem
     }
 
     function removeOption(optionId: string) {
-        update({ options: (question.options ?? []).filter((o) => o.id !== optionId) });
+        const removed = (question.options ?? []).find((o) => o.id === optionId);
+        const remaining = (question.options ?? []).filter((o) => o.id !== optionId);
+        if (removed?.isCorrect && !remaining.some((o) => o.isCorrect) && remaining.length > 0) {
+            remaining[0] = { ...remaining[0], isCorrect: true };
+        }
+        update({ options: remaining });
     }
 
     function updateOption(optionId: string, patch: Partial<TestOption>) {

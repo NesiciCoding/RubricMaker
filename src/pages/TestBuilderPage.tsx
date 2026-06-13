@@ -30,6 +30,7 @@ export default function TestBuilderPage() {
     const { tests, addTest, updateTest, gradeScales, settings } = useApp();
 
     const existing = id ? tests.find((tst) => tst.id === id) : undefined;
+    const notFound = !!id && !existing;
 
     const [name, setName] = useState(existing?.name ?? '');
     const [nameError, setNameError] = useState('');
@@ -67,17 +68,26 @@ export default function TestBuilderPage() {
     }
 
     function handleSave() {
+        if (notFound) return;
         if (!name.trim()) {
             setNameError(t('tests.name_required'));
             return;
         }
         setNameError('');
 
+        const trimmedDuration = durationMinutes.trim();
+        const parsedDuration =
+            trimmedDuration === ''
+                ? undefined
+                : Number.isFinite(Number(trimmedDuration)) && Number(trimmedDuration) > 0
+                  ? Number(trimmedDuration)
+                  : undefined;
+
         const payload = {
             name: name.trim(),
             description: description.trim() || undefined,
             questions,
-            durationMinutes: durationMinutes ? Number(durationMinutes) : undefined,
+            durationMinutes: parsedDuration,
             shuffleQuestions,
             requireSEB,
             gradeScaleId,
@@ -94,6 +104,20 @@ export default function TestBuilderPage() {
     }
 
     const totalPoints = questions.reduce((sum, q) => sum + (q.points || 0), 0);
+
+    if (notFound) {
+        return (
+            <>
+                <Topbar title={t('tests.edit_test_title')} />
+                <div className="page-content fade-in">
+                    <p className="text-muted">{t('tests.not_found')}</p>
+                    <button className="btn btn-secondary btn-sm" onClick={() => navigate('/tests')}>
+                        <ArrowLeft size={15} /> {t('tests.back_to_list')}
+                    </button>
+                </div>
+            </>
+        );
+    }
 
     return (
         <>

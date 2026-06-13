@@ -2,6 +2,20 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useLiveSessionTelemetry } from '../useLiveSessionTelemetry';
 
+const mockChannel = {
+    on: vi.fn().mockReturnThis(),
+    send: vi.fn(),
+    subscribe: vi.fn().mockReturnThis(),
+};
+const mockClient = {
+    channel: vi.fn(() => mockChannel),
+    removeChannel: vi.fn(),
+};
+
+vi.mock('@supabase/supabase-js', () => ({
+    createClient: vi.fn(() => mockClient),
+}));
+
 describe('useLiveSessionTelemetry', () => {
     afterEach(() => {
         vi.useRealTimers();
@@ -177,6 +191,8 @@ describe('useLiveSessionTelemetry', () => {
                 assignmentKey: 'key1',
                 enabled: true,
                 getSnapshot,
+                supabaseUrl: 'https://example.supabase.co',
+                supabaseAnonKey: 'anon-key',
             })
         );
 
