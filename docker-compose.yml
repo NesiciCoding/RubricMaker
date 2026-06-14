@@ -165,6 +165,8 @@ services:
         # Change SITE_URL in .env if deploying to a school server.
         VITE_SUPABASE_URL: "${SITE_URL:-http://localhost:8080}"
         VITE_SUPABASE_ANON_KEY: "${ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0}"
+        # Enables the client_logs diagnostic stream for a stress-test window — see .env.docker.example
+        VITE_STRESS_TEST_LOGGING: "${VITE_STRESS_TEST_LOGGING:-}"
     ports:
       - "8080:80"
     volumes:

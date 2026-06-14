@@ -77,6 +77,7 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 
 - [HestiaCP setup](docs/HESTIACP_SETUP.md) — shared hosting / cPanel-style VPS
 - [Virtualmin setup](docs/VIRTUALMIN_SETUP.md) — Virtualmin VPS deployment
+- [Observability on a HestiaCP subdomain](docs/OBSERVABILITY_HESTIACP.md) — Loki/Promtail/Grafana behind a dedicated HTTPS subdomain
 - [Magister integration](docs/MAGISTER_INTEGRATION.md) — importing students from Magister SIS
 
 ---
@@ -215,6 +216,66 @@ git pull
 docker-compose up -d --build    # rebuilds the app image, restarts services
 # Migrations run automatically on next startup
 ```
+
+**Stress-test logging (optional):**
+
+Before a school-wide rollout, you can enable a diagnostic event stream to a
+`client_logs` table for both the teacher and student portals — useful for
+running a full-class pilot and catching errors or sync failures afterwards.
+
+```bash
+# Apply migration 035_client_logs.sql (included with db:reset / docker-compose db_migrate)
+# In .env:
+VITE_STRESS_TEST_LOGGING=true
+docker-compose up -d --build
+```
+
+Logged events cover user actions (by type and id only), Supabase sync results
+and latency, and JS errors — never free-text content such as essay text,
+comments, or grades. Query `client_logs` via the Supabase SQL editor
+(`select * from client_logs order by created_at desc`). When the stress-test
+window is over, unset `VITE_STRESS_TEST_LOGGING` and rebuild.
+
+---
+
+### Observability (optional, for pilot/stress-test windows)
+
+A standalone Loki + Promtail + Grafana stack for filtering server logs during
+a class pilot. Works independently of how RubricMaker itself is deployed —
+the combined Docker stack above, or a traditional Apache/Nginx +
+HestiaCP/Virtualmin server. Only Docker is required on the host running this
+stack.
+
+```bash
+cp .env.observability.example .env.observability
+# edit RUBRICMAKER_LOG_DIR (and SUPABASE_DB_* if querying client_logs)
+docker-compose -f docker-compose.observability.yml --env-file .env.observability up -d
+```
+
+Open [http://localhost:3001](http://localhost:3001) (default login `admin` /
+`admin`, change via `GRAFANA_ADMIN_PASSWORD`). Grafana is bound to
+`127.0.0.1:3001` only — for remote access during a pilot, put it behind a
+reverse proxy (see [Observability on a HestiaCP subdomain](docs/OBSERVABILITY_HESTIACP.md)
+for a worked example with HTTPS).
+
+**Log sources:**
+
+- **Web server logs** — Promtail scans `RUBRICMAKER_LOG_DIR` for
+  `*access*.log` / `*error*.log` files. Set it to your panel's log directory:
+  `/var/log/virtualmin` (Virtualmin), `/var/log` (HestiaCP — per-domain logs
+  under `/var/log/apache2/domains/` or `/var/log/nginx/domains/`).
+- **Combined Docker stack containers** — Promtail also scrapes container
+  stdout/stderr for the `rubricmaker` compose project directly (no extra
+  config needed); `docker/nginx.prod.conf` writes access/error logs to
+  stdout/stderr for this.
+- **`client_logs` table** (see "Stress-test logging" above) — set
+  `SUPABASE_DB_HOST`/`SUPABASE_DB_NAME`/`SUPABASE_DB_USER`/`SUPABASE_DB_PASSWORD`
+  to provision a Postgres datasource in Grafana for querying app-level events.
+  This is the one log source available regardless of deployment style,
+  including managed Supabase Cloud projects.
+- **Managed Supabase Cloud** — there are no local containers/files for the
+  Supabase services themselves; use the Supabase dashboard's Log Explorer for
+  those. This stack still covers your web server logs and `client_logs`.
 
 ---
 

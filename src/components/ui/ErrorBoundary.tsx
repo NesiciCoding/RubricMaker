@@ -1,5 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle } from 'lucide-react';
+import { logEvent } from '../../services/logging/clientLogger';
 
 interface Props {
     children: ReactNode;
@@ -20,6 +21,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
     componentDidCatch(error: Error, info: ErrorInfo) {
         console.error('[ErrorBoundary]', error, info.componentStack);
+        logEvent('error', 'react_error_boundary', { message: error.message, componentStack: info.componentStack }, 'error');
     }
 
     handleReload = () => {

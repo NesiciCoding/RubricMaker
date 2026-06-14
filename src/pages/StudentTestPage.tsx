@@ -16,6 +16,7 @@ import {
 } from '../store/storage';
 import SebGate from '../components/Tests/SebGate';
 import { useLiveSessionTelemetry } from '../hooks/useLiveSessionTelemetry';
+import { initClientLogger, logEvent } from '../services/logging/clientLogger';
 import type { Test, TestAnswer, TestAssignmentPayload, TestQuestion, TestSubmissionPayload } from '../types';
 
 const DRAFT_KEY_PREFIX = 'rm_test_draft_';
@@ -113,6 +114,7 @@ export default function StudentTestPage() {
         const client = createClient(assignment.supabaseUrl!, assignment.supabaseAnonKey!, {
             auth: { persistSession: false, autoRefreshToken: false },
         });
+        initClientLogger(client, { role: 'student' });
         let cancelled = false;
         (async () => {
             try {
@@ -124,12 +126,17 @@ export default function StudentTestPage() {
                 if (cancelled) return;
                 if (error || !data) {
                     setLoadError(t('tests.taking.load_error'));
+                    logEvent('error', 'test_load_error', { testId: assignment.testId }, 'error');
                 } else {
                     setTest(data.data as Test);
                     setTestOwnerId((data.owner_id as string) ?? null);
+                    logEvent('lifecycle', 'test_loaded', { testId: assignment.testId });
                 }
             } catch {
-                if (!cancelled) setLoadError(t('tests.taking.load_error'));
+                if (!cancelled) {
+                    setLoadError(t('tests.taking.load_error'));
+                    logEvent('error', 'test_load_error', { testId: assignment.testId }, 'error');
+                }
             } finally {
                 if (!cancelled) setLoading(false);
             }
@@ -201,6 +208,7 @@ export default function StudentTestPage() {
                 const client = createClient(assignment.supabaseUrl, assignment.supabaseAnonKey, {
                     auth: { persistSession: false, autoRefreshToken: false },
                 });
+                initClientLogger(client, { role: 'student' });
                 const studentTestId = nanoid();
                 const { error } = await client.from('student_tests').insert({
                     id: studentTestId,
@@ -218,9 +226,13 @@ export default function StudentTestPage() {
                 });
                 if (error) {
                     setSubmitError(t('tests.taking.submit_error_db'));
+                    logEvent('error', 'test_submit_error', { testId: assignment.testId }, 'error');
+                } else {
+                    logEvent('action', 'test_submitted', { testId: assignment.testId, answerCount: testAnswers.length });
                 }
             } catch {
                 setSubmitError(t('tests.taking.submit_error_db'));
+                logEvent('error', 'test_submit_error', { testId: assignment.testId }, 'error');
             }
             setSubmitting(false);
         }
