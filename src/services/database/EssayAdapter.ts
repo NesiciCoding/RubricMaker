@@ -55,6 +55,11 @@ export class EssayAdapter {
         });
     }
 
+    /** The isolated client used for student auth — for diagnostics (e.g. clientLogger). */
+    getClient(): SupabaseClient {
+        return this.client;
+    }
+
     /**
      * Returns the active session from whichever client has one.
      * rm_student_auth is preferred; the portal session (default key) is the fallback.
