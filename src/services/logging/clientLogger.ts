@@ -54,7 +54,12 @@ export function setLoggerContext(ctx: Partial<ClientLoggerContext>): void {
 }
 
 /** Record a diagnostic event. `meta` must contain only ids/counts/durations — never free-text content. */
-export function logEvent(category: LogCategory, name: string, meta?: Record<string, unknown>, level: LogLevel = 'info'): void {
+export function logEvent(
+    category: LogCategory,
+    name: string,
+    meta?: Record<string, unknown>,
+    level: LogLevel = 'info'
+): void {
     if (!STRESS_TEST_LOGGING_ENABLED) return;
     buffer.push({
         session_id: sessionId,

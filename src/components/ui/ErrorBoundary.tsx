@@ -21,7 +21,12 @@ export class ErrorBoundary extends Component<Props, State> {
 
     componentDidCatch(error: Error, info: ErrorInfo) {
         console.error('[ErrorBoundary]', error, info.componentStack);
-        logEvent('error', 'react_error_boundary', { message: error.message, componentStack: info.componentStack }, 'error');
+        logEvent(
+            'error',
+            'react_error_boundary',
+            { message: error.message, componentStack: info.componentStack },
+            'error'
+        );
     }
 
     handleReload = () => {

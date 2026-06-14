@@ -228,7 +228,10 @@ export default function StudentTestPage() {
                     setSubmitError(t('tests.taking.submit_error_db'));
                     logEvent('error', 'test_submit_error', { testId: assignment.testId }, 'error');
                 } else {
-                    logEvent('action', 'test_submitted', { testId: assignment.testId, answerCount: testAnswers.length });
+                    logEvent('action', 'test_submitted', {
+                        testId: assignment.testId,
+                        answerCount: testAnswers.length,
+                    });
                 }
             } catch {
                 setSubmitError(t('tests.taking.submit_error_db'));

@@ -1013,10 +1013,10 @@ function DataTab() {
                     Stress-test logging
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
-                    Admins can build with <code>VITE_STRESS_TEST_LOGGING=true</code> to record diagnostic
-                    events (actions, sync results, errors — never essay text, comments, or grades) to a{' '}
-                    <code>client_logs</code> table during a pilot. Useful for running a full-class test before
-                    rollout. Disable by rebuilding without the flag once the pilot is done.
+                    Admins can build with <code>VITE_STRESS_TEST_LOGGING=true</code> to record diagnostic events
+                    (actions, sync results, errors — never essay text, comments, or grades) to a{' '}
+                    <code>client_logs</code> table during a pilot. Useful for running a full-class test before rollout.
+                    Disable by rebuilding without the flag once the pilot is done.
                 </p>
             </FeatureSection>
 

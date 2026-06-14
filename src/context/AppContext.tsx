@@ -60,7 +60,12 @@ import { storageSync, loadSupabaseConfig, saveSupabaseConfig } from '../services
 import type { DatabaseConfig, DbUser, SyncResult } from '../services/database';
 import { useToast } from '../hooks/useToast';
 import { buildAccentScale, ACCENT_SCALE_STEPS } from '../utils/accentScale';
-import { logEvent, initClientLogger, setLoggerContext, STRESS_TEST_LOGGING_ENABLED } from '../services/logging/clientLogger';
+import {
+    logEvent,
+    initClientLogger,
+    setLoggerContext,
+    STRESS_TEST_LOGGING_ENABLED,
+} from '../services/logging/clientLogger';
 
 // ─── Actions ───────────────────────────────────────────────────────────────────
 
