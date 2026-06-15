@@ -49,6 +49,12 @@ function formatTime(seconds: number): string {
     return `${m}:${s}`;
 }
 
+const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+function withAnswer(answers: Record<string, string>, key: string, value: string): Record<string, string> {
+    if (UNSAFE_KEYS.has(key)) return answers;
+    return { ...answers, [key]: value };
+}
 
 export default function StudentTestPage() {
     const { t } = useTranslation();
@@ -749,8 +755,7 @@ function QuestionCard({ question, index, total, value, onChange, code }: Questio
                                 flex: 1,
                                 padding: '14px 0',
                                 borderRadius: 8,
-                                border:
-                                    value === option ? '1px solid var(--accent)' : '1px solid var(--border)',
+                                border: value === option ? '1px solid var(--accent)' : '1px solid var(--border)',
                                 background:
                                     value === option
                                         ? 'color-mix(in srgb, var(--accent) 10%, transparent)'
@@ -926,7 +931,7 @@ function MatchingAnswer({ question, value, onChange, code }: MatchingAnswerProps
     }, [value]);
 
     function setAnswer(leftId: string, chosenId: string) {
-        onChange(JSON.stringify({ ...answers, [leftId]: chosenId }));
+        onChange(JSON.stringify(withAnswer(answers, leftId, chosenId)));
     }
 
     return (
@@ -972,7 +977,11 @@ function OrderingAnswer({ question, value, onChange, code }: OrderingAnswerProps
     const items = question.orderItems ?? [];
     const itemsById = useMemo(() => new Map(items.map((item) => [item.id, item])), [items]);
     const shuffledIds = useMemo(
-        () => seededShuffle(items.map((item) => item.id), `${code}-${question.id}`),
+        () =>
+            seededShuffle(
+                items.map((item) => item.id),
+                `${code}-${question.id}`
+            ),
         [items, code, question.id]
     );
     const order = useMemo<string[]>(() => {
@@ -1044,10 +1053,7 @@ function CategorizeAnswer({ question, value, onChange, code }: CategorizeAnswerP
     const { t } = useTranslation();
     const items = question.categorizeItems ?? [];
     const categories = question.categories ?? [];
-    const shuffledItems = useMemo(
-        () => seededShuffle(items, `${code}-${question.id}`),
-        [items, code, question.id]
-    );
+    const shuffledItems = useMemo(() => seededShuffle(items, `${code}-${question.id}`), [items, code, question.id]);
     const answers: Record<string, string> = useMemo(() => {
         try {
             return value ? (JSON.parse(value) as Record<string, string>) : {};
@@ -1057,7 +1063,7 @@ function CategorizeAnswer({ question, value, onChange, code }: CategorizeAnswerP
     }, [value]);
 
     function setAnswer(itemId: string, categoryId: string) {
-        onChange(JSON.stringify({ ...answers, [itemId]: categoryId }));
+        onChange(JSON.stringify(withAnswer(answers, itemId, categoryId)));
     }
 
     return (
@@ -1099,10 +1105,7 @@ interface HotTextAnswerProps {
 
 function HotTextAnswer({ question, value, onChange }: HotTextAnswerProps) {
     const { t } = useTranslation();
-    const segments = useMemo(
-        () => parseHotTextFragments(question.hotTextPassage ?? ''),
-        [question.hotTextPassage]
-    );
+    const segments = useMemo(() => parseHotTextFragments(question.hotTextPassage ?? ''), [question.hotTextPassage]);
     const selected: number[] = useMemo(() => {
         try {
             return value ? (JSON.parse(value) as number[]) : [];

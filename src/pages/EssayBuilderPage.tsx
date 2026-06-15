@@ -79,7 +79,18 @@ export default function EssayBuilderPage() {
         if (!teacherKeyParam) return;
         updateEssayGroup(teacherKeyParam, buildPatch());
         showToast(t('essays.save'), 'success');
-    }, [teacherKeyParam, title, prompt, rubricId, minWords, maxWords, timeLimitMinutes, requireSEB, readOnlyAfterSubmit, expiresAt]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [
+        teacherKeyParam,
+        title,
+        prompt,
+        rubricId,
+        minWords,
+        maxWords,
+        timeLimitMinutes,
+        requireSEB,
+        readOnlyAfterSubmit,
+        expiresAt,
+    ]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handlePickClass = useCallback(
         (classId: string) => {
@@ -184,7 +195,10 @@ export default function EssayBuilderPage() {
                     </div>
                 }
             />
-            <div className="page-content fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 760 }}>
+            <div
+                className="page-content fade-in"
+                style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 760 }}
+            >
                 {/* 1. Prompt editor */}
                 <div className="card">
                     <h3 style={{ marginTop: 0 }}>{t('essays.prompt_editor_label')}</h3>
@@ -337,7 +351,11 @@ export default function EssayBuilderPage() {
 
                 {/* 4 & 5. Import submission code + Monitor */}
                 <div className="card" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    <button className="btn btn-secondary btn-sm" onClick={() => setImportOpen(true)} disabled={!teacherKeyParam}>
+                    <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => setImportOpen(true)}
+                        disabled={!teacherKeyParam}
+                    >
                         <Upload size={15} /> {t('essays.import_submission_code')}
                     </button>
                     {teacherKeyParam && (
@@ -351,7 +369,14 @@ export default function EssayBuilderPage() {
             {pickClassOpen && (
                 <Modal titleId="essay-pick-class-title" onClose={() => setPickClassOpen(false)} maxWidth={420}>
                     <div style={{ padding: 20 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                        <div
+                            style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                marginBottom: 12,
+                            }}
+                        >
                             <h2 id="essay-pick-class-title" style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>
                                 {t('essays.pick_class_title')}
                             </h2>
@@ -384,7 +409,9 @@ export default function EssayBuilderPage() {
                     teacherKey={teacherKeyRef}
                     initialValues={buildPatch()}
                     onClose={() => setAssignTargets(null)}
-                    onOpenSlipSheet={(assignment, classStudents) => setSlipSheetData({ assignment, students: classStudents })}
+                    onOpenSlipSheet={(assignment, classStudents) =>
+                        setSlipSheetData({ assignment, students: classStudents })
+                    }
                     onAssignToStudents={handleAssignToStudents}
                 />
             )}
@@ -400,7 +427,14 @@ export default function EssayBuilderPage() {
             {importOpen && (
                 <Modal titleId="essay-import-title" onClose={() => setImportOpen(false)} maxWidth={480}>
                     <div style={{ padding: 20 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                        <div
+                            style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                marginBottom: 12,
+                            }}
+                        >
                             <h2 id="essay-import-title" style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>
                                 {t('essays.import_submission_code')}
                             </h2>
@@ -430,7 +464,11 @@ export default function EssayBuilderPage() {
                             <button className="btn btn-secondary btn-sm" onClick={() => setImportOpen(false)}>
                                 {t('common.cancel')}
                             </button>
-                            <button className="btn btn-primary btn-sm" onClick={handleImportSubmission} disabled={!importCode.trim()}>
+                            <button
+                                className="btn btn-primary btn-sm"
+                                onClick={handleImportSubmission}
+                                disabled={!importCode.trim()}
+                            >
                                 {t('essays.import_submission_code')}
                             </button>
                         </div>

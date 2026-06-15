@@ -666,25 +666,25 @@ function RubricsTab() {
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     Build tests and quizzes from the <strong>Tests</strong> page. Add multiple-choice, multiple-response
                     (select all that apply), true/false, short-answer, open, fill-the-gap, matching, ordering,
-                    categorize, and hot text questions, set a duration and grade scale, and optionally require Safe
-                    Exam Browser.
-                    Link standards and CEFR descriptors per question, then assign the test to a class — each student
-                    gets a unique share link to complete it. Every question type has a small <strong>{'{?}'}</strong> help
-                    button for both you and your students explaining how to author and answer it.
+                    categorize, and hot text questions, set a duration and grade scale, and optionally require Safe Exam
+                    Browser. Link standards and CEFR descriptors per question, then assign the test to a class — each
+                    student gets a unique share link to complete it. Every question type has a small{' '}
+                    <strong>{'{?}'}</strong> help button for both you and your students explaining how to author and
+                    answer it.
                 </p>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     <strong>Fill-the-gap questions</strong> use <code>{'{{...}}'}</code> markers in the question text.
-                    Write <code>{'{{Paris}}'}</code> to create a blank that students type into — add alternative
-                    correct spellings separated by a pipe, e.g. <code>{'{{Paris|City of Paris}}'}</code>. For a
-                    dropdown instead of free text, choose the <strong>Fill the gap (dropdown)</strong> type and list
-                    the correct answer first, e.g. <code>{'{{Paris|London|Berlin}}'}</code> — students see the
-                    options in a shuffled order. The builder's "Insert gap" / "Insert dropdown gap" buttons add the
-                    markers for you, and a preview shows the parsed gaps and their correct answers.
+                    Write <code>{'{{Paris}}'}</code> to create a blank that students type into — add alternative correct
+                    spellings separated by a pipe, e.g. <code>{'{{Paris|City of Paris}}'}</code>. For a dropdown instead
+                    of free text, choose the <strong>Fill the gap (dropdown)</strong> type and list the correct answer
+                    first, e.g. <code>{'{{Paris|London|Berlin}}'}</code> — students see the options in a shuffled order.
+                    The builder's "Insert gap" / "Insert dropdown gap" buttons add the markers for you, and a preview
+                    shows the parsed gaps and their correct answers.
                 </p>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
-                    <strong>Matching, ordering, and categorize questions</strong> let students work with several
-                    related items at once. For <strong>matching</strong>, enter left/right pairs — students see the
-                    left items in order and pick a matching right item from a dropdown for each. For
+                    <strong>Matching, ordering, and categorize questions</strong> let students work with several related
+                    items at once. For <strong>matching</strong>, enter left/right pairs — students see the left items
+                    in order and pick a matching right item from a dropdown for each. For
                     <strong> ordering</strong>, enter the items in their correct order using the up/down arrows —
                     students see them shuffled and reorder them with arrows. For <strong>categorize</strong>, define
                     categories and assign each item to the category it belongs to — students sort each item into a

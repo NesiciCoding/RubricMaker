@@ -92,9 +92,7 @@ export default function QuestionEditor({ question, index, total, onChange, onRem
             update({
                 type,
                 orderItems:
-                    question.orderItems && question.orderItems.length > 0
-                        ? question.orderItems
-                        : defaultOrderItems(),
+                    question.orderItems && question.orderItems.length > 0 ? question.orderItems : defaultOrderItems(),
             });
         } else if (type === 'categorize') {
             const categories =
@@ -212,9 +210,7 @@ export default function QuestionEditor({ question, index, total, onChange, onRem
 
     function toggleOptionCorrect(optionId: string) {
         update({
-            options: (question.options ?? []).map((o) =>
-                o.id === optionId ? { ...o, isCorrect: !o.isCorrect } : o
-            ),
+            options: (question.options ?? []).map((o) => (o.id === optionId ? { ...o, isCorrect: !o.isCorrect } : o)),
         });
     }
 

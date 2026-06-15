@@ -32,8 +32,7 @@ export function scoreMultipleResponse(question: TestQuestion, response: string):
     const correctSet = new Set(options.filter((o) => o.isCorrect).map((o) => o.id));
 
     if (question.partialCredit === false) {
-        const exact =
-            selectedSet.size === correctSet.size && [...selectedSet].every((id) => correctSet.has(id));
+        const exact = selectedSet.size === correctSet.size && [...selectedSet].every((id) => correctSet.has(id));
         return exact ? question.points : 0;
     }
 
@@ -149,8 +148,7 @@ export function scoreHotText(question: TestQuestion, response: string): number {
     const correctSet = new Set(question.hotTextCorrectIndices ?? []);
 
     if (question.partialCredit === false) {
-        const exact =
-            selectedSet.size === correctSet.size && [...selectedSet].every((i) => correctSet.has(i));
+        const exact = selectedSet.size === correctSet.size && [...selectedSet].every((i) => correctSet.has(i));
         return exact ? question.points : 0;
     }
 

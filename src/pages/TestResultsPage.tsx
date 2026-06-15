@@ -93,11 +93,7 @@ function formatStudentResponse(
                             style={{
                                 fontWeight: 600,
                                 textDecoration: 'underline',
-                                color: !studentAnswer
-                                    ? 'var(--text-muted)'
-                                    : correct
-                                      ? 'var(--green)'
-                                      : 'var(--red)',
+                                color: !studentAnswer ? 'var(--text-muted)' : correct ? 'var(--green)' : 'var(--red)',
                             }}
                         >
                             {studentAnswer || '___'}

@@ -521,7 +521,9 @@ function reducer(state: StoreData, action: Action): StoreData {
         }
         case 'ADD_ESSAY_SUBMISSION': {
             const exists = state.essaySubmissions.findIndex(
-                (s) => s.teacherKey === action.payload.teacherKey && s.assignmentStudentId === action.payload.assignmentStudentId
+                (s) =>
+                    s.teacherKey === action.payload.teacherKey &&
+                    s.assignmentStudentId === action.payload.assignmentStudentId
             );
             const next =
                 exists >= 0
@@ -1236,7 +1238,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'UPDATE_ESSAY_GROUP', teacherKey, patch });
     }, []);
 
-    const deleteEssayGroup = useCallback((teacherKey: string) => dispatch({ type: 'DELETE_ESSAY_GROUP', teacherKey }), []);
+    const deleteEssayGroup = useCallback(
+        (teacherKey: string) => dispatch({ type: 'DELETE_ESSAY_GROUP', teacherKey }),
+        []
+    );
 
     const addEssaySubmission = useCallback((submission: EssaySubmission) => {
         dispatch({ type: 'ADD_ESSAY_SUBMISSION', payload: submission });
