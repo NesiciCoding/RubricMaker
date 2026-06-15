@@ -1,0 +1,90 @@
+# RubricMaker — standalone observability stack (Loki + Promtail + Grafana)
+#
+# Runs independently of how RubricMaker itself is deployed — the combined
+# docker-compose.yml stack, or a traditional Apache/Nginx + HestiaCP/Virtualmin
+# server. Only Docker is required on the host running this stack.
+#
+# ── Usage ──────────────────────────────────────────────────────────────────
+#   cp .env.observability.example .env.observability
+#   # edit RUBRICMAKER_LOG_DIR (and SUPABASE_DB_* if querying client_logs)
+#   docker-compose -f docker-compose.observability.yml --env-file .env.observability up -d
+#   Open http://localhost:3001 (default login: admin / admin, change via
+#   GRAFANA_ADMIN_PASSWORD)
+#
+# See README.md → Deployment → Observability for the three log-source variants
+# (traditional web server logs, combined-stack containers, client_logs table).
+
+name: rubricmaker-observability
+
+services:
+  loki:
+    image: grafana/loki:2.9.8
+    restart: unless-stopped
+    volumes:
+      - ./docker/observability/loki-config.yml:/etc/loki/local-config.yaml:ro
+      - loki-data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+
+  promtail:
+    image: grafana/promtail:2.9.8
+    restart: unless-stopped
+    volumes:
+      - ./docker/observability/promtail-config.yml:/etc/promtail/config.yml:ro
+      # Host log directory for traditional Apache/Nginx + HestiaCP/Virtualmin
+      # deployments (set RUBRICMAKER_LOG_DIR to the panel's log path).
+      - ${RUBRICMAKER_LOG_DIR:-/var/log}:/var/host-logs:ro
+      # Optional: only relevant if the combined docker-compose.yml stack also
+      # runs on this host — harmless if these paths don't exist.
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on: [loki]
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    restart: unless-stopped
+    ports:
+      # Bound to localhost only — put a reverse proxy (with HTTPS) in front
+      # for remote access. See docs/OBSERVABILITY_HESTIACP.md.
+      - "127.0.0.1:3001:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./docker/observability/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+      - ./docker/observability/grafana-dashboards-provider.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+      - ./docker/observability/dashboards:/etc/grafana/provisioning/dashboards/json:ro
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_ADMIN_PASSWORD:-admin}"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      # Set when Grafana sits behind a reverse-proxy subdomain, so links,
+      # redirects and auth cookies use the right external URL.
+      GF_SERVER_DOMAIN: "${GRAFANA_DOMAIN:-localhost}"
+      GF_SERVER_ROOT_URL: "${GRAFANA_ROOT_URL:-}"
+      # Used by grafana-datasources.yml to provision the client_logs Postgres
+      # datasource. Leave unset to skip it (Loki is still provisioned).
+      SUPABASE_DB_HOST: "${SUPABASE_DB_HOST:-}"
+      SUPABASE_DB_NAME: "${SUPABASE_DB_NAME:-postgres}"
+      SUPABASE_DB_USER: "${SUPABASE_DB_USER:-}"
+      SUPABASE_DB_PASSWORD: "${SUPABASE_DB_PASSWORD:-}"
+      # "require" for managed Supabase Cloud; self-hosted db containers on the
+      # same Docker network usually don't have SSL configured for local
+      # connections, so set SUPABASE_DB_SSLMODE=disable in that case.
+      SUPABASE_DB_SSLMODE: "${SUPABASE_DB_SSLMODE:-require}"
+    depends_on: [loki]
+
+volumes:
+  loki-data:    # persists log chunks across restarts
+  grafana-data: # persists Grafana dashboards/users
+
+# ── Optional: self-hosted db on the same host ────────────────────────────────
+# If the combined docker-compose.yml stack (db, auth, rest, ...) also runs on
+# this host and you want Grafana to reach its `db` container by name, join its
+# network and set SUPABASE_DB_HOST=db:
+#
+# networks:
+#   default:
+#     name: rubricmaker_default
+#     external: true
+#
+# Otherwise (managed Supabase, or Supabase on another host), leave this
+# commented out and set SUPABASE_DB_HOST to the Postgres connection host —
+# e.g. db.<project-ref>.supabase.co.

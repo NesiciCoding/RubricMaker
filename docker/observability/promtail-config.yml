@@ -1,0 +1,41 @@
+# Promtail — ships logs to Loki from two sources:
+#   1. webserver  — Apache/Nginx access + error logs from any deployment style
+#                    (traditional HestiaCP/Virtualmin, or the combined docker-compose
+#                    stack's `app` container, when its logs are written to a mounted
+#                    file path). Glob path is mounted from RUBRICMAKER_LOG_DIR.
+#   2. docker     — container stdout/stderr for the combined docker-compose stack,
+#                    filtered to the `rubricmaker` compose project. Harmless if no
+#                    matching containers exist on this host.
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # ── 1. Web server log files (traditional deployments + mounted container logs) ──
+  - job_name: webserver
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: webserver
+          __path__: /var/host-logs/**/*{access,error}*.log*
+
+  # ── 2. Combined docker-compose stack containers (optional) ───────────────────────
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 15s
+        filters:
+          - name: label
+            values: ["com.docker.compose.project=rubricmaker"]
+    relabel_configs:
+      - source_labels: [__meta_docker_container_name]
+        target_label: container
+      - source_labels: [__meta_docker_container_label_com_docker_compose_service]
+        target_label: service

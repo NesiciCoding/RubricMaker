@@ -6,6 +6,7 @@ import { AppProvider } from './context/AppContext';
 import { ToastProvider } from './context/ToastContext';
 import './index.css';
 import './i18n';
+import { logEvent } from './services/logging/clientLogger';
 
 // Student-facing pages are outside AppProvider — they work from URL-encoded data only
 const StudentFeedbackPage = lazy(() => import('./pages/StudentFeedbackPage'));
@@ -15,6 +16,7 @@ const StudentTestPage = lazy(() => import('./pages/StudentTestPage'));
 
 function handleUnhandledRejection(event: PromiseRejectionEvent) {
     console.error('[unhandled rejection]', event.reason);
+    logEvent('error', 'unhandled_rejection', { message: String(event.reason) }, 'error');
 }
 window.removeEventListener('unhandledrejection', handleUnhandledRejection);
 window.addEventListener('unhandledrejection', handleUnhandledRejection);

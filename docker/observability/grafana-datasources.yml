@@ -1,0 +1,29 @@
+# Provisions Grafana datasources on startup.
+# - Loki is always available (part of this stack).
+# - The Postgres datasource is only added when SUPABASE_DB_URL is set, so
+#   `client_logs` (app-level events from Part 1) can be queried directly —
+#   works for a self-hosted `db` container or a managed Supabase project.
+
+apiVersion: 1
+
+datasources:
+  - name: Loki
+    type: loki
+    uid: loki
+    access: proxy
+    url: http://loki:3100
+    isDefault: true
+
+  - name: Supabase Postgres (client_logs)
+    type: postgres
+    uid: client_logs_postgres
+    access: proxy
+    url: "${SUPABASE_DB_HOST}"
+    database: "${SUPABASE_DB_NAME}"
+    user: "${SUPABASE_DB_USER}"
+    secureJsonData:
+      password: "${SUPABASE_DB_PASSWORD}"
+    jsonData:
+      sslmode: "${SUPABASE_DB_SSLMODE}"
+      postgresVersion: 1500
+      timescaledb: false

@@ -7,6 +7,8 @@ COPY . .
 # Set via docker-compose build args or --build-arg flags.
 ARG VITE_SUPABASE_URL
 ARG VITE_SUPABASE_ANON_KEY
+# Optional: enables the client_logs diagnostic stream for a stress-test window.
+ARG VITE_STRESS_TEST_LOGGING
 RUN npm run build
 
 FROM nginx:alpine

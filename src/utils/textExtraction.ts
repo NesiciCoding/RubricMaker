@@ -2,7 +2,9 @@ import type { Attachment } from '../types';
 
 export class UnsupportedFormatError extends Error {
     constructor(mimeType: string) {
-        super(`Cannot extract text from "${mimeType}" files. Supported: PDF, Word (.docx), plain text, and images.`);
+        super(
+            `Cannot extract text from "${mimeType}" files. Supported: PDF, Word (.docx), plain text, HTML (essays), and images.`
+        );
         this.name = 'UnsupportedFormatError';
     }
 }
@@ -48,6 +50,13 @@ function extractFromPlainText(dataUrl: string): string {
     return atob(base64);
 }
 
+function extractFromHtml(dataUrl: string): string {
+    const base64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
+    const html = decodeURIComponent(escape(atob(base64)));
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    return (doc.body.textContent ?? '').replace(/\s+/g, ' ').trim();
+}
+
 async function extractFromImage(dataUrl: string): Promise<string> {
     const { createWorker } = await import('tesseract.js');
     const worker = await createWorker('eng');
@@ -87,6 +96,13 @@ export async function extractText(
     if (mimeType === 'text/plain' || name.toLowerCase().endsWith('.txt')) {
         onProgress?.(50, 'Reading plain text…');
         const text = extractFromPlainText(dataUrl);
+        onProgress?.(100, 'Done');
+        return text;
+    }
+
+    if (mimeType === 'text/html' || name.toLowerCase().endsWith('.html')) {
+        onProgress?.(50, 'Reading text from essay…');
+        const text = extractFromHtml(dataUrl);
         onProgress?.(100, 'Done');
         return text;
     }

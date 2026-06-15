@@ -5,6 +5,7 @@ import { RecordingSync } from './RecordingSync';
 import type { DatabaseConfig, SyncStatus, SyncResult, DbUser } from './types';
 import type { StoreData } from '../../store/storage';
 import { addToPendingQueue, loadPendingQueue, removePendingWrites } from '../../store/storage';
+import { logEvent } from '../logging/clientLogger';
 import type {
     Rubric,
     Student,
@@ -479,6 +480,7 @@ class StorageSyncService {
             return { data: result };
         } catch (e) {
             console.error('[sync] hydrate failed', e);
+            logEvent('sync', 'hydrate', { error: String(e) }, 'error');
             if (gen === this.hydrationGeneration) this.setStatus('error');
             return { data: null, error: String(e) };
         }
@@ -538,6 +540,7 @@ class StorageSyncService {
     async pushOne(entity: string, action: 'upsert' | 'delete', payload: unknown, id?: string): Promise<void> {
         if (!this.adapter.isConnected()) return;
         let result: SyncResult | undefined;
+        const startedAt = Date.now();
         try {
             switch (entity) {
                 case 'rubric':
@@ -626,8 +629,10 @@ class StorageSyncService {
                 throw new Error(result.error || `sync ${entity} ${action} rejected`);
             }
             this.pushOneFailCount = 0;
+            logEvent('sync', `pushOne:${entity}:${action}`, { id, ms: Date.now() - startedAt });
         } catch (e) {
             console.warn(`[sync] pushOne(${entity}, ${action}) failed`, e);
+            logEvent('sync', `pushOne:${entity}:${action}`, { id, error: String(e) }, 'warn');
             addToPendingQueue({ entity, action, payload, entityId: id });
             this.pushOneFailCount++;
             if (this.pushOneFailCount === 3 && this.toastFn) {

@@ -63,6 +63,12 @@ import { storageSync, loadSupabaseConfig, saveSupabaseConfig } from '../services
 import type { DatabaseConfig, DbUser, SyncResult } from '../services/database';
 import { useToast } from '../hooks/useToast';
 import { buildAccentScale, ACCENT_SCALE_STEPS } from '../utils/accentScale';
+import {
+    logEvent,
+    initClientLogger,
+    setLoggerContext,
+    STRESS_TEST_LOGGING_ENABLED,
+} from '../services/logging/clientLogger';
 
 // ─── Actions ───────────────────────────────────────────────────────────────────
 
@@ -529,6 +535,26 @@ function reducer(state: StoreData, action: Action): StoreData {
     }
 }
 
+// ─── Stress-test logging ────────────────────────────────────────────────────
+
+function summarizeAction(action: Action): Record<string, unknown> {
+    const a = action as unknown as Record<string, unknown>;
+    const summary: Record<string, unknown> = {};
+    const payload = a.payload as Record<string, unknown> | undefined;
+    if (payload && typeof payload === 'object' && 'id' in payload) summary.id = payload.id;
+    for (const key of ['id', 'rubricId', 'studentId', 'itemId', 'itemIds', 'versionIndex']) {
+        if (key in a) summary[key] = Array.isArray(a[key]) ? (a[key] as unknown[]).length : a[key];
+    }
+    return summary;
+}
+
+function loggingReducer(state: StoreData, action: Action): StoreData {
+    if (STRESS_TEST_LOGGING_ENABLED) {
+        logEvent('action', action.type, summarizeAction(action));
+    }
+    return reducer(state, action);
+}
+
 // ─── Context ───────────────────────────────────────────────────────────────────
 
 interface AppContextValue extends StoreData {
@@ -711,7 +737,7 @@ async function flushToLocalStorage(merged: StoreData) {
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
-    const [state, dispatch] = useReducer(reducer, null, loadStore);
+    const [state, dispatch] = useReducer(loggingReducer, null, loadStore);
     const initialStateRef = useRef(state);
     const currentStateRef = useRef(state);
     const { showToast } = useToast();
@@ -855,6 +881,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return () => unsubAuth();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    // ── Stress-test logging: keep context/destination in sync with auth + role ───
+    useEffect(() => {
+        if (!STRESS_TEST_LOGGING_ENABLED) return;
+        const ctx = {
+            role: state.settings.userRole,
+            schoolId: state.settings.schoolId,
+            userId: storageSync.getCurrentUserId() ?? undefined,
+        };
+        const client = storageSync.adapter.getClient();
+        if (client) initClientLogger(client, ctx);
+        else setLoggerContext(ctx);
+    }, [state.settings.userRole, state.settings.schoolId]);
 
     // ── Re-hydrate from Supabase when the network comes back online ──────────────
     useEffect(() => {

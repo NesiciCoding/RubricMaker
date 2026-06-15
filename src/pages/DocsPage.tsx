@@ -1066,6 +1066,16 @@ function DataTab() {
                         'Conflict resolution: when local and cloud data differ, the newest change wins. Edits made while offline are protected and never overwritten by older cloud data until they have synced.',
                     ]}
                 />
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    Stress-test logging
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    Admins can build with <code>VITE_STRESS_TEST_LOGGING=true</code> to record diagnostic events
+                    (actions, sync results, errors — never essay text, comments, or grades) to a{' '}
+                    <code>client_logs</code> table during a pilot. Useful for running a full-class test before rollout.
+                    Disable by rebuilding without the flag once the pilot is done.
+                </p>
             </FeatureSection>
 
             <FeatureSection icon={Shield} title="Admin panel" color="#ef4444">

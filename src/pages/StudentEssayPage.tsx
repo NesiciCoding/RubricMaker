@@ -12,6 +12,7 @@ import { nanoid } from '../utils/nanoid';
 import { useLiveSessionTelemetry } from '../hooks/useLiveSessionTelemetry';
 import type { EssayAssignmentContent, EssaySubmission } from '../types';
 import { EssayAdapter } from '../services/database/EssayAdapter';
+import { initClientLogger, logEvent } from '../services/logging/clientLogger';
 
 const DRAFT_KEY_PREFIX = 'rm_essay_draft_';
 const TIMER_KEY_PREFIX = 'rm_essay_timer_';
@@ -237,7 +238,9 @@ export default function StudentEssayPage() {
     const hasDb = !!(assignment?.supabaseUrl && assignment?.supabaseAnonKey);
     const adapter = useMemo<EssayAdapter | null>(() => {
         if (!assignment?.supabaseUrl || !assignment?.supabaseAnonKey) return null;
-        return new EssayAdapter(assignment.supabaseUrl, assignment.supabaseAnonKey);
+        const a = new EssayAdapter(assignment.supabaseUrl, assignment.supabaseAnonKey);
+        initClientLogger(a.getClient(), { role: 'student' });
+        return a;
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []); // intentionally stable — assignment is decoded from the URL and never changes
 
@@ -401,6 +404,9 @@ export default function StudentEssayPage() {
             if (!result.success) {
                 setSubmitError(`Submission failed: ${result.error}. Your essay is saved below as a backup code.`);
                 setSubmissionCode(legacyCode); // show fallback code so student isn't stuck
+                logEvent('error', 'essay_submit_error', { teacherKey: assignment.teacherKey }, 'error');
+            } else {
+                logEvent('action', 'essay_submitted', { teacherKey: assignment.teacherKey, wordCount });
             }
         }
 
