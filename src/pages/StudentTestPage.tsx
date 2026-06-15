@@ -52,8 +52,9 @@ function formatTime(seconds: number): string {
 const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
 function withAnswer(answers: Record<string, string>, key: string, value: string): Record<string, string> {
-    if (UNSAFE_KEYS.has(key)) return answers;
-    return { ...answers, [key]: value };
+    const map = new Map(Object.entries(answers));
+    if (!UNSAFE_KEYS.has(key)) map.set(key, value);
+    return Object.fromEntries(map);
 }
 
 export default function StudentTestPage() {
