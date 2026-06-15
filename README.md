@@ -12,7 +12,7 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 - **CEFR descriptors**: Attach CEFR Can-Do statements to individual criteria.
 - **Framework descriptors**: Link criteria to IB Learner Profile attributes or Bloom's Taxonomy levels.
 - **Rubric versioning**: Automatic snapshots on save; restore any previous version.
-- **Tests & quizzes**: Build multiple-choice, short-answer, and open-question tests with a duration, optional Safe Exam Browser requirement, and grade scale. Link standards and CEFR descriptors per question, then assign tests to a class — each student gets a unique share link.
+- **Tests & quizzes**: Build multiple-choice, multiple-response (select all that apply), true/false, short-answer, open, fill-the-gap (with optional dropdown), matching, ordering, categorize, and hot text tests with a duration, optional Safe Exam Browser requirement, and grade scale. Link standards and CEFR descriptors per question, then assign tests to a class — each student gets a unique share link. Every question type has an in-context help button explaining how to author and answer it.
 - **Live monitoring**: While a test or essay is in progress (cloud sync enabled), watch a live presence/progress view per student — response grid for tests, live word count and draft preview for essays, plus advisory proctoring flags (tab switches, copy/paste, battery, Safe Exam Browser status).
 
 ### 2. Grading Interface
@@ -35,6 +35,7 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 - **Cambridge English exam mapping**: Optional setting shows the Cambridge English Qualification (A2 Key, B1 Preliminary, B2 First, C1 Advanced, C2 Proficiency) alongside CEFR level badges; vocabulary items can be enriched with CEFR level and definition via an optional Cambridge Dictionary API key.
 
 ### 4. Essay Writing
+- **Dedicated workspace**: A standalone "Essays" section (parallel to Tests) lists every essay assignment, with a builder for the prompt, rubric link, word/time limits, assigning to a class, copying per-student share links, importing submission codes, and a live monitor link.
 - **Essay assignments**: Teachers create prompts with optional CEFR-linked rubrics.
 - **Rich text editor**: TipTap (ProseMirror) editor with formatting toolbar.
 - **Submission codes**: Anonymous essay access via shareable codes — students submit without logging in.
@@ -124,7 +125,10 @@ npm run db:reset     # Reset and re-apply all migrations
 | `/rubrics/:rubricId/peer-review/:studentId` | Peer review view |
 | `/peer-analytics/:rubricId` | Peer review analytics (consistency, feedback heatmap, reviewer trends) |
 | `/rubrics/:rubricId/self-assess/:studentId` | Student self-assessment |
-| `/essays/:assignmentId/monitor` | Live essay monitor (presence, live word counts, draft preview) |
+| `/essays` | Essay list |
+| `/essays/new` | New essay |
+| `/essays/:teacherKey` | Essay builder (prompt, rubric link, assign students, import submissions) |
+| `/essays/:teacherKey/monitor` | Live essay monitor (presence, live word counts, draft preview) |
 | `/speaking/:rubricId/:studentId` | Speaking session |
 | `/grade-comparative/:classId/:rubricId` | Comparative grading |
 | `/tests` | Test list |

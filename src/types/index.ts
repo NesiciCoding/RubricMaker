@@ -661,7 +661,18 @@ export interface StudentEssayAssignmentSummary {
 
 // ─── Testing Environment ──────────────────────────────────────────────────────
 
-export type TestQuestionType = 'multiple-choice' | 'short-answer' | 'open';
+export type TestQuestionType =
+    | 'multiple-choice'
+    | 'multiple-response'
+    | 'true-false'
+    | 'short-answer'
+    | 'open'
+    | 'cloze'
+    | 'cloze-dropdown'
+    | 'matching'
+    | 'ordering'
+    | 'categorize'
+    | 'hot-text';
 
 export interface TestOption {
     id: string;
@@ -669,15 +680,61 @@ export interface TestOption {
     isCorrect: boolean;
 }
 
+/** A left/right pair for matching questions; correct match is left.id === right pair's id */
+export interface MatchingPair {
+    id: string;
+    left: string;
+    right: string;
+}
+
+/** An item for ordering questions; array order in TestQuestion.orderItems defines the correct order */
+export interface OrderItem {
+    id: string;
+    text: string;
+}
+
+/** A bucket for categorize questions */
+export interface TestCategory {
+    id: string;
+    label: string;
+}
+
+/** An item for categorize questions; categoryId is the correct bucket */
+export interface CategorizeItem {
+    id: string;
+    text: string;
+    categoryId: string;
+}
+
 export interface TestQuestion {
     id: string;
     prompt: string;
     type: TestQuestionType;
     points: number;
-    /** Answer options — only for multiple-choice questions */
+    /** Answer options — for multiple-choice (single correct) and multiple-response (one or more correct) questions */
     options?: TestOption[];
     /** Model answer used for exact-match auto-scoring of short-answer questions */
     expectedAnswer?: string;
+    /** Correct answer for true-false questions */
+    correctBoolean?: boolean;
+    /** Pairs for matching questions */
+    matchingPairs?: MatchingPair[];
+    /** Items in correct order for ordering questions */
+    orderItems?: OrderItem[];
+    /** Buckets for categorize questions */
+    categories?: TestCategory[];
+    /** Items to sort into categories for categorize questions */
+    categorizeItems?: CategorizeItem[];
+    /** Raw passage text with [[...]] marking selectable fragments, for hot-text questions */
+    hotTextPassage?: string;
+    /** Indices (into the parsed fragment list) of fragments that are correct to select, for hot-text questions */
+    hotTextCorrectIndices?: number[];
+    /**
+     * Whether multi-part question types award proportional credit for
+     * partially-correct answers (true, default) or only full points when
+     * every part is correct (false).
+     */
+    partialCredit?: boolean;
     linkedStandards?: LinkedStandard[];
     /** CEFR Can-Do statements linked to this question */
     linkedCefrDescriptors?: LinkedCefrDescriptor[];

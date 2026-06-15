@@ -15,7 +15,6 @@ import {
     Check,
     Layers,
     Eye,
-    PenLine,
     Users2,
     X,
 } from 'lucide-react';
@@ -36,15 +35,11 @@ import type { ParsedRubric } from '../utils/rubricImport';
 import { encodeRubricShareCode, decodeRubricShareCode } from '../utils/rubricImport';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
-import EssayAssignmentModal from '../components/Essay/EssayAssignmentModal';
-import EssaySlipSheet from '../components/Essay/EssaySlipSheet';
-import type { EssayAssignment } from '../types';
 
 export default function RubricList() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { rubrics, students, classes, studentRubrics, addRubric, deleteRubric, settings, saveEssayAssignment } =
-        useApp();
+    const { rubrics, students, classes, studentRubrics, addRubric, deleteRubric, settings } = useApp();
     const [search, setSearch] = useState('');
     const [subjectFilter, setSubjectFilter] = useState<string>('all');
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
@@ -119,15 +114,6 @@ export default function RubricList() {
         await storageSync.adapter.unshareRubric(shareModal.rubricId, userId);
         setShareList((prev) => prev.filter((s) => s.userId !== userId));
     }
-
-    // Essay assignment flow: rubricId → class pick → EssayAssignmentModal → EssaySlipSheet
-    type EssayStep = 'class-pick' | 'assignment' | 'slipsheet';
-    const [essayFlow, setEssayFlow] = useState<{
-        step: EssayStep;
-        rubricId: string;
-        classId?: string;
-        slipSheetData?: { assignment: EssayAssignment; students: { id: string; name: string }[] };
-    } | null>(null);
 
     useEffect(() => {
         if (!dbStatus.isConnected) {
@@ -914,109 +900,6 @@ export default function RubricList() {
                         </div>
                     </div>
                 </div>
-            )}
-
-            {/* ── Essay flow: Step 1 — class picker ── */}
-            {essayFlow?.step === 'class-pick' &&
-                (() => {
-                    const rubric = rubrics.find((r) => r.id === essayFlow.rubricId);
-                    const linkedClasses = classes.filter((c) => c.rubricIds?.includes(essayFlow.rubricId));
-                    const offerClasses = linkedClasses.length > 0 ? linkedClasses : classes;
-                    return (
-                        <div className="modal-overlay" onClick={() => setEssayFlow(null)}>
-                            <div className="modal" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
-                                <div className="modal-header">
-                                    <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                        <PenLine size={16} /> {t('rubricList.essay_pick_class_title')}
-                                    </h3>
-                                    <button
-                                        className="btn btn-ghost btn-icon"
-                                        aria-label={t('common.close')}
-                                        onClick={() => setEssayFlow(null)}
-                                    >
-                                        <X size={16} />
-                                    </button>
-                                </div>
-                                <div className="modal-body">
-                                    {rubric && (
-                                        <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
-                                            {t('rubricList.essay_pick_class_desc', { rubric: rubric.name })}
-                                        </p>
-                                    )}
-                                    {offerClasses.length === 0 ? (
-                                        <p className="text-muted text-sm">{t('comparativeGrading.no_classes')}</p>
-                                    ) : (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                            {offerClasses.map((c) => (
-                                                <button
-                                                    key={c.id}
-                                                    className="btn btn-secondary"
-                                                    onClick={() => {
-                                                        const classStudents = students
-                                                            .filter((s) => s.classId === c.id)
-                                                            .map((s) => ({ id: s.id, name: s.name }));
-                                                        if (classStudents.length === 0) return;
-                                                        setEssayFlow({
-                                                            step: 'assignment',
-                                                            rubricId: essayFlow.rubricId,
-                                                            classId: c.id,
-                                                        });
-                                                    }}
-                                                >
-                                                    {c.name}
-                                                    {c.year ? ` — ${c.year}` : ''}
-                                                    <span className="text-muted text-xs" style={{ marginLeft: 6 }}>
-                                                        ({students.filter((s) => s.classId === c.id).length}{' '}
-                                                        {t('rubricList.students_graded_count')})
-                                                    </span>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    );
-                })()}
-
-            {/* ── Essay flow: Step 2 — assignment modal ── */}
-            {essayFlow?.step === 'assignment' &&
-                essayFlow.classId &&
-                (() => {
-                    const rubric = rubrics.find((r) => r.id === essayFlow.rubricId);
-                    const classStudents = students
-                        .filter((s) => s.classId === essayFlow.classId)
-                        .map((s) => ({ id: s.id, name: s.name }));
-                    const firstStudent = classStudents[0];
-                    if (!rubric || !firstStudent) return null;
-                    return (
-                        <EssayAssignmentModal
-                            rubricId={rubric.id}
-                            rubricName={rubric.name}
-                            studentId={firstStudent.id}
-                            studentName={firstStudent.name}
-                            classStudents={classStudents}
-                            onSaveAssignment={saveEssayAssignment}
-                            onClose={() => setEssayFlow(null)}
-                            onOpenSlipSheet={(assignment, sts) =>
-                                setEssayFlow({
-                                    step: 'slipsheet',
-                                    rubricId: essayFlow.rubricId,
-                                    classId: essayFlow.classId,
-                                    slipSheetData: { assignment, students: sts },
-                                })
-                            }
-                        />
-                    );
-                })()}
-
-            {/* ── Essay flow: Step 3 — slip sheet ── */}
-            {essayFlow?.step === 'slipsheet' && essayFlow.slipSheetData && (
-                <EssaySlipSheet
-                    baseAssignment={essayFlow.slipSheetData.assignment}
-                    students={essayFlow.slipSheetData.students}
-                    onClose={() => setEssayFlow(null)}
-                />
             )}
         </>
     );

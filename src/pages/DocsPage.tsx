@@ -94,13 +94,6 @@ const ROUTE_TREE: RouteNode[] = [
                         color: '#8b5cf6',
                         badge: 'Student',
                     },
-                    {
-                        path: '/essays/:assignmentId/monitor',
-                        label: 'Live Essay Monitor',
-                        description:
-                            'Watch students write in real time: presence, live word counts, last-activity timestamps, and an expandable draft preview.',
-                        color: '#8b5cf6',
-                    },
                 ],
             },
             {
@@ -120,7 +113,8 @@ const ROUTE_TREE: RouteNode[] = [
             {
                 path: '/tests/new',
                 label: 'New Test',
-                description: 'Create a test from scratch with multiple-choice, short-answer, and open questions.',
+                description:
+                    'Create a test from scratch with multiple-choice, multiple-response, true/false, short-answer, open, fill-the-gap, matching, ordering, categorize, and hot text questions.',
                 color: '#3b82f6',
             },
             {
@@ -143,6 +137,36 @@ const ROUTE_TREE: RouteNode[] = [
                 description:
                     'Watch a running test in real time: who is online, their progress on each question, and proctoring signals (tab switches, copy/paste, battery, Safe Exam Browser status).',
                 color: '#3b82f6',
+            },
+        ],
+    },
+    {
+        path: '/essays',
+        label: 'Essays',
+        description: 'Browse, create, and manage essay assignments for your classes.',
+        color: '#6366f1',
+        children: [
+            {
+                path: '/essays/new',
+                label: 'New Essay',
+                description: 'Write a prompt, link a rubric, and assign it to students in a class.',
+                color: '#6366f1',
+            },
+            {
+                path: '/essays/:teacherKey',
+                label: 'Essay Builder',
+                description:
+                    'Edit the prompt, rubric link, and settings; manage assigned students, copy share links, and import submission codes.',
+                color: '#6366f1',
+                children: [
+                    {
+                        path: '/essays/:teacherKey/monitor',
+                        label: 'Live Essay Monitor',
+                        description:
+                            'Watch students write in real time: presence, live word counts, last-activity timestamps, and an expandable draft preview.',
+                        color: '#8b5cf6',
+                    },
+                ],
             },
         ],
     },
@@ -640,10 +664,40 @@ function RubricsTab() {
 
             <FeatureSection icon={ClipboardCheck} title="Tests & quizzes" color="#3b82f6">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
-                    Build tests and quizzes from the <strong>Tests</strong> page. Add multiple-choice, short-answer, and
-                    open questions, set a duration and grade scale, and optionally require Safe Exam Browser. Link
-                    standards and CEFR descriptors per question, then assign the test to a class — each student gets a
-                    unique share link to complete it.
+                    Build tests and quizzes from the <strong>Tests</strong> page. Add multiple-choice, multiple-response
+                    (select all that apply), true/false, short-answer, open, fill-the-gap, matching, ordering,
+                    categorize, and hot text questions, set a duration and grade scale, and optionally require Safe
+                    Exam Browser.
+                    Link standards and CEFR descriptors per question, then assign the test to a class — each student
+                    gets a unique share link to complete it. Every question type has a small <strong>{'{?}'}</strong> help
+                    button for both you and your students explaining how to author and answer it.
+                </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    <strong>Fill-the-gap questions</strong> use <code>{'{{...}}'}</code> markers in the question text.
+                    Write <code>{'{{Paris}}'}</code> to create a blank that students type into — add alternative
+                    correct spellings separated by a pipe, e.g. <code>{'{{Paris|City of Paris}}'}</code>. For a
+                    dropdown instead of free text, choose the <strong>Fill the gap (dropdown)</strong> type and list
+                    the correct answer first, e.g. <code>{'{{Paris|London|Berlin}}'}</code> — students see the
+                    options in a shuffled order. The builder's "Insert gap" / "Insert dropdown gap" buttons add the
+                    markers for you, and a preview shows the parsed gaps and their correct answers.
+                </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    <strong>Matching, ordering, and categorize questions</strong> let students work with several
+                    related items at once. For <strong>matching</strong>, enter left/right pairs — students see the
+                    left items in order and pick a matching right item from a dropdown for each. For
+                    <strong> ordering</strong>, enter the items in their correct order using the up/down arrows —
+                    students see them shuffled and reorder them with arrows. For <strong>categorize</strong>, define
+                    categories and assign each item to the category it belongs to — students sort each item into a
+                    category via a dropdown. All three support an <strong>Allow partial credit</strong> toggle, which
+                    awards points proportionally for each correct pair, position, or item instead of all-or-nothing.
+                </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    <strong>Hot text questions</strong> ask students to click selectable words or phrases within a
+                    passage. Write the passage and wrap each selectable fragment in double square brackets, e.g.{' '}
+                    <code>{'The capital of [[France]] is [[Paris]].'}</code> — the "Insert selectable fragment" button
+                    wraps your current text selection for you. Below the passage, use the checkmarks to mark which
+                    fragments students should select. Students click highlighted fragments to toggle them on or off.
+                    <strong> Allow partial credit</strong> awards points per fragment instead of all-or-nothing.
                 </p>
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     What students see
@@ -852,21 +906,25 @@ function CefrTab() {
 function EssaysTab() {
     return (
         <div>
-            <FeatureSection icon={FileText} title="Essay assignments" color="#6366f1">
+            <FeatureSection icon={FileText} title="Essays workspace" color="#6366f1">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
-                    Create essay prompts from the Dashboard or a rubric. Optionally link a rubric to auto-grade
-                    submissions.
+                    The <strong>Essays</strong> section in the sidebar is the dedicated home for essay assignments —
+                    separate from the Rubrics page. It lists every essay you have created, grouped by assignment, with
+                    the linked rubric, the number of assigned students, and how many have submitted.
                 </p>
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
-                    Creating an assignment
+                    Creating an essay
                 </h3>
                 <FeatureList
                     items={[
-                        'Set a title, prompt, optional word count (min/max), and time limit.',
+                        'Click "New Essay" to open the builder: write the title and prompt, set optional word count limits (min/max), a time limit, and a deadline.',
+                        'Use the rubric connector to link a rubric for structured feedback after grading.',
                         'Enable "Read-only after submit" to lock essays once submitted.',
-                        'Link a rubric for structured feedback after grading.',
-                        'Generate a submission code — share it with students so they can submit without accounts.',
-                        'Enable "Require Safe Exam Browser (SEB)" to lock the assignment to the SEB app — download the .seb config from the assignment modal to distribute to students.',
+                        'Enable "Require Safe Exam Browser (SEB)" to lock the assignment to the SEB app — download the .seb config from the assignment dialog to distribute to students.',
+                        'Click "Assign to students" to pick a class — each selected student gets their own share link and submission code.',
+                        'Once assigned, the builder lists every student with their submission status and a per-student "Copy link" button.',
+                        'Use "Import submission code" to add a student\'s completed essay (pasted code) when no database connection is configured.',
+                        'Click "Monitor" to open the live essay monitor for the assignment.',
                     ]}
                 />
 

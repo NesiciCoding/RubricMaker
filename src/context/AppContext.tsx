@@ -27,6 +27,7 @@ import type {
     VocabularyItem,
     DocumentAnalysisResult,
     EssayAssignment,
+    EssaySubmission,
     Test,
     StudentTest,
 } from '../types';
@@ -50,6 +51,8 @@ import {
     saveAnalysisResults,
     saveTests,
     saveStudentTests,
+    saveEssayAssignments,
+    saveEssaySubmissions,
     importFullBackup,
     loadPendingQueue,
 } from '../store/storage';
@@ -113,7 +116,11 @@ type Action =
     | { type: 'UPDATE_TEST'; payload: Test }
     | { type: 'DELETE_TEST'; id: string }
     | { type: 'SAVE_STUDENT_TEST'; payload: StudentTest }
-    | { type: 'DELETE_STUDENT_TEST'; id: string };
+    | { type: 'DELETE_STUDENT_TEST'; id: string }
+    | { type: 'ADD_ESSAY_ASSIGNMENTS'; payload: EssayAssignment[] }
+    | { type: 'UPDATE_ESSAY_GROUP'; teacherKey: string; patch: Partial<EssayAssignment> }
+    | { type: 'DELETE_ESSAY_GROUP'; teacherKey: string }
+    | { type: 'ADD_ESSAY_SUBMISSION'; payload: EssaySubmission };
 
 function reducer(state: StoreData, action: Action): StoreData {
     switch (action.type) {
@@ -487,6 +494,36 @@ function reducer(state: StoreData, action: Action): StoreData {
             saveStudentTests(next);
             return { ...state, studentTests: next };
         }
+        case 'ADD_ESSAY_ASSIGNMENTS': {
+            const next = [...state.essayAssignments, ...action.payload];
+            saveEssayAssignments(next);
+            return { ...state, essayAssignments: next };
+        }
+        case 'UPDATE_ESSAY_GROUP': {
+            const next = state.essayAssignments.map((a) =>
+                a.teacherKey === action.teacherKey ? { ...a, ...action.patch } : a
+            );
+            saveEssayAssignments(next);
+            return { ...state, essayAssignments: next };
+        }
+        case 'DELETE_ESSAY_GROUP': {
+            const nextAssignments = state.essayAssignments.filter((a) => a.teacherKey !== action.teacherKey);
+            saveEssayAssignments(nextAssignments);
+            const nextSubmissions = state.essaySubmissions.filter((s) => s.teacherKey !== action.teacherKey);
+            saveEssaySubmissions(nextSubmissions);
+            return { ...state, essayAssignments: nextAssignments, essaySubmissions: nextSubmissions };
+        }
+        case 'ADD_ESSAY_SUBMISSION': {
+            const exists = state.essaySubmissions.findIndex(
+                (s) => s.teacherKey === action.payload.teacherKey && s.assignmentStudentId === action.payload.assignmentStudentId
+            );
+            const next =
+                exists >= 0
+                    ? state.essaySubmissions.map((s, i) => (i === exists ? action.payload : s))
+                    : [...state.essaySubmissions, action.payload];
+            saveEssaySubmissions(next);
+            return { ...state, essaySubmissions: next };
+        }
         default:
             return state;
     }
@@ -557,6 +594,11 @@ interface AppContextValue extends StoreData {
     deleteTest: (id: string) => void;
     saveStudentTest: (st: StudentTest) => void;
     deleteStudentTest: (id: string) => void;
+    // Essay assignments (local persistence)
+    addEssayAssignments: (assignments: EssayAssignment[]) => void;
+    updateEssayGroup: (teacherKey: string, patch: Partial<EssayAssignment>) => void;
+    deleteEssayGroup: (teacherKey: string) => void;
+    addEssaySubmission: (submission: EssaySubmission) => void;
     // Database sync
     connectDatabase: (config: DatabaseConfig) => Promise<boolean>;
     disconnectDatabase: () => void;
@@ -1147,6 +1189,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const deleteStudentTest = useCallback((id: string) => dispatch({ type: 'DELETE_STUDENT_TEST', id }), []);
 
+    const addEssayAssignments = useCallback((assignments: EssayAssignment[]) => {
+        dispatch({ type: 'ADD_ESSAY_ASSIGNMENTS', payload: assignments });
+    }, []);
+
+    const updateEssayGroup = useCallback((teacherKey: string, patch: Partial<EssayAssignment>) => {
+        dispatch({ type: 'UPDATE_ESSAY_GROUP', teacherKey, patch });
+    }, []);
+
+    const deleteEssayGroup = useCallback((teacherKey: string) => dispatch({ type: 'DELETE_ESSAY_GROUP', teacherKey }), []);
+
+    const addEssaySubmission = useCallback((submission: EssaySubmission) => {
+        dispatch({ type: 'ADD_ESSAY_SUBMISSION', payload: submission });
+    }, []);
+
     // ─── Database sync ────────────────────────────────────────────────
     const connectDatabase = useCallback(
         async (config: DatabaseConfig): Promise<boolean> => {
@@ -1395,6 +1451,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         deleteTest,
         saveStudentTest,
         deleteStudentTest,
+        addEssayAssignments,
+        updateEssayGroup,
+        deleteEssayGroup,
+        addEssaySubmission,
         connectDatabase,
         disconnectDatabase,
         pushAllToDatabase,

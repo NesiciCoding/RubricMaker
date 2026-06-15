@@ -7,6 +7,13 @@ import {
     suggestAdjustmentToTarget,
     applyAdjustment,
     scoreShortAnswerExact,
+    scoreMultipleResponse,
+    scoreCloze,
+    scoreMatching,
+    scoreOrdering,
+    scoreCategorize,
+    scoreHotText,
+    autoScoreResponse,
 } from './testCalc';
 import type { Test, StudentTest, TestQuestion } from '../types';
 
@@ -128,6 +135,264 @@ describe('scoreShortAnswerExact', () => {
 
     it('returns null for non short-answer questions', () => {
         expect(scoreShortAnswerExact(openQuestion, 'Paris')).toBeNull();
+    });
+});
+
+const mrQuestion: TestQuestion = {
+    id: 'q-mr',
+    prompt: 'Select all prime numbers',
+    type: 'multiple-response',
+    points: 4,
+    options: [
+        { id: 'a', text: '2', isCorrect: true },
+        { id: 'b', text: '3', isCorrect: true },
+        { id: 'c', text: '4', isCorrect: false },
+        { id: 'd', text: '6', isCorrect: false },
+    ],
+};
+
+const tfQuestion: TestQuestion = {
+    id: 'q-tf',
+    prompt: 'The earth is round',
+    type: 'true-false',
+    points: 2,
+    correctBoolean: true,
+};
+
+describe('scoreMultipleResponse', () => {
+    it('awards full points for an exact match of correct options', () => {
+        expect(scoreMultipleResponse(mrQuestion, JSON.stringify(['a', 'b']))).toBe(4);
+    });
+
+    it('awards proportional credit by default', () => {
+        expect(scoreMultipleResponse(mrQuestion, JSON.stringify(['a']))).toBe(3);
+        expect(scoreMultipleResponse(mrQuestion, JSON.stringify(['a', 'c']))).toBe(2);
+    });
+
+    it('awards 0 for an empty selection', () => {
+        expect(scoreMultipleResponse(mrQuestion, JSON.stringify([]))).toBe(2);
+    });
+
+    it('treats unparsable responses as no selection', () => {
+        expect(scoreMultipleResponse(mrQuestion, '')).toBe(2);
+        expect(scoreMultipleResponse(mrQuestion, 'not json')).toBe(2);
+    });
+
+    it('is all-or-nothing when partialCredit is false', () => {
+        const strict = { ...mrQuestion, partialCredit: false };
+        expect(scoreMultipleResponse(strict, JSON.stringify(['a', 'b']))).toBe(4);
+        expect(scoreMultipleResponse(strict, JSON.stringify(['a']))).toBe(0);
+        expect(scoreMultipleResponse(strict, JSON.stringify(['a', 'b', 'c']))).toBe(0);
+    });
+});
+
+const clozeQuestion: TestQuestion = {
+    id: 'q-cloze',
+    prompt: 'The capital of France is {{Paris|City of Paris}} and the capital of Germany is {{Berlin}}.',
+    type: 'cloze',
+    points: 4,
+};
+
+const clozeDropdownQuestion: TestQuestion = {
+    id: 'q-cloze-dd',
+    prompt: 'The capital of France is {{Paris|London|Berlin}} and the capital of Germany is {{Berlin|Paris|London}}.',
+    type: 'cloze-dropdown',
+    points: 4,
+};
+
+describe('scoreCloze', () => {
+    it('awards full points when every gap matches an alternative, case-insensitively', () => {
+        expect(scoreCloze(clozeQuestion, JSON.stringify({ 0: ' paris ', 1: 'berlin' }))).toBe(4);
+        expect(scoreCloze(clozeQuestion, JSON.stringify({ 0: 'City of Paris', 1: 'Berlin' }))).toBe(4);
+    });
+
+    it('awards proportional credit by default', () => {
+        expect(scoreCloze(clozeQuestion, JSON.stringify({ 0: 'Paris', 1: 'London' }))).toBe(2);
+        expect(scoreCloze(clozeQuestion, JSON.stringify({}))).toBe(0);
+    });
+
+    it('treats unparsable responses as no answers', () => {
+        expect(scoreCloze(clozeQuestion, '')).toBe(0);
+        expect(scoreCloze(clozeQuestion, 'not json')).toBe(0);
+    });
+
+    it('is all-or-nothing when partialCredit is false', () => {
+        const strict = { ...clozeQuestion, partialCredit: false };
+        expect(scoreCloze(strict, JSON.stringify({ 0: 'Paris', 1: 'Berlin' }))).toBe(4);
+        expect(scoreCloze(strict, JSON.stringify({ 0: 'Paris', 1: 'London' }))).toBe(0);
+    });
+
+    it('requires the first alternative for cloze-dropdown', () => {
+        expect(scoreCloze(clozeDropdownQuestion, JSON.stringify({ 0: 'Paris', 1: 'Berlin' }))).toBe(4);
+        expect(scoreCloze(clozeDropdownQuestion, JSON.stringify({ 0: 'London', 1: 'Berlin' }))).toBe(2);
+    });
+});
+
+const matchingQuestion: TestQuestion = {
+    id: 'q-match',
+    prompt: 'Match the country to its capital',
+    type: 'matching',
+    points: 4,
+    matchingPairs: [
+        { id: 'p1', left: 'France', right: 'Paris' },
+        { id: 'p2', left: 'Germany', right: 'Berlin' },
+        { id: 'p3', left: 'Spain', right: 'Madrid' },
+        { id: 'p4', left: 'Italy', right: 'Rome' },
+    ],
+};
+
+describe('scoreMatching', () => {
+    it('awards full points when every pair is matched to itself', () => {
+        const response = JSON.stringify({ p1: 'p1', p2: 'p2', p3: 'p3', p4: 'p4' });
+        expect(scoreMatching(matchingQuestion, response)).toBe(4);
+    });
+
+    it('awards proportional credit by default', () => {
+        const response = JSON.stringify({ p1: 'p1', p2: 'p2', p3: 'p4', p4: 'p3' });
+        expect(scoreMatching(matchingQuestion, response)).toBe(2);
+    });
+
+    it('treats unparsable responses as no answers', () => {
+        expect(scoreMatching(matchingQuestion, '')).toBe(0);
+        expect(scoreMatching(matchingQuestion, 'not json')).toBe(0);
+    });
+
+    it('is all-or-nothing when partialCredit is false', () => {
+        const strict = { ...matchingQuestion, partialCredit: false };
+        expect(scoreMatching(strict, JSON.stringify({ p1: 'p1', p2: 'p2', p3: 'p3', p4: 'p4' }))).toBe(4);
+        expect(scoreMatching(strict, JSON.stringify({ p1: 'p1', p2: 'p2', p3: 'p4', p4: 'p3' }))).toBe(0);
+    });
+});
+
+const orderingQuestion: TestQuestion = {
+    id: 'q-order',
+    prompt: 'Put these steps in the correct order',
+    type: 'ordering',
+    points: 4,
+    orderItems: [
+        { id: 'i1', text: 'First' },
+        { id: 'i2', text: 'Second' },
+        { id: 'i3', text: 'Third' },
+        { id: 'i4', text: 'Fourth' },
+    ],
+};
+
+describe('scoreOrdering', () => {
+    it('awards full points for the correct order', () => {
+        expect(scoreOrdering(orderingQuestion, JSON.stringify(['i1', 'i2', 'i3', 'i4']))).toBe(4);
+    });
+
+    it('awards proportional credit by default', () => {
+        expect(scoreOrdering(orderingQuestion, JSON.stringify(['i1', 'i2', 'i4', 'i3']))).toBe(2);
+    });
+
+    it('treats unparsable responses as no answer', () => {
+        expect(scoreOrdering(orderingQuestion, '')).toBe(0);
+        expect(scoreOrdering(orderingQuestion, 'not json')).toBe(0);
+    });
+
+    it('is all-or-nothing when partialCredit is false', () => {
+        const strict = { ...orderingQuestion, partialCredit: false };
+        expect(scoreOrdering(strict, JSON.stringify(['i1', 'i2', 'i3', 'i4']))).toBe(4);
+        expect(scoreOrdering(strict, JSON.stringify(['i1', 'i2', 'i4', 'i3']))).toBe(0);
+    });
+});
+
+const categorizeQuestion: TestQuestion = {
+    id: 'q-cat',
+    prompt: 'Sort these animals by habitat',
+    type: 'categorize',
+    points: 4,
+    categories: [
+        { id: 'c1', label: 'Land' },
+        { id: 'c2', label: 'Water' },
+    ],
+    categorizeItems: [
+        { id: 'it1', text: 'Lion', categoryId: 'c1' },
+        { id: 'it2', text: 'Shark', categoryId: 'c2' },
+        { id: 'it3', text: 'Elephant', categoryId: 'c1' },
+        { id: 'it4', text: 'Dolphin', categoryId: 'c2' },
+    ],
+};
+
+describe('scoreCategorize', () => {
+    it('awards full points when every item is assigned its correct category', () => {
+        const response = JSON.stringify({ it1: 'c1', it2: 'c2', it3: 'c1', it4: 'c2' });
+        expect(scoreCategorize(categorizeQuestion, response)).toBe(4);
+    });
+
+    it('awards proportional credit by default', () => {
+        const response = JSON.stringify({ it1: 'c1', it2: 'c1', it3: 'c1', it4: 'c2' });
+        expect(scoreCategorize(categorizeQuestion, response)).toBe(3);
+    });
+
+    it('treats unparsable responses as no answers', () => {
+        expect(scoreCategorize(categorizeQuestion, '')).toBe(0);
+        expect(scoreCategorize(categorizeQuestion, 'not json')).toBe(0);
+    });
+
+    it('is all-or-nothing when partialCredit is false', () => {
+        const strict = { ...categorizeQuestion, partialCredit: false };
+        expect(scoreCategorize(strict, JSON.stringify({ it1: 'c1', it2: 'c2', it3: 'c1', it4: 'c2' }))).toBe(4);
+        expect(scoreCategorize(strict, JSON.stringify({ it1: 'c1', it2: 'c1', it3: 'c1', it4: 'c2' }))).toBe(0);
+    });
+});
+
+const hotTextQuestion: TestQuestion = {
+    id: 'q-hot',
+    prompt: 'Click the capitals mentioned in the passage.',
+    type: 'hot-text',
+    points: 4,
+    hotTextPassage: 'The capital of [[France]] is [[Paris]], and [[Berlin]] is in Germany.',
+    hotTextCorrectIndices: [0, 1],
+};
+
+describe('scoreHotText', () => {
+    it('awards full points when selection exactly matches the correct fragments', () => {
+        expect(scoreHotText(hotTextQuestion, JSON.stringify([0, 1]))).toBe(4);
+    });
+
+    it('awards proportional credit by default', () => {
+        expect(scoreHotText(hotTextQuestion, JSON.stringify([0]))).toBeCloseTo((4 * 2) / 3);
+    });
+
+    it('treats unparsable responses as no selection', () => {
+        expect(scoreHotText(hotTextQuestion, '')).toBeCloseTo((4 * 1) / 3);
+        expect(scoreHotText(hotTextQuestion, 'not json')).toBeCloseTo((4 * 1) / 3);
+    });
+
+    it('is all-or-nothing when partialCredit is false', () => {
+        const strict = { ...hotTextQuestion, partialCredit: false };
+        expect(scoreHotText(strict, JSON.stringify([0, 1]))).toBe(4);
+        expect(scoreHotText(strict, JSON.stringify([0]))).toBe(0);
+        expect(scoreHotText(strict, JSON.stringify([0, 1, 2]))).toBe(0);
+    });
+
+    it('returns 0 when the passage has no fragments', () => {
+        const empty = { ...hotTextQuestion, hotTextPassage: 'No fragments here.' };
+        expect(scoreHotText(empty, JSON.stringify([0]))).toBe(0);
+    });
+});
+
+describe('autoScoreResponse for hot-text', () => {
+    it('delegates to scoreHotText', () => {
+        expect(autoScoreResponse(hotTextQuestion, JSON.stringify([0, 1]))).toBe(4);
+    });
+});
+
+describe('autoScoreResponse for true-false', () => {
+    it('awards full points for a matching response', () => {
+        expect(autoScoreResponse(tfQuestion, 'true')).toBe(2);
+    });
+
+    it('awards 0 for a non-matching response', () => {
+        expect(autoScoreResponse(tfQuestion, 'false')).toBe(0);
+    });
+
+    it('defaults correctBoolean to true when unset', () => {
+        const { correctBoolean, ...rest } = tfQuestion;
+        void correctBoolean;
+        expect(autoScoreResponse(rest as TestQuestion, 'true')).toBe(2);
     });
 });
 

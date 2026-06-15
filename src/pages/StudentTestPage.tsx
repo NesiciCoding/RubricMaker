@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { createClient } from '@supabase/supabase-js';
-import { Clock, CheckCircle, Copy, AlertTriangle, Loader2, Eye } from 'lucide-react';
+import { Clock, CheckCircle, Copy, AlertTriangle, Loader2, Eye, ChevronUp, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { decodeTestAssignment } from '../utils/testShareCode';
 import { encodeTestSubmission } from '../utils/testSubmissionCode';
@@ -15,7 +15,10 @@ import {
     clearTestTimer,
 } from '../store/storage';
 import SebGate from '../components/Tests/SebGate';
+import HelpPopover from '../components/Tests/HelpPopover';
 import { useLiveSessionTelemetry } from '../hooks/useLiveSessionTelemetry';
+import { seededShuffle } from '../utils/seededShuffle';
+import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse';
 import type { Test, TestAnswer, TestAssignmentPayload, TestQuestion, TestSubmissionPayload } from '../types';
 
 const DRAFT_KEY_PREFIX = 'rm_test_draft_';
@@ -45,23 +48,6 @@ function formatTime(seconds: number): string {
     return `${m}:${s}`;
 }
 
-/**
- * Deterministic shuffle seeded by the share code so reloads/draft restores
- * keep the same question order for a given student.
- */
-function seededShuffle<T>(items: T[], seed: string): T[] {
-    let h = 0;
-    for (let i = 0; i < seed.length; i++) {
-        h = (h * 31 + seed.charCodeAt(i)) >>> 0;
-    }
-    const result = [...items];
-    for (let i = result.length - 1; i > 0; i--) {
-        h = (h * 1103515245 + 12345) >>> 0;
-        const j = h % (i + 1);
-        [result[i], result[j]] = [result[j], result[i]];
-    }
-    return result;
-}
 
 export default function StudentTestPage() {
     const { t } = useTranslation();
@@ -528,6 +514,7 @@ export default function StudentTestPage() {
                                     total={orderedQuestions.length}
                                     value={answers.get(question.id) ?? ''}
                                     onChange={(value) => setAnswers((prev) => new Map(prev).set(question.id, value))}
+                                    code={code ?? ''}
                                 />
                             )}
 
@@ -618,10 +605,12 @@ interface QuestionCardProps {
     total: number;
     value: string;
     onChange: (value: string) => void;
+    code: string;
 }
 
-function QuestionCard({ question, index, total, value, onChange }: QuestionCardProps) {
+function QuestionCard({ question, index, total, value, onChange, code }: QuestionCardProps) {
     const { t } = useTranslation();
+    const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown';
     return (
         <div
             style={{
@@ -644,7 +633,24 @@ function QuestionCard({ question, index, total, value, onChange }: QuestionCardP
                 {t('tests.taking.question_label', { current: index + 1, total })}
             </div>
             <p style={{ margin: '0 0 16px', fontSize: '1rem', lineHeight: 1.6, color: 'var(--text)' }}>
-                {question.prompt}
+                {isCloze
+                    ? t(
+                          question.type === 'cloze-dropdown'
+                              ? 'tests.taking.cloze_dropdown_instruction'
+                              : 'tests.taking.cloze_instruction'
+                      )
+                    : question.prompt}
+                {(question.type === 'true-false' ||
+                    question.type === 'multiple-response' ||
+                    question.type === 'matching' ||
+                    question.type === 'ordering' ||
+                    question.type === 'categorize' ||
+                    question.type === 'hot-text' ||
+                    isCloze) && (
+                    <HelpPopover title={t(`tests.help.${question.type.replace('-', '_')}_student_title`)}>
+                        {t(`tests.help.${question.type.replace('-', '_')}_student_body`)}
+                    </HelpPopover>
+                )}
             </p>
 
             {question.type === 'multiple-choice' && (
@@ -678,6 +684,89 @@ function QuestionCard({ question, index, total, value, onChange }: QuestionCardP
                     ))}
                 </div>
             )}
+
+            {question.type === 'multiple-response' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {(question.options ?? []).map((opt) => {
+                        const selected: string[] = value ? (JSON.parse(value) as string[]) : [];
+                        const checked = selected.includes(opt.id);
+                        return (
+                            <label
+                                key={opt.id}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 10,
+                                    padding: '10px 14px',
+                                    borderRadius: 8,
+                                    border: '1px solid var(--border)',
+                                    background: checked
+                                        ? 'color-mix(in srgb, var(--accent) 10%, transparent)'
+                                        : 'var(--bg)',
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={() => {
+                                        const next = checked
+                                            ? selected.filter((id) => id !== opt.id)
+                                            : [...selected, opt.id];
+                                        onChange(JSON.stringify(next));
+                                    }}
+                                />
+                                <span style={{ color: 'var(--text)' }}>{opt.text}</span>
+                            </label>
+                        );
+                    })}
+                </div>
+            )}
+
+            {question.type === 'true-false' && (
+                <div style={{ display: 'flex', gap: 10 }}>
+                    {(['true', 'false'] as const).map((option) => (
+                        <button
+                            key={option}
+                            type="button"
+                            onClick={() => onChange(option)}
+                            style={{
+                                flex: 1,
+                                padding: '14px 0',
+                                borderRadius: 8,
+                                border:
+                                    value === option ? '1px solid var(--accent)' : '1px solid var(--border)',
+                                background:
+                                    value === option
+                                        ? 'color-mix(in srgb, var(--accent) 10%, transparent)'
+                                        : 'var(--bg)',
+                                color: 'var(--text)',
+                                fontWeight: value === option ? 700 : 400,
+                                fontSize: '0.95rem',
+                                cursor: 'pointer',
+                            }}
+                        >
+                            {t(`tests.true_false_${option}`)}
+                        </button>
+                    ))}
+                </div>
+            )}
+
+            {isCloze && <ClozeAnswer question={question} value={value} onChange={onChange} code={code} />}
+
+            {question.type === 'matching' && (
+                <MatchingAnswer question={question} value={value} onChange={onChange} code={code} />
+            )}
+
+            {question.type === 'ordering' && (
+                <OrderingAnswer question={question} value={value} onChange={onChange} code={code} />
+            )}
+
+            {question.type === 'categorize' && (
+                <CategorizeAnswer question={question} value={value} onChange={onChange} code={code} />
+            )}
+
+            {question.type === 'hot-text' && <HotTextAnswer question={question} value={value} onChange={onChange} />}
 
             {question.type === 'short-answer' && (
                 <input
@@ -718,6 +807,340 @@ function QuestionCard({ question, index, total, value, onChange }: QuestionCardP
                     }}
                 />
             )}
+        </div>
+    );
+}
+
+interface ClozeAnswerProps {
+    question: TestQuestion;
+    value: string;
+    onChange: (value: string) => void;
+    code: string;
+}
+
+function ClozeAnswer({ question, value, onChange, code }: ClozeAnswerProps) {
+    const { t } = useTranslation();
+    const segments = useMemo(() => renderClozeSegments(question.prompt), [question.prompt]);
+    const answers: Record<string, string> = useMemo(() => {
+        try {
+            return value ? (JSON.parse(value) as Record<string, string>) : {};
+        } catch {
+            return {};
+        }
+    }, [value]);
+
+    function setGapAnswer(gapIndex: number, gapValue: string) {
+        onChange(JSON.stringify({ ...answers, [gapIndex]: gapValue }));
+    }
+
+    return (
+        <p style={{ margin: 0, fontSize: '1rem', lineHeight: 2.4, color: 'var(--text)' }}>
+            {segments.map((segment, i) => {
+                if (segment.type === 'text') {
+                    return <span key={i}>{segment.text}</span>;
+                }
+                const gap = segment.gap;
+                const current = answers[gap.index] ?? '';
+                if (question.type === 'cloze-dropdown') {
+                    const choices = seededShuffle(gap.alternatives, `${code}-${question.id}-${gap.index}`);
+                    return (
+                        <select
+                            key={i}
+                            value={current}
+                            onChange={(e) => setGapAnswer(gap.index, e.target.value)}
+                            style={{
+                                margin: '0 4px',
+                                padding: '4px 8px',
+                                borderRadius: 6,
+                                border: '1px solid var(--border)',
+                                background: 'var(--bg)',
+                                color: 'var(--text)',
+                                fontSize: '0.95rem',
+                            }}
+                        >
+                            <option value="">{t('tests.taking.cloze_dropdown_placeholder')}</option>
+                            {choices.map((choice) => (
+                                <option key={choice} value={choice}>
+                                    {choice}
+                                </option>
+                            ))}
+                        </select>
+                    );
+                }
+                return (
+                    <input
+                        key={i}
+                        type="text"
+                        value={current}
+                        onChange={(e) => setGapAnswer(gap.index, e.target.value)}
+                        placeholder={t('tests.taking.cloze_gap_placeholder')}
+                        style={{
+                            margin: '0 4px',
+                            padding: '4px 8px',
+                            borderRadius: 6,
+                            border: '1px solid var(--border)',
+                            background: 'var(--bg)',
+                            color: 'var(--text)',
+                            fontSize: '0.95rem',
+                            width: 120,
+                        }}
+                    />
+                );
+            })}
+        </p>
+    );
+}
+
+interface MatchingAnswerProps {
+    question: TestQuestion;
+    value: string;
+    onChange: (value: string) => void;
+    code: string;
+}
+
+function MatchingAnswer({ question, value, onChange, code }: MatchingAnswerProps) {
+    const { t } = useTranslation();
+    const pairs = question.matchingPairs ?? [];
+    const shuffledPairs = useMemo(() => seededShuffle(pairs, `${code}-${question.id}`), [pairs, code, question.id]);
+    const answers: Record<string, string> = useMemo(() => {
+        try {
+            return value ? (JSON.parse(value) as Record<string, string>) : {};
+        } catch {
+            return {};
+        }
+    }, [value]);
+
+    function setAnswer(leftId: string, chosenId: string) {
+        onChange(JSON.stringify({ ...answers, [leftId]: chosenId }));
+    }
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {pairs.map((pair) => (
+                <div key={pair.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ flex: 1, color: 'var(--text)' }}>{pair.left}</span>
+                    <select
+                        value={answers[pair.id] ?? ''}
+                        onChange={(e) => setAnswer(pair.id, e.target.value)}
+                        style={{
+                            flex: 1,
+                            padding: '8px 10px',
+                            borderRadius: 8,
+                            border: '1px solid var(--border)',
+                            background: 'var(--bg)',
+                            color: 'var(--text)',
+                            fontSize: '0.95rem',
+                        }}
+                    >
+                        <option value="">{t('tests.taking.matching_select_placeholder')}</option>
+                        {shuffledPairs.map((p) => (
+                            <option key={p.id} value={p.id}>
+                                {p.right}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+interface OrderingAnswerProps {
+    question: TestQuestion;
+    value: string;
+    onChange: (value: string) => void;
+    code: string;
+}
+
+function OrderingAnswer({ question, value, onChange, code }: OrderingAnswerProps) {
+    const { t } = useTranslation();
+    const items = question.orderItems ?? [];
+    const itemsById = useMemo(() => new Map(items.map((item) => [item.id, item])), [items]);
+    const shuffledIds = useMemo(
+        () => seededShuffle(items.map((item) => item.id), `${code}-${question.id}`),
+        [items, code, question.id]
+    );
+    const order = useMemo<string[]>(() => {
+        try {
+            const parsed = value ? (JSON.parse(value) as string[]) : [];
+            if (parsed.length === items.length && parsed.every((id) => itemsById.has(id))) return parsed;
+        } catch {
+            /* fall through to shuffled default */
+        }
+        return shuffledIds;
+    }, [value, shuffledIds, items, itemsById]);
+
+    function move(from: number, to: number) {
+        if (to < 0 || to >= order.length) return;
+        const next = [...order];
+        const [moved] = next.splice(from, 1);
+        next.splice(to, 0, moved);
+        onChange(JSON.stringify(next));
+    }
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {order.map((id, idx) => (
+                <div
+                    key={id}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        padding: '10px 14px',
+                        borderRadius: 8,
+                        border: '1px solid var(--border)',
+                        background: 'var(--bg)',
+                    }}
+                >
+                    <span style={{ flex: 1, color: 'var(--text)' }}>{itemsById.get(id)?.text}</span>
+                    <button
+                        type="button"
+                        className="btn btn-ghost btn-icon btn-sm"
+                        aria-label={t('tests.taking.move_item_up')}
+                        disabled={idx === 0}
+                        onClick={() => move(idx, idx - 1)}
+                    >
+                        <ChevronUp size={14} />
+                    </button>
+                    <button
+                        type="button"
+                        className="btn btn-ghost btn-icon btn-sm"
+                        aria-label={t('tests.taking.move_item_down')}
+                        disabled={idx === order.length - 1}
+                        onClick={() => move(idx, idx + 1)}
+                    >
+                        <ChevronDown size={14} />
+                    </button>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+interface CategorizeAnswerProps {
+    question: TestQuestion;
+    value: string;
+    onChange: (value: string) => void;
+    code: string;
+}
+
+function CategorizeAnswer({ question, value, onChange, code }: CategorizeAnswerProps) {
+    const { t } = useTranslation();
+    const items = question.categorizeItems ?? [];
+    const categories = question.categories ?? [];
+    const shuffledItems = useMemo(
+        () => seededShuffle(items, `${code}-${question.id}`),
+        [items, code, question.id]
+    );
+    const answers: Record<string, string> = useMemo(() => {
+        try {
+            return value ? (JSON.parse(value) as Record<string, string>) : {};
+        } catch {
+            return {};
+        }
+    }, [value]);
+
+    function setAnswer(itemId: string, categoryId: string) {
+        onChange(JSON.stringify({ ...answers, [itemId]: categoryId }));
+    }
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {shuffledItems.map((item) => (
+                <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ flex: 1, color: 'var(--text)' }}>{item.text}</span>
+                    <select
+                        value={answers[item.id] ?? ''}
+                        onChange={(e) => setAnswer(item.id, e.target.value)}
+                        style={{
+                            flex: 1,
+                            padding: '8px 10px',
+                            borderRadius: 8,
+                            border: '1px solid var(--border)',
+                            background: 'var(--bg)',
+                            color: 'var(--text)',
+                            fontSize: '0.95rem',
+                        }}
+                    >
+                        <option value="">{t('tests.taking.categorize_select_placeholder')}</option>
+                        {categories.map((cat) => (
+                            <option key={cat.id} value={cat.id}>
+                                {cat.label}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+interface HotTextAnswerProps {
+    question: TestQuestion;
+    value: string;
+    onChange: (value: string) => void;
+}
+
+function HotTextAnswer({ question, value, onChange }: HotTextAnswerProps) {
+    const { t } = useTranslation();
+    const segments = useMemo(
+        () => parseHotTextFragments(question.hotTextPassage ?? ''),
+        [question.hotTextPassage]
+    );
+    const selected: number[] = useMemo(() => {
+        try {
+            return value ? (JSON.parse(value) as number[]) : [];
+        } catch {
+            return [];
+        }
+    }, [value]);
+
+    function toggle(index: number) {
+        const next = selected.includes(index) ? selected.filter((i) => i !== index) : [...selected, index];
+        onChange(JSON.stringify(next));
+    }
+
+    return (
+        <div>
+            <p className="text-muted text-xs" style={{ margin: '0 0 8px' }}>
+                {t('tests.taking.hot_text_instruction')}
+            </p>
+            <p style={{ margin: 0, fontSize: '1rem', lineHeight: 2, color: 'var(--text)' }}>
+                {segments.map((segment, i) => {
+                    if (segment.type === 'text') {
+                        return <span key={i}>{segment.text}</span>;
+                    }
+                    const isSelected = selected.includes(segment.index);
+                    return (
+                        <span
+                            key={i}
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => toggle(segment.index)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    toggle(segment.index);
+                                }
+                            }}
+                            style={{
+                                display: 'inline',
+                                margin: '0 2px',
+                                padding: '2px 4px',
+                                borderRadius: 4,
+                                cursor: 'pointer',
+                                background: isSelected
+                                    ? 'color-mix(in srgb, var(--accent) 25%, transparent)'
+                                    : 'color-mix(in srgb, var(--text-muted) 12%, transparent)',
+                                border: isSelected ? '1px solid var(--accent)' : '1px solid var(--border)',
+                            }}
+                        >
+                            {segment.text}
+                        </span>
+                    );
+                })}
+            </p>
         </div>
     );
 }

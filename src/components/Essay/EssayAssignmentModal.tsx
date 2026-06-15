@@ -18,7 +18,22 @@ interface Props {
     onClose: () => void;
     onOpenSlipSheet: (assignment: EssayAssignment, classStudents: { id: string; name: string }[]) => void;
     onSaveAssignment?: (assignment: EssayAssignment) => Promise<{ success: boolean; error?: string }>;
+    onAssignToStudents?: (assignment: EssayAssignment, classStudents: { id: string; name: string }[]) => void;
     classStudents: { id: string; name: string }[];
+    teacherKey?: string;
+    initialValues?: Partial<
+        Pick<
+            EssayAssignment,
+            | 'title'
+            | 'prompt'
+            | 'minWords'
+            | 'maxWords'
+            | 'timeLimitMinutes'
+            | 'requireSEB'
+            | 'readOnlyAfterSubmit'
+            | 'expiresAt'
+        >
+    >;
 }
 
 export default function EssayAssignmentModal({
@@ -29,27 +44,33 @@ export default function EssayAssignmentModal({
     onClose,
     onOpenSlipSheet,
     onSaveAssignment,
+    onAssignToStudents,
     classStudents,
+    teacherKey: teacherKeyProp,
+    initialValues,
 }: Props) {
     const { t } = useTranslation();
     const dbStatus = useDbStatus();
     const config = loadSupabaseConfig();
 
-    const [title, setTitle] = useState(rubricName);
-    const [prompt, setPrompt] = useState('');
-    const [minWords, setMinWords] = useState('');
-    const [maxWords, setMaxWords] = useState('');
-    const [timeLimitMinutes, setTimeLimitMinutes] = useState('');
-    const [requireSEB, setRequireSEB] = useState(false);
-    const [readOnlyAfterSubmit, setReadOnlyAfterSubmit] = useState(true);
-    const [expiresAt, setExpiresAt] = useState('');
+    const [title, setTitle] = useState(initialValues?.title ?? rubricName);
+    const [prompt, setPrompt] = useState(initialValues?.prompt ?? '');
+    const [minWords, setMinWords] = useState(initialValues?.minWords ? String(initialValues.minWords) : '');
+    const [maxWords, setMaxWords] = useState(initialValues?.maxWords ? String(initialValues.maxWords) : '');
+    const [timeLimitMinutes, setTimeLimitMinutes] = useState(
+        initialValues?.timeLimitMinutes ? String(initialValues.timeLimitMinutes) : ''
+    );
+    const [requireSEB, setRequireSEB] = useState(initialValues?.requireSEB ?? false);
+    const [readOnlyAfterSubmit, setReadOnlyAfterSubmit] = useState(initialValues?.readOnlyAfterSubmit ?? true);
+    const [expiresAt, setExpiresAt] = useState(initialValues?.expiresAt ? initialValues.expiresAt.slice(0, 16) : '');
     const [embedDb, setEmbedDb] = useState(dbStatus.isConnected); // on by default when connected
     const [copied, setCopied] = useState(false);
     const [saved, setSaved] = useState(false);
     const [saveError, setSaveError] = useState('');
     const [saving, setSaving] = useState(false);
 
-    const teacherKey = React.useMemo(() => nanoid(), []);
+    const generatedTeacherKey = React.useMemo(() => nanoid(), []);
+    const teacherKey = teacherKeyProp ?? generatedTeacherKey;
 
     const buildAssignment = useCallback(
         (sid: string): EssayAssignment => {
@@ -128,6 +149,13 @@ export default function EssayAssignmentModal({
         onOpenSlipSheet(assignment, classStudents);
         onClose();
     }, [buildAssignment, studentId, classStudents, onOpenSlipSheet, onClose]);
+
+    const handleAssignToStudents = useCallback(() => {
+        if (!onAssignToStudents) return;
+        const assignment = buildAssignment(studentId);
+        onAssignToStudents(assignment, classStudents);
+        onClose();
+    }, [onAssignToStudents, buildAssignment, studentId, classStudents, onClose]);
 
     return (
         <Modal titleId="essay-assignment-title" onClose={onClose} maxWidth={560}>
@@ -427,10 +455,15 @@ export default function EssayAssignmentModal({
                 <button className="btn btn-secondary btn-sm" onClick={handleDownloadSEB}>
                     <Download size={14} /> {t('essay_assignment.download_seb')}
                 </button>
-                <button className="btn btn-primary btn-sm" onClick={handleCopyLink}>
+                <button className="btn btn-secondary btn-sm" onClick={handleCopyLink}>
                     {copied ? <Check size={14} /> : <Copy size={14} />}
                     {copied ? t('essay_assignment.link_copied') : t('essay_assignment.copy_link')}
                 </button>
+                {onAssignToStudents && (
+                    <button className="btn btn-primary btn-sm" onClick={handleAssignToStudents}>
+                        {t('essays.assign_to_students')}
+                    </button>
+                )}
             </div>
         </Modal>
     );
