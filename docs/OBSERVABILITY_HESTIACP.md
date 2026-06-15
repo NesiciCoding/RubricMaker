@@ -76,14 +76,16 @@ before we repoint Nginx at Grafana.
 ## 4. Copy the stack to the server and configure it
 
 You only need `docker-compose.observability.yml`, the `docker/observability/`
-config files, and `.env.observability.example` — not the whole app. Easiest
-is a shallow clone or rsync from your checkout:
+directory (including its `dashboards/` subdirectory — the provisioned
+Grafana dashboards, see [Grafana dashboards](OBSERVABILITY_DASHBOARDS.md)),
+and `.env.observability.example` — not the whole app. `rsync` picks up the
+subdirectory in one go; `scp -r` works too:
 
 ```bash
-ssh rubricmaker@YOUR_VPS_IP "mkdir -p ~/observability/docker/observability"
+ssh rubricmaker@YOUR_VPS_IP "mkdir -p ~/observability"
 scp docker-compose.observability.yml .env.observability.example \
     rubricmaker@YOUR_VPS_IP:~/observability/
-scp docker/observability/*.yml \
+rsync -av docker/observability/ \
     rubricmaker@YOUR_VPS_IP:~/observability/docker/observability/
 ```
 
