@@ -1,0 +1,265 @@
+{
+  "uid": "rubricmaker-client-diagnostics",
+  "title": "RubricMaker — Client Diagnostics (client_logs)",
+  "description": "Requires SUPABASE_DB_HOST (and related vars) in .env.observability so the 'Supabase Postgres (client_logs)' datasource is provisioned. Only populated while VITE_STRESS_TEST_LOGGING=true. See README → 'Stress-test logging'.",
+  "tags": ["rubricmaker"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "1m",
+  "time": { "from": "now-24h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Active sessions",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawSql": "SELECT count(DISTINCT session_id) FROM client_logs WHERE $__timeFilter(created_at)",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Actions logged",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawSql": "SELECT count(*) FROM client_logs WHERE $__timeFilter(created_at) AND category = 'action'",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Sync errors",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawSql": "SELECT count(*) FROM client_logs WHERE $__timeFilter(created_at) AND category = 'sync' AND level = 'error'",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "JS errors",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawSql": "SELECT count(*) FROM client_logs WHERE $__timeFilter(created_at) AND category = 'error'",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Essay submissions",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawSql": "SELECT count(*) FROM client_logs WHERE $__timeFilter(created_at) AND name = 'essay_submitted'",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Essay submit errors",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawSql": "SELECT count(*) FROM client_logs WHERE $__timeFilter(created_at) AND name = 'essay_submit_error'",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Events per minute by category",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "options": {},
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroup(created_at, '1m') AS time, category AS metric, count(*) AS count FROM client_logs WHERE $__timeFilter(created_at) GROUP BY 1, 2 ORDER BY 1"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Sync push latency (avg ms)",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "fieldConfig": { "defaults": { "unit": "ms" }, "overrides": [] },
+      "options": {},
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroup(created_at, '1m') AS time, avg((meta->>'ms')::numeric) AS avg_ms FROM client_logs WHERE $__timeFilter(created_at) AND category = 'sync' AND meta ? 'ms' GROUP BY 1 ORDER BY 1"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "table",
+      "title": "Top action types",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 12 },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "options": {},
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT name, count(*) AS events FROM client_logs WHERE $__timeFilter(created_at) AND category = 'action' GROUP BY name ORDER BY events DESC LIMIT 15"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "table",
+      "title": "Recent warnings & errors",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 12 },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "options": {},
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT created_at AS time, role, school_id, category, name, level, meta FROM client_logs WHERE $__timeFilter(created_at) AND level IN ('warn', 'error') ORDER BY created_at DESC LIMIT 100"
+        }
+      ]
+    }
+  ]
+}

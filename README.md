@@ -78,6 +78,7 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 - [HestiaCP setup](docs/HESTIACP_SETUP.md) — shared hosting / cPanel-style VPS
 - [Virtualmin setup](docs/VIRTUALMIN_SETUP.md) — Virtualmin VPS deployment
 - [Observability on a HestiaCP subdomain](docs/OBSERVABILITY_HESTIACP.md) — Loki/Promtail/Grafana behind a dedicated HTTPS subdomain
+- [Grafana dashboards](docs/OBSERVABILITY_DASHBOARDS.md) — what the provisioned dashboards show and how to customize them
 - [Magister integration](docs/MAGISTER_INTEGRATION.md) — importing students from Magister SIS
 
 ---
@@ -257,6 +258,13 @@ Open [http://localhost:3001](http://localhost:3001) (default login `admin` /
 `127.0.0.1:3001` only — for remote access during a pilot, put it behind a
 reverse proxy (see [Observability on a HestiaCP subdomain](docs/OBSERVABILITY_HESTIACP.md)
 for a worked example with HTTPS).
+
+Two dashboards are auto-provisioned into a **RubricMaker** folder: "Web &
+Container Logs" (Loki — always available) and "Client Diagnostics
+(`client_logs`)" (Postgres — populated when `SUPABASE_DB_*` and
+`VITE_STRESS_TEST_LOGGING=true` are set). See
+[Grafana dashboards](docs/OBSERVABILITY_DASHBOARDS.md) for what each panel
+shows and how to customize them.
 
 **Log sources:**
 

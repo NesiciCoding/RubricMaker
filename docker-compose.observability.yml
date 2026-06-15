@@ -50,6 +50,8 @@ services:
     volumes:
       - grafana-data:/var/lib/grafana
       - ./docker/observability/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+      - ./docker/observability/grafana-dashboards-provider.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+      - ./docker/observability/dashboards:/etc/grafana/provisioning/dashboards/json:ro
     environment:
       GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_ADMIN_PASSWORD:-admin}"
       GF_AUTH_ANONYMOUS_ENABLED: "false"
@@ -63,6 +65,10 @@ services:
       SUPABASE_DB_NAME: "${SUPABASE_DB_NAME:-postgres}"
       SUPABASE_DB_USER: "${SUPABASE_DB_USER:-}"
       SUPABASE_DB_PASSWORD: "${SUPABASE_DB_PASSWORD:-}"
+      # "require" for managed Supabase Cloud; self-hosted db containers on the
+      # same Docker network usually don't have SSL configured for local
+      # connections, so set SUPABASE_DB_SSLMODE=disable in that case.
+      SUPABASE_DB_SSLMODE: "${SUPABASE_DB_SSLMODE:-require}"
     depends_on: [loki]
 
 volumes:
