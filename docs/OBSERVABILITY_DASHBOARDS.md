@@ -46,8 +46,8 @@ don't use the stress-test logging feature.
 |---|---|
 | Active sessions | Distinct `session_id` values seen in the selected time range — roughly "how many browser tabs were active". |
 | Actions logged | Count of `category = 'action'` rows — every dispatched `AppContext` action (see `summarizeAction` in `src/context/AppContext.tsx`). |
-| Sync errors | Count of `category = 'sync' AND level = 'error'` — failed pushes/hydration to Supabase. Should be 0; red threshold at 1. |
-| JS errors | Count of `category = 'error'` — unhandled rejections (`src/main.tsx`) and React error boundary catches (`src/components/ui/ErrorBoundary.tsx`). Should be 0; red threshold at 1. |
+| Sync errors | Count of `category = 'sync' AND level = 'error'` — failed pushes/hydration to Supabase. This should stay at 0; the panel turns red at 1 or more. |
+| JS errors | Count of `category = 'error'` — unhandled rejections (`src/main.tsx`) and React error boundary catches (`src/components/ui/ErrorBoundary.tsx`). This should stay at 0; the panel turns red at 1 or more. |
 | Essay submissions | Count of `name = 'essay_submitted'` from `StudentEssayPage`. |
 | Essay submit errors | Count of `name = 'essay_submit_error'`. Compare against essay submissions to gauge the failure rate. |
 | Events per minute by category | Time series of `action` / `sync` / `error` / `lifecycle` event volume — shows overall usage shape during a pilot window (e.g. a class period). |
