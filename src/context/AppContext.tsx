@@ -739,6 +739,7 @@ async function flushToLocalStorage(merged: StoreData) {
         saveAnalysisResults,
         saveTests,
         saveStudentTests,
+        saveEssayTemplates,
     } = await import('../store/storage');
     saveRubrics(merged.rubrics);
     saveStudents(merged.students);
@@ -757,6 +758,7 @@ async function flushToLocalStorage(merged: StoreData) {
     saveAnalysisResults(merged.analysisResults);
     saveTests(merged.tests);
     saveStudentTests(merged.studentTests);
+    saveEssayTemplates(merged.essayTemplates);
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {

@@ -1460,6 +1460,7 @@ export class SupabaseAdapter {
             'tests',
             'student_tests',
             'user_settings',
+            'essay_templates',
             'essay_assignments',
         ];
         for (const table of tables) {

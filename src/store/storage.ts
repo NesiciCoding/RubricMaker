@@ -501,6 +501,10 @@ export function importFullBackup(json: string): boolean {
             if (isObjectArray(data.essaySubmissions)) saveEssaySubmissions(data.essaySubmissions as EssaySubmission[]);
             else console.warn('[importFullBackup] essaySubmissions failed validation — skipped');
         }
+        if (data.essayTemplates !== undefined) {
+            if (isObjectArray(data.essayTemplates)) saveEssayTemplates(data.essayTemplates as EssayTemplate[]);
+            else console.warn('[importFullBackup] essayTemplates failed validation — skipped');
+        }
         if (data.userTemplates !== undefined) {
             if (
                 Array.isArray(data.userTemplates) &&
