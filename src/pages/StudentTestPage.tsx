@@ -58,10 +58,6 @@ function withAnswer(answers: Record<string, string>, key: string, value: string)
     return Object.fromEntries(map);
 }
 
-/** Build a per-question display order for ordering answers (shuffled from correct order) */
-function shuffleOrderItems(items: TestOrderItem[], questionId: string): TestOrderItem[] {
-    return seededShuffle(items, questionId);
-}
 
 export default function StudentTestPage() {
     const { t } = useTranslation();
@@ -564,6 +560,7 @@ export default function StudentTestPage() {
 
                             {question && (
                                 <QuestionCard
+                                    key={question.id}
                                     question={question}
                                     index={currentIndex}
                                     total={orderedQuestions.length}
@@ -692,7 +689,7 @@ function QuestionTimeline({ questions, currentIndex, answers, sections, onJump }
             aria-label={t('tests.taking.timeline_label')}
         >
             {groups.map((group) => (
-                <div key={group.sectionTitle ?? '__none__'} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div key={`${group.sectionTitle ?? '__none__'}-${group.indices[0]}`} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     {group.sectionTitle && (
                         <span
                             style={{
@@ -736,8 +733,7 @@ function QuestionTimeline({ questions, currentIndex, answers, sections, onJump }
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     flexShrink: 0,
-                                    outline: 'none',
-                                    transition: 'background 0.15s',
+                                    transition: 'background 0.15s, box-shadow 0.15s',
                                 }}
                             >
                                 {i + 1}
@@ -1049,63 +1045,7 @@ function QuestionCard({ question, index, total, value, onChange, code }: Questio
             )}
 
             {question.type === 'ordering' && (
-                <div>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 10 }}>
-                        {t('tests.taking.drag_to_order')}
-                    </p>
-                    <DragDropContext onDragEnd={onOrderDragEnd}>
-                        <Droppable droppableId={`order-${question.id}`}>
-                            {(provided) => (
-                                <div
-                                    ref={provided.innerRef}
-                                    {...provided.droppableProps}
-                                    style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
-                                >
-                                    {orderItems.map((item, idx) => (
-                                        <Draggable key={item.id} draggableId={item.id} index={idx}>
-                                            {(draggable, snapshot) => (
-                                                <div
-                                                    ref={draggable.innerRef}
-                                                    {...draggable.draggableProps}
-                                                    {...draggable.dragHandleProps}
-                                                    style={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: 10,
-                                                        padding: '10px 14px',
-                                                        borderRadius: 8,
-                                                        border: '1px solid var(--border)',
-                                                        background: snapshot.isDragging
-                                                            ? 'color-mix(in srgb, var(--accent) 12%, var(--bg-elevated))'
-                                                            : 'var(--bg)',
-                                                        cursor: 'grab',
-                                                        userSelect: 'none',
-                                                        ...draggable.draggableProps.style,
-                                                    }}
-                                                >
-                                                    <span
-                                                        style={{
-                                                            width: 22,
-                                                            textAlign: 'center',
-                                                            fontWeight: 700,
-                                                            fontSize: '0.8rem',
-                                                            color: 'var(--accent)',
-                                                            flexShrink: 0,
-                                                        }}
-                                                    >
-                                                        {idx + 1}
-                                                    </span>
-                                                    <span style={{ color: 'var(--text)' }}>{item.text}</span>
-                                                </div>
-                                            )}
-                                        </Draggable>
-                                    ))}
-                                    {provided.placeholder}
-                                </div>
-                            )}
-                        </Droppable>
-                    </DragDropContext>
-                </div>
+                <OrderingAnswer question={question} value={value} onChange={onChange} code={code} />
             )}
         </div>
     );

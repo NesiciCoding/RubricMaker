@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Trash2, Plus, X, Check, BookOpen, GraduationCap, AlertCircle, GripVertical, Image, Lightbulb } from 'lucide-react';
+import { Trash2, Plus, X, Check, BookOpen, GraduationCap, AlertCircle, GripVertical, Image, Lightbulb, ChevronUp, ChevronDown } from 'lucide-react';
 import type { DraggableProvidedDragHandleProps } from '@hello-pangea/dnd';
 import { useApp } from '../../context/AppContext';
 import { nanoid } from '../../utils/nanoid';
@@ -944,7 +944,7 @@ export default function QuestionEditor({ question, index, total, sections, dragH
                             <input
                                 type="text"
                                 value={item.text}
-                                onChange={(e) => updateOrderItem(item.id, { text: e.target.value })}
+                                onChange={(e) => updateOrderItem(item.id, e.target.value)}
                                 placeholder={t('tests.order_item_placeholder')}
                                 style={{ flex: 1 }}
                             />
