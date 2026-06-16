@@ -1073,11 +1073,7 @@ export class SupabaseAdapter {
     }
 
     async deleteEssayTemplate(id: string): Promise<SyncResult> {
-        const { error } = await this.db()
-            .from('essay_templates')
-            .delete()
-            .eq('id', id)
-            .eq('owner_id', this.uid());
+        const { error } = await this.db().from('essay_templates').delete().eq('id', id).eq('owner_id', this.uid());
         return error ? { success: false, error: error.message } : { success: true };
     }
 

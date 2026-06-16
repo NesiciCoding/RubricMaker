@@ -504,9 +504,13 @@ export default function EssayAssignmentModal({
                         title={t('essay_assignment.save_template_title')}
                     >
                         {templateSaved ? (
-                            <><Check size={14} /> {t('essay_assignment.template_saved')}</>
+                            <>
+                                <Check size={14} /> {t('essay_assignment.template_saved')}
+                            </>
                         ) : (
-                            <><Save size={14} /> {t('essay_assignment.save_template')}</>
+                            <>
+                                <Save size={14} /> {t('essay_assignment.save_template')}
+                            </>
                         )}
                     </button>
                 )}
