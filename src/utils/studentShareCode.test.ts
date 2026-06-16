@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { encodeFeedbackCode, decodeFeedbackCode } from './studentShareCode';
-import type { SharedFeedback } from './studentShareCode';
+import { encodeFeedbackCode, decodeFeedbackCode } from './shareCode';
+import type { SharedFeedback } from '../types';
 import type { Rubric, Student, StudentRubric, GradeScale } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 

@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import { X, Printer } from 'lucide-react';
 import QRCode from 'qrcode';
 import { useTranslation } from 'react-i18next';
-import { encodeEssayAssignment } from '../../utils/essayShareCode';
+import { encodeEssayAssignment } from '../../utils/shareCode';
 import type { EssayAssignment } from '../../types';
 
 interface ClassStudent {

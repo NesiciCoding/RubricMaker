@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Upload, CheckCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Modal from '../ui/Modal';
-import { decodeTestSubmission } from '../../utils/testSubmissionCode';
+import { decodeTestSubmission } from '../../utils/shareCode';
 import { calcStudentTestRawPoints } from '../../utils/testCalc';
 import { nanoid } from '../../utils/nanoid';
 import type { StudentTest, Test } from '../../types';

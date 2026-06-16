@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import { decodeFeedbackCode } from '../utils/studentShareCode';
+import { decodeFeedbackCode } from '../utils/shareCode';
 import { calcGradeSummary } from '../utils/gradeCalc';
 
 export default function StudentFeedbackPage() {

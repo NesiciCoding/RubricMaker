@@ -11,7 +11,7 @@ import {
     TrendingDown,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { decodeEssaySubmission } from '../../utils/essaySubmissionCode';
+import { decodeEssaySubmission } from '../../utils/shareCode';
 import Modal from '../ui/Modal';
 import type { Attachment } from '../../types';
 import { useDbStatus } from '../../hooks/useDbStatus';

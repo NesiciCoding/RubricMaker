@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { X, Copy, Download, Check, FileText, Database, AlertCircle, Radio } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { encodeEssayAssignment } from '../../utils/essayShareCode';
+import { encodeEssayAssignment } from '../../utils/shareCode';
 import { downloadSebConfig } from '../../utils/sebConfig';
 import { nanoid } from '../../utils/nanoid';
 import Modal from '../ui/Modal';

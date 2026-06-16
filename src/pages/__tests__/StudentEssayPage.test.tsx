@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import { encodeEssayAssignment } from '../../utils/essayShareCode';
+import { encodeEssayAssignment } from '../../utils/shareCode';
 import type { EssayAssignment } from '../../types';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
@@ -35,9 +35,10 @@ vi.mock('../../components/Essay/EssayTTSControls', () => ({
 }));
 
 // Capture what gets encoded so we can assert on wordLimitStatus without DB calls
-vi.mock('../../utils/essaySubmissionCode', () => ({
-    encodeEssaySubmission: vi.fn().mockReturnValue('MOCK_SUBMISSION_CODE'),
-}));
+vi.mock('../../utils/shareCode', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../../utils/shareCode')>();
+    return { ...actual, encodeEssaySubmission: vi.fn().mockReturnValue('MOCK_SUBMISSION_CODE') };
+});
 
 vi.mock('../../utils/nanoid', () => ({ nanoid: () => 'test-submission-id' }));
 
@@ -52,7 +53,7 @@ vi.mock('../../hooks/useLiveSessionTelemetry', () => ({
     }),
 }));
 
-import { encodeEssaySubmission } from '../../utils/essaySubmissionCode';
+import { encodeEssaySubmission } from '../../utils/shareCode';
 import StudentEssayPage from '../StudentEssayPage';
 
 const mockEncode = vi.mocked(encodeEssaySubmission);

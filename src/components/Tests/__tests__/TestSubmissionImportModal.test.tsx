@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import TestSubmissionImportModal from '../TestSubmissionImportModal';
-import { encodeTestSubmission } from '../../../utils/testSubmissionCode';
+import { encodeTestSubmission } from '../../../utils/shareCode';
 import { calcStudentTestRawPoints } from '../../../utils/testCalc';
 import type { Test as RmTest, TestSubmissionPayload } from '../../../types';
 

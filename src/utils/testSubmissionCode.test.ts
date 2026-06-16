@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { encodeTestSubmission, decodeTestSubmission } from './testSubmissionCode';
+import { encodeTestSubmission, decodeTestSubmission } from './shareCode';
 import type { TestSubmissionPayload } from '../types';
 
 const makeSubmission = (overrides: Partial<TestSubmissionPayload> = {}): TestSubmissionPayload => ({

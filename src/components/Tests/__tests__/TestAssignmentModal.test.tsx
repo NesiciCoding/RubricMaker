@@ -4,7 +4,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderWithRouter } from '../../../test-utils/renderWithProviders';
 import { DEFAULT_FORMAT } from '../../../types';
 import type { AppSettings, Class, Student, Test as RmTest } from '../../../types';
-import { decodeTestAssignment } from '../../../utils/testShareCode';
+import { decodeTestAssignment } from '../../../utils/shareCode';
 
 const mockSettings: AppSettings = {
     defaultGradeScaleId: 'gs1',

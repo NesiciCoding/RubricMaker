@@ -11,7 +11,7 @@ vi.mock('react-i18next', () => ({
     }),
 }));
 
-vi.mock('../../utils/essaySubmissionCode', () => ({
+vi.mock('../../utils/shareCode', () => ({
     decodeEssaySubmission: vi.fn(),
 }));
 
@@ -20,7 +20,7 @@ vi.mock('../../hooks/useDbStatus', () => ({
     useDbStatus: () => ({ isConnected: mockDbConnected, status: 'idle', lastSyncAt: null }),
 }));
 
-import { decodeEssaySubmission } from '../../utils/essaySubmissionCode';
+import { decodeEssaySubmission } from '../../utils/shareCode';
 const mockDecode = vi.mocked(decodeEssaySubmission);
 
 const dbSubmission = {
