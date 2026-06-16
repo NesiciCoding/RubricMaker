@@ -543,6 +543,13 @@ export interface RubricShare {
     mode: 'read' | 'edit';
 }
 
+export interface SharedFeedback {
+    sr: StudentRubric;
+    rubric: Rubric;
+    student: Student;
+    scale: GradeScale | null;
+}
+
 export interface ClassMember {
     userId: string;
     email?: string;

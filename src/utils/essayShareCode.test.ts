@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { encodeEssayAssignment, decodeEssayAssignment } from './shareCode';
+import { decodeUrlSafeBase64 } from './urlSafeBase64';
 import type { EssayAssignment } from '../types';
 
 const makeAssignment = (overrides: Partial<EssayAssignment> = {}): EssayAssignment => ({
@@ -88,7 +89,7 @@ describe('ownerUserId is never encoded into the URL', () => {
         const a = makeAssignment();
         (a as any).ownerUserId = 'secret-uid-1234';
         const code = encodeEssayAssignment(a);
-        const decoded = JSON.parse(decodeURIComponent(atob(code)));
+        const decoded = JSON.parse(decodeUrlSafeBase64(code));
         expect(decoded.ownerUserId).toBeUndefined();
     });
 

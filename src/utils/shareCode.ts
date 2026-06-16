@@ -1,13 +1,14 @@
-import type { EssayAssignment, EssaySubmission, TestAssignmentPayload, TestSubmissionPayload } from '../types';
-import type { StudentRubric, Rubric, Student, GradeScale } from '../types';
+import type {
+    EssayAssignment,
+    EssaySubmission,
+    Rubric,
+    SharedFeedback,
+    TestAssignmentPayload,
+    TestSubmissionPayload,
+} from '../types';
 import { encodeUrlSafeBase64, decodeUrlSafeBase64 } from './urlSafeBase64';
 
-export interface SharedFeedback {
-    sr: StudentRubric;
-    rubric: Rubric;
-    student: Student;
-    scale: GradeScale | null;
-}
+export type { SharedFeedback };
 
 // ── Essay assignment ──────────────────────────────────────────────────────────
 
