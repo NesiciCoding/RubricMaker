@@ -9,8 +9,8 @@ import { useApp } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import EssayAssignmentModal from '../components/Essay/EssayAssignmentModal';
 import EssaySlipSheet from '../components/Essay/EssaySlipSheet';
-import { encodeEssayAssignment } from '../utils/essayShareCode';
-import { decodeEssaySubmission } from '../utils/essaySubmissionCode';
+import { encodeEssayAssignment } from '../utils/shareCode';
+import { decodeEssaySubmission } from '../utils/shareCode';
 import type { EssayAssignment } from '../types';
 
 export default function EssayBuilderPage() {
