@@ -18,6 +18,8 @@ import type {
     UserTemplate,
     Test,
     StudentTest,
+    EssayAssignment,
+    EssaySubmission,
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 import { nanoid } from '../utils/nanoid';
@@ -218,6 +220,8 @@ const KEYS = {
     userTemplates: 'rm_user_templates',
     tests: 'rm_tests',
     studentTests: 'rm_student_tests',
+    essayAssignments: 'rm_essay_assignments',
+    essaySubmissions: 'rm_essay_submissions',
 };
 
 // ─── Generic helpers ───────────────────────────────────────────────────────────
@@ -262,6 +266,8 @@ export interface StoreData {
     userTemplates: UserTemplate[];
     tests: Test[];
     studentTests: StudentTest[];
+    essayAssignments: EssayAssignment[];
+    essaySubmissions: EssaySubmission[];
 }
 
 export function loadStore(): StoreData {
@@ -284,6 +290,8 @@ export function loadStore(): StoreData {
         userTemplates: load<UserTemplate[]>(KEYS.userTemplates, []),
         tests: load<Test[]>(KEYS.tests, []),
         studentTests: load<StudentTest[]>(KEYS.studentTests, []),
+        essayAssignments: load<EssayAssignment[]>(KEYS.essayAssignments, []),
+        essaySubmissions: load<EssaySubmission[]>(KEYS.essaySubmissions, []),
     };
 }
 
@@ -337,6 +345,12 @@ export function saveTests(tests: Test[]) {
 }
 export function saveStudentTests(studentTests: StudentTest[]) {
     save(KEYS.studentTests, studentTests);
+}
+export function saveEssayAssignments(assignments: EssayAssignment[]) {
+    save(KEYS.essayAssignments, assignments);
+}
+export function saveEssaySubmissions(submissions: EssaySubmission[]) {
+    save(KEYS.essaySubmissions, submissions);
 }
 
 // ─── Full Backup / Restore ─────────────────────────────────────────────────────
@@ -462,6 +476,23 @@ export function importFullBackup(json: string): boolean {
         if (data.studentTests !== undefined) {
             if (isObjectArray(data.studentTests)) saveStudentTests(data.studentTests as StudentTest[]);
             else console.warn('[importFullBackup] studentTests failed validation — skipped');
+        }
+        if (data.essayAssignments !== undefined) {
+            if (
+                Array.isArray(data.essayAssignments) &&
+                data.essayAssignments.every(
+                    (a) =>
+                        isPlainObject(a) &&
+                        typeof (a as Record<string, unknown>).teacherKey === 'string' &&
+                        typeof (a as Record<string, unknown>).studentId === 'string'
+                )
+            )
+                saveEssayAssignments(data.essayAssignments as EssayAssignment[]);
+            else console.warn('[importFullBackup] essayAssignments failed validation — skipped');
+        }
+        if (data.essaySubmissions !== undefined) {
+            if (isObjectArray(data.essaySubmissions)) saveEssaySubmissions(data.essaySubmissions as EssaySubmission[]);
+            else console.warn('[importFullBackup] essaySubmissions failed validation — skipped');
         }
         if (data.userTemplates !== undefined) {
             if (

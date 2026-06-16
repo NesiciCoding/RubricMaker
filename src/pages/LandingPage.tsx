@@ -22,6 +22,7 @@ import {
     Languages,
     Radio,
     ClipboardCheck,
+    PenLine,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { loadSupabaseConfig } from '../services/database';
@@ -67,8 +68,14 @@ const TEACHER_FEATURES = [
     {
         icon: ClipboardCheck,
         title: 'Tests & Quizzes',
-        desc: 'Build multiple-choice, short-answer, and open-question tests, assign them with a share link or Safe Exam Browser, then auto-grade and fine-tune the class average.',
+        desc: 'Build multiple-choice, multiple-response, true/false, short-answer, open, fill-the-gap, matching, ordering, categorize, and hot text tests, assign them with a share link or Safe Exam Browser, then auto-grade and fine-tune the class average.',
         color: '#3b82f6',
+    },
+    {
+        icon: PenLine,
+        title: 'Essays',
+        desc: 'Write a prompt, link a rubric, and assign it to a class from a dedicated Essays page — then track submissions, share links, and watch live progress, all in one place.',
+        color: '#6366f1',
     },
 ];
 

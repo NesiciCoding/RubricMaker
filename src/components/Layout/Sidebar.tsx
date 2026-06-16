@@ -18,6 +18,7 @@ import {
     HelpCircle,
     Languages,
     ClipboardCheck,
+    PenLine,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
@@ -56,6 +57,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
         { to: '/', icon: LayoutDashboard, label: t('navigation.dashboard'), end: true },
         { to: '/rubrics', icon: BookOpen, label: t('navigation.rubrics') },
         { to: '/tests', icon: ClipboardCheck, label: t('navigation.tests') },
+        { to: '/essays', icon: PenLine, label: t('navigation.essays') },
         { to: '/students', icon: Users, label: t('navigation.students') },
         { to: '/cefr-overview', icon: GraduationCap, label: t('navigation.cefr_overview') },
     ];

@@ -1,0 +1,145 @@
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Plus, Edit2, Trash2, FileText, Radio } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import Topbar from '../components/Layout/Topbar';
+import { useApp } from '../context/AppContext';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import { useConfirm } from '../hooks/useConfirm';
+
+export default function EssayListPage() {
+    const { t } = useTranslation();
+    const navigate = useNavigate();
+    const { essayAssignments, essaySubmissions, rubrics, deleteEssayGroup } = useApp();
+    const { confirm, dialogProps: confirmDialogProps } = useConfirm();
+
+    const groups = React.useMemo(() => {
+        const byKey = new Map<string, typeof essayAssignments>();
+        for (const a of essayAssignments) {
+            const existing = byKey.get(a.teacherKey);
+            if (existing) existing.push(a);
+            else byKey.set(a.teacherKey, [a]);
+        }
+        return Array.from(byKey.entries())
+            .map(([teacherKey, rows]) => ({ teacherKey, rows }))
+            .sort((a, b) => (b.rows[0]?.createdAt ?? '').localeCompare(a.rows[0]?.createdAt ?? ''));
+    }, [essayAssignments]);
+
+    async function handleDelete(teacherKey: string, title: string) {
+        const ok = await confirm({
+            title: t('essays.delete_essay_title'),
+            message: t('essays.delete_essay_warning', { name: title }),
+            confirmLabel: t('common.delete'),
+        });
+        if (ok) deleteEssayGroup(teacherKey);
+    }
+
+    return (
+        <>
+            <Topbar
+                title={t('essays.list_title')}
+                actions={
+                    <button className="btn btn-primary btn-sm" onClick={() => navigate('/essays/new')}>
+                        <Plus size={15} /> {t('essays.new_essay')}
+                    </button>
+                }
+            />
+            <div className="page-content fade-in">
+                {groups.length === 0 ? (
+                    <div className="empty-state">
+                        <FileText size={40} />
+                        <h3>{t('essays.no_essays')}</h3>
+                        <p className="text-muted text-sm">{t('essays.create_first_instruction')}</p>
+                        <button className="btn btn-primary" onClick={() => navigate('/essays/new')}>
+                            <Plus size={16} /> {t('essays.new_essay')}
+                        </button>
+                    </div>
+                ) : (
+                    <div
+                        style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                            gap: 16,
+                        }}
+                    >
+                        {groups.map(({ teacherKey, rows }) => {
+                            const first = rows[0];
+                            const rubric = rubrics.find((r) => r.id === first.rubricId);
+                            const submittedCount = new Set(
+                                essaySubmissions
+                                    .filter((s) => s.teacherKey === teacherKey)
+                                    .map((s) => s.assignmentStudentId)
+                            ).size;
+                            return (
+                                <div
+                                    key={teacherKey}
+                                    className="card"
+                                    style={{ transition: 'border-color var(--transition)' }}
+                                >
+                                    <div
+                                        style={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'flex-start',
+                                            marginBottom: 12,
+                                        }}
+                                    >
+                                        <div>
+                                            <h3>{first.title}</h3>
+                                            <div className="text-muted text-xs" style={{ marginTop: 2 }}>
+                                                {new Date(first.createdAt).toLocaleDateString()}
+                                            </div>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: 4 }}>
+                                            <button
+                                                className="btn btn-ghost btn-icon btn-sm"
+                                                title={t('tests.action_edit')}
+                                                aria-label={t('tests.action_edit')}
+                                                onClick={() => navigate(`/essays/${teacherKey}`)}
+                                            >
+                                                <Edit2 size={14} />
+                                            </button>
+                                            <button
+                                                className="btn btn-ghost btn-icon btn-sm"
+                                                title={t('tests.action_delete')}
+                                                aria-label={t('tests.action_delete')}
+                                                style={{ color: 'var(--red)' }}
+                                                onClick={() => handleDelete(teacherKey, first.title)}
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+                                        {rubric && <span className="badge badge-blue">{rubric.name}</span>}
+                                        <span className="badge badge-purple">
+                                            {t('essays.assigned_students_title')}: {rows.length}
+                                        </span>
+                                        <span className="badge badge-green">
+                                            {t('essays.submission_status_submitted')}: {submittedCount}/{rows.length}
+                                        </span>
+                                    </div>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                        <button
+                                            className="btn btn-primary btn-sm"
+                                            onClick={() => navigate(`/essays/${teacherKey}`)}
+                                        >
+                                            <Edit2 size={14} /> {t('tests.action_edit')}
+                                        </button>
+                                        <Link to={`/essays/${teacherKey}/monitor`} className="btn btn-secondary btn-sm">
+                                            <Radio size={14} /> {t('essays.action_monitor')}
+                                        </Link>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+
+                <ConfirmDialog {...confirmDialogProps} />
+            </div>
+        </>
+    );
+}

@@ -197,4 +197,5 @@ Keep card descriptions short (one sentence, no jargon) and written from the user
 | `src/utils/textExtraction.ts` | OCR (Tesseract) + DOCX parsing (Mammoth) |
 | `src/utils/essayShareCode.ts` | Shareable codes for essay access (no auth needed) |
 | `src/utils/pinHash.ts` | PIN hashing for student self-assessment locks |
+| `src/utils/clozeParse.ts` | Parses `{{...}}` cloze gap syntax and `[[...]]` hot-text fragment syntax for test questions |
 | `src/services/standardsApi.ts` | Common Standards Project API (CCSS, NGSS) |

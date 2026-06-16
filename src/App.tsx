@@ -35,6 +35,8 @@ const CefrOverviewPage = lazy(() => import('./pages/CefrOverviewPage'));
 const VocabularyDashboardPage = lazy(() => import('./pages/VocabularyDashboardPage'));
 const TestListPage = lazy(() => import('./pages/TestListPage'));
 const TestBuilderPage = lazy(() => import('./pages/TestBuilderPage'));
+const EssayListPage = lazy(() => import('./pages/EssayListPage'));
+const EssayBuilderPage = lazy(() => import('./pages/EssayBuilderPage'));
 const TestResultsPage = lazy(() => import('./pages/TestResultsPage'));
 const LiveMonitorPage = lazy(() => import('./pages/LiveMonitorPage'));
 const StudentPortalPage = lazy(() => import('./pages/StudentPortalPage'));
@@ -208,6 +210,9 @@ export default function App() {
                                 <Route path="/tests/:id" element={<TestBuilderPage />} />
                                 <Route path="/tests/:testId/results/:studentTestId" element={<TestResultsPage />} />
                                 <Route path="/tests/:testId/monitor" element={<LiveMonitorPage kind="test" />} />
+                                <Route path="/essays" element={<EssayListPage />} />
+                                <Route path="/essays/new" element={<EssayBuilderPage />} />
+                                <Route path="/essays/:teacherKey" element={<EssayBuilderPage />} />
                                 <Route
                                     path="/essays/:assignmentId/monitor"
                                     element={<LiveMonitorPage kind="essay" />}

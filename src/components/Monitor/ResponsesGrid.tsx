@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { scoreShortAnswerExact } from '../../utils/testCalc';
+import { scoreShortAnswerExact, autoScoreResponse } from '../../utils/testCalc';
+import { parseClozeGaps, parseHotTextFragments } from '../../utils/clozeParse';
 import type { Test, TestAnswer, TestQuestion } from '../../types';
 
 export interface ResponsesGridStudentRow {
@@ -27,10 +28,63 @@ function cellState(question: TestQuestion, answer: TestAnswer | undefined): Cell
         const selected = question.options?.find((o) => o.id === answer.response);
         return selected?.isCorrect ? 'correct' : 'incorrect';
     }
+    if (question.type === 'multiple-response') {
+        let selected: string[] = [];
+        try {
+            selected = JSON.parse(answer.response) as string[];
+        } catch {
+            /* ignore malformed response */
+        }
+        if (selected.length === 0) return 'empty';
+        return autoScoreResponse(question, answer.response) >= question.points ? 'correct' : 'incorrect';
+    }
+    if (question.type === 'true-false') {
+        return autoScoreResponse(question, answer.response) >= question.points ? 'correct' : 'incorrect';
+    }
     if (question.type === 'short-answer') {
         const score = scoreShortAnswerExact(question, answer.response);
         if (score === null) return 'ungraded';
         return score > 0 ? 'correct' : 'incorrect';
+    }
+    if (question.type === 'cloze' || question.type === 'cloze-dropdown') {
+        let answers: Record<string, string> = {};
+        try {
+            answers = JSON.parse(answer.response) as Record<string, string>;
+        } catch {
+            /* ignore malformed response */
+        }
+        if (!Object.values(answers).some((v) => v.trim() !== '')) return 'empty';
+        return autoScoreResponse(question, answer.response) >= question.points ? 'correct' : 'incorrect';
+    }
+    if (question.type === 'matching' || question.type === 'categorize') {
+        let answers: Record<string, string> = {};
+        try {
+            answers = JSON.parse(answer.response) as Record<string, string>;
+        } catch {
+            /* ignore malformed response */
+        }
+        if (Object.keys(answers).length === 0) return 'empty';
+        return autoScoreResponse(question, answer.response) >= question.points ? 'correct' : 'incorrect';
+    }
+    if (question.type === 'ordering') {
+        let order: string[] = [];
+        try {
+            order = JSON.parse(answer.response) as string[];
+        } catch {
+            /* ignore malformed response */
+        }
+        if (order.length === 0) return 'empty';
+        return autoScoreResponse(question, answer.response) >= question.points ? 'correct' : 'incorrect';
+    }
+    if (question.type === 'hot-text') {
+        let selected: number[] = [];
+        try {
+            selected = JSON.parse(answer.response) as number[];
+        } catch {
+            /* ignore malformed response */
+        }
+        if (selected.length === 0) return 'empty';
+        return autoScoreResponse(question, answer.response) >= question.points ? 'correct' : 'incorrect';
     }
     return 'ungraded';
 }
@@ -42,10 +96,47 @@ const CELL_COLORS: Record<CellState, string> = {
     empty: 'var(--bg)',
 };
 
-function answerDisplayText(question: TestQuestion, answer: TestAnswer | undefined): string {
+function answerDisplayText(question: TestQuestion, answer: TestAnswer | undefined, t: (key: string) => string): string {
     if (!answer || answer.response.trim() === '') return '';
     if (question.type === 'multiple-choice') {
         return question.options?.find((o) => o.id === answer.response)?.text ?? answer.response;
+    }
+    if (question.type === 'multiple-response') {
+        try {
+            const selected = JSON.parse(answer.response) as string[];
+            return selected
+                .map((id) => question.options?.find((o) => o.id === id)?.text)
+                .filter((text): text is string => !!text)
+                .join(', ');
+        } catch {
+            return '';
+        }
+    }
+    if (question.type === 'true-false') {
+        return t(`tests.true_false_${answer.response}`);
+    }
+    if (question.type === 'cloze' || question.type === 'cloze-dropdown') {
+        try {
+            const answers = JSON.parse(answer.response) as Record<string, string>;
+            const gaps = parseClozeGaps(question.prompt);
+            return gaps
+                .map((gap) => answers[gap.index] ?? '')
+                .filter((v) => v.trim() !== '')
+                .join(', ');
+        } catch {
+            return '';
+        }
+    }
+    if (question.type === 'hot-text') {
+        try {
+            const selected = new Set(JSON.parse(answer.response) as number[]);
+            const fragments = parseHotTextFragments(question.hotTextPassage ?? '').filter(
+                (s) => s.type === 'fragment' && selected.has(s.index)
+            );
+            return fragments.map((f) => f.text).join(', ');
+        } catch {
+            return '';
+        }
     }
     return answer.response;
 }
@@ -210,7 +301,7 @@ export default function ResponsesGrid({ test, rows }: ResponsesGridProps) {
                         <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
                             {rows.map((row) => {
                                 const answer = row.answers.find((a) => a.questionId === galleryQuestion.id);
-                                const text = answerDisplayText(galleryQuestion, answer);
+                                const text = answerDisplayText(galleryQuestion, answer, t);
                                 return (
                                     <div
                                         key={row.studentId}

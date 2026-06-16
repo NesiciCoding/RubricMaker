@@ -4,8 +4,9 @@ import { ArrowLeft, CheckCircle2, XCircle, Award, Languages, ShieldAlert } from 
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
-import { calcTestMaxPoints, calcStudentTestRawPoints, calcTestPercentage } from '../utils/testCalc';
+import { calcTestMaxPoints, calcStudentTestRawPoints, calcTestPercentage, autoScoreResponse } from '../utils/testCalc';
 import { calcLetterGrade, calcGradeColor } from '../utils/gradeCalc';
+import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse';
 import type { TestAnswer, TestQuestion, ProctorEventType } from '../types';
 
 function clamp(value: number, min: number, max: number): number {
@@ -15,21 +16,227 @@ function clamp(value: number, min: number, max: number): number {
 function isAutoScored(question: TestQuestion, answer: TestAnswer | undefined): boolean {
     if (!answer) return false;
     if (answer.pointsEarned !== undefined) return false;
-    return question.type === 'multiple-choice' || (question.type === 'short-answer' && !!question.expectedAnswer);
+    return (
+        question.type === 'multiple-choice' ||
+        question.type === 'multiple-response' ||
+        question.type === 'true-false' ||
+        question.type === 'cloze' ||
+        question.type === 'cloze-dropdown' ||
+        question.type === 'matching' ||
+        question.type === 'ordering' ||
+        question.type === 'categorize' ||
+        question.type === 'hot-text' ||
+        (question.type === 'short-answer' && !!question.expectedAnswer)
+    );
 }
 
 function autoScore(question: TestQuestion, answer: TestAnswer | undefined): number {
     if (!answer) return 0;
+    return autoScoreResponse(question, answer.response);
+}
+
+/** Renders a cloze prompt with each `{{...}}` gap shown as a blank placeholder. */
+function promptPreview(question: TestQuestion): string {
+    if (question.type !== 'cloze' && question.type !== 'cloze-dropdown') return question.prompt;
+    return renderClozeSegments(question.prompt)
+        .map((segment) => (segment.type === 'text' ? segment.text : '_____'))
+        .join('');
+}
+
+function formatStudentResponse(
+    question: TestQuestion,
+    answer: TestAnswer | undefined,
+    t: (key: string) => string
+): React.ReactNode {
+    const response = answer?.response;
+    if (!response) return t('tests.results.no_response');
     if (question.type === 'multiple-choice') {
-        const selected = question.options?.find((o) => o.id === answer.response);
-        return selected?.isCorrect ? question.points : 0;
+        return question.options?.find((o) => o.id === response)?.text ?? t('tests.results.no_response');
     }
-    if (question.type === 'short-answer' && question.expectedAnswer) {
-        return answer.response.trim().toLowerCase() === question.expectedAnswer.trim().toLowerCase()
-            ? question.points
-            : 0;
+    if (question.type === 'multiple-response') {
+        try {
+            const selected = JSON.parse(response) as string[];
+            if (selected.length === 0) return t('tests.results.no_response');
+            const texts = selected
+                .map((id) => question.options?.find((o) => o.id === id)?.text)
+                .filter((text): text is string => !!text);
+            return texts.length > 0 ? texts.join(', ') : t('tests.results.no_response');
+        } catch {
+            return t('tests.results.no_response');
+        }
     }
-    return 0;
+    if (question.type === 'true-false') {
+        return t(`tests.true_false_${response}`);
+    }
+    if (question.type === 'cloze' || question.type === 'cloze-dropdown') {
+        let answers: Record<string, string> = {};
+        try {
+            answers = JSON.parse(response) as Record<string, string>;
+        } catch {
+            answers = {};
+        }
+        const isDropdown = question.type === 'cloze-dropdown';
+        const segments = renderClozeSegments(question.prompt);
+        if (!segments.some((s) => s.type === 'gap')) return t('tests.results.no_response');
+        return (
+            <>
+                {segments.map((segment, i) => {
+                    if (segment.type === 'text') return <span key={i}>{segment.text}</span>;
+                    const gap = segment.gap;
+                    const studentAnswer = (answers[gap.index] ?? '').trim();
+                    const correct = isDropdown
+                        ? studentAnswer === gap.alternatives[0]
+                        : gap.alternatives.some((alt) => alt.toLowerCase() === studentAnswer.toLowerCase());
+                    return (
+                        <span
+                            key={i}
+                            style={{
+                                fontWeight: 600,
+                                textDecoration: 'underline',
+                                color: !studentAnswer ? 'var(--text-muted)' : correct ? 'var(--green)' : 'var(--red)',
+                            }}
+                        >
+                            {studentAnswer || '___'}
+                        </span>
+                    );
+                })}
+            </>
+        );
+    }
+    if (question.type === 'matching') {
+        const pairs = question.matchingPairs ?? [];
+        if (pairs.length === 0) return t('tests.results.no_response');
+        let answers: Record<string, string> = {};
+        try {
+            answers = JSON.parse(response) as Record<string, string>;
+        } catch {
+            answers = {};
+        }
+        const pairsById = new Map(pairs.map((p) => [p.id, p]));
+        return (
+            <>
+                {pairs.map((pair, i) => {
+                    const chosenId = answers[pair.id];
+                    const chosen = chosenId ? pairsById.get(chosenId) : undefined;
+                    const correct = chosenId === pair.id;
+                    return (
+                        <div key={pair.id} style={{ marginTop: i === 0 ? 0 : 4 }}>
+                            <span>{pair.left}</span> →{' '}
+                            <span
+                                style={{
+                                    fontWeight: 600,
+                                    color: !chosen ? 'var(--text-muted)' : correct ? 'var(--green)' : 'var(--red)',
+                                }}
+                            >
+                                {chosen?.right ?? '___'}
+                            </span>
+                        </div>
+                    );
+                })}
+            </>
+        );
+    }
+    if (question.type === 'ordering') {
+        const items = question.orderItems ?? [];
+        if (items.length === 0) return t('tests.results.no_response');
+        let order: string[];
+        try {
+            order = JSON.parse(response) as string[];
+        } catch {
+            order = [];
+        }
+        const itemsById = new Map(items.map((item) => [item.id, item]));
+        return (
+            <>
+                {order.map((id, i) => (
+                    <div key={id} style={{ marginTop: i === 0 ? 0 : 4 }}>
+                        <span
+                            style={{
+                                fontWeight: 600,
+                                color: items[i]?.id === id ? 'var(--green)' : 'var(--red)',
+                            }}
+                        >
+                            {i + 1}. {itemsById.get(id)?.text}
+                        </span>
+                    </div>
+                ))}
+            </>
+        );
+    }
+    if (question.type === 'categorize') {
+        const items = question.categorizeItems ?? [];
+        if (items.length === 0) return t('tests.results.no_response');
+        let answers: Record<string, string> = {};
+        try {
+            answers = JSON.parse(response) as Record<string, string>;
+        } catch {
+            answers = {};
+        }
+        const categoriesById = new Map((question.categories ?? []).map((c) => [c.id, c]));
+        return (
+            <>
+                {items.map((item, i) => {
+                    const chosenId = answers[item.id];
+                    const chosen = chosenId ? categoriesById.get(chosenId) : undefined;
+                    const correct = chosenId === item.categoryId;
+                    return (
+                        <div key={item.id} style={{ marginTop: i === 0 ? 0 : 4 }}>
+                            <span>{item.text}</span> →{' '}
+                            <span
+                                style={{
+                                    fontWeight: 600,
+                                    color: !chosen ? 'var(--text-muted)' : correct ? 'var(--green)' : 'var(--red)',
+                                }}
+                            >
+                                {chosen?.label ?? '___'}
+                            </span>
+                        </div>
+                    );
+                })}
+            </>
+        );
+    }
+    if (question.type === 'hot-text') {
+        const segments = parseHotTextFragments(question.hotTextPassage ?? '');
+        if (!segments.some((s) => s.type === 'fragment')) return t('tests.results.no_response');
+        let selected: number[];
+        try {
+            selected = JSON.parse(response) as number[];
+        } catch {
+            selected = [];
+        }
+        const correctIndices = new Set(question.hotTextCorrectIndices ?? []);
+        const selectedSet = new Set(selected);
+        return (
+            <>
+                {segments.map((segment, i) => {
+                    if (segment.type === 'text') return <span key={i}>{segment.text}</span>;
+                    const isSelected = selectedSet.has(segment.index);
+                    const isCorrect = correctIndices.has(segment.index);
+                    const match = isSelected === isCorrect;
+                    return (
+                        <span
+                            key={i}
+                            style={{
+                                margin: '0 2px',
+                                padding: '1px 4px',
+                                borderRadius: 4,
+                                fontWeight: isSelected ? 600 : 400,
+                                background: isSelected
+                                    ? 'color-mix(in srgb, var(--accent) 20%, transparent)'
+                                    : 'transparent',
+                                color: match ? 'var(--green)' : 'var(--red)',
+                                border: isSelected ? '1px solid var(--accent)' : '1px solid transparent',
+                            }}
+                        >
+                            {segment.text}
+                        </span>
+                    );
+                })}
+            </>
+        );
+    }
+    return response || t('tests.results.no_response');
 }
 
 const PROCTOR_EVENT_TYPES: ProctorEventType[] = [
@@ -258,7 +465,15 @@ export default function TestResultsPage() {
                         const allowManual =
                             question.type === 'open' ||
                             question.type === 'short-answer' ||
-                            question.type === 'multiple-choice';
+                            question.type === 'multiple-choice' ||
+                            question.type === 'multiple-response' ||
+                            question.type === 'true-false' ||
+                            question.type === 'cloze' ||
+                            question.type === 'cloze-dropdown' ||
+                            question.type === 'matching' ||
+                            question.type === 'ordering' ||
+                            question.type === 'categorize' ||
+                            question.type === 'hot-text';
 
                         return (
                             <div className="card" key={question.id}>
@@ -276,7 +491,7 @@ export default function TestResultsPage() {
                                             {t(`tests.question_type_${question.type.replace('-', '_')}`)} ·{' '}
                                             {t('tests.total_points', { points: question.points })}
                                         </div>
-                                        <div style={{ fontWeight: 600, marginTop: 4 }}>{question.prompt}</div>
+                                        <div style={{ fontWeight: 600, marginTop: 4 }}>{promptPreview(question)}</div>
                                     </div>
                                     {autoScored &&
                                         (isCorrect ? (
@@ -297,10 +512,7 @@ export default function TestResultsPage() {
                                             whiteSpace: 'pre-wrap',
                                         }}
                                     >
-                                        {question.type === 'multiple-choice'
-                                            ? (question.options?.find((o) => o.id === answer?.response)?.text ??
-                                              t('tests.results.no_response'))
-                                            : answer?.response || t('tests.results.no_response')}
+                                        {formatStudentResponse(question, answer, t)}
                                     </div>
                                 </div>
 
