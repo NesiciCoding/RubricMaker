@@ -1,6 +1,19 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Trash2, Plus, X, Check, BookOpen, GraduationCap, AlertCircle, GripVertical, Image, Lightbulb, ChevronUp, ChevronDown } from 'lucide-react';
+import {
+    Trash2,
+    Plus,
+    X,
+    Check,
+    BookOpen,
+    GraduationCap,
+    AlertCircle,
+    GripVertical,
+    Image,
+    Lightbulb,
+    ChevronUp,
+    ChevronDown,
+} from 'lucide-react';
 import type { DraggableProvidedDragHandleProps } from '@hello-pangea/dnd';
 import { useApp } from '../../context/AppContext';
 import { nanoid } from '../../utils/nanoid';
@@ -45,7 +58,15 @@ const QUESTION_TYPES: TestQuestionType[] = [
     'hot-text',
 ];
 
-export default function QuestionEditor({ question, index, total, sections, dragHandleProps, onChange, onRemove }: Props) {
+export default function QuestionEditor({
+    question,
+    index,
+    total,
+    sections,
+    dragHandleProps,
+    onChange,
+    onRemove,
+}: Props) {
     const { t } = useTranslation();
     const { settings } = useApp();
     const [pickingStandard, setPickingStandard] = React.useState(false);
@@ -230,7 +251,6 @@ export default function QuestionEditor({ question, index, total, sections, dragH
         });
     }
 
-
     function addOrderItem() {
         update({ orderItems: [...(question.orderItems ?? []), { id: nanoid(), text: '' }] });
     }
@@ -305,7 +325,6 @@ export default function QuestionEditor({ question, index, total, sections, dragH
             </label>
         );
     }
-
 
     function linkStandard(std: LinkedStandard) {
         update({ linkedStandards: [...(question.linkedStandards ?? []), std] });
@@ -420,9 +439,14 @@ export default function QuestionEditor({ question, index, total, sections, dragH
 
             {/* Image */}
             <div className="form-group" style={{ marginBottom: 0 }}>
-                <label htmlFor={`question-image-${question.id}`} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <label
+                    htmlFor={`question-image-${question.id}`}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                >
                     <Image size={14} /> {t('tests.question_image_label')}{' '}
-                    <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>({t('essay_assignment.optional')})</span>
+                    <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
+                        ({t('essay_assignment.optional')})
+                    </span>
                 </label>
                 <input
                     id={`question-image-${question.id}`}
@@ -435,18 +459,34 @@ export default function QuestionEditor({ question, index, total, sections, dragH
                     <img
                         src={question.imageUrl}
                         alt={t('tests.question_image_preview_alt')}
-                        style={{ marginTop: 8, maxWidth: '100%', maxHeight: 200, borderRadius: 6, objectFit: 'contain', border: '1px solid var(--border)' }}
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                        onLoad={(e) => { (e.target as HTMLImageElement).style.display = ''; }}
+                        style={{
+                            marginTop: 8,
+                            maxWidth: '100%',
+                            maxHeight: 200,
+                            borderRadius: 6,
+                            objectFit: 'contain',
+                            border: '1px solid var(--border)',
+                        }}
+                        onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                        onLoad={(e) => {
+                            (e.target as HTMLImageElement).style.display = '';
+                        }}
                     />
                 )}
             </div>
 
             {/* Hint */}
             <div className="form-group" style={{ marginBottom: 0 }}>
-                <label htmlFor={`question-hint-${question.id}`} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <label
+                    htmlFor={`question-hint-${question.id}`}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                >
                     <Lightbulb size={14} /> {t('tests.question_hint_label')}{' '}
-                    <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>({t('essay_assignment.optional')})</span>
+                    <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
+                        ({t('essay_assignment.optional')})
+                    </span>
                 </label>
                 <input
                     id={`question-hint-${question.id}`}

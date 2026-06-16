@@ -60,10 +60,7 @@ export default function TestBuilderPage() {
         uncategorised: TestQuestion[],
         sectionGroups: Record<string, TestQuestion[]>
     ): TestQuestion[] {
-        return [
-            ...uncategorised,
-            ...sections.flatMap((s) => sectionGroups[s.id] ?? []),
-        ];
+        return [...uncategorised, ...sections.flatMap((s) => sectionGroups[s.id] ?? [])];
     }
 
     function onDragEnd(result: DropResult) {
@@ -364,7 +361,11 @@ export default function TestBuilderPage() {
                             onKeyDown={(e) => e.key === 'Enter' && addSection()}
                             style={{ flex: 1, fontSize: '0.875rem' }}
                         />
-                        <button className="btn btn-secondary btn-sm" onClick={addSection} disabled={!newSectionTitle.trim()}>
+                        <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={addSection}
+                            disabled={!newSectionTitle.trim()}
+                        >
                             <Plus size={14} /> {t('tests.add_section')}
                         </button>
                     </div>
@@ -402,15 +403,17 @@ export default function TestBuilderPage() {
                                     <div
                                         ref={provided.innerRef}
                                         {...provided.droppableProps}
-                                        style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: sections.length > 0 ? 20 : 0 }}
+                                        style={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: 16,
+                                            marginBottom: sections.length > 0 ? 20 : 0,
+                                        }}
                                     >
                                         {uncategorised.map((question, index) => (
                                             <Draggable key={question.id} draggableId={question.id} index={index}>
                                                 {(draggable) => (
-                                                    <div
-                                                        ref={draggable.innerRef}
-                                                        {...draggable.draggableProps}
-                                                    >
+                                                    <div ref={draggable.innerRef} {...draggable.draggableProps}>
                                                         <QuestionEditor
                                                             question={question}
                                                             index={questions.indexOf(question)}
@@ -507,7 +510,9 @@ export default function TestBuilderPage() {
                                                                             total={questions.length}
                                                                             sections={sections}
                                                                             dragHandleProps={draggable.dragHandleProps}
-                                                                            onChange={(q) => updateQuestion(question.id, q)}
+                                                                            onChange={(q) =>
+                                                                                updateQuestion(question.id, q)
+                                                                            }
                                                                             onRemove={() => removeQuestion(question.id)}
                                                                         />
                                                                     </div>
@@ -516,7 +521,10 @@ export default function TestBuilderPage() {
                                                         ))}
                                                         {provided.placeholder}
                                                         {sectionQs.length === 0 && (
-                                                            <p className="text-muted text-sm" style={{ margin: '8px 0' }}>
+                                                            <p
+                                                                className="text-muted text-sm"
+                                                                style={{ margin: '8px 0' }}
+                                                            >
                                                                 {t('tests.section_empty_hint')}
                                                             </p>
                                                         )}

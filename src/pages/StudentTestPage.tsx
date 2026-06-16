@@ -57,7 +57,6 @@ function withAnswer(answers: Record<string, string>, key: string, value: string)
     return Object.fromEntries(map);
 }
 
-
 export default function StudentTestPage() {
     const { t } = useTranslation();
     const { code } = useParams<{ code: string }>();
@@ -324,9 +323,7 @@ export default function StudentTestPage() {
 
     // Find current question's section label
     const sections = test.sections ?? [];
-    const currentSection = question?.sectionId
-        ? sections.find((s) => s.id === question.sectionId)
-        : null;
+    const currentSection = question?.sectionId ? sections.find((s) => s.id === question.sectionId) : null;
 
     return (
         <SebGate requireSEB={assignment.requireSEB}>
@@ -688,7 +685,10 @@ function QuestionTimeline({ questions, currentIndex, answers, sections, onJump }
             aria-label={t('tests.taking.timeline_label')}
         >
             {groups.map((group) => (
-                <div key={`${group.sectionTitle ?? '__none__'}-${group.indices[0]}`} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div
+                    key={`${group.sectionTitle ?? '__none__'}-${group.indices[0]}`}
+                    style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+                >
                     {group.sectionTitle && (
                         <span
                             style={{
@@ -718,9 +718,7 @@ function QuestionTimeline({ questions, currentIndex, answers, sections, onJump }
                                     width: 28,
                                     height: 28,
                                     borderRadius: 6,
-                                    border: isCurrent
-                                        ? '2px solid var(--accent)'
-                                        : '2px solid transparent',
+                                    border: isCurrent ? '2px solid var(--accent)' : '2px solid transparent',
                                     background: answered
                                         ? 'var(--accent)'
                                         : 'color-mix(in srgb, var(--text-muted) 20%, var(--bg))',
@@ -1036,7 +1034,14 @@ function QuestionCard({ question, index, total, value, onChange, code }: Questio
                         }}
                     />
                     {wordCount !== null && (
-                        <div style={{ textAlign: 'right', fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                        <div
+                            style={{
+                                textAlign: 'right',
+                                fontSize: '0.75rem',
+                                color: 'var(--text-muted)',
+                                marginTop: 4,
+                            }}
+                        >
                             {t('tests.taking.word_count', { count: wordCount })}
                         </div>
                     )}
