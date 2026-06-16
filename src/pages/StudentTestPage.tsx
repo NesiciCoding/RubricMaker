@@ -3,8 +3,8 @@ import { useParams } from 'react-router-dom';
 import { createClient } from '@supabase/supabase-js';
 import { Clock, CheckCircle, Copy, AlertTriangle, Loader2, Eye, ChevronUp, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { decodeTestAssignment } from '../utils/testShareCode';
-import { encodeTestSubmission } from '../utils/testSubmissionCode';
+import { decodeTestAssignment } from '../utils/shareCode';
+import { encodeTestSubmission } from '../utils/shareCode';
 import { nanoid } from '../utils/nanoid';
 import {
     loadTestDraft,

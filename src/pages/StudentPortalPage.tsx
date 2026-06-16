@@ -23,7 +23,7 @@ import CefrProgressChart from '../components/Statistics/CefrProgressChart';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
 import { getStudentPortalTutorialSteps } from '../data/StudentPortalTutorialSteps';
 import RubricSelfAssessPanel from '../components/Students/RubricSelfAssessPanel';
-import { encodeEssayAssignment } from '../utils/essayShareCode';
+import { encodeEssayAssignment } from '../utils/shareCode';
 import { loadSupabaseConfig } from '../services/database';
 import type { CefrLevel, CefrSkill, EssayAssignment, StudentEssayAssignmentSummary } from '../types';
 

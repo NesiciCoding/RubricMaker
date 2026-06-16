@@ -14,7 +14,7 @@ import {
     type AppSettings,
     type StudentRubric,
 } from '../../types';
-import { encodeFeedbackCode } from '../../utils/studentShareCode';
+import { encodeFeedbackCode } from '../../utils/shareCode';
 import { encodeRubricShareCode } from '../../utils/rubricImport';
 
 // ─── Test data ───────────────────────────────────────────────────────────────

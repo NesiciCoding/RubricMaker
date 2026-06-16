@@ -2,8 +2,8 @@ import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import { encodeTestAssignment } from '../../utils/testShareCode';
-import { decodeTestSubmission } from '../../utils/testSubmissionCode';
+import { encodeTestAssignment } from '../../utils/shareCode';
+import { decodeTestSubmission } from '../../utils/shareCode';
 import type { Test, TestAssignmentPayload } from '../../types';
 
 vi.mock('react-i18next', () => ({

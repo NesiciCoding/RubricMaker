@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { encodeEssayAssignment, decodeEssayAssignment } from './essayShareCode';
+import { encodeEssayAssignment, decodeEssayAssignment } from './shareCode';
 import type { EssayAssignment } from '../types';
 
 const makeAssignment = (overrides: Partial<EssayAssignment> = {}): EssayAssignment => ({

@@ -19,7 +19,7 @@ import { useApp } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { calcGradeSummary } from '../utils/gradeCalc';
 import { getStudentGoalScores } from '../utils/learningGoalsAggregator';
-import { encodeFeedbackCode } from '../utils/studentShareCode';
+import { encodeFeedbackCode } from '../utils/shareCode';
 
 export default function ExportPage() {
     const { t } = useTranslation();

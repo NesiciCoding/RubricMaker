@@ -4,8 +4,8 @@ import { Clock, CheckCircle, Copy, AlertTriangle, Mail, Loader2, Save, Eye, Down
 import { useTranslation } from 'react-i18next';
 import EssayEditor from '../components/Editor/EssayEditor';
 import EssayTTSControls from '../components/Essay/EssayTTSControls';
-import { decodeEssayAssignment } from '../utils/essayShareCode';
-import { encodeEssaySubmission } from '../utils/essaySubmissionCode';
+import { decodeEssayAssignment } from '../utils/shareCode';
+import { encodeEssaySubmission } from '../utils/shareCode';
 import { downloadSebConfig } from '../utils/sebConfig';
 import { countWords } from '../utils/essayUtils';
 import { nanoid } from '../utils/nanoid';

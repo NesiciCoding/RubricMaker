@@ -5,7 +5,7 @@ import Modal from '../ui/Modal';
 import { useApp } from '../../context/AppContext';
 import { useDbStatus } from '../../hooks/useDbStatus';
 import { loadSupabaseConfig } from '../../services/database';
-import { encodeTestAssignment } from '../../utils/testShareCode';
+import { encodeTestAssignment } from '../../utils/shareCode';
 import { nanoid } from '../../utils/nanoid';
 import type { Test, TestAssignmentPayload } from '../../types';
 
