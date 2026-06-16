@@ -1,12 +1,12 @@
 import React, { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { X, Copy, Download, Check, FileText, Database, AlertCircle, Radio } from 'lucide-react';
+import { X, Copy, Download, Check, FileText, Database, AlertCircle, Radio, Save } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { encodeEssayAssignment } from '../../utils/shareCode';
 import { downloadSebConfig } from '../../utils/sebConfig';
 import { nanoid } from '../../utils/nanoid';
 import Modal from '../ui/Modal';
-import type { EssayAssignment } from '../../types';
+import type { EssayAssignment, EssayTemplate } from '../../types';
 import { useDbStatus } from '../../hooks/useDbStatus';
 import { loadSupabaseConfig } from '../../services/database';
 
@@ -34,6 +34,8 @@ interface Props {
             | 'expiresAt'
         >
     >;
+    savedTemplate?: EssayTemplate;
+    onSaveTemplate?: (template: EssayTemplate) => void;
 }
 
 export default function EssayAssignmentModal({
@@ -48,26 +50,42 @@ export default function EssayAssignmentModal({
     classStudents,
     teacherKey: teacherKeyProp,
     initialValues,
+    savedTemplate,
+    onSaveTemplate,
 }: Props) {
     const { t } = useTranslation();
     const dbStatus = useDbStatus();
     const config = loadSupabaseConfig();
 
-    const [title, setTitle] = useState(initialValues?.title ?? rubricName);
-    const [prompt, setPrompt] = useState(initialValues?.prompt ?? '');
-    const [minWords, setMinWords] = useState(initialValues?.minWords ? String(initialValues.minWords) : '');
-    const [maxWords, setMaxWords] = useState(initialValues?.maxWords ? String(initialValues.maxWords) : '');
-    const [timeLimitMinutes, setTimeLimitMinutes] = useState(
-        initialValues?.timeLimitMinutes ? String(initialValues.timeLimitMinutes) : ''
+    const [title, setTitle] = useState(savedTemplate?.title ?? initialValues?.title ?? rubricName);
+    const [prompt, setPrompt] = useState(savedTemplate?.prompt ?? initialValues?.prompt ?? '');
+    const [minWords, setMinWords] = useState(
+        savedTemplate?.minWords?.toString() ?? (initialValues?.minWords ? String(initialValues.minWords) : '')
     );
-    const [requireSEB, setRequireSEB] = useState(initialValues?.requireSEB ?? false);
-    const [readOnlyAfterSubmit, setReadOnlyAfterSubmit] = useState(initialValues?.readOnlyAfterSubmit ?? true);
-    const [expiresAt, setExpiresAt] = useState(initialValues?.expiresAt ? initialValues.expiresAt.slice(0, 16) : '');
+    const [maxWords, setMaxWords] = useState(
+        savedTemplate?.maxWords?.toString() ?? (initialValues?.maxWords ? String(initialValues.maxWords) : '')
+    );
+    const [timeLimitMinutes, setTimeLimitMinutes] = useState(
+        savedTemplate?.timeLimitMinutes?.toString() ??
+            (initialValues?.timeLimitMinutes ? String(initialValues.timeLimitMinutes) : '')
+    );
+    const [requireSEB, setRequireSEB] = useState(savedTemplate?.requireSEB ?? initialValues?.requireSEB ?? false);
+    const [readOnlyAfterSubmit, setReadOnlyAfterSubmit] = useState(
+        savedTemplate?.readOnlyAfterSubmit ?? initialValues?.readOnlyAfterSubmit ?? true
+    );
+    const [expiresAt, setExpiresAt] = useState(
+        savedTemplate?.expiresAt
+            ? savedTemplate.expiresAt.slice(0, 16)
+            : initialValues?.expiresAt
+              ? initialValues.expiresAt.slice(0, 16)
+              : ''
+    );
     const [embedDb, setEmbedDb] = useState(dbStatus.isConnected); // on by default when connected
     const [copied, setCopied] = useState(false);
     const [saved, setSaved] = useState(false);
     const [saveError, setSaveError] = useState('');
     const [saving, setSaving] = useState(false);
+    const [templateSaved, setTemplateSaved] = useState(false);
 
     const generatedTeacherKey = React.useMemo(() => nanoid(), []);
     const teacherKey = teacherKeyProp ?? generatedTeacherKey;
@@ -156,6 +174,38 @@ export default function EssayAssignmentModal({
         onAssignToStudents(assignment, classStudents);
         onClose();
     }, [onAssignToStudents, buildAssignment, studentId, classStudents, onClose]);
+
+    const handleSaveTemplate = useCallback(() => {
+        if (!onSaveTemplate) return;
+        const template: EssayTemplate = {
+            id: savedTemplate?.id ?? nanoid(),
+            rubricId,
+            title,
+            prompt: prompt || undefined,
+            minWords: minWords ? parseInt(minWords, 10) : undefined,
+            maxWords: maxWords ? parseInt(maxWords, 10) : undefined,
+            timeLimitMinutes: timeLimitMinutes ? parseInt(timeLimitMinutes, 10) : undefined,
+            requireSEB,
+            readOnlyAfterSubmit,
+            expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
+            createdAt: savedTemplate?.createdAt ?? new Date().toISOString(),
+        };
+        onSaveTemplate(template);
+        setTemplateSaved(true);
+        setTimeout(() => setTemplateSaved(false), 2500);
+    }, [
+        onSaveTemplate,
+        savedTemplate,
+        rubricId,
+        title,
+        prompt,
+        minWords,
+        maxWords,
+        timeLimitMinutes,
+        requireSEB,
+        readOnlyAfterSubmit,
+        expiresAt,
+    ]);
 
     return (
         <Modal titleId="essay-assignment-title" onClose={onClose} maxWidth={560}>
@@ -447,6 +497,19 @@ export default function EssayAssignmentModal({
                     justifyContent: 'flex-end',
                 }}
             >
+                {onSaveTemplate && (
+                    <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={handleSaveTemplate}
+                        title={t('essay_assignment.save_template_title')}
+                    >
+                        {templateSaved ? (
+                            <><Check size={14} /> {t('essay_assignment.template_saved')}</>
+                        ) : (
+                            <><Save size={14} /> {t('essay_assignment.save_template')}</>
+                        )}
+                    </button>
+                )}
                 {classStudents.length > 1 && (
                     <button className="btn btn-secondary btn-sm" onClick={handlePrintSlips}>
                         {t('essay_assignment.print_slips', { count: classStudents.length })}

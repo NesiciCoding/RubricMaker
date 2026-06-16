@@ -925,6 +925,7 @@ function EssaysTab() {
                         'Once assigned, the builder lists every student with their submission status and a per-student "Copy link" button.',
                         'Use "Import submission code" to add a student\'s completed essay (pasted code) when no database connection is configured.',
                         'Click "Monitor" to open the live essay monitor for the assignment.',
+                        'Save configuration — click "Save configuration" in the assignment dialog footer to store the title, prompt, limits, and deadline locally for this rubric. The form auto-fills from the saved configuration the next time you open the assignment dialog, so you can prepare assignments in advance and only share links when you are ready.',
                     ]}
                 />
 

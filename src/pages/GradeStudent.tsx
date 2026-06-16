@@ -55,6 +55,8 @@ export default function GradeStudent() {
         addCommentBankItem,
         addAttachment,
         saveEssayAssignment,
+        essayTemplates,
+        saveEssayTemplate,
         fetchEssaySubmissionsForStudent,
         deleteEssaySubmission,
         getEssaySignedUrl,
@@ -1448,6 +1450,8 @@ export default function GradeStudent() {
                     classStudents={classStudents}
                     onClose={() => setShowEssayAssignment(false)}
                     onSaveAssignment={saveEssayAssignment}
+                    savedTemplate={essayTemplates.find((t) => t.rubricId === rubricId)}
+                    onSaveTemplate={saveEssayTemplate}
                     onOpenSlipSheet={(assignment, sts) => {
                         setSlipSheetData({ assignment, students: sts });
                         setShowEssayAssignment(false);

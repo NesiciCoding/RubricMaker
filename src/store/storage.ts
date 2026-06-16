@@ -20,6 +20,7 @@ import type {
     StudentTest,
     EssayAssignment,
     EssaySubmission,
+    EssayTemplate,
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 import { nanoid } from '../utils/nanoid';
@@ -222,6 +223,7 @@ const KEYS = {
     studentTests: 'rm_student_tests',
     essayAssignments: 'rm_essay_assignments',
     essaySubmissions: 'rm_essay_submissions',
+    essayTemplates: 'rm_essay_templates',
 };
 
 // ─── Generic helpers ───────────────────────────────────────────────────────────
@@ -268,6 +270,7 @@ export interface StoreData {
     studentTests: StudentTest[];
     essayAssignments: EssayAssignment[];
     essaySubmissions: EssaySubmission[];
+    essayTemplates: EssayTemplate[];
 }
 
 export function loadStore(): StoreData {
@@ -292,6 +295,7 @@ export function loadStore(): StoreData {
         studentTests: load<StudentTest[]>(KEYS.studentTests, []),
         essayAssignments: load<EssayAssignment[]>(KEYS.essayAssignments, []),
         essaySubmissions: load<EssaySubmission[]>(KEYS.essaySubmissions, []),
+        essayTemplates: load<EssayTemplate[]>(KEYS.essayTemplates, []),
     };
 }
 
@@ -351,6 +355,9 @@ export function saveEssayAssignments(assignments: EssayAssignment[]) {
 }
 export function saveEssaySubmissions(submissions: EssaySubmission[]) {
     save(KEYS.essaySubmissions, submissions);
+}
+export function saveEssayTemplates(templates: EssayTemplate[]) {
+    save(KEYS.essayTemplates, templates);
 }
 
 // ─── Full Backup / Restore ─────────────────────────────────────────────────────

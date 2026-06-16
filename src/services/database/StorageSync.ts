@@ -21,6 +21,7 @@ import type {
     SpeakingSession,
     DocumentAnalysisResult,
     EssayAssignment,
+    EssayTemplate,
     Test,
     StudentTest,
 } from '../../types';
@@ -377,6 +378,7 @@ class StorageSyncService {
                 analysisResults,
                 tests,
                 studentTests,
+                essayTemplates,
                 attachments,
                 settings,
                 profile,
@@ -396,6 +398,7 @@ class StorageSyncService {
                 this.adapter.fetchAnalysisResults(),
                 this.adapter.fetchTests(),
                 this.adapter.fetchStudentTests(),
+                this.adapter.fetchEssayTemplates(),
                 this.attachmentSync.hydrateAttachments(),
                 this.adapter.fetchSettings(),
                 this.adapter.fetchMyProfile(),
@@ -460,6 +463,7 @@ class StorageSyncService {
                 analysisResults,
                 tests,
                 studentTests,
+                essayTemplates,
                 attachments,
                 ...(mergedSettings ? { settings: mergedSettings as StoreData['settings'] } : {}),
             };
@@ -507,6 +511,7 @@ class StorageSyncService {
                 ...state.analysisResults.map((ar) => this.adapter.upsertAnalysisResult(ar)),
                 ...state.tests.map((t) => this.adapter.upsertTest(t)),
                 ...state.studentTests.map((st) => this.adapter.upsertStudentTest(st)),
+                ...state.essayTemplates.map((et) => this.adapter.upsertEssayTemplate(et)),
                 this.adapter.saveSettings(state.settings),
             ];
             await Promise.all(ups);
@@ -619,6 +624,10 @@ class StorageSyncService {
                 case 'studentTest':
                     if (action === 'upsert') result = await this.adapter.upsertStudentTest(payload as StudentTest);
                     else if (id) result = await this.adapter.deleteStudentTest(id);
+                    break;
+                case 'essayTemplate':
+                    if (action === 'upsert') result = await this.adapter.upsertEssayTemplate(payload as EssayTemplate);
+                    else if (id) result = await this.adapter.deleteEssayTemplate(id);
                     break;
                 case 'settings':
                     if (action === 'upsert')

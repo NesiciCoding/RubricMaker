@@ -1360,7 +1360,10 @@
         "copy_link": "Link kopieren",
         "link_copied": "Link kopiert!",
         "print_slips": "Klassenzettel drucken ({{count}} Schüler)",
-        "download_seb": ".seb-Konfiguration herunterladen"
+        "download_seb": ".seb-Konfiguration herunterladen",
+        "save_template": "Konfiguration speichern",
+        "template_saved": "Konfiguration gespeichert!",
+        "save_template_title": "Diese Aufgabenkonfiguration für die spätere Verwendung speichern"
     },
     "essays": {
         "list_title": "Aufsätze",

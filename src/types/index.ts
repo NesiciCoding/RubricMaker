@@ -650,6 +650,21 @@ export interface EssayAssignment {
     supabaseAnonKey?: string;
 }
 
+/** Saved essay configuration not yet assigned to any student — used to prepare assignments in advance */
+export interface EssayTemplate {
+    id: string;
+    rubricId: string;
+    title: string;
+    prompt?: string;
+    minWords?: number;
+    maxWords?: number;
+    timeLimitMinutes?: number;
+    requireSEB: boolean;
+    readOnlyAfterSubmit: boolean;
+    expiresAt?: string;
+    createdAt: string;
+}
+
 export interface StudentEssayAssignmentSummary {
     teacherKey: string;
     rubricId: string;
