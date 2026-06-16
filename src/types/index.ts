@@ -693,6 +693,8 @@ export interface OrderItem {
     text: string;
 }
 
+export type TestOrderItem = OrderItem;
+
 /** A bucket for categorize questions */
 export interface TestCategory {
     id: string;
@@ -704,6 +706,11 @@ export interface CategorizeItem {
     id: string;
     text: string;
     categoryId: string;
+}
+
+export interface TestSection {
+    id: string;
+    title: string;
 }
 
 export interface TestQuestion {
@@ -738,6 +745,12 @@ export interface TestQuestion {
     linkedStandards?: LinkedStandard[];
     /** CEFR Can-Do statements linked to this question */
     linkedCefrDescriptors?: LinkedCefrDescriptor[];
+    /** Section this question belongs to */
+    sectionId?: string;
+    /** Image shown above the answer area — either a public URL or a data URI */
+    imageUrl?: string;
+    /** Optional hint shown on student request */
+    hint?: string;
 }
 
 export interface Test {
@@ -745,6 +758,7 @@ export interface Test {
     name: string;
     description?: string;
     questions: TestQuestion[];
+    sections?: TestSection[];
     /** Time limit for students taking the test */
     durationMinutes?: number;
     /** When true the test can only be taken inside Safe Exam Browser */

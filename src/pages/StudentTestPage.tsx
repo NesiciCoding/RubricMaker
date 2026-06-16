@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { createClient } from '@supabase/supabase-js';
-import { Clock, CheckCircle, Copy, AlertTriangle, Loader2, Eye, ChevronUp, ChevronDown } from 'lucide-react';
+import { Clock, CheckCircle, Copy, AlertTriangle, Loader2, Eye, ChevronUp, ChevronDown, Lightbulb } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { decodeTestAssignment } from '../utils/testShareCode';
 import { encodeTestSubmission } from '../utils/testSubmissionCode';
 import { nanoid } from '../utils/nanoid';
@@ -55,6 +56,11 @@ function withAnswer(answers: Record<string, string>, key: string, value: string)
     const map = new Map(Object.entries(answers));
     if (!UNSAFE_KEYS.has(key)) map.set(key, value);
     return Object.fromEntries(map);
+}
+
+/** Build a per-question display order for ordering answers (shuffled from correct order) */
+function shuffleOrderItems(items: TestOrderItem[], questionId: string): TestOrderItem[] {
+    return seededShuffle(items, questionId);
 }
 
 export default function StudentTestPage() {
@@ -321,6 +327,12 @@ export default function StudentTestPage() {
     const isFirst = currentIndex === 0;
     const answeredCount = orderedQuestions.filter((q) => (answers.get(q.id) ?? '').trim().length > 0).length;
 
+    // Find current question's section label
+    const sections = test.sections ?? [];
+    const currentSection = question?.sectionId
+        ? sections.find((s) => s.id === question.sectionId)
+        : null;
+
     return (
         <SebGate requireSEB={assignment.requireSEB}>
             <div
@@ -329,6 +341,7 @@ export default function StudentTestPage() {
                     background: 'var(--bg)',
                     fontFamily: 'var(--font, Inter, system-ui, sans-serif)',
                     color: 'var(--text)',
+                    paddingBottom: 80,
                 }}
             >
                 {/* Draft restored banner */}
@@ -529,6 +542,26 @@ export default function StudentTestPage() {
                         </div>
                     ) : (
                         <>
+                            {/* Section label */}
+                            {currentSection && (
+                                <div
+                                    style={{
+                                        fontSize: '0.75rem',
+                                        fontWeight: 700,
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.06em',
+                                        color: 'var(--accent)',
+                                        marginBottom: 10,
+                                        padding: '4px 10px',
+                                        background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
+                                        borderRadius: 6,
+                                        display: 'inline-block',
+                                    }}
+                                >
+                                    {currentSection.title}
+                                </div>
+                            )}
+
                             {question && (
                                 <QuestionCard
                                     question={question}
@@ -599,10 +632,125 @@ export default function StudentTestPage() {
                         </>
                     )}
                 </div>
+
+                {/* Question timeline — sticky footer */}
+                {!submitted && orderedQuestions.length > 0 && (
+                    <QuestionTimeline
+                        questions={orderedQuestions}
+                        currentIndex={currentIndex}
+                        answers={answers}
+                        sections={sections}
+                        onJump={setCurrentIndex}
+                    />
+                )}
             </div>
         </SebGate>
     );
 }
+
+// ── Question Timeline ─────────────────────────────────────────────────────────
+
+interface TimelineProps {
+    questions: TestQuestion[];
+    currentIndex: number;
+    answers: Map<string, string>;
+    sections: { id: string; title: string }[];
+    onJump: (index: number) => void;
+}
+
+function QuestionTimeline({ questions, currentIndex, answers, sections, onJump }: TimelineProps) {
+    const { t } = useTranslation();
+
+    // Group consecutive questions with same sectionId
+    const groups: { sectionTitle: string | null; indices: number[] }[] = [];
+    questions.forEach((q, i) => {
+        const sectionTitle = q.sectionId ? (sections.find((s) => s.id === q.sectionId)?.title ?? null) : null;
+        const last = groups[groups.length - 1];
+        if (last && last.sectionTitle === sectionTitle) {
+            last.indices.push(i);
+        } else {
+            groups.push({ sectionTitle, indices: [i] });
+        }
+    });
+
+    return (
+        <div
+            style={{
+                position: 'fixed',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                background: 'var(--bg-elevated)',
+                borderTop: '1px solid var(--border)',
+                padding: '10px 16px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                flexWrap: 'wrap',
+                zIndex: 100,
+            }}
+            aria-label={t('tests.taking.timeline_label')}
+        >
+            {groups.map((group) => (
+                <div key={group.sectionTitle ?? '__none__'} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    {group.sectionTitle && (
+                        <span
+                            style={{
+                                fontSize: '0.7rem',
+                                fontWeight: 600,
+                                color: 'var(--text-muted)',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.04em',
+                                marginRight: 4,
+                                flexShrink: 0,
+                            }}
+                        >
+                            {group.sectionTitle}
+                        </span>
+                    )}
+                    {group.indices.map((i) => {
+                        const q = questions[i];
+                        const answered = (answers.get(q.id) ?? '').trim().length > 0;
+                        const isCurrent = i === currentIndex;
+                        return (
+                            <button
+                                key={q.id}
+                                onClick={() => onJump(i)}
+                                aria-label={t('tests.taking.go_to_question', { number: i + 1 })}
+                                aria-current={isCurrent ? 'step' : undefined}
+                                style={{
+                                    width: 28,
+                                    height: 28,
+                                    borderRadius: 6,
+                                    border: isCurrent
+                                        ? '2px solid var(--accent)'
+                                        : '2px solid transparent',
+                                    background: answered
+                                        ? 'var(--accent)'
+                                        : 'color-mix(in srgb, var(--text-muted) 20%, var(--bg))',
+                                    color: answered ? '#fff' : 'var(--text-muted)',
+                                    fontWeight: 700,
+                                    fontSize: '0.75rem',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0,
+                                    outline: 'none',
+                                    transition: 'background 0.15s',
+                                }}
+                            >
+                                {i + 1}
+                            </button>
+                        );
+                    })}
+                </div>
+            ))}
+        </div>
+    );
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function CenteredMessage({ children }: { children: React.ReactNode }) {
     return (
@@ -621,6 +769,8 @@ function CenteredMessage({ children }: { children: React.ReactNode }) {
     );
 }
 
+// ── Question Card ─────────────────────────────────────────────────────────────
+
 interface QuestionCardProps {
     question: TestQuestion;
     index: number;
@@ -633,6 +783,9 @@ interface QuestionCardProps {
 function QuestionCard({ question, index, total, value, onChange, code }: QuestionCardProps) {
     const { t } = useTranslation();
     const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown';
+    const [hintVisible, setHintVisible] = useState(false);
+    const wordCount =
+        question.type === 'open' && value.trim() ? value.trim().split(/\s+/).filter(Boolean).length : null;
     return (
         <div
             style={{
@@ -674,6 +827,65 @@ function QuestionCard({ question, index, total, value, onChange, code }: Questio
                     </HelpPopover>
                 )}
             </p>
+
+            {/* Image stimulus */}
+            {question.imageUrl && (
+                <img
+                    src={question.imageUrl}
+                    alt={t('tests.taking.question_image_alt')}
+                    style={{
+                        display: 'block',
+                        maxWidth: '100%',
+                        maxHeight: 320,
+                        borderRadius: 8,
+                        objectFit: 'contain',
+                        border: '1px solid var(--border)',
+                        marginBottom: 16,
+                    }}
+                />
+            )}
+
+            {/* Hint toggle */}
+            {question.hint && (
+                <div style={{ marginBottom: 16 }}>
+                    <button
+                        type="button"
+                        onClick={() => setHintVisible((v) => !v)}
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            background: 'none',
+                            border: '1px solid color-mix(in srgb, var(--accent) 40%, transparent)',
+                            borderRadius: 6,
+                            padding: '4px 10px',
+                            fontSize: '0.8rem',
+                            fontWeight: 600,
+                            color: 'var(--accent)',
+                            cursor: 'pointer',
+                        }}
+                    >
+                        <Lightbulb size={13} />
+                        {hintVisible ? t('tests.taking.hint_hide') : t('tests.taking.hint_show')}
+                    </button>
+                    {hintVisible && (
+                        <div
+                            style={{
+                                marginTop: 8,
+                                padding: '10px 14px',
+                                background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
+                                border: '1px solid color-mix(in srgb, var(--accent) 25%, transparent)',
+                                borderRadius: 8,
+                                fontSize: '0.9rem',
+                                color: 'var(--text)',
+                                lineHeight: 1.55,
+                            }}
+                        >
+                            {question.hint}
+                        </div>
+                    )}
+                </div>
+            )}
 
             {question.type === 'multiple-choice' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -809,24 +1021,91 @@ function QuestionCard({ question, index, total, value, onChange, code }: Questio
             )}
 
             {question.type === 'open' && (
-                <textarea
-                    value={value}
-                    onChange={(e) => onChange(e.target.value)}
-                    placeholder={t('tests.taking.open_answer_placeholder')}
-                    rows={6}
-                    style={{
-                        width: '100%',
-                        padding: '10px 14px',
-                        borderRadius: 8,
-                        border: '1px solid var(--border)',
-                        fontSize: '0.95rem',
-                        outline: 'none',
-                        resize: 'vertical',
-                        background: 'var(--bg)',
-                        color: 'var(--text)',
-                        fontFamily: 'inherit',
-                    }}
-                />
+                <>
+                    <textarea
+                        value={value}
+                        onChange={(e) => onChange(e.target.value)}
+                        placeholder={t('tests.taking.open_answer_placeholder')}
+                        rows={6}
+                        style={{
+                            width: '100%',
+                            padding: '10px 14px',
+                            borderRadius: 8,
+                            border: '1px solid var(--border)',
+                            fontSize: '0.95rem',
+                            outline: 'none',
+                            resize: 'vertical',
+                            background: 'var(--bg)',
+                            color: 'var(--text)',
+                            fontFamily: 'inherit',
+                        }}
+                    />
+                    {wordCount !== null && (
+                        <div style={{ textAlign: 'right', fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                            {t('tests.taking.word_count', { count: wordCount })}
+                        </div>
+                    )}
+                </>
+            )}
+
+            {question.type === 'ordering' && (
+                <div>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 10 }}>
+                        {t('tests.taking.drag_to_order')}
+                    </p>
+                    <DragDropContext onDragEnd={onOrderDragEnd}>
+                        <Droppable droppableId={`order-${question.id}`}>
+                            {(provided) => (
+                                <div
+                                    ref={provided.innerRef}
+                                    {...provided.droppableProps}
+                                    style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
+                                >
+                                    {orderItems.map((item, idx) => (
+                                        <Draggable key={item.id} draggableId={item.id} index={idx}>
+                                            {(draggable, snapshot) => (
+                                                <div
+                                                    ref={draggable.innerRef}
+                                                    {...draggable.draggableProps}
+                                                    {...draggable.dragHandleProps}
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 10,
+                                                        padding: '10px 14px',
+                                                        borderRadius: 8,
+                                                        border: '1px solid var(--border)',
+                                                        background: snapshot.isDragging
+                                                            ? 'color-mix(in srgb, var(--accent) 12%, var(--bg-elevated))'
+                                                            : 'var(--bg)',
+                                                        cursor: 'grab',
+                                                        userSelect: 'none',
+                                                        ...draggable.draggableProps.style,
+                                                    }}
+                                                >
+                                                    <span
+                                                        style={{
+                                                            width: 22,
+                                                            textAlign: 'center',
+                                                            fontWeight: 700,
+                                                            fontSize: '0.8rem',
+                                                            color: 'var(--accent)',
+                                                            flexShrink: 0,
+                                                        }}
+                                                    >
+                                                        {idx + 1}
+                                                    </span>
+                                                    <span style={{ color: 'var(--text)' }}>{item.text}</span>
+                                                </div>
+                                            )}
+                                        </Draggable>
+                                    ))}
+                                    {provided.placeholder}
+                                </div>
+                            )}
+                        </Droppable>
+                    </DragDropContext>
+                </div>
             )}
         </div>
     );

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Trash2, ChevronUp, ChevronDown, Plus, X, Check, BookOpen, GraduationCap, AlertCircle } from 'lucide-react';
+import { Trash2, Plus, X, Check, BookOpen, GraduationCap, AlertCircle, GripVertical, Image, Lightbulb } from 'lucide-react';
+import type { DraggableProvidedDragHandleProps } from '@hello-pangea/dnd';
 import { useApp } from '../../context/AppContext';
 import { nanoid } from '../../utils/nanoid';
 import StandardsPickerModal from '../Standards/StandardsPickerModal';
@@ -15,6 +16,7 @@ import type {
     OrderItem,
     TestCategory,
     CategorizeItem,
+    TestSection,
     LinkedStandard,
     LinkedCefrDescriptor,
 } from '../../types';
@@ -23,10 +25,10 @@ interface Props {
     question: TestQuestion;
     index: number;
     total: number;
+    sections: TestSection[];
+    dragHandleProps?: DraggableProvidedDragHandleProps | null;
     onChange: (question: TestQuestion) => void;
     onRemove: () => void;
-    onMoveUp: () => void;
-    onMoveDown: () => void;
 }
 
 const QUESTION_TYPES: TestQuestionType[] = [
@@ -43,7 +45,7 @@ const QUESTION_TYPES: TestQuestionType[] = [
     'hot-text',
 ];
 
-export default function QuestionEditor({ question, index, total, onChange, onRemove, onMoveUp, onMoveDown }: Props) {
+export default function QuestionEditor({ question, index, total, sections, dragHandleProps, onChange, onRemove }: Props) {
     const { t } = useTranslation();
     const { settings } = useApp();
     const [pickingStandard, setPickingStandard] = React.useState(false);
@@ -228,6 +230,7 @@ export default function QuestionEditor({ question, index, total, onChange, onRem
         });
     }
 
+
     function addOrderItem() {
         update({ orderItems: [...(question.orderItems ?? []), { id: nanoid(), text: '' }] });
     }
@@ -303,6 +306,7 @@ export default function QuestionEditor({ question, index, total, onChange, onRem
         );
     }
 
+
     function linkStandard(std: LinkedStandard) {
         update({ linkedStandards: [...(question.linkedStandards ?? []), std] });
     }
@@ -329,25 +333,23 @@ export default function QuestionEditor({ question, index, total, onChange, onRem
         <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {/* Drag handle */}
+                    <div
+                        {...(dragHandleProps ?? {})}
+                        style={{
+                            cursor: 'grab',
+                            color: 'var(--text-muted)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            padding: '2px 0',
+                        }}
+                        aria-label={t('tests.drag_question')}
+                    >
+                        <GripVertical size={16} />
+                    </div>
                     <span className="badge badge-blue">{t('tests.question_number', { number: index + 1 })}</span>
                 </div>
                 <div style={{ display: 'flex', gap: 4 }}>
-                    <button
-                        className="btn btn-ghost btn-icon btn-sm"
-                        aria-label={t('tests.move_question_up')}
-                        disabled={index === 0}
-                        onClick={onMoveUp}
-                    >
-                        <ChevronUp size={14} />
-                    </button>
-                    <button
-                        className="btn btn-ghost btn-icon btn-sm"
-                        aria-label={t('tests.move_question_down')}
-                        disabled={index === total - 1}
-                        onClick={onMoveDown}
-                    >
-                        <ChevronDown size={14} />
-                    </button>
                     <button
                         className="btn btn-ghost btn-icon btn-sm"
                         aria-label={t('tests.remove_question')}
@@ -382,7 +384,7 @@ export default function QuestionEditor({ question, index, total, onChange, onRem
                     >
                         {QUESTION_TYPES.map((type) => (
                             <option key={type} value={type}>
-                                {t(`tests.question_type_${type.replace('-', '_')}`)}
+                                {t(`tests.question_type_${type.replace(/-/g, '_')}`)}
                             </option>
                         ))}
                     </select>
@@ -397,6 +399,62 @@ export default function QuestionEditor({ question, index, total, onChange, onRem
                         onChange={(e) => update({ points: Number(e.target.value) || 0 })}
                     />
                 </div>
+                {sections.length > 0 && (
+                    <div className="form-group" style={{ marginBottom: 0, flex: '1 1 180px' }}>
+                        <label htmlFor={`question-section-${question.id}`}>{t('tests.question_section_label')}</label>
+                        <select
+                            id={`question-section-${question.id}`}
+                            value={question.sectionId ?? ''}
+                            onChange={(e) => update({ sectionId: e.target.value || undefined })}
+                        >
+                            <option value="">{t('tests.no_section')}</option>
+                            {sections.map((s) => (
+                                <option key={s.id} value={s.id}>
+                                    {s.title}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                )}
+            </div>
+
+            {/* Image */}
+            <div className="form-group" style={{ marginBottom: 0 }}>
+                <label htmlFor={`question-image-${question.id}`} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Image size={14} /> {t('tests.question_image_label')}{' '}
+                    <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>({t('essay_assignment.optional')})</span>
+                </label>
+                <input
+                    id={`question-image-${question.id}`}
+                    type="url"
+                    value={question.imageUrl ?? ''}
+                    onChange={(e) => update({ imageUrl: e.target.value || undefined })}
+                    placeholder={t('tests.question_image_placeholder')}
+                />
+                {question.imageUrl && (
+                    <img
+                        src={question.imageUrl}
+                        alt={t('tests.question_image_preview_alt')}
+                        style={{ marginTop: 8, maxWidth: '100%', maxHeight: 200, borderRadius: 6, objectFit: 'contain', border: '1px solid var(--border)' }}
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                        onLoad={(e) => { (e.target as HTMLImageElement).style.display = ''; }}
+                    />
+                )}
+            </div>
+
+            {/* Hint */}
+            <div className="form-group" style={{ marginBottom: 0 }}>
+                <label htmlFor={`question-hint-${question.id}`} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Lightbulb size={14} /> {t('tests.question_hint_label')}{' '}
+                    <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>({t('essay_assignment.optional')})</span>
+                </label>
+                <input
+                    id={`question-hint-${question.id}`}
+                    type="text"
+                    value={question.hint ?? ''}
+                    onChange={(e) => update({ hint: e.target.value || undefined })}
+                    placeholder={t('tests.question_hint_placeholder')}
+                />
             </div>
 
             {(question.type === 'multiple-choice' || question.type === 'multiple-response') && (
@@ -860,6 +918,51 @@ export default function QuestionEditor({ question, index, total, onChange, onRem
                     <p className="text-muted text-xs" style={{ marginTop: 4 }}>
                         {t('tests.expected_answer_help')}
                     </p>
+                </div>
+            )}
+
+            {question.type === 'ordering' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <label>{t('tests.order_items_label')}</label>
+                    <p className="text-muted text-xs" style={{ marginTop: 0, marginBottom: 4 }}>
+                        {t('tests.order_items_help')}
+                    </p>
+                    {(question.orderItems ?? []).map((item, idx) => (
+                        <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span
+                                style={{
+                                    flexShrink: 0,
+                                    width: 22,
+                                    textAlign: 'center',
+                                    fontSize: '0.8rem',
+                                    fontWeight: 700,
+                                    color: 'var(--accent)',
+                                }}
+                            >
+                                {idx + 1}
+                            </span>
+                            <input
+                                type="text"
+                                value={item.text}
+                                onChange={(e) => updateOrderItem(item.id, { text: e.target.value })}
+                                placeholder={t('tests.order_item_placeholder')}
+                                style={{ flex: 1 }}
+                            />
+                            <button
+                                type="button"
+                                className="btn btn-ghost btn-icon btn-sm"
+                                aria-label={t('tests.remove_option')}
+                                style={{ color: 'var(--red)' }}
+                                disabled={(question.orderItems ?? []).length <= 2}
+                                onClick={() => removeOrderItem(item.id)}
+                            >
+                                <X size={14} />
+                            </button>
+                        </div>
+                    ))}
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={addOrderItem}>
+                        <Plus size={14} /> {t('tests.add_order_item')}
+                    </button>
                 </div>
             )}
 
