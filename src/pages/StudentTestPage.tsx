@@ -3,7 +3,6 @@ import { useParams } from 'react-router-dom';
 import { createClient } from '@supabase/supabase-js';
 import { Clock, CheckCircle, Copy, AlertTriangle, Loader2, Eye, ChevronUp, ChevronDown, Lightbulb } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { decodeTestAssignment } from '../utils/testShareCode';
 import { encodeTestSubmission } from '../utils/testSubmissionCode';
 import { nanoid } from '../utils/nanoid';
@@ -825,7 +824,7 @@ function QuestionCard({ question, index, total, value, onChange, code }: Questio
             </p>
 
             {/* Image stimulus */}
-            {question.imageUrl && (
+            {question.imageUrl && /^https?:\/\/|^data:image\//i.test(question.imageUrl) && (
                 <img
                     src={question.imageUrl}
                     alt={t('tests.taking.question_image_alt')}
