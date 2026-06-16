@@ -1,20 +1,22 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Plus, Save, ArrowLeft, AlertCircle } from 'lucide-react';
+import { Plus, Save, ArrowLeft, AlertCircle, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { nanoid } from '../utils/nanoid';
 import QuestionEditor from '../components/Tests/QuestionEditor';
-import type { TestQuestion } from '../types';
+import type { TestQuestion, TestSection } from '../types';
 
-function newQuestion(): TestQuestion {
+function newQuestion(sectionId?: string): TestQuestion {
     return {
         id: nanoid(),
         prompt: '',
         type: 'multiple-choice',
         points: 1,
+        sectionId,
         options: [
             { id: nanoid(), text: '', isCorrect: true },
             { id: nanoid(), text: '', isCorrect: false },
@@ -36,6 +38,9 @@ export default function TestBuilderPage() {
     const [nameError, setNameError] = useState('');
     const [description, setDescription] = useState(existing?.description ?? '');
     const [questions, setQuestions] = useState<TestQuestion[]>(existing?.questions ?? []);
+    const [sections, setSections] = useState<TestSection[]>(existing?.sections ?? []);
+    const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+    const [newSectionTitle, setNewSectionTitle] = useState('');
     const [durationMinutes, setDurationMinutes] = useState(
         existing?.durationMinutes ? String(existing.durationMinutes) : ''
     );
@@ -45,8 +50,69 @@ export default function TestBuilderPage() {
         existing?.gradeScaleId ?? settings.defaultGradeScaleId
     );
 
-    function addQuestion() {
-        setQuestions((prev) => [...prev, newQuestion()]);
+    const validSectionIds = React.useMemo(() => new Set(sections.map((s) => s.id)), [sections]);
+
+    // Group questions by section for rendering; normalize stale sectionIds to null
+    function questionsFor(sectionId: string | null): TestQuestion[] {
+        return questions.filter((q) => {
+            const normalized = q.sectionId && validSectionIds.has(q.sectionId) ? q.sectionId : null;
+            return normalized === sectionId;
+        });
+    }
+
+    // Reconstruct flat array from grouped order (uncategorised → section order)
+    function flattenGroups(
+        uncategorised: TestQuestion[],
+        sectionGroups: Record<string, TestQuestion[]>
+    ): TestQuestion[] {
+        return [...uncategorised, ...sections.flatMap((s) => sectionGroups[s.id] ?? [])];
+    }
+
+    function onDragEnd(result: DropResult) {
+        if (!result.destination) return;
+        const { source, destination } = result;
+        if (source.droppableId === destination.droppableId && source.index === destination.index) return;
+
+        const sectionGroups: Record<string, TestQuestion[]> = {};
+        sections.forEach((s) => {
+            sectionGroups[s.id] = questionsFor(s.id);
+        });
+        const uncategorised = questionsFor(null);
+
+        const srcId = source.droppableId;
+        const dstId = destination.droppableId;
+        const srcList = srcId === '__none__' ? [...uncategorised] : [...(sectionGroups[srcId] ?? [])];
+        const [moved] = srcList.splice(source.index, 1);
+
+        if (srcId === dstId) {
+            srcList.splice(destination.index, 0, moved);
+            if (srcId === '__none__') {
+                setQuestions(flattenGroups(srcList, sectionGroups));
+            } else {
+                sectionGroups[srcId] = srcList;
+                setQuestions(flattenGroups(uncategorised, sectionGroups));
+            }
+        } else {
+            const newSectionId = dstId === '__none__' ? undefined : dstId;
+            const updatedMoved = { ...moved, sectionId: newSectionId };
+            const dstList = dstId === '__none__' ? [...uncategorised] : [...(sectionGroups[dstId] ?? [])];
+            dstList.splice(destination.index, 0, updatedMoved);
+            if (srcId === '__none__') {
+                sectionGroups[dstId] = dstList;
+                setQuestions(flattenGroups(srcList, sectionGroups));
+            } else if (dstId === '__none__') {
+                sectionGroups[srcId] = srcList;
+                setQuestions(flattenGroups(dstList, sectionGroups));
+            } else {
+                sectionGroups[srcId] = srcList;
+                sectionGroups[dstId] = dstList;
+                setQuestions(flattenGroups(uncategorised, sectionGroups));
+            }
+        }
+    }
+
+    function addQuestion(sectionId?: string) {
+        setQuestions((prev) => [...prev, newQuestion(sectionId)]);
     }
 
     function updateQuestion(qid: string, question: TestQuestion) {
@@ -57,12 +123,27 @@ export default function TestBuilderPage() {
         setQuestions((prev) => prev.filter((q) => q.id !== qid));
     }
 
-    function moveQuestion(index: number, direction: -1 | 1) {
-        setQuestions((prev) => {
-            const next = [...prev];
-            const target = index + direction;
-            if (target < 0 || target >= next.length) return prev;
-            [next[index], next[target]] = [next[target], next[index]];
+    function addSection() {
+        const title = newSectionTitle.trim();
+        if (!title) return;
+        setSections((prev) => [...prev, { id: nanoid(), title }]);
+        setNewSectionTitle('');
+    }
+
+    function removeSection(sectionId: string) {
+        setSections((prev) => prev.filter((s) => s.id !== sectionId));
+        setQuestions((prev) => prev.map((q) => (q.sectionId === sectionId ? { ...q, sectionId: undefined } : q)));
+    }
+
+    function renameSection(sectionId: string, title: string) {
+        setSections((prev) => prev.map((s) => (s.id === sectionId ? { ...s, title } : s)));
+    }
+
+    function toggleSection(sectionId: string) {
+        setCollapsedSections((prev) => {
+            const next = new Set(prev);
+            if (next.has(sectionId)) next.delete(sectionId);
+            else next.add(sectionId);
             return next;
         });
     }
@@ -87,6 +168,7 @@ export default function TestBuilderPage() {
             name: name.trim(),
             description: description.trim() || undefined,
             questions,
+            sections: sections.length > 0 ? sections : undefined,
             durationMinutes: parsedDuration,
             shuffleQuestions,
             requireSEB,
@@ -104,6 +186,7 @@ export default function TestBuilderPage() {
     }
 
     const totalPoints = questions.reduce((sum, q) => sum + (q.points || 0), 0);
+    const uncategorised = questionsFor(null);
 
     if (notFound) {
         return (
@@ -246,6 +329,53 @@ export default function TestBuilderPage() {
                     </div>
                 </div>
 
+                {/* Sections panel */}
+                <div className="card" style={{ marginBottom: 20 }}>
+                    <h3 style={{ marginTop: 0, marginBottom: 14, fontSize: '0.95rem' }}>{t('tests.sections_title')}</h3>
+                    {sections.length === 0 ? (
+                        <p className="text-muted text-sm" style={{ marginBottom: 12 }}>
+                            {t('tests.sections_none_hint')}
+                        </p>
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+                            {sections.map((s) => (
+                                <div key={s.id} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                    <input
+                                        value={s.title}
+                                        onChange={(e) => renameSection(s.id, e.target.value)}
+                                        style={{ flex: 1, fontSize: '0.875rem' }}
+                                        aria-label={t('tests.section_name_label')}
+                                    />
+                                    <button
+                                        className="btn btn-ghost btn-icon btn-sm"
+                                        aria-label={t('tests.remove_section')}
+                                        style={{ color: 'var(--red)', flexShrink: 0 }}
+                                        onClick={() => removeSection(s.id)}
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    <div style={{ display: 'flex', gap: 8 }}>
+                        <input
+                            value={newSectionTitle}
+                            onChange={(e) => setNewSectionTitle(e.target.value)}
+                            placeholder={t('tests.new_section_placeholder')}
+                            onKeyDown={(e) => e.key === 'Enter' && addSection()}
+                            style={{ flex: 1, fontSize: '0.875rem' }}
+                        />
+                        <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={addSection}
+                            disabled={!newSectionTitle.trim()}
+                        >
+                            <Plus size={14} /> {t('tests.add_section')}
+                        </button>
+                    </div>
+                </div>
+
                 {/* Questions */}
                 <div
                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}
@@ -256,7 +386,7 @@ export default function TestBuilderPage() {
                             {t('tests.questions_summary', { count: questions.length, points: totalPoints })}
                         </span>
                     </h3>
-                    <button className="btn btn-secondary btn-sm" onClick={addQuestion}>
+                    <button className="btn btn-secondary btn-sm" onClick={() => addQuestion()}>
                         <Plus size={14} /> {t('tests.add_question')}
                     </button>
                 </div>
@@ -265,25 +395,160 @@ export default function TestBuilderPage() {
                     <div className="empty-state">
                         <h3>{t('tests.no_questions')}</h3>
                         <p className="text-muted text-sm">{t('tests.no_questions_instruction')}</p>
-                        <button className="btn btn-primary" onClick={addQuestion}>
+                        <button className="btn btn-primary" onClick={() => addQuestion()}>
                             <Plus size={16} /> {t('tests.add_question')}
                         </button>
                     </div>
                 ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                        {questions.map((question, index) => (
-                            <QuestionEditor
-                                key={question.id}
-                                question={question}
-                                index={index}
-                                total={questions.length}
-                                onChange={(q) => updateQuestion(question.id, q)}
-                                onRemove={() => removeQuestion(question.id)}
-                                onMoveUp={() => moveQuestion(index, -1)}
-                                onMoveDown={() => moveQuestion(index, 1)}
-                            />
-                        ))}
-                    </div>
+                    <DragDropContext onDragEnd={onDragEnd}>
+                        {/* Uncategorised questions */}
+                        {(uncategorised.length > 0 || sections.length === 0) && (
+                            <Droppable droppableId="__none__">
+                                {(provided) => (
+                                    <div
+                                        ref={provided.innerRef}
+                                        {...provided.droppableProps}
+                                        style={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: 16,
+                                            marginBottom: sections.length > 0 ? 20 : 0,
+                                        }}
+                                    >
+                                        {uncategorised.map((question, index) => (
+                                            <Draggable key={question.id} draggableId={question.id} index={index}>
+                                                {(draggable) => (
+                                                    <div ref={draggable.innerRef} {...draggable.draggableProps}>
+                                                        <QuestionEditor
+                                                            question={question}
+                                                            index={questions.indexOf(question)}
+                                                            total={questions.length}
+                                                            sections={sections}
+                                                            dragHandleProps={draggable.dragHandleProps}
+                                                            onChange={(q) => updateQuestion(question.id, q)}
+                                                            onRemove={() => removeQuestion(question.id)}
+                                                        />
+                                                    </div>
+                                                )}
+                                            </Draggable>
+                                        ))}
+                                        {provided.placeholder}
+                                        <button
+                                            className="btn btn-secondary btn-sm"
+                                            style={{ alignSelf: 'flex-start' }}
+                                            onClick={() => addQuestion()}
+                                        >
+                                            <Plus size={14} /> {t('tests.add_question')}
+                                        </button>
+                                    </div>
+                                )}
+                            </Droppable>
+                        )}
+
+                        {/* Sections */}
+                        {sections.map((section) => {
+                            const sectionQs = questionsFor(section.id);
+                            const collapsed = collapsedSections.has(section.id);
+                            return (
+                                <div
+                                    key={section.id}
+                                    style={{
+                                        marginBottom: 20,
+                                        border: '1px solid var(--border)',
+                                        borderRadius: 10,
+                                        overflow: 'hidden',
+                                    }}
+                                >
+                                    <button
+                                        onClick={() => toggleSection(section.id)}
+                                        style={{
+                                            width: '100%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 8,
+                                            padding: '10px 14px',
+                                            background: 'color-mix(in srgb, var(--accent) 8%, var(--bg-elevated))',
+                                            border: 'none',
+                                            borderBottom: collapsed ? 'none' : '1px solid var(--border)',
+                                            cursor: 'pointer',
+                                            textAlign: 'left',
+                                            fontWeight: 600,
+                                            fontSize: '0.9rem',
+                                            color: 'var(--text)',
+                                        }}
+                                    >
+                                        {collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+                                        {section.title}
+                                        <span className="text-muted text-sm" style={{ fontWeight: 400, marginLeft: 4 }}>
+                                            ({t('tests.section_question_count', { count: sectionQs.length })})
+                                        </span>
+                                    </button>
+
+                                    {!collapsed && (
+                                        <div style={{ padding: '16px 14px' }}>
+                                            <Droppable droppableId={section.id}>
+                                                {(provided) => (
+                                                    <div
+                                                        ref={provided.innerRef}
+                                                        {...provided.droppableProps}
+                                                        style={{
+                                                            display: 'flex',
+                                                            flexDirection: 'column',
+                                                            gap: 16,
+                                                            minHeight: 40,
+                                                        }}
+                                                    >
+                                                        {sectionQs.map((question, index) => (
+                                                            <Draggable
+                                                                key={question.id}
+                                                                draggableId={question.id}
+                                                                index={index}
+                                                            >
+                                                                {(draggable) => (
+                                                                    <div
+                                                                        ref={draggable.innerRef}
+                                                                        {...draggable.draggableProps}
+                                                                    >
+                                                                        <QuestionEditor
+                                                                            question={question}
+                                                                            index={questions.indexOf(question)}
+                                                                            total={questions.length}
+                                                                            sections={sections}
+                                                                            dragHandleProps={draggable.dragHandleProps}
+                                                                            onChange={(q) =>
+                                                                                updateQuestion(question.id, q)
+                                                                            }
+                                                                            onRemove={() => removeQuestion(question.id)}
+                                                                        />
+                                                                    </div>
+                                                                )}
+                                                            </Draggable>
+                                                        ))}
+                                                        {provided.placeholder}
+                                                        {sectionQs.length === 0 && (
+                                                            <p
+                                                                className="text-muted text-sm"
+                                                                style={{ margin: '8px 0' }}
+                                                            >
+                                                                {t('tests.section_empty_hint')}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </Droppable>
+                                            <button
+                                                className="btn btn-secondary btn-sm"
+                                                style={{ marginTop: 12 }}
+                                                onClick={() => addQuestion(section.id)}
+                                            >
+                                                <Plus size={14} /> {t('tests.add_question')}
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </DragDropContext>
                 )}
             </div>
         </>
