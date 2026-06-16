@@ -50,9 +50,14 @@ export default function TestBuilderPage() {
         existing?.gradeScaleId ?? settings.defaultGradeScaleId
     );
 
-    // Group questions by section for rendering
+    const validSectionIds = React.useMemo(() => new Set(sections.map((s) => s.id)), [sections]);
+
+    // Group questions by section for rendering; normalize stale sectionIds to null
     function questionsFor(sectionId: string | null): TestQuestion[] {
-        return questions.filter((q) => (q.sectionId ?? null) === sectionId);
+        return questions.filter((q) => {
+            const normalized = q.sectionId && validSectionIds.has(q.sectionId) ? q.sectionId : null;
+            return normalized === sectionId;
+        });
     }
 
     // Reconstruct flat array from grouped order (uncategorised → section order)

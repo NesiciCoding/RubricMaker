@@ -961,51 +961,6 @@ export default function QuestionEditor({
                 </div>
             )}
 
-            {question.type === 'ordering' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <label>{t('tests.order_items_label')}</label>
-                    <p className="text-muted text-xs" style={{ marginTop: 0, marginBottom: 4 }}>
-                        {t('tests.order_items_help')}
-                    </p>
-                    {(question.orderItems ?? []).map((item, idx) => (
-                        <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <span
-                                style={{
-                                    flexShrink: 0,
-                                    width: 22,
-                                    textAlign: 'center',
-                                    fontSize: '0.8rem',
-                                    fontWeight: 700,
-                                    color: 'var(--accent)',
-                                }}
-                            >
-                                {idx + 1}
-                            </span>
-                            <input
-                                type="text"
-                                value={item.text}
-                                onChange={(e) => updateOrderItem(item.id, e.target.value)}
-                                placeholder={t('tests.order_item_placeholder')}
-                                style={{ flex: 1 }}
-                            />
-                            <button
-                                type="button"
-                                className="btn btn-ghost btn-icon btn-sm"
-                                aria-label={t('tests.remove_option')}
-                                style={{ color: 'var(--red)' }}
-                                disabled={(question.orderItems ?? []).length <= 2}
-                                onClick={() => removeOrderItem(item.id)}
-                            >
-                                <X size={14} />
-                            </button>
-                        </div>
-                    ))}
-                    <button type="button" className="btn btn-secondary btn-sm" onClick={addOrderItem}>
-                        <Plus size={14} /> {t('tests.add_order_item')}
-                    </button>
-                </div>
-            )}
-
             {/* Standards + CEFR linking */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>

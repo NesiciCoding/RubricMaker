@@ -20,7 +20,14 @@ import { useLiveSessionTelemetry } from '../hooks/useLiveSessionTelemetry';
 import { seededShuffle } from '../utils/seededShuffle';
 import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse';
 import { initClientLogger, logEvent } from '../services/logging/clientLogger';
-import type { Test, TestAnswer, TestAssignmentPayload, TestQuestion, TestSubmissionPayload } from '../types';
+import type {
+    Test,
+    TestAnswer,
+    TestAssignmentPayload,
+    TestQuestion,
+    TestSection,
+    TestSubmissionPayload,
+} from '../types';
 
 const DRAFT_KEY_PREFIX = 'rm_test_draft_';
 
@@ -660,7 +667,7 @@ interface TimelineProps {
     questions: TestQuestion[];
     currentIndex: number;
     answers: Map<string, string>;
-    sections: { id: string; title: string }[];
+    sections: TestSection[];
     onJump: (index: number) => void;
 }
 
@@ -997,10 +1004,6 @@ function QuestionCard({ question, index, total, value, onChange, code }: Questio
                 <MatchingAnswer question={question} value={value} onChange={onChange} code={code} />
             )}
 
-            {question.type === 'ordering' && (
-                <OrderingAnswer question={question} value={value} onChange={onChange} code={code} />
-            )}
-
             {question.type === 'categorize' && (
                 <CategorizeAnswer question={question} value={value} onChange={onChange} code={code} />
             )}
@@ -1019,7 +1022,6 @@ function QuestionCard({ question, index, total, value, onChange, code }: Questio
                         borderRadius: 8,
                         border: '1px solid var(--border)',
                         fontSize: '0.95rem',
-                        outline: 'none',
                         background: 'var(--bg)',
                         color: 'var(--text)',
                     }}
@@ -1039,7 +1041,6 @@ function QuestionCard({ question, index, total, value, onChange, code }: Questio
                             borderRadius: 8,
                             border: '1px solid var(--border)',
                             fontSize: '0.95rem',
-                            outline: 'none',
                             resize: 'vertical',
                             background: 'var(--bg)',
                             color: 'var(--text)',
