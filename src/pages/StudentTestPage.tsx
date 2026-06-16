@@ -51,6 +51,19 @@ function formatTime(seconds: number): string {
 
 const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
+/** Returns the URL only when protocol is http(s), blocking javascript: and other dangerous schemes. */
+function safeImgSrc(url: string | undefined): string | undefined {
+    if (!url) return undefined;
+    try {
+        const u = new URL(url);
+        if (u.protocol === 'https:' || u.protocol === 'http:') return u.href;
+    } catch {
+        // not a valid absolute URL — allow data: URIs that are image MIME types
+        if (/^data:image\//i.test(url)) return url;
+    }
+    return undefined;
+}
+
 function withAnswer(answers: Record<string, string>, key: string, value: string): Record<string, string> {
     const map = new Map(Object.entries(answers));
     if (!UNSAFE_KEYS.has(key)) map.set(key, value);
@@ -822,9 +835,9 @@ function QuestionCard({ question, index, total, value, onChange, code }: Questio
             </p>
 
             {/* Image stimulus */}
-            {question.imageUrl && /^https?:\/\/|^data:image\//i.test(question.imageUrl) && (
+            {safeImgSrc(question.imageUrl) && (
                 <img
-                    src={question.imageUrl}
+                    src={safeImgSrc(question.imageUrl)}
                     alt={t('tests.taking.question_image_alt')}
                     style={{
                         display: 'block',
