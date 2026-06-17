@@ -47,3 +47,4 @@ pnpm-debug.log*
 
 # Codegraph daemon runtime files
 .codegraph/
+daemon.pid

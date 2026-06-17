@@ -148,7 +148,8 @@ npm run db:reset     # Reset and re-apply all migrations
 | `/test/:code` | Take a test (public, no login — answer questions, optional timer, submit) |
 | `/attachments` | Attachment manager |
 | `/comments` | Comment bank |
-| `/statistics` | Statistics dashboard |
+| `/statistics` | Statistics dashboard (by-rubric, by-student, multi-class compare with insights) |
+| `/activity-dashboard` | Activity Dashboard — rubric/test/essay × class grid with link/assign actions |
 | `/export` | Export page |
 | `/settings` | Settings |
 | `/admin` | Admin panel (admin role only) |

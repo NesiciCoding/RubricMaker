@@ -241,8 +241,14 @@ const ROUTE_TREE: RouteNode[] = [
     {
         path: '/statistics',
         label: 'Statistics',
-        description: 'Grade distributions, per-criterion performance, CEFR achievement rates.',
+        description: 'Grade distributions, per-criterion performance, class comparison, and trend analysis.',
         color: '#64748b',
+    },
+    {
+        path: '/activity-dashboard',
+        label: 'Activity Dashboard',
+        description: 'Grid of all rubrics, tests, and essays vs classes — link, assign, and monitor coverage at a glance.',
+        color: '#0ea5e9',
     },
     {
         path: '/export',
@@ -986,15 +992,29 @@ function AnalyticsTab() {
 
             <FeatureSection icon={BarChart3} title="Statistics dashboard" color="#3b82f6">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
-                    Go to <strong>Statistics</strong> in the sidebar. Filter by class and rubric.
+                    Go to <strong>Statistics</strong> in the sidebar. Filter by class, track, and year. Three views:
                 </p>
                 <FeatureList
                     items={[
-                        'Summary cards: Average, Median, Highest, and Lowest scores.',
-                        'Grade distribution bar chart — see how many students fall in each grade band.',
-                        'Per-criterion breakdown — which criteria students find hardest.',
-                        'CEFR achievement rates — percentage of students at each level per skill.',
-                        'Learning goal progress tracking across a class.',
+                        'By Rubric — grade distribution, per-criterion averages, score histogram, class trend.',
+                        'By Student — per-student rubric history and criterion radar comparison.',
+                        'Compare — select up to 4 classes, compare averages, criterion gaps, and trend lines side by side. Collapsible Insights panel flags struggling classes, weak criteria, and divergence between classes.',
+                        'Track and year filter dropdowns scope the class selector to Dutch VO tracks (VMBO/HAVO/VWO) and school year.',
+                    ]}
+                />
+            </FeatureSection>
+
+            <FeatureSection icon={BarChart3} title="Activity Dashboard" color="#0ea5e9">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    Go to <strong>Activity Dashboard</strong> in the sidebar. Rows are rubrics, tests, and essays;
+                    columns are classes. Each cell shows how many students submitted/were graded and a quick action:
+                </p>
+                <FeatureList
+                    items={[
+                        'Rubrics — Link/Unlink adds or removes the rubric from a class\'s assignment list.',
+                        'Essays — Assign All bulk-creates essay assignments for all unenrolled students in the class.',
+                        'Tests — Open navigates to the test builder where you can share the class link.',
+                        'Filter by school year and VO track to narrow the column set.',
                     ]}
                 />
             </FeatureSection>

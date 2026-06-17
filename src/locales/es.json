@@ -202,7 +202,8 @@
         "localization": "Localización",
         "cefr_overview": "Resumen MCER",
         "vocabulary": "Vocabulario",
-        "docs": "Documentación"
+        "docs": "Documentación",
+        "activity_dashboard": "Panel de actividades"
     },
     "dashboard": {
         "title": "Panel",
@@ -1144,6 +1145,9 @@
         "select_student_prompt": "Selecciona un estudiante para ver sus estadísticas.",
         "student_not_graded": "Este estudiante aún no ha sido calificado en ninguna rúbrica.",
         "graded_rubrics": "Rúbricas Calificadas",
+        "test_results": "Resultados de Tests",
+        "label_test": "Test",
+        "class_test_averages": "Promedios de tests (esta clase)",
         "label_student": "Estudiante",
         "label_rubric_comparison": "Rúbrica (para comparación)",
         "select_rubric_placeholder": "Seleccionar una rúbrica...",
@@ -1157,7 +1161,36 @@
         "all_classes": "Todas las Clases",
         "action_fullscreen": "Pantalla completa",
         "action_close_fullscreen": "Cerrar",
-        "action_export_chart": "Exportar Gráfico"
+        "action_export_chart": "Exportar Gráfico",
+        "view_compare": "Comparar",
+        "compare": {
+            "select_classes": "Seleccionar clases",
+            "prompt": "Selecciona al menos 2 clases para comparar.",
+            "no_data": "No se encontraron alumnos calificados para las clases y rúbrica seleccionadas.",
+            "avg_title": "Puntuaciones promedio por clase",
+            "criterion_gap": "Comparación por criterio",
+            "trend_title": "Tendencia de progreso por clase"
+        },
+        "insights": {
+            "title": "Observaciones"
+        },
+        "filters": {
+            "year": "Año",
+            "track": "Modalidad"
+        }
+    },
+    "activityDashboard": {
+        "title": "Panel de actividades",
+        "empty": "No se encontraron rúbricas, pruebas ni ensayos. Crea actividades primero.",
+        "col_activity": "Actividad",
+        "section_rubrics": "Rúbricas",
+        "section_tests": "Pruebas",
+        "section_essays": "Ensayos",
+        "link": "Vincular",
+        "unlink": "Desvincular",
+        "assign": "Asignar a todos",
+        "all_assigned": "Todos asignados ✓",
+        "open": "Abrir"
     },
     "attachments": {
         "title": "Archivos adjuntos",

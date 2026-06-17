@@ -202,7 +202,8 @@
         "localization": "Localization",
         "cefr_overview": "CEFR Overview",
         "vocabulary": "Vocabulary",
-        "docs": "Docs"
+        "docs": "Docs",
+        "activity_dashboard": "Activity Dashboard"
     },
     "dashboard": {
         "title": "Dashboard",
@@ -1144,6 +1145,9 @@
         "select_student_prompt": "Select a student to view their statistics.",
         "student_not_graded": "This student hasn't been graded on any rubrics yet.",
         "graded_rubrics": "Graded Rubrics",
+        "test_results": "Test Results",
+        "label_test": "Test",
+        "class_test_averages": "Test Averages (this class)",
         "label_student": "Student",
         "label_rubric_comparison": "Rubric (for comparison)",
         "select_rubric_placeholder": "Select a rubric...",
@@ -1157,7 +1161,36 @@
         "all_classes": "All Classes",
         "action_fullscreen": "Fullscreen",
         "action_close_fullscreen": "Close",
-        "action_export_chart": "Export Chart"
+        "action_export_chart": "Export Chart",
+        "view_compare": "Compare",
+        "compare": {
+            "select_classes": "Select classes",
+            "prompt": "Select at least 2 classes to compare.",
+            "no_data": "No graded students found for the selected classes and rubric.",
+            "avg_title": "Class Average Scores",
+            "criterion_gap": "Per-Criterion Comparison",
+            "trend_title": "Class Progress Trend"
+        },
+        "insights": {
+            "title": "Insights"
+        },
+        "filters": {
+            "year": "Year",
+            "track": "Track"
+        }
+    },
+    "activityDashboard": {
+        "title": "Activity Dashboard",
+        "empty": "No rubrics, tests, or essays found. Create some activities first.",
+        "col_activity": "Activity",
+        "section_rubrics": "Rubrics",
+        "section_tests": "Tests",
+        "section_essays": "Essays",
+        "link": "Link",
+        "unlink": "Unlink",
+        "assign": "Assign All",
+        "all_assigned": "All Assigned ✓",
+        "open": "Open"
     },
     "attachments": {
         "title": "Attachments",

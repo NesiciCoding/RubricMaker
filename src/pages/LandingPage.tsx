@@ -44,7 +44,7 @@ const TEACHER_FEATURES = [
     {
         icon: BarChart3,
         title: 'Analytics & Export',
-        desc: 'Grade distributions, per-criterion breakdowns, CEFR progress reports, peer review consistency analytics, PDF/Word/CSV export.',
+        desc: 'Grade distributions, per-criterion breakdowns, class-vs-class comparison with insights, activity dashboard, CEFR progress reports, PDF/Word/CSV export.',
         color: '#06b6d4',
     },
     {

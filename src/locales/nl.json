@@ -202,7 +202,8 @@
         "localization": "Localisatie",
         "cefr_overview": "CEFR Overzicht",
         "vocabulary": "Woordenschat",
-        "docs": "Documentatie"
+        "docs": "Documentatie",
+        "activity_dashboard": "Activiteitenoverzicht"
     },
     "dashboard": {
         "title": "Dashboard",
@@ -1144,6 +1145,9 @@
         "select_student_prompt": "Selecteer een leerling om statistieken te zien.",
         "student_not_graded": "Deze leerling is nog niet beoordeeld op rubrieken.",
         "graded_rubrics": "Beoordeelde Rubrieken",
+        "test_results": "Toetsresultaten",
+        "label_test": "Toets",
+        "class_test_averages": "Toetsgemiddelden (deze klas)",
         "label_student": "Leerling",
         "label_rubric_comparison": "Rubriek (voor vergelijking)",
         "select_rubric_placeholder": "Selecteer een rubriek...",
@@ -1157,7 +1161,36 @@
         "all_classes": "Alle Klassen",
         "action_fullscreen": "Volledig scherm",
         "action_close_fullscreen": "Sluiten",
-        "action_export_chart": "Grafiek Exporteren"
+        "action_export_chart": "Grafiek Exporteren",
+        "view_compare": "Vergelijken",
+        "compare": {
+            "select_classes": "Selecteer klassen",
+            "prompt": "Selecteer minimaal 2 klassen om te vergelijken.",
+            "no_data": "Geen beoordeelde leerlingen gevonden voor de geselecteerde klassen en rubriek.",
+            "avg_title": "Gemiddelde scores per klas",
+            "criterion_gap": "Criteriumvergelijking",
+            "trend_title": "Voortgangstrend per klas"
+        },
+        "insights": {
+            "title": "Inzichten"
+        },
+        "filters": {
+            "year": "Jaar",
+            "track": "Afdeling"
+        }
+    },
+    "activityDashboard": {
+        "title": "Activiteitenoverzicht",
+        "empty": "Geen rubrieken, toetsen of essays gevonden. Maak eerst activiteiten aan.",
+        "col_activity": "Activiteit",
+        "section_rubrics": "Rubrieken",
+        "section_tests": "Toetsen",
+        "section_essays": "Essays",
+        "link": "Koppelen",
+        "unlink": "Ontkoppelen",
+        "assign": "Aan alle toewijzen",
+        "all_assigned": "Alle toegewezen ✓",
+        "open": "Openen"
     },
     "attachments": {
         "title": "Bijlagen",
