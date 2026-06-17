@@ -514,7 +514,9 @@ function GettingStartedTab() {
                 </Step>
                 <Step number={3} title="Add students">
                     Go to <strong>Students</strong>. Click <strong>+ Add Student</strong> and fill in their name. Group
-                    students into classes by setting the Class field. You can also import from a CSV or a Magister export — the importer auto-detects Dutch column names and, if "Update existing students" is checked, will update matching records instead of creating duplicates.
+                    students into classes by setting the Class field. You can also import from a CSV or a Magister
+                    export — the importer auto-detects Dutch column names and, if "Update existing students" is checked,
+                    will update matching records instead of creating duplicates.
                 </Step>
                 <Step number={4} title="Grade a student">
                     Open any rubric from the Rubrics page. Click the student's name to open the grading view. Click each

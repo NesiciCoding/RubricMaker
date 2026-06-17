@@ -180,7 +180,9 @@ function reducer(state: StoreData, action: Action): StoreData {
         }
         case 'DELETE_STUDENT': {
             const next = state.students.map((s) =>
-                s.id === action.id ? { ...s, archivedAt: new Date().toISOString(), updatedAt: new Date().toISOString() } : s
+                s.id === action.id
+                    ? { ...s, archivedAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+                    : s
             );
             saveStudents(next);
             return { ...state, students: next };

@@ -1589,10 +1589,16 @@ function AuditTab() {
     const PAGE_SIZE = 50;
 
     useEffect(() => {
-        if (!dbStatus.isConnected) { setLoading(false); return; }
+        if (!dbStatus.isConnected) {
+            setLoading(false);
+            return;
+        }
         setLoading(true);
         const client = storageSync.adapter.getClient();
-        if (!client) { setLoading(false); return; }
+        if (!client) {
+            setLoading(false);
+            return;
+        }
         let q = client
             .from('audit_logs')
             .select('*')
@@ -1631,7 +1637,10 @@ function AuditTab() {
                     <button
                         key={c}
                         className={`btn btn-sm ${category === c ? 'btn-primary' : 'btn-ghost'}`}
-                        onClick={() => { setCategory(c); setPage(0); }}
+                        onClick={() => {
+                            setCategory(c);
+                            setPage(0);
+                        }}
                     >
                         {c === 'all' ? t('common.all') : c}
                     </button>
@@ -1651,7 +1660,9 @@ function AuditTab() {
                         <thead>
                             <tr style={{ borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}>
                                 <th style={{ textAlign: 'left', padding: '6px 8px' }}>{t('admin.audit_col_time')}</th>
-                                <th style={{ textAlign: 'left', padding: '6px 8px' }}>{t('admin.audit_col_category')}</th>
+                                <th style={{ textAlign: 'left', padding: '6px 8px' }}>
+                                    {t('admin.audit_col_category')}
+                                </th>
                                 <th style={{ textAlign: 'left', padding: '6px 8px' }}>{t('admin.audit_col_action')}</th>
                                 <th style={{ textAlign: 'left', padding: '6px 8px' }}>{t('admin.audit_col_entity')}</th>
                             </tr>
@@ -1659,25 +1670,30 @@ function AuditTab() {
                         <tbody>
                             {rows.map((r) => (
                                 <tr key={r.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                                    <td style={{ padding: '6px 8px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                                    <td
+                                        style={{ padding: '6px 8px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}
+                                    >
                                         {new Date(r.created_at).toLocaleString()}
                                     </td>
                                     <td style={{ padding: '6px 8px' }}>
-                                        <span style={{
-                                            background: `${CATEGORY_COLORS[r.category]}20`,
-                                            color: CATEGORY_COLORS[r.category],
-                                            border: `1px solid ${CATEGORY_COLORS[r.category]}40`,
-                                            borderRadius: 4,
-                                            padding: '1px 6px',
-                                            fontSize: '0.78rem',
-                                            fontWeight: 600,
-                                        }}>
+                                        <span
+                                            style={{
+                                                background: `${CATEGORY_COLORS[r.category]}20`,
+                                                color: CATEGORY_COLORS[r.category],
+                                                border: `1px solid ${CATEGORY_COLORS[r.category]}40`,
+                                                borderRadius: 4,
+                                                padding: '1px 6px',
+                                                fontSize: '0.78rem',
+                                                fontWeight: 600,
+                                            }}
+                                        >
                                             {r.category}
                                         </span>
                                     </td>
                                     <td style={{ padding: '6px 8px' }}>{r.action}</td>
                                     <td style={{ padding: '6px 8px', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                                        {r.entity_type && `${r.entity_type}${r.entity_id ? ` / ${r.entity_id.slice(0, 8)}` : ''}`}
+                                        {r.entity_type &&
+                                            `${r.entity_type}${r.entity_id ? ` / ${r.entity_id.slice(0, 8)}` : ''}`}
                                     </td>
                                 </tr>
                             ))}
@@ -1688,8 +1704,14 @@ function AuditTab() {
 
             {rows.length === PAGE_SIZE && (
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-                    {page > 0 && <button className="btn btn-sm btn-ghost" onClick={() => setPage((p) => p - 1)}>{t('common.prev')}</button>}
-                    <button className="btn btn-sm btn-ghost" onClick={() => setPage((p) => p + 1)}>{t('common.next')}</button>
+                    {page > 0 && (
+                        <button className="btn btn-sm btn-ghost" onClick={() => setPage((p) => p - 1)}>
+                            {t('common.prev')}
+                        </button>
+                    )}
+                    <button className="btn btn-sm btn-ghost" onClick={() => setPage((p) => p + 1)}>
+                        {t('common.next')}
+                    </button>
                 </div>
             )}
         </div>
@@ -1755,7 +1777,8 @@ function ArchiveTab() {
                                             className="btn btn-ghost btn-sm"
                                             style={{ color: 'var(--red, #ef4444)' }}
                                             onClick={() => {
-                                                if (window.confirm(t('admin.anonymize_confirm'))) anonymizeStudent(s.id);
+                                                if (window.confirm(t('admin.anonymize_confirm')))
+                                                    anonymizeStudent(s.id);
                                             }}
                                             title={t('admin.anonymize_btn')}
                                         >

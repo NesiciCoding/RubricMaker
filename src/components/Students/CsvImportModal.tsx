@@ -30,7 +30,12 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
         className: '',
     });
     const [syncMode, setSyncMode] = useState(false);
-    const [summary, setSummary] = useState<{ created: number; updated: number; transferred: number; removed: number } | null>(null);
+    const [summary, setSummary] = useState<{
+        created: number;
+        updated: number;
+        transferred: number;
+        removed: number;
+    } | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
@@ -143,11 +148,9 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
 
             // Upsert: match by name+class first, then by email across all classes (enables class transfer)
             const nameLower = name.toLowerCase();
-            const existing = students.find(
-                (s) =>
-                    s.classId === targetClassId &&
-                    s.name.toLowerCase().trim() === nameLower
-            ) ?? (email ? students.find((s) => s.email?.toLowerCase().trim() === email.toLowerCase()) : undefined);
+            const existing =
+                students.find((s) => s.classId === targetClassId && s.name.toLowerCase().trim() === nameLower) ??
+                (email ? students.find((s) => s.email?.toLowerCase().trim() === email.toLowerCase()) : undefined);
 
             if (existing) {
                 const isTransfer = existing.classId !== targetClassId;
@@ -367,9 +370,7 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                             </span>
                         )}
                         {summary.updated > 0 && (
-                            <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
-                                {summary.updated} updated
-                            </span>
+                            <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{summary.updated} updated</span>
                         )}
                         {summary.transferred > 0 && (
                             <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
@@ -387,21 +388,31 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
 
             <div className="modal-footer">
                 {summary ? (
-                    <button className="btn btn-primary" onClick={onSuccess}>Done</button>
+                    <button className="btn btn-primary" onClick={onSuccess}>
+                        Done
+                    </button>
                 ) : (
                     <>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', color: 'var(--text-muted)', marginRight: 'auto' }}>
-                            <input
-                                type="checkbox"
-                                checked={syncMode}
-                                onChange={(e) => setSyncMode(e.target.checked)}
-                            />
+                        <label
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                fontSize: '0.85rem',
+                                color: 'var(--text-muted)',
+                                marginRight: 'auto',
+                            }}
+                        >
+                            <input type="checkbox" checked={syncMode} onChange={(e) => setSyncMode(e.target.checked)} />
                             Sync class rosters (remove students not in this CSV)
                         </label>
-                        <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+                        <button className="btn btn-secondary" onClick={onClose}>
+                            Cancel
+                        </button>
                         {!error && headers.length > 0 && (
                             <button className="btn btn-primary" disabled={!hasNameMapping} onClick={handleImport}>
-                                <CheckCircle size={15} /> Import {parsedData.length} Student{parsedData.length !== 1 ? 's' : ''}
+                                <CheckCircle size={15} /> Import {parsedData.length} Student
+                                {parsedData.length !== 1 ? 's' : ''}
                             </button>
                         )}
                     </>
