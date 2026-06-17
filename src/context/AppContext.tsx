@@ -1359,19 +1359,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return storageSync.fetchAllProfiles();
     }, []);
 
-    const updateUserRole = useCallback(
-        async (userId: string, role: UserRole): Promise<SyncResult> => {
-            const result = await storageSync.updateUserRole(userId, role);
-            if (result.success) {
-                logAuditEvent('admin', 'role_change', 'user', userId, { role });
-                if (userId === storageSync.getCurrentUserId()) {
-                    dispatch({ type: 'UPDATE_SETTINGS', payload: { userRole: role } });
-                }
+    const updateUserRole = useCallback(async (userId: string, role: UserRole): Promise<SyncResult> => {
+        const result = await storageSync.updateUserRole(userId, role);
+        if (result.success) {
+            logAuditEvent('admin', 'role_change', 'user', userId, { role });
+            if (userId === storageSync.getCurrentUserId()) {
+                dispatch({ type: 'UPDATE_SETTINGS', payload: { userRole: role } });
             }
-            return result;
-        },
-        []
-    );
+        }
+        return result;
+    }, []);
 
     const updateMyProfile = useCallback(async (updates: { displayName?: string }): Promise<SyncResult> => {
         return storageSync.updateMyProfile(updates);
