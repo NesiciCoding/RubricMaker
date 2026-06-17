@@ -223,6 +223,18 @@ docker-compose up -d --build    # rebuilds the app image, restarts services
 # Migrations run automatically on next startup
 ```
 
+**Nightly attachment cleanup (recommended):**
+
+Attachment files and their database rows are deleted automatically when they age past the owner's school retention period (default: 7 years for users not linked to a school). Schedule the bundled script with `crontab -e`:
+
+```cron
+0 2 * * *  cd /path/to/rubricmaker && ./scripts/delete-old-attachments.sh >> /var/log/rubricmaker-cleanup.log 2>&1
+```
+
+The script uses the Storage HTTP API — it does **not** delete rows directly from `storage.objects` (which Supabase blocks). It calls `public.get_overdue_attachments()` to find eligible rows, removes each file via `DELETE /storage/v1/object/attachments/{path}`, then cleans up the metadata rows. A 404 from storage is treated as success so orphaned DB rows are always removed.
+
+On Supabase Cloud, schedule the `delete-old-attachments` edge function instead (see [Supabase Dashboard → Edge Functions](https://supabase.com/dashboard/project/_/functions)).
+
 **Stress-test logging (optional):**
 
 Before a school-wide rollout, you can enable a diagnostic event stream to a
