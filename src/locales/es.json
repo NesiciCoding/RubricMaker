@@ -1164,7 +1164,7 @@
         "action_export_chart": "Exportar Gráfico",
         "view_compare": "Comparar",
         "compare": {
-            "select_classes": "Seleccionar clases",
+            "select_classes": "Seleccionar clases (máx {{max}})",
             "prompt": "Selecciona al menos 2 clases para comparar.",
             "no_data": "No se encontraron alumnos calificados para las clases y rúbrica seleccionadas.",
             "avg_title": "Puntuaciones promedio por clase",
@@ -1172,7 +1172,10 @@
             "trend_title": "Tendencia de progreso por clase"
         },
         "insights": {
-            "title": "Observaciones"
+            "title": "Observaciones",
+            "struggling": "{{className}} puede necesitar apoyo focalizado — promedio de clase: {{average}}%.",
+            "weak_criterion": "\"{{criterion}}\" es un punto débil constante en {{className}} ({{criterionAvg}}% vs promedio clase {{classAvg}}%).",
+            "divergence": "\"{{criterion}}\" muestra la mayor brecha: {{highClass}} está {{gap}} pp por delante de {{lowClass}}."
         },
         "filters": {
             "year": "Año",

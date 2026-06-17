@@ -897,3 +897,17 @@ export interface AuditRow {
     details: Record<string, unknown> | null;
     created_at: string;
 }
+
+export type ActivityKind = 'rubric' | 'test' | 'essay';
+
+export interface ActivityRow {
+    kind: ActivityKind;
+    id: string;
+    name: string;
+}
+
+export interface CellData {
+    submittedCount: number;
+    totalStudents: number;
+    isLinked: boolean;
+}

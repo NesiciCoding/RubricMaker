@@ -1164,7 +1164,7 @@
         "action_export_chart": "Grafiek Exporteren",
         "view_compare": "Vergelijken",
         "compare": {
-            "select_classes": "Selecteer klassen",
+            "select_classes": "Selecteer klassen (max {{max}})",
             "prompt": "Selecteer minimaal 2 klassen om te vergelijken.",
             "no_data": "Geen beoordeelde leerlingen gevonden voor de geselecteerde klassen en rubriek.",
             "avg_title": "Gemiddelde scores per klas",
@@ -1172,7 +1172,10 @@
             "trend_title": "Voortgangstrend per klas"
         },
         "insights": {
-            "title": "Inzichten"
+            "title": "Inzichten",
+            "struggling": "{{className}} heeft mogelijk gerichte ondersteuning nodig — klasgemiddelde: {{average}}%.",
+            "weak_criterion": "\"{{criterion}}\" is een consistent zwak punt in {{className}} ({{criterionAvg}}% vs klasgemiddelde {{classAvg}}%).",
+            "divergence": "\"{{criterion}}\" laat het grootste verschil zien: {{highClass}} loopt {{gap}} pp voor op {{lowClass}}."
         },
         "filters": {
             "year": "Jaar",

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import { getActivityRows, buildDashboardMatrix } from '../utils/activityDashboardAggregator';
+import { VO_TRACKS, VO_TRACK_LABELS } from '../data/voTracks';
 import type { VoTrack } from '../types';
 
 const SECTION_LABELS: Record<string, string> = {
@@ -98,7 +99,6 @@ export default function ActivityDashboardPage() {
         <>
             <Topbar title={t('activityDashboard.title')} />
             <div className="page-content fade-in">
-                {/* Filter bar */}
                 {(yearOptions.length > 0 || classes.some((c) => c.voTrack)) && (
                     <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
                         {yearOptions.length > 0 && (
@@ -122,18 +122,17 @@ export default function ActivityDashboardPage() {
                                     onChange={(e) => setFilterTrack(e.target.value as VoTrack | 'all')}
                                 >
                                     <option value="all">{t('statistics.all_classes')}</option>
-                                    <option value="vmbo-bb">VMBO-BB</option>
-                                    <option value="vmbo-kb">VMBO-KB</option>
-                                    <option value="vmbo-tl">VMBO-TL</option>
-                                    <option value="havo">HAVO</option>
-                                    <option value="vwo">VWO</option>
+                                    {VO_TRACKS.map((track) => (
+                                        <option key={track} value={track}>
+                                            {VO_TRACK_LABELS[track]}
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
                         )}
                     </div>
                 )}
 
-                {/* Grid */}
                 <div style={{ overflowX: 'auto' }}>
                     <table
                         style={{
@@ -195,7 +194,6 @@ export default function ActivityDashboardPage() {
                                 if (rows.length === 0) return null;
                                 return (
                                     <React.Fragment key={kind}>
-                                        {/* Section header row */}
                                         <tr>
                                             <td
                                                 colSpan={visibleClasses.length + 1}
@@ -215,7 +213,6 @@ export default function ActivityDashboardPage() {
                                         </tr>
                                         {rows.map((activity) => (
                                             <tr key={activity.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                                                {/* Activity name — sticky left */}
                                                 <td
                                                     style={{
                                                         position: 'sticky',
@@ -243,9 +240,10 @@ export default function ActivityDashboardPage() {
                                                     {activity.name}
                                                 </td>
 
-                                                {/* Cells per class */}
                                                 {visibleClasses.map((cls) => {
-                                                    const cell = matrix[activity.id]?.[cls.id] ?? {
+                                                    const cell = matrix[`${activity.kind}:${activity.id}`]?.[
+                                                        cls.id
+                                                    ] ?? {
                                                         submittedCount: 0,
                                                         totalStudents: 0,
                                                         isLinked: false,
@@ -275,7 +273,6 @@ export default function ActivityDashboardPage() {
                                                                         gap: 4,
                                                                     }}
                                                                 >
-                                                                    {/* Count badge */}
                                                                     <span
                                                                         style={{
                                                                             fontSize: '0.78rem',
@@ -289,7 +286,6 @@ export default function ActivityDashboardPage() {
                                                                         {cell.submittedCount}/{cell.totalStudents}
                                                                     </span>
 
-                                                                    {/* Action button */}
                                                                     {activity.kind === 'rubric' && (
                                                                         <button
                                                                             className={`btn btn-sm ${cell.isLinked ? 'btn-secondary' : 'btn-primary'}`}

@@ -1164,7 +1164,7 @@
         "ib_title": "IB-Lernerprofil",
         "view_compare": "Vergleichen",
         "compare": {
-            "select_classes": "Klassen auswählen",
+            "select_classes": "Klassen auswählen (max {{max}})",
             "prompt": "Wählen Sie mindestens 2 Klassen zum Vergleichen.",
             "no_data": "Keine bewerteten Schüler für die ausgewählten Klassen und Rubrik gefunden.",
             "avg_title": "Durchschnittliche Klassennoten",
@@ -1172,7 +1172,10 @@
             "trend_title": "Lernfortschrittstrend pro Klasse"
         },
         "insights": {
-            "title": "Erkenntnisse"
+            "title": "Erkenntnisse",
+            "struggling": "{{className}} benötigt möglicherweise gezielte Unterstützung — Klassendurchschnitt: {{average}}%.",
+            "weak_criterion": "\"{{criterion}}\" ist ein durchgehend schwacher Punkt in {{className}} ({{criterionAvg}}% vs Klassenschnitt {{classAvg}}%).",
+            "divergence": "\"{{criterion}}\" zeigt den größten Unterschied: {{highClass}} liegt {{gap}} PP vor {{lowClass}}."
         },
         "filters": {
             "year": "Jahrgangsstufe",

@@ -13,6 +13,7 @@ import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import { calcGradeSummary, calcClassStats, calcEntryPoints, type GradeSummary } from '../utils/gradeCalc';
 import type { StudentRubric, Student, Rubric, RubricCriterion, VoTrack, StudentTest, Test } from '../types';
+import { VO_TRACKS, VO_TRACK_LABELS } from '../data/voTracks';
 import { calcTestMaxPoints, calcStudentTestRawPoints, calcTestPercentage } from '../utils/testCalc';
 import { getClassGoalScores } from '../utils/learningGoalsAggregator';
 import LearningGoalChart from '../components/Statistics/LearningGoalChart';
@@ -50,8 +51,17 @@ function exportChartAsPng(containerRef: React.RefObject<HTMLDivElement | null>, 
 }
 
 export default function StatisticsPage() {
-    const { rubrics, students, classes, studentRubrics, gradeScales, settings, updateSettings, tests, studentTests } =
-        useApp();
+    const {
+        rubrics,
+        students,
+        classes,
+        studentRubrics,
+        gradeScales,
+        settings,
+        updateSettings,
+        tests = [],
+        studentTests = [],
+    } = useApp();
     const { t, i18n } = useTranslation();
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
 
@@ -85,6 +95,13 @@ export default function StatisticsPage() {
     // ── Rubric view state ─────────────────────────────────────────────────────
     const [selectedRubricId, setSelectedRubricId] = useState(rubrics[0]?.id ?? '');
     const [selectedClassId, setSelectedClassId] = useState<string>('all');
+
+    // Sync selections when track/year filter removes previously selected classes
+    useEffect(() => {
+        const visibleIds = new Set(filteredClasses.map((c) => c.id));
+        setSelectedClassId((prev) => (prev === 'all' || visibleIds.has(prev) ? prev : 'all'));
+        setCompareClassIds((prev) => prev.filter((id) => visibleIds.has(id)));
+    }, [filteredClasses]);
     const [sortKey, setSortKey] = useState<'name' | 'score' | 'raw' | 'grade' | 'progress'>('name');
     const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
@@ -620,11 +637,11 @@ export default function StatisticsPage() {
                                         onChange={(e) => setFilterTrack(e.target.value as VoTrack | 'all')}
                                     >
                                         <option value="all">{t('statistics.all_classes')}</option>
-                                        <option value="vmbo-bb">VMBO-BB</option>
-                                        <option value="vmbo-kb">VMBO-KB</option>
-                                        <option value="vmbo-tl">VMBO-TL</option>
-                                        <option value="havo">HAVO</option>
-                                        <option value="vwo">VWO</option>
+                                        {VO_TRACKS.map((track) => (
+                                            <option key={track} value={track}>
+                                                {VO_TRACK_LABELS[track]}
+                                            </option>
+                                        ))}
                                     </select>
                                 </div>
                             )}
@@ -713,7 +730,7 @@ export default function StatisticsPage() {
                                 </select>
                             </div>
                             <div className="form-group" style={{ flex: 1, maxWidth: 280, marginBottom: 0 }}>
-                                <label>{t('statistics.compare.select_classes')} (max 4)</label>
+                                <label>{t('statistics.compare.select_classes', { max: 4 })}</label>
                                 <div
                                     style={{
                                         border: '1px solid var(--border)',
@@ -964,7 +981,7 @@ export default function StatisticsPage() {
                                                         key={i}
                                                         style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}
                                                     >
-                                                        {ins.message}
+                                                        {t(ins.messageKey, ins.messageParams)}
                                                     </li>
                                                 ))}
                                             </ul>

@@ -1164,7 +1164,7 @@
         "ib_title": "Profil de l'apprenant IB",
         "view_compare": "Comparer",
         "compare": {
-            "select_classes": "Sélectionner des classes",
+            "select_classes": "Sélectionner des classes (max {{max}})",
             "prompt": "Sélectionnez au moins 2 classes à comparer.",
             "no_data": "Aucun élève noté trouvé pour les classes et la rubrique sélectionnées.",
             "avg_title": "Scores moyens par classe",
@@ -1172,7 +1172,10 @@
             "trend_title": "Tendance de progression par classe"
         },
         "insights": {
-            "title": "Analyses"
+            "title": "Analyses",
+            "struggling": "{{className}} peut nécessiter un soutien ciblé — moyenne de classe : {{average}}%.",
+            "weak_criterion": "\"{{criterion}}\" est un point faible récurrent dans {{className}} ({{criterionAvg}}% vs moy. classe {{classAvg}}%).",
+            "divergence": "\"{{criterion}}\" présente le plus grand écart : {{highClass}} est {{gap}} pp devant {{lowClass}}."
         },
         "filters": {
             "year": "Année",

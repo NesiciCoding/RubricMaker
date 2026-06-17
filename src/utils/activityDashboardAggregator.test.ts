@@ -111,47 +111,47 @@ describe('buildDashboardMatrix', () => {
         it('isLinked true when rubric is in Class.rubricIds', () => {
             const activities = [{ kind: 'rubric' as const, id: 'r1', name: 'R1' }];
             const matrix = buildDashboardMatrix(activities, classes, students, [], [], []);
-            expect(matrix['r1']['cls1'].isLinked).toBe(true);
+            expect(matrix['rubric:r1']['cls1'].isLinked).toBe(true);
         });
 
         it('isLinked false when rubric not in Class.rubricIds', () => {
             const activities = [{ kind: 'rubric' as const, id: 'r1', name: 'R1' }];
             const matrix = buildDashboardMatrix(activities, classes, students, [], [], []);
-            expect(matrix['r1']['cls2'].isLinked).toBe(false);
+            expect(matrix['rubric:r1']['cls2'].isLinked).toBe(false);
         });
 
         it('isLinked false when class has no rubricIds field', () => {
             const activities = [{ kind: 'rubric' as const, id: 'r99', name: 'R99' }];
             const matrix = buildDashboardMatrix(activities, [mkClass('cls_empty')], students, [], [], []);
-            expect(matrix['r99']['cls_empty'].isLinked).toBe(false);
+            expect(matrix['rubric:r99']['cls_empty'].isLinked).toBe(false);
         });
 
         it('submittedCount counts graded students in the class', () => {
             const activities = [{ kind: 'rubric' as const, id: 'r1', name: 'R1' }];
             const srs = [mkSR('a', 'r1', 's1'), mkSR('b', 'r1', 's2')];
             const matrix = buildDashboardMatrix(activities, classes, students, srs, [], []);
-            expect(matrix['r1']['cls1'].submittedCount).toBe(2);
+            expect(matrix['rubric:r1']['cls1'].submittedCount).toBe(2);
         });
 
         it('submittedCount does not count students from other classes', () => {
             const activities = [{ kind: 'rubric' as const, id: 'r1', name: 'R1' }];
             const srs = [mkSR('a', 'r1', 's3')]; // s3 is in cls2
             const matrix = buildDashboardMatrix(activities, classes, students, srs, [], []);
-            expect(matrix['r1']['cls1'].submittedCount).toBe(0);
-            expect(matrix['r1']['cls2'].submittedCount).toBe(1);
+            expect(matrix['rubric:r1']['cls1'].submittedCount).toBe(0);
+            expect(matrix['rubric:r1']['cls2'].submittedCount).toBe(1);
         });
 
         it('submittedCount does not count grades for other rubrics', () => {
             const activities = [{ kind: 'rubric' as const, id: 'r1', name: 'R1' }];
             const srs = [mkSR('a', 'r_other', 's1')];
             const matrix = buildDashboardMatrix(activities, classes, students, srs, [], []);
-            expect(matrix['r1']['cls1'].submittedCount).toBe(0);
+            expect(matrix['rubric:r1']['cls1'].submittedCount).toBe(0);
         });
 
         it('submittedCount is 0 when no studentRubrics', () => {
             const activities = [{ kind: 'rubric' as const, id: 'r1', name: 'R1' }];
             const matrix = buildDashboardMatrix(activities, classes, students, [], [], []);
-            expect(matrix['r1']['cls1'].submittedCount).toBe(0);
+            expect(matrix['rubric:r1']['cls1'].submittedCount).toBe(0);
         });
     });
 
@@ -160,35 +160,35 @@ describe('buildDashboardMatrix', () => {
             const activities = [{ kind: 'test' as const, id: 't1', name: 'T1' }];
             const sts = [mkST('a', 't1', 's1', 'submitted'), mkST('b', 't1', 's2', 'in_progress')];
             const matrix = buildDashboardMatrix(activities, classes, students, [], sts, []);
-            expect(matrix['t1']['cls1'].submittedCount).toBe(1);
+            expect(matrix['test:t1']['cls1'].submittedCount).toBe(1);
         });
 
         it('submittedCount counts graded status', () => {
             const activities = [{ kind: 'test' as const, id: 't1', name: 'T1' }];
             const sts = [mkST('a', 't1', 's1', 'graded')];
             const matrix = buildDashboardMatrix(activities, classes, students, [], sts, []);
-            expect(matrix['t1']['cls1'].submittedCount).toBe(1);
+            expect(matrix['test:t1']['cls1'].submittedCount).toBe(1);
         });
 
         it('isLinked true when any student in class has a StudentTest (even in_progress)', () => {
             const activities = [{ kind: 'test' as const, id: 't1', name: 'T1' }];
             const sts = [mkST('a', 't1', 's1', 'in_progress')];
             const matrix = buildDashboardMatrix(activities, classes, students, [], sts, []);
-            expect(matrix['t1']['cls1'].isLinked).toBe(true);
-            expect(matrix['t1']['cls2'].isLinked).toBe(false);
+            expect(matrix['test:t1']['cls1'].isLinked).toBe(true);
+            expect(matrix['test:t1']['cls2'].isLinked).toBe(false);
         });
 
         it('isLinked false when no students in class have started the test', () => {
             const activities = [{ kind: 'test' as const, id: 't1', name: 'T1' }];
             const matrix = buildDashboardMatrix(activities, classes, students, [], [], []);
-            expect(matrix['t1']['cls1'].isLinked).toBe(false);
+            expect(matrix['test:t1']['cls1'].isLinked).toBe(false);
         });
 
         it('does not count tests for other testIds', () => {
             const activities = [{ kind: 'test' as const, id: 't1', name: 'T1' }];
             const sts = [mkST('a', 't_other', 's1', 'submitted')];
             const matrix = buildDashboardMatrix(activities, classes, students, [], sts, []);
-            expect(matrix['t1']['cls1'].submittedCount).toBe(0);
+            expect(matrix['test:t1']['cls1'].submittedCount).toBe(0);
         });
     });
 
@@ -197,37 +197,37 @@ describe('buildDashboardMatrix', () => {
             const activities = [{ kind: 'essay' as const, id: 'ek1', name: 'Essay' }];
             const essays = [mkEssay('ek1', 's1'), mkEssay('ek1', 's2')];
             const matrix = buildDashboardMatrix(activities, classes, students, [], [], essays);
-            expect(matrix['ek1']['cls1'].submittedCount).toBe(2);
-            expect(matrix['ek1']['cls2'].submittedCount).toBe(0);
+            expect(matrix['essay:ek1']['cls1'].submittedCount).toBe(2);
+            expect(matrix['essay:ek1']['cls2'].submittedCount).toBe(0);
         });
 
         it('isLinked true when at least one student in class is assigned', () => {
             const activities = [{ kind: 'essay' as const, id: 'ek1', name: 'Essay' }];
             const essays = [mkEssay('ek1', 's1')];
             const matrix = buildDashboardMatrix(activities, classes, students, [], [], essays);
-            expect(matrix['ek1']['cls1'].isLinked).toBe(true);
+            expect(matrix['essay:ek1']['cls1'].isLinked).toBe(true);
         });
 
         it('isLinked false when no students in class are assigned', () => {
             const activities = [{ kind: 'essay' as const, id: 'ek1', name: 'Essay' }];
             const essays = [mkEssay('ek1', 's1')]; // s1 in cls1 only
             const matrix = buildDashboardMatrix(activities, classes, students, [], [], essays);
-            expect(matrix['ek1']['cls2'].isLinked).toBe(false);
+            expect(matrix['essay:ek1']['cls2'].isLinked).toBe(false);
         });
 
         it('does not count assignments for other teacherKeys', () => {
             const activities = [{ kind: 'essay' as const, id: 'ek1', name: 'Essay' }];
             const essays = [mkEssay('ek_other', 's1')];
             const matrix = buildDashboardMatrix(activities, classes, students, [], [], essays);
-            expect(matrix['ek1']['cls1'].submittedCount).toBe(0);
+            expect(matrix['essay:ek1']['cls1'].submittedCount).toBe(0);
         });
 
         it('only counts assignments for students in the class, not other classes', () => {
             const activities = [{ kind: 'essay' as const, id: 'ek1', name: 'Essay' }];
             const essays = [mkEssay('ek1', 's3')]; // s3 in cls2
             const matrix = buildDashboardMatrix(activities, classes, students, [], [], essays);
-            expect(matrix['ek1']['cls1'].submittedCount).toBe(0);
-            expect(matrix['ek1']['cls2'].submittedCount).toBe(1);
+            expect(matrix['essay:ek1']['cls1'].submittedCount).toBe(0);
+            expect(matrix['essay:ek1']['cls2'].submittedCount).toBe(1);
         });
     });
 
@@ -235,14 +235,14 @@ describe('buildDashboardMatrix', () => {
         it('reflects the number of students in the class', () => {
             const activities = [{ kind: 'rubric' as const, id: 'r1', name: 'R1' }];
             const matrix = buildDashboardMatrix(activities, classes, students, [], [], []);
-            expect(matrix['r1']['cls1'].totalStudents).toBe(2); // s1, s2
-            expect(matrix['r1']['cls2'].totalStudents).toBe(1); // s3
+            expect(matrix['rubric:r1']['cls1'].totalStudents).toBe(2); // s1, s2
+            expect(matrix['rubric:r1']['cls2'].totalStudents).toBe(1); // s3
         });
 
         it('is 0 for a class with no students', () => {
             const activities = [{ kind: 'rubric' as const, id: 'r1', name: 'R1' }];
             const matrix = buildDashboardMatrix(activities, [mkClass('empty')], students, [], [], []);
-            expect(matrix['r1']['empty'].totalStudents).toBe(0);
+            expect(matrix['rubric:r1']['empty'].totalStudents).toBe(0);
         });
 
         it('is the same across all activity kinds for the same class', () => {
@@ -252,9 +252,9 @@ describe('buildDashboardMatrix', () => {
                 { kind: 'essay' as const, id: 'ek1', name: 'E1' },
             ];
             const matrix = buildDashboardMatrix(activities, [mkClass('cls1')], students, [], [], []);
-            expect(matrix['r1']['cls1'].totalStudents).toBe(2);
-            expect(matrix['t1']['cls1'].totalStudents).toBe(2);
-            expect(matrix['ek1']['cls1'].totalStudents).toBe(2);
+            expect(matrix['rubric:r1']['cls1'].totalStudents).toBe(2);
+            expect(matrix['test:t1']['cls1'].totalStudents).toBe(2);
+            expect(matrix['essay:ek1']['cls1'].totalStudents).toBe(2);
         });
     });
 
@@ -266,8 +266,8 @@ describe('buildDashboardMatrix', () => {
             ];
             const matrix = buildDashboardMatrix(activities, classes, students, [], [], []);
             expect(Object.keys(matrix)).toHaveLength(2);
-            expect(Object.keys(matrix['r1'])).toHaveLength(2);
-            expect(Object.keys(matrix['t1'])).toHaveLength(2);
+            expect(Object.keys(matrix['rubric:r1'])).toHaveLength(2);
+            expect(Object.keys(matrix['test:t1'])).toHaveLength(2);
         });
 
         it('returns empty matrix when no activities', () => {
@@ -278,7 +278,18 @@ describe('buildDashboardMatrix', () => {
         it('returns matrix with empty class-rows when no classes', () => {
             const activities = [{ kind: 'rubric' as const, id: 'r1', name: 'R1' }];
             const matrix = buildDashboardMatrix(activities, [], students, [], [], []);
-            expect(matrix['r1']).toEqual({});
+            expect(matrix['rubric:r1']).toEqual({});
+        });
+
+        it('rubric and test with the same id are independently addressable (no key collision)', () => {
+            const activities = [
+                { kind: 'rubric' as const, id: 'dup', name: 'Dup Rubric' },
+                { kind: 'test' as const, id: 'dup', name: 'Dup Test' },
+            ];
+            const matrix = buildDashboardMatrix(activities, classes, students, [], [], []);
+            expect(matrix['rubric:dup']).toBeDefined();
+            expect(matrix['test:dup']).toBeDefined();
+            expect(Object.keys(matrix)).toHaveLength(2);
         });
     });
 });
@@ -350,12 +361,12 @@ describe('stress test — large dataset', () => {
     it('rubric isLinked matches Class.rubricIds (even-indexed classes have r0-r2 linked)', () => {
         const matrix = buildDashboardMatrix(ALL_ACTIVITIES, CLASSES, STUDENTS, [], [], []);
         // cls0 (even): has r0, r1, r2 linked
-        expect(matrix['r0']['cls0'].isLinked).toBe(true);
-        expect(matrix['r1']['cls0'].isLinked).toBe(true);
-        expect(matrix['r2']['cls0'].isLinked).toBe(true);
-        expect(matrix['r3']['cls0'].isLinked).toBe(false); // r3 not in rubricIds
+        expect(matrix['rubric:r0']['cls0'].isLinked).toBe(true);
+        expect(matrix['rubric:r1']['cls0'].isLinked).toBe(true);
+        expect(matrix['rubric:r2']['cls0'].isLinked).toBe(true);
+        expect(matrix['rubric:r3']['cls0'].isLinked).toBe(false); // r3 not in rubricIds
         // cls1 (odd): no rubricIds
-        expect(matrix['r0']['cls1'].isLinked).toBe(false);
+        expect(matrix['rubric:r0']['cls1'].isLinked).toBe(false);
     });
 
     it('getActivityRows deduplicates 500 essay assignments into 5 rows', () => {

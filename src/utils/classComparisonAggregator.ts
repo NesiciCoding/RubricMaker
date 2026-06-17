@@ -20,7 +20,8 @@ export interface MultiTrendPoint {
 
 export interface Insight {
     kind: 'struggling' | 'weak_criterion' | 'divergence';
-    message: string;
+    messageKey: string;
+    messageParams: Record<string, string | number>;
 }
 
 export function compareClasses(
@@ -32,11 +33,12 @@ export function compareClasses(
     rubric: Rubric,
     scale: GradeScale | null
 ): ClassComparisonResult[] {
+    const studentClassById = new Map(students.map((s) => [s.id, s.classId]));
     return classIds
         .map((classId) => {
             const cls = classes.find((c) => c.id === classId);
             const srs = studentRubrics.filter(
-                (sr) => sr.rubricId === rubricId && students.find((s) => s.id === sr.studentId)?.classId === classId
+                (sr) => sr.rubricId === rubricId && studentClassById.get(sr.studentId) === classId
             );
             const summaries = srs.map((sr) => calcGradeSummary(sr, rubric.criteria, scale, rubric));
             const stats = calcClassStats(summaries, scale);
@@ -74,12 +76,11 @@ export function buildMultiClassTrend(
     rubrics: Rubric[],
     gradeScales: GradeScale[]
 ): MultiTrendPoint[] {
+    const studentClassById = new Map(students.map((s) => [s.id, s.classId]));
     const relevantRubrics = rubrics
         .filter((r) =>
             classIds.some((classId) =>
-                studentRubrics.some(
-                    (sr) => sr.rubricId === r.id && students.find((s) => s.id === sr.studentId)?.classId === classId
-                )
+                studentRubrics.some((sr) => sr.rubricId === r.id && studentClassById.get(sr.studentId) === classId)
             )
         )
         .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
@@ -90,9 +91,7 @@ export function buildMultiClassTrend(
         const point: MultiTrendPoint = { rubricName: r.name, date: r.createdAt };
         for (const classId of classIds) {
             const sums = studentRubrics
-                .filter(
-                    (sr) => sr.rubricId === r.id && students.find((s) => s.id === sr.studentId)?.classId === classId
-                )
+                .filter((sr) => sr.rubricId === r.id && studentClassById.get(sr.studentId) === classId)
                 .map((sr) => calcGradeSummary(sr, r.criteria, scale, r).modifiedPercentage);
             if (sums.length > 0) {
                 point[classId] = parseFloat((sums.reduce((a, b) => a + b, 0) / sums.length).toFixed(1));
@@ -115,7 +114,8 @@ export function getInsights(results: ClassComparisonResult[], criteria: RubricCr
         if (r.average < 55) {
             insights.push({
                 kind: 'struggling',
-                message: `${r.className} may need targeted support — class average: ${r.average.toFixed(1)}%.`,
+                messageKey: 'statistics.insights.struggling',
+                messageParams: { className: r.className, average: r.average.toFixed(1) },
             });
         }
         for (const c of criteria) {
@@ -123,7 +123,13 @@ export function getInsights(results: ClassComparisonResult[], criteria: RubricCr
             if (r.average - cAvg >= 15) {
                 insights.push({
                     kind: 'weak_criterion',
-                    message: `"${c.title}" is a consistent weak point in ${r.className} (${cAvg.toFixed(1)}% vs class avg ${r.average.toFixed(1)}%).`,
+                    messageKey: 'statistics.insights.weak_criterion',
+                    messageParams: {
+                        criterion: c.title,
+                        className: r.className,
+                        criterionAvg: cAvg.toFixed(1),
+                        classAvg: r.average.toFixed(1),
+                    },
                 });
             }
         }
@@ -148,7 +154,13 @@ export function getInsights(results: ClassComparisonResult[], criteria: RubricCr
         if (maxGap >= 20) {
             insights.push({
                 kind: 'divergence',
-                message: `"${maxGapCritTitle}" shows the biggest gap: ${maxGapHigh} is ${maxGap.toFixed(0)} pp ahead of ${maxGapLow}.`,
+                messageKey: 'statistics.insights.divergence',
+                messageParams: {
+                    criterion: maxGapCritTitle,
+                    highClass: maxGapHigh,
+                    gap: maxGap.toFixed(0),
+                    lowClass: maxGapLow,
+                },
             });
         }
     }

@@ -1164,7 +1164,7 @@
         "action_export_chart": "Export Chart",
         "view_compare": "Compare",
         "compare": {
-            "select_classes": "Select classes",
+            "select_classes": "Select classes (max {{max}})",
             "prompt": "Select at least 2 classes to compare.",
             "no_data": "No graded students found for the selected classes and rubric.",
             "avg_title": "Class Average Scores",
@@ -1172,7 +1172,10 @@
             "trend_title": "Class Progress Trend"
         },
         "insights": {
-            "title": "Insights"
+            "title": "Insights",
+            "struggling": "{{className}} may need targeted support — class average: {{average}}%.",
+            "weak_criterion": "\"{{criterion}}\" is a consistent weak point in {{className}} ({{criterionAvg}}% vs class avg {{classAvg}}%).",
+            "divergence": "\"{{criterion}}\" shows the biggest gap: {{highClass}} is {{gap}} pp ahead of {{lowClass}}."
         },
         "filters": {
             "year": "Year",

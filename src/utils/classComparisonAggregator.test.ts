@@ -264,17 +264,18 @@ describe('getInsights', () => {
         expect(getInsights(results, [c1, c2]).some((i) => i.kind === 'struggling')).toBe(false);
     });
 
-    it('struggling insight message names the class', () => {
+    it('struggling insight names the class', () => {
         const results = [good('a', 'Year 3 VMBO', 40, { c1: 40, c2: 40 })];
         const insight = getInsights(results, [c1, c2]).find((i) => i.kind === 'struggling');
-        expect(insight?.message).toContain('Year 3 VMBO');
+        expect(insight?.messageKey).toBe('statistics.insights.struggling');
+        expect(insight?.messageParams.className).toBe('Year 3 VMBO');
     });
 
     it('flags weak criterion when criterion gap >= 15 pp below class avg', () => {
         // avg=70, c2=50 → gap=20 ≥ 15 → flag
         const results = [good('a', 'Test', 70, { c1: 70, c2: 50 })];
         const insights = getInsights(results, [c1, c2]);
-        expect(insights.some((i) => i.kind === 'weak_criterion' && i.message.includes('Grammar'))).toBe(true);
+        expect(insights.some((i) => i.kind === 'weak_criterion' && i.messageParams.criterion === 'Grammar')).toBe(true);
     });
 
     it('does not flag weak criterion when gap < 15 pp', () => {
@@ -291,8 +292,9 @@ describe('getInsights', () => {
     it('weak criterion insight names the criterion and class', () => {
         const results = [good('a', 'Class X', 70, { c1: 70, c2: 50 })];
         const insight = getInsights(results, [c1, c2]).find((i) => i.kind === 'weak_criterion');
-        expect(insight?.message).toContain('Grammar');
-        expect(insight?.message).toContain('Class X');
+        expect(insight?.messageKey).toBe('statistics.insights.weak_criterion');
+        expect(insight?.messageParams.criterion).toBe('Grammar');
+        expect(insight?.messageParams.className).toBe('Class X');
     });
 
     it('flags divergence when inter-class criterion gap >= 20 pp', () => {
@@ -316,8 +318,9 @@ describe('getInsights', () => {
     it('divergence insight names both classes and the criterion', () => {
         const results = [good('a', 'Alpha', 80, { c1: 90, c2: 80 }), good('b', 'Beta', 50, { c1: 60, c2: 55 })];
         const insight = getInsights(results, [c1, c2]).find((i) => i.kind === 'divergence');
-        expect(insight?.message).toContain('Alpha');
-        expect(insight?.message).toContain('Beta');
+        expect(insight?.messageKey).toBe('statistics.insights.divergence');
+        expect(insight?.messageParams.highClass).toBe('Alpha');
+        expect(insight?.messageParams.lowClass).toBe('Beta');
     });
 
     it('does not flag divergence with only one class', () => {
@@ -351,10 +354,12 @@ describe('getInsights', () => {
             good('b', 'Full', 80, { c1: 80, c2: 80 }),
         ];
         const insights = getInsights(results, [c1, c2]);
-        expect(insights.filter((i) => i.kind === 'struggling').some((i) => i.message.includes('Empty'))).toBe(false);
-        expect(insights.filter((i) => i.kind === 'weak_criterion').some((i) => i.message.includes('Empty'))).toBe(
+        expect(insights.filter((i) => i.kind === 'struggling').some((i) => i.messageParams.className === 'Empty')).toBe(
             false
         );
+        expect(
+            insights.filter((i) => i.kind === 'weak_criterion').some((i) => i.messageParams.className === 'Empty')
+        ).toBe(false);
     });
 
     it('produces exactly one divergence insight (worst-case criterion only)', () => {

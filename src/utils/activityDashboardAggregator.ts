@@ -1,18 +1,15 @@
-import type { Rubric, Test, EssayAssignment, Student, StudentRubric, StudentTest, Class } from '../types';
-
-export type ActivityKind = 'rubric' | 'test' | 'essay';
-
-export interface ActivityRow {
-    kind: ActivityKind;
-    id: string; // rubricId, testId, or teacherKey
-    name: string;
-}
-
-export interface CellData {
-    submittedCount: number;
-    totalStudents: number;
-    isLinked: boolean; // rubric in Class.rubricIds; essay has ≥1 assignment in this class
-}
+import type {
+    Rubric,
+    Test,
+    EssayAssignment,
+    Student,
+    StudentRubric,
+    StudentTest,
+    Class,
+    ActivityKind,
+    ActivityRow,
+    CellData,
+} from '../types';
 
 export function getActivityRows(rubrics: Rubric[], tests: Test[], essayAssignments: EssayAssignment[]): ActivityRow[] {
     const rubricRows: ActivityRow[] = rubrics.map((r) => ({ kind: 'rubric', id: r.id, name: r.name }));
@@ -45,7 +42,8 @@ export function buildDashboardMatrix(
     const matrix: Record<string, Record<string, CellData>> = {};
 
     for (const activity of activities) {
-        matrix[activity.id] = {};
+        const activityKey = `${activity.kind}:${activity.id}`;
+        matrix[activityKey] = {};
         for (const cls of classes) {
             const classStudents = students.filter((s) => s.classId === cls.id);
             const totalStudents = classStudents.length;
@@ -82,7 +80,7 @@ export function buildDashboardMatrix(
                 };
             }
 
-            matrix[activity.id][cls.id] = cell;
+            matrix[activityKey][cls.id] = cell;
         }
     }
 
