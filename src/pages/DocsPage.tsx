@@ -514,7 +514,7 @@ function GettingStartedTab() {
                 </Step>
                 <Step number={3} title="Add students">
                     Go to <strong>Students</strong>. Click <strong>+ Add Student</strong> and fill in their name. Group
-                    students into classes by setting the Class field. You can also import from a CSV or Magister.
+                    students into classes by setting the Class field. You can also import from a CSV or a Magister export — the importer auto-detects Dutch column names and, if "Update existing students" is checked, will update matching records instead of creating duplicates.
                 </Step>
                 <Step number={4} title="Grade a student">
                     Open any rubric from the Rubrics page. Click the student's name to open the grading view. Click each
@@ -1090,7 +1090,8 @@ function DataTab() {
                         'Database tab — configure Supabase connection, push/pull data, manage sharing.',
                         'Integrations tab — Standards API key, Cambridge Dictionary API key.',
                         'Data tab — anonymise student data, bulk delete, compliance tools.',
-                        'Retention tab — set automatic data retention policies.',
+                        'Retention tab — set automatic data retention policies per school.',
+                        'Audit Log tab — filterable, paginated log of role changes, grade saves, exports, and auth events; admins see all entries, teachers see their own. Entries are retained for 3 years (admin), 1 year (grade), 1 month (export/auth) then automatically purged.',
                     ]}
                 />
             </FeatureSection>

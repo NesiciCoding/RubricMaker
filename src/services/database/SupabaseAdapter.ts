@@ -43,7 +43,7 @@ export class SupabaseAdapter {
                     const profile = await this.fetchMyProfile();
                     const resolved = profile
                         ? { ...profile, email: profile.email ?? s.user.email ?? undefined }
-                        : { id: s.user.id, email: s.user.email, role: 'user' as const };
+                        : { id: s.user.id, email: s.user.email, role: 'teacher' as const };
                     this.onAuthChange(resolved);
                 } else {
                     this.onAuthChange(null);
@@ -219,7 +219,7 @@ export class SupabaseAdapter {
             id: data.id,
             email: data.email ?? undefined,
             displayName: data.display_name ?? undefined,
-            role: (data.role as 'admin' | 'user' | 'student') ?? 'user',
+            role: (data.role as 'admin' | 'teacher' | 'student') ?? 'teacher',
         };
     }
 
@@ -243,11 +243,11 @@ export class SupabaseAdapter {
             id: p.id,
             email: p.email ?? undefined,
             displayName: p.display_name ?? undefined,
-            role: (p.role as 'admin' | 'user' | 'student') ?? 'user',
+            role: (p.role as 'admin' | 'teacher' | 'student') ?? 'teacher',
         }));
     }
 
-    async updateUserRole(userId: string, role: 'admin' | 'user' | 'student'): Promise<SyncResult> {
+    async updateUserRole(userId: string, role: 'admin' | 'teacher' | 'student'): Promise<SyncResult> {
         if (!this.client) return { success: false, error: 'Not connected' };
         const { error } = await this.client.from('profiles').update({ role }).eq('id', userId);
         return error ? { success: false, error: error.message } : { success: true };
@@ -357,7 +357,7 @@ export class SupabaseAdapter {
                 id: p?.id ?? m.profile_id,
                 email: p?.email ?? undefined,
                 displayName: p?.display_name ?? undefined,
-                role: (p?.role ?? 'user') as 'admin' | 'user' | 'student',
+                role: (p?.role ?? 'teacher') as 'admin' | 'teacher' | 'student',
                 joinedAt: m.created_at,
             };
         });
@@ -402,7 +402,7 @@ export class SupabaseAdapter {
             id: data.id,
             email: data.email ?? undefined,
             displayName: data.display_name ?? undefined,
-            role: (data.role as 'admin' | 'user' | 'student') ?? 'user',
+            role: (data.role as 'admin' | 'teacher' | 'student') ?? 'teacher',
             schoolId: data.school_id ?? undefined,
         };
     }

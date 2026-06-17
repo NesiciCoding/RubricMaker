@@ -29,17 +29,22 @@ import {
     UserMinus,
     Plug,
     Search,
+    ScrollText,
+    Filter,
+    Archive,
+    RotateCcw,
 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { loadSupabaseConfig, storageSync } from '../services/database';
+import { logAuditEvent } from '../services/database/AuditLogger';
 import LoginButtons from '../components/auth/LoginButtons';
 import type { DbUser } from '../services/database/types';
 import type { School as SchoolType, RubricShare, ClassMember } from '../types';
 
-type Tab = 'users' | 'schools' | 'database' | 'integrations' | 'data' | 'retention';
+type Tab = 'users' | 'schools' | 'database' | 'integrations' | 'data' | 'retention' | 'audit' | 'archive';
 
 // ─── Users tab ───────────────────────────────────────────────────────────────
 
@@ -75,7 +80,7 @@ function UsersTab() {
         };
     }, [fetchAllUsers, dbStatus.isConnected]);
 
-    async function handleRoleChange(userId: string, newRole: 'admin' | 'user' | 'student') {
+    async function handleRoleChange(userId: string, newRole: 'admin' | 'teacher' | 'student') {
         setSaving(userId);
         const result = await updateUserRole(userId, newRole);
         if (result.success) {
@@ -140,11 +145,11 @@ function UsersTab() {
                                         value={u.role}
                                         disabled={u.id === currentUserId}
                                         onChange={(e) =>
-                                            handleRoleChange(u.id, e.target.value as 'admin' | 'user' | 'student')
+                                            handleRoleChange(u.id, e.target.value as 'admin' | 'teacher' | 'student')
                                         }
                                     >
                                         <option value="admin">{t('admin.role_admin')}</option>
-                                        <option value="user">{t('admin.role_user')}</option>
+                                        <option value="teacher">{t('admin.role_teacher')}</option>
                                         <option value="student">{t('admin.role_student')}</option>
                                     </select>
                                 )}
@@ -199,6 +204,7 @@ function SchoolsTab() {
         setCreating(true);
         const s = await createSchool(newName.trim(), retention);
         if (s) {
+            logAuditEvent('admin', 'school_create', 'school', s.id);
             setNewName('');
             setNewRetention(3);
             await load();
@@ -210,12 +216,14 @@ function SchoolsTab() {
         const years = editRetention[schoolId];
         if (!years || !Number.isFinite(years) || years < 1 || years > 20) return;
         await updateSchool(schoolId, { retentionYears: Math.round(years) });
+        logAuditEvent('admin', 'school_update', 'school', schoolId, { retentionYears: Math.round(years) });
         await load();
     }
 
     async function handleDelete(schoolId: string) {
         if (!window.confirm(t('admin.btn_delete_confirm'))) return;
         await deleteSchool(schoolId);
+        logAuditEvent('admin', 'school_delete', 'school', schoolId);
         await load();
     }
 
@@ -1549,6 +1557,221 @@ function RetentionTab() {
     );
 }
 
+// ─── Audit tab ───────────────────────────────────────────────────────────────
+
+type AuditCategory = 'admin' | 'grade' | 'export' | 'auth';
+
+interface AuditRow {
+    id: string;
+    actor_id: string | null;
+    category: AuditCategory;
+    action: string;
+    entity_type: string | null;
+    entity_id: string | null;
+    details: Record<string, unknown> | null;
+    created_at: string;
+}
+
+const CATEGORY_COLORS: Record<AuditCategory, string> = {
+    admin: '#ef4444',
+    grade: '#3b82f6',
+    export: '#8b5cf6',
+    auth: '#f59e0b',
+};
+
+function AuditTab() {
+    const { t } = useTranslation();
+    const dbStatus = useDbStatus();
+    const [rows, setRows] = useState<AuditRow[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [category, setCategory] = useState<AuditCategory | 'all'>('all');
+    const [page, setPage] = useState(0);
+    const PAGE_SIZE = 50;
+
+    useEffect(() => {
+        if (!dbStatus.isConnected) { setLoading(false); return; }
+        setLoading(true);
+        const client = storageSync.adapter.getClient();
+        if (!client) { setLoading(false); return; }
+        let q = client
+            .from('audit_logs')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+        if (category !== 'all') q = q.eq('category', category);
+        q.then(({ data }) => {
+            setRows((data as AuditRow[]) ?? []);
+            setLoading(false);
+        });
+    }, [dbStatus.isConnected, category, page]);
+
+    function exportCsv() {
+        const header = ['timestamp', 'category', 'action', 'entity_type', 'entity_id', 'actor_id'];
+        const csv = [
+            header.join(','),
+            ...rows.map((r) =>
+                [r.created_at, r.category, r.action, r.entity_type ?? '', r.entity_id ?? '', r.actor_id ?? ''].join(',')
+            ),
+        ].join('\n');
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+        a.download = `audit_log_${new Date().toISOString().slice(0, 10)}.csv`;
+        a.click();
+    }
+
+    if (!dbStatus.isConnected) {
+        return <p style={{ color: 'var(--text-muted)' }}>{t('admin.db_required')}</p>;
+    }
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                <Filter size={14} style={{ color: 'var(--text-muted)' }} />
+                {(['all', 'admin', 'grade', 'export', 'auth'] as const).map((c) => (
+                    <button
+                        key={c}
+                        className={`btn btn-sm ${category === c ? 'btn-primary' : 'btn-ghost'}`}
+                        onClick={() => { setCategory(c); setPage(0); }}
+                    >
+                        {c === 'all' ? t('common.all') : c}
+                    </button>
+                ))}
+                <button className="btn btn-sm btn-ghost" onClick={exportCsv} style={{ marginLeft: 'auto' }}>
+                    <Download size={13} /> {t('common.export_csv')}
+                </button>
+            </div>
+
+            {loading ? (
+                <Loader size={20} className="spin" />
+            ) : rows.length === 0 ? (
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{t('admin.audit_empty')}</p>
+            ) : (
+                <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                        <thead>
+                            <tr style={{ borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+                                <th style={{ textAlign: 'left', padding: '6px 8px' }}>{t('admin.audit_col_time')}</th>
+                                <th style={{ textAlign: 'left', padding: '6px 8px' }}>{t('admin.audit_col_category')}</th>
+                                <th style={{ textAlign: 'left', padding: '6px 8px' }}>{t('admin.audit_col_action')}</th>
+                                <th style={{ textAlign: 'left', padding: '6px 8px' }}>{t('admin.audit_col_entity')}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {rows.map((r) => (
+                                <tr key={r.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                                    <td style={{ padding: '6px 8px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                                        {new Date(r.created_at).toLocaleString()}
+                                    </td>
+                                    <td style={{ padding: '6px 8px' }}>
+                                        <span style={{
+                                            background: `${CATEGORY_COLORS[r.category]}20`,
+                                            color: CATEGORY_COLORS[r.category],
+                                            border: `1px solid ${CATEGORY_COLORS[r.category]}40`,
+                                            borderRadius: 4,
+                                            padding: '1px 6px',
+                                            fontSize: '0.78rem',
+                                            fontWeight: 600,
+                                        }}>
+                                            {r.category}
+                                        </span>
+                                    </td>
+                                    <td style={{ padding: '6px 8px' }}>{r.action}</td>
+                                    <td style={{ padding: '6px 8px', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                                        {r.entity_type && `${r.entity_type}${r.entity_id ? ` / ${r.entity_id.slice(0, 8)}` : ''}`}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
+            {rows.length === PAGE_SIZE && (
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+                    {page > 0 && <button className="btn btn-sm btn-ghost" onClick={() => setPage((p) => p - 1)}>{t('common.prev')}</button>}
+                    <button className="btn btn-sm btn-ghost" onClick={() => setPage((p) => p + 1)}>{t('common.next')}</button>
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ─── Archive tab ─────────────────────────────────────────────────────────────
+
+function ArchiveTab() {
+    const { t } = useTranslation();
+    const { archivedStudents, restoreStudent, anonymizeStudent, classes } = useApp();
+
+    const classMap = new Map(classes.map((c) => [c.id, c.name]));
+
+    if (archivedStudents.length === 0) {
+        return (
+            <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
+                {t('admin.archive_empty')}
+            </div>
+        );
+    }
+
+    return (
+        <div>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: 16 }}>
+                {t('admin.archive_desc')}
+            </p>
+            <table className="data-table">
+                <thead>
+                    <tr>
+                        <th>{t('admin.audit_col_time')}</th>
+                        <th>{t('admin.col_name')}</th>
+                        <th>{t('admin.col_class')}</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {archivedStudents.map((s) => (
+                        <tr key={s.id}>
+                            <td style={{ color: 'var(--text-muted)', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
+                                {s.archivedAt ? new Date(s.archivedAt).toLocaleDateString() : '—'}
+                            </td>
+                            <td>
+                                <span style={{ fontWeight: 500 }}>{s.name}</span>
+                                {s.anonymizedAt && (
+                                    <span style={{ marginLeft: 6, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                        ({t('admin.anonymized_badge')})
+                                    </span>
+                                )}
+                            </td>
+                            <td style={{ color: 'var(--text-muted)' }}>{classMap.get(s.classId) ?? '—'}</td>
+                            <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                                {!s.anonymizedAt && (
+                                    <>
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            onClick={() => restoreStudent(s.id)}
+                                            title={t('admin.btn_restore')}
+                                        >
+                                            <RotateCcw size={14} /> {t('admin.btn_restore')}
+                                        </button>
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            style={{ color: 'var(--red, #ef4444)' }}
+                                            onClick={() => {
+                                                if (window.confirm(t('admin.anonymize_confirm'))) anonymizeStudent(s.id);
+                                            }}
+                                            title={t('admin.anonymize_btn')}
+                                        >
+                                            <UserMinus size={14} /> {t('admin.anonymize_btn')}
+                                        </button>
+                                    </>
+                                )}
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+}
+
 // ─── Admin page ───────────────────────────────────────────────────────────────
 
 export default function AdminPage() {
@@ -1562,6 +1785,8 @@ export default function AdminPage() {
         { id: 'integrations', label: t('admin.tab_integrations'), Icon: Plug },
         { id: 'data', label: t('admin.tab_data'), Icon: Clock },
         { id: 'retention', label: t('admin.tab_retention'), Icon: Clock },
+        { id: 'audit', label: t('admin.tab_audit'), Icon: ScrollText },
+        { id: 'archive', label: t('admin.tab_archive'), Icon: Archive },
     ];
 
     return (
@@ -1610,6 +1835,8 @@ export default function AdminPage() {
                 {tab === 'integrations' && <IntegrationsTab />}
                 {tab === 'data' && <DataTab />}
                 {tab === 'retention' && <RetentionTab />}
+                {tab === 'audit' && <AuditTab />}
+                {tab === 'archive' && <ArchiveTab />}
             </div>
         </>
     );

@@ -81,6 +81,7 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 - [Observability on a HestiaCP subdomain](docs/OBSERVABILITY_HESTIACP.md) — Loki/Promtail/Grafana behind a dedicated HTTPS subdomain
 - [Grafana dashboards](docs/OBSERVABILITY_DASHBOARDS.md) — what the provisioned dashboards show and how to customize them
 - [Magister integration](docs/MAGISTER_INTEGRATION.md) — importing students from Magister SIS
+- [Self-hosting operations](docs/SELF_HOSTING_OPS.md) — backup/restore, upgrades, resource sizing, pg_cron setup, troubleshooting
 
 ---
 

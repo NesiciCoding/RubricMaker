@@ -1235,7 +1235,7 @@ select.input-error {
     border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
-.role-badge-user {
+.role-badge-teacher {
     background: color-mix(in srgb, var(--green) 15%, transparent);
     color: var(--green);
     border: 1px solid color-mix(in srgb, var(--green) 35%, transparent);

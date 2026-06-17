@@ -21,14 +21,20 @@ vi.mock('papaparse', () => ({
 }));
 
 const mockAddStudent = vi.fn();
+const mockUpdateStudent = vi.fn();
+const mockDeleteStudent = vi.fn();
 const mockAddClass = vi.fn((c: { name: string }) => ({ id: `class-${c.name.toLowerCase()}`, name: c.name }));
 let mockClasses: { id: string; name: string }[] = [{ id: 'class-1', name: 'Class A' }];
+let mockStudents: { id: string; name: string; email?: string; classId: string }[] = [];
 
 vi.mock('../../../context/AppContext', () => ({
     useApp: () => ({
         addStudent: mockAddStudent,
+        updateStudent: mockUpdateStudent,
+        deleteStudent: mockDeleteStudent,
         addClass: mockAddClass,
         classes: mockClasses,
+        students: mockStudents,
     }),
 }));
 
@@ -42,6 +48,8 @@ describe('CsvImportModal', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockClasses = [{ id: 'class-1', name: 'Class A' }];
+        mockStudents = [];
+        mockDeleteStudent.mockReset();
         parseImpl = (_file, opts) => {
             opts.complete({ data: [{ Name: 'Alice Anderson', Email: 'alice@school.com', Class: 'Class A' }] });
         };
@@ -147,6 +155,8 @@ describe('CsvImportModal', () => {
             classId: 'class-1',
         });
         expect(mockAddClass).not.toHaveBeenCalled();
+        // Summary is shown; click Done to trigger onSuccess
+        fireEvent.click(screen.getByRole('button', { name: /done/i }));
         expect(baseProps.onSuccess).toHaveBeenCalled();
     });
 
@@ -193,6 +203,8 @@ describe('CsvImportModal', () => {
         render(<CsvImportModal {...baseProps} />);
         fireEvent.click(screen.getByRole('button', { name: /import 1 student/i }));
         expect(mockAddStudent).not.toHaveBeenCalled();
+        // Summary is shown; click Done to trigger onSuccess
+        fireEvent.click(screen.getByRole('button', { name: /done/i }));
         expect(baseProps.onSuccess).toHaveBeenCalled();
     });
 
@@ -220,5 +232,39 @@ describe('CsvImportModal', () => {
         fireEvent.click(screen.getByRole('button', { name: /close/i }));
         fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
         expect(baseProps.onClose).toHaveBeenCalledTimes(2);
+    });
+
+    it('transfers a student to a new class when matched by email', () => {
+        mockClasses = [
+            { id: 'class-1', name: 'Class A' },
+            { id: 'class-2', name: 'Class B' },
+        ];
+        mockStudents = [{ id: 'student-1', name: 'Alice Anderson', email: 'alice@school.com', classId: 'class-1' }];
+        parseImpl = (_file, opts) =>
+            opts.complete({ data: [{ Name: 'Alice Anderson', Email: 'alice@school.com', Class: 'Class B' }] });
+        render(<CsvImportModal {...baseProps} />);
+        fireEvent.click(screen.getByRole('button', { name: /import 1 student/i }));
+        expect(mockUpdateStudent).toHaveBeenCalledWith(
+            expect.objectContaining({ id: 'student-1', classId: 'class-2' })
+        );
+        expect(mockAddStudent).not.toHaveBeenCalled();
+        expect(screen.getByText(/moved between classes/i)).toBeInTheDocument();
+    });
+
+    it('removes unmatched students from imported classes when sync mode is enabled', () => {
+        mockClasses = [{ id: 'class-1', name: 'Class A' }];
+        mockStudents = [
+            { id: 'student-1', name: 'Alice Anderson', email: 'alice@school.com', classId: 'class-1' },
+            { id: 'student-2', name: 'Bob Brown', email: '', classId: 'class-1' },
+        ];
+        parseImpl = (_file, opts) =>
+            opts.complete({ data: [{ Name: 'Alice Anderson', Email: 'alice@school.com', Class: 'Class A' }] });
+        render(<CsvImportModal {...baseProps} />);
+        const syncCheckbox = screen.getByRole('checkbox');
+        fireEvent.click(syncCheckbox);
+        fireEvent.click(screen.getByRole('button', { name: /import 1 student/i }));
+        expect(mockDeleteStudent).toHaveBeenCalledWith('student-2');
+        expect(mockDeleteStudent).not.toHaveBeenCalledWith('student-1');
+        expect(screen.getByText(/1 removed/i)).toBeInTheDocument();
     });
 });

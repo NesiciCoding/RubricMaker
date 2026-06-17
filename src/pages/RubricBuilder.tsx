@@ -60,6 +60,7 @@ import VocabularyListEditor from '../components/Vocabulary/VocabularyListEditor'
 import { CEFR_LEVELS, CEFR_SKILLS, CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
 import { exportRubricGridPdf } from '../utils/pdfExport';
 import { exportRubricToDocx } from '../utils/docxExport';
+import { logAuditEvent } from '../services/database/AuditLogger';
 import { getSpeakingDimensions } from '../data/speakingDimensions';
 import { useToast } from '../hooks/useToast';
 
@@ -289,8 +290,10 @@ export default function RubricBuilder() {
         const rubric = getRubricData();
         if (type === 'pdf') {
             await exportRubricGridPdf(rubric);
+            logAuditEvent('export', 'export_pdf', 'rubric', rubric.id);
         } else if (type === 'docx') {
             await exportRubricToDocx(rubric);
+            logAuditEvent('export', 'export_docx', 'rubric', rubric.id);
         } else {
             const json = JSON.stringify(rubric, null, 2);
             const blob = new Blob([json], { type: 'application/json' });

@@ -21,7 +21,7 @@ export default function OnboardingPage() {
         useApp();
 
     const [step, setStep] = useState<Step>('role');
-    const [role, setRole] = useState<RoleChoice>('user');
+    const [role, setRole] = useState<RoleChoice>('teacher');
     const [schoolAction, setSchoolAction] = useState<SchoolAction>('create');
     const [schoolName, setSchoolName] = useState('');
     const [retentionYears, setRetentionYears] = useState(3);
@@ -148,8 +148,8 @@ export default function OnboardingPage() {
                                 {t('onboarding.step_role')}
                             </h2>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                                {(['user', 'admin', 'student'] as RoleChoice[]).map((r) => {
-                                    const labelKey = r === 'user' ? 'teacher' : r === 'admin' ? 'admin' : 'student';
+                                {(['teacher', 'admin', 'student'] as RoleChoice[]).map((r) => {
+                                    const labelKey = r === 'teacher' ? 'teacher' : r === 'admin' ? 'admin' : 'student';
                                     return (
                                         <button
                                             key={r}

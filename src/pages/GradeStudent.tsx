@@ -34,6 +34,7 @@ import TiptapEditor, { type TiptapEditorHandle } from '../components/Editor/Tipt
 import type { ScoreEntry, Modifier, EssayAssignment } from '../types';
 import { calcGradeSummary } from '../utils/gradeCalc';
 import { exportSinglePdf } from '../utils/pdfExport';
+import { logAuditEvent } from '../services/database/AuditLogger';
 import { loadSupabaseConfig } from '../services/database';
 
 export default function GradeStudent() {
@@ -384,6 +385,7 @@ export default function GradeStudent() {
     const handleExportPdf = async () => {
         if (!sr || !rubric || !student) return;
         await exportSinglePdf(sr, rubric, student, scale, { orientation: rubric.format.orientation });
+        logAuditEvent('export', 'export_pdf', 'rubric', rubric.id);
     };
 
     const fmt = rubric.format;

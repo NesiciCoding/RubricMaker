@@ -386,6 +386,8 @@ export interface Student {
     classId: string;
     /** ISO timestamp set when PII was anonymized; presence means the record is anonymized. */
     anonymizedAt?: string;
+    /** ISO timestamp set when the student was soft-deleted; presence means archived (pending anonymization). */
+    archivedAt?: string;
     /** ISO timestamp of the last local edit; used for last-write-wins sync conflict resolution */
     updatedAt?: string;
 }
@@ -463,7 +465,7 @@ export interface CommentSnippet {
 }
 
 /** Role controlling which settings a user can access */
-export type UserRole = 'admin' | 'user' | 'student';
+export type UserRole = 'admin' | 'teacher' | 'student';
 
 export interface School {
     id: string;

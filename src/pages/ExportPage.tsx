@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { logAuditEvent } from '../services/database/AuditLogger';
 import {
     Download,
     CheckSquare,
@@ -107,6 +108,7 @@ export default function ExportPage() {
                     await exportSinglePdf(sr, rubric, student, scale, {
                         orientation: orientation || rubric.format.orientation || 'portrait',
                     });
+                    logAuditEvent('export', 'export_pdf', 'rubric', rubric.id, { count: 1 });
                 }
             } else {
                 const toExport = gradedStudents
@@ -117,6 +119,7 @@ export default function ExportPage() {
                     padForDoubleSided,
                     orientation: orientation || rubric.format.orientation || 'portrait',
                 });
+                logAuditEvent('export', 'export_pdf', 'rubric', rubric.id, { count: toExport.length });
             }
         } catch {
             showToast(t('toast.export_error'), 'error');
@@ -134,6 +137,7 @@ export default function ExportPage() {
                 .map((x) => ({ sr: x.sr, student: x.student! }));
             const { exportBatchDocx } = await import('../utils/docxExport');
             await exportBatchDocx(toExport, rubric, scale);
+            logAuditEvent('export', 'export_docx', 'rubric', rubric.id, { count: toExport.length });
         } catch {
             showToast(t('toast.export_error'), 'error');
         } finally {
@@ -152,6 +156,7 @@ export default function ExportPage() {
                 const { exportRubricToDocx } = await import('../utils/docxExport');
                 await exportRubricToDocx(rubric);
             }
+            logAuditEvent('export', 'export_docx', 'rubric', rubric.id, { template: !!activeTemplate });
         } catch {
             showToast(t('toast.export_error'), 'error');
         } finally {
@@ -219,6 +224,7 @@ export default function ExportPage() {
         a.download = `${rubric.name.replace(/[^a-z0-9]/gi, '_')}_grades.csv`;
         a.click();
         URL.revokeObjectURL(url);
+        logAuditEvent('export', 'export_csv', 'rubric', rubric.id, { count: toExport.length });
     }
 
     function handleBulkMarkNHI() {

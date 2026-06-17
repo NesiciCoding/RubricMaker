@@ -45,10 +45,10 @@ const ROLE_META: Record<UserRole, { label: string; icon: React.ReactNode; badgeC
         badgeClass: 'role-badge-admin',
         description: 'Full access to all settings including database, integrations, and backup/restore.',
     },
-    user: {
+    teacher: {
         label: 'Teacher',
         icon: <User size={13} />,
-        badgeClass: 'role-badge-user',
+        badgeClass: 'role-badge-teacher',
         description: 'Access to teaching tools: grade scales, comment bank, templates, and display settings.',
     },
     student: {
@@ -92,7 +92,7 @@ export default function SettingsPage() {
     // ─── Role state ─────────────────────────────────────────────────────────────
     const role: UserRole = settings.userRole ?? 'admin';
     const isAdmin = role === 'admin';
-    const isUserPlus = role === 'admin' || role === 'user'; // teaching features
+    const isUserPlus = role === 'admin' || role === 'teacher'; // teaching features
 
     const [activeTab, setActiveTab] = useState<Tab>('general');
 
@@ -390,7 +390,7 @@ export default function SettingsPage() {
                             </p>
 
                             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                                {(['admin', 'user', 'student'] as UserRole[]).map((r) => (
+                                {(['admin', 'teacher', 'student'] as UserRole[]).map((r) => (
                                     <button
                                         key={r}
                                         className={`btn btn-sm ${role === r ? 'btn-primary' : 'btn-ghost'}`}
@@ -398,7 +398,7 @@ export default function SettingsPage() {
                                         style={{ display: 'flex', alignItems: 'center', gap: 6 }}
                                     >
                                         {r === 'admin' && <Shield size={13} aria-hidden="true" />}
-                                        {r === 'user' && <User size={13} aria-hidden="true" />}
+                                        {r === 'teacher' && <User size={13} aria-hidden="true" />}
                                         {r === 'student' && <GraduationCap size={13} aria-hidden="true" />}
                                         {ROLE_META[r].label}
                                         {r === 'admin' && settings.adminPin && role !== 'admin' && (
@@ -1484,7 +1484,7 @@ export default function SettingsPage() {
                                         <h3 style={{ margin: 0 }}>Role Reference</h3>
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                                        {(['admin', 'user', 'student'] as UserRole[]).map((r) => (
+                                        {(['admin', 'teacher', 'student'] as UserRole[]).map((r) => (
                                             <div
                                                 key={r}
                                                 style={{
