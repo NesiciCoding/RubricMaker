@@ -47,6 +47,9 @@ test.describe('CSV student import', () => {
         const dialog = appPage.getByRole('dialog');
         await dialog.getByRole('button', { name: /import 2 students/i }).click();
 
+        // Dismiss the import summary and close the modal
+        await dialog.getByRole('button', { name: /done/i }).click();
+
         // Select the imported class in the sidebar to make its students visible
         await appPage.locator('.nav-item').filter({ hasText: 'Year 3B' }).click();
 
