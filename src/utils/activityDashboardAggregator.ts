@@ -55,33 +55,36 @@ export function buildDashboardMatrix(
             const totalStudents = classStudents.length;
             const studentIds = new Set(classStudents.map((s) => s.id));
 
-            let submittedCount = 0;
-            let isLinked = false;
-
+            let cell: CellData;
             if (activity.kind === 'rubric') {
-                isLinked = (cls.rubricIds ?? []).includes(activity.id);
-                submittedCount = studentRubrics.filter(
-                    (sr) => sr.rubricId === activity.id && studentIds.has(sr.studentId)
-                ).length;
+                cell = {
+                    isLinked: (cls.rubricIds ?? []).includes(activity.id),
+                    submittedCount: studentRubrics.filter(
+                        (sr) => sr.rubricId === activity.id && studentIds.has(sr.studentId)
+                    ).length,
+                    totalStudents,
+                };
             } else if (activity.kind === 'test') {
-                submittedCount = studentTests.filter(
-                    (st) =>
-                        st.testId === activity.id &&
-                        studentIds.has(st.studentId) &&
-                        (st.status === 'submitted' || st.status === 'graded')
-                ).length;
-                isLinked = studentTests.some(
-                    (st) => st.testId === activity.id && studentIds.has(st.studentId)
-                );
+                cell = {
+                    submittedCount: studentTests.filter(
+                        (st) =>
+                            st.testId === activity.id &&
+                            studentIds.has(st.studentId) &&
+                            (st.status === 'submitted' || st.status === 'graded')
+                    ).length,
+                    isLinked: studentTests.some(
+                        (st) => st.testId === activity.id && studentIds.has(st.studentId)
+                    ),
+                    totalStudents,
+                };
             } else {
                 const classAssignments = essayAssignments.filter(
                     (a) => a.teacherKey === activity.id && studentIds.has(a.studentId)
                 );
-                submittedCount = classAssignments.length;
-                isLinked = classAssignments.length > 0;
+                cell = { submittedCount: classAssignments.length, isLinked: classAssignments.length > 0, totalStudents };
             }
 
-            matrix[activity.id][cls.id] = { submittedCount, totalStudents, isLinked };
+            matrix[activity.id][cls.id] = cell;
         }
     }
 
