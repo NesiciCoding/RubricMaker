@@ -11,6 +11,12 @@ export function initAuditLogger(supabaseClient: SupabaseClient, userId: string):
     actorId = userId;
 }
 
+/** Clear the logger on sign-out to prevent stale actor attribution. */
+export function clearAuditLogger(): void {
+    client = null;
+    actorId = null;
+}
+
 /** Fire-and-forget audit event. Never throws; silently no-ops when offline. */
 export function logAuditEvent(
     category: AuditCategory,
@@ -20,12 +26,22 @@ export function logAuditEvent(
     details?: Record<string, unknown>
 ): void {
     if (!client || !actorId) return;
-    void client.from('audit_logs').insert({
-        actor_id: actorId,
-        category,
-        action,
-        entity_type: entityType ?? null,
-        entity_id: entityId ?? null,
-        details: details ?? null,
-    });
+    void client
+        .from('audit_logs')
+        .insert({
+            actor_id: actorId,
+            category,
+            action,
+            entity_type: entityType ?? null,
+            entity_id: entityId ?? null,
+            details: details ?? null,
+        })
+        .then(
+            ({ error }) => {
+                if (error) console.warn('[audit] insert failed', error.message);
+            },
+            (err: unknown) => {
+                console.warn('[audit] insert error', err);
+            }
+        );
 }

@@ -90,7 +90,9 @@ export default function SettingsPage() {
     const dbStatus = useDbStatus();
 
     // ─── Role state ─────────────────────────────────────────────────────────────
-    const role: UserRole = settings.userRole ?? 'admin';
+    // Normalize legacy 'user' role stored before the teacher rename migration.
+    const rawRole = settings.userRole ?? 'admin';
+    const role: UserRole = (rawRole as string) === 'user' ? 'teacher' : rawRole;
     const isAdmin = role === 'admin';
     const isUserPlus = role === 'admin' || role === 'teacher'; // teaching features
 

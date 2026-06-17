@@ -303,6 +303,7 @@ export default function RubricBuilder() {
             a.download = `${rubric.name.replace(/[^a-z0-9]/gi, '_')}.json`;
             a.click();
             setTimeout(() => URL.revokeObjectURL(url), 100);
+            logAuditEvent('export', 'export_json', 'rubric', rubric.id);
         }
     };
 

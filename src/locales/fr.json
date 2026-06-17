@@ -1613,5 +1613,12 @@
         "csv_column_source": "Source",
         "csv_source_rubric": "Vocabulaire de la grille",
         "csv_source_analysis": "Analyse de document"
+    },
+    "csv": {
+        "summary_created": "créé(s)",
+        "summary_updated": "mis à jour",
+        "summary_transferred": "transféré(s) dans une autre classe",
+        "summary_removed": "supprimé(s)",
+        "sync_label": "Synchroniser les listes de classe (supprimer les élèves absents de ce CSV)"
     }
 }

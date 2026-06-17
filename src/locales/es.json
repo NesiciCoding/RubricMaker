@@ -1613,5 +1613,12 @@
         "csv_column_source": "Fuente",
         "csv_source_rubric": "Vocabulario de la rúbrica",
         "csv_source_analysis": "Análisis de documento"
+    },
+    "csv": {
+        "summary_created": "creado(s)",
+        "summary_updated": "actualizado(s)",
+        "summary_transferred": "transferido(s) a otra clase",
+        "summary_removed": "eliminado(s)",
+        "sync_label": "Sincronizar listas de clase (eliminar alumnos no incluidos en este CSV)"
     }
 }

@@ -3,9 +3,17 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import CsvImportModal from '../CsvImportModal';
 
+const CSV_TRANSLATIONS: Record<string, string> = {
+    'csv.summary_created': 'created',
+    'csv.summary_updated': 'updated',
+    'csv.summary_transferred': 'moved between classes',
+    'csv.summary_removed': 'removed',
+    'csv.sync_label': 'Sync class rosters (remove students not in this CSV)',
+};
+
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
-        t: (key: string) => key,
+        t: (key: string) => CSV_TRANSLATIONS[key] ?? key,
         i18n: { language: 'en', changeLanguage: vi.fn() },
     }),
 }));

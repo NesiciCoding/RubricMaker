@@ -293,6 +293,7 @@ export default function ExportPage() {
             });
 
             await exportPeriodReportsBatch(inputs);
+            logAuditEvent('export', 'export_period_report', 'class', reportClassId, { count: inputs.length });
             showToast(t('exportPage.period_report_success', { count: inputs.length }), 'success');
         } catch {
             showToast(t('toast.export_error'), 'error');

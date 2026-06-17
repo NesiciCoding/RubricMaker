@@ -1613,5 +1613,12 @@
         "csv_column_source": "Bron",
         "csv_source_rubric": "Rubriekwoordenschat",
         "csv_source_analysis": "Documentanalyse"
+    },
+    "csv": {
+        "summary_created": "aangemaakt",
+        "summary_updated": "bijgewerkt",
+        "summary_transferred": "verplaatst naar andere klas",
+        "summary_removed": "verwijderd",
+        "sync_label": "Klassenlijsten synchroniseren (studenten niet in deze CSV verwijderen)"
     }
 }

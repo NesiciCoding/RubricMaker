@@ -1613,5 +1613,12 @@
         "csv_column_source": "Quelle",
         "csv_source_rubric": "Rubrik-Wortschatz",
         "csv_source_analysis": "Dokumentanalyse"
+    },
+    "csv": {
+        "summary_created": "erstellt",
+        "summary_updated": "aktualisiert",
+        "summary_transferred": "in andere Klasse verschoben",
+        "summary_removed": "entfernt",
+        "sync_label": "Klassenlisten synchronisieren (Schüler nicht in dieser CSV entfernen)"
     }
 }

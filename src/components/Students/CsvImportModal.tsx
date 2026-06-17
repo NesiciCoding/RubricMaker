@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import Papa from 'papaparse';
 import { Upload, CheckCircle, X, AlertTriangle, Table } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
@@ -19,6 +20,7 @@ type ColumnMap = {
 };
 
 export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
+    const { t } = useTranslation();
     const { addStudent, addClass, updateStudent, deleteStudent, classes, students } = useApp();
     const [parsedData, setParsedData] = useState<any[]>([]);
     const [headers, setHeaders] = useState<string[]>([]);
@@ -154,11 +156,11 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                     (s) =>
                         !processedIds.has(s.id) &&
                         s.classId === targetClassId &&
-                        s.name.toLowerCase().trim() === nameLower,
+                        s.name.toLowerCase().trim() === nameLower
                 ) ??
                 (email
                     ? students.find(
-                          (s) => !processedIds.has(s.id) && s.email?.toLowerCase().trim() === email.toLowerCase(),
+                          (s) => !processedIds.has(s.id) && s.email?.toLowerCase().trim() === email.toLowerCase()
                       )
                     : undefined);
 
@@ -377,20 +379,22 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                         {summary.created > 0 && (
                             <span style={{ color: 'var(--green)', fontWeight: 600 }}>
                                 <CheckCircle size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />
-                                {summary.created} created
+                                {summary.created} {t('csv.summary_created')}
                             </span>
                         )}
                         {summary.updated > 0 && (
-                            <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{summary.updated} updated</span>
+                            <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
+                                {summary.updated} {t('csv.summary_updated')}
+                            </span>
                         )}
                         {summary.transferred > 0 && (
                             <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
-                                {summary.transferred} moved between classes
+                                {summary.transferred} {t('csv.summary_transferred')}
                             </span>
                         )}
                         {summary.removed > 0 && (
                             <span style={{ color: 'var(--red, #ef4444)', fontWeight: 600 }}>
-                                {summary.removed} removed
+                                {summary.removed} {t('csv.summary_removed')}
                             </span>
                         )}
                     </div>
@@ -415,7 +419,7 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                             }}
                         >
                             <input type="checkbox" checked={syncMode} onChange={(e) => setSyncMode(e.target.checked)} />
-                            Sync class rosters (remove students not in this CSV)
+                            {t('csv.sync_label')}
                         </label>
                         <button className="btn btn-secondary" onClick={onClose}>
                             Cancel

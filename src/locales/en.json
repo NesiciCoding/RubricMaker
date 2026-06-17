@@ -1613,5 +1613,12 @@
         "csv_column_source": "Source",
         "csv_source_rubric": "Rubric vocabulary",
         "csv_source_analysis": "Document analysis"
+    },
+    "csv": {
+        "summary_created": "created",
+        "summary_updated": "updated",
+        "summary_transferred": "moved between classes",
+        "summary_removed": "removed",
+        "sync_label": "Sync class rosters (remove students not in this CSV)"
     }
 }

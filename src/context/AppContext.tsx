@@ -71,7 +71,7 @@ import {
     setLoggerContext,
     STRESS_TEST_LOGGING_ENABLED,
 } from '../services/logging/clientLogger';
-import { initAuditLogger, logAuditEvent } from '../services/database/AuditLogger';
+import { initAuditLogger, clearAuditLogger, logAuditEvent } from '../services/database/AuditLogger';
 
 // ─── Actions ───────────────────────────────────────────────────────────────────
 
@@ -925,6 +925,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const userId = storageSync.getCurrentUserId();
         const client = storageSync.adapter.getClient();
         if (client && userId) initAuditLogger(client, userId);
+        else clearAuditLogger();
 
         if (!STRESS_TEST_LOGGING_ENABLED) return;
         const ctx = {
@@ -934,7 +935,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         };
         if (client) initClientLogger(client, ctx);
         else setLoggerContext(ctx);
-    }, [state.settings.userRole, state.settings.schoolId]);
+    }, [state.settings.userRole, state.settings.schoolId, landingState]);
 
     // ── Re-hydrate from Supabase when the network comes back online ──────────────
     useEffect(() => {
@@ -1057,6 +1058,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'DELETE_STUDENT', id });
     }, []);
     const restoreStudent = useCallback((id: string) => {
+        logAuditEvent('admin', 'student_restore', 'student', id);
         dispatch({ type: 'RESTORE_STUDENT', id });
     }, []);
 

@@ -1605,10 +1605,17 @@ function AuditTab() {
             .order('created_at', { ascending: false })
             .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
         if (category !== 'all') q = q.eq('category', category);
-        q.then(({ data }) => {
-            setRows((data as AuditRow[]) ?? []);
-            setLoading(false);
-        });
+        void q.then(
+            ({ data, error }) => {
+                if (error) console.warn('[audit] fetch failed', error.message);
+                setRows((data as AuditRow[]) ?? []);
+                setLoading(false);
+            },
+            (err: unknown) => {
+                console.warn('[audit] fetch error', err);
+                setLoading(false);
+            }
+        );
     }, [dbStatus.isConnected, category, page]);
 
     function exportCsv() {
@@ -1702,16 +1709,18 @@ function AuditTab() {
                 </div>
             )}
 
-            {rows.length === PAGE_SIZE && (
+            {(page > 0 || rows.length === PAGE_SIZE) && (
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
                     {page > 0 && (
                         <button className="btn btn-sm btn-ghost" onClick={() => setPage((p) => p - 1)}>
                             {t('common.prev')}
                         </button>
                     )}
-                    <button className="btn btn-sm btn-ghost" onClick={() => setPage((p) => p + 1)}>
-                        {t('common.next')}
-                    </button>
+                    {rows.length === PAGE_SIZE && (
+                        <button className="btn btn-sm btn-ghost" onClick={() => setPage((p) => p + 1)}>
+                            {t('common.next')}
+                        </button>
+                    )}
                 </div>
             )}
         </div>
