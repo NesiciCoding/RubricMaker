@@ -1386,6 +1386,10 @@
         "audit_empty": "Nog geen auditgebeurtenissen geregistreerd.",
         "audit_col_time": "Tijdstip",
         "audit_col_category": "Categorie",
+        "audit_category_admin": "Beheer",
+        "audit_category_grade": "Beoordeling",
+        "audit_category_export": "Export",
+        "audit_category_auth": "Auth",
         "audit_col_action": "Actie",
         "audit_col_entity": "Entiteit",
         "users_title": "Gebruikersbeheer",
@@ -1619,6 +1623,10 @@
         "summary_updated": "bijgewerkt",
         "summary_transferred": "verplaatst naar andere klas",
         "summary_removed": "verwijderd",
-        "sync_label": "Klassenlijsten synchroniseren (studenten niet in deze CSV verwijderen)"
+        "sync_label": "Klassenlijsten synchroniseren (studenten niet in deze CSV verwijderen)",
+        "done": "Klaar",
+        "cancel": "Annuleren",
+        "import_btn_one": "{{count}} leerling importeren",
+        "import_btn_other": "{{count}} leerlingen importeren"
     }
 }

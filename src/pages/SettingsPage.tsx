@@ -38,6 +38,14 @@ type Tab = 'general' | 'teaching' | 'administration';
 
 // ─── Role helpers ──────────────────────────────────────────────────────────────
 
+const VALID_ROLES = new Set<string>(['admin', 'teacher', 'student']);
+
+function normalizeStoredRole(raw: string | undefined): UserRole {
+    if (raw === 'user') return 'teacher';
+    if (raw && VALID_ROLES.has(raw)) return raw as UserRole;
+    return 'admin';
+}
+
 const ROLE_META: Record<UserRole, { label: string; icon: React.ReactNode; badgeClass: string; description: string }> = {
     admin: {
         label: 'Administrator',
@@ -90,9 +98,7 @@ export default function SettingsPage() {
     const dbStatus = useDbStatus();
 
     // ─── Role state ─────────────────────────────────────────────────────────────
-    // Normalize legacy 'user' role stored before the teacher rename migration.
-    const rawRole = settings.userRole ?? 'admin';
-    const role: UserRole = (rawRole as string) === 'user' ? 'teacher' : rawRole;
+    const role = normalizeStoredRole(settings.userRole);
     const isAdmin = role === 'admin';
     const isUserPlus = role === 'admin' || role === 'teacher'; // teaching features
 

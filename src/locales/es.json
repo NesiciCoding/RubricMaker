@@ -1388,6 +1388,10 @@
         "audit_col_category": "Categoría",
         "audit_col_action": "Acción",
         "audit_col_entity": "Entidad",
+        "audit_category_admin": "Admin",
+        "audit_category_grade": "Calificación",
+        "audit_category_export": "Exportar",
+        "audit_category_auth": "Auth",
         "users_title": "Gestión de Usuarios",
         "users_loading": "Cargando usuarios…",
         "users_empty": "No se encontraron usuarios.",
@@ -1619,6 +1623,10 @@
         "summary_updated": "actualizado(s)",
         "summary_transferred": "transferido(s) a otra clase",
         "summary_removed": "eliminado(s)",
-        "sync_label": "Sincronizar listas de clase (eliminar alumnos no incluidos en este CSV)"
+        "sync_label": "Sincronizar listas de clase (eliminar alumnos no incluidos en este CSV)",
+        "done": "Hecho",
+        "cancel": "Cancelar",
+        "import_btn_one": "Importar {{count}} alumno",
+        "import_btn_other": "Importar {{count}} alumnos"
     }
 }

@@ -42,7 +42,7 @@ import { loadSupabaseConfig, storageSync } from '../services/database';
 import { logAuditEvent } from '../services/database/AuditLogger';
 import LoginButtons from '../components/auth/LoginButtons';
 import type { DbUser } from '../services/database/types';
-import type { School as SchoolType, RubricShare, ClassMember } from '../types';
+import type { School as SchoolType, RubricShare, ClassMember, AuditCategory, AuditRow } from '../types';
 
 type Tab = 'users' | 'schools' | 'database' | 'integrations' | 'data' | 'retention' | 'audit' | 'archive';
 
@@ -1559,19 +1559,6 @@ function RetentionTab() {
 
 // ─── Audit tab ───────────────────────────────────────────────────────────────
 
-type AuditCategory = 'admin' | 'grade' | 'export' | 'auth';
-
-interface AuditRow {
-    id: string;
-    actor_id: string | null;
-    category: AuditCategory;
-    action: string;
-    entity_type: string | null;
-    entity_id: string | null;
-    details: Record<string, unknown> | null;
-    created_at: string;
-}
-
 const CATEGORY_COLORS: Record<AuditCategory, string> = {
     admin: '#ef4444',
     grade: '#3b82f6',
@@ -1599,6 +1586,7 @@ function AuditTab() {
             setLoading(false);
             return;
         }
+        let cancelled = false;
         let q = client
             .from('audit_logs')
             .select('*')
@@ -1607,15 +1595,20 @@ function AuditTab() {
         if (category !== 'all') q = q.eq('category', category);
         void q.then(
             ({ data, error }) => {
+                if (cancelled) return;
                 if (error) console.warn('[audit] fetch failed', error.message);
                 setRows((data as AuditRow[]) ?? []);
                 setLoading(false);
             },
             (err: unknown) => {
+                if (cancelled) return;
                 console.warn('[audit] fetch error', err);
                 setLoading(false);
             }
         );
+        return () => {
+            cancelled = true;
+        };
     }, [dbStatus.isConnected, category, page]);
 
     function exportCsv() {
@@ -1649,7 +1642,7 @@ function AuditTab() {
                             setPage(0);
                         }}
                     >
-                        {c === 'all' ? t('common.all') : c}
+                        {c === 'all' ? t('common.all') : t(`admin.audit_category_${c}`)}
                     </button>
                 ))}
                 <button className="btn btn-sm btn-ghost" onClick={exportCsv} style={{ marginLeft: 'auto' }}>
@@ -1694,7 +1687,7 @@ function AuditTab() {
                                                 fontWeight: 600,
                                             }}
                                         >
-                                            {r.category}
+                                            {t(`admin.audit_category_${r.category}`)}
                                         </span>
                                     </td>
                                     <td style={{ padding: '6px 8px' }}>{r.action}</td>

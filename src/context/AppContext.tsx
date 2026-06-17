@@ -31,6 +31,7 @@ import type {
     EssayTemplate,
     Test,
     StudentTest,
+    UserRole,
 } from '../types';
 import {
     loadStore,
@@ -670,7 +671,7 @@ interface AppContextValue extends StoreData {
     pullFromDatabase: () => Promise<void>;
     // User / profile management
     fetchAllUsers: () => Promise<DbUser[]>;
-    updateUserRole: (userId: string, role: 'admin' | 'teacher' | 'student') => Promise<SyncResult>;
+    updateUserRole: (userId: string, role: UserRole) => Promise<SyncResult>;
     updateMyProfile: (updates: { displayName?: string }) => Promise<SyncResult>;
     // Schools (cloud-only — no-op in offline mode)
     fetchSchools: () => Promise<Awaited<ReturnType<typeof storageSync.fetchSchools>>>;
@@ -1315,6 +1316,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
             if (ok) {
                 saveSupabaseConfig(config);
                 storageSync.setToastFn(showToast);
+                const _userId = storageSync.getCurrentUserId();
+                const _client = storageSync.adapter.getClient();
+                if (_client && _userId) initAuditLogger(_client, _userId);
                 const { data: fresh, error: hydrateError } = await storageSync.hydrate();
                 if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
                 if (fresh) {
@@ -1356,7 +1360,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const updateUserRole = useCallback(
-        async (userId: string, role: 'admin' | 'teacher' | 'student'): Promise<SyncResult> => {
+        async (userId: string, role: UserRole): Promise<SyncResult> => {
             const result = await storageSync.updateUserRole(userId, role);
             if (result.success) {
                 logAuditEvent('admin', 'role_change', 'user', userId, { role });
@@ -1432,6 +1436,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const signOutFromDatabase = useCallback(async () => {
         await storageSync.signOut();
+        clearAuditLogger();
         if (localStorage.getItem(LOCAL_MODE_KEY) !== 'true') {
             setLandingState('show');
         }

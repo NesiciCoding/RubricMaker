@@ -404,7 +404,7 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
             <div className="modal-footer">
                 {summary ? (
                     <button className="btn btn-primary" onClick={onSuccess}>
-                        Done
+                        {t('csv.done')}
                     </button>
                 ) : (
                     <>
@@ -422,12 +422,11 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                             {t('csv.sync_label')}
                         </label>
                         <button className="btn btn-secondary" onClick={onClose}>
-                            Cancel
+                            {t('csv.cancel')}
                         </button>
                         {!error && headers.length > 0 && (
                             <button className="btn btn-primary" disabled={!hasNameMapping} onClick={handleImport}>
-                                <CheckCircle size={15} /> Import {parsedData.length} Student
-                                {parsedData.length !== 1 ? 's' : ''}
+                                <CheckCircle size={15} /> {t('csv.import_btn', { count: parsedData.length })}
                             </button>
                         )}
                     </>

@@ -9,11 +9,18 @@ const CSV_TRANSLATIONS: Record<string, string> = {
     'csv.summary_transferred': 'moved between classes',
     'csv.summary_removed': 'removed',
     'csv.sync_label': 'Sync class rosters (remove students not in this CSV)',
+    'csv.done': 'Done',
+    'csv.cancel': 'Cancel',
 };
 
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
-        t: (key: string) => CSV_TRANSLATIONS[key] ?? key,
+        t: (key: string, opts?: { count?: number }) => {
+            if (key === 'csv.import_btn') {
+                return `Import ${opts?.count ?? 0} Student${(opts?.count ?? 0) !== 1 ? 's' : ''}`;
+            }
+            return CSV_TRANSLATIONS[key] ?? key;
+        },
         i18n: { language: 'en', changeLanguage: vi.fn() },
     }),
 }));

@@ -882,3 +882,18 @@ export interface EssaySubmission {
     /** Proctoring events captured while the student wrote this essay */
     events?: ProctorEvent[];
 }
+
+// ─── Audit log ───────────────────────────────────────────────────────────────
+
+export type AuditCategory = 'admin' | 'grade' | 'export' | 'auth';
+
+export interface AuditRow {
+    id: string;
+    actor_id: string | null;
+    category: AuditCategory;
+    action: string;
+    entity_type: string | null;
+    entity_id: string | null;
+    details: Record<string, unknown> | null;
+    created_at: string;
+}
