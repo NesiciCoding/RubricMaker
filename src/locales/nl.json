@@ -37,7 +37,11 @@
         "language": "Taal",
         "toggle_theme": "Thema wisselen",
         "print": "Afdrukken",
-        "view": "Bekijken"
+        "view": "Bekijken",
+        "all": "Alles",
+        "export_csv": "Exporteer CSV",
+        "prev": "Vorige",
+        "next": "Volgende"
     },
     "sidebar": {
         "main_section": "Hoofdmenu",
@@ -176,7 +180,14 @@
         "sharing_no_users": "Geen andere gebruikers gevonden. Zorg dat collega's zich minimaal één keer hebben aangemeld.",
         "notify_students_title": "Leerlingmeldingen",
         "notify_on_grade_label": "Leerlingen informeren bij een beoordeling",
-        "notify_on_grade_help": "Stuurt een e-mail naar de leerling wanneer je een beoordeling opslaat. Vereist dat SMTP is geconfigureerd in je Supabase-project."
+        "notify_on_grade_help": "Stuurt een e-mail naar de leerling wanneer je een beoordeling opslaat. Vereist dat SMTP is geconfigureerd in je Supabase-project.",
+        "role_admin_label": "Beheerder",
+        "role_admin_description": "Volledige toegang tot alle instellingen, inclusief database, integraties en back-up/herstel.",
+        "role_teacher_label": "Leraar",
+        "role_teacher_description": "Toegang tot lestools: beoordelingsschalen, opmerkingenbank, sjablonen en weergave-instellingen.",
+        "role_student_label": "Leerling",
+        "role_student_description": "Toegang tot weergavevoorkeuren en taal.",
+        "role_changed_to": "Rol gewijzigd naar {{role}}"
     },
     "navigation": {
         "dashboard": "Dashboard",
@@ -1373,6 +1384,21 @@
         "tab_integrations": "Integraties",
         "tab_data": "Gegevens",
         "tab_retention": "Retentie",
+        "tab_audit": "Auditlog",
+        "tab_archive": "Archief",
+        "archive_empty": "Geen gearchiveerde leerlingen.",
+        "archive_desc": "Gearchiveerde leerlingen zijn verwijderd uit klassenlijsten, maar hun cijfers blijven bewaard. Anonimiseer om persoonlijke gegevens te wissen.",
+        "col_class": "Klas",
+        "btn_restore": "Herstellen",
+        "audit_empty": "Nog geen auditgebeurtenissen geregistreerd.",
+        "audit_col_time": "Tijdstip",
+        "audit_col_category": "Categorie",
+        "audit_category_admin": "Beheer",
+        "audit_category_grade": "Beoordeling",
+        "audit_category_export": "Export",
+        "audit_category_auth": "Auth",
+        "audit_col_action": "Actie",
+        "audit_col_entity": "Entiteit",
         "users_title": "Gebruikersbeheer",
         "users_loading": "Gebruikers laden…",
         "users_empty": "Geen gebruikers gevonden.",
@@ -1380,7 +1406,7 @@
         "col_name": "Naam",
         "col_role": "Rol",
         "role_admin": "Beheerder",
-        "role_user": "Docent",
+        "role_teacher": "Docent",
         "role_student": "Leerling",
         "role_saving": "Opslaan…",
         "schools_title": "Scholen",
@@ -1598,5 +1624,16 @@
         "csv_column_source": "Bron",
         "csv_source_rubric": "Rubriekwoordenschat",
         "csv_source_analysis": "Documentanalyse"
+    },
+    "csv": {
+        "summary_created": "aangemaakt",
+        "summary_updated": "bijgewerkt",
+        "summary_transferred": "verplaatst naar andere klas",
+        "summary_removed": "verwijderd",
+        "sync_label": "Klassenlijsten synchroniseren (studenten niet in deze CSV verwijderen)",
+        "done": "Klaar",
+        "cancel": "Annuleren",
+        "import_btn_one": "{{count}} leerling importeren",
+        "import_btn_other": "{{count}} leerlingen importeren"
     }
 }

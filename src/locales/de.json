@@ -37,7 +37,11 @@
         "back": "Zurück",
         "close": "Schließen",
         "print": "Drucken",
-        "view": "Ansehen"
+        "view": "Ansehen",
+        "all": "Alle",
+        "export_csv": "CSV exportieren",
+        "prev": "Zurück",
+        "next": "Weiter"
     },
     "sidebar": {
         "main_section": "Hauptmenü",
@@ -176,7 +180,14 @@
         "optional": "Optional",
         "notify_students_title": "Schülerbenachrichtigungen",
         "notify_on_grade_label": "Schüler bei Bewertung benachrichtigen",
-        "notify_on_grade_help": "Sendet eine E-Mail an den Schüler, wenn Sie eine Bewertung speichern. Erfordert eine SMTP-Konfiguration in Ihrem Supabase-Projekt."
+        "notify_on_grade_help": "Sendet eine E-Mail an den Schüler, wenn Sie eine Bewertung speichern. Erfordert eine SMTP-Konfiguration in Ihrem Supabase-Projekt.",
+        "role_admin_label": "Administrator",
+        "role_admin_description": "Vollständiger Zugriff auf alle Einstellungen inkl. Datenbank, Integrationen und Backup/Wiederherstellung.",
+        "role_teacher_label": "Lehrer",
+        "role_teacher_description": "Zugriff auf Lehrmittel: Beurteilungsskalen, Kommentarbank, Vorlagen und Anzeigeeinstellungen.",
+        "role_student_label": "Schüler",
+        "role_student_description": "Zugriff nur auf Anzeigeeinstellungen und Sprache.",
+        "role_changed_to": "Rolle geändert zu {{role}}"
     },
     "navigation": {
         "dashboard": "Dashboard",
@@ -1444,6 +1455,21 @@
         "tab_integrations": "Integrationen",
         "tab_data": "Daten",
         "tab_retention": "Aufbewahrung",
+        "tab_audit": "Prüfprotokoll",
+        "tab_archive": "Archiv",
+        "archive_empty": "Keine archivierten Schüler.",
+        "archive_desc": "Archivierte Schüler werden aus den Klassenlisten entfernt, ihre Noten bleiben jedoch erhalten. Anonymisieren, um personenbezogene Daten zu löschen.",
+        "col_class": "Klasse",
+        "btn_restore": "Wiederherstellen",
+        "audit_empty": "Noch keine Audit-Ereignisse aufgezeichnet.",
+        "audit_col_time": "Zeitpunkt",
+        "audit_col_category": "Kategorie",
+        "audit_col_action": "Aktion",
+        "audit_col_entity": "Entität",
+        "audit_category_admin": "Admin",
+        "audit_category_grade": "Bewertung",
+        "audit_category_export": "Export",
+        "audit_category_auth": "Auth",
         "users_title": "Benutzerverwaltung",
         "users_loading": "Benutzer werden geladen…",
         "users_empty": "Keine Benutzer gefunden.",
@@ -1451,7 +1477,7 @@
         "col_name": "Name",
         "col_role": "Rolle",
         "role_admin": "Admin",
-        "role_user": "Lehrer",
+        "role_teacher": "Lehrer",
         "role_student": "Schüler",
         "role_saving": "Speichern…",
         "schools_title": "Schulen",
@@ -1598,5 +1624,16 @@
         "csv_column_source": "Quelle",
         "csv_source_rubric": "Rubrik-Wortschatz",
         "csv_source_analysis": "Dokumentanalyse"
+    },
+    "csv": {
+        "summary_created": "erstellt",
+        "summary_updated": "aktualisiert",
+        "summary_transferred": "in andere Klasse verschoben",
+        "summary_removed": "entfernt",
+        "sync_label": "Klassenlisten synchronisieren (Schüler nicht in dieser CSV entfernen)",
+        "done": "Fertig",
+        "cancel": "Abbrechen",
+        "import_btn_one": "{{count}} Schüler importieren",
+        "import_btn_other": "{{count}} Schüler importieren"
     }
 }

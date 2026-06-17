@@ -37,7 +37,11 @@
         "language": "Language",
         "toggle_theme": "Toggle theme",
         "print": "Print",
-        "view": "View"
+        "view": "View",
+        "all": "All",
+        "export_csv": "Export CSV",
+        "prev": "Previous",
+        "next": "Next"
     },
     "sidebar": {
         "main_section": "Main",
@@ -176,7 +180,14 @@
         "sharing_no_users": "No other users found. Make sure colleagues have signed in at least once.",
         "notify_students_title": "Student Notifications",
         "notify_on_grade_label": "Notify students when graded",
-        "notify_on_grade_help": "Sends an email to the student when you save a grade. Requires SMTP to be configured in your Supabase project."
+        "notify_on_grade_help": "Sends an email to the student when you save a grade. Requires SMTP to be configured in your Supabase project.",
+        "role_admin_label": "Administrator",
+        "role_admin_description": "Full access to all settings including database, integrations, and backup/restore.",
+        "role_teacher_label": "Teacher",
+        "role_teacher_description": "Access to teaching tools: grade scales, comment bank, templates, and display settings.",
+        "role_student_label": "Student",
+        "role_student_description": "Access to display preferences and language only.",
+        "role_changed_to": "Role changed to {{role}}"
     },
     "navigation": {
         "dashboard": "Dashboard",
@@ -1373,6 +1384,21 @@
         "tab_integrations": "Integrations",
         "tab_data": "Data",
         "tab_retention": "Retention",
+        "tab_audit": "Audit Log",
+        "tab_archive": "Archive",
+        "archive_empty": "No archived students.",
+        "archive_desc": "Archived students are removed from class rosters but their grades are preserved. Anonymize to erase personal data.",
+        "col_class": "Class",
+        "btn_restore": "Restore",
+        "audit_empty": "No audit events recorded yet.",
+        "audit_col_time": "Time",
+        "audit_col_category": "Category",
+        "audit_col_action": "Action",
+        "audit_col_entity": "Entity",
+        "audit_category_admin": "Admin",
+        "audit_category_grade": "Grade",
+        "audit_category_export": "Export",
+        "audit_category_auth": "Auth",
         "users_title": "User Management",
         "users_loading": "Loading users…",
         "users_empty": "No users found.",
@@ -1380,7 +1406,7 @@
         "col_name": "Name",
         "col_role": "Role",
         "role_admin": "Admin",
-        "role_user": "Teacher",
+        "role_teacher": "Teacher",
         "role_student": "Student",
         "role_saving": "Saving…",
         "schools_title": "Schools",
@@ -1598,5 +1624,16 @@
         "csv_column_source": "Source",
         "csv_source_rubric": "Rubric vocabulary",
         "csv_source_analysis": "Document analysis"
+    },
+    "csv": {
+        "summary_created": "created",
+        "summary_updated": "updated",
+        "summary_transferred": "moved between classes",
+        "summary_removed": "removed",
+        "sync_label": "Sync class rosters (remove students not in this CSV)",
+        "done": "Done",
+        "cancel": "Cancel",
+        "import_btn_one": "Import {{count}} Student",
+        "import_btn_other": "Import {{count}} Students"
     }
 }

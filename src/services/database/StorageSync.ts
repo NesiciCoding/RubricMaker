@@ -262,7 +262,7 @@ class StorageSyncService {
         return this.adapter.fetchAllProfiles();
     }
 
-    async updateUserRole(userId: string, role: 'admin' | 'user' | 'student'): Promise<SyncResult> {
+    async updateUserRole(userId: string, role: 'admin' | 'teacher' | 'student'): Promise<SyncResult> {
         return this.adapter.updateUserRole(userId, role);
     }
 

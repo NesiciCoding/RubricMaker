@@ -31,6 +31,7 @@ import type {
     EssayTemplate,
     Test,
     StudentTest,
+    UserRole,
 } from '../types';
 import {
     loadStore,
@@ -71,6 +72,7 @@ import {
     setLoggerContext,
     STRESS_TEST_LOGGING_ENABLED,
 } from '../services/logging/clientLogger';
+import { initAuditLogger, clearAuditLogger, logAuditEvent } from '../services/database/AuditLogger';
 
 // ─── Actions ───────────────────────────────────────────────────────────────────
 
@@ -82,6 +84,7 @@ type Action =
     | { type: 'ADD_STUDENT'; payload: Student }
     | { type: 'UPDATE_STUDENT'; payload: Student }
     | { type: 'DELETE_STUDENT'; id: string }
+    | { type: 'RESTORE_STUDENT'; id: string }
     | { type: 'ADD_CLASS'; payload: Class }
     | { type: 'UPDATE_CLASS'; payload: Class }
     | { type: 'DELETE_CLASS'; id: string }
@@ -177,7 +180,18 @@ function reducer(state: StoreData, action: Action): StoreData {
             return { ...state, students: next };
         }
         case 'DELETE_STUDENT': {
-            const next = state.students.filter((s) => s.id !== action.id);
+            const next = state.students.map((s) =>
+                s.id === action.id
+                    ? { ...s, archivedAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+                    : s
+            );
+            saveStudents(next);
+            return { ...state, students: next };
+        }
+        case 'RESTORE_STUDENT': {
+            const next = state.students.map((s) =>
+                s.id === action.id ? { ...s, archivedAt: undefined, updatedAt: new Date().toISOString() } : s
+            );
             saveStudents(next);
             return { ...state, students: next };
         }
@@ -586,6 +600,8 @@ interface AppContextValue extends StoreData {
     addStudent: (s: Omit<Student, 'id'>) => Student;
     updateStudent: (s: Student) => void;
     deleteStudent: (id: string) => void;
+    restoreStudent: (id: string) => void;
+    archivedStudents: Student[];
     addClass: (c: Omit<Class, 'id'>) => Class;
     updateClass: (c: Class) => void;
     deleteClass: (id: string, deleteStudents?: boolean) => void;
@@ -655,7 +671,7 @@ interface AppContextValue extends StoreData {
     pullFromDatabase: () => Promise<void>;
     // User / profile management
     fetchAllUsers: () => Promise<DbUser[]>;
-    updateUserRole: (userId: string, role: 'admin' | 'user' | 'student') => Promise<SyncResult>;
+    updateUserRole: (userId: string, role: UserRole) => Promise<SyncResult>;
     updateMyProfile: (updates: { displayName?: string }) => Promise<SyncResult>;
     // Schools (cloud-only — no-op in offline mode)
     fetchSchools: () => Promise<Awaited<ReturnType<typeof storageSync.fetchSchools>>>;
@@ -907,18 +923,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // ── Stress-test logging: keep context/destination in sync with auth + role ───
+    // ── Stress-test logging + audit logger: keep in sync with auth + role ────────
     useEffect(() => {
+        const userId = storageSync.getCurrentUserId();
+        const client = storageSync.adapter.getClient();
+        if (client && userId) initAuditLogger(client, userId);
+        else clearAuditLogger();
+
         if (!STRESS_TEST_LOGGING_ENABLED) return;
         const ctx = {
             role: state.settings.userRole,
             schoolId: state.settings.schoolId,
-            userId: storageSync.getCurrentUserId() ?? undefined,
+            userId: userId ?? undefined,
         };
-        const client = storageSync.adapter.getClient();
         if (client) initClientLogger(client, ctx);
         else setLoggerContext(ctx);
-    }, [state.settings.userRole, state.settings.schoolId]);
+    }, [state.settings.userRole, state.settings.schoolId, landingState]);
 
     // ── Re-hydrate from Supabase when the network comes back online ──────────────
     useEffect(() => {
@@ -1024,6 +1044,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const updateRubric = useCallback((r: Rubric) => {
         dispatch({ type: 'UPDATE_RUBRIC', payload: { ...r, updatedAt: new Date().toISOString() } });
+        logAuditEvent('grade', 'rubric_edit', 'rubric', r.id);
     }, []);
 
     const deleteRubric = useCallback((id: string) => dispatch({ type: 'DELETE_RUBRIC', id }), []);
@@ -1035,7 +1056,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const updateStudent = useCallback((s: Student) => dispatch({ type: 'UPDATE_STUDENT', payload: s }), []);
-    const deleteStudent = useCallback((id: string) => dispatch({ type: 'DELETE_STUDENT', id }), []);
+    const deleteStudent = useCallback((id: string) => {
+        logAuditEvent('admin', 'student_delete', 'student', id);
+        dispatch({ type: 'DELETE_STUDENT', id });
+    }, []);
+    const restoreStudent = useCallback((id: string) => {
+        logAuditEvent('admin', 'student_restore', 'student', id);
+        dispatch({ type: 'RESTORE_STUDENT', id });
+    }, []);
 
     const addClass = useCallback((c: Omit<Class, 'id'>): Class => {
         const cls: Class = { ...c, id: nanoid() };
@@ -1076,6 +1104,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     );
 
     const saveStudentRubricFn = useCallback((sr: StudentRubric) => {
+        logAuditEvent('grade', 'grade_save', 'student_rubric', sr.id, {
+            rubricId: sr.rubricId,
+            studentId: sr.studentId,
+        });
         dispatch({ type: 'SAVE_STUDENT_RUBRIC', payload: sr });
     }, []);
 
@@ -1286,6 +1318,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
             if (ok) {
                 saveSupabaseConfig(config);
                 storageSync.setToastFn(showToast);
+                const _userId = storageSync.getCurrentUserId();
+                const _client = storageSync.adapter.getClient();
+                if (_client && _userId) initAuditLogger(_client, _userId);
                 const { data: fresh, error: hydrateError } = await storageSync.hydrate();
                 if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
                 if (fresh) {
@@ -1305,6 +1340,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     );
 
     const disconnectDatabase = useCallback(() => {
+        clearAuditLogger();
         storageSync.disconnect();
     }, []);
 
@@ -1326,17 +1362,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return storageSync.fetchAllProfiles();
     }, []);
 
-    const updateUserRole = useCallback(
-        async (userId: string, role: 'admin' | 'user' | 'student'): Promise<SyncResult> => {
-            const result = await storageSync.updateUserRole(userId, role);
-            // If the role change affected the current user, sync it to local settings
-            if (result.success && userId === storageSync.getCurrentUserId()) {
+    const updateUserRole = useCallback(async (userId: string, role: UserRole): Promise<SyncResult> => {
+        const result = await storageSync.updateUserRole(userId, role);
+        if (result.success) {
+            logAuditEvent('admin', 'role_change', 'user', userId, { role });
+            if (userId === storageSync.getCurrentUserId()) {
                 dispatch({ type: 'UPDATE_SETTINGS', payload: { userRole: role } });
             }
-            return result;
-        },
-        []
-    );
+        }
+        return result;
+    }, []);
 
     const updateMyProfile = useCallback(async (updates: { displayName?: string }): Promise<SyncResult> => {
         return storageSync.updateMyProfile(updates);
@@ -1401,6 +1436,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const signOutFromDatabase = useCallback(async () => {
         await storageSync.signOut();
+        clearAuditLogger();
         if (localStorage.getItem(LOCAL_MODE_KEY) !== 'true') {
             setLandingState('show');
         }
@@ -1457,6 +1493,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const anonymizeStudent = useCallback(
         (id: string) => {
             const original = state.students.find((s) => s.id === id);
+            logAuditEvent('admin', 'student_anonymize', 'student', id);
             dispatch({ type: 'ANONYMIZE_STUDENT', id });
             if (original) {
                 const anonymized = {
@@ -1474,6 +1511,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const value: AppContextValue = {
         ...state,
+        students: state.students.filter((s) => !s.archivedAt),
+        archivedStudents: state.students.filter((s) => !!s.archivedAt),
         dispatch,
         addRubric,
         updateRubric,
@@ -1481,6 +1520,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         addStudent,
         updateStudent,
         deleteStudent,
+        restoreStudent,
         addClass,
         updateClass,
         deleteClass,

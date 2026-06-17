@@ -18,7 +18,10 @@ import CsvImportModal from '../Students/CsvImportModal';
 
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
-        t: (key: string, fallback?: string) => fallback ?? key,
+        t: (key: string, opts?: Record<string, unknown> | string) => {
+            if (opts && typeof opts === 'object' && 'count' in opts) return `${key}:${opts.count}`;
+            return (typeof opts === 'string' ? opts : null) ?? key;
+        },
         i18n: { language: 'en' },
     }),
 }));

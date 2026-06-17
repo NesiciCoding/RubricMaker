@@ -23,6 +23,7 @@ import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import { calcGradeSummary } from '../utils/gradeCalc';
 import { exportSinglePdf } from '../utils/pdfExport';
+import { logAuditEvent } from '../services/database/AuditLogger';
 import { getStudentGoalScores } from '../utils/learningGoalsAggregator';
 import LearningGoalChart from '../components/Statistics/LearningGoalChart';
 import CefrProgressChart from '../components/Statistics/CefrProgressChart';
@@ -280,6 +281,7 @@ export default function StudentProfilePage() {
             await exportSinglePdf(h.sr, h.rubric, student, h.scale, {
                 orientation: h.rubric.format?.orientation || 'portrait',
             });
+            logAuditEvent('export', 'export_pdf', 'rubric', h.rubric.id);
         } finally {
             setExportingId(null);
         }

@@ -37,7 +37,11 @@
         "back": "Retour",
         "close": "Fermer",
         "print": "Imprimer",
-        "view": "Voir"
+        "view": "Voir",
+        "all": "Tout",
+        "export_csv": "Exporter CSV",
+        "prev": "Précédent",
+        "next": "Suivant"
     },
     "sidebar": {
         "main_section": "Principal",
@@ -176,7 +180,14 @@
         "optional": "Optionnel",
         "notify_students_title": "Notifications aux élèves",
         "notify_on_grade_label": "Notifier les élèves lors de la notation",
-        "notify_on_grade_help": "Envoie un e-mail à l'élève lorsque vous enregistrez une note. Nécessite une configuration SMTP dans votre projet Supabase."
+        "notify_on_grade_help": "Envoie un e-mail à l'élève lorsque vous enregistrez une note. Nécessite une configuration SMTP dans votre projet Supabase.",
+        "role_admin_label": "Administrateur",
+        "role_admin_description": "Accès complet à tous les paramètres : base de données, intégrations et sauvegarde/restauration.",
+        "role_teacher_label": "Enseignant",
+        "role_teacher_description": "Accès aux outils pédagogiques : barèmes, banque de commentaires, modèles et préférences d'affichage.",
+        "role_student_label": "Élève",
+        "role_student_description": "Accès aux préférences d'affichage et à la langue uniquement.",
+        "role_changed_to": "Rôle changé en {{role}}"
     },
     "navigation": {
         "dashboard": "Tableau de bord",
@@ -1444,6 +1455,21 @@
         "tab_integrations": "Intégrations",
         "tab_data": "Données",
         "tab_retention": "Conservation",
+        "tab_audit": "Journal d'audit",
+        "tab_archive": "Archiver",
+        "archive_empty": "Aucun élève archivé.",
+        "archive_desc": "Les élèves archivés sont retirés des listes de classe mais leurs notes sont conservées. Anonymisez pour effacer les données personnelles.",
+        "col_class": "Classe",
+        "btn_restore": "Restaurer",
+        "audit_empty": "Aucun événement d'audit enregistré.",
+        "audit_col_time": "Heure",
+        "audit_col_category": "Catégorie",
+        "audit_col_action": "Action",
+        "audit_col_entity": "Entité",
+        "audit_category_admin": "Admin",
+        "audit_category_grade": "Note",
+        "audit_category_export": "Export",
+        "audit_category_auth": "Auth",
         "users_title": "Gestion des utilisateurs",
         "users_loading": "Chargement des utilisateurs…",
         "users_empty": "Aucun utilisateur trouvé.",
@@ -1451,7 +1477,7 @@
         "col_name": "Nom",
         "col_role": "Rôle",
         "role_admin": "Admin",
-        "role_user": "Enseignant",
+        "role_teacher": "Enseignant",
         "role_student": "Élève",
         "role_saving": "Enregistrement…",
         "schools_title": "Établissements",
@@ -1598,5 +1624,16 @@
         "csv_column_source": "Source",
         "csv_source_rubric": "Vocabulaire de la grille",
         "csv_source_analysis": "Analyse de document"
+    },
+    "csv": {
+        "summary_created": "créé(s)",
+        "summary_updated": "mis à jour",
+        "summary_transferred": "transféré(s) dans une autre classe",
+        "summary_removed": "supprimé(s)",
+        "sync_label": "Synchroniser les listes de classe (supprimer les élèves absents de ce CSV)",
+        "done": "Terminer",
+        "cancel": "Annuler",
+        "import_btn_one": "Importer {{count}} élève",
+        "import_btn_other": "Importer {{count}} élèves"
     }
 }

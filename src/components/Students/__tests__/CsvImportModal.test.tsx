@@ -3,9 +3,24 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import CsvImportModal from '../CsvImportModal';
 
+const CSV_TRANSLATIONS: Record<string, string> = {
+    'csv.summary_created': 'created',
+    'csv.summary_updated': 'updated',
+    'csv.summary_transferred': 'moved between classes',
+    'csv.summary_removed': 'removed',
+    'csv.sync_label': 'Sync class rosters (remove students not in this CSV)',
+    'csv.done': 'Done',
+    'csv.cancel': 'Cancel',
+};
+
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
-        t: (key: string) => key,
+        t: (key: string, opts?: { count?: number }) => {
+            if (key === 'csv.import_btn') {
+                return `Import ${opts?.count ?? 0} Student${(opts?.count ?? 0) !== 1 ? 's' : ''}`;
+            }
+            return CSV_TRANSLATIONS[key] ?? key;
+        },
         i18n: { language: 'en', changeLanguage: vi.fn() },
     }),
 }));
@@ -21,14 +36,20 @@ vi.mock('papaparse', () => ({
 }));
 
 const mockAddStudent = vi.fn();
+const mockUpdateStudent = vi.fn();
+const mockDeleteStudent = vi.fn();
 const mockAddClass = vi.fn((c: { name: string }) => ({ id: `class-${c.name.toLowerCase()}`, name: c.name }));
 let mockClasses: { id: string; name: string }[] = [{ id: 'class-1', name: 'Class A' }];
+let mockStudents: { id: string; name: string; email?: string; classId: string }[] = [];
 
 vi.mock('../../../context/AppContext', () => ({
     useApp: () => ({
         addStudent: mockAddStudent,
+        updateStudent: mockUpdateStudent,
+        deleteStudent: mockDeleteStudent,
         addClass: mockAddClass,
         classes: mockClasses,
+        students: mockStudents,
     }),
 }));
 
@@ -42,6 +63,8 @@ describe('CsvImportModal', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockClasses = [{ id: 'class-1', name: 'Class A' }];
+        mockStudents = [];
+        mockDeleteStudent.mockReset();
         parseImpl = (_file, opts) => {
             opts.complete({ data: [{ Name: 'Alice Anderson', Email: 'alice@school.com', Class: 'Class A' }] });
         };
@@ -147,6 +170,8 @@ describe('CsvImportModal', () => {
             classId: 'class-1',
         });
         expect(mockAddClass).not.toHaveBeenCalled();
+        // Summary is shown; click Done to trigger onSuccess
+        fireEvent.click(screen.getByRole('button', { name: /done/i }));
         expect(baseProps.onSuccess).toHaveBeenCalled();
     });
 
@@ -193,6 +218,8 @@ describe('CsvImportModal', () => {
         render(<CsvImportModal {...baseProps} />);
         fireEvent.click(screen.getByRole('button', { name: /import 1 student/i }));
         expect(mockAddStudent).not.toHaveBeenCalled();
+        // Summary is shown; click Done to trigger onSuccess
+        fireEvent.click(screen.getByRole('button', { name: /done/i }));
         expect(baseProps.onSuccess).toHaveBeenCalled();
     });
 
@@ -220,5 +247,54 @@ describe('CsvImportModal', () => {
         fireEvent.click(screen.getByRole('button', { name: /close/i }));
         fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
         expect(baseProps.onClose).toHaveBeenCalledTimes(2);
+    });
+
+    it('transfers a student to a new class when matched by email', () => {
+        mockClasses = [
+            { id: 'class-1', name: 'Class A' },
+            { id: 'class-2', name: 'Class B' },
+        ];
+        mockStudents = [{ id: 'student-1', name: 'Alice Anderson', email: 'alice@school.com', classId: 'class-1' }];
+        parseImpl = (_file, opts) =>
+            opts.complete({ data: [{ Name: 'Alice Anderson', Email: 'alice@school.com', Class: 'Class B' }] });
+        render(<CsvImportModal {...baseProps} />);
+        fireEvent.click(screen.getByRole('button', { name: /import 1 student/i }));
+        expect(mockUpdateStudent).toHaveBeenCalledWith(
+            expect.objectContaining({ id: 'student-1', classId: 'class-2' })
+        );
+        expect(mockAddStudent).not.toHaveBeenCalled();
+        expect(screen.getByText(/moved between classes/i)).toBeInTheDocument();
+    });
+
+    it('does not double-update a student when the same email appears twice in the CSV', () => {
+        mockStudents = [{ id: 'student-1', name: 'Alice Anderson', email: 'alice@school.com', classId: 'class-1' }];
+        parseImpl = (_file, opts) =>
+            opts.complete({
+                data: [
+                    { Name: 'Alice Anderson', Email: 'alice@school.com', Class: 'Class A' },
+                    { Name: 'Alice A', Email: 'alice@school.com', Class: 'Class A' },
+                ],
+            });
+        render(<CsvImportModal {...baseProps} />);
+        fireEvent.click(screen.getByRole('button', { name: /import 2 students/i }));
+        expect(mockUpdateStudent).toHaveBeenCalledTimes(1);
+        expect(mockAddStudent).not.toHaveBeenCalled(); // second row is skipped (same email)
+    });
+
+    it('removes unmatched students from imported classes when sync mode is enabled', () => {
+        mockClasses = [{ id: 'class-1', name: 'Class A' }];
+        mockStudents = [
+            { id: 'student-1', name: 'Alice Anderson', email: 'alice@school.com', classId: 'class-1' },
+            { id: 'student-2', name: 'Bob Brown', email: '', classId: 'class-1' },
+        ];
+        parseImpl = (_file, opts) =>
+            opts.complete({ data: [{ Name: 'Alice Anderson', Email: 'alice@school.com', Class: 'Class A' }] });
+        render(<CsvImportModal {...baseProps} />);
+        const syncCheckbox = screen.getByRole('checkbox');
+        fireEvent.click(syncCheckbox);
+        fireEvent.click(screen.getByRole('button', { name: /import 1 student/i }));
+        expect(mockDeleteStudent).toHaveBeenCalledWith('student-2');
+        expect(mockDeleteStudent).not.toHaveBeenCalledWith('student-1');
+        expect(screen.getByText(/1 removed/i)).toBeInTheDocument();
     });
 });

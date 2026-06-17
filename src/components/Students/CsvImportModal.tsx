@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import Papa from 'papaparse';
 import { Upload, CheckCircle, X, AlertTriangle, Table } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
@@ -19,7 +20,8 @@ type ColumnMap = {
 };
 
 export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
-    const { addStudent, addClass, classes } = useApp();
+    const { t } = useTranslation();
+    const { addStudent, addClass, updateStudent, deleteStudent, classes, students } = useApp();
     const [parsedData, setParsedData] = useState<any[]>([]);
     const [headers, setHeaders] = useState<string[]>([]);
     const [mapping, setMapping] = useState<ColumnMap>({
@@ -29,6 +31,13 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
         email: '',
         className: '',
     });
+    const [syncMode, setSyncMode] = useState(false);
+    const [summary, setSummary] = useState<{
+        created: number;
+        updated: number;
+        transferred: number;
+        removed: number;
+    } | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
@@ -100,11 +109,17 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
     };
 
     const handleImport = () => {
-        // Cache existing classes by name for quick lookup
         const classMap = new Map<string, string>(); // name (lowercase) -> id
         classes.forEach((c) => classMap.set(c.name.toLowerCase().trim(), c.id));
-
         const defaultClassId = classes[0]?.id || '';
+
+        let created = 0;
+        let updated = 0;
+        let transferred = 0;
+        const matchedIds = new Set<string>();
+        const processedIds = new Set<string>();
+        const seenCsvKeys = new Set<string>(); // skip duplicate rows within one CSV import
+        const csvClassIds = new Set<string>();
 
         parsedData.forEach((row) => {
             let name: string;
@@ -115,33 +130,76 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                 const l = mapping.lastName && row[mapping.lastName] ? String(row[mapping.lastName]).trim() : '';
                 name = [f, l].filter(Boolean).join(' ');
             }
-
-            if (!name) return; // Skip rows without names
+            if (!name) return;
 
             const email = mapping.email && row[mapping.email] ? String(row[mapping.email]).trim() : '';
             const classNameToMap =
                 mapping.className && row[mapping.className] ? String(row[mapping.className]).trim() : '';
 
             let targetClassId: string = defaultClassId;
-
             if (classNameToMap) {
                 const lowerName = classNameToMap.toLowerCase();
                 if (classMap.has(lowerName)) {
                     targetClassId = classMap.get(lowerName) || '';
                 } else {
-                    // Create new class dynamically
                     const newClass = addClass({ name: classNameToMap });
                     classMap.set(lowerName, newClass.id);
                     targetClassId = newClass.id;
                 }
             }
+            if (!targetClassId) return;
+            csvClassIds.add(targetClassId);
 
-            if (targetClassId) {
-                addStudent({ name, email, classId: targetClassId });
+            // Skip duplicate CSV rows (same identity already processed in this import)
+            const nameLower = name.toLowerCase();
+            const emailLower = email.toLowerCase();
+            const csvKey = emailLower ? `email:${emailLower}` : `class:${targetClassId}|name:${nameLower}`;
+            if (seenCsvKeys.has(csvKey)) return;
+            seenCsvKeys.add(csvKey);
+
+            // Upsert: match by name+class first, then by email across all classes (enables class transfer)
+            const existing =
+                students.find(
+                    (s) =>
+                        !processedIds.has(s.id) &&
+                        s.classId === targetClassId &&
+                        s.name.toLowerCase().trim() === nameLower
+                ) ??
+                (emailLower
+                    ? students.find((s) => !processedIds.has(s.id) && s.email?.toLowerCase().trim() === emailLower)
+                    : undefined);
+
+            if (existing) {
+                const isTransfer = existing.classId !== targetClassId;
+                updateStudent({
+                    ...existing,
+                    name,
+                    email: email || existing.email,
+                    classId: targetClassId,
+                    updatedAt: new Date().toISOString(),
+                });
+                processedIds.add(existing.id);
+                matchedIds.add(existing.id);
+                if (isTransfer) transferred++;
+                else updated++;
+                return;
             }
+
+            addStudent({ name, email, classId: targetClassId });
+            created++;
         });
 
-        onSuccess();
+        let removed = 0;
+        if (syncMode) {
+            students
+                .filter((s) => csvClassIds.has(s.classId) && !matchedIds.has(s.id))
+                .forEach((s) => {
+                    deleteStudent(s.id);
+                    removed++;
+                });
+        }
+
+        setSummary({ created, updated, transferred, removed });
     };
 
     const hasNameMapping = mapping.fullName || (mapping.firstName && mapping.lastName);
@@ -320,14 +378,63 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                 )}
             </div>
 
+            {summary ? (
+                <div className="modal-body">
+                    <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+                        {summary.created > 0 && (
+                            <span style={{ color: 'var(--green)', fontWeight: 600 }}>
+                                <CheckCircle size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                                {summary.created} {t('csv.summary_created')}
+                            </span>
+                        )}
+                        {summary.updated > 0 && (
+                            <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
+                                {summary.updated} {t('csv.summary_updated')}
+                            </span>
+                        )}
+                        {summary.transferred > 0 && (
+                            <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
+                                {summary.transferred} {t('csv.summary_transferred')}
+                            </span>
+                        )}
+                        {summary.removed > 0 && (
+                            <span style={{ color: 'var(--red, #ef4444)', fontWeight: 600 }}>
+                                {summary.removed} {t('csv.summary_removed')}
+                            </span>
+                        )}
+                    </div>
+                </div>
+            ) : null}
+
             <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={onClose}>
-                    Cancel
-                </button>
-                {!error && headers.length > 0 && (
-                    <button className="btn btn-primary" disabled={!hasNameMapping} onClick={handleImport}>
-                        <CheckCircle size={15} /> Import {parsedData.length} Student{parsedData.length !== 1 ? 's' : ''}
+                {summary ? (
+                    <button className="btn btn-primary" onClick={onSuccess}>
+                        {t('csv.done')}
                     </button>
+                ) : (
+                    <>
+                        <label
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                fontSize: '0.85rem',
+                                color: 'var(--text-muted)',
+                                marginRight: 'auto',
+                            }}
+                        >
+                            <input type="checkbox" checked={syncMode} onChange={(e) => setSyncMode(e.target.checked)} />
+                            {t('csv.sync_label')}
+                        </label>
+                        <button className="btn btn-secondary" onClick={onClose}>
+                            {t('csv.cancel')}
+                        </button>
+                        {!error && headers.length > 0 && (
+                            <button className="btn btn-primary" disabled={!hasNameMapping} onClick={handleImport}>
+                                <CheckCircle size={15} /> {t('csv.import_btn', { count: parsedData.length })}
+                            </button>
+                        )}
+                    </>
                 )}
             </div>
         </Modal>
