@@ -180,7 +180,14 @@
         "sharing_no_users": "Geen andere gebruikers gevonden. Zorg dat collega's zich minimaal één keer hebben aangemeld.",
         "notify_students_title": "Leerlingmeldingen",
         "notify_on_grade_label": "Leerlingen informeren bij een beoordeling",
-        "notify_on_grade_help": "Stuurt een e-mail naar de leerling wanneer je een beoordeling opslaat. Vereist dat SMTP is geconfigureerd in je Supabase-project."
+        "notify_on_grade_help": "Stuurt een e-mail naar de leerling wanneer je een beoordeling opslaat. Vereist dat SMTP is geconfigureerd in je Supabase-project.",
+        "role_admin_label": "Beheerder",
+        "role_admin_description": "Volledige toegang tot alle instellingen, inclusief database, integraties en back-up/herstel.",
+        "role_teacher_label": "Leraar",
+        "role_teacher_description": "Toegang tot lestools: beoordelingsschalen, opmerkingenbank, sjablonen en weergave-instellingen.",
+        "role_student_label": "Leerling",
+        "role_student_description": "Toegang tot weergavevoorkeuren en taal.",
+        "role_changed_to": "Rol gewijzigd naar {{role}}"
     },
     "navigation": {
         "dashboard": "Dashboard",

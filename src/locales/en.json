@@ -180,7 +180,14 @@
         "sharing_no_users": "No other users found. Make sure colleagues have signed in at least once.",
         "notify_students_title": "Student Notifications",
         "notify_on_grade_label": "Notify students when graded",
-        "notify_on_grade_help": "Sends an email to the student when you save a grade. Requires SMTP to be configured in your Supabase project."
+        "notify_on_grade_help": "Sends an email to the student when you save a grade. Requires SMTP to be configured in your Supabase project.",
+        "role_admin_label": "Administrator",
+        "role_admin_description": "Full access to all settings including database, integrations, and backup/restore.",
+        "role_teacher_label": "Teacher",
+        "role_teacher_description": "Access to teaching tools: grade scales, comment bank, templates, and display settings.",
+        "role_student_label": "Student",
+        "role_student_description": "Access to display preferences and language only.",
+        "role_changed_to": "Role changed to {{role}}"
     },
     "navigation": {
         "dashboard": "Dashboard",

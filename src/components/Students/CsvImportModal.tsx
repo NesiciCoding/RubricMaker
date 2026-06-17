@@ -117,7 +117,8 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
         let updated = 0;
         let transferred = 0;
         const matchedIds = new Set<string>();
-        const processedIds = new Set<string>(); // guard against duplicate CSV rows
+        const processedIds = new Set<string>();
+        const seenCsvKeys = new Set<string>(); // skip duplicate rows within one CSV import
         const csvClassIds = new Set<string>();
 
         parsedData.forEach((row) => {
@@ -149,8 +150,14 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
             if (!targetClassId) return;
             csvClassIds.add(targetClassId);
 
-            // Upsert: match by name+class first, then by email across all classes (enables class transfer)
+            // Skip duplicate CSV rows (same identity already processed in this import)
             const nameLower = name.toLowerCase();
+            const emailLower = email.toLowerCase();
+            const csvKey = emailLower ? `email:${emailLower}` : `class:${targetClassId}|name:${nameLower}`;
+            if (seenCsvKeys.has(csvKey)) return;
+            seenCsvKeys.add(csvKey);
+
+            // Upsert: match by name+class first, then by email across all classes (enables class transfer)
             const existing =
                 students.find(
                     (s) =>
@@ -158,10 +165,8 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                         s.classId === targetClassId &&
                         s.name.toLowerCase().trim() === nameLower
                 ) ??
-                (email
-                    ? students.find(
-                          (s) => !processedIds.has(s.id) && s.email?.toLowerCase().trim() === email.toLowerCase()
-                      )
+                (emailLower
+                    ? students.find((s) => !processedIds.has(s.id) && s.email?.toLowerCase().trim() === emailLower)
                     : undefined);
 
             if (existing) {

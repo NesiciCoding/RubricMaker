@@ -46,24 +46,27 @@ function normalizeStoredRole(raw: string | undefined): UserRole {
     return 'admin';
 }
 
-const ROLE_META: Record<UserRole, { label: string; icon: React.ReactNode; badgeClass: string; description: string }> = {
+const ROLE_META: Record<
+    UserRole,
+    { labelKey: string; icon: React.ReactNode; badgeClass: string; descriptionKey: string }
+> = {
     admin: {
-        label: 'Administrator',
+        labelKey: 'settings.role_admin_label',
         icon: <Shield size={13} />,
         badgeClass: 'role-badge-admin',
-        description: 'Full access to all settings including database, integrations, and backup/restore.',
+        descriptionKey: 'settings.role_admin_description',
     },
     teacher: {
-        label: 'Teacher',
+        labelKey: 'settings.role_teacher_label',
         icon: <User size={13} />,
         badgeClass: 'role-badge-teacher',
-        description: 'Access to teaching tools: grade scales, comment bank, templates, and display settings.',
+        descriptionKey: 'settings.role_teacher_description',
     },
     student: {
-        label: 'Student',
+        labelKey: 'settings.role_student_label',
         icon: <GraduationCap size={13} />,
         badgeClass: 'role-badge-student',
-        description: 'Access to display preferences and language only.',
+        descriptionKey: 'settings.role_student_description',
     },
 };
 
@@ -164,18 +167,18 @@ export default function SettingsPage() {
 
     function applyRoleSwitch(newRole: UserRole) {
         updateSettings({ userRole: newRole });
-        showToast(`Role changed to ${ROLE_META[newRole].label}`, 'success');
+        showToast(t('settings.role_changed_to', { role: t(ROLE_META[newRole].labelKey) }), 'success');
     }
 
-    async function confirmPinAndSwitch() {
+    async function confirmPinAndSwitch(targetRole: UserRole | null = pendingRole) {
         const stored = settings.adminPin;
-        if (!stored) return;
+        if (!stored || !targetRole) return;
         const ok = await verifyPin(pinInput, stored);
         if (ok) {
             // Upgrade legacy plaintext PIN to hashed on first successful use
             if (!isHashed(stored)) updateSettings({ adminPin: await hashPin(pinInput) });
             setShowPinDialog(false);
-            applyRoleSwitch(pendingRole!);
+            applyRoleSwitch(targetRole);
             setPendingRole(null);
         } else {
             setPinError(true);
@@ -389,12 +392,12 @@ export default function SettingsPage() {
                                 )}
                                 <h3 style={{ margin: 0 }}>Role &amp; Access</h3>
                                 <span className={`role-badge ${ROLE_META[role].badgeClass}`} style={{ marginLeft: 4 }}>
-                                    {ROLE_META[role].icon} {ROLE_META[role].label}
+                                    {ROLE_META[role].icon} {t(ROLE_META[role].labelKey)}
                                 </span>
                             </div>
 
                             <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
-                                {ROLE_META[role].description}
+                                {t(ROLE_META[role].descriptionKey)}
                             </p>
 
                             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -408,7 +411,7 @@ export default function SettingsPage() {
                                         {r === 'admin' && <Shield size={13} aria-hidden="true" />}
                                         {r === 'teacher' && <User size={13} aria-hidden="true" />}
                                         {r === 'student' && <GraduationCap size={13} aria-hidden="true" />}
-                                        {ROLE_META[r].label}
+                                        {t(ROLE_META[r].labelKey)}
                                         {r === 'admin' && settings.adminPin && role !== 'admin' && (
                                             <Lock size={11} aria-label="password required" style={{ marginLeft: 2 }} />
                                         )}
@@ -1201,8 +1204,7 @@ export default function SettingsPage() {
                                                         }}
                                                         onKeyDown={(e) => {
                                                             if (e.key === 'Enter') {
-                                                                setPendingRole('admin');
-                                                                confirmPinAndSwitch();
+                                                                void confirmPinAndSwitch('admin');
                                                             }
                                                         }}
                                                         placeholder="Enter admin password"
@@ -1229,10 +1231,7 @@ export default function SettingsPage() {
                                             </div>
                                             <button
                                                 className="btn btn-primary"
-                                                onClick={() => {
-                                                    setPendingRole('admin');
-                                                    confirmPinAndSwitch();
-                                                }}
+                                                onClick={() => void confirmPinAndSwitch('admin')}
                                             >
                                                 <Shield size={15} aria-hidden="true" /> Switch to Administrator
                                             </button>
@@ -1512,10 +1511,10 @@ export default function SettingsPage() {
                                                     className={`role-badge ${ROLE_META[r].badgeClass}`}
                                                     style={{ flexShrink: 0, marginTop: 1 }}
                                                 >
-                                                    {ROLE_META[r].icon} {ROLE_META[r].label}
+                                                    {ROLE_META[r].icon} {t(ROLE_META[r].labelKey)}
                                                 </span>
                                                 <p className="text-muted text-sm" style={{ margin: 0 }}>
-                                                    {ROLE_META[r].description}
+                                                    {t(ROLE_META[r].descriptionKey)}
                                                 </p>
                                                 {role === r && (
                                                     <span
@@ -1800,7 +1799,7 @@ export default function SettingsPage() {
                             >
                                 Cancel
                             </button>
-                            <button className="btn btn-primary" onClick={confirmPinAndSwitch}>
+                            <button className="btn btn-primary" onClick={() => void confirmPinAndSwitch()}>
                                 <Shield size={14} aria-hidden="true" /> Confirm
                             </button>
                         </div>

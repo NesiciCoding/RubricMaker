@@ -278,7 +278,7 @@ describe('CsvImportModal', () => {
         render(<CsvImportModal {...baseProps} />);
         fireEvent.click(screen.getByRole('button', { name: /import 2 students/i }));
         expect(mockUpdateStudent).toHaveBeenCalledTimes(1);
-        expect(mockAddStudent).toHaveBeenCalledTimes(1); // second row creates a new student
+        expect(mockAddStudent).not.toHaveBeenCalled(); // second row is skipped (same email)
     });
 
     it('removes unmatched students from imported classes when sync mode is enabled', () => {

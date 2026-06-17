@@ -180,7 +180,14 @@
         "sharing_no_users": "No se encontraron otros usuarios. Asegúrate de que los colegas hayan iniciado sesión al menos una vez.",
         "notify_students_title": "Notificaciones a estudiantes",
         "notify_on_grade_label": "Notificar a los estudiantes cuando se califica",
-        "notify_on_grade_help": "Envía un correo electrónico al estudiante cuando guarda una calificación. Requiere que SMTP esté configurado en su proyecto de Supabase."
+        "notify_on_grade_help": "Envía un correo electrónico al estudiante cuando guarda una calificación. Requiere que SMTP esté configurado en su proyecto de Supabase.",
+        "role_admin_label": "Administrador",
+        "role_admin_description": "Acceso completo a todos los ajustes: base de datos, integraciones y copia de seguridad/restauración.",
+        "role_teacher_label": "Profesor",
+        "role_teacher_description": "Acceso a herramientas docentes: escalas de calificación, banco de comentarios, plantillas y preferencias de visualización.",
+        "role_student_label": "Alumno",
+        "role_student_description": "Acceso solo a preferencias de visualización e idioma.",
+        "role_changed_to": "Rol cambiado a {{role}}"
     },
     "navigation": {
         "dashboard": "Panel",

@@ -180,7 +180,14 @@
         "optional": "Optionnel",
         "notify_students_title": "Notifications aux élèves",
         "notify_on_grade_label": "Notifier les élèves lors de la notation",
-        "notify_on_grade_help": "Envoie un e-mail à l'élève lorsque vous enregistrez une note. Nécessite une configuration SMTP dans votre projet Supabase."
+        "notify_on_grade_help": "Envoie un e-mail à l'élève lorsque vous enregistrez une note. Nécessite une configuration SMTP dans votre projet Supabase.",
+        "role_admin_label": "Administrateur",
+        "role_admin_description": "Accès complet à tous les paramètres : base de données, intégrations et sauvegarde/restauration.",
+        "role_teacher_label": "Enseignant",
+        "role_teacher_description": "Accès aux outils pédagogiques : barèmes, banque de commentaires, modèles et préférences d'affichage.",
+        "role_student_label": "Élève",
+        "role_student_description": "Accès aux préférences d'affichage et à la langue uniquement.",
+        "role_changed_to": "Rôle changé en {{role}}"
     },
     "navigation": {
         "dashboard": "Tableau de bord",

@@ -1338,6 +1338,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     );
 
     const disconnectDatabase = useCallback(() => {
+        clearAuditLogger();
         storageSync.disconnect();
     }, []);
 
