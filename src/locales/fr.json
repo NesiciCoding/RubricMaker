@@ -1360,7 +1360,10 @@
         "copy_link": "Copier le lien",
         "link_copied": "Lien copié !",
         "print_slips": "Imprimer les fiches de classe ({{count}} élèves)",
-        "download_seb": "Télécharger la config .seb"
+        "download_seb": "Télécharger la config .seb",
+        "save_template": "Enregistrer la configuration",
+        "template_saved": "Configuration enregistrée !",
+        "save_template_title": "Enregistrer cette configuration pour une utilisation ultérieure"
     },
     "essays": {
         "list_title": "Essais",

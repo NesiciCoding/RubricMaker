@@ -28,6 +28,7 @@ import type {
     DocumentAnalysisResult,
     EssayAssignment,
     EssaySubmission,
+    EssayTemplate,
     Test,
     StudentTest,
 } from '../types';
@@ -53,6 +54,7 @@ import {
     saveStudentTests,
     saveEssayAssignments,
     saveEssaySubmissions,
+    saveEssayTemplates,
     importFullBackup,
     loadPendingQueue,
 } from '../store/storage';
@@ -126,7 +128,9 @@ type Action =
     | { type: 'ADD_ESSAY_ASSIGNMENTS'; payload: EssayAssignment[] }
     | { type: 'UPDATE_ESSAY_GROUP'; teacherKey: string; patch: Partial<EssayAssignment> }
     | { type: 'DELETE_ESSAY_GROUP'; teacherKey: string }
-    | { type: 'ADD_ESSAY_SUBMISSION'; payload: EssaySubmission };
+    | { type: 'ADD_ESSAY_SUBMISSION'; payload: EssaySubmission }
+    | { type: 'SAVE_ESSAY_TEMPLATE'; payload: EssayTemplate }
+    | { type: 'DELETE_ESSAY_TEMPLATE'; id: string };
 
 function reducer(state: StoreData, action: Action): StoreData {
     switch (action.type) {
@@ -532,6 +536,20 @@ function reducer(state: StoreData, action: Action): StoreData {
             saveEssaySubmissions(next);
             return { ...state, essaySubmissions: next };
         }
+        case 'SAVE_ESSAY_TEMPLATE': {
+            const exists = state.essayTemplates.findIndex((t) => t.id === action.payload.id);
+            const next =
+                exists >= 0
+                    ? state.essayTemplates.map((t) => (t.id === action.payload.id ? action.payload : t))
+                    : [...state.essayTemplates, action.payload];
+            saveEssayTemplates(next);
+            return { ...state, essayTemplates: next };
+        }
+        case 'DELETE_ESSAY_TEMPLATE': {
+            const next = state.essayTemplates.filter((t) => t.id !== action.id);
+            saveEssayTemplates(next);
+            return { ...state, essayTemplates: next };
+        }
         default:
             return state;
     }
@@ -627,6 +645,9 @@ interface AppContextValue extends StoreData {
     updateEssayGroup: (teacherKey: string, patch: Partial<EssayAssignment>) => void;
     deleteEssayGroup: (teacherKey: string) => void;
     addEssaySubmission: (submission: EssaySubmission) => void;
+    // Essay templates (local drafts, not yet assigned to students)
+    saveEssayTemplate: (t: EssayTemplate) => void;
+    deleteEssayTemplate: (id: string) => void;
     // Database sync
     connectDatabase: (config: DatabaseConfig) => Promise<boolean>;
     disconnectDatabase: () => void;
@@ -718,6 +739,7 @@ async function flushToLocalStorage(merged: StoreData) {
         saveAnalysisResults,
         saveTests,
         saveStudentTests,
+        saveEssayTemplates,
     } = await import('../store/storage');
     saveRubrics(merged.rubrics);
     saveStudents(merged.students);
@@ -736,6 +758,7 @@ async function flushToLocalStorage(merged: StoreData) {
     saveAnalysisResults(merged.analysisResults);
     saveTests(merged.tests);
     saveStudentTests(merged.studentTests);
+    saveEssayTemplates(merged.essayTemplates);
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -1247,6 +1270,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'ADD_ESSAY_SUBMISSION', payload: submission });
     }, []);
 
+    const saveEssayTemplate = useCallback((t: EssayTemplate) => {
+        dispatch({ type: 'SAVE_ESSAY_TEMPLATE', payload: t });
+        storageSync.pushOne('essayTemplate', 'upsert', t);
+    }, []);
+    const deleteEssayTemplate = useCallback((id: string) => {
+        dispatch({ type: 'DELETE_ESSAY_TEMPLATE', id });
+        storageSync.pushOne('essayTemplate', 'delete', null, id);
+    }, []);
+
     // ─── Database sync ────────────────────────────────────────────────
     const connectDatabase = useCallback(
         async (config: DatabaseConfig): Promise<boolean> => {
@@ -1499,6 +1531,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         updateEssayGroup,
         deleteEssayGroup,
         addEssaySubmission,
+        saveEssayTemplate,
+        deleteEssayTemplate,
         connectDatabase,
         disconnectDatabase,
         pushAllToDatabase,

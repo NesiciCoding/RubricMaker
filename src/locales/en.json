@@ -1450,7 +1450,10 @@
         "copy_link": "Copy link",
         "link_copied": "Link copied!",
         "print_slips": "Print class slips ({{count}} students)",
-        "download_seb": "Download .seb config"
+        "download_seb": "Download .seb config",
+        "save_template": "Save configuration",
+        "template_saved": "Configuration saved!",
+        "save_template_title": "Save this essay configuration for later use — pre-fills the form next time you open this rubric"
     },
     "essays": {
         "list_title": "Essays",

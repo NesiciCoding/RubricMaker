@@ -1450,7 +1450,10 @@
         "copy_link": "Copiar enlace",
         "link_copied": "¡Enlace copiado!",
         "print_slips": "Imprimir fichas de clase ({{count}} estudiantes)",
-        "download_seb": "Descargar configuración .seb"
+        "download_seb": "Descargar configuración .seb",
+        "save_template": "Guardar configuración",
+        "template_saved": "¡Configuración guardada!",
+        "save_template_title": "Guardar esta configuración de tarea para uso posterior"
     },
     "essays": {
         "list_title": "Ensayos",

@@ -16,6 +16,7 @@ import type {
     SessionRecording,
     DocumentAnalysisResult,
     EssayAssignment,
+    EssayTemplate,
     StudentEssayAssignmentSummary,
     Test,
     StudentTest,
@@ -1053,6 +1054,29 @@ export class SupabaseAdapter {
         return error ? { success: false, error: error.message } : { success: true };
     }
 
+    // ── Essay templates (saved configs, not yet assigned to students) ─────────
+
+    async fetchEssayTemplates(): Promise<EssayTemplate[]> {
+        const { data, error } = await this.db().from('essay_templates').select('data');
+        if (error) {
+            console.error('fetchEssayTemplates', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as EssayTemplate);
+    }
+
+    async upsertEssayTemplate(t: EssayTemplate): Promise<SyncResult> {
+        const { error } = await this.db()
+            .from('essay_templates')
+            .upsert({ id: t.id, owner_id: this.uid(), data: t }, { onConflict: 'id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteEssayTemplate(id: string): Promise<SyncResult> {
+        const { error } = await this.db().from('essay_templates').delete().eq('id', id).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
     // ── Essay assignments & submissions (teacher side) ────────────────────────
 
     /** Persist the assignment to the DB so the student page can validate it */
@@ -1436,6 +1460,7 @@ export class SupabaseAdapter {
             'tests',
             'student_tests',
             'user_settings',
+            'essay_templates',
             'essay_assignments',
         ];
         for (const table of tables) {

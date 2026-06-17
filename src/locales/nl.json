@@ -1450,7 +1450,10 @@
         "copy_link": "Link kopiëren",
         "link_copied": "Link gekopieerd!",
         "print_slips": "Klasbriefjes afdrukken ({{count}} leerlingen)",
-        "download_seb": "Download .seb-configuratie"
+        "download_seb": "Download .seb-configuratie",
+        "save_template": "Configuratie opslaan",
+        "template_saved": "Configuratie opgeslagen!",
+        "save_template_title": "Sla deze opdrachtinstellingen op voor later gebruik"
     },
     "essays": {
         "list_title": "Essays",
