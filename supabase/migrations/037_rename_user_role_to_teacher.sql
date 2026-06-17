@@ -26,7 +26,8 @@ CREATE POLICY "profiles_read_users_and_admins"
   );
 
 -- ── 5. Replace handle_new_user() — assigns 'teacher' instead of 'user' ────────
--- Replaces migration 020's version; logic is identical except 'user' → 'teacher'.
+-- Replaces migration 028's version; changes: 'user' → 'teacher' in fallback role
+-- and lock name; preserves the is_anonymous → 'student' branch from migration 028.
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -43,17 +44,24 @@ BEGIN
     new.email
   );
 
-  PERFORM pg_advisory_xact_lock(hashtext('public.handle_new_user.first_admin')::bigint);
+  IF new.is_anonymous THEN
+    -- Anonymous sign-ins are always essay-submitting students.
+    v_role := 'student';
 
-  IF new.email IS NOT NULL AND EXISTS (
+  ELSIF new.email IS NOT NULL AND EXISTS (
     SELECT 1 FROM public.students
     WHERE data->>'email' IS NOT NULL
       AND lower(data->>'email') = lower(new.email)
   ) THEN
     v_role := 'student';
+
   ELSE
+    PERFORM pg_advisory_xact_lock(hashtext('public.handle_new_user:first_admin'));
+
     SELECT CASE WHEN EXISTS (
-      SELECT 1 FROM public.profiles WHERE role <> 'student' LIMIT 1
+      SELECT 1 FROM public.profiles WHERE NOT (
+        role = 'student' AND email IS NULL
+      ) LIMIT 1
     ) THEN 'teacher' ELSE 'admin' END
       INTO v_role;
   END IF;
@@ -63,5 +71,28 @@ BEGIN
   ON CONFLICT (id) DO NOTHING;
 
   RETURN new;
+END;
+$$;
+
+-- ── 6. Update protect_role_changes() — allow 'teacher' → 'student' self-downgrade
+-- Replaces migration 030's version which checked OLD.role = 'user'.
+CREATE OR REPLACE FUNCTION public.protect_role_changes()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF OLD.role IS DISTINCT FROM NEW.role THEN
+    -- Allow a user to downgrade their own role from 'teacher' to 'student'.
+    IF NEW.id = auth.uid() AND OLD.role = 'teacher' AND NEW.role = 'student' THEN
+      RETURN NEW;
+    END IF;
+    -- All other role changes require admin privileges.
+    IF get_my_role() IS DISTINCT FROM 'admin' THEN
+      RAISE EXCEPTION 'Only admins can change roles';
+    END IF;
+  END IF;
+  RETURN NEW;
 END;
 $$;
