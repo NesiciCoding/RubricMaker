@@ -251,6 +251,21 @@ describe('CsvImportModal', () => {
         expect(screen.getByText(/moved between classes/i)).toBeInTheDocument();
     });
 
+    it('does not double-update a student when the same email appears twice in the CSV', () => {
+        mockStudents = [{ id: 'student-1', name: 'Alice Anderson', email: 'alice@school.com', classId: 'class-1' }];
+        parseImpl = (_file, opts) =>
+            opts.complete({
+                data: [
+                    { Name: 'Alice Anderson', Email: 'alice@school.com', Class: 'Class A' },
+                    { Name: 'Alice A', Email: 'alice@school.com', Class: 'Class A' },
+                ],
+            });
+        render(<CsvImportModal {...baseProps} />);
+        fireEvent.click(screen.getByRole('button', { name: /import 2 students/i }));
+        expect(mockUpdateStudent).toHaveBeenCalledTimes(1);
+        expect(mockAddStudent).toHaveBeenCalledTimes(1); // second row creates a new student
+    });
+
     it('removes unmatched students from imported classes when sync mode is enabled', () => {
         mockClasses = [{ id: 'class-1', name: 'Class A' }];
         mockStudents = [

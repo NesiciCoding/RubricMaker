@@ -115,6 +115,7 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
         let updated = 0;
         let transferred = 0;
         const matchedIds = new Set<string>();
+        const processedIds = new Set<string>(); // guard against duplicate CSV rows
         const csvClassIds = new Set<string>();
 
         parsedData.forEach((row) => {
@@ -149,8 +150,17 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
             // Upsert: match by name+class first, then by email across all classes (enables class transfer)
             const nameLower = name.toLowerCase();
             const existing =
-                students.find((s) => s.classId === targetClassId && s.name.toLowerCase().trim() === nameLower) ??
-                (email ? students.find((s) => s.email?.toLowerCase().trim() === email.toLowerCase()) : undefined);
+                students.find(
+                    (s) =>
+                        !processedIds.has(s.id) &&
+                        s.classId === targetClassId &&
+                        s.name.toLowerCase().trim() === nameLower,
+                ) ??
+                (email
+                    ? students.find(
+                          (s) => !processedIds.has(s.id) && s.email?.toLowerCase().trim() === email.toLowerCase(),
+                      )
+                    : undefined);
 
             if (existing) {
                 const isTransfer = existing.classId !== targetClassId;
@@ -161,6 +171,7 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                     classId: targetClassId,
                     updatedAt: new Date().toISOString(),
                 });
+                processedIds.add(existing.id);
                 matchedIds.add(existing.id);
                 if (isTransfer) transferred++;
                 else updated++;
