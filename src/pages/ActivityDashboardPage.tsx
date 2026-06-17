@@ -220,24 +220,27 @@ export default function ActivityDashboardPage() {
                                                         zIndex: 1,
                                                         background: 'var(--bg-card)',
                                                         padding: '8px 12px',
-                                                        fontWeight: 500,
                                                         maxWidth: 200,
                                                         overflow: 'hidden',
                                                         textOverflow: 'ellipsis',
                                                         whiteSpace: 'nowrap',
-                                                        cursor: 'pointer',
-                                                        color: 'var(--accent)',
-                                                    }}
-                                                    onClick={() => {
-                                                        if (activity.kind === 'rubric')
-                                                            navigate(`/rubrics/${activity.id}`);
-                                                        else if (activity.kind === 'test')
-                                                            navigate(`/tests/${activity.id}`);
-                                                        else navigate(`/essays/${activity.id}`);
                                                     }}
                                                     title={activity.name}
                                                 >
-                                                    {activity.name}
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-ghost btn-sm"
+                                                        style={{ padding: 0, color: 'var(--accent)', fontWeight: 500 }}
+                                                        onClick={() => {
+                                                            if (activity.kind === 'rubric')
+                                                                navigate(`/rubrics/${activity.id}`);
+                                                            else if (activity.kind === 'test')
+                                                                navigate(`/tests/${activity.id}`);
+                                                            else navigate(`/essays/${activity.id}`);
+                                                        }}
+                                                    >
+                                                        {activity.name}
+                                                    </button>
                                                 </td>
 
                                                 {visibleClasses.map((cls) => {
@@ -278,7 +281,7 @@ export default function ActivityDashboardPage() {
                                                                             fontSize: '0.78rem',
                                                                             color:
                                                                                 cell.submittedCount > 0
-                                                                                    ? 'var(--green, #22c55e)'
+                                                                                    ? 'var(--accent)'
                                                                                     : 'var(--text-muted)',
                                                                             fontWeight: 600,
                                                                         }}

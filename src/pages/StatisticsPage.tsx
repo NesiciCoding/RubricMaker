@@ -1469,7 +1469,9 @@ export default function StatisticsPage() {
                                                             </span>
                                                         </td>
                                                         <td className="text-muted text-sm">
-                                                            {new Date(sr.gradedAt || new Date()).toLocaleDateString()}
+                                                            {sr.gradedAt
+                                                                ? new Date(sr.gradedAt).toLocaleDateString()
+                                                                : '—'}
                                                         </td>
                                                     </tr>
                                                 ))}

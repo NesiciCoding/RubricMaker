@@ -135,13 +135,14 @@ export function getInsights(results: ClassComparisonResult[], criteria: RubricCr
         }
     }
 
-    if (results.length >= 2) {
+    const nonEmptyResults = results.filter((r) => r.studentCount > 0);
+    if (nonEmptyResults.length >= 2) {
         let maxGap = 0;
         let maxGapCritTitle = '';
         let maxGapHigh = '';
         let maxGapLow = '';
         for (const c of criteria) {
-            const avgs = results.map((r) => ({ name: r.className, avg: r.criterionAvgs[c.id] ?? 0 }));
+            const avgs = nonEmptyResults.map((r) => ({ name: r.className, avg: r.criterionAvgs[c.id] ?? 0 }));
             const sorted = [...avgs].sort((a, b) => a.avg - b.avg);
             const gap = sorted[sorted.length - 1].avg - sorted[0].avg;
             if (gap > maxGap) {

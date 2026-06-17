@@ -18,8 +18,16 @@ test.describe('Statistics — Compare tab', () => {
         //   Class A: high (avg ~100%)    Class B: medium (avg ~62.5%)    Class C: low (avg ~25%)
         // Two rubrics are seeded so the trend chart (which requires >= 2 data points) renders.
         // The rubric has 4 levels: 0=Excellent(4pts), 1=Good(3pts), 2=Adequate(2pts), 3=Poor(1pt)
-        const rubric1 = buildRubric({ id: 'cmp-rubric-1', name: 'Compare Rubric 1', createdAt: '2026-01-01T00:00:00Z' });
-        const rubric2 = buildRubric({ id: 'cmp-rubric-2', name: 'Compare Rubric 2', createdAt: '2026-02-01T00:00:00Z' });
+        const rubric1 = buildRubric({
+            id: 'cmp-rubric-1',
+            name: 'Compare Rubric 1',
+            createdAt: '2026-01-01T00:00:00Z',
+        });
+        const rubric2 = buildRubric({
+            id: 'cmp-rubric-2',
+            name: 'Compare Rubric 2',
+            createdAt: '2026-02-01T00:00:00Z',
+        });
 
         const clsA = buildClass({ id: 'cls-a', name: 'Class A' });
         const clsB = buildClass({ id: 'cls-b', name: 'Class B' });
@@ -83,7 +91,8 @@ test.describe('Statistics — Compare tab', () => {
         await expect(appPage.getByText('Class C')).toBeVisible();
 
         // 3 selected classes → 3 bar cells in the avg chart
-        const bars = appPage.locator('.recharts-bar-rectangle');
+        const avgChart = appPage.locator('.recharts-wrapper').first();
+        const bars = avgChart.locator('.recharts-bar-rectangle');
         await expect(bars).toHaveCount(3, { timeout: 5_000 });
     });
 
@@ -100,9 +109,9 @@ test.describe('Statistics — Compare tab', () => {
 
         await insightsBtn.click();
         // i18next renders the struggling message with className interpolated
-        await expect(
-            appPage.locator('text=/Class C may need targeted support|ahead of Class C/i')
-        ).toBeVisible({ timeout: 3_000 });
+        await expect(appPage.locator('text=/Class C may need targeted support|ahead of Class C/i')).toBeVisible({
+            timeout: 3_000,
+        });
     });
 
     test('trend chart renders when 2 classes and 2 rubrics are present', async ({ appPage }) => {
