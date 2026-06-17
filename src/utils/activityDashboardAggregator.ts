@@ -14,11 +14,7 @@ export interface CellData {
     isLinked: boolean; // rubric in Class.rubricIds; essay has ≥1 assignment in this class
 }
 
-export function getActivityRows(
-    rubrics: Rubric[],
-    tests: Test[],
-    essayAssignments: EssayAssignment[]
-): ActivityRow[] {
+export function getActivityRows(rubrics: Rubric[], tests: Test[], essayAssignments: EssayAssignment[]): ActivityRow[] {
     const rubricRows: ActivityRow[] = rubrics.map((r) => ({ kind: 'rubric', id: r.id, name: r.name }));
     const testRows: ActivityRow[] = tests.map((t) => ({ kind: 'test', id: t.id, name: t.name }));
 
@@ -72,16 +68,18 @@ export function buildDashboardMatrix(
                             studentIds.has(st.studentId) &&
                             (st.status === 'submitted' || st.status === 'graded')
                     ).length,
-                    isLinked: studentTests.some(
-                        (st) => st.testId === activity.id && studentIds.has(st.studentId)
-                    ),
+                    isLinked: studentTests.some((st) => st.testId === activity.id && studentIds.has(st.studentId)),
                     totalStudents,
                 };
             } else {
                 const classAssignments = essayAssignments.filter(
                     (a) => a.teacherKey === activity.id && studentIds.has(a.studentId)
                 );
-                cell = { submittedCount: classAssignments.length, isLinked: classAssignments.length > 0, totalStudents };
+                cell = {
+                    submittedCount: classAssignments.length,
+                    isLinked: classAssignments.length > 0,
+                    totalStudents,
+                };
             }
 
             matrix[activity.id][cls.id] = cell;

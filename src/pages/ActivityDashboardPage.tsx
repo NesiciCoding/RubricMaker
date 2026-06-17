@@ -52,7 +52,8 @@ export default function ActivityDashboardPage() {
     );
 
     const matrix = useMemo(
-        () => buildDashboardMatrix(activities, visibleClasses, students, studentRubrics, studentTests, essayAssignments),
+        () =>
+            buildDashboardMatrix(activities, visibleClasses, students, studentRubrics, studentTests, essayAssignments),
         [activities, visibleClasses, students, studentRubrics, studentTests, essayAssignments]
     );
 
@@ -106,7 +107,9 @@ export default function ActivityDashboardPage() {
                                 <select value={filterYear} onChange={(e) => setFilterYear(e.target.value)}>
                                     <option value="all">{t('statistics.all_classes')}</option>
                                     {yearOptions.map((y) => (
-                                        <option key={y} value={y}>{y}</option>
+                                        <option key={y} value={y}>
+                                            {y}
+                                        </option>
                                     ))}
                                 </select>
                             </div>
@@ -211,10 +214,7 @@ export default function ActivityDashboardPage() {
                                             </td>
                                         </tr>
                                         {rows.map((activity) => (
-                                            <tr
-                                                key={activity.id}
-                                                style={{ borderBottom: '1px solid var(--border)' }}
-                                            >
+                                            <tr key={activity.id} style={{ borderBottom: '1px solid var(--border)' }}>
                                                 {/* Activity name — sticky left */}
                                                 <td
                                                     style={{
@@ -232,8 +232,10 @@ export default function ActivityDashboardPage() {
                                                         color: 'var(--accent)',
                                                     }}
                                                     onClick={() => {
-                                                        if (activity.kind === 'rubric') navigate(`/rubrics/${activity.id}`);
-                                                        else if (activity.kind === 'test') navigate(`/tests/${activity.id}`);
+                                                        if (activity.kind === 'rubric')
+                                                            navigate(`/rubrics/${activity.id}`);
+                                                        else if (activity.kind === 'test')
+                                                            navigate(`/tests/${activity.id}`);
                                                         else navigate(`/essays/${activity.id}`);
                                                     }}
                                                     title={activity.name}
@@ -277,9 +279,10 @@ export default function ActivityDashboardPage() {
                                                                     <span
                                                                         style={{
                                                                             fontSize: '0.78rem',
-                                                                            color: cell.submittedCount > 0
-                                                                                ? 'var(--green, #22c55e)'
-                                                                                : 'var(--text-muted)',
+                                                                            color:
+                                                                                cell.submittedCount > 0
+                                                                                    ? 'var(--green, #22c55e)'
+                                                                                    : 'var(--text-muted)',
                                                                             fontWeight: 600,
                                                                         }}
                                                                     >
@@ -290,7 +293,10 @@ export default function ActivityDashboardPage() {
                                                                     {activity.kind === 'rubric' && (
                                                                         <button
                                                                             className={`btn btn-sm ${cell.isLinked ? 'btn-secondary' : 'btn-primary'}`}
-                                                                            style={{ fontSize: '0.7rem', padding: '2px 8px' }}
+                                                                            style={{
+                                                                                fontSize: '0.7rem',
+                                                                                padding: '2px 8px',
+                                                                            }}
                                                                             onClick={() =>
                                                                                 toggleRubricLink(
                                                                                     cls.id,
@@ -308,10 +314,14 @@ export default function ActivityDashboardPage() {
                                                                     {activity.kind === 'essay' && (
                                                                         <button
                                                                             className={`btn btn-sm ${cell.isLinked ? 'btn-ghost' : 'btn-primary'}`}
-                                                                            style={{ fontSize: '0.7rem', padding: '2px 8px' }}
+                                                                            style={{
+                                                                                fontSize: '0.7rem',
+                                                                                padding: '2px 8px',
+                                                                            }}
                                                                             disabled={
                                                                                 cell.isLinked &&
-                                                                                cell.submittedCount >= cell.totalStudents
+                                                                                cell.submittedCount >=
+                                                                                    cell.totalStudents
                                                                             }
                                                                             onClick={() =>
                                                                                 assignEssayToClass(cls.id, activity.id)
@@ -327,7 +337,10 @@ export default function ActivityDashboardPage() {
                                                                     {activity.kind === 'test' && (
                                                                         <button
                                                                             className="btn btn-ghost btn-sm"
-                                                                            style={{ fontSize: '0.7rem', padding: '2px 8px' }}
+                                                                            style={{
+                                                                                fontSize: '0.7rem',
+                                                                                padding: '2px 8px',
+                                                                            }}
                                                                             onClick={() =>
                                                                                 navigate(`/tests/${activity.id}`)
                                                                             }

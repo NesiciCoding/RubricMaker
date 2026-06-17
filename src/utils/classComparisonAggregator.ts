@@ -36,9 +36,7 @@ export function compareClasses(
         .map((classId) => {
             const cls = classes.find((c) => c.id === classId);
             const srs = studentRubrics.filter(
-                (sr) =>
-                    sr.rubricId === rubricId &&
-                    students.find((s) => s.id === sr.studentId)?.classId === classId
+                (sr) => sr.rubricId === rubricId && students.find((s) => s.id === sr.studentId)?.classId === classId
             );
             const summaries = srs.map((sr) => calcGradeSummary(sr, rubric.criteria, scale, rubric));
             const stats = calcClassStats(summaries, scale);
@@ -80,9 +78,7 @@ export function buildMultiClassTrend(
         .filter((r) =>
             classIds.some((classId) =>
                 studentRubrics.some(
-                    (sr) =>
-                        sr.rubricId === r.id &&
-                        students.find((s) => s.id === sr.studentId)?.classId === classId
+                    (sr) => sr.rubricId === r.id && students.find((s) => s.id === sr.studentId)?.classId === classId
                 )
             )
         )
@@ -90,16 +86,12 @@ export function buildMultiClassTrend(
 
     return relevantRubrics.map((r) => {
         const scale =
-            r.gradeScaleId === 'none'
-                ? null
-                : (gradeScales.find((g) => g.id === r.gradeScaleId) ?? gradeScales[0]);
+            r.gradeScaleId === 'none' ? null : (gradeScales.find((g) => g.id === r.gradeScaleId) ?? gradeScales[0]);
         const point: MultiTrendPoint = { rubricName: r.name, date: r.createdAt };
         for (const classId of classIds) {
             const sums = studentRubrics
                 .filter(
-                    (sr) =>
-                        sr.rubricId === r.id &&
-                        students.find((s) => s.id === sr.studentId)?.classId === classId
+                    (sr) => sr.rubricId === r.id && students.find((s) => s.id === sr.studentId)?.classId === classId
                 )
                 .map((sr) => calcGradeSummary(sr, r.criteria, scale, r).modifiedPercentage);
             if (sums.length > 0) {

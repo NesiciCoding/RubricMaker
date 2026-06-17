@@ -64,8 +64,11 @@ const c2 = mkCriterion('c2', 'Grammar', 10);
 const rubric = mkRubric('r1', [c1, c2]);
 
 const students = [
-    mkStudent('s1', 'cls1'), mkStudent('s2', 'cls1'), mkStudent('s3', 'cls1'),
-    mkStudent('s4', 'cls2'), mkStudent('s5', 'cls2'),
+    mkStudent('s1', 'cls1'),
+    mkStudent('s2', 'cls1'),
+    mkStudent('s3', 'cls1'),
+    mkStudent('s4', 'cls2'),
+    mkStudent('s5', 'cls2'),
 ];
 const classes = [mkClass('cls1', 'Class A'), mkClass('cls2', 'Class B')];
 
@@ -73,10 +76,7 @@ const classes = [mkClass('cls1', 'Class A'), mkClass('cls2', 'Class B')];
 
 describe('compareClasses', () => {
     it('returns one result per class that has graded students', () => {
-        const srs = [
-            mkSR('a', 'r1', 's1', { c1: 8, c2: 6 }),
-            mkSR('b', 'r1', 's4', { c1: 9, c2: 9 }),
-        ];
+        const srs = [mkSR('a', 'r1', 's1', { c1: 8, c2: 6 }), mkSR('b', 'r1', 's4', { c1: 9, c2: 9 })];
         const results = compareClasses(['cls1', 'cls2'], 'r1', srs, students, classes, rubric, null);
         expect(results).toHaveLength(2);
         expect(results.find((r) => r.classId === 'cls1')?.studentCount).toBe(1);
@@ -91,20 +91,14 @@ describe('compareClasses', () => {
     });
 
     it('ignores studentRubrics for other rubrics', () => {
-        const srs = [
-            mkSR('a', 'r1', 's1', { c1: 8, c2: 6 }),
-            mkSR('b', 'r_other', 's2', { c1: 10, c2: 10 }),
-        ];
+        const srs = [mkSR('a', 'r1', 's1', { c1: 8, c2: 6 }), mkSR('b', 'r_other', 's2', { c1: 10, c2: 10 })];
         const results = compareClasses(['cls1'], 'r1', srs, students, classes, rubric, null);
         expect(results[0].studentCount).toBe(1);
     });
 
     it('ignores students from other classes', () => {
         // s4 is in cls2; grading it should not appear in cls1 result
-        const srs = [
-            mkSR('a', 'r1', 's1', { c1: 8, c2: 8 }),
-            mkSR('b', 'r1', 's4', { c1: 2, c2: 2 }),
-        ];
+        const srs = [mkSR('a', 'r1', 's1', { c1: 8, c2: 8 }), mkSR('b', 'r1', 's4', { c1: 2, c2: 2 })];
         const results = compareClasses(['cls1'], 'r1', srs, students, classes, rubric, null);
         expect(results[0].studentCount).toBe(1);
         expect(results[0].average).toBeCloseTo(80, 0);
@@ -113,29 +107,27 @@ describe('compareClasses', () => {
     it('computes correct weighted average across criteria', () => {
         // s1: c1=8/10=80%, c2=4/10=40% → 60%; s2: c1=6/10=60%, c2=8/10=80% → 70%
         // class avg = 65%
-        const srs = [
-            mkSR('a', 'r1', 's1', { c1: 8, c2: 4 }),
-            mkSR('b', 'r1', 's2', { c1: 6, c2: 8 }),
-        ];
+        const srs = [mkSR('a', 'r1', 's1', { c1: 8, c2: 4 }), mkSR('b', 'r1', 's2', { c1: 6, c2: 8 })];
         const results = compareClasses(['cls1'], 'r1', srs, students, classes, rubric, null);
         expect(results[0].average).toBeCloseTo(65, 0);
     });
 
     it('computes criterion averages independently per class', () => {
-        const srs = [
-            mkSR('a', 'r1', 's1', { c1: 10, c2: 2 }),
-            mkSR('b', 'r1', 's2', { c1: 10, c2: 2 }),
-        ];
+        const srs = [mkSR('a', 'r1', 's1', { c1: 10, c2: 2 }), mkSR('b', 'r1', 's2', { c1: 10, c2: 2 })];
         const results = compareClasses(['cls1'], 'r1', srs, students, classes, rubric, null);
         expect(results[0].criterionAvgs['c1']).toBeCloseTo(100, 0);
         expect(results[0].criterionAvgs['c2']).toBeCloseTo(20, 0);
     });
 
     it('criterion avg is 0 when no entries exist for that criterion', () => {
-        const srs = [{
-            ...mkSR('a', 'r1', 's1', {}),
-            entries: [{ criterionId: 'c1', levelId: 'c1_lvl', selectedPoints: 8, checkedSubItems: [], comment: '' }],
-        }];
+        const srs = [
+            {
+                ...mkSR('a', 'r1', 's1', {}),
+                entries: [
+                    { criterionId: 'c1', levelId: 'c1_lvl', selectedPoints: 8, checkedSubItems: [], comment: '' },
+                ],
+            },
+        ];
         const results = compareClasses(['cls1'], 'r1', srs, students, classes, rubric, null);
         expect(results[0].criterionAvgs['c2']).toBe(0);
     });
@@ -158,8 +150,8 @@ describe('compareClasses', () => {
     it('highest and lowest reflect the correct extreme scores', () => {
         const srs = [
             mkSR('a', 'r1', 's1', { c1: 10, c2: 10 }), // 100%
-            mkSR('b', 'r1', 's2', { c1: 1, c2: 1 }),   //  10%
-            mkSR('c', 'r1', 's3', { c1: 6, c2: 6 }),   //  60%
+            mkSR('b', 'r1', 's2', { c1: 1, c2: 1 }), //  10%
+            mkSR('c', 'r1', 's3', { c1: 6, c2: 6 }), //  60%
         ];
         const results = compareClasses(['cls1'], 'r1', srs, students, classes, rubric, null);
         expect(results[0].highest).toBeCloseTo(100, 0);
@@ -191,14 +183,8 @@ describe('compareClasses', () => {
 
 describe('buildMultiClassTrend', () => {
     it('returns points sorted by rubric createdAt ascending', () => {
-        const rubrics = [
-            mkRubric('r2', [c1, c2], '2024-03-01'),
-            mkRubric('r1', [c1, c2], '2024-01-01'),
-        ];
-        const srs = [
-            mkSR('a', 'r1', 's1', { c1: 6, c2: 6 }),
-            mkSR('b', 'r2', 's1', { c1: 8, c2: 8 }),
-        ];
+        const rubrics = [mkRubric('r2', [c1, c2], '2024-03-01'), mkRubric('r1', [c1, c2], '2024-01-01')];
+        const srs = [mkSR('a', 'r1', 's1', { c1: 6, c2: 6 }), mkSR('b', 'r2', 's1', { c1: 8, c2: 8 })];
         const trend = buildMultiClassTrend(['cls1'], classes, srs, students, rubrics, []);
         expect(trend[0].rubricName).toBe('Rubric r1');
         expect(trend[1].rubricName).toBe('Rubric r2');
@@ -206,10 +192,7 @@ describe('buildMultiClassTrend', () => {
 
     it('keys avg values by classId', () => {
         const rubrics = [mkRubric('r1', [c1, c2])];
-        const srs = [
-            mkSR('a', 'r1', 's1', { c1: 8, c2: 8 }),
-            mkSR('b', 'r1', 's4', { c1: 4, c2: 4 }),
-        ];
+        const srs = [mkSR('a', 'r1', 's1', { c1: 8, c2: 8 }), mkSR('b', 'r1', 's4', { c1: 4, c2: 4 })];
         const trend = buildMultiClassTrend(['cls1', 'cls2'], classes, srs, students, rubrics, []);
         expect(typeof trend[0]['cls1']).toBe('number');
         expect(typeof trend[0]['cls2']).toBe('number');
@@ -227,7 +210,7 @@ describe('buildMultiClassTrend', () => {
         const rubrics = [mkRubric('r1', [c1, c2])];
         const srs = [
             mkSR('a', 'r1', 's1', { c1: 10, c2: 10 }), // 100%
-            mkSR('b', 'r1', 's2', { c1: 0, c2: 0 }),   //   0%
+            mkSR('b', 'r1', 's2', { c1: 0, c2: 0 }), //   0%
         ];
         const trend = buildMultiClassTrend(['cls1'], classes, srs, students, rubrics, []);
         expect(trend[0]['cls1']).toBeCloseTo(50, 0);
@@ -261,8 +244,14 @@ describe('buildMultiClassTrend', () => {
 
 describe('getInsights', () => {
     const good = (id: string, name: string, avg: number, cAvgs: Record<string, number>) => ({
-        classId: id, className: name, average: avg, median: avg, highest: avg + 5, lowest: avg - 5,
-        studentCount: 10, criterionAvgs: cAvgs,
+        classId: id,
+        className: name,
+        average: avg,
+        median: avg,
+        highest: avg + 5,
+        lowest: avg - 5,
+        studentCount: 10,
+        criterionAvgs: cAvgs,
     });
 
     it('flags struggling class when avg < 55', () => {
@@ -308,36 +297,24 @@ describe('getInsights', () => {
 
     it('flags divergence when inter-class criterion gap >= 20 pp', () => {
         // c1 gap: 90 - 65 = 25 ≥ 20 → flag
-        const results = [
-            good('a', 'High', 80, { c1: 90, c2: 80 }),
-            good('b', 'Low', 50, { c1: 65, c2: 55 }),
-        ];
+        const results = [good('a', 'High', 80, { c1: 90, c2: 80 }), good('b', 'Low', 50, { c1: 65, c2: 55 })];
         expect(getInsights(results, [c1, c2]).some((i) => i.kind === 'divergence')).toBe(true);
     });
 
     it('does not flag divergence when max gap < 20 pp', () => {
         // max gap c1: 75-60=15 < 20 → no flag
-        const results = [
-            good('a', 'A', 70, { c1: 75, c2: 70 }),
-            good('b', 'B', 65, { c1: 60, c2: 65 }),
-        ];
+        const results = [good('a', 'A', 70, { c1: 75, c2: 70 }), good('b', 'B', 65, { c1: 60, c2: 65 })];
         expect(getInsights(results, [c1, c2]).some((i) => i.kind === 'divergence')).toBe(false);
     });
 
     it('flags divergence at exactly 20 pp', () => {
         // c1: 80 - 60 = 20 → flag
-        const results = [
-            good('a', 'A', 70, { c1: 80, c2: 70 }),
-            good('b', 'B', 60, { c1: 60, c2: 65 }),
-        ];
+        const results = [good('a', 'A', 70, { c1: 80, c2: 70 }), good('b', 'B', 60, { c1: 60, c2: 65 })];
         expect(getInsights(results, [c1, c2]).some((i) => i.kind === 'divergence')).toBe(true);
     });
 
     it('divergence insight names both classes and the criterion', () => {
-        const results = [
-            good('a', 'Alpha', 80, { c1: 90, c2: 80 }),
-            good('b', 'Beta', 50, { c1: 60, c2: 55 }),
-        ];
+        const results = [good('a', 'Alpha', 80, { c1: 90, c2: 80 }), good('b', 'Beta', 50, { c1: 60, c2: 55 })];
         const insight = getInsights(results, [c1, c2]).find((i) => i.kind === 'divergence');
         expect(insight?.message).toContain('Alpha');
         expect(insight?.message).toContain('Beta');
@@ -349,37 +326,39 @@ describe('getInsights', () => {
     });
 
     it('returns empty when all classes perform well without gaps', () => {
-        const results = [
-            good('a', 'A', 80, { c1: 80, c2: 75 }),
-            good('b', 'B', 78, { c1: 72, c2: 76 }),
-        ];
+        const results = [good('a', 'A', 80, { c1: 80, c2: 75 }), good('b', 'B', 78, { c1: 72, c2: 76 })];
         expect(getInsights(results, [c1, c2])).toHaveLength(0);
     });
 
     it('can return multiple insights simultaneously', () => {
         // struggling (avg 40<55), weak c2 (gap 25), divergence (c1: 90 vs 40 = 50pp)
-        const results = [
-            good('a', 'Weak A', 40, { c1: 40, c2: 15 }),
-            good('b', 'Strong B', 80, { c1: 90, c2: 75 }),
-        ];
+        const results = [good('a', 'Weak A', 40, { c1: 40, c2: 15 }), good('b', 'Strong B', 80, { c1: 90, c2: 75 })];
         expect(getInsights(results, [c1, c2]).length).toBeGreaterThanOrEqual(3);
     });
 
     it('does not flag struggling or weak_criterion for class with studentCount 0', () => {
         const results = [
-            { classId: 'empty', className: 'Empty', average: 0, median: 0, highest: 0, lowest: 0, studentCount: 0, criterionAvgs: {} },
+            {
+                classId: 'empty',
+                className: 'Empty',
+                average: 0,
+                median: 0,
+                highest: 0,
+                lowest: 0,
+                studentCount: 0,
+                criterionAvgs: {},
+            },
             good('b', 'Full', 80, { c1: 80, c2: 80 }),
         ];
         const insights = getInsights(results, [c1, c2]);
         expect(insights.filter((i) => i.kind === 'struggling').some((i) => i.message.includes('Empty'))).toBe(false);
-        expect(insights.filter((i) => i.kind === 'weak_criterion').some((i) => i.message.includes('Empty'))).toBe(false);
+        expect(insights.filter((i) => i.kind === 'weak_criterion').some((i) => i.message.includes('Empty'))).toBe(
+            false
+        );
     });
 
     it('produces exactly one divergence insight (worst-case criterion only)', () => {
-        const results = [
-            good('a', 'A', 80, { c1: 90, c2: 90 }),
-            good('b', 'B', 50, { c1: 60, c2: 60 }),
-        ];
+        const results = [good('a', 'A', 80, { c1: 90, c2: 90 }), good('b', 'B', 50, { c1: 60, c2: 60 })];
         // c1 and c2 both have 30pp gap; only one divergence insight should be emitted
         expect(getInsights(results, [c1, c2]).filter((i) => i.kind === 'divergence')).toHaveLength(1);
     });
@@ -389,9 +368,7 @@ describe('getInsights', () => {
 
 describe('stress test — large dataset', () => {
     const CRITERIA = Array.from({ length: 8 }, (_, i) => mkCriterion(`cr${i}`, `Criterion ${i}`, 10));
-    const RUBRICS = Array.from({ length: 6 }, (_, i) =>
-        mkRubric(`rb${i}`, CRITERIA, `2024-0${i + 1}-15`)
-    );
+    const RUBRICS = Array.from({ length: 6 }, (_, i) => mkRubric(`rb${i}`, CRITERIA, `2024-0${i + 1}-15`));
     const CLASSES: Class[] = [
         { id: 'ca', name: 'Alpha', voTrack: 'havo', year: '3' },
         { id: 'cb', name: 'Beta', voTrack: 'vwo', year: '3' },
@@ -417,13 +394,29 @@ describe('stress test — large dataset', () => {
     });
 
     it('returns 4 results with correct studentCount (40 each)', () => {
-        const results = compareClasses(['ca', 'cb', 'cc', 'cd'], 'rb0', STUDENT_RUBRICS, STUDENTS, CLASSES, RUBRICS[0], null);
+        const results = compareClasses(
+            ['ca', 'cb', 'cc', 'cd'],
+            'rb0',
+            STUDENT_RUBRICS,
+            STUDENTS,
+            CLASSES,
+            RUBRICS[0],
+            null
+        );
         expect(results).toHaveLength(4);
         results.forEach((r) => expect(r.studentCount).toBe(40));
     });
 
     it('all averages are between 0 and 100', () => {
-        const results = compareClasses(['ca', 'cb', 'cc', 'cd'], 'rb0', STUDENT_RUBRICS, STUDENTS, CLASSES, RUBRICS[0], null);
+        const results = compareClasses(
+            ['ca', 'cb', 'cc', 'cd'],
+            'rb0',
+            STUDENT_RUBRICS,
+            STUDENTS,
+            CLASSES,
+            RUBRICS[0],
+            null
+        );
         results.forEach((r) => {
             expect(r.average).toBeGreaterThanOrEqual(0);
             expect(r.average).toBeLessThanOrEqual(100);
@@ -449,16 +442,34 @@ describe('stress test — large dataset', () => {
     });
 
     it('getInsights runs without error on 4-class result', () => {
-        const results = compareClasses(['ca', 'cb', 'cc', 'cd'], 'rb0', STUDENT_RUBRICS, STUDENTS, CLASSES, RUBRICS[0], null);
+        const results = compareClasses(
+            ['ca', 'cb', 'cc', 'cd'],
+            'rb0',
+            STUDENT_RUBRICS,
+            STUDENTS,
+            CLASSES,
+            RUBRICS[0],
+            null
+        );
         expect(() => getInsights(results, CRITERIA)).not.toThrow();
     });
 
     it('all classes with identical scores produce no divergence insight', () => {
         // Every student gets exactly 5/10 on every criterion → identical class distributions
         const uniformSRs = RUBRICS.slice(0, 1).flatMap((rb) =>
-            STUDENTS.map((s) => mkSR(`u_${rb.id}_${s.id}`, rb.id, s.id, Object.fromEntries(CRITERIA.map((c) => [c.id, 5]))))
+            STUDENTS.map((s) =>
+                mkSR(`u_${rb.id}_${s.id}`, rb.id, s.id, Object.fromEntries(CRITERIA.map((c) => [c.id, 5])))
+            )
         );
-        const results = compareClasses(['ca', 'cb', 'cc', 'cd'], 'rb0', uniformSRs, STUDENTS, CLASSES, RUBRICS[0], null);
+        const results = compareClasses(
+            ['ca', 'cb', 'cc', 'cd'],
+            'rb0',
+            uniformSRs,
+            STUDENTS,
+            CLASSES,
+            RUBRICS[0],
+            null
+        );
         const insights = getInsights(results, CRITERIA);
         expect(insights.some((i) => i.kind === 'divergence')).toBe(false);
     });

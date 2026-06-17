@@ -247,7 +247,8 @@ const ROUTE_TREE: RouteNode[] = [
     {
         path: '/activity-dashboard',
         label: 'Activity Dashboard',
-        description: 'Grid of all rubrics, tests, and essays vs classes — link, assign, and monitor coverage at a glance.',
+        description:
+            'Grid of all rubrics, tests, and essays vs classes — link, assign, and monitor coverage at a glance.',
         color: '#0ea5e9',
     },
     {
@@ -1011,7 +1012,7 @@ function AnalyticsTab() {
                 </p>
                 <FeatureList
                     items={[
-                        'Rubrics — Link/Unlink adds or removes the rubric from a class\'s assignment list.',
+                        "Rubrics — Link/Unlink adds or removes the rubric from a class's assignment list.",
                         'Essays — Assign All bulk-creates essay assignments for all unenrolled students in the class.',
                         'Tests — Open navigates to the test builder where you can share the class link.',
                         'Filter by school year and VO track to narrow the column set.',

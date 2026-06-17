@@ -1,22 +1,8 @@
 import React from 'react';
-import {
-    LineChart,
-    Line,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    Legend,
-    ResponsiveContainer,
-} from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import type { MultiTrendPoint } from '../../utils/classComparisonAggregator';
 
-const CLASS_COLORS = [
-    'var(--accent)',
-    'var(--purple, #a855f7)',
-    'var(--green, #22c55e)',
-    'var(--yellow, #eab308)',
-];
+const CLASS_COLORS = ['var(--accent)', 'var(--purple, #a855f7)', 'var(--green, #22c55e)', 'var(--yellow, #eab308)'];
 
 interface Props {
     data: MultiTrendPoint[];
@@ -54,10 +40,7 @@ export default function MultiClassTrendChart({ data, classIds, classNames }: Pro
                         classNames[String(name)] ?? String(name),
                     ]}
                 />
-                <Legend
-                    wrapperStyle={{ paddingTop: 8 }}
-                    formatter={(value) => classNames[value] ?? value}
-                />
+                <Legend wrapperStyle={{ paddingTop: 8 }} formatter={(value) => classNames[value] ?? value} />
                 {classIds.map((classId, i) => (
                     <Line
                         key={classId}

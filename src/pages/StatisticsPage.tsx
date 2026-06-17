@@ -50,7 +50,8 @@ function exportChartAsPng(containerRef: React.RefObject<HTMLDivElement | null>, 
 }
 
 export default function StatisticsPage() {
-    const { rubrics, students, classes, studentRubrics, gradeScales, settings, updateSettings, tests, studentTests } = useApp();
+    const { rubrics, students, classes, studentRubrics, gradeScales, settings, updateSettings, tests, studentTests } =
+        useApp();
     const { t, i18n } = useTranslation();
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
 
@@ -240,14 +241,22 @@ export default function StatisticsPage() {
     // ── Compare mode data ─────────────────────────────────────────────────────
     const compareRubric = rubrics.find((r) => r.id === compareRubricId);
     const compareScale = compareRubric
-        ? (compareRubric.gradeScaleId === 'none'
-              ? null
-              : (gradeScales.find((g) => g.id === compareRubric.gradeScaleId) ?? gradeScales[0]))
+        ? compareRubric.gradeScaleId === 'none'
+            ? null
+            : (gradeScales.find((g) => g.id === compareRubric.gradeScaleId) ?? gradeScales[0])
         : null;
 
     const comparisonResults = useMemo(() => {
         if (!compareRubric || compareClassIds.length === 0) return [];
-        return compareClasses(compareClassIds, compareRubricId, studentRubrics, students, classes, compareRubric, compareScale);
+        return compareClasses(
+            compareClassIds,
+            compareRubricId,
+            studentRubrics,
+            students,
+            classes,
+            compareRubric,
+            compareScale
+        );
     }, [compareClassIds, compareRubricId, studentRubrics, students, classes, compareRubric, compareScale]);
 
     const comparisonCriterionGap = useMemo(() => {
@@ -368,11 +377,7 @@ export default function StatisticsPage() {
     const studentTestData = useMemo(() => {
         if (viewMode !== 'student' || !selectedStudentId) return [];
         return studentTests
-            .filter(
-                (st) =>
-                    st.studentId === selectedStudentId &&
-                    (st.status === 'submitted' || st.status === 'graded')
-            )
+            .filter((st) => st.studentId === selectedStudentId && (st.status === 'submitted' || st.status === 'graded'))
             .map((st) => {
                 const test = tests.find((t) => t.id === st.testId);
                 if (!test) return null;
@@ -383,8 +388,16 @@ export default function StatisticsPage() {
                 return { st, test, rawPts, effective, maxPts, pct };
             })
             .filter(
-                (d): d is { st: StudentTest; test: Test; rawPts: number; effective: number; maxPts: number; pct: number } =>
-                    d !== null
+                (
+                    d
+                ): d is {
+                    st: StudentTest;
+                    test: Test;
+                    rawPts: number;
+                    effective: number;
+                    maxPts: number;
+                    pct: number;
+                } => d !== null
             );
     }, [viewMode, selectedStudentId, studentTests, tests]);
 
@@ -410,9 +423,7 @@ export default function StatisticsPage() {
                     }, 0) / submissions.length;
                 return { test, avgPct: parseFloat(avgPct.toFixed(1)), submittedCount: submissions.length };
             })
-            .filter(
-                (d): d is { test: Test; avgPct: number; submittedCount: number } => d !== null
-            );
+            .filter((d): d is { test: Test; avgPct: number; submittedCount: number } => d !== null);
     }, [viewMode, selectedClassId, tests, studentTests, students]);
 
     // Students graded on the selected rubric (for multi-student comparison chips)
@@ -594,7 +605,9 @@ export default function StatisticsPage() {
                                     <select value={filterYear} onChange={(e) => setFilterYear(e.target.value)}>
                                         <option value="all">{t('statistics.all_classes')}</option>
                                         {yearOptions.map((y) => (
-                                            <option key={y} value={y}>{y}</option>
+                                            <option key={y} value={y}>
+                                                {y}
+                                            </option>
                                         ))}
                                     </select>
                                 </div>
@@ -693,7 +706,9 @@ export default function StatisticsPage() {
                                 <label>{t('statistics.label_rubric')}</label>
                                 <select value={compareRubricId} onChange={(e) => setCompareRubricId(e.target.value)}>
                                     {rubrics.map((r) => (
-                                        <option key={r.id} value={r.id}>{r.name}</option>
+                                        <option key={r.id} value={r.id}>
+                                            {r.name}
+                                        </option>
                                     ))}
                                 </select>
                             </div>
@@ -731,9 +746,7 @@ export default function StatisticsPage() {
                                                     disabled={disabled}
                                                     onChange={() =>
                                                         setCompareClassIds((prev) =>
-                                                            checked
-                                                                ? prev.filter((id) => id !== c.id)
-                                                                : [...prev, c.id]
+                                                            checked ? prev.filter((id) => id !== c.id) : [...prev, c.id]
                                                         )
                                                     }
                                                 />
@@ -939,13 +952,18 @@ export default function StatisticsPage() {
                                             }}
                                             onClick={() => setInsightsOpen((o) => !o)}
                                         >
-                                            <span>{t('statistics.insights.title')} ({insights.length})</span>
+                                            <span>
+                                                {t('statistics.insights.title')} ({insights.length})
+                                            </span>
                                             {insightsOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                                         </button>
                                         {insightsOpen && (
                                             <ul style={{ marginTop: 12, paddingLeft: 20, lineHeight: 1.8 }}>
                                                 {insights.map((ins, i) => (
-                                                    <li key={i} style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                                                    <li
+                                                        key={i}
+                                                        style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}
+                                                    >
                                                         {ins.message}
                                                     </li>
                                                 ))}
@@ -977,7 +995,11 @@ export default function StatisticsPage() {
                                 <h3 style={{ marginBottom: 16 }}>{t('statistics.class_test_averages')}</h3>
                                 <ResponsiveContainer width="100%" height={180}>
                                     <BarChart
-                                        data={classTestAverages.map((d) => ({ name: d.test.name, avg: d.avgPct, n: d.submittedCount }))}
+                                        data={classTestAverages.map((d) => ({
+                                            name: d.test.name,
+                                            avg: d.avgPct,
+                                            n: d.submittedCount,
+                                        }))}
                                         margin={{ top: 0, right: 8, left: 0, bottom: 0 }}
                                     >
                                         <XAxis dataKey="name" tick={{ fontSize: 11 }} />
@@ -1394,47 +1416,49 @@ export default function StatisticsPage() {
                             <>
                                 {/* Graded rubrics table */}
                                 {studentViewTableData.length > 0 && (
-                                <div className="card" style={{ marginBottom: 20 }}>
-                                    <h3 style={{ marginBottom: 14 }}>{t('statistics.graded_rubrics')}</h3>
-                                    <table className="data-table">
-                                        <thead>
-                                            <tr>
-                                                <th>{t('statistics.label_rubric')}</th>
-                                                <th>{t('statistics.table_subject')}</th>
-                                                <th>{t('statistics.table_score')}</th>
-                                                <th>{t('statistics.table_raw')}</th>
-                                                <th>{t('statistics.table_grade')}</th>
-                                                <th>{t('statistics.table_date_graded')}</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {studentViewTableData.map(({ sr, rubric: r, summary }) => (
-                                                <tr
-                                                    key={sr.id}
-                                                    style={{
-                                                        borderLeft: `4px solid ${summary.gradeColor}`,
-                                                        background: `${summary.gradeColor}08`,
-                                                    }}
-                                                >
-                                                    <td style={{ fontWeight: 500, paddingLeft: 16 }}>{r.name}</td>
-                                                    <td className="text-muted text-sm">{r.subject || '—'}</td>
-                                                    <td>{summary.modifiedPercentage.toFixed(1)}%</td>
-                                                    <td>
-                                                        {summary.rawScore}/{summary.maxRawScore}
-                                                    </td>
-                                                    <td>
-                                                        <span style={{ color: summary.gradeColor, fontWeight: 700 }}>
-                                                            {summary.letterGrade}
-                                                        </span>
-                                                    </td>
-                                                    <td className="text-muted text-sm">
-                                                        {new Date(sr.gradedAt || new Date()).toLocaleDateString()}
-                                                    </td>
+                                    <div className="card" style={{ marginBottom: 20 }}>
+                                        <h3 style={{ marginBottom: 14 }}>{t('statistics.graded_rubrics')}</h3>
+                                        <table className="data-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>{t('statistics.label_rubric')}</th>
+                                                    <th>{t('statistics.table_subject')}</th>
+                                                    <th>{t('statistics.table_score')}</th>
+                                                    <th>{t('statistics.table_raw')}</th>
+                                                    <th>{t('statistics.table_grade')}</th>
+                                                    <th>{t('statistics.table_date_graded')}</th>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                            </thead>
+                                            <tbody>
+                                                {studentViewTableData.map(({ sr, rubric: r, summary }) => (
+                                                    <tr
+                                                        key={sr.id}
+                                                        style={{
+                                                            borderLeft: `4px solid ${summary.gradeColor}`,
+                                                            background: `${summary.gradeColor}08`,
+                                                        }}
+                                                    >
+                                                        <td style={{ fontWeight: 500, paddingLeft: 16 }}>{r.name}</td>
+                                                        <td className="text-muted text-sm">{r.subject || '—'}</td>
+                                                        <td>{summary.modifiedPercentage.toFixed(1)}%</td>
+                                                        <td>
+                                                            {summary.rawScore}/{summary.maxRawScore}
+                                                        </td>
+                                                        <td>
+                                                            <span
+                                                                style={{ color: summary.gradeColor, fontWeight: 700 }}
+                                                            >
+                                                                {summary.letterGrade}
+                                                            </span>
+                                                        </td>
+                                                        <td className="text-muted text-sm">
+                                                            {new Date(sr.gradedAt || new Date()).toLocaleDateString()}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 )}
 
                                 {/* Test results table */}

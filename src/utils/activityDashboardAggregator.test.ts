@@ -5,11 +5,32 @@ import type { Rubric, Test, EssayAssignment, Student, StudentRubric, StudentTest
 // ─── Builders ─────────────────────────────────────────────────────────────────
 
 function mkRubric(id: string, name = `Rubric ${id}`): Rubric {
-    return { id, name, subject: '', description: '', gradeScaleId: 'none', format: {} as never, attachmentIds: [], createdAt: '2024-01-01', updatedAt: '2024-01-01', totalMaxPoints: 0, scoringMode: 'weighted-percentage', criteria: [] };
+    return {
+        id,
+        name,
+        subject: '',
+        description: '',
+        gradeScaleId: 'none',
+        format: {} as never,
+        attachmentIds: [],
+        createdAt: '2024-01-01',
+        updatedAt: '2024-01-01',
+        totalMaxPoints: 0,
+        scoringMode: 'weighted-percentage',
+        criteria: [],
+    };
 }
 
 function mkTest(id: string, name = `Test ${id}`): Test {
-    return { id, name, questions: [], requireSEB: false, shuffleQuestions: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' };
+    return {
+        id,
+        name,
+        questions: [],
+        requireSEB: false,
+        shuffleQuestions: false,
+        createdAt: '2024-01-01',
+        updatedAt: '2024-01-01',
+    };
 }
 
 function mkEssay(teacherKey: string, studentId: string, title = 'Essay', rubricId = 'r1'): EssayAssignment {
@@ -137,10 +158,7 @@ describe('buildDashboardMatrix', () => {
     describe('test cells', () => {
         it('submittedCount counts only submitted and graded, not in_progress', () => {
             const activities = [{ kind: 'test' as const, id: 't1', name: 'T1' }];
-            const sts = [
-                mkST('a', 't1', 's1', 'submitted'),
-                mkST('b', 't1', 's2', 'in_progress'),
-            ];
+            const sts = [mkST('a', 't1', 's1', 'submitted'), mkST('b', 't1', 's2', 'in_progress')];
             const matrix = buildDashboardMatrix(activities, classes, students, [], sts, []);
             expect(matrix['t1']['cls1'].submittedCount).toBe(1);
         });
@@ -268,15 +286,25 @@ describe('buildDashboardMatrix', () => {
 // ─── Stress tests ─────────────────────────────────────────────────────────────
 
 describe('stress test — large dataset', () => {
-    const CLASSES = Array.from({ length: 12 }, (_, i) =>
-        mkClass(`cls${i}`, i % 2 === 0 ? ['r0', 'r1', 'r2'] : [])
-    );
+    const CLASSES = Array.from({ length: 12 }, (_, i) => mkClass(`cls${i}`, i % 2 === 0 ? ['r0', 'r1', 'r2'] : []));
     const STUDENTS = CLASSES.flatMap((cls) =>
         Array.from({ length: 35 }, (_, j) => mkStudent(`${cls.id}_s${j}`, cls.id))
     );
-    const RUBRIC_ACTIVITIES = Array.from({ length: 8 }, (_, i) => ({ kind: 'rubric' as const, id: `r${i}`, name: `Rubric ${i}` }));
-    const TEST_ACTIVITIES = Array.from({ length: 4 }, (_, i) => ({ kind: 'test' as const, id: `t${i}`, name: `Test ${i}` }));
-    const ESSAY_ACTIVITIES = Array.from({ length: 5 }, (_, i) => ({ kind: 'essay' as const, id: `ek${i}`, name: `Essay ${i}` }));
+    const RUBRIC_ACTIVITIES = Array.from({ length: 8 }, (_, i) => ({
+        kind: 'rubric' as const,
+        id: `r${i}`,
+        name: `Rubric ${i}`,
+    }));
+    const TEST_ACTIVITIES = Array.from({ length: 4 }, (_, i) => ({
+        kind: 'test' as const,
+        id: `t${i}`,
+        name: `Test ${i}`,
+    }));
+    const ESSAY_ACTIVITIES = Array.from({ length: 5 }, (_, i) => ({
+        kind: 'essay' as const,
+        id: `ek${i}`,
+        name: `Essay ${i}`,
+    }));
     const ALL_ACTIVITIES = [...RUBRIC_ACTIVITIES, ...TEST_ACTIVITIES, ...ESSAY_ACTIVITIES];
 
     const STUDENT_RUBRICS = RUBRIC_ACTIVITIES.flatMap((rb) =>
@@ -296,7 +324,14 @@ describe('stress test — large dataset', () => {
     });
 
     it('produces exactly 17 activity keys and 12 class keys each', () => {
-        const matrix = buildDashboardMatrix(ALL_ACTIVITIES, CLASSES, STUDENTS, STUDENT_RUBRICS, STUDENT_TESTS, ESSAY_ASSIGNMENTS);
+        const matrix = buildDashboardMatrix(
+            ALL_ACTIVITIES,
+            CLASSES,
+            STUDENTS,
+            STUDENT_RUBRICS,
+            STUDENT_TESTS,
+            ESSAY_ASSIGNMENTS
+        );
         expect(Object.keys(matrix)).toHaveLength(17);
         for (const actId of Object.keys(matrix)) {
             expect(Object.keys(matrix[actId])).toHaveLength(12);
@@ -332,7 +367,14 @@ describe('stress test — large dataset', () => {
     });
 
     it('all submittedCounts are non-negative integers', () => {
-        const matrix = buildDashboardMatrix(ALL_ACTIVITIES, CLASSES, STUDENTS, STUDENT_RUBRICS, STUDENT_TESTS, ESSAY_ASSIGNMENTS);
+        const matrix = buildDashboardMatrix(
+            ALL_ACTIVITIES,
+            CLASSES,
+            STUDENTS,
+            STUDENT_RUBRICS,
+            STUDENT_TESTS,
+            ESSAY_ASSIGNMENTS
+        );
         for (const actId of Object.keys(matrix)) {
             for (const clsId of Object.keys(matrix[actId])) {
                 const { submittedCount } = matrix[actId][clsId];
