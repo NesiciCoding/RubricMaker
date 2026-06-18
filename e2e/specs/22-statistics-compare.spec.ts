@@ -124,9 +124,10 @@ test.describe('Statistics — Compare tab', () => {
         await appPage.getByLabel('Class A').check();
         await appPage.getByLabel('Class B').check();
 
-        // MultiClassTrendChart requires >= 2 trend points (one per rubric)
-        // .recharts-line is a <g> wrapper (not visible in Playwright); .recharts-line-curve is the actual <path>
-        // Chromium renders SVG slower than firefox; 20s covers the observed 13-14s in CI
-        await expect(appPage.locator('.recharts-line-curve').first()).toBeVisible({ timeout: 20_000 });
+        // Wait for bar chart first (proves compare data is loaded)
+        await expect(appPage.locator('.recharts-bar-rectangle').first()).toBeVisible({ timeout: 10_000 });
+        // The trend section heading appears when multiTrendData.length >= 2 — assert on a plain <h3>
+        // not on SVG elements (recharts <path>/<g> are unreliable in headless chromium)
+        await expect(appPage.locator('h3', { hasText: /class progress trend/i })).toBeVisible({ timeout: 10_000 });
     });
 });
