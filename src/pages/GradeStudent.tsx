@@ -903,7 +903,11 @@ export default function GradeStudent() {
                                             return (
                                                 <button
                                                     key={level.id}
-                                                    data-tour={levelIndex === 0 && criterionIndex === 0 ? 'grading-level-btn' : undefined}
+                                                    data-tour={
+                                                        levelIndex === 0 && criterionIndex === 0
+                                                            ? 'grading-level-btn'
+                                                            : undefined
+                                                    }
                                                     className={`level-btn${isSelected ? ' selected' : ''}`}
                                                     style={
                                                         isSelected

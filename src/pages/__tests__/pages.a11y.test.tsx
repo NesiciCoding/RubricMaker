@@ -373,4 +373,3 @@ describe('BloomsPyramidChart — a11y', () => {
         expect(srList?.textContent).toContain('75%');
     });
 });
-

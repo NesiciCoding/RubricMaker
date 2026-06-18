@@ -479,7 +479,10 @@ export default function ExportPage() {
                     </div>
 
                     {/* CSV export */}
-                    <div data-tour="export-grades" style={{ borderTop: '1px solid var(--border)', paddingTop: 14, marginTop: 14 }}>
+                    <div
+                        data-tour="export-grades"
+                        style={{ borderTop: '1px solid var(--border)', paddingTop: 14, marginTop: 14 }}
+                    >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div
                                 style={{
