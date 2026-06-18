@@ -96,11 +96,16 @@ test.describe('Statistics — Compare tab', () => {
         const avgChart = appPage.locator('.recharts-wrapper').first();
         await expect(avgChart.locator('.recharts-bar-rectangle')).toHaveCount(3, { timeout: 10_000 });
         // Verify A > B > C ordering via SVG rect heights (getAttribute works; toBeVisible does not for SVG)
-        const heights = await avgChart.locator('.recharts-bar-rectangle').evaluateAll(
-            (els) => els.map((el) => parseFloat(el.getAttribute('height') ?? '0'))
-        );
-        expect(heights[0]).toBeGreaterThan(heights[1]); // Class A (100%) taller than Class B (~62.5%)
-        expect(heights[1]).toBeGreaterThan(heights[2]); // Class B taller than Class C (~25%)
+        // Use expect.poll so the check retries until Recharts finishes its bar-grow animation (~400 ms)
+        await expect.poll(
+            async () => {
+                const hs = await avgChart.locator('.recharts-bar-rectangle').evaluateAll(
+                    (els) => els.map((el) => parseFloat(el.getAttribute('height') ?? '0'))
+                );
+                return hs.length === 3 && hs[0] > hs[1] && hs[1] > hs[2];
+            },
+            { timeout: 5_000 }
+        ).toBe(true);
     });
 
     test('insights panel appears when classes have divergent performance', async ({ appPage }) => {
