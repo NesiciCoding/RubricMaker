@@ -23,7 +23,18 @@
         "step_settings_title": "Instellingen & Aanpassing",
         "step_settings_content": "Wijzig het thema en de accentkleur, beheer beoordelingsschalen, stel je taal in (Nederlands of Engels) en configureer de Standards API-sleutel. Je kunt de rondleiding op elk moment opnieuw starten via deze pagina.",
         "restart_button": "Rondleiding opnieuw starten",
-        "restart_section_title": "Rondleiding"
+        "restart_section_title": "Rondleiding",
+        "grading_tour_button": "Rondleiding",
+        "grading_step_criteria_title": "Beoordelingscriteria",
+        "grading_step_criteria_content": "Elke kaart is één beoordelingscriterium. Werk ze van boven naar beneden door om de leerling op elk onderdeel te scoren.",
+        "grading_step_level_title": "Niveau kiezen",
+        "grading_step_level_content": "Klik op een prestatieniveau om die score toe te kennen. Gebruik de cijfertoetsen 1–5 als een criterium gefocust is voor snel toetsenbordgebruik.",
+        "grading_step_comment_title": "Feedback toevoegen",
+        "grading_step_comment_content": "Klik op het tekstballonpictogram om de commentaareditor voor dit criterium te openen. U kunt ook fragmenten uit uw commentaarbank invoegen.",
+        "grading_step_modifier_title": "Scorecorrectie",
+        "grading_step_modifier_content": "Pas een globale procentuele of puntenwijziging toe op de eindscore. Voeg een reden toe zodat deze zichtbaar is in de export.",
+        "grading_step_footer_title": "Live scorebalke",
+        "grading_step_footer_content": "De balk toont het lopende totaal, het cijfer en navigatie naar de volgende leerling. Klik op Opslaan of Opslaan & Volgende als u klaar bent."
     },
     "common": {
         "save": "Opslaan",
@@ -711,7 +722,9 @@
         "action_essay": "Opstel",
         "action_import_essay": "Opstel importeren",
         "anchor_help_text": "Ankerwerkstukken zijn referentie-inzendingen die worden gebruikt om je beoordeling te kalibreren. Door een inzending als anker te markeren, kun je deze naast nieuwe inzendingen vergelijken in de beoordelingsvoettekst.",
-        "aria_grade_summary": "Cijferoverzicht"
+        "aria_grade_summary": "Cijferoverzicht",
+        "help_modifier_title": "Scorecorrectie",
+        "help_modifier_content": "Voeg een globale aanpassing toe aan de eindscore. Kies percentage (bijv. +10%) of punten (bijv. +5). Voer een reden in zodat deze in het exportrapport en het auditlog verschijnt."
     },
     "rubricBuilder": {
         "action_back": "Terug",

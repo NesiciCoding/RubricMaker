@@ -23,7 +23,18 @@
         "step_settings_title": "Settings & Customisation",
         "step_settings_content": "Change the theme and accent colour, manage grade scales, set your language (English or Dutch), and configure the Standards API key. You can restart this tour at any time from the Settings page.",
         "restart_button": "Restart guided tour",
-        "restart_section_title": "Guided tour"
+        "restart_section_title": "Guided tour",
+        "grading_tour_button": "Tour this page",
+        "grading_step_criteria_title": "Grading Criteria",
+        "grading_step_criteria_content": "Each card is one grading criterion. Work through them top to bottom to score the student on every dimension.",
+        "grading_step_level_title": "Selecting a Level",
+        "grading_step_level_content": "Click a performance level to award that score. Use number keys 1–5 while a criterion is focused for fast keyboard grading.",
+        "grading_step_comment_title": "Adding Feedback",
+        "grading_step_comment_content": "Click the speech-bubble icon to open the comment editor for this criterion. You can also pull snippets from your Comment Bank with one click.",
+        "grading_step_modifier_title": "Score Modifier",
+        "grading_step_modifier_content": "Apply a global percentage or point adjustment to the final score (e.g. +5% for excellent presentation). Add a reason so it is visible in the export.",
+        "grading_step_footer_title": "Live Score Footer",
+        "grading_step_footer_content": "The footer shows the running total, letter grade, and navigation to the next student. Hit Save or Save & Next when you are done."
     },
     "common": {
         "save": "Save",
@@ -711,7 +722,9 @@
         "action_essay": "Essay",
         "action_import_essay": "Import essay",
         "anchor_help_text": "Anchor papers are reference submissions used to calibrate your grading. Marking a submission as an anchor lets you compare it side-by-side with new submissions in the grade footer.",
-        "aria_grade_summary": "Grade summary"
+        "aria_grade_summary": "Grade summary",
+        "help_modifier_title": "Score Modifiers",
+        "help_modifier_content": "Add a global adjustment to the final score. Choose percentage (e.g. +10%) or points (e.g. +5). Enter a reason so it appears in the exported report and audit log."
     },
     "rubricBuilder": {
         "action_back": "Back",

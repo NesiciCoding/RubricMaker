@@ -23,7 +23,18 @@
         "step_settings_title": "Ajustes y Personalización",
         "step_settings_content": "Cambia el tema y el color de acento, gestiona las escalas de calificación, establece tu idioma (inglés, holandés, francés, alemán o español) y configura la clave de la API de Estándares. Puedes reiniciar este recorrido en cualquier momento desde la página de Ajustes.",
         "restart_button": "Reiniciar recorrido guiado",
-        "restart_section_title": "Recorrido guiado"
+        "restart_section_title": "Recorrido guiado",
+        "grading_tour_button": "Visita guiada",
+        "grading_step_criteria_title": "Criterios de evaluación",
+        "grading_step_criteria_content": "Cada tarjeta es un criterio de evaluación. Recórralos de arriba a abajo para puntuar al estudiante en cada dimensión.",
+        "grading_step_level_title": "Seleccionar nivel",
+        "grading_step_level_content": "Haga clic en un nivel de desempeño para asignar esa puntuación. Use las teclas 1–5 cuando un criterio esté enfocado para calificar rápidamente con el teclado.",
+        "grading_step_comment_title": "Añadir comentarios",
+        "grading_step_comment_content": "Haga clic en el icono de burbuja de texto para abrir el editor de comentarios de este criterio. También puede insertar fragmentos de su banco de comentarios.",
+        "grading_step_modifier_title": "Modificador de puntuación",
+        "grading_step_modifier_content": "Aplique un ajuste global en porcentaje o puntos a la puntuación final. Añada un motivo para que aparezca en la exportación.",
+        "grading_step_footer_title": "Barra de puntuación en vivo",
+        "grading_step_footer_content": "La barra muestra el total acumulado, la calificación y la navegación al siguiente estudiante. Haga clic en Guardar o Guardar y siguiente cuando haya terminado."
     },
     "common": {
         "save": "Guardar",
@@ -711,7 +722,9 @@
         "action_essay": "Redacción",
         "action_import_essay": "Importar redacción",
         "anchor_help_text": "Los trabajos de referencia son envíos usados para calibrar su evaluación. Marcar un envío como referencia le permite compararlo junto a nuevos envíos en el pie de página de calificación.",
-        "aria_grade_summary": "Resumen de calificación"
+        "aria_grade_summary": "Resumen de calificación",
+        "help_modifier_title": "Modificador de puntuación",
+        "help_modifier_content": "Añada un ajuste global a la puntuación final. Elija porcentaje (ej. +10%) o puntos (ej. +5). Ingrese un motivo para que aparezca en el informe exportado y el registro de auditoría."
     },
     "rubricBuilder": {
         "action_back": "Volver",

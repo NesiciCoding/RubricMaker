@@ -23,7 +23,18 @@
         "restart_button": "Relancer la visite guidée",
         "restart_section_title": "Visite guidée",
         "step_cefr_title": "Aperçu du CECR",
-        "step_cefr_content": "Suivez les compétences linguistiques dans toute votre école à l'aide du Cadre européen commun de référence pour les langues. Consultez les niveaux CECR atteints par chaque élève par compétence, identifiez les tendances à l'échelle de la classe et suivez la progression dans le temps."
+        "step_cefr_content": "Suivez les compétences linguistiques dans toute votre école à l'aide du Cadre européen commun de référence pour les langues. Consultez les niveaux CECR atteints par chaque élève par compétence, identifiez les tendances à l'échelle de la classe et suivez la progression dans le temps.",
+        "grading_tour_button": "Visite guidée",
+        "grading_step_criteria_title": "Critères d'évaluation",
+        "grading_step_criteria_content": "Chaque carte correspond à un critère d'évaluation. Parcourez-les de haut en bas pour noter l'élève sur chaque dimension.",
+        "grading_step_level_title": "Choisir un niveau",
+        "grading_step_level_content": "Cliquez sur un niveau de performance pour attribuer ce score. Utilisez les touches 1–5 lorsqu'un critère est sélectionné pour noter rapidement au clavier.",
+        "grading_step_comment_title": "Ajouter des commentaires",
+        "grading_step_comment_content": "Cliquez sur l'icône bulle pour ouvrir l'éditeur de commentaires pour ce critère. Vous pouvez aussi insérer des extraits depuis votre banque de commentaires.",
+        "grading_step_modifier_title": "Modificateur de score",
+        "grading_step_modifier_content": "Appliquez un ajustement global en pourcentage ou en points au score final. Ajoutez une raison pour qu'elle apparaisse dans l'exportation.",
+        "grading_step_footer_title": "Pied de page du score en direct",
+        "grading_step_footer_content": "Le pied de page affiche le total courant, la note et la navigation vers l'élève suivant. Cliquez sur Enregistrer ou Enregistrer & Suivant lorsque vous avez terminé."
     },
     "common": {
         "save": "Enregistrer",
@@ -711,7 +722,9 @@
         "action_essay": "Dissertation",
         "action_import_essay": "Importer la dissertation",
         "anchor_help_text": "Les copies de référence sont des travaux utilisés pour calibrer votre évaluation. Marquer une copie comme référence vous permet de la comparer côte à côte avec de nouvelles copies dans le pied de page de notation.",
-        "aria_grade_summary": "Résumé de la note"
+        "aria_grade_summary": "Résumé de la note",
+        "help_modifier_title": "Modificateur de score",
+        "help_modifier_content": "Ajoutez un ajustement global au score final. Choisissez un pourcentage (ex. +10%) ou des points (ex. +5). Entrez une raison pour qu'elle apparaisse dans le rapport exporté et le journal d'audit."
     },
     "rubricBuilder": {
         "action_back": "Retour",

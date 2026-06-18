@@ -58,6 +58,16 @@ vi.mock('../../context/AppContext', () => ({
         showMigrationPrompt: false,
         dismissMigrationPrompt: vi.fn(),
         getActiveGradeScale: vi.fn(),
+        // Phase 3/4 collections
+        tests: [],
+        studentTests: [],
+        essayAssignments: [],
+        peerReviews: [],
+        analysisResults: [],
+        attachments: [],
+        // Phase 3/4 actions
+        updateClass: vi.fn(),
+        addEssayAssignments: vi.fn(),
     }),
 }));
 
@@ -363,3 +373,4 @@ describe('BloomsPyramidChart — a11y', () => {
         expect(srList?.textContent).toContain('75%');
     });
 });
+

@@ -23,7 +23,18 @@
         "restart_button": "Geführte Tour neu starten",
         "restart_section_title": "Geführte Tour",
         "step_cefr_title": "GERS-Übersicht",
-        "step_cefr_content": "Verfolgen Sie die Sprachkenntnisse in Ihrer gesamten Schule anhand des Gemeinsamen europäischen Referenzrahmens. Sehen Sie, welche GERS-Niveaus jeder Schüler je Fertigkeit erreicht hat, erkennen Sie klassenweite Trends und beobachten Sie den Fortschritt über Zeit."
+        "step_cefr_content": "Verfolgen Sie die Sprachkenntnisse in Ihrer gesamten Schule anhand des Gemeinsamen europäischen Referenzrahmens. Sehen Sie, welche GERS-Niveaus jeder Schüler je Fertigkeit erreicht hat, erkennen Sie klassenweite Trends und beobachten Sie den Fortschritt über Zeit.",
+        "grading_tour_button": "Seitenführung",
+        "grading_step_criteria_title": "Bewertungskriterien",
+        "grading_step_criteria_content": "Jede Karte ist ein Bewertungskriterium. Arbeiten Sie sie von oben nach unten durch, um den Schüler in jeder Dimension zu bewerten.",
+        "grading_step_level_title": "Niveau auswählen",
+        "grading_step_level_content": "Klicken Sie auf ein Leistungsniveau, um diesen Wert zu vergeben. Verwenden Sie die Zahlentasten 1–5, wenn ein Kriterium fokussiert ist, für schnelle Tastatureingabe.",
+        "grading_step_comment_title": "Feedback hinzufügen",
+        "grading_step_comment_content": "Klicken Sie auf das Sprechblasensymbol, um den Kommentareditor für dieses Kriterium zu öffnen. Sie können auch Snippets aus Ihrer Kommentarbank einfügen.",
+        "grading_step_modifier_title": "Punktemodifikator",
+        "grading_step_modifier_content": "Wenden Sie eine globale Prozent- oder Punktekorrektur auf die Endpunktzahl an. Fügen Sie einen Grund hinzu, damit er im Export sichtbar ist.",
+        "grading_step_footer_title": "Live-Punkteleiste",
+        "grading_step_footer_content": "Die Leiste zeigt die laufende Summe, die Note und die Navigation zum nächsten Schüler. Klicken Sie auf Speichern oder Speichern & Weiter, wenn Sie fertig sind."
     },
     "common": {
         "save": "Speichern",
@@ -711,7 +722,9 @@
         "action_essay": "Aufsatz",
         "action_import_essay": "Aufsatz importieren",
         "anchor_help_text": "Ankerarbeiten sind Referenzeinreichungen, die zur Kalibrierung Ihrer Bewertung verwendet werden. Durch das Markieren einer Einreichung als Anker können Sie sie in der Bewertungsfußzeile neben neuen Einreichungen vergleichen.",
-        "aria_grade_summary": "Notenübersicht"
+        "aria_grade_summary": "Notenübersicht",
+        "help_modifier_title": "Punktemodifikator",
+        "help_modifier_content": "Fügen Sie eine globale Anpassung zur Endpunktzahl hinzu. Wählen Sie Prozent (z.B. +10%) oder Punkte (z.B. +5). Geben Sie einen Grund ein, damit er im exportierten Bericht und Prüfprotokoll erscheint."
     },
     "rubricBuilder": {
         "action_back": "Zurück",

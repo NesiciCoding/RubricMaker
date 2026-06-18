@@ -1126,8 +1126,22 @@ select.input-error {
     /* Grade footer spans full width when sidebar is an overlay */
     .grade-footer {
         left: 0;
-        padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 8px calc(12px + env(safe-area-inset-right, 0px))
+                 calc(8px + env(safe-area-inset-bottom, 0px)) 12px;
     }
+
+    /* Level buttons: smaller minimum so 4+ levels fit on portrait phones */
+    .level-btn {
+        min-width: 90px;
+        padding: 12px 10px;
+    }
+}
+
+/* Hide keyboard shortcut number hints on touch-only devices */
+@media (hover: none) {
+    .level-btn-shortcut-hint { display: none; }
 }
 
 /* ─── Tablet / iPad optimisation (≤ 1024 px) ─────────────────────────────────── */

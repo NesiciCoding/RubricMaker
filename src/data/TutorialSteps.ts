@@ -1,6 +1,47 @@
 import type { Step } from 'react-joyride';
 import type { TFunction } from 'i18next';
 
+/** Five-step in-page tour for the grade-student workflow. */
+export function getGradingTourSteps(t: TFunction): Step[] {
+    return [
+        {
+            target: '[data-tour="grading-criteria"]',
+            title: t('tutorial.grading_step_criteria_title'),
+            content: t('tutorial.grading_step_criteria_content'),
+            placement: 'top',
+            skipBeacon: true,
+        },
+        {
+            target: '[data-tour="grading-level-btn"]',
+            title: t('tutorial.grading_step_level_title'),
+            content: t('tutorial.grading_step_level_content'),
+            placement: 'top',
+            skipBeacon: true,
+        },
+        {
+            target: '[data-tour="grading-comment"]',
+            title: t('tutorial.grading_step_comment_title'),
+            content: t('tutorial.grading_step_comment_content'),
+            placement: 'top',
+            skipBeacon: true,
+        },
+        {
+            target: '[data-tour="grading-modifier"]',
+            title: t('tutorial.grading_step_modifier_title'),
+            content: t('tutorial.grading_step_modifier_content'),
+            placement: 'top',
+            skipBeacon: true,
+        },
+        {
+            target: '[data-tour="grading-footer"]',
+            title: t('tutorial.grading_step_footer_title'),
+            content: t('tutorial.grading_step_footer_content'),
+            placement: 'top',
+            skipBeacon: true,
+        },
+    ];
+}
+
 export function getTutorialSteps(t: TFunction): Step[] {
     return [
         {
