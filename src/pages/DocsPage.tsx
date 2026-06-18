@@ -536,7 +536,9 @@ function GettingStartedTab() {
 
                 <InfoBox>
                     <strong>Guided tour:</strong> A built-in Joyride walkthrough runs the first time you log in. You can
-                    restart it at any time from <strong>Settings → Guided tour</strong>.
+                    restart it at any time from <strong>Settings → Guided tour</strong>. Individual page tours are also
+                    available on the Rubric Builder, Statistics, and Export pages via the{' '}
+                    <strong>"Tour this page"</strong> button in the top-right corner.
                 </InfoBox>
             </FeatureSection>
 

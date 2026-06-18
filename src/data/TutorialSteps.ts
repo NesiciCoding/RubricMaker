@@ -42,6 +42,85 @@ export function getGradingTourSteps(t: TFunction): Step[] {
     ];
 }
 
+export function getRubricBuilderTourSteps(t: TFunction): Step[] {
+    return [
+        {
+            target: '[data-tour="rb-meta"]',
+            title: t('tutorial.rb_step_meta_title'),
+            content: t('tutorial.rb_step_meta_content'),
+            placement: 'bottom',
+            skipBeacon: true,
+        },
+        {
+            target: '[data-tour="rb-scoring-mode"]',
+            title: t('tutorial.rb_step_scoring_title'),
+            content: t('tutorial.rb_step_scoring_content'),
+            placement: 'top',
+            skipBeacon: true,
+        },
+        {
+            target: '[data-tour="rb-criteria-section"]',
+            title: t('tutorial.rb_step_criteria_title'),
+            content: t('tutorial.rb_step_criteria_content'),
+            placement: 'top',
+            skipBeacon: true,
+        },
+        {
+            target: '[data-tour="rb-save"]',
+            title: t('tutorial.rb_step_save_title'),
+            content: t('tutorial.rb_step_save_content'),
+            placement: 'bottom',
+            skipBeacon: true,
+            isFixed: true,
+        },
+    ];
+}
+
+export function getExportTourSteps(t: TFunction): Step[] {
+    return [
+        {
+            target: '[data-tour="export-rubric"]',
+            title: t('tutorial.export_step_rubric_title'),
+            content: t('tutorial.export_step_rubric_content'),
+            placement: 'bottom',
+            skipBeacon: true,
+        },
+        {
+            target: '[data-tour="export-template"]',
+            title: t('tutorial.export_step_template_title'),
+            content: t('tutorial.export_step_template_content'),
+            placement: 'bottom',
+            skipBeacon: true,
+        },
+        {
+            target: '[data-tour="export-grades"]',
+            title: t('tutorial.export_step_grades_title'),
+            content: t('tutorial.export_step_grades_content'),
+            placement: 'top',
+            skipBeacon: true,
+        },
+    ];
+}
+
+export function getStatisticsTourSteps(t: TFunction): Step[] {
+    return [
+        {
+            target: '[data-tour="stats-controls"]',
+            title: t('tutorial.stats_step_controls_title'),
+            content: t('tutorial.stats_step_controls_content'),
+            placement: 'bottom',
+            skipBeacon: true,
+        },
+        {
+            target: '[data-tour="stats-criterion-chart"]',
+            title: t('tutorial.stats_step_criterion_title'),
+            content: t('tutorial.stats_step_criterion_content'),
+            placement: 'top',
+            skipBeacon: true,
+        },
+    ];
+}
+
 export function getTutorialSteps(t: TFunction): Step[] {
     return [
         {

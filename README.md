@@ -65,6 +65,7 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 
 - **Theme bundles**: Six named bundles (Academy, Nature, Midnight, Warm, Slate, Rose) set accent colour, UI font, and export header colour in one click. Eight quick accent-colour presets are also available.
 - **WCAG 2.1 AA**: Icon-only buttons carry `aria-label`; tab navigation uses `role="tablist"` / `role="tab"` with `aria-selected`; axe-core audits run in CI on key pages and components.
+- **In-app help**: A Joyride guided tour runs on first login and can be restarted from Settings. Page-specific tours are available on the Rubric Builder, Statistics, and Export pages via the "Tour this page" button.
 
 ### 8. Data Management
 

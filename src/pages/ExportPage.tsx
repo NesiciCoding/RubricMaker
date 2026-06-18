@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { logAuditEvent } from '../services/database/AuditLogger';
+import { Joyride, STATUS } from 'react-joyride';
+import type { EventData } from 'react-joyride';
+import { getExportTourSteps } from '../data/TutorialSteps';
 import {
     Download,
     CheckSquare,
@@ -54,6 +57,8 @@ export default function ExportPage() {
     const [reportDateTo, setReportDateTo] = useState('');
     const [reportPeriodLabel, setReportPeriodLabel] = useState('');
     const [generatingReport, setGeneratingReport] = useState(false);
+    const [tourRun, setTourRun] = useState(false);
+    const exportTourSteps = useMemo(() => getExportTourSteps(t), [t]);
 
     const activeTemplateId = settings.exportTemplateId ?? '';
     const activeTemplate = exportTemplates.find((t) => t.id === activeTemplateId) ?? null;
@@ -304,9 +309,34 @@ export default function ExportPage() {
 
     return (
         <>
-            <Topbar title={t('navigation.export')} />
+            <Joyride
+                steps={exportTourSteps}
+                run={tourRun}
+                continuous
+                onEvent={(data: EventData) => {
+                    if (data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED) {
+                        setTourRun(false);
+                    }
+                }}
+                options={{
+                    showProgress: true,
+                    primaryColor: 'var(--accent)',
+                    backgroundColor: 'var(--bg-elevated)',
+                    textColor: 'var(--text)',
+                    arrowColor: 'var(--bg-elevated)',
+                    overlayColor: 'rgba(0, 0, 0, 0.6)',
+                }}
+            />
+            <Topbar
+                title={t('navigation.export')}
+                actions={
+                    <button className="btn btn-ghost btn-sm" onClick={() => setTourRun(true)}>
+                        {t('tutorial.export_tour_button')}
+                    </button>
+                }
+            />
             <div className="page-content fade-in">
-                <div className="card" style={{ marginBottom: 20 }}>
+                <div data-tour="export-rubric" className="card" style={{ marginBottom: 20 }}>
                     <div className="form-group" style={{ marginBottom: 16 }}>
                         <label>{t('exportPage.select_rubric')}</label>
                         <select
@@ -326,7 +356,7 @@ export default function ExportPage() {
                     </div>
 
                     {/* Word export template selector */}
-                    <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14 }}>
+                    <div data-tour="export-template" style={{ borderTop: '1px solid var(--border)', paddingTop: 14 }}>
                         <div
                             style={{
                                 display: 'flex',
@@ -449,7 +479,7 @@ export default function ExportPage() {
                     </div>
 
                     {/* CSV export */}
-                    <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14, marginTop: 14 }}>
+                    <div data-tour="export-grades" style={{ borderTop: '1px solid var(--border)', paddingTop: 14, marginTop: 14 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div
                                 style={{
