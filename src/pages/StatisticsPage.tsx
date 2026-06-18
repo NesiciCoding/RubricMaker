@@ -1,4 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { Joyride, STATUS } from 'react-joyride';
+import type { EventData } from 'react-joyride';
+import { getStatisticsTourSteps } from '../data/TutorialSteps';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { TrendingUp, Users, BookOpen, Download, Maximize2, Printer, ChevronDown, ChevronUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -64,6 +67,9 @@ export default function StatisticsPage() {
     } = useApp();
     const { t, i18n } = useTranslation();
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
+
+    const [tourRun, setTourRun] = useState(false);
+    const statsTourSteps = useMemo(() => getStatisticsTourSteps(t), [t]);
 
     // ── View mode ────────────────────────────────────────────────────────────
     const [viewMode, setViewMode] = useState<'rubric' | 'student' | 'compare'>('rubric');
@@ -574,17 +580,41 @@ export default function StatisticsPage() {
     // ── Render ────────────────────────────────────────────────────────────────
     return (
         <>
+            <Joyride
+                steps={statsTourSteps}
+                run={tourRun}
+                continuous
+                onEvent={(data: EventData) => {
+                    if (data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED) {
+                        setTourRun(false);
+                    }
+                }}
+                options={{
+                    showProgress: true,
+                    primaryColor: 'var(--accent)',
+                    backgroundColor: 'var(--bg-elevated)',
+                    textColor: 'var(--text)',
+                    arrowColor: 'var(--bg-elevated)',
+                    overlayColor: 'rgba(0, 0, 0, 0.6)',
+                }}
+            />
             <Topbar
                 title={t('statistics.title')}
                 actions={
-                    <button className="btn btn-ghost btn-sm no-print" onClick={() => window.print()}>
-                        <Printer size={14} /> {t('common.print')}
-                    </button>
+                    <>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setTourRun(true)}>
+                            {t('tutorial.stats_tour_button')}
+                        </button>
+                        <button className="btn btn-ghost btn-sm no-print" onClick={() => window.print()}>
+                            <Printer size={14} /> {t('common.print')}
+                        </button>
+                    </>
                 }
             />
             <div className="page-content fade-in">
                 {/* ── Top controls ── */}
                 <div
+                    data-tour="stats-controls"
                     className="statistics-controls"
                     style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap', alignItems: 'flex-end' }}
                 >
@@ -672,7 +702,7 @@ export default function StatisticsPage() {
                                 </select>
                             </div>
                             {/* Criterion chart type toggle */}
-                            <div className="form-group" style={{ marginBottom: 0 }}>
+                            <div data-tour="stats-criterion-chart" className="form-group" style={{ marginBottom: 0 }}>
                                 <label>{t('statistics.label_criterion_chart')}</label>
                                 <div
                                     style={{

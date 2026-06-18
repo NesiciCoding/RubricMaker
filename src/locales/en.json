@@ -23,7 +23,39 @@
         "step_settings_title": "Settings & Customisation",
         "step_settings_content": "Change the theme and accent colour, manage grade scales, set your language (English or Dutch), and configure the Standards API key. You can restart this tour at any time from the Settings page.",
         "restart_button": "Restart guided tour",
-        "restart_section_title": "Guided tour"
+        "restart_section_title": "Guided tour",
+        "grading_tour_button": "Tour this page",
+        "grading_step_criteria_title": "Grading Criteria",
+        "grading_step_criteria_content": "Each card is one grading criterion. Work through them top to bottom to score the student on every dimension.",
+        "grading_step_level_title": "Selecting a Level",
+        "grading_step_level_content": "Click a performance level to award that score. Use number keys 1–5 while a criterion is focused for fast keyboard grading.",
+        "grading_step_comment_title": "Adding Feedback",
+        "grading_step_comment_content": "Click the speech-bubble icon to open the comment editor for this criterion. You can also pull snippets from your Comment Bank with one click.",
+        "grading_step_modifier_title": "Score Modifier",
+        "grading_step_modifier_content": "Apply a global percentage or point adjustment to the final score (e.g. +5% for excellent presentation). Add a reason so it is visible in the export.",
+        "grading_step_footer_title": "Live Score Footer",
+        "grading_step_footer_content": "The footer shows the running total, letter grade, and navigation to the next student. Hit Save or Save & Next when you are done.",
+        "rb_tour_button": "Tour this page",
+        "rb_step_meta_title": "Rubric Details",
+        "rb_step_meta_content": "Give your rubric a name, subject, and grade scale. These appear on every exported report.",
+        "rb_step_scoring_title": "Scoring Mode",
+        "rb_step_scoring_content": "Choose how the final grade is calculated: weighted percentage (most common), total raw points, or single-point mastery.",
+        "rb_step_criteria_title": "Criteria",
+        "rb_step_criteria_content": "Add one criterion per graded dimension. Drag the ⠿ handle to reorder. Each criterion gets performance levels with point ranges.",
+        "rb_step_save_title": "Save & Start Grading",
+        "rb_step_save_content": "Save your rubric. Then go to Students, pick a student, and click Grade to start scoring.",
+        "export_tour_button": "Tour this page",
+        "export_step_rubric_title": "Choose a Rubric",
+        "export_step_rubric_content": "Select which rubric to export. All PDF, DOCX, and CSV options below apply to this rubric.",
+        "export_step_template_title": "Word Template",
+        "export_step_template_content": "Upload a DOCX template with {{fields}} placeholders. Each student gets a personalised report with their name, score, and feedback merged in.",
+        "export_step_grades_title": "Export Grades",
+        "export_step_grades_content": "Download all student grades as a formatted PDF or DOCX batch, or a CSV spreadsheet. Tick the students you want first.",
+        "stats_tour_button": "Tour this page",
+        "stats_step_controls_title": "Pick a Rubric & Class",
+        "stats_step_controls_content": "Select a rubric and class to load the charts below. Switch the view mode to compare classes or see a single student's history.",
+        "stats_step_criterion_title": "Criterion Breakdown Chart",
+        "stats_step_criterion_content": "Toggle between a bar chart and a radar chart to see how the class performed on each criterion. Bars near the left reveal which dimensions need more teaching time."
     },
     "common": {
         "save": "Save",
@@ -711,7 +743,9 @@
         "action_essay": "Essay",
         "action_import_essay": "Import essay",
         "anchor_help_text": "Anchor papers are reference submissions used to calibrate your grading. Marking a submission as an anchor lets you compare it side-by-side with new submissions in the grade footer.",
-        "aria_grade_summary": "Grade summary"
+        "aria_grade_summary": "Grade summary",
+        "help_modifier_title": "Score Modifiers",
+        "help_modifier_content": "Add a global adjustment to the final score. Choose percentage (e.g. +10%) or points (e.g. +5). Enter a reason so it appears in the exported report and audit log."
     },
     "rubricBuilder": {
         "action_back": "Back",
@@ -1609,7 +1643,9 @@
         "tab_cefr": "CEFR & Speaking",
         "tab_essays": "Essay Writing",
         "tab_analytics": "Analytics & Export",
-        "tab_data": "Data Management"
+        "tab_data": "Data Management",
+        "guided_tour_page_tours_prefix": "Individual page tours are also available on the Rubric Builder, Statistics, and Export pages via the",
+        "guided_tour_page_tours_suffix": "button in the top-right corner."
     },
     "studentProfile": {
         "tab_overview": "Overview",

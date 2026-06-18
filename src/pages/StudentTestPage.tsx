@@ -695,7 +695,7 @@ function QuestionTimeline({ questions, currentIndex, answers, sections, onJump }
                 right: 0,
                 background: 'var(--bg-elevated)',
                 borderTop: '1px solid var(--border)',
-                padding: '10px 16px',
+                padding: `10px calc(16px + env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) 16px`,
                 display: 'flex',
                 alignItems: 'center',
                 gap: 12,

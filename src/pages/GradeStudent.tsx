@@ -18,7 +18,10 @@ import {
     PenLine,
     Upload,
     Printer,
+    HelpCircle,
 } from 'lucide-react';
+import { Joyride, STATUS } from 'react-joyride';
+import type { EventData } from 'react-joyride';
 import Topbar from '../components/Layout/Topbar';
 import CommentBankModal from '../components/Comments/CommentBankModal';
 import AttachmentViewer from '../components/Attachments/AttachmentViewer';
@@ -26,6 +29,7 @@ import DocumentAnalysisPanel from '../components/Essay/DocumentAnalysisPanel';
 import EssayAssignmentModal from '../components/Essay/EssayAssignmentModal';
 import EssayImportModal from '../components/Essay/EssayImportModal';
 import EssaySlipSheet from '../components/Essay/EssaySlipSheet';
+import HelpPopover from '../components/Tests/HelpPopover';
 import { useApp } from '../context/AppContext';
 import { useTranslation } from 'react-i18next';
 import { useVoiceGrading } from '../hooks/useVoiceGrading';
@@ -36,6 +40,7 @@ import { calcGradeSummary } from '../utils/gradeCalc';
 import { exportSinglePdf } from '../utils/pdfExport';
 import { logAuditEvent } from '../services/database/AuditLogger';
 import { loadSupabaseConfig } from '../services/database';
+import { getGradingTourSteps } from '../data/TutorialSteps';
 
 export default function GradeStudent() {
     const { t, i18n } = useTranslation();
@@ -115,6 +120,8 @@ export default function GradeStudent() {
     const [showStdDesc, setShowStdDesc] = useState(false);
     const [focusedCriterionIdx, setFocusedCriterionIdx] = useState<number | null>(null);
     const [showShortcuts, setShowShortcuts] = useState(false);
+    const [tourRun, setTourRun] = useState(false);
+    const gradingTourSteps = useMemo(() => getGradingTourSteps(t), [t]);
     const criterionCardsRef = useRef<(HTMLDivElement | null)[]>([]);
     const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
@@ -414,6 +421,25 @@ export default function GradeStudent() {
 
     return (
         <>
+            <Joyride
+                steps={gradingTourSteps}
+                run={tourRun}
+                continuous
+                onEvent={(data: EventData) => {
+                    if (data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED) {
+                        setTourRun(false);
+                    }
+                }}
+                options={{
+                    showProgress: true,
+                    buttons: ['back', 'skip', 'primary'],
+                    primaryColor: 'var(--accent)',
+                    backgroundColor: 'var(--bg-elevated)',
+                    textColor: 'var(--text)',
+                    arrowColor: 'var(--bg-elevated)',
+                    overlayColor: 'rgba(0, 0, 0, 0.6)',
+                }}
+            />
             <Topbar
                 title={`${t('gradeStudent.title_prefix')} ${student.name}`}
                 actions={
@@ -487,6 +513,13 @@ export default function GradeStudent() {
                         >
                             <XCircle size={15} /> {t('gradeStudent.action_not_handed_in')}
                         </button>
+                        <button
+                            className="btn btn-secondary btn-sm no-print"
+                            onClick={() => setTourRun(true)}
+                            title={t('tutorial.grading_tour_button')}
+                        >
+                            <HelpCircle size={15} /> {t('tutorial.grading_tour_button')}
+                        </button>
                         <button className="btn btn-secondary btn-sm no-print" onClick={handlePrint}>
                             <Printer size={15} /> {t('gradeStudent.action_print')}
                         </button>
@@ -523,11 +556,15 @@ export default function GradeStudent() {
 
                 {/* Modifier + export panel */}
                 <div
+                    data-tour="grading-modifier"
                     className="card no-print"
                     style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}
                 >
                     <span
                         style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4,
                             fontSize: '0.72rem',
                             color: 'var(--text-muted)',
                             fontWeight: 600,
@@ -536,6 +573,9 @@ export default function GradeStudent() {
                         }}
                     >
                         {t('gradeStudent.label_modifier')}
+                        <HelpPopover title={t('gradeStudent.help_modifier_title')}>
+                            {t('gradeStudent.help_modifier_content')}
+                        </HelpPopover>
                     </span>
                     <div style={{ display: 'flex', gap: 6, alignItems: 'center', flex: 1, minWidth: 280 }}>
                         <select
@@ -652,6 +692,7 @@ export default function GradeStudent() {
 
                 {/* Rubric — card per criterion */}
                 <div
+                    data-tour="grading-criteria"
                     style={{
                         marginBottom: 20,
                         display: 'flex',
@@ -746,6 +787,7 @@ export default function GradeStudent() {
                                         {fmt.showWeights && <span className="badge badge-blue">{c.weight}%</span>}
                                         <button
                                             className="btn btn-ghost btn-icon btn-sm"
+                                            data-tour={criterionIndex === 0 ? 'grading-comment' : undefined}
                                             onClick={() =>
                                                 setActiveCommentCrit(activeCommentCrit === c.id ? null : c.id)
                                             }
@@ -861,6 +903,11 @@ export default function GradeStudent() {
                                             return (
                                                 <button
                                                     key={level.id}
+                                                    data-tour={
+                                                        levelIndex === 0 && criterionIndex === 0
+                                                            ? 'grading-level-btn'
+                                                            : undefined
+                                                    }
                                                     className={`level-btn${isSelected ? ' selected' : ''}`}
                                                     style={
                                                         isSelected
@@ -901,6 +948,7 @@ export default function GradeStudent() {
                                                         >
                                                             {isCriterionFocused && shortcutNum <= 5 && (
                                                                 <span
+                                                                    className="level-btn-shortcut-hint"
                                                                     style={{
                                                                         display: 'inline-block',
                                                                         marginRight: 5,
@@ -1549,6 +1597,7 @@ export default function GradeStudent() {
             {/* Sticky grade footer */}
             {summary && rubric.format.showCalculatedGrade !== false && (
                 <div
+                    data-tour="grading-footer"
                     className="grade-footer"
                     role="status"
                     aria-live="polite"

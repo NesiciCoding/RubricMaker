@@ -23,7 +23,39 @@
         "restart_button": "Relancer la visite guidée",
         "restart_section_title": "Visite guidée",
         "step_cefr_title": "Aperçu du CECR",
-        "step_cefr_content": "Suivez les compétences linguistiques dans toute votre école à l'aide du Cadre européen commun de référence pour les langues. Consultez les niveaux CECR atteints par chaque élève par compétence, identifiez les tendances à l'échelle de la classe et suivez la progression dans le temps."
+        "step_cefr_content": "Suivez les compétences linguistiques dans toute votre école à l'aide du Cadre européen commun de référence pour les langues. Consultez les niveaux CECR atteints par chaque élève par compétence, identifiez les tendances à l'échelle de la classe et suivez la progression dans le temps.",
+        "grading_tour_button": "Visite guidée",
+        "grading_step_criteria_title": "Critères d'évaluation",
+        "grading_step_criteria_content": "Chaque carte correspond à un critère d'évaluation. Parcourez-les de haut en bas pour noter l'élève sur chaque dimension.",
+        "grading_step_level_title": "Choisir un niveau",
+        "grading_step_level_content": "Cliquez sur un niveau de performance pour attribuer ce score. Utilisez les touches 1–5 lorsqu'un critère est sélectionné pour noter rapidement au clavier.",
+        "grading_step_comment_title": "Ajouter des commentaires",
+        "grading_step_comment_content": "Cliquez sur l'icône bulle pour ouvrir l'éditeur de commentaires pour ce critère. Vous pouvez aussi insérer des extraits depuis votre banque de commentaires.",
+        "grading_step_modifier_title": "Modificateur de score",
+        "grading_step_modifier_content": "Appliquez un ajustement global en pourcentage ou en points au score final. Ajoutez une raison pour qu'elle apparaisse dans l'exportation.",
+        "grading_step_footer_title": "Pied de page du score en direct",
+        "grading_step_footer_content": "Le pied de page affiche le total courant, la note et la navigation vers l'élève suivant. Cliquez sur Enregistrer ou Enregistrer & Suivant lorsque vous avez terminé.",
+        "rb_tour_button": "Visite guidée",
+        "rb_step_meta_title": "Détails de la grille",
+        "rb_step_meta_content": "Donnez un nom, une matière et une échelle de notation à votre grille. Ces informations apparaissent sur chaque rapport exporté.",
+        "rb_step_scoring_title": "Mode de notation",
+        "rb_step_scoring_content": "Choisissez comment la note finale est calculée : pourcentage pondéré (le plus courant), points bruts ou maîtrise point unique.",
+        "rb_step_criteria_title": "Critères",
+        "rb_step_criteria_content": "Ajoutez un critère par dimension évaluée. Faites glisser le ⠿ pour réordonner. Chaque critère a des niveaux de performance avec des plages de points.",
+        "rb_step_save_title": "Enregistrer & Corriger",
+        "rb_step_save_content": "Enregistrez votre grille. Ensuite, allez dans Élèves, choisissez un élève et cliquez sur Corriger.",
+        "export_tour_button": "Visite guidée",
+        "export_step_rubric_title": "Choisir une grille",
+        "export_step_rubric_content": "Sélectionnez la grille à exporter. Toutes les options PDF, DOCX et CSV ci-dessous s'appliquent à cette grille.",
+        "export_step_template_title": "Modèle Word",
+        "export_step_template_content": "Téléversez un modèle DOCX avec des espaces réservés {{champs}}. Chaque élève reçoit un rapport personnalisé avec son nom, sa note et ses commentaires.",
+        "export_step_grades_title": "Exporter les notes",
+        "export_step_grades_content": "Téléchargez toutes les notes en PDF, DOCX groupé ou CSV. Cochez d'abord les élèves souhaités.",
+        "stats_tour_button": "Visite guidée",
+        "stats_step_controls_title": "Choisir une grille et une classe",
+        "stats_step_controls_content": "Sélectionnez une grille et une classe pour charger les graphiques. Changez le mode d'affichage pour comparer des classes ou voir l'historique d'un élève.",
+        "stats_step_criterion_title": "Graphique par critère",
+        "stats_step_criterion_content": "Basculez entre un histogramme et un radar pour voir les résultats de la classe par critère. Choisissez le type de graphique qui convient le mieux à votre analyse."
     },
     "common": {
         "save": "Enregistrer",
@@ -711,7 +743,9 @@
         "action_essay": "Dissertation",
         "action_import_essay": "Importer la dissertation",
         "anchor_help_text": "Les copies de référence sont des travaux utilisés pour calibrer votre évaluation. Marquer une copie comme référence vous permet de la comparer côte à côte avec de nouvelles copies dans le pied de page de notation.",
-        "aria_grade_summary": "Résumé de la note"
+        "aria_grade_summary": "Résumé de la note",
+        "help_modifier_title": "Modificateur de score",
+        "help_modifier_content": "Ajoutez un ajustement global au score final. Choisissez un pourcentage (ex. +10%) ou des points (ex. +5). Entrez une raison pour qu'elle apparaisse dans le rapport exporté et le journal d'audit."
     },
     "rubricBuilder": {
         "action_back": "Retour",
@@ -1609,7 +1643,9 @@
         "tab_cefr": "CECRL & Expression",
         "tab_essays": "Rédaction d'essais",
         "tab_analytics": "Analyses & Export",
-        "tab_data": "Gestion des données"
+        "tab_data": "Gestion des données",
+        "guided_tour_page_tours_prefix": "Des visites guidées par page sont également disponibles dans le Créateur de rubriques, les Statistiques et l'Export via le bouton",
+        "guided_tour_page_tours_suffix": "en haut à droite."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",

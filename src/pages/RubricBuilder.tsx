@@ -63,6 +63,9 @@ import { exportRubricToDocx } from '../utils/docxExport';
 import { logAuditEvent } from '../services/database/AuditLogger';
 import { getSpeakingDimensions } from '../data/speakingDimensions';
 import { useToast } from '../hooks/useToast';
+import { Joyride, STATUS } from 'react-joyride';
+import type { EventData } from 'react-joyride';
+import { getRubricBuilderTourSteps } from '../data/TutorialSteps';
 
 function newLevel(min = 0, max = 0, label = ''): RubricLevel {
     return {
@@ -156,6 +159,7 @@ export default function RubricBuilder() {
     const [showVersionHistory, setShowVersionHistory] = useState(false);
     const [versionLabel, setVersionLabel] = useState('');
     const [showPreviewStdDesc, setShowPreviewStdDesc] = useState(false);
+    const [tourRun, setTourRun] = useState(false);
 
     // ── Collapsible criteria ─────────────────────────────────────────────────
     const [collapsedCriteria, setCollapsedCriteria] = useState<Set<string>>(new Set());
@@ -672,6 +676,24 @@ export default function RubricBuilder() {
 
     return (
         <>
+            <Joyride
+                steps={getRubricBuilderTourSteps(t)}
+                run={tourRun}
+                continuous
+                onEvent={(data: EventData) => {
+                    if (data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED) {
+                        setTourRun(false);
+                    }
+                }}
+                options={{
+                    showProgress: true,
+                    primaryColor: 'var(--accent)',
+                    backgroundColor: 'var(--bg-elevated)',
+                    textColor: 'var(--text)',
+                    arrowColor: 'var(--bg-elevated)',
+                    overlayColor: 'rgba(0, 0, 0, 0.6)',
+                }}
+            />
             <Topbar
                 title={id ? t('rubricBuilder.edit_rubric') : t('rubricBuilder.new_rubric')}
                 actions={
@@ -799,7 +821,16 @@ export default function RubricBuilder() {
                                 <Clock size={15} /> {t('rubricBuilder.version_history')}
                             </button>
                         )}
-                        <button className="btn btn-primary btn-sm" onClick={handleSave}>
+                        <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => {
+                                if (viewMode !== 'form') setViewMode('form');
+                                setTourRun(true);
+                            }}
+                        >
+                            {t('tutorial.rb_tour_button')}
+                        </button>
+                        <button data-tour="rb-save" className="btn btn-primary btn-sm" onClick={handleSave}>
                             <Save size={15} />{' '}
                             {saved ? t('rubricBuilder.action_saved') : t('rubricBuilder.action_save')}
                         </button>
@@ -818,7 +849,7 @@ export default function RubricBuilder() {
                 >
                     <div style={{ display: viewMode === 'form' ? 'block' : 'none' }}>
                         {/* Rubric Meta */}
-                        <div className="card" style={{ marginBottom: 20 }}>
+                        <div data-tour="rb-meta" className="card" style={{ marginBottom: 20 }}>
                             <h3 style={{ marginBottom: 16 }}>{t('rubricBuilder.section_rubric_details')}</h3>
                             <div className="grid-2" style={{ gap: 12 }}>
                                 <div className="form-group">
@@ -875,6 +906,7 @@ export default function RubricBuilder() {
 
                             {/* ── Scoring mode ── */}
                             <div
+                                data-tour="rb-scoring-mode"
                                 style={{
                                     background: 'var(--bg-elevated)',
                                     borderRadius: 10,
@@ -1171,6 +1203,7 @@ export default function RubricBuilder() {
 
                         {/* Criteria */}
                         <div
+                            data-tour="rb-criteria-section"
                             style={{
                                 display: 'flex',
                                 justifyContent: 'space-between',

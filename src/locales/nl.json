@@ -23,7 +23,39 @@
         "step_settings_title": "Instellingen & Aanpassing",
         "step_settings_content": "Wijzig het thema en de accentkleur, beheer beoordelingsschalen, stel je taal in (Nederlands of Engels) en configureer de Standards API-sleutel. Je kunt de rondleiding op elk moment opnieuw starten via deze pagina.",
         "restart_button": "Rondleiding opnieuw starten",
-        "restart_section_title": "Rondleiding"
+        "restart_section_title": "Rondleiding",
+        "grading_tour_button": "Rondleiding",
+        "grading_step_criteria_title": "Beoordelingscriteria",
+        "grading_step_criteria_content": "Elke kaart is één beoordelingscriterium. Werk ze van boven naar beneden door om de leerling op elk onderdeel te scoren.",
+        "grading_step_level_title": "Niveau kiezen",
+        "grading_step_level_content": "Klik op een prestatieniveau om die score toe te kennen. Gebruik de cijfertoetsen 1–5 als een criterium gefocust is voor snel toetsenbordgebruik.",
+        "grading_step_comment_title": "Feedback toevoegen",
+        "grading_step_comment_content": "Klik op het tekstballonpictogram om de commentaareditor voor dit criterium te openen. U kunt ook fragmenten uit uw commentaarbank invoegen.",
+        "grading_step_modifier_title": "Scorecorrectie",
+        "grading_step_modifier_content": "Pas een globale procentuele of puntenwijziging toe op de eindscore. Voeg een reden toe zodat deze zichtbaar is in de export.",
+        "grading_step_footer_title": "Live scorebalke",
+        "grading_step_footer_content": "De balk toont het lopende totaal, het cijfer en navigatie naar de volgende leerling. Klik op Opslaan of Opslaan & Volgende als u klaar bent.",
+        "rb_tour_button": "Rondleiding",
+        "rb_step_meta_title": "Rubricdetails",
+        "rb_step_meta_content": "Geef uw rubric een naam, vak en beoordelingsschaal. Deze worden op elk geëxporteerd rapport weergegeven.",
+        "rb_step_scoring_title": "Beoordelingsmodus",
+        "rb_step_scoring_content": "Kies hoe het eindcijfer wordt berekend: gewogen percentage (meest gebruikt), totaal punten of single-point mastery.",
+        "rb_step_criteria_title": "Criteria",
+        "rb_step_criteria_content": "Voeg één criterium toe per beoordelingsdimensie. Versleep het ⠿-handvat om te herordenen. Elk criterium krijgt prestatieniveaus met puntenbereiken.",
+        "rb_step_save_title": "Opslaan & Beoordelen",
+        "rb_step_save_content": "Sla uw rubric op. Ga daarna naar Leerlingen, kies een leerling en klik op Beoordelen.",
+        "export_tour_button": "Rondleiding",
+        "export_step_rubric_title": "Kies een rubric",
+        "export_step_rubric_content": "Selecteer welke rubric u wilt exporteren. Alle PDF-, DOCX- en CSV-opties hieronder gelden voor deze rubric.",
+        "export_step_template_title": "Word-sjabloon",
+        "export_step_template_content": "Upload een DOCX-sjabloon met {{velden}}-plaatshouders. Elke leerling krijgt een gepersonaliseerd rapport met naam, score en feedback.",
+        "export_step_grades_title": "Cijfers exporteren",
+        "export_step_grades_content": "Download alle leerlingcijfers als een PDF- of DOCX-batch, of als CSV-spreadsheet. Vink eerst de gewenste leerlingen aan.",
+        "stats_tour_button": "Rondleiding",
+        "stats_step_controls_title": "Kies een rubric en klas",
+        "stats_step_controls_content": "Selecteer een rubric en klas om de grafieken te laden. Wissel de weergavemodus om klassen te vergelijken of de geschiedenis van een leerling te zien.",
+        "stats_step_criterion_title": "Criteriumgrafiek",
+        "stats_step_criterion_content": "Wissel tussen een staafgrafiek en een radardiagram om te zien hoe de klas scoorde op elk criterium. Balken links tonen welke dimensies meer aandacht nodig hebben."
     },
     "common": {
         "save": "Opslaan",
@@ -711,7 +743,9 @@
         "action_essay": "Opstel",
         "action_import_essay": "Opstel importeren",
         "anchor_help_text": "Ankerwerkstukken zijn referentie-inzendingen die worden gebruikt om je beoordeling te kalibreren. Door een inzending als anker te markeren, kun je deze naast nieuwe inzendingen vergelijken in de beoordelingsvoettekst.",
-        "aria_grade_summary": "Cijferoverzicht"
+        "aria_grade_summary": "Cijferoverzicht",
+        "help_modifier_title": "Scorecorrectie",
+        "help_modifier_content": "Voeg een globale aanpassing toe aan de eindscore. Kies percentage (bijv. +10%) of punten (bijv. +5). Voer een reden in zodat deze in het exportrapport en het auditlog verschijnt."
     },
     "rubricBuilder": {
         "action_back": "Terug",
@@ -1609,7 +1643,9 @@
         "tab_cefr": "ERK & Spreken",
         "tab_essays": "Essays schrijven",
         "tab_analytics": "Analyse & Export",
-        "tab_data": "Gegevensbeheer"
+        "tab_data": "Gegevensbeheer",
+        "guided_tour_page_tours_prefix": "Paginatours zijn ook beschikbaar in de Rubrieksmaker, Statistieken en Export via de",
+        "guided_tour_page_tours_suffix": "knop rechtsboven."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",
