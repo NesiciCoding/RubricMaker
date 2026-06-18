@@ -13,7 +13,7 @@ function srAtLevel(rubric: Rubric, student: Student, levelIndex: number): Studen
 }
 
 test.describe('Statistics — Compare tab', () => {
-    test.beforeEach(async ({ seedStorage }) => {
+    test.beforeEach(async ({ appPage, seedStorage }) => {
         // Three classes with clearly different performance levels:
         //   Class A: high (avg ~100%)    Class B: medium (avg ~62.5%)    Class C: low (avg ~25%)
         // Two rubrics are seeded so the trend chart (which requires >= 2 data points) renders.
@@ -57,17 +57,21 @@ test.describe('Statistics — Compare tab', () => {
             rm_students: allStudents,
             rm_student_rubrics: srs,
         });
+
+        // Hash-only navigation does not reload the JS context, so addInitScript data
+        // won't be written to localStorage until a hard reload. Navigate then reload.
+        await appPage.goto('/#/statistics');
+        await appPage.reload();
+        await appPage.waitForSelector('.main-area', { timeout: 20_000 });
     });
 
     test('Compare tab is visible and navigable', async ({ appPage }) => {
-        await appPage.goto('/#/statistics');
         await expect(appPage.getByRole('button', { name: /compare/i })).toBeVisible({ timeout: 10_000 });
         await appPage.getByRole('button', { name: /compare/i }).click();
         await expect(appPage.getByText(/compare rubric 1/i)).toBeVisible({ timeout: 5_000 });
     });
 
     test('selecting 2 classes shows avg bar chart with class names', async ({ appPage }) => {
-        await appPage.goto('/#/statistics');
         await appPage.getByRole('button', { name: /compare/i }).click();
 
         await appPage.getByLabel('Class A').check();
@@ -79,7 +83,6 @@ test.describe('Statistics — Compare tab', () => {
     });
 
     test('class averages reflect grade data — 3 bars visible for 3 classes', async ({ appPage }) => {
-        await appPage.goto('/#/statistics');
         await appPage.getByRole('button', { name: /compare/i }).click();
 
         await appPage.getByLabel('Class A').check();
@@ -97,7 +100,6 @@ test.describe('Statistics — Compare tab', () => {
     });
 
     test('insights panel appears when classes have divergent performance', async ({ appPage }) => {
-        await appPage.goto('/#/statistics');
         await appPage.getByRole('button', { name: /compare/i }).click();
 
         await appPage.getByLabel('Class A').check();
@@ -115,7 +117,6 @@ test.describe('Statistics — Compare tab', () => {
     });
 
     test('trend chart renders when 2 classes and 2 rubrics are present', async ({ appPage }) => {
-        await appPage.goto('/#/statistics');
         await appPage.getByRole('button', { name: /compare/i }).click();
 
         await appPage.getByLabel('Class A').check();
