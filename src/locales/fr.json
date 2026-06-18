@@ -1643,7 +1643,9 @@
         "tab_cefr": "CECRL & Expression",
         "tab_essays": "Rédaction d'essais",
         "tab_analytics": "Analyses & Export",
-        "tab_data": "Gestion des données"
+        "tab_data": "Gestion des données",
+        "guided_tour_page_tours_prefix": "Des visites guidées par page sont également disponibles dans le Créateur de rubriques, les Statistiques et l'Export via le bouton",
+        "guided_tour_page_tours_suffix": "en haut à droite."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",

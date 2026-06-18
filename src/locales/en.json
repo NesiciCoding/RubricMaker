@@ -1643,7 +1643,9 @@
         "tab_cefr": "CEFR & Speaking",
         "tab_essays": "Essay Writing",
         "tab_analytics": "Analytics & Export",
-        "tab_data": "Data Management"
+        "tab_data": "Data Management",
+        "guided_tour_page_tours_prefix": "Individual page tours are also available on the Rubric Builder, Statistics, and Export pages via the",
+        "guided_tour_page_tours_suffix": "button in the top-right corner."
     },
     "studentProfile": {
         "tab_overview": "Overview",

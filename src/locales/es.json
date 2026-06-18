@@ -1643,7 +1643,9 @@
         "tab_cefr": "MCER & Expresión",
         "tab_essays": "Redacción de ensayos",
         "tab_analytics": "Análisis y exportación",
-        "tab_data": "Gestión de datos"
+        "tab_data": "Gestión de datos",
+        "guided_tour_page_tours_prefix": "También hay visitas guiadas por página en el Constructor de rúbricas, Estadísticas y Exportación mediante el botón",
+        "guided_tour_page_tours_suffix": "en la esquina superior derecha."
     },
     "studentProfile": {
         "tab_overview": "Resumen",

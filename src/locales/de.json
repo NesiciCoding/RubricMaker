@@ -1643,7 +1643,9 @@
         "tab_cefr": "GER & Sprechen",
         "tab_essays": "Aufsatzschreiben",
         "tab_analytics": "Analyse & Export",
-        "tab_data": "Datenverwaltung"
+        "tab_data": "Datenverwaltung",
+        "guided_tour_page_tours_prefix": "Seitenspezifische Touren sind auch im Rubrikeneditor, in der Statistik und im Export über die Schaltfläche",
+        "guided_tour_page_tours_suffix": "oben rechts verfügbar."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",

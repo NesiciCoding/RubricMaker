@@ -503,6 +503,7 @@ function RouteMapTab() {
 }
 
 function GettingStartedTab() {
+    const { t } = useTranslation();
     return (
         <div>
             <FeatureSection icon={CheckCircle} title="Quick Start" color="#10b981">
@@ -536,9 +537,10 @@ function GettingStartedTab() {
 
                 <InfoBox>
                     <strong>Guided tour:</strong> A built-in Joyride walkthrough runs the first time you log in. You can
-                    restart it at any time from <strong>Settings → Guided tour</strong>. Individual page tours are also
-                    available on the Rubric Builder, Statistics, and Export pages via the{' '}
-                    <strong>"Tour this page"</strong> button in the top-right corner.
+                    restart it at any time from <strong>Settings → Guided tour</strong>.{' '}
+                    {t('docs.guided_tour_page_tours_prefix')}{' '}
+                    <strong>"{t('tutorial.rb_tour_button')}"</strong>{' '}
+                    {t('docs.guided_tour_page_tours_suffix')}
                 </InfoBox>
             </FeatureSection>
 

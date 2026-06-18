@@ -1643,7 +1643,9 @@
         "tab_cefr": "ERK & Spreken",
         "tab_essays": "Essays schrijven",
         "tab_analytics": "Analyse & Export",
-        "tab_data": "Gegevensbeheer"
+        "tab_data": "Gegevensbeheer",
+        "guided_tour_page_tours_prefix": "Paginatours zijn ook beschikbaar in de Rubrieksmaker, Statistieken en Export via de",
+        "guided_tour_page_tours_suffix": "knop rechtsboven."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",

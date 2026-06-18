@@ -821,7 +821,13 @@ export default function RubricBuilder() {
                                 <Clock size={15} /> {t('rubricBuilder.version_history')}
                             </button>
                         )}
-                        <button className="btn btn-ghost btn-sm" onClick={() => setTourRun(true)}>
+                        <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => {
+                                if (viewMode !== 'form') setViewMode('form');
+                                setTourRun(true);
+                            }}
+                        >
                             {t('tutorial.rb_tour_button')}
                         </button>
                         <button data-tour="rb-save" className="btn btn-primary btn-sm" onClick={handleSave}>
