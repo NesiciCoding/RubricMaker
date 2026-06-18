@@ -44,7 +44,8 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 - **Peer review**: Classmates leave structured feedback on submissions.
 
 ### 5. Analytics & Reporting
-- **Statistics dashboard**: Class performance with Average, Median, Highest, and Lowest scores; grade distribution charts; per-criterion performance breakdown.
+- **Statistics dashboard**: Class performance with Average, Median, Highest, and Lowest scores; grade distribution charts; per-criterion performance breakdown. A **Compare** tab lets you select up to 4 classes side-by-side — grouped average bars, per-criterion gap chart, multi-class trend overlay, and a collapsible Insights panel that flags struggling classes, weak criteria, and inter-class divergence.
+- **Activity Dashboard**: Grid of every rubric, test, and essay against every class — see submitted/total counts at a glance and take quick actions (link/unlink rubrics, bulk-assign essays, open test builder). Filter by school year and VO track.
 - **Vocabulary Profile dashboard**: Per-class and per-student CEFR vocabulary distribution (A1–C2), aggregated from document analysis results, with CSV export of vocabulary lists filtered by CEFR band.
 - **Student profiles**: Individual progress view across all rubrics, CEFR levels, and essays. A **Portfolio** tab shows a unified chronological timeline of grades, speaking sessions, and self-assessments.
 - **Overdue tracking**: Highlights students with assignments past due dates.
@@ -148,7 +149,8 @@ npm run db:reset     # Reset and re-apply all migrations
 | `/test/:code` | Take a test (public, no login — answer questions, optional timer, submit) |
 | `/attachments` | Attachment manager |
 | `/comments` | Comment bank |
-| `/statistics` | Statistics dashboard |
+| `/statistics` | Statistics dashboard (by-rubric, by-student, multi-class compare with insights) |
+| `/activity-dashboard` | Activity Dashboard — rubric/test/essay × class grid with link/assign actions |
 | `/export` | Export page |
 | `/settings` | Settings |
 | `/admin` | Admin panel (admin role only) |

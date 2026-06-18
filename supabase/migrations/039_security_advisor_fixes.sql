@@ -21,6 +21,16 @@ CREATE POLICY "client_logs_insert"
   WITH CHECK (user_id IS NULL OR user_id = (SELECT auth.uid()));
 
 -- ── 2. Hide _migrations from the API ─────────────────────────────────────────
+-- The table only exists in cloud Supabase projects; local stacks skip it.
 
-REVOKE SELECT ON TABLE public._migrations FROM anon;
-REVOKE SELECT ON TABLE public._migrations FROM authenticated;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = '_migrations'
+  ) THEN
+    REVOKE SELECT ON TABLE public._migrations FROM anon;
+    REVOKE SELECT ON TABLE public._migrations FROM authenticated;
+  END IF;
+END;
+$$;

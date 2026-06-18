@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { TrendingUp, Users, BookOpen, Download, Maximize2, Printer } from 'lucide-react';
+import { TrendingUp, Users, BookOpen, Download, Maximize2, Printer, ChevronDown, ChevronUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { BLOOM_LEVELS } from '../data/bloomsTaxonomy';
 import { IB_ATTRIBUTES } from '../data/ibLearnerProfile';
@@ -12,13 +12,17 @@ import { saveAs } from 'file-saver';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import { calcGradeSummary, calcClassStats, calcEntryPoints, type GradeSummary } from '../utils/gradeCalc';
-import type { StudentRubric, Student, Rubric, RubricCriterion } from '../types';
+import type { StudentRubric, Student, Rubric, RubricCriterion, VoTrack, StudentTest, Test } from '../types';
+import { VO_TRACKS } from '../data/voTracks';
+import { calcTestMaxPoints, calcStudentTestRawPoints, calcTestPercentage } from '../utils/testCalc';
 import { getClassGoalScores } from '../utils/learningGoalsAggregator';
 import LearningGoalChart from '../components/Statistics/LearningGoalChart';
 import CriterionRadarChart, { type CriterionRadarDataPoint } from '../components/Statistics/CriterionRadarChart';
 import ScoreHistogram from '../components/Statistics/ScoreHistogram';
 import CriterionHeatmap from '../components/Statistics/CriterionHeatmap';
 import ClassTrendChart from '../components/Statistics/ClassTrendChart';
+import MultiClassTrendChart from '../components/Statistics/MultiClassTrendChart';
+import { compareClasses, buildMultiClassTrend, getInsights } from '../utils/classComparisonAggregator';
 
 const STUDENT_COLORS = ['var(--purple)', 'var(--green)', 'var(--yellow)', 'var(--red)'];
 
@@ -47,16 +51,57 @@ function exportChartAsPng(containerRef: React.RefObject<HTMLDivElement | null>, 
 }
 
 export default function StatisticsPage() {
-    const { rubrics, students, classes, studentRubrics, gradeScales, settings, updateSettings } = useApp();
+    const {
+        rubrics,
+        students,
+        classes,
+        studentRubrics,
+        gradeScales,
+        settings,
+        updateSettings,
+        tests = [],
+        studentTests = [],
+    } = useApp();
     const { t, i18n } = useTranslation();
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
 
     // ── View mode ────────────────────────────────────────────────────────────
-    const [viewMode, setViewMode] = useState<'rubric' | 'student'>('rubric');
+    const [viewMode, setViewMode] = useState<'rubric' | 'student' | 'compare'>('rubric');
+
+    // ── Track / year filters (shared across rubric + compare modes) ───────────
+    const [filterTrack, setFilterTrack] = useState<VoTrack | 'all'>('all');
+    const [filterYear, setFilterYear] = useState<string>('all');
+
+    const yearOptions = useMemo(() => {
+        const years = new Set(classes.map((c) => c.year).filter((y): y is string => !!y));
+        return Array.from(years).sort();
+    }, [classes]);
+
+    const filteredClasses = useMemo(
+        () =>
+            classes.filter((c) => {
+                if (filterTrack !== 'all' && c.voTrack !== filterTrack) return false;
+                if (filterYear !== 'all' && c.year !== filterYear) return false;
+                return true;
+            }),
+        [classes, filterTrack, filterYear]
+    );
+
+    // ── Compare mode state ────────────────────────────────────────────────────
+    const [compareClassIds, setCompareClassIds] = useState<string[]>([]);
+    const [compareRubricId, setCompareRubricId] = useState(rubrics[0]?.id ?? '');
+    const [insightsOpen, setInsightsOpen] = useState(false);
 
     // ── Rubric view state ─────────────────────────────────────────────────────
     const [selectedRubricId, setSelectedRubricId] = useState(rubrics[0]?.id ?? '');
     const [selectedClassId, setSelectedClassId] = useState<string>('all');
+
+    // Sync selections when track/year filter removes previously selected classes
+    useEffect(() => {
+        const visibleIds = new Set(filteredClasses.map((c) => c.id));
+        setSelectedClassId((prev) => (prev === 'all' || visibleIds.has(prev) ? prev : 'all'));
+        setCompareClassIds((prev) => prev.filter((id) => visibleIds.has(id)));
+    }, [filteredClasses]);
     const [sortKey, setSortKey] = useState<'name' | 'score' | 'raw' | 'grade' | 'progress'>('name');
     const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
@@ -210,6 +255,61 @@ export default function StatisticsPage() {
             .filter((d): d is NonNullable<typeof d> => d !== null);
     }, [selectedClassId, rubrics, studentRubrics, students, gradeScales]);
 
+    // ── Compare mode data ─────────────────────────────────────────────────────
+    const compareRubric = rubrics.find((r) => r.id === compareRubricId);
+    const compareScale = compareRubric
+        ? compareRubric.gradeScaleId === 'none'
+            ? null
+            : (gradeScales.find((g) => g.id === compareRubric.gradeScaleId) ?? gradeScales[0])
+        : null;
+
+    const comparisonResults = useMemo(() => {
+        if (!compareRubric || compareClassIds.length === 0) return [];
+        return compareClasses(
+            compareClassIds,
+            compareRubricId,
+            studentRubrics,
+            students,
+            classes,
+            compareRubric,
+            compareScale
+        );
+    }, [compareClassIds, compareRubricId, studentRubrics, students, classes, compareRubric, compareScale]);
+
+    const comparisonCriterionGap = useMemo(() => {
+        if (comparisonResults.length < 2 || !compareRubric) return [];
+        return compareRubric.criteria.map((c) => {
+            const point: Record<string, number | string> = { name: c.title };
+            for (const r of comparisonResults) {
+                point[r.classId] = r.criterionAvgs[c.id] ?? 0;
+            }
+            return point;
+        });
+    }, [comparisonResults, compareRubric]);
+
+    const multiTrendData = useMemo(() => {
+        if (compareClassIds.length === 0) return [];
+        return buildMultiClassTrend(compareClassIds, classes, studentRubrics, students, rubrics, gradeScales);
+    }, [compareClassIds, classes, studentRubrics, students, rubrics, gradeScales]);
+
+    const classNamesMap = useMemo(() => {
+        const map: Record<string, string> = {};
+        for (const c of classes) map[c.id] = c.name;
+        return map;
+    }, [classes]);
+
+    const insights = useMemo(
+        () => (compareRubric ? getInsights(comparisonResults, compareRubric.criteria) : []),
+        [comparisonResults, compareRubric]
+    );
+
+    const CLASS_COMPARE_COLORS = [
+        'var(--accent)',
+        'var(--purple, #a855f7)',
+        'var(--green, #22c55e)',
+        'var(--yellow, #eab308)',
+    ];
+
     const tableData = useMemo(() => {
         if (!rubric) return [];
         const data = studentRubrics
@@ -289,6 +389,59 @@ export default function StatisticsPage() {
             })
             .filter((d): d is { sr: StudentRubric; rubric: Rubric; summary: GradeSummary } => !!d);
     }, [viewMode, selectedStudentId, studentRubrics, rubrics, gradeScales, settings.defaultGradeScaleId]);
+
+    // Test results for the selected student
+    const studentTestData = useMemo(() => {
+        if (viewMode !== 'student' || !selectedStudentId) return [];
+        return studentTests
+            .filter((st) => st.studentId === selectedStudentId && (st.status === 'submitted' || st.status === 'graded'))
+            .map((st) => {
+                const test = tests.find((t) => t.id === st.testId);
+                if (!test) return null;
+                const maxPts = calcTestMaxPoints(test);
+                const rawPts = st.rawTotalPoints ?? calcStudentTestRawPoints(test, st.answers);
+                const effective = rawPts + (st.adjustmentPoints ?? 0);
+                const pct = calcTestPercentage(effective, maxPts);
+                return { st, test, rawPts, effective, maxPts, pct };
+            })
+            .filter(
+                (
+                    d
+                ): d is {
+                    st: StudentTest;
+                    test: Test;
+                    rawPts: number;
+                    effective: number;
+                    maxPts: number;
+                    pct: number;
+                } => d !== null
+            );
+    }, [viewMode, selectedStudentId, studentTests, tests]);
+
+    // Class-level test averages (for the rubric view)
+    const classTestAverages = useMemo(() => {
+        if (viewMode !== 'rubric' || !selectedClassId) return [];
+        const classStudentIds = new Set(students.filter((s) => s.classId === selectedClassId).map((s) => s.id));
+        return tests
+            .map((test) => {
+                const submissions = studentTests.filter(
+                    (st) =>
+                        st.testId === test.id &&
+                        classStudentIds.has(st.studentId) &&
+                        (st.status === 'submitted' || st.status === 'graded')
+                );
+                if (submissions.length === 0) return null;
+                const maxPts = calcTestMaxPoints(test);
+                const avgPct =
+                    submissions.reduce((sum, st) => {
+                        const raw = st.rawTotalPoints ?? calcStudentTestRawPoints(test, st.answers);
+                        const effective = raw + (st.adjustmentPoints ?? 0);
+                        return sum + calcTestPercentage(effective, maxPts);
+                    }, 0) / submissions.length;
+                return { test, avgPct: parseFloat(avgPct.toFixed(1)), submittedCount: submissions.length };
+            })
+            .filter((d): d is { test: Test; avgPct: number; submittedCount: number } => d !== null);
+    }, [viewMode, selectedClassId, tests, studentTests, students]);
 
     // Students graded on the selected rubric (for multi-student comparison chips)
     const rubricPeers = useMemo(() => {
@@ -451,8 +604,49 @@ export default function StatisticsPage() {
                             >
                                 {t('statistics.view_by_student')}
                             </button>
+                            <button
+                                className={`btn btn-sm ${viewMode === 'compare' ? 'btn-primary' : 'btn-ghost'}`}
+                                onClick={() => setViewMode('compare')}
+                            >
+                                {t('statistics.view_compare')}
+                            </button>
                         </div>
                     </div>
+
+                    {/* Track + year filters (shown in rubric and compare modes) */}
+                    {viewMode !== 'student' && (yearOptions.length > 0 || classes.some((c) => c.voTrack)) && (
+                        <>
+                            {yearOptions.length > 0 && (
+                                <div className="form-group" style={{ maxWidth: 140, marginBottom: 0 }}>
+                                    <label>{t('statistics.filters.year')}</label>
+                                    <select value={filterYear} onChange={(e) => setFilterYear(e.target.value)}>
+                                        <option value="all">{t('statistics.all_classes')}</option>
+                                        {yearOptions.map((y) => (
+                                            <option key={y} value={y}>
+                                                {y}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+                            {classes.some((c) => c.voTrack) && (
+                                <div className="form-group" style={{ maxWidth: 160, marginBottom: 0 }}>
+                                    <label>{t('statistics.filters.track')}</label>
+                                    <select
+                                        value={filterTrack}
+                                        onChange={(e) => setFilterTrack(e.target.value as VoTrack | 'all')}
+                                    >
+                                        <option value="all">{t('statistics.all_classes')}</option>
+                                        {VO_TRACKS.map((track) => (
+                                            <option key={track} value={track}>
+                                                {t('voTrack.' + track)}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+                        </>
+                    )}
 
                     {viewMode === 'rubric' ? (
                         <>
@@ -470,7 +664,7 @@ export default function StatisticsPage() {
                                 <label>{t('statistics.label_class_filter')}</label>
                                 <select value={selectedClassId} onChange={(e) => setSelectedClassId(e.target.value)}>
                                     <option value="all">{t('statistics.all_classes')}</option>
-                                    {classes.map((c) => (
+                                    {filteredClasses.map((c) => (
                                         <option key={c.id} value={c.id}>
                                             {c.name}
                                         </option>
@@ -522,6 +716,63 @@ export default function StatisticsPage() {
                                     <Download size={14} /> {t('statistics.download_csv')}
                                 </button>
                             )}
+                        </>
+                    ) : viewMode === 'compare' ? (
+                        <>
+                            <div className="form-group" style={{ flex: 1, maxWidth: 320, marginBottom: 0 }}>
+                                <label>{t('statistics.label_rubric')}</label>
+                                <select value={compareRubricId} onChange={(e) => setCompareRubricId(e.target.value)}>
+                                    {rubrics.map((r) => (
+                                        <option key={r.id} value={r.id}>
+                                            {r.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="form-group" style={{ flex: 1, maxWidth: 280, marginBottom: 0 }}>
+                                <label>{t('statistics.compare.select_classes', { max: 4 })}</label>
+                                <div
+                                    style={{
+                                        border: '1px solid var(--border)',
+                                        borderRadius: 6,
+                                        padding: '4px 8px',
+                                        maxHeight: 120,
+                                        overflowY: 'auto',
+                                        background: 'var(--bg-elevated)',
+                                    }}
+                                >
+                                    {filteredClasses.map((c) => {
+                                        const checked = compareClassIds.includes(c.id);
+                                        const disabled = !checked && compareClassIds.length >= 4;
+                                        return (
+                                            <label
+                                                key={c.id}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 6,
+                                                    padding: '3px 0',
+                                                    cursor: disabled ? 'not-allowed' : 'pointer',
+                                                    opacity: disabled ? 0.4 : 1,
+                                                    fontSize: '0.85rem',
+                                                }}
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={checked}
+                                                    disabled={disabled}
+                                                    onChange={() =>
+                                                        setCompareClassIds((prev) =>
+                                                            checked ? prev.filter((id) => id !== c.id) : [...prev, c.id]
+                                                        )
+                                                    }
+                                                />
+                                                {c.name}
+                                            </label>
+                                        );
+                                    })}
+                                </div>
+                            </div>
                         </>
                     ) : (
                         <>
@@ -585,8 +836,165 @@ export default function StatisticsPage() {
                     )}
                 </div>
 
+                {/* ── Compare view ── */}
+                {viewMode === 'compare' && (
+                    <>
+                        {compareClassIds.length < 2 ? (
+                            <div className="empty-state">
+                                <TrendingUp size={36} />
+                                <p>{t('statistics.compare.prompt')}</p>
+                            </div>
+                        ) : comparisonResults.length === 0 ? (
+                            <div className="empty-state">
+                                <TrendingUp size={36} />
+                                <p>{t('statistics.compare.no_data')}</p>
+                            </div>
+                        ) : (
+                            <>
+                                {/* Class average bar chart */}
+                                <div className="card" style={{ marginBottom: 20 }}>
+                                    <h3 style={{ marginBottom: 16 }}>{t('statistics.compare.avg_title')}</h3>
+                                    <ResponsiveContainer width="100%" height={220}>
+                                        <BarChart
+                                            data={comparisonResults}
+                                            margin={{ top: 4, right: 16, bottom: 0, left: -16 }}
+                                        >
+                                            <XAxis
+                                                dataKey="className"
+                                                tick={{ fill: 'var(--text-muted)', fontSize: 12 }}
+                                            />
+                                            <YAxis
+                                                domain={[0, 100]}
+                                                tick={{ fill: 'var(--text-muted)', fontSize: 12 }}
+                                                tickFormatter={(v: number) => `${v}%`}
+                                            />
+                                            <Tooltip
+                                                contentStyle={{
+                                                    background: 'var(--bg-card)',
+                                                    border: '1px solid var(--border)',
+                                                    borderRadius: 8,
+                                                }}
+                                                formatter={(v: unknown) => [`${v}%`, t('statistics.stat_average')]}
+                                            />
+                                            <Bar dataKey="average" radius={[4, 4, 0, 0]} maxBarSize={80}>
+                                                {comparisonResults.map((r, i) => (
+                                                    <Cell
+                                                        key={r.classId}
+                                                        fill={CLASS_COMPARE_COLORS[i % CLASS_COMPARE_COLORS.length]}
+                                                    />
+                                                ))}
+                                            </Bar>
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+
+                                {/* Per-criterion gap */}
+                                {comparisonCriterionGap.length > 0 && (
+                                    <div className="card" style={{ marginBottom: 20 }}>
+                                        <h3 style={{ marginBottom: 16 }}>{t('statistics.compare.criterion_gap')}</h3>
+                                        <ResponsiveContainer
+                                            width="100%"
+                                            height={Math.max(160, comparisonCriterionGap.length * 36)}
+                                        >
+                                            <BarChart
+                                                data={comparisonCriterionGap}
+                                                layout="vertical"
+                                                margin={{ top: 0, right: 16, bottom: 0, left: 8 }}
+                                            >
+                                                <XAxis
+                                                    type="number"
+                                                    domain={[0, 100]}
+                                                    tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
+                                                    tickFormatter={(v: number) => `${v}%`}
+                                                />
+                                                <YAxis
+                                                    type="category"
+                                                    dataKey="name"
+                                                    width={120}
+                                                    tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
+                                                />
+                                                <Tooltip
+                                                    contentStyle={{
+                                                        background: 'var(--bg-card)',
+                                                        border: '1px solid var(--border)',
+                                                        borderRadius: 8,
+                                                    }}
+                                                    formatter={(v: unknown, name: unknown) => [
+                                                        `${v}%`,
+                                                        classNamesMap[String(name)] ?? String(name),
+                                                    ]}
+                                                />
+                                                {comparisonResults.map((r, i) => (
+                                                    <Bar
+                                                        key={r.classId}
+                                                        dataKey={r.classId}
+                                                        name={r.classId}
+                                                        fill={CLASS_COMPARE_COLORS[i % CLASS_COMPARE_COLORS.length]}
+                                                        radius={[0, 4, 4, 0]}
+                                                    />
+                                                ))}
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                )}
+
+                                {/* Multi-class trend */}
+                                {multiTrendData.length >= 2 && (
+                                    <div className="card" style={{ marginBottom: 20 }}>
+                                        <h3 style={{ marginBottom: 16 }}>{t('statistics.compare.trend_title')}</h3>
+                                        <MultiClassTrendChart
+                                            data={multiTrendData}
+                                            classIds={compareClassIds}
+                                            classNames={classNamesMap}
+                                        />
+                                    </div>
+                                )}
+
+                                {/* Insights panel */}
+                                {insights.length > 0 && (
+                                    <div className="card" style={{ marginBottom: 20 }}>
+                                        <button
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                                width: '100%',
+                                                background: 'none',
+                                                border: 'none',
+                                                cursor: 'pointer',
+                                                padding: 0,
+                                                color: 'var(--text)',
+                                                fontWeight: 600,
+                                                fontSize: '1rem',
+                                            }}
+                                            onClick={() => setInsightsOpen((o) => !o)}
+                                        >
+                                            <span>
+                                                {t('statistics.insights.title')} ({insights.length})
+                                            </span>
+                                            {insightsOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                        </button>
+                                        {insightsOpen && (
+                                            <ul style={{ marginTop: 12, paddingLeft: 20, lineHeight: 1.8 }}>
+                                                {insights.map((ins, i) => (
+                                                    <li
+                                                        key={i}
+                                                        style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}
+                                                    >
+                                                        {t(ins.messageKey, ins.messageParams)}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </>
+                )}
+
                 {/* ── Rubric view ── */}
-                {viewMode === 'rubric' ? (
+                {viewMode === 'rubric' && (
                     <>
                         {selectedClassId !== 'all' && classGoals.length > 0 && <LearningGoalChart goals={classGoals} />}
 
@@ -595,6 +1003,28 @@ export default function StatisticsPage() {
                             <div className="card" style={{ marginBottom: 20 }}>
                                 <h3 style={{ marginBottom: 16 }}>{t('statistics.class_trend')}</h3>
                                 <ClassTrendChart data={classTrendData} />
+                            </div>
+                        )}
+
+                        {/* Test averages for this class */}
+                        {classTestAverages.length > 0 && (
+                            <div className="card" style={{ marginBottom: 20 }}>
+                                <h3 style={{ marginBottom: 16 }}>{t('statistics.class_test_averages')}</h3>
+                                <ResponsiveContainer width="100%" height={180}>
+                                    <BarChart
+                                        data={classTestAverages.map((d) => ({
+                                            name: d.test.name,
+                                            avg: d.avgPct,
+                                            n: d.submittedCount,
+                                        }))}
+                                        margin={{ top: 0, right: 8, left: 0, bottom: 0 }}
+                                    >
+                                        <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                                        <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} unit="%" width={36} />
+                                        <Tooltip formatter={(v) => [`${v}%`, t('statistics.stat_average')]} />
+                                        <Bar dataKey="avg" fill="var(--accent)" radius={[4, 4, 0, 0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
                             </div>
                         )}
 
@@ -984,15 +1414,17 @@ export default function StatisticsPage() {
                             </>
                         )}
                     </>
-                ) : (
-                    /* ── Student view ── */
+                )}
+
+                {/* ── Student view ── */}
+                {viewMode === 'student' && (
                     <>
                         {!selectedStudentId ? (
                             <div className="empty-state">
                                 <Users size={36} />
                                 <p>{t('statistics.select_student_prompt')}</p>
                             </div>
-                        ) : studentViewTableData.length === 0 ? (
+                        ) : studentViewTableData.length === 0 && studentTestData.length === 0 ? (
                             <div className="empty-state">
                                 <BookOpen size={36} />
                                 <p>{t('statistics.student_not_graded')}</p>
@@ -1000,47 +1432,86 @@ export default function StatisticsPage() {
                         ) : (
                             <>
                                 {/* Graded rubrics table */}
-                                <div className="card" style={{ marginBottom: 20 }}>
-                                    <h3 style={{ marginBottom: 14 }}>{t('statistics.graded_rubrics')}</h3>
-                                    <table className="data-table">
-                                        <thead>
-                                            <tr>
-                                                <th>{t('statistics.label_rubric')}</th>
-                                                <th>{t('statistics.table_subject')}</th>
-                                                <th>{t('statistics.table_score')}</th>
-                                                <th>{t('statistics.table_raw')}</th>
-                                                <th>{t('statistics.table_grade')}</th>
-                                                <th>{t('statistics.table_date_graded')}</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {studentViewTableData.map(({ sr, rubric: r, summary }) => (
-                                                <tr
-                                                    key={sr.id}
-                                                    style={{
-                                                        borderLeft: `4px solid ${summary.gradeColor}`,
-                                                        background: `${summary.gradeColor}08`,
-                                                    }}
-                                                >
-                                                    <td style={{ fontWeight: 500, paddingLeft: 16 }}>{r.name}</td>
-                                                    <td className="text-muted text-sm">{r.subject || '—'}</td>
-                                                    <td>{summary.modifiedPercentage.toFixed(1)}%</td>
-                                                    <td>
-                                                        {summary.rawScore}/{summary.maxRawScore}
-                                                    </td>
-                                                    <td>
-                                                        <span style={{ color: summary.gradeColor, fontWeight: 700 }}>
-                                                            {summary.letterGrade}
-                                                        </span>
-                                                    </td>
-                                                    <td className="text-muted text-sm">
-                                                        {new Date(sr.gradedAt || new Date()).toLocaleDateString()}
-                                                    </td>
+                                {studentViewTableData.length > 0 && (
+                                    <div className="card" style={{ marginBottom: 20 }}>
+                                        <h3 style={{ marginBottom: 14 }}>{t('statistics.graded_rubrics')}</h3>
+                                        <table className="data-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>{t('statistics.label_rubric')}</th>
+                                                    <th>{t('statistics.table_subject')}</th>
+                                                    <th>{t('statistics.table_score')}</th>
+                                                    <th>{t('statistics.table_raw')}</th>
+                                                    <th>{t('statistics.table_grade')}</th>
+                                                    <th>{t('statistics.table_date_graded')}</th>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                            </thead>
+                                            <tbody>
+                                                {studentViewTableData.map(({ sr, rubric: r, summary }) => (
+                                                    <tr
+                                                        key={sr.id}
+                                                        style={{
+                                                            borderLeft: `4px solid ${summary.gradeColor}`,
+                                                            background: `${summary.gradeColor}08`,
+                                                        }}
+                                                    >
+                                                        <td style={{ fontWeight: 500, paddingLeft: 16 }}>{r.name}</td>
+                                                        <td className="text-muted text-sm">{r.subject || '—'}</td>
+                                                        <td>{summary.modifiedPercentage.toFixed(1)}%</td>
+                                                        <td>
+                                                            {summary.rawScore}/{summary.maxRawScore}
+                                                        </td>
+                                                        <td>
+                                                            <span
+                                                                style={{ color: summary.gradeColor, fontWeight: 700 }}
+                                                            >
+                                                                {summary.letterGrade}
+                                                            </span>
+                                                        </td>
+                                                        <td className="text-muted text-sm">
+                                                            {sr.gradedAt
+                                                                ? new Date(sr.gradedAt).toLocaleDateString()
+                                                                : '—'}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+
+                                {/* Test results table */}
+                                {studentTestData.length > 0 && (
+                                    <div className="card" style={{ marginBottom: 20 }}>
+                                        <h3 style={{ marginBottom: 14 }}>{t('statistics.test_results')}</h3>
+                                        <table className="data-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>{t('statistics.label_test')}</th>
+                                                    <th>{t('statistics.table_score')}</th>
+                                                    <th>{t('statistics.table_raw')}</th>
+                                                    <th>{t('statistics.table_date_graded')}</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {studentTestData.map(({ st, test, effective, maxPts, pct }) => (
+                                                    <tr key={st.id}>
+                                                        <td style={{ fontWeight: 500 }}>{test.name}</td>
+                                                        <td>{pct.toFixed(1)}%</td>
+                                                        <td>
+                                                            {effective}/{maxPts}
+                                                        </td>
+                                                        <td className="text-muted text-sm">
+                                                            {new Date(
+                                                                st.gradedAt || st.submittedAt || st.startedAt
+                                                            ).toLocaleDateString()}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
 
                                 {/* Criterion radar comparison */}
                                 {selectedStudentRubricId && (

@@ -202,7 +202,8 @@
         "localization": "Localisation",
         "cefr_overview": "Aperçu CECR",
         "vocabulary": "Vocabulaire",
-        "docs": "Documentation"
+        "docs": "Documentation",
+        "activity_dashboard": "Tableau des activités"
     },
     "dashboard": {
         "title": "Tableau de bord",
@@ -1142,6 +1143,9 @@
         "select_student_prompt": "Sélectionnez un élève pour voir ses statistiques.",
         "student_not_graded": "Cet élève n'a pas encore été noté.",
         "graded_rubrics": "Rubriques notées",
+        "test_results": "Résultats de tests",
+        "label_test": "Test",
+        "class_test_averages": "Moyennes des tests (cette classe)",
         "label_student": "Élève",
         "label_rubric_comparison": "Rubrique (pour comparaison)",
         "select_rubric_placeholder": "Sélectionner une rubrique...",
@@ -1157,7 +1161,39 @@
         "action_close_fullscreen": "Fermer",
         "action_export_chart": "Exporter le graphique",
         "blooms_title": "Taxonomie de Bloom",
-        "ib_title": "Profil de l'apprenant IB"
+        "ib_title": "Profil de l'apprenant IB",
+        "view_compare": "Comparer",
+        "compare": {
+            "select_classes": "Sélectionner des classes (max {{max}})",
+            "prompt": "Sélectionnez au moins 2 classes à comparer.",
+            "no_data": "Aucun élève noté trouvé pour les classes et la rubrique sélectionnées.",
+            "avg_title": "Scores moyens par classe",
+            "criterion_gap": "Comparaison par critère",
+            "trend_title": "Tendance de progression par classe"
+        },
+        "insights": {
+            "title": "Analyses",
+            "struggling": "{{className}} peut nécessiter un soutien ciblé — moyenne de classe : {{average}}%.",
+            "weak_criterion": "\"{{criterion}}\" est un point faible récurrent dans {{className}} ({{criterionAvg}}% vs moy. classe {{classAvg}}%).",
+            "divergence": "\"{{criterion}}\" présente le plus grand écart : {{highClass}} est {{gap}} pp devant {{lowClass}}."
+        },
+        "filters": {
+            "year": "Année",
+            "track": "Filière"
+        }
+    },
+    "activityDashboard": {
+        "title": "Tableau des activités",
+        "empty": "Aucune rubrique, test ou rédaction trouvé. Créez d'abord des activités.",
+        "col_activity": "Activité",
+        "section_rubrics": "Rubriques",
+        "section_tests": "Tests",
+        "section_essays": "Rédactions",
+        "link": "Lier",
+        "unlink": "Délier",
+        "assign": "Assigner à tous",
+        "all_assigned": "Tous assignés ✓",
+        "open": "Ouvrir"
     },
     "attachments": {
         "title": "Pièces jointes",

@@ -202,7 +202,8 @@
         "localization": "Lokalisierung",
         "cefr_overview": "GER-Übersicht",
         "vocabulary": "Wortschatz",
-        "docs": "Dokumentation"
+        "docs": "Dokumentation",
+        "activity_dashboard": "Aktivitätsdashboard"
     },
     "dashboard": {
         "title": "Dashboard",
@@ -1142,6 +1143,9 @@
         "select_student_prompt": "Wählen Sie einen Schüler, um dessen Statistiken anzuzeigen.",
         "student_not_graded": "Dieser Schüler wurde noch auf keiner Rubrik benotet.",
         "graded_rubrics": "Benotete Rubriken",
+        "test_results": "Testergebnisse",
+        "label_test": "Test",
+        "class_test_averages": "Testdurchschnitte (diese Klasse)",
         "label_student": "Schüler",
         "label_rubric_comparison": "Rubrik (zum Vergleich)",
         "select_rubric_placeholder": "Rubrik auswählen...",
@@ -1157,7 +1161,39 @@
         "action_close_fullscreen": "Schließen",
         "action_export_chart": "Diagramm exportieren",
         "blooms_title": "Blooms Taxonomie",
-        "ib_title": "IB-Lernerprofil"
+        "ib_title": "IB-Lernerprofil",
+        "view_compare": "Vergleichen",
+        "compare": {
+            "select_classes": "Klassen auswählen (max {{max}})",
+            "prompt": "Wählen Sie mindestens 2 Klassen zum Vergleichen.",
+            "no_data": "Keine bewerteten Schüler für die ausgewählten Klassen und Rubrik gefunden.",
+            "avg_title": "Durchschnittliche Klassennoten",
+            "criterion_gap": "Kriterienvergleich",
+            "trend_title": "Lernfortschrittstrend pro Klasse"
+        },
+        "insights": {
+            "title": "Erkenntnisse",
+            "struggling": "{{className}} benötigt möglicherweise gezielte Unterstützung — Klassendurchschnitt: {{average}}%.",
+            "weak_criterion": "\"{{criterion}}\" ist ein durchgehend schwacher Punkt in {{className}} ({{criterionAvg}}% vs Klassenschnitt {{classAvg}}%).",
+            "divergence": "\"{{criterion}}\" zeigt den größten Unterschied: {{highClass}} liegt {{gap}} PP vor {{lowClass}}."
+        },
+        "filters": {
+            "year": "Jahrgangsstufe",
+            "track": "Schulzweig"
+        }
+    },
+    "activityDashboard": {
+        "title": "Aktivitätsdashboard",
+        "empty": "Keine Rubriken, Tests oder Aufsätze gefunden. Erstellen Sie zuerst Aktivitäten.",
+        "col_activity": "Aktivität",
+        "section_rubrics": "Rubriken",
+        "section_tests": "Tests",
+        "section_essays": "Aufsätze",
+        "link": "Verknüpfen",
+        "unlink": "Trennen",
+        "assign": "Allen zuweisen",
+        "all_assigned": "Alle zugewiesen ✓",
+        "open": "Öffnen"
     },
     "attachments": {
         "title": "Anhänge",
