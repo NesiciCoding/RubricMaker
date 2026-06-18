@@ -111,8 +111,9 @@ test.describe('Statistics — Compare tab', () => {
         await expect(insightsBtn).toBeVisible({ timeout: 10_000 });
 
         await insightsBtn.click();
-        // i18next renders the struggling message with className interpolated
-        await expect(appPage.locator('text=/Class C may need targeted support|ahead of Class C/i')).toBeVisible({
+        // i18next renders the struggling message with className interpolated; use li scope to avoid
+        // strict mode (divergence insight is also visible and can match a broader regex)
+        await expect(appPage.locator('li', { hasText: /Class C may need targeted support/i })).toBeVisible({
             timeout: 5_000,
         });
     });
@@ -124,7 +125,8 @@ test.describe('Statistics — Compare tab', () => {
         await appPage.getByLabel('Class B').check();
 
         // MultiClassTrendChart requires >= 2 trend points (one per rubric)
+        // .recharts-line is a <g> wrapper (not visible in Playwright); .recharts-line-curve is the actual <path>
         // Chromium renders SVG slower than firefox; 20s covers the observed 13-14s in CI
-        await expect(appPage.locator('.recharts-line').first()).toBeVisible({ timeout: 20_000 });
+        await expect(appPage.locator('.recharts-line-curve').first()).toBeVisible({ timeout: 20_000 });
     });
 });
