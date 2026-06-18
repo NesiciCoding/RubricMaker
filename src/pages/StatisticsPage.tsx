@@ -13,7 +13,7 @@ import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import { calcGradeSummary, calcClassStats, calcEntryPoints, type GradeSummary } from '../utils/gradeCalc';
 import type { StudentRubric, Student, Rubric, RubricCriterion, VoTrack, StudentTest, Test } from '../types';
-import { VO_TRACKS, VO_TRACK_LABELS } from '../data/voTracks';
+import { VO_TRACKS } from '../data/voTracks';
 import { calcTestMaxPoints, calcStudentTestRawPoints, calcTestPercentage } from '../utils/testCalc';
 import { getClassGoalScores } from '../utils/learningGoalsAggregator';
 import LearningGoalChart from '../components/Statistics/LearningGoalChart';
@@ -639,7 +639,7 @@ export default function StatisticsPage() {
                                         <option value="all">{t('statistics.all_classes')}</option>
                                         {VO_TRACKS.map((track) => (
                                             <option key={track} value={track}>
-                                                {VO_TRACK_LABELS[track]}
+                                                {t('voTrack.' + track)}
                                             </option>
                                         ))}
                                     </select>
