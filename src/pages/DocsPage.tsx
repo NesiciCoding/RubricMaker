@@ -538,8 +538,7 @@ function GettingStartedTab() {
                 <InfoBox>
                     <strong>Guided tour:</strong> A built-in Joyride walkthrough runs the first time you log in. You can
                     restart it at any time from <strong>Settings → Guided tour</strong>.{' '}
-                    {t('docs.guided_tour_page_tours_prefix')}{' '}
-                    <strong>"{t('tutorial.rb_tour_button')}"</strong>{' '}
+                    {t('docs.guided_tour_page_tours_prefix')} <strong>"{t('tutorial.rb_tour_button')}"</strong>{' '}
                     {t('docs.guided_tour_page_tours_suffix')}
                 </InfoBox>
             </FeatureSection>
