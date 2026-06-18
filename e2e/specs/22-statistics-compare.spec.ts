@@ -97,7 +97,10 @@ test.describe('Statistics — Compare tab', () => {
         await expect(avgChart.locator('.recharts-bar-rectangle')).toHaveCount(3, { timeout: 10_000 });
         // Verify A, B, C appear in order on the XAxis — text content is reliable without SVG visibility issues.
         // SVG rect heights are Recharts-animation-dependent and DOM order doesn't match visual order reliably.
-        const axisLabels = await avgChart.locator('.recharts-xAxis tspan').allTextContents();
+        // toHaveCount waits for the tspan elements before allTextContents() reads them.
+        const axisTicks = avgChart.locator('.recharts-xAxis tspan');
+        await expect(axisTicks).toHaveCount(3, { timeout: 5_000 });
+        const axisLabels = await axisTicks.allTextContents();
         expect(axisLabels[0]).toContain('Class A');
         expect(axisLabels[1]).toContain('Class B');
         expect(axisLabels[2]).toContain('Class C');
