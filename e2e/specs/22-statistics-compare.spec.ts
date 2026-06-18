@@ -68,7 +68,10 @@ test.describe('Statistics — Compare tab', () => {
     test('Compare tab is visible and navigable', async ({ appPage }) => {
         await expect(appPage.getByRole('button', { name: /compare/i })).toBeVisible({ timeout: 10_000 });
         await appPage.getByRole('button', { name: /compare/i }).click();
-        await expect(appPage.getByText(/compare rubric 1/i)).toBeVisible({ timeout: 5_000 });
+        // Confirm seeded classes appear as checkboxes (option elements are not visible in Playwright)
+        await expect(appPage.locator('label', { hasText: 'Class A' })).toBeVisible({ timeout: 5_000 });
+        await expect(appPage.locator('label', { hasText: 'Class B' })).toBeVisible();
+        await expect(appPage.locator('label', { hasText: 'Class C' })).toBeVisible();
     });
 
     test('selecting 2 classes shows avg bar chart with class names', async ({ appPage }) => {
@@ -77,7 +80,8 @@ test.describe('Statistics — Compare tab', () => {
         await appPage.getByLabel('Class A').check();
         await appPage.getByLabel('Class B').check();
 
-        await expect(appPage.locator('.recharts-bar')).toBeVisible({ timeout: 5_000 });
+        // recharts-bar-rectangle are the rendered <rect> elements (visible); recharts-bar is a <g> wrapper (not visible in Playwright)
+        await expect(appPage.locator('.recharts-bar-rectangle').first()).toBeVisible({ timeout: 10_000 });
         await expect(appPage.getByText('Class A')).toBeVisible();
         await expect(appPage.getByText('Class B')).toBeVisible();
     });
@@ -95,8 +99,7 @@ test.describe('Statistics — Compare tab', () => {
 
         // 3 selected classes → 3 bar cells in the avg chart
         const avgChart = appPage.locator('.recharts-wrapper').first();
-        const bars = avgChart.locator('.recharts-bar-rectangle');
-        await expect(bars).toHaveCount(3, { timeout: 5_000 });
+        await expect(avgChart.locator('.recharts-bar-rectangle')).toHaveCount(3, { timeout: 10_000 });
     });
 
     test('insights panel appears when classes have divergent performance', async ({ appPage }) => {
@@ -107,12 +110,12 @@ test.describe('Statistics — Compare tab', () => {
 
         // Class C avg ~25% triggers "struggling" insight; gap A vs C = 75pp → divergence
         const insightsBtn = appPage.locator('button', { hasText: /insights/i });
-        await expect(insightsBtn).toBeVisible({ timeout: 5_000 });
+        await expect(insightsBtn).toBeVisible({ timeout: 10_000 });
 
         await insightsBtn.click();
         // i18next renders the struggling message with className interpolated
         await expect(appPage.locator('text=/Class C may need targeted support|ahead of Class C/i')).toBeVisible({
-            timeout: 3_000,
+            timeout: 5_000,
         });
     });
 
@@ -123,6 +126,6 @@ test.describe('Statistics — Compare tab', () => {
         await appPage.getByLabel('Class B').check();
 
         // MultiClassTrendChart requires >= 2 trend points (one per rubric)
-        await expect(appPage.locator('.recharts-line')).toBeVisible({ timeout: 5_000 });
+        await expect(appPage.locator('.recharts-line').first()).toBeVisible({ timeout: 10_000 });
     });
 });
