@@ -75,7 +75,12 @@ export default function ActivityDashboardPage() {
         );
         const newAssignments = students
             .filter((s) => s.classId === classId && !assignedIds.has(s.id))
-            .map((s) => ({ ...template, studentId: s.id, createdAt: new Date().toISOString() }));
+            .map((s) => ({
+                ...template,
+                id: crypto.randomUUID(),
+                studentId: s.id,
+                createdAt: new Date().toISOString(),
+            }));
         if (newAssignments.length > 0) addEssayAssignments(newAssignments);
     }
 
