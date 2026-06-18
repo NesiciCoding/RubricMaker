@@ -95,6 +95,12 @@ test.describe('Statistics — Compare tab', () => {
         // 3 selected classes → 3 bar cells in the avg chart
         const avgChart = appPage.locator('.recharts-wrapper').first();
         await expect(avgChart.locator('.recharts-bar-rectangle')).toHaveCount(3, { timeout: 10_000 });
+        // Verify A > B > C ordering via SVG rect heights (getAttribute works; toBeVisible does not for SVG)
+        const heights = await avgChart.locator('.recharts-bar-rectangle').evaluateAll(
+            (els) => els.map((el) => parseFloat(el.getAttribute('height') ?? '0'))
+        );
+        expect(heights[0]).toBeGreaterThan(heights[1]); // Class A (100%) taller than Class B (~62.5%)
+        expect(heights[1]).toBeGreaterThan(heights[2]); // Class B taller than Class C (~25%)
     });
 
     test('insights panel appears when classes have divergent performance', async ({ appPage }) => {

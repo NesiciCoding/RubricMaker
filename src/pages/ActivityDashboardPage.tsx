@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import { getActivityRows, buildDashboardMatrix } from '../utils/activityDashboardAggregator';
-import { VO_TRACKS, VO_TRACK_LABELS } from '../data/voTracks';
+import { VO_TRACKS } from '../data/voTracks';
 import type { VoTrack } from '../types';
 
 const SECTION_LABELS: Record<string, string> = {
@@ -129,7 +129,7 @@ export default function ActivityDashboardPage() {
                                     <option value="all">{t('statistics.all_classes')}</option>
                                     {VO_TRACKS.map((track) => (
                                         <option key={track} value={track}>
-                                            {VO_TRACK_LABELS[track]}
+                                            {t('voTrack.' + track)}
                                         </option>
                                     ))}
                                 </select>
