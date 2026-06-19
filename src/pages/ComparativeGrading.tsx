@@ -15,6 +15,9 @@ import {
     Printer,
 } from 'lucide-react';
 import DOMPurify from 'dompurify';
+import { Joyride, STATUS } from 'react-joyride';
+import type { EventData } from 'react-joyride';
+import { getComparativeTourSteps } from '../data/TutorialSteps';
 import { nanoid } from '../utils/nanoid';
 import { useTranslation } from 'react-i18next';
 import { calcGradeSummary } from '../utils/gradeCalc';
@@ -264,6 +267,8 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
     // Local limit = total matchups for this session. 0 = unlimited.
     // Seeded from global settings but adjustable on the fly.
     const [matchupLimit, setMatchupLimit] = useState(settings.comparativeMatchupLimit ?? 0);
+    const [tourRun, setTourRun] = useState(false);
+    const comparativeTourSteps = useMemo(() => getComparativeTourSteps(t), [t]);
 
     // Which criterion comment panels are open
     const [openComments, setOpenComments] = useState<Set<string>>(new Set());
@@ -628,10 +633,31 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
 
     return (
         <>
+            <Joyride
+                steps={comparativeTourSteps}
+                run={tourRun}
+                continuous
+                onEvent={(data: EventData) => {
+                    if (data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED) {
+                        setTourRun(false);
+                    }
+                }}
+                options={{
+                    showProgress: true,
+                    primaryColor: 'var(--accent)',
+                    backgroundColor: 'var(--bg-elevated)',
+                    textColor: 'var(--text)',
+                    arrowColor: 'var(--bg-elevated)',
+                    overlayColor: 'rgba(0, 0, 0, 0.6)',
+                }}
+            />
             <Topbar
                 title={t('comparativeGrading.title_compare', { name: rubric.name })}
                 actions={
                     <>
+                        <button className="btn btn-ghost btn-sm no-print" onClick={() => setTourRun(true)}>
+                            {t('tutorial.cg_tour_button')}
+                        </button>
                         <button className="btn btn-ghost btn-sm no-print" onClick={() => window.print()}>
                             <Printer size={14} /> {t('common.print')}
                         </button>
@@ -652,7 +678,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                 }}
             >
                 {/* Header Strip */}
-                <div className="card" style={{ marginBottom: 16, padding: '12px 20px' }}>
+                <div className="card" data-tour="cg-header" style={{ marginBottom: 16, padding: '12px 20px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         {/* Student A */}
                         <div style={{ flex: 1 }}>
@@ -670,6 +696,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
 
                         {/* Centre: VS + overall progress + limit control */}
                         <div
+                            data-tour="cg-center"
                             style={{
                                 flex: 1,
                                 textAlign: 'center',
@@ -862,6 +889,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
 
                     {/* Middle Column (Rubric & Controls) */}
                     <div
+                        data-tour="cg-compare"
                         style={{
                             display: 'flex',
                             flexDirection: 'column',
@@ -1408,6 +1436,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                         >
                             <button
                                 className="btn btn-primary"
+                                data-tour="cg-save"
                                 onClick={handleSaveAndNext}
                                 style={{ padding: '12px 30px', fontSize: '1.1rem' }}
                             >

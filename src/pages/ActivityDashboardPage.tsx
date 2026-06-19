@@ -2,6 +2,9 @@ import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LayoutGrid } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Joyride, STATUS } from 'react-joyride';
+import type { EventData } from 'react-joyride';
+import { getActivityDashboardTourSteps } from '../data/TutorialSteps';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import { getActivityRows, buildDashboardMatrix } from '../utils/activityDashboardAggregator';
@@ -31,6 +34,8 @@ export default function ActivityDashboardPage() {
 
     const [filterYear, setFilterYear] = useState<string>('all');
     const [filterTrack, setFilterTrack] = useState<VoTrack | 'all'>('all');
+    const [tourRun, setTourRun] = useState(false);
+    const activityTourSteps = useMemo(() => getActivityDashboardTourSteps(t), [t]);
 
     const yearOptions = useMemo(() => {
         const years = new Set(classes.map((c) => c.year).filter((y): y is string => !!y));
@@ -102,7 +107,32 @@ export default function ActivityDashboardPage() {
 
     return (
         <>
-            <Topbar title={t('activityDashboard.title')} />
+            <Joyride
+                steps={activityTourSteps}
+                run={tourRun}
+                continuous
+                onEvent={(data: EventData) => {
+                    if (data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED) {
+                        setTourRun(false);
+                    }
+                }}
+                options={{
+                    showProgress: true,
+                    primaryColor: 'var(--accent)',
+                    backgroundColor: 'var(--bg-elevated)',
+                    textColor: 'var(--text)',
+                    arrowColor: 'var(--bg-elevated)',
+                    overlayColor: 'rgba(0, 0, 0, 0.6)',
+                }}
+            />
+            <Topbar
+                title={t('activityDashboard.title')}
+                actions={
+                    <button className="btn btn-ghost btn-sm" onClick={() => setTourRun(true)}>
+                        {t('tutorial.ad_tour_button')}
+                    </button>
+                }
+            />
             <div className="page-content fade-in">
                 {(yearOptions.length > 0 || classes.some((c) => c.voTrack)) && (
                     <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
@@ -138,7 +168,7 @@ export default function ActivityDashboardPage() {
                     </div>
                 )}
 
-                <div style={{ overflowX: 'auto' }}>
+                <div data-tour="ad-grid" style={{ overflowX: 'auto' }}>
                     <table
                         style={{
                             borderCollapse: 'collapse',
@@ -149,6 +179,7 @@ export default function ActivityDashboardPage() {
                         <thead>
                             <tr>
                                 <th
+                                    data-tour="ad-activity"
                                     style={{
                                         position: 'sticky',
                                         left: 0,
@@ -163,9 +194,10 @@ export default function ActivityDashboardPage() {
                                 >
                                     {t('activityDashboard.col_activity')}
                                 </th>
-                                {visibleClasses.map((cls) => (
+                                {visibleClasses.map((cls, clsIndex) => (
                                     <th
                                         key={cls.id}
+                                        data-tour={clsIndex === 0 ? 'ad-cell' : undefined}
                                         style={{
                                             padding: '8px 12px',
                                             textAlign: 'center',

@@ -1,5 +1,15 @@
 import { describe, it, expect } from 'vitest';
-import { getTutorialSteps } from './TutorialSteps';
+import {
+    getTutorialSteps,
+    getComparativeTourSteps,
+    getEssayBuilderTourSteps,
+    getTestBuilderTourSteps,
+    getActivityDashboardTourSteps,
+    getCefrOverviewTourSteps,
+    getSpeakingTourSteps,
+    getStudentProfileTourSteps,
+    getStudentsTourSteps,
+} from './TutorialSteps';
 
 const t = (key: string) => key;
 
@@ -50,4 +60,41 @@ describe('getTutorialSteps', () => {
         const targets = steps.map((s) => s.target as string);
         expect(targets).not.toContain('.compare-btn-tutorial');
     });
+});
+
+describe('per-page tours', () => {
+    const builders = {
+        comparative: getComparativeTourSteps,
+        essayBuilder: getEssayBuilderTourSteps,
+        testBuilder: getTestBuilderTourSteps,
+        activityDashboard: getActivityDashboardTourSteps,
+        cefrOverview: getCefrOverviewTourSteps,
+        speaking: getSpeakingTourSteps,
+        studentProfile: getStudentProfileTourSteps,
+        students: getStudentsTourSteps,
+    };
+
+    for (const [name, build] of Object.entries(builders)) {
+        it(`${name} tour has 3–5 well-formed steps`, () => {
+            const steps = build(t as any);
+            expect(steps.length).toBeGreaterThanOrEqual(3);
+            expect(steps.length).toBeLessThanOrEqual(5);
+            for (const step of steps) {
+                expect(typeof step.target).toBe('string');
+                expect(step.target as string).toMatch(/^\[data-tour="/);
+                expect(typeof step.title).toBe('string');
+                expect(typeof step.content).toBe('string');
+                expect(step.skipBeacon).toBe(true);
+            }
+        });
+
+        it(`${name} tour passes tutorial.* keys to t()`, () => {
+            const keys: string[] = [];
+            build(((key: string) => {
+                keys.push(key);
+                return key;
+            }) as any);
+            expect(keys.every((k) => k.startsWith('tutorial.'))).toBe(true);
+        });
+    }
 });
