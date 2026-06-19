@@ -20,9 +20,7 @@ export class GradeStudentPage extends BasePage {
     }
 
     isLevelSelected(levelLabel: string, criterionIndex = 0) {
-        return this.getLevelBtn(levelLabel, criterionIndex).evaluate((el) =>
-            el.classList.contains('selected')
-        );
+        return this.getLevelBtn(levelLabel, criterionIndex).evaluate((el) => el.classList.contains('selected'));
     }
 
     async fillCriterionComment(criterionIndex: number, text: string): Promise<void> {
@@ -44,5 +42,13 @@ export class GradeStudentPage extends BasePage {
 
     getGradeSummary() {
         return this.page.locator('[role="status"][aria-label="Grade summary"]');
+    }
+
+    getGradeFooter() {
+        return this.page.locator('.grade-footer');
+    }
+
+    getStepper() {
+        return this.page.locator('.touch-stepper');
     }
 }

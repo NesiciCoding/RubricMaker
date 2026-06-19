@@ -704,6 +704,8 @@
         "label_override": "Remplacement :",
         "level_select": "Sélectionner",
         "label_base_points": "Points de base",
+        "stepper_decrease": "Diminuer le score",
+        "stepper_increase": "Augmenter le score",
         "label_points": "Points",
         "comment_placeholder": "Ajouter un commentaire…",
         "comment_open_bank": "Ouvrir la banque de commentaires",

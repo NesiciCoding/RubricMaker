@@ -704,6 +704,8 @@
         "label_override": "Anular:",
         "level_select": "Seleccionar",
         "label_base_points": "Puntos Base",
+        "stepper_decrease": "Disminuir puntuación",
+        "stepper_increase": "Aumentar puntuación",
         "label_points": "Puntos",
         "comment_placeholder": "Añadir un comentario…",
         "comment_open_bank": "Abrir Banco de Comentarios",

@@ -59,7 +59,12 @@ export default defineConfig({
         {
             name: 'mobile-chrome',
             use: { ...devices['Pixel 5'] },
-            testMatch: ['**/01-local-mode.spec.ts', '**/12-navigation.spec.ts'],
+            testMatch: [
+                '**/01-local-mode.spec.ts',
+                '**/04-grading.spec.ts',
+                '**/04b-grading-mobile.spec.ts',
+                '**/12-navigation.spec.ts',
+            ],
         },
         // Supabase integration tests — require `npm run db:start` before running.
         // Run with: npm run e2e:supabase

@@ -19,6 +19,8 @@ import {
     Upload,
     Printer,
     HelpCircle,
+    Minus,
+    Plus,
 } from 'lucide-react';
 import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
@@ -41,6 +43,89 @@ import { exportSinglePdf } from '../utils/pdfExport';
 import { logAuditEvent } from '../services/database/AuditLogger';
 import { loadSupabaseConfig } from '../services/database';
 import { getGradingTourSteps } from '../data/TutorialSteps';
+
+function TouchStepper({
+    value,
+    min,
+    max,
+    step,
+    accentColor,
+    onChange,
+    label,
+}: {
+    value: number;
+    min: number;
+    max: number;
+    step: number;
+    accentColor: string;
+    onChange: (value: number) => void;
+    label: string;
+}) {
+    const { t } = useTranslation();
+    const clamp = (v: number) => Math.min(max, Math.max(min, Math.round(v / step) * step));
+    const stepBy = (delta: number) => onChange(clamp(value + delta));
+    const controlStyle: React.CSSProperties = {
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minWidth: 44,
+        minHeight: 44,
+        padding: 0,
+    };
+    const makeKeyHandler = (delta: number, disabled: boolean) => (e: React.KeyboardEvent) => {
+        if (disabled) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            stepBy(delta);
+        }
+    };
+    const decDisabled = value <= min;
+    const incDisabled = value >= max;
+    return (
+        <div
+            className="touch-stepper"
+            role="group"
+            aria-label={label}
+            style={{ alignItems: 'center', gap: 8, marginTop: 4 }}
+        >
+            <span
+                role="button"
+                tabIndex={decDisabled ? -1 : 0}
+                className="btn btn-secondary"
+                aria-label={t('gradeStudent.stepper_decrease')}
+                aria-disabled={decDisabled}
+                onClick={() => !decDisabled && stepBy(-step)}
+                onKeyDown={makeKeyHandler(-step, decDisabled)}
+                style={{ ...controlStyle, opacity: decDisabled ? 0.5 : 1 }}
+            >
+                <Minus size={18} />
+            </span>
+            <div
+                aria-hidden="true"
+                style={{
+                    minWidth: 36,
+                    textAlign: 'center',
+                    fontWeight: 600,
+                    color: accentColor,
+                }}
+            >
+                {value}
+            </div>
+            <span
+                role="button"
+                tabIndex={incDisabled ? -1 : 0}
+                className="btn btn-secondary"
+                aria-label={t('gradeStudent.stepper_increase')}
+                aria-disabled={incDisabled}
+                onClick={() => !incDisabled && stepBy(step)}
+                onKeyDown={makeKeyHandler(step, incDisabled)}
+                style={{ ...controlStyle, opacity: incDisabled ? 0.5 : 1 }}
+            >
+                <Plus size={18} />
+            </span>
+        </div>
+    );
+}
 
 export default function GradeStudent() {
     const { t, i18n } = useTranslation();
@@ -1111,6 +1196,17 @@ export default function GradeStudent() {
                                                                                     accentColor: fmt.accentColor,
                                                                                 }}
                                                                             />
+                                                                            <TouchStepper
+                                                                                value={currentScore}
+                                                                                min={min}
+                                                                                max={max}
+                                                                                step={0.5}
+                                                                                accentColor={fmt.accentColor}
+                                                                                label={si.label}
+                                                                                onChange={(v) =>
+                                                                                    setSubItemScore(entry, si.id, v)
+                                                                                }
+                                                                            />
                                                                             {si.linkedStandards &&
                                                                                 si.linkedStandards.length > 0 && (
                                                                                     <div
@@ -1215,6 +1311,21 @@ export default function GradeStudent() {
                                                                             {entry.selectedPoints ?? level.minPoints}
                                                                         </div>
                                                                     </div>
+                                                                    <TouchStepper
+                                                                        value={entry.selectedPoints ?? level.minPoints}
+                                                                        min={level.minPoints}
+                                                                        max={level.maxPoints}
+                                                                        step={0.5}
+                                                                        accentColor={fmt.accentColor}
+                                                                        label={
+                                                                            c.levels.some((l) => l.subItems.length > 0)
+                                                                                ? t('gradeStudent.label_base_points')
+                                                                                : t('gradeStudent.label_points')
+                                                                        }
+                                                                        onChange={(v) =>
+                                                                            updateEntry(c.id, { selectedPoints: v })
+                                                                        }
+                                                                    />
                                                                 </div>
                                                             </div>
                                                         )}
