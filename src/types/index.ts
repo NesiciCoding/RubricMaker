@@ -1,5 +1,9 @@
 // ─── Core Domain Types for Rubric Maker ───────────────────────────────────────
 
+import type { PeriodReportEntry } from '../utils/periodReportExport';
+import type { LearningGoalAggregate } from '../utils/learningGoalsAggregator';
+import type { StandardSetGroup, CefrStudentOverview } from '../utils/cefrStudentAggregator';
+
 // ─── CEFR / ERK Types ─────────────────────────────────────────────────────────
 
 export type CefrLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
@@ -910,4 +914,64 @@ export interface CellData {
     submittedCount: number;
     totalStudents: number;
     isLinked: boolean;
+}
+
+// ─── Report cards ──────────────────────────────────────────────────────────────
+
+export interface ReportCardConfig {
+    includeRubrics: boolean;
+    includeStandards: boolean;
+    includeLearningGoals: boolean;
+    includeCefr: boolean;
+    includeTestSummary: boolean;
+}
+
+export interface ReportCardRubricsSection {
+    type: 'rubrics';
+    entries: PeriodReportEntry[];
+}
+
+export interface ReportCardStandardsSection {
+    type: 'standards';
+    standardSets: StandardSetGroup[];
+}
+
+export interface ReportCardLearningGoalsSection {
+    type: 'learningGoals';
+    goals: LearningGoalAggregate[];
+}
+
+export interface ReportCardCefrSection {
+    type: 'cefr';
+    overview: CefrStudentOverview;
+}
+
+/**
+ * Placeholder contract for the test-summary section. `testSummaryAggregator.ts` did not
+ * exist yet when this was written — once it lands, replace `TestSummaryOverview` here with
+ * its real exported type and wire `buildReportCardData` to call its aggregator function.
+ */
+export interface TestSummaryOverview {
+    strong: { id: string; label: string; score: number }[];
+    weak: { id: string; label: string; score: number }[];
+}
+
+export interface ReportCardTestSummarySection {
+    type: 'testSummary';
+    overview: TestSummaryOverview;
+}
+
+export type ReportCardSection =
+    | ReportCardRubricsSection
+    | ReportCardStandardsSection
+    | ReportCardLearningGoalsSection
+    | ReportCardCefrSection
+    | ReportCardTestSummarySection;
+
+export interface ReportCardData {
+    studentId: string;
+    studentName: string;
+    className: string;
+    periodLabel?: string;
+    sections: ReportCardSection[];
 }
