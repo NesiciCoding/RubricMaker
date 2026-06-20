@@ -20,8 +20,10 @@ import type {
     StudentEssayAssignmentSummary,
     Test,
     StudentTest,
+    MarketplaceListing,
 } from '../../types';
 import type { DatabaseConfig, DbUser, SyncResult } from './types';
+import { nanoid } from '../../utils/nanoid';
 
 export class SupabaseAdapter {
     private client: SupabaseClient | null = null;
@@ -1386,6 +1388,126 @@ export class SupabaseAdapter {
         return (data ?? [])
             .map((r) => (r as unknown as { rubrics: { data: unknown } }).rubrics?.data as Rubric)
             .filter(Boolean);
+    }
+
+    // ── Rubric Marketplace ────────────────────────────────────────────────────
+
+    private mapMarketplaceListing(row: {
+        id: string;
+        school_id: string;
+        published_by: string;
+        rubric_snapshot: unknown;
+        name: string;
+        subject: string | null;
+        description: string | null;
+        attribution: string | null;
+        upvote_count: number;
+        created_at: string;
+        updated_at: string;
+    }): MarketplaceListing {
+        return {
+            id: row.id,
+            schoolId: row.school_id,
+            publishedBy: row.published_by,
+            rubricSnapshot: row.rubric_snapshot as Rubric,
+            name: row.name,
+            subject: row.subject ?? undefined,
+            description: row.description ?? undefined,
+            attribution: row.attribution ?? undefined,
+            upvoteCount: row.upvote_count,
+            createdAt: row.created_at,
+            updatedAt: row.updated_at,
+        };
+    }
+
+    /** RLS scopes results to the caller's school; schoolId here is just a hint for callers, not an extra filter. */
+    async listMarketplaceListings(schoolId: string): Promise<MarketplaceListing[]> {
+        if (!this.client || !this.userId) return [];
+        const { data, error } = await this.client
+            .from('marketplace_listings')
+            .select(
+                'id, school_id, published_by, rubric_snapshot, name, subject, description, attribution, upvote_count, created_at, updated_at'
+            )
+            .eq('school_id', schoolId)
+            .order('created_at', { ascending: false });
+        if (error || !data) {
+            if (error) console.error('listMarketplaceListings', error);
+            return [];
+        }
+        return data.map((row) => this.mapMarketplaceListing(row));
+    }
+
+    async publishToMarketplace(
+        schoolId: string,
+        rubric: Rubric,
+        attribution?: string,
+        options?: { name?: string; subject?: string; description?: string }
+    ): Promise<MarketplaceListing | null> {
+        if (!this.client || !this.userId) return null;
+        const { data, error } = await this.client
+            .from('marketplace_listings')
+            .insert({
+                school_id: schoolId,
+                published_by: this.userId,
+                rubric_snapshot: rubric,
+                name: options?.name ?? rubric.name,
+                subject: options?.subject ?? rubric.subject ?? null,
+                description: options?.description ?? rubric.description ?? null,
+                attribution: attribution ?? null,
+            })
+            .select(
+                'id, school_id, published_by, rubric_snapshot, name, subject, description, attribution, upvote_count, created_at, updated_at'
+            )
+            .single();
+        if (error || !data) {
+            if (error) console.error('publishToMarketplace', error);
+            return null;
+        }
+        return this.mapMarketplaceListing(data);
+    }
+
+    /**
+     * Fetches a listing's snapshot and materializes it as a new local Rubric shape.
+     * Does not write anywhere — caller must add the returned Rubric via the normal
+     * AppContext/storage.ts path so localStorage stays the single write point.
+     */
+    async cloneMarketplaceListing(listingId: string): Promise<Rubric | null> {
+        if (!this.client || !this.userId) return null;
+        const { data, error } = await this.client
+            .from('marketplace_listings')
+            .select('rubric_snapshot')
+            .eq('id', listingId)
+            .single();
+        if (error || !data) {
+            if (error) console.error('cloneMarketplaceListing', error);
+            return null;
+        }
+        const { versions: _versions, ...snapshot } = data.rubric_snapshot as Rubric;
+        const now = new Date().toISOString();
+        return {
+            ...snapshot,
+            id: nanoid(),
+            createdAt: now,
+            updatedAt: now,
+        };
+    }
+
+    async upvoteListing(listingId: string): Promise<SyncResult> {
+        if (!this.client || !this.userId) return { success: false, error: 'Not connected' };
+        const { error } = await this.client
+            .from('marketplace_upvotes')
+            .upsert({ listing_id: listingId, profile_id: this.userId }, { onConflict: 'listing_id,profile_id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async removeUpvote(listingId: string): Promise<SyncResult> {
+        if (!this.client || !this.userId) return { success: false, error: 'Not connected' };
+        const { error } = await this.client
+            .from('marketplace_upvotes')
+            .delete()
+            .eq('listing_id', listingId)
+            .eq('profile_id', this.userId);
+        return error ? { success: false, error: error.message } : { success: true };
     }
 
     // ── Class Sharing ─────────────────────────────────────────────────────────
