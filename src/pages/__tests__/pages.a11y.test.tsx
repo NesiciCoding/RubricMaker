@@ -9,7 +9,7 @@ import React from 'react';
 import { render } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { axe } from 'jest-axe';
-import { MemoryRouter, Routes, Route, createMemoryRouter, RouterProvider } from 'react-router-dom';
+import { MemoryRouter, createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
 import type { AppSettings, Class, Student, Rubric, StudentRubric } from '../../types';
 
