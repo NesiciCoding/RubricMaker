@@ -837,6 +837,37 @@ export interface StudentTest {
     updatedAt?: string;
 }
 
+export type TestStrengthBucket = 'strong' | 'developing' | 'weak';
+
+/** Accuracy breakdown for a single test question, aggregated across one or more StudentTest submissions */
+export interface TestQuestionBreakdown {
+    questionId: string;
+    /** Fraction of relevant answers that were fully correct, 0-100 */
+    accuracyPct: number;
+    bucket: TestStrengthBucket;
+    /** Number of StudentTest answers included in the accuracy calculation */
+    sampleSize: number;
+}
+
+/** Accuracy breakdown for a group of questions sharing a linked standard or CEFR descriptor */
+export interface TestSkillBreakdown {
+    /** Linked standard guid, CEFR descriptorId, or 'ungrouped' for questions with no link */
+    groupId: string;
+    /** Human-readable label — standard notation/description or CEFR descriptor text */
+    label: string;
+    questionIds: string[];
+    accuracyPct: number;
+    bucket: TestStrengthBucket;
+    sampleSize: number;
+}
+
+/** Strong/weak-point summary for a test, either for a single student or aggregated across the cohort */
+export interface TestStrongWeakSummary {
+    studentId: string | null;
+    questions: TestQuestionBreakdown[];
+    skills: TestSkillBreakdown[];
+}
+
 /** Configuration for a teacher-created test assignment, encoded into the student's share code */
 export interface TestAssignmentPayload {
     testId: string;
