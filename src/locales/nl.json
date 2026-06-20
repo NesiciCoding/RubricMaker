@@ -1773,7 +1773,9 @@
         "done": "Klaar",
         "cancel": "Annuleren",
         "import_btn_one": "{{count}} leerling importeren",
-        "import_btn_other": "{{count}} leerlingen importeren"
+        "import_btn_other": "{{count}} leerlingen importeren",
+        "detected_format_clever": "Gedetecteerd: Clever-indeling",
+        "detected_format_oneroster": "Gedetecteerd: OneRoster-indeling"
     },
     "a11y": {
         "skip_to_content": "Naar hoofdinhoud springen"
