@@ -1461,6 +1461,25 @@
         "open_student_detail": "Open {{name}}'s CEFR detail",
         "legend_target_level": "Target level"
     },
+    "learningPath": {
+        "page_title": "Learning Path",
+        "nav_label": "Learning Path",
+        "view_button": "View Learning Path",
+        "back_to_profile": "Back to Profile",
+        "student_not_found": "Student not found.",
+        "recommendations_title": "Rubric Recommendations",
+        "recommendations_subtitle": "Untried rubrics for CEFR skills where this student trails the class average. Rule-based, no AI involved.",
+        "recommendations_empty": "No recommendations right now — this student isn't trailing the class average on any assessed skill.",
+        "gap_summary": "{{studentScore}}% vs class average {{cohortAverage}}%",
+        "no_suggested_rubrics": "No untried rubrics tagged for this skill and level yet.",
+        "interventions_title": "Intervention Flags",
+        "interventions_subtitle": "Three or more consecutive low scores on the same criterion or CEFR skill.",
+        "interventions_empty": "No intervention flags — no streaks of consecutive low scores detected.",
+        "flag_kind_criterion": "Criterion",
+        "flag_kind_cefr_skill": "CEFR Skill",
+        "flag_streak": "{{count}} consecutive low scores",
+        "flag_scores": "Scores: {{scores}}%"
+    },
     "analysis": {
         "add_to_bank": "Add to bank",
         "added_to_bank": "Added"

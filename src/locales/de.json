@@ -1461,6 +1461,25 @@
         "open_student_detail": "CEFR-Detail von {{name}} öffnen",
         "legend_target_level": "Zielniveau"
     },
+    "learningPath": {
+        "page_title": "Lernpfad",
+        "nav_label": "Lernpfad",
+        "view_button": "Lernpfad anzeigen",
+        "back_to_profile": "Zurück zum Profil",
+        "student_not_found": "Schüler nicht gefunden.",
+        "recommendations_title": "Rubrik-Empfehlungen",
+        "recommendations_subtitle": "Noch nicht versuchte Rubriken für GER-Fähigkeiten, bei denen dieser Schüler hinter dem Klassendurchschnitt zurückbleibt. Regelbasiert, keine KI.",
+        "recommendations_empty": "Derzeit keine Empfehlungen — dieser Schüler liegt bei keiner bewerteten Fähigkeit hinter dem Klassendurchschnitt.",
+        "gap_summary": "{{studentScore}}% gegenüber Klassendurchschnitt {{cohortAverage}}%",
+        "no_suggested_rubrics": "Noch keine nicht versuchten Rubriken für diese Fähigkeit und dieses Niveau verknüpft.",
+        "interventions_title": "Interventionshinweise",
+        "interventions_subtitle": "Drei oder mehr aufeinanderfolgende niedrige Bewertungen beim gleichen Kriterium oder der gleichen GER-Fähigkeit.",
+        "interventions_empty": "Keine Interventionshinweise — keine Serien aufeinanderfolgender niedriger Bewertungen festgestellt.",
+        "flag_kind_criterion": "Kriterium",
+        "flag_kind_cefr_skill": "GER-Fähigkeit",
+        "flag_streak": "{{count}} aufeinanderfolgende niedrige Bewertungen",
+        "flag_scores": "Bewertungen: {{scores}}%"
+    },
     "analysis": {
         "add_to_bank": "Zur Bank hinzufügen",
         "added_to_bank": "Hinzugefügt"

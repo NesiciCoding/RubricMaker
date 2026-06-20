@@ -22,6 +22,7 @@ import {
     Languages,
     ClipboardCheck,
     Radio,
+    TrendingUp,
 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useTranslation } from 'react-i18next';
@@ -186,6 +187,13 @@ const ROUTE_TREE: RouteNode[] = [
                         path: '/students/:id/cefr-overview',
                         label: 'CEFR Overview (Student)',
                         description: 'Per-student proficiency dashboard across all CEFR skills.',
+                        color: '#10b981',
+                    },
+                    {
+                        path: '/students/:id/learning-path',
+                        label: 'Learning Path',
+                        description:
+                            'Rule-based rubric recommendations for CEFR skills where the student trails the class average, plus intervention flags for consecutive low scores.',
                         color: '#10b981',
                     },
                 ],
@@ -874,6 +882,20 @@ function CefrTab() {
                     CEFR levels are computed from rubric scores when CEFR descriptors are linked to criteria. They are
                     also updated by speaking sessions and self-assessments.
                 </InfoBox>
+            </FeatureSection>
+
+            <FeatureSection icon={TrendingUp} title="Learning Paths & Interventions" color="#10b981">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    Open a student's profile and click "Learning Path" to see rule-based, offline suggestions — no AI
+                    is involved, only deterministic comparisons against class averages and score history.
+                </p>
+                <FeatureList
+                    items={[
+                        'Rubric recommendations — for each CEFR skill/level where the student scores well below the class average, untried rubrics tagged with that skill and level are suggested.',
+                        'Intervention flags — three or more consecutive low scores on the same rubric criterion, or on the same CEFR skill, raise a flag so it is easy to spot students who need extra support.',
+                        'Everything is computed on the fly from existing grades; nothing new is stored.',
+                    ]}
+                />
             </FeatureSection>
 
             <FeatureSection icon={Mic} title="Speaking Sessions" color="#f59e0b">

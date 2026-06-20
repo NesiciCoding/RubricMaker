@@ -1461,6 +1461,25 @@
         "open_student_detail": "Ouvrir le détail CECR de {{name}}",
         "legend_target_level": "Niveau cible"
     },
+    "learningPath": {
+        "page_title": "Parcours d'apprentissage",
+        "nav_label": "Parcours d'apprentissage",
+        "view_button": "Voir le parcours d'apprentissage",
+        "back_to_profile": "Retour au profil",
+        "student_not_found": "Élève non trouvé.",
+        "recommendations_title": "Recommandations de grilles",
+        "recommendations_subtitle": "Grilles non essayées pour les compétences CECR où cet élève est en retard par rapport à la moyenne de la classe. Basé sur des règles, sans IA.",
+        "recommendations_empty": "Aucune recommandation pour le moment — cet élève n'est en retard sur aucune compétence évaluée.",
+        "gap_summary": "{{studentScore}}% contre moyenne de classe {{cohortAverage}}%",
+        "no_suggested_rubrics": "Aucune grille non essayée associée à cette compétence et ce niveau pour le moment.",
+        "interventions_title": "Signaux d'intervention",
+        "interventions_subtitle": "Trois scores faibles consécutifs ou plus sur le même critère ou la même compétence CECR.",
+        "interventions_empty": "Aucun signal d'intervention — aucune série de scores faibles consécutifs détectée.",
+        "flag_kind_criterion": "Critère",
+        "flag_kind_cefr_skill": "Compétence CECR",
+        "flag_streak": "{{count}} scores faibles consécutifs",
+        "flag_scores": "Scores : {{scores}}%"
+    },
     "analysis": {
         "add_to_bank": "Ajouter à la banque",
         "added_to_bank": "Ajouté"
