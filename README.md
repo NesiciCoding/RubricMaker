@@ -33,6 +33,7 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 - **CEFR overview**: Per-student and whole-class proficiency dashboards showing progress across Reading, Writing, Speaking, and Listening.
 - **Student self-assessment**: Students rate themselves against Can-Do descriptors; reflection text is stored alongside teacher scores.
 - **Cambridge English exam mapping**: Optional setting shows the Cambridge English Qualification (A2 Key, B1 Preliminary, B2 First, C1 Advanced, C2 Proficiency) alongside CEFR level badges; vocabulary items can be enriched with CEFR level and definition via an optional Cambridge Dictionary API key.
+- **Learning paths & interventions**: Rule-based (no AI) rubric recommendations for CEFR skills where a student trails the class average, plus flags for three or more consecutive low scores on the same criterion or CEFR skill — available from each student's profile.
 
 ### 4. Essay Writing
 - **Dedicated workspace**: A standalone "Essays" section (parallel to Tests) lists every essay assignment, with a builder for the prompt, rubric link, word/time limits, assigning to a class, copying per-student share links, importing submission codes, and a live monitor link.
@@ -144,6 +145,7 @@ npm run db:reset     # Reset and re-apply all migrations
 | `/students` | Students list |
 | `/students/:id` | Student profile |
 | `/students/:id/cefr-overview` | Per-student CEFR overview |
+| `/students/:id/learning-path` | Per-student learning path — rule-based rubric recommendations and intervention flags |
 | `/cefr-overview` | Whole-class CEFR overview |
 | `/vocabulary` | Vocabulary Profile dashboard (CEFR vocabulary distribution per class/student, CSV export) |
 | `/portal/:studentId` | Student portal (public) |

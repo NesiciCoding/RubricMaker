@@ -23,6 +23,7 @@ import {
     Radio,
     ClipboardCheck,
     PenLine,
+    TrendingUp,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { loadSupabaseConfig } from '../services/database';
@@ -76,6 +77,12 @@ const TEACHER_FEATURES = [
         title: 'Essays',
         desc: 'Write a prompt, link a rubric, and assign it to a class from a dedicated Essays page — then track submissions, share links, and watch live progress, all in one place.',
         color: '#6366f1',
+    },
+    {
+        icon: TrendingUp,
+        title: 'Learning Paths',
+        desc: 'See which students need extra support, with rubric suggestions based on their CEFR progress compared to the class average.',
+        color: '#10b981',
     },
 ];
 

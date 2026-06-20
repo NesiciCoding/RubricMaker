@@ -1461,6 +1461,25 @@
         "open_student_detail": "Abrir detalle CEFR de {{name}}",
         "legend_target_level": "Nivel objetivo"
     },
+    "learningPath": {
+        "page_title": "Ruta de aprendizaje",
+        "nav_label": "Ruta de aprendizaje",
+        "view_button": "Ver ruta de aprendizaje",
+        "back_to_profile": "Volver al perfil",
+        "student_not_found": "Estudiante no encontrado.",
+        "recommendations_title": "Recomendaciones de rúbricas",
+        "recommendations_subtitle": "Rúbricas no probadas para las competencias MCER en las que este estudiante va por detrás de la media de la clase. Basado en reglas, sin IA.",
+        "recommendations_empty": "No hay recomendaciones por ahora — este estudiante no va por detrás de la media en ninguna competencia evaluada.",
+        "gap_summary": "{{studentScore}}% frente a media de clase {{cohortAverage}}%",
+        "no_suggested_rubrics": "Todavía no hay rúbricas no probadas vinculadas a esta competencia y nivel.",
+        "interventions_title": "Señales de intervención",
+        "interventions_subtitle": "Tres o más puntuaciones bajas consecutivas en el mismo criterio o competencia MCER.",
+        "interventions_empty": "Sin señales de intervención — no se detectaron rachas de puntuaciones bajas consecutivas.",
+        "flag_kind_criterion": "Criterio",
+        "flag_kind_cefr_skill": "Competencia MCER",
+        "flag_streak": "{{count}} puntuaciones bajas consecutivas",
+        "flag_scores": "Puntuaciones: {{scores}}%"
+    },
     "analysis": {
         "add_to_bank": "Añadir al banco",
         "added_to_bank": "Añadido"
