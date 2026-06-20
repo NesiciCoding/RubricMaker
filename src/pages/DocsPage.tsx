@@ -845,10 +845,20 @@ function GradingTab() {
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     Importing offline submissions
                 </h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     If a student submits a test as a code instead of online (e.g. when offline), click{' '}
                     <strong>Import submission code</strong> on the Tests list, paste the code, and the submission is
                     created or updated automatically — ready for grading and results.
+                </p>
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    Test summary export
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
+                    Open <strong>Results</strong> on a test to find the <strong>Export summary</strong> panel. Choose
+                    a single student or the whole class, then export a PDF or Word summary with per-question accuracy
+                    and a strong/developing/weak breakdown by linked standard or CEFR descriptor — useful for spotting
+                    which topics a student or the class as a whole needs to revisit.
                 </p>
             </FeatureSection>
         </div>

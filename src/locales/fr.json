@@ -491,6 +491,19 @@
             "import_error_invalid": "Code de soumission invalide. Vérifiez que vous avez copié le code complet envoyé par l'élève.",
             "import_error_wrong_test": "Ce code de soumission correspond à un autre test."
         },
+        "export": {
+            "section_title": "Exporter le résumé",
+            "scope_label": "Portée",
+            "scope_single": "Un seul élève",
+            "scope_batch": "Toute la classe",
+            "student_label": "Élève",
+            "select_student_placeholder": "Sélectionner un élève…",
+            "export_pdf": "Exporter en PDF",
+            "export_docx": "Exporter en Word",
+            "no_submissions": "Aucune soumission pour ce test pour le moment.",
+            "summary_title": "Résumé des points forts/faibles",
+            "summary_description": "Précision par question et répartition des points forts/faibles par norme ou descripteur CECRL associé, pour un élève ou toute la classe."
+        },
         "taking": {
             "invalid_link_title": "Lien invalide ou expiré",
             "invalid_link_desc": "Ce lien de test n'est pas valide. Demandez un nouveau lien à votre enseignant.",

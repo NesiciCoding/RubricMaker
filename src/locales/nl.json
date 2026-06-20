@@ -491,6 +491,19 @@
             "import_error_invalid": "Ongeldige inzendingscode. Controleer of je de volledige code van de leerling hebt gekopieerd.",
             "import_error_wrong_test": "Deze inzendingscode is voor een andere toets."
         },
+        "export": {
+            "section_title": "Samenvatting exporteren",
+            "scope_label": "Bereik",
+            "scope_single": "Eén leerling",
+            "scope_batch": "Hele klas",
+            "student_label": "Leerling",
+            "select_student_placeholder": "Selecteer een leerling…",
+            "export_pdf": "Exporteer PDF",
+            "export_docx": "Exporteer Word",
+            "no_submissions": "Nog geen inzendingen voor deze toets.",
+            "summary_title": "Sterke/zwakke punten samenvatting",
+            "summary_description": "Nauwkeurigheid per vraag en een sterk/zwak overzicht per gekoppelde standaard of CEFR-descriptor, voor één leerling of de hele klas."
+        },
         "taking": {
             "invalid_link_title": "Ongeldige of verlopen link",
             "invalid_link_desc": "Deze toetslink is niet geldig. Vraag je docent om een nieuwe link.",

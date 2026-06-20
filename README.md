@@ -13,6 +13,7 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 - **Framework descriptors**: Link criteria to IB Learner Profile attributes or Bloom's Taxonomy levels.
 - **Rubric versioning**: Automatic snapshots on save; restore any previous version.
 - **Tests & quizzes**: Build multiple-choice, multiple-response (select all that apply), true/false, short-answer, open, fill-the-gap (with optional dropdown), matching, ordering, categorize, and hot text tests with a duration, optional Safe Exam Browser requirement, and grade scale. Link standards and CEFR descriptors per question, then assign tests to a class — each student gets a unique share link. Every question type has an in-context help button explaining how to author and answer it.
+- **Test summary export**: From a test's Results panel, export a PDF or Word summary for one student or the whole class with per-question accuracy and a strong/developing/weak breakdown by linked standard or CEFR descriptor.
 - **Live monitoring**: While a test or essay is in progress (cloud sync enabled), watch a live presence/progress view per student — response grid for tests, live word count and draft preview for essays, plus advisory proctoring flags (tab switches, copy/paste, battery, Safe Exam Browser status).
 
 ### 2. Grading Interface
