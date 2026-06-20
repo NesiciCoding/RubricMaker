@@ -239,16 +239,14 @@ const GRAMMAR_PATTERNS: GrammarPattern[] = [
         shorthand: 'PAST.SIMPLE.REG',
         label: 'Past simple, regular verbs (-ed)',
         level: 'A1',
-        detect: (_, doc) =>
-            (doc.match('#PastTense').out('array') as string[]).filter((w) => /ed$/i.test(w)).length,
+        detect: (_, doc) => (doc.match('#PastTense').out('array') as string[]).filter((w) => /ed$/i.test(w)).length,
     },
     {
         // ponytail: irregular = past-tense word NOT ending -ed; relies on compromise's #PastTense tagging.
         shorthand: 'PAST.SIMPLE.IRREG',
         label: 'Past simple, irregular verbs',
         level: 'A2',
-        detect: (_, doc) =>
-            (doc.match('#PastTense').out('array') as string[]).filter((w) => !/ed$/i.test(w)).length,
+        detect: (_, doc) => (doc.match('#PastTense').out('array') as string[]).filter((w) => !/ed$/i.test(w)).length,
     },
     {
         shorthand: 'COMP.ADJ',

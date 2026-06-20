@@ -26,10 +26,7 @@ export interface GrammarQualificationResult {
     passed: boolean;
 }
 
-export function evaluateGrammar(
-    linked: LinkedFrameworkDescriptor[],
-    text: string
-): GrammarQualificationResult {
+export function evaluateGrammar(linked: LinkedFrameworkDescriptor[], text: string): GrammarQualificationResult {
     const grammar = linked.filter((d) => d.framework === 'grammar');
 
     const shorthands = grammar

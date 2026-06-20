@@ -750,7 +750,9 @@ export default function DocumentAnalysisPanel({
                                                                     marginLeft: 8,
                                                                     fontSize: 12,
                                                                     fontWeight: 600,
-                                                                    color: qual.passed ? 'var(--green)' : 'var(--yellow)',
+                                                                    color: qual.passed
+                                                                        ? 'var(--green)'
+                                                                        : 'var(--yellow)',
                                                                 }}
                                                             >
                                                                 {qual.foundCount}/{qual.autoDetectableCount}

@@ -13,8 +13,7 @@ export function useUnsavedChangesGuard(isDirty: boolean) {
     const { confirm, dialogProps } = useConfirm();
 
     const blocker = useBlocker(
-        ({ currentLocation, nextLocation }) =>
-            isDirty && currentLocation.pathname !== nextLocation.pathname
+        ({ currentLocation, nextLocation }) => isDirty && currentLocation.pathname !== nextLocation.pathname
     );
 
     useEffect(() => {

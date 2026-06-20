@@ -65,16 +65,7 @@ export default function TestBuilderPage() {
             return;
         }
         setIsDirty(true);
-    }, [
-        name,
-        description,
-        questions,
-        sections,
-        durationMinutes,
-        shuffleQuestions,
-        requireSEB,
-        gradeScaleId,
-    ]);
+    }, [name, description, questions, sections, durationMinutes, shuffleQuestions, requireSEB, gradeScaleId]);
     const { dialogProps: unsavedDialogProps } = useUnsavedChangesGuard(isDirty);
 
     const validSectionIds = React.useMemo(() => new Set(sections.map((s) => s.id)), [sections]);
