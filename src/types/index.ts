@@ -486,6 +486,21 @@ export interface SchoolMember {
     createdAt: string;
 }
 
+/** A rubric published to a school's marketplace. rubricSnapshot is frozen at publish time. */
+export interface MarketplaceListing {
+    id: string;
+    schoolId: string;
+    publishedBy: string;
+    rubricSnapshot: Rubric;
+    name: string;
+    subject?: string;
+    description?: string;
+    attribution?: string;
+    upvoteCount: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
 export interface AppSettings {
     defaultGradeScaleId: string;
     theme: 'light' | 'dark';
