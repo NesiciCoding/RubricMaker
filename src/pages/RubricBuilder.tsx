@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { flushSync } from 'react-dom';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
     Plus,
@@ -192,6 +193,7 @@ export default function RubricBuilder() {
         subject,
         description,
         criteria,
+        gradeScaleId,
         format,
         scoringMode,
         totalMaxPoints,
@@ -377,12 +379,14 @@ export default function RubricBuilder() {
             if (affectedCount > 0) {
                 setSyncDialogRubric(savedRubric);
             }
-        } else {
+        }
+        // Flush before any navigate so useBlocker doesn't see stale isDirty=true.
+        flushSync(() => setIsDirty(false));
+        if (!existing) {
             const newR = addRubric(rubricData);
             navigate(`/rubrics/${newR.id}`, { replace: true });
         }
         setSaved(true);
-        setIsDirty(false);
         setTimeout(() => setSaved(false), 2000);
     }, [
         name,

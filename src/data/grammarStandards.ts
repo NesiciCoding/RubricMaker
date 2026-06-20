@@ -1,29 +1,6 @@
-// English grammar standards for the grammar linker.
-//
-// Each category is a teacher-facing header (e.g. "Past Simple"); its items are the
-// individually-linkable distinctions within it (e.g. regular vs irregular verbs).
 // CEFR levels follow the CEFR-J Grammar Profile conventions (see cefrjGrammar.ts).
-// `detectShorthand`, when present, links an item to a rule in grammarChecker.ts so
-// it can be auto-detected in a scanned essay. Items without it are manual-check only.
-import type { CefrLevel } from '../types';
-
-export interface GrammarItem {
-    id: string;
-    level: CefrLevel;
-    labelEn: string;
-    labelNl: string;
-    examplesEn?: string[];
-    /** Links to a GRAMMAR_PATTERNS rule in grammarChecker.ts. Absent = not auto-detectable. */
-    detectShorthand?: string;
-}
-
-export interface GrammarCategory {
-    id: string;
-    labelEn: string;
-    labelNl: string;
-    color: string;
-    items: GrammarItem[];
-}
+// `detectShorthand` links an item to a rule in grammarChecker.ts for auto-detection.
+import type { CefrLevel, GrammarCategory, GrammarItem } from '../types';
 
 export const GRAMMAR_CATEGORIES: GrammarCategory[] = [
     {

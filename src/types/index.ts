@@ -72,6 +72,26 @@ export interface LinkedFrameworkDescriptor {
     level?: CefrLevel;
 }
 
+/** A single English grammar standard (e.g. "Past Simple — irregular verbs"). */
+export interface GrammarItem {
+    id: string;
+    level: CefrLevel;
+    labelEn: string;
+    labelNl: string;
+    examplesEn?: string[];
+    /** Links to a GRAMMAR_PATTERNS rule in grammarChecker.ts. Absent = not auto-detectable. */
+    detectShorthand?: string;
+}
+
+/** A grammar topic header grouping its individually-linkable distinctions. */
+export interface GrammarCategory {
+    id: string;
+    labelEn: string;
+    labelNl: string;
+    color: string;
+    items: GrammarItem[];
+}
+
 /** A single item inside a level — awarded via checkbox or scored via points */
 export interface SubItem {
     id: string;

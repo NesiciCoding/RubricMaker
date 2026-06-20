@@ -241,13 +241,15 @@ export default function CefrPickerModal({
                     }}
                 >
                     <button
+                        type="button"
                         className={`btn btn-sm ${!selectedLevel ? 'btn-primary' : 'btn-ghost'}`}
                         onClick={() => setSelectedLevel(null)}
                     >
-                        {t('cefr.all_levels', 'All levels')}
+                        {t('cefr.all_levels')}
                     </button>
                     {CEFR_LEVELS.map((level) => (
                         <button
+                            type="button"
                             key={level}
                             className={`btn btn-sm ${selectedLevel === level ? 'btn-primary' : 'btn-ghost'}`}
                             style={
@@ -617,6 +619,7 @@ export default function CefrPickerModal({
                             return (
                                 <div key={cat.id}>
                                     <button
+                                        type="button"
                                         style={{
                                             width: '100%',
                                             display: 'flex',

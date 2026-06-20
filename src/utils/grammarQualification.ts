@@ -1,10 +1,8 @@
-// Evaluates the grammar standards linked to a rubric criterion against a scanned
-// essay, and builds an automated grading comment from the result.
+import type { TFunction } from 'i18next';
 import type { LinkedFrameworkDescriptor } from '../types';
 import { detectGrammar } from './grammarChecker';
 import { getGrammarItemById } from '../data/grammarStandards';
 
-/** Minimum occurrences for a grammar structure to count as "demonstrated". */
 export const DEMONSTRATED_THRESHOLD = 1;
 
 export interface GrammarItemResult {
@@ -25,6 +23,8 @@ export interface GrammarQualificationResult {
     /** True when every auto-detectable linked structure was demonstrated. */
     passed: boolean;
 }
+
+type DescLang = 'en' | 'nl';
 
 export function evaluateGrammar(linked: LinkedFrameworkDescriptor[], text: string): GrammarQualificationResult {
     const grammar = linked.filter((d) => d.framework === 'grammar');
@@ -61,15 +61,16 @@ export function evaluateGrammar(linked: LinkedFrameworkDescriptor[], text: strin
     };
 }
 
-/** Renders the qualification result as an HTML snippet for a criterion comment. */
-export function buildGrammarComment(result: GrammarQualificationResult, lang: 'en' | 'nl'): string {
-    const heading = lang === 'nl' ? 'Grammaticacontrole' : 'Grammar check';
-    const manual = lang === 'nl' ? 'handmatig controleren' : 'manual check';
-    const notFound = lang === 'nl' ? 'niet gevonden' : 'not found';
+// Fixed labels come from i18n (localised for all UI languages); the grammar
+// descriptions only exist in en/nl, so descLang selects between those two.
+export function buildGrammarComment(result: GrammarQualificationResult, t: TFunction, descLang: DescLang): string {
+    const heading = t('analysis.grammar_qualification');
+    const manual = t('analysis.manual_check');
+    const notFound = t('analysis.not_found');
 
     const lines = result.items.map((i) => {
-        const cat = lang === 'nl' ? i.categoryLabelNl : i.categoryLabelEn;
-        const desc = lang === 'nl' ? i.descriptionNl : i.descriptionEn;
+        const cat = descLang === 'nl' ? i.categoryLabelNl : i.categoryLabelEn;
+        const desc = descLang === 'nl' ? i.descriptionNl : i.descriptionEn;
         const label = `${cat} — ${desc}`;
         if (!i.autoDetectable) return `<li>⊘ ${label} (${manual})</li>`;
         if (i.found) return `<li>✔ ${label} (${i.occurrences}×)</li>`;

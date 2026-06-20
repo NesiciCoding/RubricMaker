@@ -132,6 +132,17 @@ describe('TestBuilderPage', () => {
         expect(payload.questions[0].options?.[0].isCorrect).toBe(false);
     });
 
+    it('does not show the unsaved-changes prompt after saving a new test (redirect)', async () => {
+        const { default: TestBuilderPage } = await import('../TestBuilderPage');
+        renderBuilder(TestBuilderPage);
+
+        fireEvent.change(screen.getByLabelText('tests.name_label'), { target: { value: 'Draft' } });
+        fireEvent.click(screen.getByText('common.save'));
+
+        expect(mockAddTest).toHaveBeenCalledTimes(1);
+        expect(screen.queryByText('common.unsaved_title')).not.toBeInTheDocument();
+    });
+
     it('shows a validation error when saving without a name', async () => {
         const { default: TestBuilderPage } = await import('../TestBuilderPage');
         renderBuilder(TestBuilderPage);

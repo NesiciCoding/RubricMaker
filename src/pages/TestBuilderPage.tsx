@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { flushSync } from 'react-dom';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Plus, Save, ArrowLeft, AlertCircle, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -173,7 +174,8 @@ export default function TestBuilderPage() {
             return;
         }
         setNameError('');
-        setIsDirty(false);
+        // Flush before any navigate so useBlocker doesn't see stale isDirty=true.
+        flushSync(() => setIsDirty(false));
 
         const trimmedDuration = durationMinutes.trim();
         const parsedDuration =

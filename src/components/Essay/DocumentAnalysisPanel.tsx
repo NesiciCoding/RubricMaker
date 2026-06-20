@@ -272,10 +272,7 @@ export default function DocumentAnalysisPanel({
                     >
                         <Info size={15} style={{ color: 'var(--accent)', flexShrink: 0, marginTop: 2 }} />
                         <p className="text-xs text-muted" style={{ margin: 0, lineHeight: 1.6 }}>
-                            {t(
-                                'analysis.detection_disclaimer',
-                                'Vocabulary and grammar detection is rule- and NLP-based (no AI) and approximate. It may miss some structures, flag false matches, and does not catch misspelled words — always review the results before relying on them.'
-                            )}
+                            {t('analysis.detection_disclaimer')}
                         </p>
                     </div>
 
@@ -718,7 +715,7 @@ export default function DocumentAnalysisPanel({
                             {grammarQual.length > 0 && (
                                 <div>
                                     <h4 style={{ marginBottom: 10, fontSize: '0.9rem' }}>
-                                        {t('analysis.grammar_qualification', 'Grammar qualification')}
+                                        {t('analysis.grammar_qualification')}
                                     </h4>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                                         {grammarQual.map(({ criterion, result: qual }) => {
@@ -760,12 +757,13 @@ export default function DocumentAnalysisPanel({
                                                         </strong>
                                                         {onApplyComment && (
                                                             <button
+                                                                type="button"
                                                                 className="btn btn-secondary btn-xs"
                                                                 disabled={applied}
                                                                 onClick={() => {
                                                                     onApplyComment(
                                                                         criterion.id,
-                                                                        buildGrammarComment(qual, lang)
+                                                                        buildGrammarComment(qual, t, lang)
                                                                     );
                                                                     setAppliedComments((prev) =>
                                                                         new Set(prev).add(criterion.id)
@@ -773,8 +771,8 @@ export default function DocumentAnalysisPanel({
                                                                 }}
                                                             >
                                                                 {applied
-                                                                    ? t('analysis.comment_applied', 'Applied')
-                                                                    : t('analysis.apply_comment', 'Apply as comment')}
+                                                                    ? t('analysis.comment_applied')
+                                                                    : t('analysis.apply_comment')}
                                                             </button>
                                                         )}
                                                     </div>
@@ -785,10 +783,10 @@ export default function DocumentAnalysisPanel({
                                                                 style={{ fontSize: '0.8rem', lineHeight: 1.6 }}
                                                             >
                                                                 {!item.autoDetectable
-                                                                    ? `⊘ ${lang === 'nl' ? item.descriptionNl : item.descriptionEn} (${t('analysis.manual_check', 'manual check')})`
+                                                                    ? `⊘ ${lang === 'nl' ? item.descriptionNl : item.descriptionEn} (${t('analysis.manual_check')})`
                                                                     : item.found
                                                                       ? `✔ ${lang === 'nl' ? item.descriptionNl : item.descriptionEn} (${item.occurrences}×)`
-                                                                      : `✘ ${lang === 'nl' ? item.descriptionNl : item.descriptionEn} — ${t('analysis.not_found', 'not found')}`}
+                                                                      : `✘ ${lang === 'nl' ? item.descriptionNl : item.descriptionEn} — ${t('analysis.not_found')}`}
                                                             </li>
                                                         ))}
                                                     </ul>

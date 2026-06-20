@@ -46,7 +46,8 @@ describe('evaluateGrammar', () => {
             grammarLink('gr-gerund', 'Gerund'),
         ];
         const result = evaluateGrammar(linked, 'I went home.');
-        const html = buildGrammarComment(result, 'en');
+        const t = ((key: string) => key) as unknown as Parameters<typeof buildGrammarComment>[1];
+        const html = buildGrammarComment(result, t, 'en');
         expect(html).toContain('✔');
         expect(html).toContain('✘');
         expect(html).toContain('⊘');
