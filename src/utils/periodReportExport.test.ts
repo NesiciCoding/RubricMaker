@@ -18,8 +18,9 @@ vi.mock('docx', () => ({
 vi.mock('file-saver', () => ({ saveAs: vi.fn() }));
 
 import { saveAs } from 'file-saver';
-import { exportPeriodReport, exportPeriodReportsBatch } from './periodReportExport';
+import { exportPeriodReport, exportPeriodReportsBatch, exportReportCard, exportReportCardsBatch } from './periodReportExport';
 import type { PeriodReportInput } from './periodReportExport';
+import type { ReportCardData } from '../types';
 
 const mockRubric = {
     id: 'r1',
@@ -107,5 +108,124 @@ describe('periodReportExport', () => {
             entries: [{ sr: noCommentSr as any, rubric: mockRubric as any, scale: mockScale as any }],
         });
         expect(saveAs).toHaveBeenCalledOnce();
+    });
+});
+
+describe('exportReportCard', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    const fullReportCard: ReportCardData = {
+        studentId: 's1',
+        studentName: 'Bob Builder',
+        className: 'Class A',
+        periodLabel: 'Q1 2024',
+        sections: [
+            {
+                type: 'rubrics',
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                entries: [{ sr: mockSr as any, rubric: mockRubric as any, scale: mockScale as any }],
+            },
+            {
+                type: 'standards',
+                standardSets: [
+                    {
+                        setTitle: 'CCSS ELA',
+                        standards: [
+                            {
+                                guid: 'std1',
+                                statementNotation: 'W.4.1',
+                                description: 'Write opinion pieces',
+                                standardSetTitle: 'CCSS ELA',
+                                jurisdictionTitle: 'Common Core',
+                                rubricCount: 2,
+                                avgScore: 82,
+                            },
+                        ],
+                    },
+                ],
+            },
+            {
+                type: 'learningGoals',
+                goals: [{ guid: 'g1', title: 'Master fractions', averagePercentage: 70, rubricCount: 3 }],
+            },
+            {
+                type: 'cefr',
+                overview: {
+                    cells: [
+                        {
+                            skill: 'Writing',
+                            level: 'B1',
+                            rubricCount: 2,
+                            avgScore: 75,
+                            threshold: 70,
+                            rubricAchieved: true,
+                            totalDescriptors: 4,
+                            confidentCount: 3,
+                            confidenceRate: 0.75,
+                            state: 'achieved',
+                            descriptors: [],
+                        },
+                    ],
+                    cellMap: new Map(),
+                    standardSets: [],
+                    skillsWithRubricData: 1,
+                    overallConfidenceRate: 0.75,
+                    standardsCovered: 1,
+                },
+            },
+            {
+                type: 'testSummary',
+                overview: {
+                    studentId: 's1',
+                    questions: [{ questionId: 'q1', accuracyPct: 80, bucket: 'strong', sampleSize: 1 }],
+                    skills: [{ groupId: 'sk1', label: 'Reading', accuracyPct: 80, bucket: 'strong', sampleSize: 1 }],
+                },
+            },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ] as any,
+    };
+
+    const emptyReportCard: ReportCardData = {
+        studentId: 's2',
+        studentName: 'Empty Student',
+        className: 'Class B',
+        sections: [
+            { type: 'rubrics', entries: [] },
+            { type: 'standards', standardSets: [] },
+            { type: 'learningGoals', goals: [] },
+            {
+                type: 'cefr',
+                overview: {
+                    cells: [],
+                    cellMap: new Map(),
+                    standardSets: [],
+                    skillsWithRubricData: 0,
+                    overallConfidenceRate: 0,
+                    standardsCovered: 0,
+                },
+            },
+            { type: 'testSummary', overview: { studentId: 's2', questions: [], skills: [] } },
+        ],
+    };
+
+    it('generates a docx file for a report card with all sections populated', async () => {
+        await exportReportCard(fullReportCard);
+        expect(saveAs).toHaveBeenCalledOnce();
+        const [, filename] = vi.mocked(saveAs).mock.calls[0];
+        expect(filename).toBe('Bob_Builder_report_card.docx');
+    });
+
+    it('handles a report card with all sections empty without throwing', async () => {
+        await exportReportCard(emptyReportCard);
+        expect(saveAs).toHaveBeenCalledOnce();
+        const [, filename] = vi.mocked(saveAs).mock.calls[0];
+        expect(filename).toBe('Empty_Student_report_card.docx');
+    });
+
+    it('exportReportCardsBatch calls saveAs once per student', async () => {
+        await exportReportCardsBatch([fullReportCard, emptyReportCard]);
+        expect(saveAs).toHaveBeenCalledTimes(2);
     });
 });
