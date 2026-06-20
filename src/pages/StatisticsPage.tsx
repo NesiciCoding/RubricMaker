@@ -1,7 +1,4 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Joyride, STATUS } from 'react-joyride';
-import type { EventData } from 'react-joyride';
-import { getStatisticsTourSteps } from '../data/TutorialSteps';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { TrendingUp, Users, BookOpen, Download, Maximize2, Printer, ChevronDown, ChevronUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -26,6 +23,7 @@ import CriterionHeatmap from '../components/Statistics/CriterionHeatmap';
 import ClassTrendChart from '../components/Statistics/ClassTrendChart';
 import MultiClassTrendChart from '../components/Statistics/MultiClassTrendChart';
 import { compareClasses, buildMultiClassTrend, getInsights } from '../utils/classComparisonAggregator';
+import { ChartSkeleton } from '../components/ui/Skeleton';
 
 const STUDENT_COLORS = ['var(--purple)', 'var(--green)', 'var(--yellow)', 'var(--red)'];
 
@@ -68,9 +66,6 @@ export default function StatisticsPage() {
     const { t, i18n } = useTranslation();
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
 
-    const [tourRun, setTourRun] = useState(false);
-    const statsTourSteps = useMemo(() => getStatisticsTourSteps(t), [t]);
-
     // ── View mode ────────────────────────────────────────────────────────────
     const [viewMode, setViewMode] = useState<'rubric' | 'student' | 'compare'>('rubric');
 
@@ -92,6 +87,15 @@ export default function StatisticsPage() {
             }),
         [classes, filterTrack, filterYear]
     );
+
+    // ponytail: charts render synchronously; defer one frame so the controls paint
+    // first and the heavy Recharts/aggregation work doesn't block the shell.
+    const [chartsReady, setChartsReady] = useState(false);
+    useEffect(() => {
+        setChartsReady(false);
+        const id = requestAnimationFrame(() => setChartsReady(true));
+        return () => cancelAnimationFrame(id);
+    }, [viewMode, filterTrack, filterYear]);
 
     // ── Compare mode state ────────────────────────────────────────────────────
     const [compareClassIds, setCompareClassIds] = useState<string[]>([]);
@@ -580,41 +584,17 @@ export default function StatisticsPage() {
     // ── Render ────────────────────────────────────────────────────────────────
     return (
         <>
-            <Joyride
-                steps={statsTourSteps}
-                run={tourRun}
-                continuous
-                onEvent={(data: EventData) => {
-                    if (data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED) {
-                        setTourRun(false);
-                    }
-                }}
-                options={{
-                    showProgress: true,
-                    primaryColor: 'var(--accent)',
-                    backgroundColor: 'var(--bg-elevated)',
-                    textColor: 'var(--text)',
-                    arrowColor: 'var(--bg-elevated)',
-                    overlayColor: 'rgba(0, 0, 0, 0.6)',
-                }}
-            />
             <Topbar
                 title={t('statistics.title')}
                 actions={
-                    <>
-                        <button className="btn btn-ghost btn-sm" onClick={() => setTourRun(true)}>
-                            {t('tutorial.stats_tour_button')}
-                        </button>
-                        <button className="btn btn-ghost btn-sm no-print" onClick={() => window.print()}>
-                            <Printer size={14} /> {t('common.print')}
-                        </button>
-                    </>
+                    <button className="btn btn-ghost btn-sm no-print" onClick={() => window.print()}>
+                        <Printer size={14} /> {t('common.print')}
+                    </button>
                 }
             />
             <div className="page-content fade-in">
                 {/* ── Top controls ── */}
                 <div
-                    data-tour="stats-controls"
                     className="statistics-controls"
                     style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap', alignItems: 'flex-end' }}
                 >
@@ -702,7 +682,7 @@ export default function StatisticsPage() {
                                 </select>
                             </div>
                             {/* Criterion chart type toggle */}
-                            <div data-tour="stats-criterion-chart" className="form-group" style={{ marginBottom: 0 }}>
+                            <div className="form-group" style={{ marginBottom: 0 }}>
                                 <label>{t('statistics.label_criterion_chart')}</label>
                                 <div
                                     style={{
@@ -867,7 +847,20 @@ export default function StatisticsPage() {
                 </div>
 
                 {/* ── Compare view ── */}
-                {viewMode === 'compare' && (
+                {!chartsReady && (
+                    <div
+                        style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                            gap: 20,
+                        }}
+                    >
+                        <ChartSkeleton />
+                        <ChartSkeleton />
+                    </div>
+                )}
+
+                {chartsReady && viewMode === 'compare' && (
                     <>
                         {compareClassIds.length < 2 ? (
                             <div className="empty-state">
@@ -1024,7 +1017,7 @@ export default function StatisticsPage() {
                 )}
 
                 {/* ── Rubric view ── */}
-                {viewMode === 'rubric' && (
+                {chartsReady && viewMode === 'rubric' && (
                     <>
                         {selectedClassId !== 'all' && classGoals.length > 0 && <LearningGoalChart goals={classGoals} />}
 
@@ -1447,7 +1440,7 @@ export default function StatisticsPage() {
                 )}
 
                 {/* ── Student view ── */}
-                {viewMode === 'student' && (
+                {chartsReady && viewMode === 'student' && (
                     <>
                         {!selectedStudentId ? (
                             <div className="empty-state">
