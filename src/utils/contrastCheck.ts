@@ -5,17 +5,18 @@ export interface Rgb {
 }
 
 export function parseHex(hex: string): Rgb {
-    const cleaned = hex.replace('#', '').trim();
+    const match = hex.trim().match(/^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/);
+    if (!match) {
+        throw new Error(`Invalid hex color: ${hex}`);
+    }
+    const raw = match[1];
     const full =
-        cleaned.length === 3
-            ? cleaned
+        raw.length === 3
+            ? raw
                   .split('')
                   .map((c) => c + c)
                   .join('')
-            : cleaned;
-    if (!/^[0-9a-fA-F]{6}$/.test(full)) {
-        throw new Error(`Invalid hex color: ${hex}`);
-    }
+            : raw;
     return {
         r: parseInt(full.slice(0, 2), 16),
         g: parseInt(full.slice(2, 4), 16),

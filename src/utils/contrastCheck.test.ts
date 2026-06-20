@@ -50,6 +50,11 @@ describe('contrastRatio', () => {
         expect(meetsAAA('#767676', '#ffffff')).toBe(false);
         expect(meetsAAA('#767676', '#ffffff', true)).toBe(true);
     });
+
+    it('parseHex accepts 3-digit shorthand and rejects a misplaced #', () => {
+        expect(parseHex('#fff')).toEqual({ r: 255, g: 255, b: 255 });
+        expect(() => parseHex('abc#def')).toThrow('Invalid hex color');
+    });
 });
 
 describe('surface text tokens meet AAA (>=7:1)', () => {
