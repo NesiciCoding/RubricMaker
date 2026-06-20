@@ -946,7 +946,10 @@
         "action_remove_descriptor": "Deskriptor entfernen",
         "action_delete_level": "Niveau löschen",
         "action_move_level_left": "Niveau nach links verschieben",
-        "action_move_level_right": "Niveau nach rechts verschieben"
+        "action_move_level_right": "Niveau nach rechts verschieben",
+        "drag_reorder_criterion": "Ziehen, um Kriterium neu zu ordnen: {{name}}",
+        "drag_reorder_level": "Ziehen, um Niveau neu zu ordnen: {{name}}",
+        "untitled": "Unbenannt"
     },
     "peerReview": {
         "round_label": "Runde",
@@ -1773,5 +1776,8 @@
         "cancel": "Abbrechen",
         "import_btn_one": "{{count}} Schüler importieren",
         "import_btn_other": "{{count}} Schüler importieren"
+    },
+    "a11y": {
+        "skip_to_content": "Zum Hauptinhalt springen"
     }
 }
