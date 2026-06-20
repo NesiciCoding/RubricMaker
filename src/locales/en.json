@@ -122,6 +122,10 @@
         "students_step_import_content": "Bulk-import students from a CSV file, including Magister exports, to set up a whole class at once."
     },
     "common": {
+        "unsaved_title": "Unsaved changes",
+        "unsaved_message": "You have unsaved changes. If you leave now, they will be lost.",
+        "unsaved_leave": "Leave",
+        "unsaved_stay": "Stay",
         "save": "Save",
         "cancel": "Cancel",
         "delete": "Delete",
@@ -1017,6 +1021,7 @@
         "picker_title": "CEFR Can-Do Descriptors",
         "picker_subtitle": "Select statements that this criterion assesses",
         "all_skills": "All skills",
+        "all_levels": "All levels",
         "search_placeholder": "Search Can-Do statements…",
         "no_results": "No descriptors match your filters.",
         "selected_count": "{{count}} descriptor(s) linked",
@@ -1059,6 +1064,7 @@
         "picker_subtitle": "Link CEFR, IB, or Bloom's statements to this criterion",
         "ib_short": "IB Learner Profile",
         "blooms_short": "Bloom's Taxonomy",
+        "grammar_short": "Grammar",
         "action_link_descriptor": "Link Descriptor",
         "selected_count": "{{count}} descriptor(s) linked"
     },
@@ -1464,6 +1470,12 @@
         "legend_target_level": "Target level"
     },
     "analysis": {
+        "detection_disclaimer": "Vocabulary and grammar detection is rule- and NLP-based (no AI) and approximate. It may miss some structures, flag false matches, and does not catch misspelled words — always review the results before relying on them.",
+        "grammar_qualification": "Grammar qualification",
+        "apply_comment": "Apply as comment",
+        "comment_applied": "Applied",
+        "manual_check": "manual check",
+        "not_found": "not found",
         "add_to_bank": "Add to bank",
         "added_to_bank": "Added"
     },

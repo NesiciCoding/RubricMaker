@@ -12,6 +12,7 @@ import {
 } from '../../data/cefrDescriptors';
 import { IB_ATTRIBUTES } from '../../data/ibLearnerProfile';
 import { BLOOM_LEVELS } from '../../data/bloomsTaxonomy';
+import { GRAMMAR_CATEGORIES } from '../../data/grammarStandards';
 import type {
     CefrLevel,
     CefrSkill,
@@ -117,6 +118,7 @@ export default function CefrPickerModal({
         { id: 'cefr', label: 'CEFR / ERK' },
         { id: 'ib', label: t('framework.ib_short') },
         { id: 'blooms', label: t('framework.blooms_short') },
+        { id: 'grammar', label: t('framework.grammar_short') },
     ];
 
     return (
@@ -224,6 +226,40 @@ export default function CefrPickerModal({
                             </button>
                         ))}
                     </div>
+                </div>
+            )}
+
+            {/* Grammar: level filter */}
+            {activeFramework === 'grammar' && (
+                <div
+                    style={{
+                        padding: '12px 20px',
+                        borderBottom: '1px solid var(--border)',
+                        display: 'flex',
+                        gap: 4,
+                        flexWrap: 'wrap',
+                    }}
+                >
+                    <button
+                        className={`btn btn-sm ${!selectedLevel ? 'btn-primary' : 'btn-ghost'}`}
+                        onClick={() => setSelectedLevel(null)}
+                    >
+                        {t('cefr.all_levels', 'All levels')}
+                    </button>
+                    {CEFR_LEVELS.map((level) => (
+                        <button
+                            key={level}
+                            className={`btn btn-sm ${selectedLevel === level ? 'btn-primary' : 'btn-ghost'}`}
+                            style={
+                                selectedLevel === level
+                                    ? {}
+                                    : { borderColor: CEFR_LEVEL_COLORS[level], color: CEFR_LEVEL_COLORS[level] }
+                            }
+                            onClick={() => setSelectedLevel((prev) => (prev === level ? null : level))}
+                        >
+                            {level}
+                        </button>
+                    ))}
                 </div>
             )}
 
@@ -548,6 +584,102 @@ export default function CefrPickerModal({
                         )}
                     </>
                 )}
+
+                {/* ── Grammar list ── */}
+                {activeFramework === 'grammar' &&
+                    (() => {
+                        const matches = (labelEn: string, labelNl: string) => {
+                            if (!search) return true;
+                            const text = lang === 'nl' ? labelNl : labelEn;
+                            return text.toLowerCase().includes(search.toLowerCase());
+                        };
+                        const visibleCategories = GRAMMAR_CATEGORIES.map((cat) => ({
+                            cat,
+                            items: cat.items.filter(
+                                (item) =>
+                                    (!selectedLevel || item.level === selectedLevel) &&
+                                    matches(item.labelEn, item.labelNl)
+                            ),
+                        })).filter((g) => g.items.length > 0);
+
+                        if (visibleCategories.length === 0) {
+                            return (
+                                <div className="empty-state" style={{ padding: 40 }}>
+                                    {t('cefr.no_results')}
+                                </div>
+                            );
+                        }
+
+                        return visibleCategories.map(({ cat, items }) => {
+                            const expanded = expandedSections.has(cat.id);
+                            const linkedCount = items.filter((i) => linkedFrameworkIds.has(i.id)).length;
+                            const catLabel = lang === 'nl' ? cat.labelNl : cat.labelEn;
+                            return (
+                                <div key={cat.id}>
+                                    <button
+                                        style={{
+                                            width: '100%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 10,
+                                            padding: '8px 20px',
+                                            background: 'var(--bg-elevated)',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            textAlign: 'left',
+                                            borderLeft: `4px solid ${cat.color}`,
+                                        }}
+                                        onClick={() => toggleSection(cat.id)}
+                                    >
+                                        <span style={{ fontWeight: 700, fontSize: 13, color: cat.color, flex: 1 }}>
+                                            {catLabel}
+                                        </span>
+                                        {linkedCount > 0 && (
+                                            <span
+                                                style={{
+                                                    background: 'var(--accent)',
+                                                    color: '#fff',
+                                                    borderRadius: 10,
+                                                    padding: '1px 7px',
+                                                    fontSize: 11,
+                                                    fontWeight: 600,
+                                                }}
+                                            >
+                                                {linkedCount}
+                                            </span>
+                                        )}
+                                        {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                                    </button>
+                                    {expanded &&
+                                        items.map((item) => {
+                                            const isLinked = linkedFrameworkIds.has(item.id);
+                                            const text = lang === 'nl' ? item.labelNl : item.labelEn;
+                                            return (
+                                                <DescriptorRow
+                                                    key={item.id}
+                                                    isLinked={isLinked}
+                                                    text={text}
+                                                    sublabel={`${catLabel} · ${item.level}`}
+                                                    onClick={() =>
+                                                        toggleFramework({
+                                                            descriptorId: item.id,
+                                                            framework: 'grammar',
+                                                            categoryId: cat.id,
+                                                            categoryLabelEn: cat.labelEn,
+                                                            categoryLabelNl: cat.labelNl,
+                                                            categoryColor: cat.color,
+                                                            descriptionEn: item.labelEn,
+                                                            descriptionNl: item.labelNl,
+                                                            level: item.level,
+                                                        })
+                                                    }
+                                                />
+                                            );
+                                        })}
+                                </div>
+                            );
+                        });
+                    })()}
             </div>
 
             {/* Footer */}

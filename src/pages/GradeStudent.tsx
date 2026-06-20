@@ -1588,6 +1588,11 @@ export default function GradeStudent() {
                             updateEntry(criterionId, { checkedSubItems: [...entry.checkedSubItems, subItemId] });
                         }
                     }}
+                    onApplyComment={(criterionId, html) => {
+                        const entry = sr?.entries.find((e) => e.criterionId === criterionId);
+                        const existing = entry?.comment ?? '';
+                        updateEntry(criterionId, { comment: existing ? `${existing}${html}` : html });
+                    }}
                 />
             )}
             {showCommentBankFor && (

@@ -64,6 +64,8 @@ import { exportRubricToDocx } from '../utils/docxExport';
 import { logAuditEvent } from '../services/database/AuditLogger';
 import { getSpeakingDimensions } from '../data/speakingDimensions';
 import { useToast } from '../hooks/useToast';
+import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
 import { getRubricBuilderTourSteps } from '../data/TutorialSteps';
@@ -197,16 +199,7 @@ export default function RubricBuilder() {
         cefrSkill,
         cefrAchieveThreshold,
     ]);
-    useEffect(() => {
-        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-            if (isDirty) {
-                e.preventDefault();
-                e.returnValue = '';
-            }
-        };
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-    }, [isDirty]);
+    const { dialogProps: unsavedDialogProps } = useUnsavedChangesGuard(isDirty);
 
     useEffect(() => {
         const EXPORT_GOOGLE_FONTS: Record<string, string> = {
@@ -3408,6 +3401,7 @@ export default function RubricBuilder() {
                     </div>
                 </div>
             )}
+            <ConfirmDialog {...unsavedDialogProps} />
         </>
     );
 }

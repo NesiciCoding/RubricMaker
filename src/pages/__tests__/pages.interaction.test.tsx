@@ -5,7 +5,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { MemoryRouter, Routes, Route, createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
 import type { Rubric, Student, Class, GradeScale, AppSettings, StudentRubric } from '../../types';
 
@@ -280,13 +280,8 @@ vi.mock('papaparse', () => ({
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
 function renderPage(element: React.ReactElement, route = '/', path = '/') {
-    return render(
-        <MemoryRouter initialEntries={[route]}>
-            <Routes>
-                <Route path={path} element={element} />
-            </Routes>
-        </MemoryRouter>
-    );
+    const router = createMemoryRouter([{ path, element }], { initialEntries: [route] });
+    return render(<RouterProvider router={router} />);
 }
 
 // ─── RubricList interactions ──────────────────────────────────────────────────

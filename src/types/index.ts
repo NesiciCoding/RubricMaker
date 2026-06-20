@@ -56,9 +56,9 @@ export interface LinkedCefrDescriptor {
 }
 
 /** Framework type for non-CEFR assessment frameworks */
-export type AssessmentFramework = 'ib' | 'blooms';
+export type AssessmentFramework = 'ib' | 'blooms' | 'grammar';
 
-/** A descriptor from IB Learner Profile or Bloom's Taxonomy linked to a rubric criterion */
+/** A descriptor from IB Learner Profile, Bloom's Taxonomy, or the grammar linker, linked to a rubric criterion */
 export interface LinkedFrameworkDescriptor {
     descriptorId: string;
     framework: AssessmentFramework;
@@ -68,6 +68,8 @@ export interface LinkedFrameworkDescriptor {
     categoryColor: string;
     descriptionEn: string;
     descriptionNl: string;
+    /** CEFR level — set for grammar descriptors so chips can show their level */
+    level?: CefrLevel;
 }
 
 /** A single item inside a level — awarded via checkbox or scored via points */

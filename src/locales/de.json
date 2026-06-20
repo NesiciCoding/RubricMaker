@@ -122,6 +122,10 @@
         "students_step_import_content": "Importieren Sie Schüler per CSV-Datei in großer Zahl, einschließlich Magister-Exporten, um eine ganze Klasse auf einmal einzurichten."
     },
     "common": {
+        "unsaved_title": "Nicht gespeicherte Änderungen",
+        "unsaved_message": "Sie haben nicht gespeicherte Änderungen. Wenn Sie jetzt gehen, gehen sie verloren.",
+        "unsaved_leave": "Verlassen",
+        "unsaved_stay": "Bleiben",
         "save": "Speichern",
         "cancel": "Abbrechen",
         "delete": "Löschen",
@@ -1017,6 +1021,7 @@
         "picker_title": "GER Kann-Beschreibungen",
         "picker_subtitle": "Aussagen auswählen, die dieses Kriterium bewertet",
         "all_skills": "Alle Kompetenzen",
+        "all_levels": "Alle Stufen",
         "search_placeholder": "Kann-Beschreibungen suchen…",
         "no_results": "Keine Deskriptoren entsprechen Ihren Filtern.",
         "selected_count": "{{count}} Deskriptor(en) verknüpft",
@@ -1059,6 +1064,7 @@
         "picker_subtitle": "GER-, IB- oder Bloom-Aussagen mit diesem Kriterium verknüpfen",
         "ib_short": "IB-Lernerprofil",
         "blooms_short": "Bloomsche Taxonomie",
+        "grammar_short": "Grammatik",
         "action_link_descriptor": "Deskriptor verknüpfen",
         "selected_count": "{{count}} Deskriptor(en) verknüpft"
     },
@@ -1464,6 +1470,12 @@
         "legend_target_level": "Zielniveau"
     },
     "analysis": {
+        "detection_disclaimer": "Die Erkennung von Wortschatz und Grammatik basiert auf Regeln und NLP (keine KI) und ist näherungsweise. Sie kann Strukturen übersehen, falsche Treffer melden und prüft keine falsch geschriebenen Wörter — überprüfen Sie die Ergebnisse stets, bevor Sie sich darauf verlassen.",
+        "grammar_qualification": "Grammatikqualifikation",
+        "apply_comment": "Als Kommentar übernehmen",
+        "comment_applied": "Übernommen",
+        "manual_check": "manuelle Prüfung",
+        "not_found": "nicht gefunden",
         "add_to_bank": "Zur Bank hinzufügen",
         "added_to_bank": "Hinzugefügt"
     },

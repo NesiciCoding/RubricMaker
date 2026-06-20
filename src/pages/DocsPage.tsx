@@ -643,6 +643,7 @@ function RubricsTab() {
                         'CEFR Can-Do descriptors — attach specific descriptors per criterion.',
                         "IB Learner Profile attributes and Bloom's Taxonomy levels.",
                         'CCSS, NGSS, and state standards via the Common Standards Project API.',
+                        'Grammar linker — open the alignment picker and switch to the Grammar tab. Each grammar topic is a header (e.g. Past Simple) and its distinctions (regular verbs, irregular verbs) are separate, individually linkable standards. Filter by CEFR level (levels follow the CEFR-J Grammar Profile). Linked grammar can be auto-checked in scanned essays during grading — see Grading.',
                     ]}
                 />
 
@@ -969,6 +970,7 @@ function EssaysTab() {
                         'Upload a DOCX or PDF to import text into the editor.',
                         'OCR via Tesseract.js for scanned images or PDFs.',
                         'Vocabulary and grammar checking via LanguageTool integration.',
+                        'Grammar qualification — if a rubric criterion has linked grammar standards (see Rubric Builder → Grammar tab), scanning the essay reports per-criterion which structures the student demonstrated (✔), which were not found (✘), and which need a manual check (⊘). Detection is approximate, rule/NLP-based (no AI), using the CEFR-J Grammar Profile. Click "Apply as comment" to append the summary to that criterion\'s feedback.',
                     ]}
                 />
             </FeatureSection>

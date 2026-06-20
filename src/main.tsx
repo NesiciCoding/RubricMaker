@@ -1,6 +1,6 @@
 import React, { Suspense, lazy } from 'react';
 import ReactDOM from 'react-dom/client';
-import { HashRouter, Routes, Route } from 'react-router-dom';
+import { createHashRouter, RouterProvider } from 'react-router-dom';
 import App from './App';
 import { AppProvider } from './context/AppContext';
 import { ToastProvider } from './context/ToastContext';
@@ -31,29 +31,29 @@ function isStudentRoute() {
     return STUDENT_ROUTES.some((r) => hash.startsWith(r));
 }
 
+const router = createHashRouter([
+    { path: '/feedback/:code', element: <StudentFeedbackPage /> },
+    { path: '/preview/:code', element: <RubricPreviewPage /> },
+    { path: '/essay/:code', element: <StudentEssayPage /> },
+    { path: '/test/:code', element: <StudentTestPage /> },
+    {
+        path: '*',
+        element: (
+            <ToastProvider>
+                <AppProvider>
+                    <App />
+                </AppProvider>
+            </ToastProvider>
+        ),
+    },
+]);
+
 function renderApp() {
     root.render(
         <React.StrictMode>
-            <HashRouter>
-                <Suspense fallback={null}>
-                    <Routes>
-                        <Route path="/feedback/:code" element={<StudentFeedbackPage />} />
-                        <Route path="/preview/:code" element={<RubricPreviewPage />} />
-                        <Route path="/essay/:code" element={<StudentEssayPage />} />
-                        <Route path="/test/:code" element={<StudentTestPage />} />
-                        <Route
-                            path="*"
-                            element={
-                                <ToastProvider>
-                                    <AppProvider>
-                                        <App />
-                                    </AppProvider>
-                                </ToastProvider>
-                            }
-                        />
-                    </Routes>
-                </Suspense>
-            </HashRouter>
+            <Suspense fallback={null}>
+                <RouterProvider router={router} />
+            </Suspense>
         </React.StrictMode>
     );
 }

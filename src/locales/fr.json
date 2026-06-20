@@ -122,6 +122,10 @@
         "students_step_import_content": "Importez les élèves en masse depuis un fichier CSV, y compris les exports Magister, pour configurer toute une classe d'un coup."
     },
     "common": {
+        "unsaved_title": "Modifications non enregistrées",
+        "unsaved_message": "Vous avez des modifications non enregistrées. Si vous partez maintenant, elles seront perdues.",
+        "unsaved_leave": "Quitter",
+        "unsaved_stay": "Rester",
         "save": "Enregistrer",
         "cancel": "Annuler",
         "delete": "Supprimer",
@@ -1017,6 +1021,7 @@
         "picker_title": "Descripteurs Can-Do CECR",
         "picker_subtitle": "Sélectionner les énoncés évalués par ce critère",
         "all_skills": "Toutes les compétences",
+        "all_levels": "Tous les niveaux",
         "search_placeholder": "Rechercher des énoncés Can-Do…",
         "no_results": "Aucun descripteur ne correspond à vos filtres.",
         "selected_count": "{{count}} descripteur(s) lié(s)",
@@ -1059,6 +1064,7 @@
         "picker_subtitle": "Lier des énoncés CECR, IB ou Bloom à ce critère",
         "ib_short": "Profil de l'apprenant IB",
         "blooms_short": "Taxonomie de Bloom",
+        "grammar_short": "Grammaire",
         "action_link_descriptor": "Lier un descripteur",
         "selected_count": "{{count}} descripteur(s) lié(s)"
     },
@@ -1464,6 +1470,12 @@
         "legend_target_level": "Niveau cible"
     },
     "analysis": {
+        "detection_disclaimer": "La détection du vocabulaire et de la grammaire repose sur des règles et le TAL (sans IA) et reste approximative. Elle peut manquer certaines structures, signaler de fausses correspondances et ne détecte pas les fautes d'orthographe — vérifiez toujours les résultats avant de vous y fier.",
+        "grammar_qualification": "Qualification grammaticale",
+        "apply_comment": "Appliquer comme commentaire",
+        "comment_applied": "Appliqué",
+        "manual_check": "vérification manuelle",
+        "not_found": "non trouvé",
         "add_to_bank": "Ajouter à la banque",
         "added_to_bank": "Ajouté"
     },

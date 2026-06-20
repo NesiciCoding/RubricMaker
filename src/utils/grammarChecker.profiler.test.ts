@@ -1,5 +1,21 @@
 import { describe, it, expect } from 'vitest';
-import { profileGrammar } from './grammarChecker';
+import { profileGrammar, detectGrammar } from './grammarChecker';
+
+describe('detectGrammar', () => {
+    it('counts regular past-simple verbs separately from irregular ones', () => {
+        const counts = detectGrammar('She walked home and played outside, then went inside and saw the dog.', [
+            'PAST.SIMPLE.REG',
+            'PAST.SIMPLE.IRREG',
+        ]);
+        expect(counts['PAST.SIMPLE.REG']).toBeGreaterThan(0);
+        expect(counts['PAST.SIMPLE.IRREG']).toBeGreaterThan(0);
+    });
+
+    it('omits unknown shorthands', () => {
+        const counts = detectGrammar('Hello world.', ['NOPE.NOT.A.RULE']);
+        expect(counts['NOPE.NOT.A.RULE']).toBeUndefined();
+    });
+});
 
 describe('profileGrammar', () => {
     it('returns A1 estimated level for text with no advanced structures', () => {
