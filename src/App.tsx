@@ -163,7 +163,7 @@ export default function App() {
             <MigrationPrompt />
             <div className="app-layout">
                 <a href="#main-content" className="skip-nav">
-                    Skip to main content
+                    {t('a11y.skip_to_content')}
                 </a>
                 <Joyride
                     steps={steps}

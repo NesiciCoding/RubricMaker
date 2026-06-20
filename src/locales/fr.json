@@ -880,7 +880,10 @@
         "action_remove_descriptor": "Supprimer le descripteur",
         "action_delete_level": "Supprimer le niveau",
         "action_move_level_left": "Déplacer le niveau à gauche",
-        "action_move_level_right": "Déplacer le niveau à droite"
+        "action_move_level_right": "Déplacer le niveau à droite",
+        "drag_reorder_criterion": "Glisser pour réorganiser le critère : {{name}}",
+        "drag_reorder_level": "Glisser pour réorganiser le niveau : {{name}}",
+        "untitled": "Sans titre"
     },
     "peerReview": {
         "round_label": "Tour",
@@ -1707,5 +1710,8 @@
         "cancel": "Annuler",
         "import_btn_one": "Importer {{count}} élève",
         "import_btn_other": "Importer {{count}} élèves"
+    },
+    "a11y": {
+        "skip_to_content": "Aller au contenu principal"
     }
 }

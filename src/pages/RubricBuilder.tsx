@@ -56,6 +56,7 @@ import { saveCriterionClipboard, loadCriterionClipboard, loadUserTemplates, save
 import { nanoid } from '../utils/nanoid';
 import StandardsPickerModal from '../components/Standards/StandardsPickerModal';
 import CefrPickerModal from '../components/CEFR/CefrPickerModal';
+import Modal from '../components/ui/Modal';
 import VocabularyListEditor from '../components/Vocabulary/VocabularyListEditor';
 import { CEFR_LEVELS, CEFR_SKILLS, CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
 import { exportRubricGridPdf } from '../utils/pdfExport';
@@ -1289,7 +1290,10 @@ export default function RubricBuilder() {
                                                         >
                                                             <div
                                                                 {...provided.dragHandleProps}
-                                                                aria-label={`Drag to reorder criterion: ${criterion.title || 'Untitled'}`}
+                                                                aria-label={t('rubricBuilder.drag_reorder_criterion', {
+                                                                    name:
+                                                                        criterion.title || t('rubricBuilder.untitled'),
+                                                                })}
                                                                 style={{
                                                                     display: 'flex',
                                                                     flexDirection: 'column',
@@ -2004,7 +2008,16 @@ export default function RubricBuilder() {
                                                                                                                 >
                                                                                                                     <div
                                                                                                                         {...lvlDraggable.dragHandleProps}
-                                                                                                                        aria-label={`Drag to reorder level: ${level.label || 'Untitled'}`}
+                                                                                                                        aria-label={t(
+                                                                                                                            'rubricBuilder.drag_reorder_level',
+                                                                                                                            {
+                                                                                                                                name:
+                                                                                                                                    level.label ||
+                                                                                                                                    t(
+                                                                                                                                        'rubricBuilder.untitled'
+                                                                                                                                    ),
+                                                                                                                            }
+                                                                                                                        )}
                                                                                                                         style={{
                                                                                                                             cursor: 'grab',
                                                                                                                             color: 'var(--text-dim)',
@@ -3203,155 +3216,151 @@ export default function RubricBuilder() {
 
                 {/* Markdown Hint Modal */}
                 {showMarkdownHint && (
-                    <div className="modal-overlay" onClick={() => setShowMarkdownHint(false)}>
-                        <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 400 }}>
-                            <div className="modal-header">
-                                <h3>{t('rubricBuilder.md_modal_title')}</h3>
-                                <button
-                                    className="btn btn-ghost btn-icon"
-                                    aria-label={t('common.close')}
-                                    onClick={() => setShowMarkdownHint(false)}
-                                >
-                                    ✕
-                                </button>
-                            </div>
-                            <div className="modal-body">
-                                <p style={{ marginBottom: 16 }}>{t('rubricBuilder.md_modal_desc')}</p>
-                                <ul style={{ paddingLeft: 20, lineHeight: 2 }}>
-                                    <li>
-                                        <code>**bold**</code> for <strong>bold text</strong>
-                                    </li>
-                                    <li>
-                                        <code>*italic*</code> for <em>italic text</em>
-                                    </li>
-                                </ul>
-                                <p style={{ marginTop: 16, fontSize: '0.9em', color: 'var(--text-muted)' }}>
-                                    Just type the asterisks around your words. The formatting will apply as soon as you
-                                    click outside the text box!
-                                </p>
-                            </div>
-                            <div className="modal-footer">
-                                <button className="btn btn-primary" onClick={() => setShowMarkdownHint(false)}>
-                                    {t('rubricBuilder.action_got_it')}
-                                </button>
-                            </div>
+                    <Modal titleId="md-hint-title" onClose={() => setShowMarkdownHint(false)} maxWidth={400}>
+                        <div className="modal-header">
+                            <h3 id="md-hint-title">{t('rubricBuilder.md_modal_title')}</h3>
+                            <button
+                                className="btn btn-ghost btn-icon"
+                                aria-label={t('common.close')}
+                                onClick={() => setShowMarkdownHint(false)}
+                            >
+                                ✕
+                            </button>
                         </div>
-                    </div>
+                        <div className="modal-body">
+                            <p style={{ marginBottom: 16 }}>{t('rubricBuilder.md_modal_desc')}</p>
+                            <ul style={{ paddingLeft: 20, lineHeight: 2 }}>
+                                <li>
+                                    <code>**bold**</code> for <strong>bold text</strong>
+                                </li>
+                                <li>
+                                    <code>*italic*</code> for <em>italic text</em>
+                                </li>
+                            </ul>
+                            <p style={{ marginTop: 16, fontSize: '0.9em', color: 'var(--text-muted)' }}>
+                                Just type the asterisks around your words. The formatting will apply as soon as you
+                                click outside the text box!
+                            </p>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn btn-primary" onClick={() => setShowMarkdownHint(false)}>
+                                {t('rubricBuilder.action_got_it')}
+                            </button>
+                        </div>
+                    </Modal>
                 )}
             </div>
 
             {/* Rubric snapshot sync dialog */}
             {/* Version History Panel */}
             {showVersionHistory && id && (
-                <div className="modal-overlay" onClick={() => setShowVersionHistory(false)}>
-                    <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 500 }}>
-                        <div className="modal-header">
-                            <h3>
-                                <Clock size={16} style={{ marginRight: 6, verticalAlign: 'middle' }} />
-                                {t('rubricBuilder.version_history')}
-                            </h3>
+                <Modal titleId="version-history-title" onClose={() => setShowVersionHistory(false)} maxWidth={500}>
+                    <div className="modal-header">
+                        <h3 id="version-history-title">
+                            <Clock size={16} style={{ marginRight: 6, verticalAlign: 'middle' }} />
+                            {t('rubricBuilder.version_history')}
+                        </h3>
+                        <button
+                            className="btn btn-ghost btn-icon"
+                            aria-label={t('common.close')}
+                            onClick={() => setShowVersionHistory(false)}
+                        >
+                            ✕
+                        </button>
+                    </div>
+                    <div className="modal-body">
+                        {/* Save new version */}
+                        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                            <input
+                                type="text"
+                                value={versionLabel}
+                                onChange={(e) => setVersionLabel(e.target.value)}
+                                placeholder={t('rubricBuilder.version_label_placeholder')}
+                                style={{ flex: 1 }}
+                            />
                             <button
-                                className="btn btn-ghost btn-icon"
-                                aria-label={t('common.close')}
-                                onClick={() => setShowVersionHistory(false)}
+                                className="btn btn-primary btn-sm"
+                                onClick={() => {
+                                    saveRubricVersion(id, versionLabel || undefined);
+                                    setVersionLabel('');
+                                }}
                             >
-                                ✕
+                                <Save size={13} /> {t('rubricBuilder.save_version')}
                             </button>
                         </div>
-                        <div className="modal-body">
-                            {/* Save new version */}
-                            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-                                <input
-                                    type="text"
-                                    value={versionLabel}
-                                    onChange={(e) => setVersionLabel(e.target.value)}
-                                    placeholder={t('rubricBuilder.version_label_placeholder')}
-                                    style={{ flex: 1 }}
-                                />
-                                <button
-                                    className="btn btn-primary btn-sm"
-                                    onClick={() => {
-                                        saveRubricVersion(id, versionLabel || undefined);
-                                        setVersionLabel('');
-                                    }}
-                                >
-                                    <Save size={13} /> {t('rubricBuilder.save_version')}
-                                </button>
-                            </div>
-                            {/* Version list */}
-                            {(existing?.versions ?? []).length === 0 ? (
-                                <p className="text-muted text-sm">{t('rubricBuilder.no_versions_yet')}</p>
-                            ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                    {[...(existing?.versions ?? [])].reverse().map((v, ri) => {
-                                        const actualIndex = (existing?.versions?.length ?? 0) - 1 - ri;
-                                        return (
-                                            <div
-                                                key={actualIndex}
-                                                style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: 10,
-                                                    padding: '10px 12px',
-                                                    background: 'var(--bg-elevated)',
-                                                    borderRadius: 8,
-                                                    border: '1px solid var(--border)',
-                                                }}
-                                            >
-                                                <div style={{ flex: 1 }}>
-                                                    <div
-                                                        style={{
-                                                            fontWeight: 600,
-                                                            fontSize: '0.87rem',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            gap: 6,
-                                                        }}
-                                                    >
-                                                        {v.label?.startsWith('auto:')
-                                                            ? t('rubricBuilder.version_n', { n: actualIndex + 1 })
-                                                            : v.label ||
-                                                              t('rubricBuilder.version_n', { n: actualIndex + 1 })}
-                                                        {v.label?.startsWith('auto:') && (
-                                                            <span
-                                                                style={{
-                                                                    fontSize: '0.65rem',
-                                                                    padding: '1px 5px',
-                                                                    borderRadius: 4,
-                                                                    background: 'var(--bg-panel)',
-                                                                    color: 'var(--text-muted)',
-                                                                    border: '1px solid var(--border)',
-                                                                    fontWeight: 400,
-                                                                }}
-                                                            >
-                                                                {t('rubricBuilder.auto_save_badge')}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                                        {new Date(v.savedAt).toLocaleString()} ·{' '}
-                                                        {v.snapshot.criteria.length} {t('rubricBuilder.criteria_count')}
-                                                    </div>
-                                                </div>
-                                                <button
-                                                    className="btn btn-secondary btn-sm"
-                                                    onClick={() => {
-                                                        if (!window.confirm(t('rubricBuilder.confirm_restore'))) return;
-                                                        restoreRubricVersion(id, actualIndex);
-                                                        setShowVersionHistory(false);
-                                                        window.location.reload();
+                        {/* Version list */}
+                        {(existing?.versions ?? []).length === 0 ? (
+                            <p className="text-muted text-sm">{t('rubricBuilder.no_versions_yet')}</p>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                {[...(existing?.versions ?? [])].reverse().map((v, ri) => {
+                                    const actualIndex = (existing?.versions?.length ?? 0) - 1 - ri;
+                                    return (
+                                        <div
+                                            key={actualIndex}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 10,
+                                                padding: '10px 12px',
+                                                background: 'var(--bg-elevated)',
+                                                borderRadius: 8,
+                                                border: '1px solid var(--border)',
+                                            }}
+                                        >
+                                            <div style={{ flex: 1 }}>
+                                                <div
+                                                    style={{
+                                                        fontWeight: 600,
+                                                        fontSize: '0.87rem',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 6,
                                                     }}
                                                 >
-                                                    <RotateCcw size={13} /> {t('rubricBuilder.restore_version')}
-                                                </button>
+                                                    {v.label?.startsWith('auto:')
+                                                        ? t('rubricBuilder.version_n', { n: actualIndex + 1 })
+                                                        : v.label ||
+                                                          t('rubricBuilder.version_n', { n: actualIndex + 1 })}
+                                                    {v.label?.startsWith('auto:') && (
+                                                        <span
+                                                            style={{
+                                                                fontSize: '0.65rem',
+                                                                padding: '1px 5px',
+                                                                borderRadius: 4,
+                                                                background: 'var(--bg-panel)',
+                                                                color: 'var(--text-muted)',
+                                                                border: '1px solid var(--border)',
+                                                                fontWeight: 400,
+                                                            }}
+                                                        >
+                                                            {t('rubricBuilder.auto_save_badge')}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                    {new Date(v.savedAt).toLocaleString()} ·{' '}
+                                                    {v.snapshot.criteria.length} {t('rubricBuilder.criteria_count')}
+                                                </div>
                                             </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
+                                            <button
+                                                className="btn btn-secondary btn-sm"
+                                                onClick={() => {
+                                                    if (!window.confirm(t('rubricBuilder.confirm_restore'))) return;
+                                                    restoreRubricVersion(id, actualIndex);
+                                                    setShowVersionHistory(false);
+                                                    window.location.reload();
+                                                }}
+                                            >
+                                                <RotateCcw size={13} /> {t('rubricBuilder.restore_version')}
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
-                </div>
+                </Modal>
             )}
 
             {syncDialogRubric && (

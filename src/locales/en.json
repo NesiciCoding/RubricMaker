@@ -880,7 +880,10 @@
         "action_remove_descriptor": "Remove descriptor",
         "action_delete_level": "Delete level",
         "action_move_level_left": "Move level left",
-        "action_move_level_right": "Move level right"
+        "action_move_level_right": "Move level right",
+        "drag_reorder_criterion": "Drag to reorder criterion: {{name}}",
+        "drag_reorder_level": "Drag to reorder level: {{name}}",
+        "untitled": "Untitled"
     },
     "peerReview": {
         "round_label": "Round",
@@ -1707,5 +1710,8 @@
         "cancel": "Cancel",
         "import_btn_one": "Import {{count}} Student",
         "import_btn_other": "Import {{count}} Students"
+    },
+    "a11y": {
+        "skip_to_content": "Skip to main content"
     }
 }
