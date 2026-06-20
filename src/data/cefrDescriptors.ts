@@ -761,9 +761,9 @@ export const CEFR_LEVEL_DESCRIPTORS: Record<CefrLevel, { en: string; nl: string 
 
 /** Colour associated with each CEFR level for badges/charts */
 export const CEFR_LEVEL_COLORS: Record<CefrLevel, string> = {
-    A1: '#94a3b8', // slate-400
+    A1: '#6a7584', // slate-500/600 (AAA-large white text)
     A2: '#64748b', // slate-500
-    B1: '#3b82f6', // blue-500
+    B1: '#3473da', // blue-500/600 (AAA-large white text)
     B2: '#2563eb', // blue-600
     C1: '#7c3aed', // violet-600
     C2: '#6d28d9', // violet-700
