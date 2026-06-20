@@ -4,7 +4,7 @@ import { createClient, type RealtimeChannel, type SupabaseClient } from '@supaba
 import { Eye, EyeOff, AlertTriangle, Database } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
-import HelpPopover from '../components/ui/Tooltip';
+import HelpPopover from '../components/ui/HelpPopover';
 import { useApp } from '../context/AppContext';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { loadSupabaseConfig } from '../services/database';

@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, XCircle, Award, Languages, ShieldAlert } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
-import HelpPopover from '../components/ui/Tooltip';
+import HelpPopover from '../components/ui/HelpPopover';
 import { useApp } from '../context/AppContext';
 import { calcTestMaxPoints, calcStudentTestRawPoints, calcTestPercentage, autoScoreResponse } from '../utils/testCalc';
 import { calcLetterGrade, calcGradeColor } from '../utils/gradeCalc';

@@ -35,7 +35,7 @@ import {
     RotateCcw,
 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
-import HelpPopover from '../components/ui/Tooltip';
+import HelpPopover from '../components/ui/HelpPopover';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { useDbStatus } from '../hooks/useDbStatus';
