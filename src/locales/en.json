@@ -491,6 +491,19 @@
             "import_error_invalid": "Invalid submission code. Make sure you copied the full code from the student.",
             "import_error_wrong_test": "This submission code is for a different test."
         },
+        "export": {
+            "section_title": "Export summary",
+            "scope_label": "Scope",
+            "scope_single": "Single student",
+            "scope_batch": "Whole class",
+            "student_label": "Student",
+            "select_student_placeholder": "Select a student…",
+            "export_pdf": "Export PDF",
+            "export_docx": "Export Word",
+            "no_submissions": "No submissions yet for this test.",
+            "summary_title": "Strong/weak point summary",
+            "summary_description": "Per-question accuracy and a strong/weak breakdown by linked standard or CEFR descriptor, for one student or the whole class."
+        },
         "taking": {
             "invalid_link_title": "Invalid or expired link",
             "invalid_link_desc": "This test link is not valid. Please ask your teacher for a new link.",

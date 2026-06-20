@@ -491,6 +491,19 @@
             "import_error_invalid": "Código de entrega no válido. Asegúrate de haber copiado el código completo del estudiante.",
             "import_error_wrong_test": "Este código de entrega corresponde a otra prueba."
         },
+        "export": {
+            "section_title": "Exportar resumen",
+            "scope_label": "Alcance",
+            "scope_single": "Un estudiante",
+            "scope_batch": "Toda la clase",
+            "student_label": "Estudiante",
+            "select_student_placeholder": "Selecciona un estudiante…",
+            "export_pdf": "Exportar PDF",
+            "export_docx": "Exportar Word",
+            "no_submissions": "Todavía no hay entregas para esta prueba.",
+            "summary_title": "Resumen de puntos fuertes/débiles",
+            "summary_description": "Precisión por pregunta y un desglose de puntos fuertes/débiles por estándar o descriptor CEFR vinculado, para un estudiante o toda la clase."
+        },
         "taking": {
             "invalid_link_title": "Enlace no válido o caducado",
             "invalid_link_desc": "Este enlace de prueba no es válido. Pide a tu profesor un nuevo enlace.",

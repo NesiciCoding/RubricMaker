@@ -491,6 +491,19 @@
             "import_error_invalid": "Ungültiger Abgabecode. Stellen Sie sicher, dass Sie den vollständigen Code kopiert haben.",
             "import_error_wrong_test": "Dieser Abgabecode gehört zu einem anderen Test."
         },
+        "export": {
+            "section_title": "Zusammenfassung exportieren",
+            "scope_label": "Umfang",
+            "scope_single": "Einzelne Schülerin/Schüler",
+            "scope_batch": "Gesamte Klasse",
+            "student_label": "Schülerin/Schüler",
+            "select_student_placeholder": "Schülerin/Schüler auswählen…",
+            "export_pdf": "PDF exportieren",
+            "export_docx": "Word exportieren",
+            "no_submissions": "Noch keine Abgaben für diesen Test.",
+            "summary_title": "Stärken/Schwächen-Zusammenfassung",
+            "summary_description": "Genauigkeit je Frage und eine Stärken/Schwächen-Aufschlüsselung nach verknüpftem Standard oder CEFR-Deskriptor, für eine Person oder die gesamte Klasse."
+        },
         "taking": {
             "invalid_link_title": "Ungültiger oder abgelaufener Link",
             "invalid_link_desc": "Dieser Test-Link ist ungültig. Bitten Sie Ihre Lehrkraft um einen neuen Link.",

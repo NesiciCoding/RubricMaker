@@ -69,7 +69,7 @@ const TEACHER_FEATURES = [
     {
         icon: ClipboardCheck,
         title: 'Tests & Quizzes',
-        desc: 'Build multiple-choice, multiple-response, true/false, short-answer, open, fill-the-gap, matching, ordering, categorize, and hot text tests, assign them with a share link or Safe Exam Browser, then auto-grade and fine-tune the class average.',
+        desc: 'Build multiple-choice, multiple-response, true/false, short-answer, open, fill-the-gap, matching, ordering, categorize, and hot text tests, assign them with a share link or Safe Exam Browser, then auto-grade, fine-tune the class average, and export a strong/weak point summary per student or class.',
         color: '#3b82f6',
     },
     {
