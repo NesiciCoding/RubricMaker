@@ -65,9 +65,30 @@ vi.mock('../../context/AppContext', () => ({
         peerReviews: [],
         analysisResults: [],
         attachments: [],
+        essayTemplates: [],
         // Phase 3/4 actions
         updateClass: vi.fn(),
         addEssayAssignments: vi.fn(),
+        // RubricBuilder actions
+        addRubric: vi.fn(),
+        updateRubric: vi.fn(),
+        syncRubricSnapshot: vi.fn(),
+        saveRubricVersion: vi.fn(),
+        restoreRubricVersion: vi.fn(),
+        addVocabularyItem: vi.fn(),
+        updateVocabularyItem: vi.fn(),
+        deleteVocabularyItem: vi.fn(),
+        deleteVocabularyItems: vi.fn(),
+        // GradeStudent actions
+        saveStudentRubric: vi.fn(),
+        saveAnalysisResult: vi.fn(),
+        addCommentBankItem: vi.fn(),
+        addAttachment: vi.fn(),
+        saveEssayAssignment: vi.fn(),
+        saveEssayTemplate: vi.fn(),
+        fetchEssaySubmissionsForStudent: vi.fn(() => Promise.resolve([])),
+        deleteEssaySubmission: vi.fn(),
+        getEssaySignedUrl: vi.fn(() => Promise.resolve(null)),
     }),
 }));
 
@@ -371,5 +392,44 @@ describe('BloomsPyramidChart — a11y', () => {
         const srList = document.querySelector('ul.sr-only');
         expect(srList).not.toBeNull();
         expect(srList?.textContent).toContain('75%');
+    });
+});
+
+// ─── RubricBuilder ──────────────────────────────────────────────────────────────
+
+describe('RubricBuilder — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations', async () => {
+        const { default: RubricBuilder } = await import('../RubricBuilder');
+        renderPage(<RubricBuilder />, '/rubrics/r1', '/rubrics/:id');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    }, 15000);
+});
+
+// ─── GradeStudent ───────────────────────────────────────────────────────────────
+
+describe('GradeStudent — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations', async () => {
+        const { default: GradeStudent } = await import('../GradeStudent');
+        renderPage(<GradeStudent />, '/rubrics/r1/grade/s1', '/rubrics/:rubricId/grade/:studentId');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    }, 15000);
+});
+
+// ─── ComparativeGrading ─────────────────────────────────────────────────────────
+
+describe('ComparativeGrading — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations', async () => {
+        const { default: ComparativeGrading } = await import('../ComparativeGrading');
+        renderPage(<ComparativeGrading />, '/grade-comparative/c1/r1', '/grade-comparative/:classId/:rubricId');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
     });
 });
