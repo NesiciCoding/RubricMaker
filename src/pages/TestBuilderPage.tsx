@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Plus, Save, ArrowLeft, AlertCircle, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Joyride, STATUS } from 'react-joyride';
+import type { EventData } from 'react-joyride';
+import { getTestBuilderTourSteps } from '../data/TutorialSteps';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
@@ -49,6 +52,8 @@ export default function TestBuilderPage() {
     const [gradeScaleId, setGradeScaleId] = useState<string | undefined>(
         existing?.gradeScaleId ?? settings.defaultGradeScaleId
     );
+    const [tourRun, setTourRun] = useState(false);
+    const testTourSteps = React.useMemo(() => getTestBuilderTourSteps(t), [t]);
 
     const validSectionIds = React.useMemo(() => new Set(sections.map((s) => s.id)), [sections]);
 
@@ -204,10 +209,31 @@ export default function TestBuilderPage() {
 
     return (
         <>
+            <Joyride
+                steps={testTourSteps}
+                run={tourRun}
+                continuous
+                onEvent={(data: EventData) => {
+                    if (data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED) {
+                        setTourRun(false);
+                    }
+                }}
+                options={{
+                    showProgress: true,
+                    primaryColor: 'var(--accent)',
+                    backgroundColor: 'var(--bg-elevated)',
+                    textColor: 'var(--text)',
+                    arrowColor: 'var(--bg-elevated)',
+                    overlayColor: 'rgba(0, 0, 0, 0.6)',
+                }}
+            />
             <Topbar
                 title={existing ? t('tests.edit_test_title') : t('tests.new_test_title')}
                 actions={
                     <>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setTourRun(true)}>
+                            {t('tutorial.tb_tour_button')}
+                        </button>
                         <button className="btn btn-secondary btn-sm" onClick={() => navigate('/tests')}>
                             <ArrowLeft size={15} /> {t('tests.back_to_list')}
                         </button>
@@ -218,7 +244,11 @@ export default function TestBuilderPage() {
                 }
             />
             <div className="page-content fade-in">
-                <div className="card" style={{ marginBottom: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div
+                    className="card"
+                    data-tour="tb-details"
+                    style={{ marginBottom: 20, display: 'flex', flexDirection: 'column', gap: 14 }}
+                >
                     <div className="form-group" style={{ marginBottom: 0 }}>
                         <label htmlFor="test-name">{t('tests.name_label')}</label>
                         <input
@@ -256,7 +286,7 @@ export default function TestBuilderPage() {
                 </div>
 
                 {/* Settings panel */}
-                <div className="card" style={{ marginBottom: 20 }}>
+                <div className="card" data-tour="tb-settings" style={{ marginBottom: 20 }}>
                     <h3 style={{ marginTop: 0, marginBottom: 14, fontSize: '0.95rem' }}>{t('tests.settings_title')}</h3>
                     <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
                         <div className="form-group" style={{ marginBottom: 0, flex: '1 1 160px' }}>
@@ -330,7 +360,7 @@ export default function TestBuilderPage() {
                 </div>
 
                 {/* Sections panel */}
-                <div className="card" style={{ marginBottom: 20 }}>
+                <div className="card" data-tour="tb-sections" style={{ marginBottom: 20 }}>
                     <h3 style={{ marginTop: 0, marginBottom: 14, fontSize: '0.95rem' }}>{t('tests.sections_title')}</h3>
                     {sections.length === 0 ? (
                         <p className="text-muted text-sm" style={{ marginBottom: 12 }}>
@@ -378,6 +408,7 @@ export default function TestBuilderPage() {
 
                 {/* Questions */}
                 <div
+                    data-tour="tb-add-question"
                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}
                 >
                     <h3 style={{ margin: 0, fontSize: '0.95rem' }}>

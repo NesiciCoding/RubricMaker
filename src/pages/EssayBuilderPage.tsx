@@ -1,6 +1,9 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { Joyride, STATUS } from 'react-joyride';
+import type { EventData } from 'react-joyride';
+import { getEssayBuilderTourSteps } from '../data/TutorialSteps';
 import { ArrowLeft, Save, UserPlus, Upload, Radio, Copy, Check, X, FileText } from 'lucide-react';
 import { nanoid } from '../utils/nanoid';
 import Topbar from '../components/Layout/Topbar';
@@ -60,6 +63,8 @@ export default function EssayBuilderPage() {
     const [importCode, setImportCode] = useState('');
     const [importError, setImportError] = useState('');
     const [copiedStudentId, setCopiedStudentId] = useState<string | null>(null);
+    const [tourRun, setTourRun] = useState(false);
+    const essayTourSteps = useMemo(() => getEssayBuilderTourSteps(t), [t]);
 
     function buildPatch(): Partial<EssayAssignment> {
         return {
@@ -180,10 +185,31 @@ export default function EssayBuilderPage() {
 
     return (
         <>
+            <Joyride
+                steps={essayTourSteps}
+                run={tourRun}
+                continuous
+                onEvent={(data: EventData) => {
+                    if (data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED) {
+                        setTourRun(false);
+                    }
+                }}
+                options={{
+                    showProgress: true,
+                    primaryColor: 'var(--accent)',
+                    backgroundColor: 'var(--bg-elevated)',
+                    textColor: 'var(--text)',
+                    arrowColor: 'var(--bg-elevated)',
+                    overlayColor: 'rgba(0, 0, 0, 0.6)',
+                }}
+            />
             <Topbar
                 title={existing ? t('essays.builder_title_edit') : t('essays.builder_title_new')}
                 actions={
                     <div style={{ display: 'flex', gap: 8 }}>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setTourRun(true)}>
+                            {t('tutorial.eb_tour_button')}
+                        </button>
                         <button className="btn btn-secondary btn-sm" onClick={() => navigate('/essays')}>
                             <ArrowLeft size={15} /> {t('common.back')}
                         </button>
@@ -200,7 +226,7 @@ export default function EssayBuilderPage() {
                 style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 760 }}
             >
                 {/* 1. Prompt editor */}
-                <div className="card">
+                <div className="card" data-tour="eb-prompt">
                     <h3 style={{ marginTop: 0 }}>{t('essays.prompt_editor_label')}</h3>
                     <div className="form-group">
                         <label className="form-label">{t('essays.title_label')}</label>
@@ -280,7 +306,7 @@ export default function EssayBuilderPage() {
                 </div>
 
                 {/* 2. Rubric connector */}
-                <div className="card">
+                <div className="card" data-tour="eb-rubric">
                     <h3 style={{ marginTop: 0 }}>{t('essays.rubric_connector_label')}</h3>
                     <select className="form-input" value={rubricId} onChange={(e) => setRubricId(e.target.value)}>
                         <option value="">{t('essays.rubric_connector_placeholder')}</option>
@@ -293,7 +319,7 @@ export default function EssayBuilderPage() {
                 </div>
 
                 {/* 3. Assign to students */}
-                <div className="card">
+                <div className="card" data-tour="eb-assign">
                     <h3 style={{ marginTop: 0 }}>{t('essays.assigned_students_title')}</h3>
                     {rows.length > 0 && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
@@ -350,7 +376,7 @@ export default function EssayBuilderPage() {
                 </div>
 
                 {/* 4 & 5. Import submission code + Monitor */}
-                <div className="card" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <div className="card" data-tour="eb-monitor" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     <button
                         className="btn btn-secondary btn-sm"
                         onClick={() => setImportOpen(true)}

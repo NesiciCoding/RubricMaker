@@ -16,6 +16,9 @@ import {
     ClipboardCopy,
     FileText,
 } from 'lucide-react';
+import { Joyride, STATUS } from 'react-joyride';
+import type { EventData } from 'react-joyride';
+import { getStudentsTourSteps } from '../data/TutorialSteps';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import Papa from 'papaparse';
@@ -131,6 +134,8 @@ export default function StudentsPage() {
     const [editStudentClassId, setEditStudentClassId] = useState('');
     const [newClassName, setNewClassName] = useState('');
     const [importFile, setImportFile] = useState<File | null>(null);
+    const [tourRun, setTourRun] = useState(false);
+    const studentsTourSteps = React.useMemo(() => getStudentsTourSteps(t), [t]);
 
     // Context Menu State for Classes
     const [classMenuOpen, setClassMenuOpen] = useState<string | null>(null);
@@ -276,11 +281,36 @@ export default function StudentsPage() {
 
     return (
         <>
+            <Joyride
+                steps={studentsTourSteps}
+                run={tourRun}
+                continuous
+                onEvent={(data: EventData) => {
+                    if (data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED) {
+                        setTourRun(false);
+                    }
+                }}
+                options={{
+                    showProgress: true,
+                    primaryColor: 'var(--accent)',
+                    backgroundColor: 'var(--bg-elevated)',
+                    textColor: 'var(--text)',
+                    arrowColor: 'var(--bg-elevated)',
+                    overlayColor: 'rgba(0, 0, 0, 0.6)',
+                }}
+            />
             <Topbar
                 title={t('studentsPage.title')}
                 actions={
                     <>
-                        <button className="btn btn-secondary btn-sm" onClick={() => fileRef.current?.click()}>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setTourRun(true)}>
+                            {t('tutorial.students_tour_button')}
+                        </button>
+                        <button
+                            className="btn btn-secondary btn-sm"
+                            data-tour="students-import"
+                            onClick={() => fileRef.current?.click()}
+                        >
                             <Upload size={15} /> {t('studentsPage.import_csv')}
                         </button>
                         <input
@@ -302,7 +332,11 @@ export default function StudentsPage() {
                                 <FileText size={15} /> {t('studentsPage.action_export_summaries')}
                             </button>
                         )}
-                        <button className="btn btn-primary btn-sm" onClick={() => setShowAddModal(true)}>
+                        <button
+                            className="btn btn-primary btn-sm"
+                            data-tour="students-add"
+                            onClick={() => setShowAddModal(true)}
+                        >
                             <Plus size={15} /> {t('studentsPage.add_student')}
                         </button>
                     </>
@@ -472,7 +506,7 @@ export default function StudentsPage() {
                     </div>
 
                     {/* Student list */}
-                    <div className="card">
+                    <div className="card" data-tour="students-roster">
                         <div className="card-header">
                             <h3>
                                 {classes.find((c) => c.id === activeClass)?.name ??

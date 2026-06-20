@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { Joyride, STATUS } from 'react-joyride';
+import type { EventData } from 'react-joyride';
+import { getSpeakingTourSteps } from '../data/TutorialSteps';
 import { ArrowLeft, Play, Pause, Square, Save, Mic, X, Trash2 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
@@ -70,6 +73,10 @@ export default function SpeakingSession() {
     // ── Dirty state ─────────────────────────────────────────────────────────────
     const [isDirty, setIsDirty] = useState(false);
     const [isSaved, setIsSaved] = useState(false);
+
+    // ── Tour state ──────────────────────────────────────────────────────────────
+    const [tourRun, setTourRun] = useState(false);
+    const speakingTourSteps = React.useMemo(() => getSpeakingTourSteps(t), [t]);
 
     useEffect(() => {
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -188,10 +195,31 @@ export default function SpeakingSession() {
 
     return (
         <>
+            <Joyride
+                steps={speakingTourSteps}
+                run={tourRun}
+                continuous
+                onEvent={(data: EventData) => {
+                    if (data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED) {
+                        setTourRun(false);
+                    }
+                }}
+                options={{
+                    showProgress: true,
+                    primaryColor: 'var(--accent)',
+                    backgroundColor: 'var(--bg-elevated)',
+                    textColor: 'var(--text)',
+                    arrowColor: 'var(--bg-elevated)',
+                    overlayColor: 'rgba(0, 0, 0, 0.6)',
+                }}
+            />
             <Topbar
                 title={`${t('speaking.page_title')} — ${student.name}`}
                 actions={
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setTourRun(true)}>
+                            {t('tutorial.sp_tour_button')}
+                        </button>
                         <button className="btn btn-ghost btn-sm" onClick={() => navigate(-1)}>
                             <ArrowLeft size={14} /> {t('gradeStudent.action_back')}
                         </button>
@@ -207,7 +235,7 @@ export default function SpeakingSession() {
 
             <div className="page-content fade-in" style={{ maxWidth: 900 }}>
                 {/* ── Timer Panel ── */}
-                <div className="card" style={{ marginBottom: 24 }}>
+                <div className="card" data-tour="sp-timer" style={{ marginBottom: 24 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
                         <Mic size={18} style={{ color: 'var(--accent)' }} />
                         <h3 style={{ margin: 0 }}>{t('speaking.timer_label')}</h3>
@@ -319,7 +347,7 @@ export default function SpeakingSession() {
                 </div>
 
                 {/* ── Pronunciation Quick-Marks ── */}
-                <div className="card" style={{ marginBottom: 24 }}>
+                <div className="card" data-tour="sp-pronunciation" style={{ marginBottom: 24 }}>
                     <h3 style={{ marginBottom: 12 }}>{t('speaking.pronunciation_panel')}</h3>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
                         {ERROR_TYPES.map((type) => (
@@ -391,7 +419,7 @@ export default function SpeakingSession() {
                 </div>
 
                 {/* ── Recordings ── */}
-                <div className="card" style={{ marginBottom: 24 }}>
+                <div className="card" data-tour="sp-recordings" style={{ marginBottom: 24 }}>
                     <h3 style={{ marginBottom: 12 }}>{t('recordings.panel_title')}</h3>
                     <p className="text-sm text-muted" style={{ marginTop: 0, marginBottom: 12 }}>
                         {t('recordings.student_disclosure')}
@@ -404,7 +432,7 @@ export default function SpeakingSession() {
                 </div>
 
                 {/* ── Rubric Scoring ── */}
-                <div className="card" style={{ marginBottom: 24 }}>
+                <div className="card" data-tour="sp-scoring" style={{ marginBottom: 24 }}>
                     <h3 style={{ marginBottom: 16 }}>{rubric.name}</h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                         {criteria.map((criterion) => {

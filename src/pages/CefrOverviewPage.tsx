@@ -2,6 +2,9 @@ import React, { useMemo, useState } from 'react';
 import { BookOpen, Award, Users, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { Joyride, STATUS } from 'react-joyride';
+import type { EventData } from 'react-joyride';
+import { getCefrOverviewTourSteps } from '../data/TutorialSteps';
 import Topbar from '../components/Layout/Topbar';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import CefrOverviewGrid from '../components/CEFR/CefrOverviewGrid';
@@ -38,6 +41,8 @@ export default function CefrOverviewPage() {
     const [selectedClassId, setSelectedClassId] = useState<string>('all');
     const [selectedStudentId, setSelectedStudentId] = useState<string>('');
     const [viewMode, setViewMode] = useState<'class' | 'student'>('class');
+    const [tourRun, setTourRun] = useState(false);
+    const cefrTourSteps = useMemo(() => getCefrOverviewTourSteps(t), [t]);
 
     const filteredStudents = useMemo(
         () =>
@@ -83,9 +88,37 @@ export default function CefrOverviewPage() {
 
     return (
         <>
-            <Topbar title={t('cefrOverview.page_title')} />
+            <Joyride
+                steps={cefrTourSteps}
+                run={tourRun}
+                continuous
+                onEvent={(data: EventData) => {
+                    if (data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED) {
+                        setTourRun(false);
+                    }
+                }}
+                options={{
+                    showProgress: true,
+                    primaryColor: 'var(--accent)',
+                    backgroundColor: 'var(--bg-elevated)',
+                    textColor: 'var(--text)',
+                    arrowColor: 'var(--bg-elevated)',
+                    overlayColor: 'rgba(0, 0, 0, 0.6)',
+                }}
+            />
+            <Topbar
+                title={t('cefrOverview.page_title')}
+                actions={
+                    <button className="btn btn-ghost btn-sm" onClick={() => setTourRun(true)}>
+                        {t('tutorial.cefr_tour_button')}
+                    </button>
+                }
+            />
             <div className="page-content fade-in">
-                <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                <div
+                    data-tour="cefr-controls"
+                    style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap', alignItems: 'flex-end' }}
+                >
                     <div className="form-group" style={{ flex: '0 0 auto', minWidth: 180, marginBottom: 0 }}>
                         <label>{t('statistics.label_class_filter')}</label>
                         <select
@@ -106,6 +139,7 @@ export default function CefrOverviewPage() {
                     </div>
 
                     <div
+                        data-tour="cefr-view"
                         style={{
                             display: 'flex',
                             background: 'var(--bg-elevated)',
@@ -139,7 +173,7 @@ export default function CefrOverviewPage() {
                                 <p>{t('cefr.empty_no_students')}</p>
                             </div>
                         ) : (
-                            <div className="card" style={{ overflowX: 'auto', padding: 0 }}>
+                            <div className="card" data-tour="cefr-heatmap" style={{ overflowX: 'auto', padding: 0 }}>
                                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
                                     <thead>
                                         <tr style={{ borderBottom: '2px solid var(--border)' }}>
