@@ -809,9 +809,7 @@
         "action_essay": "Redacción",
         "action_import_essay": "Importar redacción",
         "anchor_help_text": "Los trabajos de referencia son envíos usados para calibrar su evaluación. Marcar un envío como referencia le permite compararlo junto a nuevos envíos en el pie de página de calificación.",
-        "aria_grade_summary": "Resumen de calificación",
-        "help_modifier_title": "Modificador de puntuación",
-        "help_modifier_content": "Añada un ajuste global a la puntuación final. Elija porcentaje (ej. +10%) o puntos (ej. +5). Ingrese un motivo para que aparezca en el informe exportado y el registro de auditoría."
+        "aria_grade_summary": "Resumen de calificación"
     },
     "rubricBuilder": {
         "action_back": "Volver",
@@ -1779,5 +1777,13 @@
     },
     "a11y": {
         "skip_to_content": "Saltar al contenido principal"
+    },
+    "help": {
+        "score_modifier_title": "Modificadores de nota",
+        "score_modifier_body": "Añade un ajuste global a la nota final. Elige porcentaje (p. ej. +10%) o puntos (p. ej. +5). Indica un motivo para que aparezca en el informe exportado y en el registro de auditoría.",
+        "lww_title": "Cómo resuelve conflictos la sincronización",
+        "lww_body": "Cuando el mismo registro se edita en dos dispositivos, gana el cambio más reciente (last-write-wins). Los cambios que hagas sin conexión están protegidos y nunca se sobrescriben con datos más antiguos de la nube hasta que se hayan sincronizado.",
+        "proctoring_title": "Alertas de supervisión",
+        "proctoring_body": "Las alertas registran cuando un estudiante abandonó la pestaña del examen, perdió el foco o pegó contenido. Considéralas señales para revisar, no pruebas de copia — usa tu criterio junto con las respuestas."
     }
 }

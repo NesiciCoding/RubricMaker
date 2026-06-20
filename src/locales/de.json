@@ -809,9 +809,7 @@
         "action_essay": "Aufsatz",
         "action_import_essay": "Aufsatz importieren",
         "anchor_help_text": "Ankerarbeiten sind Referenzeinreichungen, die zur Kalibrierung Ihrer Bewertung verwendet werden. Durch das Markieren einer Einreichung als Anker können Sie sie in der Bewertungsfußzeile neben neuen Einreichungen vergleichen.",
-        "aria_grade_summary": "Notenübersicht",
-        "help_modifier_title": "Punktemodifikator",
-        "help_modifier_content": "Fügen Sie eine globale Anpassung zur Endpunktzahl hinzu. Wählen Sie Prozent (z.B. +10%) oder Punkte (z.B. +5). Geben Sie einen Grund ein, damit er im exportierten Bericht und Prüfprotokoll erscheint."
+        "aria_grade_summary": "Notenübersicht"
     },
     "rubricBuilder": {
         "action_back": "Zurück",
@@ -1779,5 +1777,13 @@
     },
     "a11y": {
         "skip_to_content": "Zum Hauptinhalt springen"
+    },
+    "help": {
+        "score_modifier_title": "Notenanpassungen",
+        "score_modifier_body": "Fügen Sie eine globale Anpassung zur Endnote hinzu. Wählen Sie Prozent (z. B. +10%) oder Punkte (z. B. +5). Geben Sie einen Grund an, damit er im exportierten Bericht und im Audit-Protokoll erscheint.",
+        "lww_title": "Wie die Synchronisierung Konflikte löst",
+        "lww_body": "Wenn derselbe Datensatz auf zwei Geräten bearbeitet wird, gewinnt die neueste Änderung (Last-Write-Wins). Offline vorgenommene Änderungen sind geschützt und werden niemals von älteren Cloud-Daten überschrieben, bis sie synchronisiert wurden.",
+        "proctoring_title": "Aufsichtsmeldungen",
+        "proctoring_body": "Meldungen erfassen, wenn ein Lernender den Test-Tab verlassen, den Fokus verloren oder Inhalte eingefügt hat. Behandeln Sie sie als Hinweise zur Überprüfung, nicht als Beweis für Betrug — nutzen Sie Ihr Urteilsvermögen zusammen mit den Antworten."
     }
 }

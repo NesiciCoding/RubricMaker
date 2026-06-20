@@ -35,6 +35,7 @@ import {
     RotateCcw,
 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
+import HelpPopover from '../components/ui/HelpPopover';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { useDbStatus } from '../hooks/useDbStatus';
@@ -524,6 +525,7 @@ function DatabaseTab() {
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
                     <Database size={20} style={{ color: 'var(--accent)' }} aria-hidden="true" />
                     <h3 style={{ margin: 0 }}>Database (Supabase)</h3>
+                    <HelpPopover title={t('help.lww_title')}>{t('help.lww_body')}</HelpPopover>
                     <span
                         style={{
                             marginLeft: 'auto',

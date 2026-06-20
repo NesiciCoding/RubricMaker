@@ -4,6 +4,7 @@ import { createClient, type RealtimeChannel, type SupabaseClient } from '@supaba
 import { Eye, EyeOff, AlertTriangle, Database } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
+import HelpPopover from '../components/ui/HelpPopover';
 import { useApp } from '../context/AppContext';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { loadSupabaseConfig } from '../services/database';
@@ -332,6 +333,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                         {hideNames ? <Eye size={14} /> : <EyeOff size={14} />}
                         {hideNames ? t('tests.monitor.show_names') : t('tests.monitor.hideNames')}
                     </button>
+                    <HelpPopover title={t('help.proctoring_title')}>{t('help.proctoring_body')}</HelpPopover>
                 </div>
 
                 {sortedRows.length === 0 ? (

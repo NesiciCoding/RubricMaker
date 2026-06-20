@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, XCircle, Award, Languages, ShieldAlert } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
+import HelpPopover from '../components/ui/HelpPopover';
 import { useApp } from '../context/AppContext';
 import { calcTestMaxPoints, calcStudentTestRawPoints, calcTestPercentage, autoScoreResponse } from '../utils/testCalc';
 import { calcLetterGrade, calcGradeColor } from '../utils/gradeCalc';
@@ -438,6 +439,7 @@ export default function TestResultsPage() {
                     <h3 style={{ margin: '0 0 12px' }}>
                         <ShieldAlert size={16} style={{ marginRight: 6, verticalAlign: 'middle' }} />
                         {t('tests.results.integrity_title')}
+                        <HelpPopover title={t('help.proctoring_title')}>{t('help.proctoring_body')}</HelpPopover>
                     </h3>
                     {(studentTest.events ?? []).length === 0 ? (
                         <p className="text-muted text-sm" style={{ margin: 0 }}>

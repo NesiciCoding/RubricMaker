@@ -809,9 +809,7 @@
         "action_essay": "Opstel",
         "action_import_essay": "Opstel importeren",
         "anchor_help_text": "Ankerwerkstukken zijn referentie-inzendingen die worden gebruikt om je beoordeling te kalibreren. Door een inzending als anker te markeren, kun je deze naast nieuwe inzendingen vergelijken in de beoordelingsvoettekst.",
-        "aria_grade_summary": "Cijferoverzicht",
-        "help_modifier_title": "Scorecorrectie",
-        "help_modifier_content": "Voeg een globale aanpassing toe aan de eindscore. Kies percentage (bijv. +10%) of punten (bijv. +5). Voer een reden in zodat deze in het exportrapport en het auditlog verschijnt."
+        "aria_grade_summary": "Cijferoverzicht"
     },
     "rubricBuilder": {
         "action_back": "Terug",
@@ -1779,5 +1777,13 @@
     },
     "a11y": {
         "skip_to_content": "Naar hoofdinhoud springen"
+    },
+    "help": {
+        "score_modifier_title": "Cijferaanpassingen",
+        "score_modifier_body": "Voeg een algemene aanpassing toe aan de eindscore. Kies percentage (bijv. +10%) of punten (bijv. +5). Voer een reden in zodat die in het geëxporteerde rapport en het auditlogboek verschijnt.",
+        "lww_title": "Hoe synchronisatie conflicten oplost",
+        "lww_body": "Wanneer hetzelfde record op twee apparaten wordt bewerkt, wint de meest recente wijziging (last-write-wins). Wijzigingen die je offline maakt zijn beschermd en worden nooit overschreven door oudere clouddata totdat ze gesynchroniseerd zijn.",
+        "proctoring_title": "Toezichtsmeldingen",
+        "proctoring_body": "Meldingen registreren wanneer een leerling het tabblad verliet, de focus kwijtraakte of inhoud plakte. Beschouw ze als signalen om te bekijken, niet als bewijs van fraude — gebruik je eigen oordeel naast de antwoorden."
     }
 }
