@@ -196,6 +196,8 @@ describe('buildReportCardData', () => {
             selfAssessments: [],
         });
 
-        expect(result.sections).toEqual([{ type: 'testSummary', overview: { strong: [], weak: [] } }]);
+        expect(result.sections).toEqual([
+            { type: 'testSummary', overview: { studentId: 's1', questions: [], skills: [] } },
+        ]);
     });
 });
