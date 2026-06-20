@@ -12,6 +12,7 @@ import LandingPage from './pages/LandingPage';
 import MigrationPrompt from './components/auth/MigrationPrompt';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import NotFoundPage from './pages/NotFoundPage';
+import RouteSkeleton from './components/ui/RouteSkeleton';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const RubricList = lazy(() => import('./pages/RubricList'));
@@ -65,18 +66,6 @@ function RouteAnnouncer() {
     );
 }
 
-const Spinner = () => {
-    return (
-        <div
-            role="status"
-            aria-label="Loading"
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}
-        >
-            <Loader className="spin" size={24} aria-hidden="true" style={{ color: 'var(--text-muted)' }} />
-        </div>
-    );
-};
-
 export default function App() {
     const { settings, students, updateSettings, showLanding, isCheckingSession, signOutFromDatabase } = useApp();
     const { t } = useTranslation();
@@ -95,7 +84,7 @@ export default function App() {
 
     if (settings.needsOnboarding) {
         return (
-            <Suspense fallback={<Spinner />}>
+            <Suspense fallback={<RouteSkeleton />}>
                 <OnboardingPage />
             </Suspense>
         );
@@ -141,7 +130,7 @@ export default function App() {
 
         return (
             <ErrorBoundary>
-                <Suspense fallback={<Spinner />}>
+                <Suspense fallback={<RouteSkeleton />}>
                     <Routes>
                         <Route path="/portal/:studentId" element={<StudentPortalPage />} />
                         <Route path="/privacy" element={<PrivacyPage />} />
@@ -163,7 +152,7 @@ export default function App() {
             <MigrationPrompt />
             <div className="app-layout">
                 <a href="#main-content" className="skip-nav">
-                    Skip to main content
+                    {t('a11y.skip_to_content')}
                 </a>
                 <Joyride
                     steps={steps}
@@ -189,7 +178,7 @@ export default function App() {
                 <Sidebar mobileOpen={mobileMenuOpen} onMobileClose={() => setMobileMenuOpen(false)} />
                 <main className="main-area" id="main-content">
                     <ErrorBoundary>
-                        <Suspense fallback={<Spinner />}>
+                        <Suspense fallback={<RouteSkeleton />}>
                             <Routes>
                                 <Route path="/" element={<Dashboard />} />
                                 <Route path="/rubrics" element={<RubricList />} />

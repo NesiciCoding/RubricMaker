@@ -35,7 +35,7 @@ test.describe('Rubric version history', () => {
         await expect(appPage.getByText('snapshot-v1')).toBeVisible({ timeout: 5_000 });
 
         // Close the panel first so the DOM is stable before the second save
-        await builder.openVersionHistory(); // toggles off
+        await builder.closeVersionHistory();
         await builder.fillName('Name After Change');
         await builder.save();
         await builder.waitForSaved();

@@ -67,6 +67,12 @@ export class RubricBuilderPage extends BasePage {
         await this.page.getByRole('button', { name: /history/i }).click({ force: true });
     }
 
+    async closeVersionHistory(): Promise<void> {
+        // The panel is a focus-trapping dialog: the outside trigger is aria-hidden
+        // while it's open, so close it the modal way rather than re-clicking it.
+        await this.page.keyboard.press('Escape');
+    }
+
     async saveVersion(label?: string): Promise<void> {
         if (label) {
             await this.page.getByPlaceholder(/label.*optional/i).fill(label);

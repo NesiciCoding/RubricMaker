@@ -19,6 +19,9 @@ import {
     ChevronDown,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Joyride, STATUS } from 'react-joyride';
+import type { EventData } from 'react-joyride';
+import { getStudentProfileTourSteps } from '../data/TutorialSteps';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import { calcGradeSummary } from '../utils/gradeCalc';
@@ -41,7 +44,9 @@ export default function StudentProfilePage() {
     const [copiedSALink, setCopiedSALink] = useState<string | null>(null);
     const [showSpeakingPicker, setShowSpeakingPicker] = useState(false);
     const [activeTab, setActiveTab] = useState<'overview' | 'portfolio'>('overview');
+    const [tourRun, setTourRun] = useState(false);
     const { t, i18n } = useTranslation();
+    const profileTourSteps = useMemo(() => getStudentProfileTourSteps(t), [t]);
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
 
     const student = students.find((s) => s.id === id);
@@ -289,12 +294,33 @@ export default function StudentProfilePage() {
 
     return (
         <>
+            <Joyride
+                steps={profileTourSteps}
+                run={tourRun}
+                continuous
+                onEvent={(data: EventData) => {
+                    if (data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED) {
+                        setTourRun(false);
+                    }
+                }}
+                options={{
+                    showProgress: true,
+                    primaryColor: 'var(--accent)',
+                    backgroundColor: 'var(--bg-elevated)',
+                    textColor: 'var(--text)',
+                    arrowColor: 'var(--bg-elevated)',
+                    overlayColor: 'rgba(0, 0, 0, 0.6)',
+                }}
+            />
             <Topbar
                 title="Student Profile"
                 actions={
                     <>
+                        <button className="btn btn-ghost btn-sm no-print" onClick={() => setTourRun(true)}>
+                            {t('tutorial.sprofile_tour_button')}
+                        </button>
                         {/* Speaking session launcher */}
-                        <div style={{ position: 'relative' }} className="no-print">
+                        <div style={{ position: 'relative' }} className="no-print" data-tour="sprofile-speaking">
                             <button
                                 className="btn btn-secondary btn-sm"
                                 onClick={() => {
@@ -375,7 +401,11 @@ export default function StudentProfilePage() {
             />
             <div className="page-content fade-in">
                 {/* Header Profile Area */}
-                <div className="card" style={{ marginBottom: 24, display: 'flex', gap: 20, alignItems: 'center' }}>
+                <div
+                    className="card"
+                    data-tour="sprofile-header"
+                    style={{ marginBottom: 24, display: 'flex', gap: 20, alignItems: 'center' }}
+                >
                     <div
                         style={{
                             width: 72,
@@ -422,6 +452,7 @@ export default function StudentProfilePage() {
                 {/* Tab navigation */}
                 <div
                     role="tablist"
+                    data-tour="sprofile-tabs"
                     style={{
                         display: 'flex',
                         gap: 4,
