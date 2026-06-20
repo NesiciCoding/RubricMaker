@@ -1773,7 +1773,9 @@
         "done": "Done",
         "cancel": "Cancel",
         "import_btn_one": "Import {{count}} Student",
-        "import_btn_other": "Import {{count}} Students"
+        "import_btn_other": "Import {{count}} Students",
+        "detected_format_clever": "Detected: Clever format",
+        "detected_format_oneroster": "Detected: OneRoster format"
     },
     "a11y": {
         "skip_to_content": "Skip to main content"

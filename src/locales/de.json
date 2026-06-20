@@ -1773,7 +1773,9 @@
         "done": "Fertig",
         "cancel": "Abbrechen",
         "import_btn_one": "{{count}} Schüler importieren",
-        "import_btn_other": "{{count}} Schüler importieren"
+        "import_btn_other": "{{count}} Schüler importieren",
+        "detected_format_clever": "Erkannt: Clever-Format",
+        "detected_format_oneroster": "Erkannt: OneRoster-Format"
     },
     "a11y": {
         "skip_to_content": "Zum Hauptinhalt springen"

@@ -19,11 +19,14 @@ type ColumnMap = {
     className: string;
 };
 
+type DetectedFormat = 'generic' | 'clever' | 'oneroster' | null;
+
 export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
     const { t } = useTranslation();
     const { addStudent, addClass, updateStudent, deleteStudent, classes, students } = useApp();
     const [parsedData, setParsedData] = useState<any[]>([]);
     const [headers, setHeaders] = useState<string[]>([]);
+    const [detectedFormat, setDetectedFormat] = useState<DetectedFormat>(null);
     const [mapping, setMapping] = useState<ColumnMap>({
         fullName: '',
         firstName: '',
@@ -66,6 +69,46 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                 const findIndex = (...keywords: string[]) =>
                     lowerHeaders.findIndex((h) => keywords.some((k) => h.includes(k)));
 
+                // Detect known CSV formats (Clever, OneRoster)
+                const hasCleverFormat =
+                    detectedHeaders.some((h) => h === 'Email') &&
+                    detectedHeaders.some((h) => h === 'First_Name') &&
+                    detectedHeaders.some((h) => h === 'Last_Name');
+
+                const hasOneRosterFormat =
+                    detectedHeaders.some((h) => h === 'givenName') &&
+                    detectedHeaders.some((h) => h === 'familyName') &&
+                    detectedHeaders.some((h) => h === 'email');
+
+                // Map Clever format
+                if (hasCleverFormat) {
+                    autoMap.email = detectedHeaders.find((h) => h === 'Email') || '';
+                    autoMap.firstName = detectedHeaders.find((h) => h === 'First_Name') || '';
+                    autoMap.lastName = detectedHeaders.find((h) => h === 'Last_Name') || '';
+                    const schoolIdx = detectedHeaders.findIndex((h) => h === 'Last_Known_School_Name');
+                    if (schoolIdx !== -1) {
+                        autoMap.className = detectedHeaders[schoolIdx];
+                    }
+                    setDetectedFormat('clever');
+                    setMapping(autoMap);
+                    return;
+                }
+
+                // Map OneRoster format
+                if (hasOneRosterFormat) {
+                    autoMap.email = detectedHeaders.find((h) => h === 'email') || '';
+                    autoMap.firstName = detectedHeaders.find((h) => h === 'givenName') || '';
+                    autoMap.lastName = detectedHeaders.find((h) => h === 'familyName') || '';
+                    const classIdx = detectedHeaders.findIndex((h) => h === 'className' || h === 'classSourcedId');
+                    if (classIdx !== -1) {
+                        autoMap.className = detectedHeaders[classIdx];
+                    }
+                    setDetectedFormat('oneroster');
+                    setMapping(autoMap);
+                    return;
+                }
+
+                // Generic format detection
                 const fnIdx = findIndex('full name', 'fullname', 'name');
                 // Dutch (Magister): voornaam / roepnaam = first name, achternaam = last name, klas = class
                 const firstIdx = findIndex('first name', 'firstname', 'first', 'voornaam', 'roepnaam');
@@ -79,6 +122,7 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                 if (emailIdx !== -1) autoMap.email = detectedHeaders[emailIdx];
                 if (classIdx !== -1) autoMap.className = detectedHeaders[classIdx];
 
+                setDetectedFormat('generic');
                 setMapping(autoMap);
             },
             error: (err) => {
@@ -239,6 +283,21 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                     </div>
                 ) : (
                     <>
+                        {detectedFormat && detectedFormat !== 'generic' && (
+                            <div
+                                style={{
+                                    fontSize: '0.8rem',
+                                    color: 'var(--accent)',
+                                    marginBottom: 12,
+                                    padding: '8px 12px',
+                                    background: 'var(--bg-elevated)',
+                                    borderRadius: 6,
+                                    border: '1px solid var(--border)',
+                                }}
+                            >
+                                {t(`csv.detected_format_${detectedFormat}`)}
+                            </div>
+                        )}
                         <div
                             style={{
                                 background: 'var(--bg-elevated)',
