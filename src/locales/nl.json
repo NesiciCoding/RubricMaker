@@ -704,6 +704,8 @@
         "label_override": "Overschrijft:",
         "level_select": "Selecteer",
         "label_base_points": "Basispunten",
+        "stepper_decrease": "Score verlagen",
+        "stepper_increase": "Score verhogen",
         "label_points": "Punten",
         "comment_placeholder": "Voeg een opmerking toe…",
         "comment_open_bank": "Opmerkingenbank Openen",

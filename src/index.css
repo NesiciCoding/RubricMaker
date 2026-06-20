@@ -1167,6 +1167,59 @@ select.input-error {
     }
 }
 
+/* ─── Touch-friendly score stepper (paired with range sliders) ───────────────── */
+/* Hidden on pointer devices; the slider is used instead. */
+.touch-stepper {
+    display: none;
+}
+
+/* ─── Comparative grading reflow (stack to single column on phones) ──────────── */
+@media (max-width: 768px) {
+    .comparative-grid {
+        grid-template-columns: 1fr !important;
+        overflow: visible !important;
+    }
+
+    .comparative-level-select {
+        min-height: 44px;
+    }
+}
+
+/* ─── iPad portrait grading optimisation ─────────────────────────────────────── */
+@media (max-width: 1024px) and (orientation: portrait) {
+    .comparative-grid {
+        grid-template-columns: 1fr !important;
+        overflow: visible !important;
+    }
+
+    .grade-footer {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .comparative-level-select {
+        min-height: 44px;
+    }
+}
+
+/* ─── Touch device overrides ─────────────────────────────────────────────────── */
+@media (hover: none) {
+    /* Show the stepper as a touch alternative to the slider */
+    .touch-stepper {
+        display: flex;
+    }
+
+    /* Larger drag thumb for the range sliders that remain visible */
+    input[type='range']::-webkit-slider-thumb {
+        width: 28px;
+        height: 28px;
+    }
+    input[type='range']::-moz-range-thumb {
+        width: 28px;
+        height: 28px;
+    }
+}
+
 /* ─── Settings tabs ──────────────────────────────────────────────────────────── */
 .settings-tabs {
     display: flex;

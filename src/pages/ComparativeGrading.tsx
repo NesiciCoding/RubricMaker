@@ -744,6 +744,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
 
                 {/* 3 Column Layout */}
                 <div
+                    className="comparative-grid"
                     style={{
                         display: 'grid',
                         gridTemplateColumns: 'minmax(250px, 1fr) minmax(400px, 1.5fr) minmax(250px, 1fr)',
@@ -935,6 +936,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                                 {t('comparativeGrading.label_score', { name: studentA.name })}
                                             </div>
                                             <select
+                                                className="comparative-level-select"
                                                 value={eA?.levelId || ''}
                                                 onChange={(e) => manuallyUpdateLevel(true, c.id, e.target.value)}
                                                 style={{ width: '100%', fontSize: '0.85rem', marginBottom: 8 }}
@@ -1214,6 +1216,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                                 {t('comparativeGrading.label_score', { name: studentB.name })}
                                             </div>
                                             <select
+                                                className="comparative-level-select"
                                                 value={eB?.levelId || ''}
                                                 onChange={(e) => manuallyUpdateLevel(false, c.id, e.target.value)}
                                                 style={{ width: '100%', fontSize: '0.85rem', marginBottom: 8 }}

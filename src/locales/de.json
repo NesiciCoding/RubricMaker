@@ -704,6 +704,8 @@
         "label_override": "Überschreiben:",
         "level_select": "Auswählen",
         "label_base_points": "Basispunkte",
+        "stepper_decrease": "Punktzahl verringern",
+        "stepper_increase": "Punktzahl erhöhen",
         "label_points": "Punkte",
         "comment_placeholder": "Kommentar hinzufügen…",
         "comment_open_bank": "Kommentarbank öffnen",

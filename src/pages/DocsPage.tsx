@@ -766,6 +766,16 @@ function GradingTab() {
                 />
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    Mobile grading
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
+                    On phones and iPad portrait the grading view is touch-optimised. Point-range and sub-item sliders
+                    gain a <strong>− / +</strong> stepper for precise scoring without dragging a thin slider, the level
+                    cards and score pickers use larger tap targets, and the Save bar stays pinned to the bottom of the
+                    screen. Comparative grading stacks into a single column so each student's panel is full-width.
+                </p>
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     Feedback tools
                 </h3>
                 <FeatureList
