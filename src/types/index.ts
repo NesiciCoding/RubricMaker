@@ -911,3 +911,40 @@ export interface CellData {
     totalStudents: number;
     isLinked: boolean;
 }
+
+// ─── Student Learning Paths (rule-based, no AI) ───────────────────────────────
+
+/** A single rule-based suggestion to address a below-cohort-average skill gap */
+export interface LearningPathRecommendation {
+    studentId: string;
+    skill: CefrSkill;
+    level: CefrLevel;
+    studentScore: number;
+    cohortAverage: number;
+    /** studentScore - cohortAverage, always negative for a recommendation to exist */
+    gap: number;
+    /** Rubric ids tagged with this skill/level that the student has not yet achieved */
+    suggestedRubricIds: string[];
+}
+
+/** A streak of N+ consecutive low scores on the same criterion or CEFR skill */
+export interface InterventionFlag {
+    studentId: string;
+    /** 'criterion' when tracked per RubricCriterion, 'cefrSkill' when tracked per CefrSkill */
+    kind: 'criterion' | 'cefrSkill';
+    /** criterionId for 'criterion' kind, CefrSkill value for 'cefrSkill' kind */
+    targetId: string;
+    streakLength: number;
+    /** Most recent scores in the streak, oldest first */
+    scores: number[];
+    triggeredAt: string;
+}
+
+export interface LearningPathConfig {
+    /** Number of consecutive low scores required to trigger an intervention flag (default 3) */
+    consecutiveLowThreshold: number;
+    /** Score percentage at/below which an entry counts as "low" (default 60) */
+    lowScoreThreshold: number;
+    /** Minimum percentage-point gap below cohort average to trigger a recommendation (default 15) */
+    cohortGapThreshold: number;
+}
