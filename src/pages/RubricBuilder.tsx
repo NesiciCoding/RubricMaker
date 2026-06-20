@@ -893,7 +893,11 @@ export default function RubricBuilder() {
                             <div className="grid-2" style={{ gap: 12, marginTop: 12 }}>
                                 <div className="form-group">
                                     <label>{t('rubricBuilder.label_grade_scale')}</label>
-                                    <select value={gradeScaleId} onChange={(e) => setGradeScaleId(e.target.value)}>
+                                    <select
+                                        aria-label={t('rubricBuilder.label_grade_scale')}
+                                        value={gradeScaleId}
+                                        onChange={(e) => setGradeScaleId(e.target.value)}
+                                    >
                                         <option value="none">{t('rubricBuilder.grade_scale_none')}</option>
                                         {gradeScales.map((gs) => (
                                             <option key={gs.id} value={gs.id}>
@@ -989,6 +993,7 @@ export default function RubricBuilder() {
                                     <div className="form-group">
                                         <label>{t('cefr.target_level_label')}</label>
                                         <select
+                                            aria-label={t('cefr.target_level_label')}
                                             value={cefrTargetLevel}
                                             onChange={(e) => setCefrTargetLevel(e.target.value as CefrLevel | '')}
                                         >
@@ -1003,6 +1008,7 @@ export default function RubricBuilder() {
                                     <div className="form-group">
                                         <label>{t('cefr.skill_label')}</label>
                                         <select
+                                            aria-label={t('cefr.skill_label')}
                                             value={cefrSkill}
                                             onChange={(e) => setCefrSkill(e.target.value as CefrSkill | '')}
                                         >

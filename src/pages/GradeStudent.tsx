@@ -579,6 +579,7 @@ export default function GradeStudent() {
                     </span>
                     <div style={{ display: 'flex', gap: 6, alignItems: 'center', flex: 1, minWidth: 280 }}>
                         <select
+                            aria-label={t('gradeStudent.label_modifier')}
                             value={sr.globalModifier?.type ?? 'percentage'}
                             onChange={(e) => {
                                 setSr((p) =>
@@ -602,6 +603,7 @@ export default function GradeStudent() {
                         </select>
                         <input
                             type="number"
+                            aria-label={t('gradeStudent.label_modifier')}
                             value={sr.globalModifier?.value ?? 0}
                             onChange={(e) => {
                                 setSr((p) =>
