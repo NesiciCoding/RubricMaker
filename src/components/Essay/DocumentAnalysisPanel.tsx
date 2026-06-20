@@ -27,6 +27,7 @@ import { checkGrammar, profileGrammar, LT_ATTRIBUTION_URL } from '../../utils/gr
 import { profileText } from '../../utils/cefrVocabularyProfiler';
 import { CEFR_LEVEL_COLORS } from '../../data/cefrDescriptors';
 import { nanoid } from '../../utils/nanoid';
+import { Skeleton, SkeletonCard } from '../ui/Skeleton';
 
 const LEVEL_ORDER: CefrLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 
@@ -410,32 +411,41 @@ export default function DocumentAnalysisPanel({
 
                     {/* Progress */}
                     {phase === 'analysing' && (
-                        <div className="card" style={{ padding: 16, textAlign: 'center' }}>
-                            <p style={{ marginBottom: 12, fontWeight: 600 }} aria-live="polite" aria-atomic="true">
-                                {progressStatus || t('analysis.analysing', 'Analysing…')}
-                            </p>
-                            <div
-                                role="progressbar"
-                                aria-valuenow={progress}
-                                aria-valuemin={0}
-                                aria-valuemax={100}
-                                aria-label={t('analysis.analysing', 'Analysing…')}
-                                style={{ height: 8, background: 'var(--bg)', borderRadius: 4, overflow: 'hidden' }}
-                            >
+                        <>
+                            <div className="card" style={{ padding: 16, textAlign: 'center' }}>
+                                <p style={{ marginBottom: 12, fontWeight: 600 }} aria-live="polite" aria-atomic="true">
+                                    {progressStatus || t('analysis.analysing', 'Analysing…')}
+                                </p>
                                 <div
-                                    style={{
-                                        height: '100%',
-                                        width: `${progress}%`,
-                                        background: 'var(--accent)',
-                                        borderRadius: 4,
-                                        transition: 'width 0.3s',
-                                    }}
-                                />
+                                    role="progressbar"
+                                    aria-valuenow={progress}
+                                    aria-valuemin={0}
+                                    aria-valuemax={100}
+                                    aria-label={t('analysis.analysing', 'Analysing…')}
+                                    style={{ height: 8, background: 'var(--bg)', borderRadius: 4, overflow: 'hidden' }}
+                                >
+                                    <div
+                                        style={{
+                                            height: '100%',
+                                            width: `${progress}%`,
+                                            background: 'var(--accent)',
+                                            borderRadius: 4,
+                                            transition: 'width 0.3s',
+                                        }}
+                                    />
+                                </div>
+                                <p className="text-xs text-muted" style={{ marginTop: 8 }} aria-hidden="true">
+                                    {progress}%
+                                </p>
                             </div>
-                            <p className="text-xs text-muted" style={{ marginTop: 8 }} aria-hidden="true">
-                                {progress}%
-                            </p>
-                        </div>
+                            {/* Skeleton of the results layout that will replace this once analysis completes */}
+                            <div aria-hidden="true" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                <Skeleton height="3rem" />
+                                <Skeleton width="60%" height="0.9rem" />
+                                <SkeletonCard />
+                                <SkeletonCard />
+                            </div>
+                        </>
                     )}
 
                     {/* Results */}

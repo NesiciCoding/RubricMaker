@@ -899,6 +899,12 @@ select.input-error {
     display: block;
 }
 
+@media (prefers-reduced-motion: reduce) {
+    .skeleton {
+        animation: none;
+    }
+}
+
 /* ─── Animations ─────────────────────────────────────────────────────────────── */
 @keyframes toast-in {
     from {
@@ -1126,22 +1132,7 @@ select.input-error {
     /* Grade footer spans full width when sidebar is an overlay */
     .grade-footer {
         left: 0;
-        flex-wrap: wrap;
-        gap: 8px;
-        padding: 8px calc(12px + env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) 12px;
-    }
-
-    /* Level buttons: smaller minimum so 4+ levels fit on portrait phones */
-    .level-btn {
-        min-width: 90px;
-        padding: 12px 10px;
-    }
-}
-
-/* Hide keyboard shortcut number hints on touch-only devices */
-@media (hover: none) {
-    .level-btn-shortcut-hint {
-        display: none;
+        padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
     }
 }
 
