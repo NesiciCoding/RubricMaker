@@ -1707,5 +1707,13 @@
         "cancel": "Annuler",
         "import_btn_one": "Importer {{count}} élève",
         "import_btn_other": "Importer {{count}} élèves"
+    },
+    "help": {
+        "score_modifier_title": "Modificateurs de note",
+        "score_modifier_body": "Ajoutez un ajustement global à la note finale. Choisissez un pourcentage (ex. +10%) ou des points (ex. +5). Indiquez une raison afin qu'elle figure dans le rapport exporté et le journal d'audit.",
+        "lww_title": "Comment la synchronisation résout les conflits",
+        "lww_body": "Lorsqu'un même enregistrement est modifié sur deux appareils, la modification la plus récente l'emporte (last-write-wins). Les modifications faites hors ligne sont protégées et ne sont jamais écrasées par des données cloud plus anciennes tant qu'elles n'ont pas été synchronisées.",
+        "proctoring_title": "Signalements de surveillance",
+        "proctoring_body": "Les signalements enregistrent lorsqu'un élève a quitté l'onglet du test, perdu le focus ou collé du contenu. Considérez-les comme des signaux à examiner, non comme une preuve de triche — faites preuve de jugement avec les réponses."
     }
 }

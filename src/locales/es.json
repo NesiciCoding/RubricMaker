@@ -1707,5 +1707,13 @@
         "cancel": "Cancelar",
         "import_btn_one": "Importar {{count}} alumno",
         "import_btn_other": "Importar {{count}} alumnos"
+    },
+    "help": {
+        "score_modifier_title": "Modificadores de nota",
+        "score_modifier_body": "Añade un ajuste global a la nota final. Elige porcentaje (p. ej. +10%) o puntos (p. ej. +5). Indica un motivo para que aparezca en el informe exportado y en el registro de auditoría.",
+        "lww_title": "Cómo resuelve conflictos la sincronización",
+        "lww_body": "Cuando el mismo registro se edita en dos dispositivos, gana el cambio más reciente (last-write-wins). Los cambios que hagas sin conexión están protegidos y nunca se sobrescriben con datos más antiguos de la nube hasta que se hayan sincronizado.",
+        "proctoring_title": "Alertas de supervisión",
+        "proctoring_body": "Las alertas registran cuando un estudiante abandonó la pestaña del examen, perdió el foco o pegó contenido. Considéralas señales para revisar, no pruebas de copia — usa tu criterio junto con las respuestas."
     }
 }

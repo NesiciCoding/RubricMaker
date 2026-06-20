@@ -1707,5 +1707,13 @@
         "cancel": "Abbrechen",
         "import_btn_one": "{{count}} Schüler importieren",
         "import_btn_other": "{{count}} Schüler importieren"
+    },
+    "help": {
+        "score_modifier_title": "Notenanpassungen",
+        "score_modifier_body": "Fügen Sie eine globale Anpassung zur Endnote hinzu. Wählen Sie Prozent (z. B. +10%) oder Punkte (z. B. +5). Geben Sie einen Grund an, damit er im exportierten Bericht und im Audit-Protokoll erscheint.",
+        "lww_title": "Wie die Synchronisierung Konflikte löst",
+        "lww_body": "Wenn derselbe Datensatz auf zwei Geräten bearbeitet wird, gewinnt die neueste Änderung (Last-Write-Wins). Offline vorgenommene Änderungen sind geschützt und werden niemals von älteren Cloud-Daten überschrieben, bis sie synchronisiert wurden.",
+        "proctoring_title": "Aufsichtsmeldungen",
+        "proctoring_body": "Meldungen erfassen, wenn ein Lernender den Test-Tab verlassen, den Fokus verloren oder Inhalte eingefügt hat. Behandeln Sie sie als Hinweise zur Überprüfung, nicht als Beweis für Betrug — nutzen Sie Ihr Urteilsvermögen zusammen mit den Antworten."
     }
 }

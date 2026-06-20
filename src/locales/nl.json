@@ -1707,5 +1707,13 @@
         "cancel": "Annuleren",
         "import_btn_one": "{{count}} leerling importeren",
         "import_btn_other": "{{count}} leerlingen importeren"
+    },
+    "help": {
+        "score_modifier_title": "Cijferaanpassingen",
+        "score_modifier_body": "Voeg een algemene aanpassing toe aan de eindscore. Kies percentage (bijv. +10%) of punten (bijv. +5). Voer een reden in zodat die in het geëxporteerde rapport en het auditlogboek verschijnt.",
+        "lww_title": "Hoe synchronisatie conflicten oplost",
+        "lww_body": "Wanneer hetzelfde record op twee apparaten wordt bewerkt, wint de meest recente wijziging (last-write-wins). Wijzigingen die je offline maakt zijn beschermd en worden nooit overschreven door oudere clouddata totdat ze gesynchroniseerd zijn.",
+        "proctoring_title": "Toezichtsmeldingen",
+        "proctoring_body": "Meldingen registreren wanneer een leerling het tabblad verliet, de focus kwijtraakte of inhoud plakte. Beschouw ze als signalen om te bekijken, niet als bewijs van fraude — gebruik je eigen oordeel naast de antwoorden."
     }
 }

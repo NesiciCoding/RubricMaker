@@ -1707,5 +1707,13 @@
         "cancel": "Cancel",
         "import_btn_one": "Import {{count}} Student",
         "import_btn_other": "Import {{count}} Students"
+    },
+    "help": {
+        "score_modifier_title": "Score Modifiers",
+        "score_modifier_body": "Add a global adjustment to the final score. Choose percentage (e.g. +10%) or points (e.g. +5). Enter a reason so it appears in the exported report and audit log.",
+        "lww_title": "How sync resolves conflicts",
+        "lww_body": "When the same record is edited on two devices, the most recent change wins (last-write-wins). Edits you make while offline are protected and are never overwritten by older cloud data until they have synced.",
+        "proctoring_title": "Proctoring flags",
+        "proctoring_body": "Flags record when a student left the test tab, lost focus, or pasted content. Treat them as signals to review, not proof of cheating — use your judgement alongside the responses."
     }
 }

@@ -573,8 +573,8 @@ export default function GradeStudent() {
                         }}
                     >
                         {t('gradeStudent.label_modifier')}
-                        <HelpPopover title={t('gradeStudent.help_modifier_title')}>
-                            {t('gradeStudent.help_modifier_content')}
+                        <HelpPopover title={t('help.score_modifier_title')}>
+                            {t('help.score_modifier_body')}
                         </HelpPopover>
                     </span>
                     <div style={{ display: 'flex', gap: 6, alignItems: 'center', flex: 1, minWidth: 280 }}>
