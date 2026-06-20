@@ -52,7 +52,7 @@
     "compromise": "^14.15.1",
     "docx": "^9.7.1",
     "docx-preview": "^0.3.7",
-    "dompurify": "^3.4.8",
+    "dompurify": "^3.4.11",
     "file-saver": "^2.0.5",
     "i18next": "^26.3.1",
     "i18next-browser-languagedetector": "^8.2.1",
