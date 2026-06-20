@@ -174,8 +174,6 @@ export default function TestBuilderPage() {
             return;
         }
         setNameError('');
-        // Flush before any navigate so useBlocker doesn't see stale isDirty=true.
-        flushSync(() => setIsDirty(false));
 
         const trimmedDuration = durationMinutes.trim();
         const parsedDuration =
@@ -199,8 +197,12 @@ export default function TestBuilderPage() {
         if (existing) {
             updateTest({ ...existing, ...payload, updatedAt: new Date().toISOString() });
             showToast(t('tests.save_success'), 'success');
+            flushSync(() => setIsDirty(false));
         } else {
             const created = addTest(payload);
+            // Flush only after the create succeeds, and before navigate so
+            // useBlocker doesn't see stale isDirty=true.
+            flushSync(() => setIsDirty(false));
             showToast(t('tests.save_success'), 'success');
             navigate(`/tests/${created.id}`, { replace: true });
         }

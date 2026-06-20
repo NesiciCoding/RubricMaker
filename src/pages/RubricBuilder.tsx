@@ -379,11 +379,12 @@ export default function RubricBuilder() {
             if (affectedCount > 0) {
                 setSyncDialogRubric(savedRubric);
             }
-        }
-        // Flush before any navigate so useBlocker doesn't see stale isDirty=true.
-        flushSync(() => setIsDirty(false));
-        if (!existing) {
+            flushSync(() => setIsDirty(false));
+        } else {
             const newR = addRubric(rubricData);
+            // Flush only after the create succeeds, and before navigate so
+            // useBlocker doesn't see stale isDirty=true.
+            flushSync(() => setIsDirty(false));
             navigate(`/rubrics/${newR.id}`, { replace: true });
         }
         setSaved(true);

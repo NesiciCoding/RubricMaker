@@ -145,6 +145,7 @@ export default function DocumentAnalysisPanel({
         setPhase('analysing');
         setProgress(0);
         setErrorMsg('');
+        setAppliedComments(new Set());
 
         try {
             let text: string;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
@@ -13,7 +13,7 @@ function renderBuilder(TestBuilderPage: React.ComponentType, route = '/tests/new
         ],
         { initialEntries: [route] }
     );
-    return render(<RouterProvider router={router} />);
+    return { router, ...render(<RouterProvider router={router} />) };
 }
 
 const mockSettings: AppSettings = {
@@ -134,12 +134,13 @@ describe('TestBuilderPage', () => {
 
     it('does not show the unsaved-changes prompt after saving a new test (redirect)', async () => {
         const { default: TestBuilderPage } = await import('../TestBuilderPage');
-        renderBuilder(TestBuilderPage);
+        const { router } = renderBuilder(TestBuilderPage);
 
         fireEvent.change(screen.getByLabelText('tests.name_label'), { target: { value: 'Draft' } });
         fireEvent.click(screen.getByText('common.save'));
 
         expect(mockAddTest).toHaveBeenCalledTimes(1);
+        await waitFor(() => expect(router.state.location.pathname).not.toBe('/tests/new'));
         expect(screen.queryByText('common.unsaved_title')).not.toBeInTheDocument();
     });
 
