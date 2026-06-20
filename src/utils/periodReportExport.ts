@@ -13,7 +13,7 @@ import {
     ShadingType,
 } from 'docx';
 import { saveAs } from 'file-saver';
-import type { Student, StudentRubric, Rubric, GradeScale } from '../types';
+import type { Student, StudentRubric, Rubric, GradeScale, ReportCardData, ReportCardSection } from '../types';
 import { calcGradeSummary } from './gradeCalc';
 import type { LearningGoalAggregate } from './learningGoalsAggregator';
 
@@ -72,49 +72,78 @@ function dataCell(text: string, pct = 25, fill?: string): TableCell {
     });
 }
 
-export async function exportPeriodReport(input: PeriodReportInput): Promise<void> {
-    const { student, className, entries, periodLabel, goals } = input;
+function buildGoalsTable(goals: LearningGoalAggregate[]): Table {
+    const goalRows: TableRow[] = [
+        new TableRow({
+            children: [headerCell('Goal', 50), headerCell('Average', 20), headerCell('Progress', 30)],
+        }),
+        ...goals.map((g) => {
+            const pct = normalizePct(g.averagePercentage);
+            const filledBlocks = Math.round((pct / 100) * 10);
+            const bar = '█'.repeat(filledBlocks) + '░'.repeat(10 - filledBlocks);
+            return new TableRow({
+                children: [
+                    dataCell(g.title || g.guid, 50),
+                    dataCell(`${pct.toFixed(1)}%`, 20, gradeColor(pct)),
+                    new TableCell({
+                        children: [
+                            new Paragraph({
+                                children: [
+                                    new TextRun({
+                                        text: bar,
+                                        size: 18,
+                                        font: 'Courier New',
+                                        color: pct >= 75 ? '16A34A' : pct >= 55 ? 'CA8A04' : 'DC2626',
+                                    }),
+                                ],
+                            }),
+                        ],
+                        width: { size: 30, type: WidthType.PERCENTAGE },
+                        borders: { top: BORDER, bottom: BORDER, left: NO_BORDER, right: NO_BORDER },
+                    }),
+                ],
+            });
+        }),
+    ];
 
+    return new Table({
+        rows: goalRows,
+        width: { size: 100, type: WidthType.PERCENTAGE },
+    });
+}
+
+interface RubricGradeSummary {
+    sr: StudentRubric;
+    rubric: Rubric;
+    summary: ReturnType<typeof calcGradeSummary>;
+    dateStr: string;
+}
+
+function summarizeRubricEntries(entries: PeriodReportEntry[]): RubricGradeSummary[] {
     const sorted = [...entries].sort((a, b) => {
         const da = a.sr.gradedAt ? new Date(a.sr.gradedAt).getTime() : 0;
         const db = b.sr.gradedAt ? new Date(b.sr.gradedAt).getTime() : 0;
         return da - db;
     });
 
-    const summaries = sorted.map((e) => ({
+    return sorted.map((e) => ({
         ...e,
         summary: calcGradeSummary(e.sr, (e.sr.rubricSnapshot ?? e.rubric).criteria, e.scale),
         dateStr: e.sr.gradedAt ? new Date(e.sr.gradedAt).toLocaleDateString() : '—',
     }));
+}
+
+function buildRubricGradeSections(summaries: RubricGradeSummary[]): (Paragraph | Table)[] {
+    const blocks: (Paragraph | Table)[] = [];
 
     const avg =
         summaries.length > 0
             ? summaries.reduce((acc, s) => acc + s.summary.modifiedPercentage, 0) / summaries.length
             : null;
 
-    const sections: (Paragraph | Table)[] = [];
-
-    sections.push(
-        new Paragraph({
-            text: student.name,
-            heading: HeadingLevel.HEADING_1,
-            spacing: { after: 80 },
-        })
-    );
-
-    sections.push(
-        new Paragraph({
-            children: [
-                new TextRun({ text: className, size: 22, color: '6B7280' }),
-                periodLabel ? new TextRun({ text: `  ·  ${periodLabel}`, size: 22, color: '6B7280' }) : new TextRun(''),
-            ],
-            spacing: { after: 200 },
-        })
-    );
-
     if (avg !== null) {
         const spark = summaries.map((s) => sparkBar(s.summary.modifiedPercentage)).join(' ');
-        sections.push(
+        blocks.push(
             new Paragraph({
                 children: [
                     new TextRun({ text: 'Period average: ', bold: true, size: 22 }),
@@ -127,7 +156,7 @@ export async function exportPeriodReport(input: PeriodReportInput): Promise<void
     }
 
     if (summaries.length >= 2) {
-        sections.push(
+        blocks.push(
             new Paragraph({
                 text: 'Grade Trend',
                 heading: HeadingLevel.HEADING_2,
@@ -156,7 +185,7 @@ export async function exportPeriodReport(input: PeriodReportInput): Promise<void
             });
         });
 
-        sections.push(
+        blocks.push(
             new Table({
                 rows: [new TableRow({ children: trendCells })],
                 width: { size: 100, type: WidthType.PERCENTAGE },
@@ -164,7 +193,7 @@ export async function exportPeriodReport(input: PeriodReportInput): Promise<void
         );
     }
 
-    sections.push(
+    blocks.push(
         new Paragraph({ text: 'Grades', heading: HeadingLevel.HEADING_2, spacing: { before: 280, after: 120 } })
     );
 
@@ -194,12 +223,42 @@ export async function exportPeriodReport(input: PeriodReportInput): Promise<void
         ),
     ];
 
-    sections.push(
+    blocks.push(
         new Table({
             rows: tableRows,
             width: { size: 100, type: WidthType.PERCENTAGE },
         })
     );
+
+    return blocks;
+}
+
+export async function exportPeriodReport(input: PeriodReportInput): Promise<void> {
+    const { student, className, entries, periodLabel, goals } = input;
+
+    const summaries = summarizeRubricEntries(entries);
+
+    const sections: (Paragraph | Table)[] = [];
+
+    sections.push(
+        new Paragraph({
+            text: student.name,
+            heading: HeadingLevel.HEADING_1,
+            spacing: { after: 80 },
+        })
+    );
+
+    sections.push(
+        new Paragraph({
+            children: [
+                new TextRun({ text: className, size: 22, color: '6B7280' }),
+                periodLabel ? new TextRun({ text: `  ·  ${periodLabel}`, size: 22, color: '6B7280' }) : new TextRun(''),
+            ],
+            spacing: { after: 200 },
+        })
+    );
+
+    sections.push(...buildRubricGradeSections(summaries));
 
     if (goals && goals.length > 0) {
         sections.push(
@@ -210,45 +269,7 @@ export async function exportPeriodReport(input: PeriodReportInput): Promise<void
             })
         );
 
-        const goalRows: TableRow[] = [
-            new TableRow({
-                children: [headerCell('Goal', 50), headerCell('Average', 20), headerCell('Progress', 30)],
-            }),
-            ...goals.map((g) => {
-                const pct = normalizePct(g.averagePercentage);
-                const filledBlocks = Math.round((pct / 100) * 10);
-                const bar = '█'.repeat(filledBlocks) + '░'.repeat(10 - filledBlocks);
-                return new TableRow({
-                    children: [
-                        dataCell(g.title || g.guid, 50),
-                        dataCell(`${pct.toFixed(1)}%`, 20, gradeColor(pct)),
-                        new TableCell({
-                            children: [
-                                new Paragraph({
-                                    children: [
-                                        new TextRun({
-                                            text: bar,
-                                            size: 18,
-                                            font: 'Courier New',
-                                            color: pct >= 75 ? '16A34A' : pct >= 55 ? 'CA8A04' : 'DC2626',
-                                        }),
-                                    ],
-                                }),
-                            ],
-                            width: { size: 30, type: WidthType.PERCENTAGE },
-                            borders: { top: BORDER, bottom: BORDER, left: NO_BORDER, right: NO_BORDER },
-                        }),
-                    ],
-                });
-            }),
-        ];
-
-        sections.push(
-            new Table({
-                rows: goalRows,
-                width: { size: 100, type: WidthType.PERCENTAGE },
-            })
-        );
+        sections.push(buildGoalsTable(goals));
     }
 
     const withComments = summaries.filter((s) => s.sr.overallComment || s.sr.entries.some((e) => e.comment));
@@ -302,5 +323,247 @@ export async function exportPeriodReport(input: PeriodReportInput): Promise<void
 export async function exportPeriodReportsBatch(inputs: PeriodReportInput[]): Promise<void> {
     for (const input of inputs) {
         await exportPeriodReport(input);
+    }
+}
+
+// ─── Report cards ──────────────────────────────────────────────────────────────
+
+function bucketColor(bucket: 'strong' | 'developing' | 'weak'): string {
+    if (bucket === 'strong') return '16A34A';
+    if (bucket === 'developing') return 'CA8A04';
+    return 'DC2626';
+}
+
+function buildStandardsSection(section: Extract<ReportCardSection, { type: 'standards' }>): (Paragraph | Table)[] {
+    const blocks: (Paragraph | Table)[] = [
+        new Paragraph({ text: 'Standards', heading: HeadingLevel.HEADING_2, spacing: { before: 360, after: 120 } }),
+    ];
+
+    const allStandards = section.standardSets.flatMap((set) => set.standards);
+    if (allStandards.length === 0) {
+        blocks.push(
+            new Paragraph({
+                children: [new TextRun({ text: 'No standards coverage recorded.', size: 20, color: '6B7280' })],
+                spacing: { after: 120 },
+            })
+        );
+        return blocks;
+    }
+
+    for (const set of section.standardSets) {
+        if (set.standards.length === 0) continue;
+        blocks.push(
+            new Paragraph({
+                children: [new TextRun({ text: set.setTitle, bold: true, size: 22 })],
+                spacing: { before: 160, after: 80 },
+            })
+        );
+
+        const rows: TableRow[] = [
+            new TableRow({
+                children: [headerCell('Standard', 60), headerCell('Avg Score', 20), headerCell('Count', 20)],
+            }),
+            ...set.standards.map((s) => {
+                const pct = normalizePct(s.avgScore);
+                return new TableRow({
+                    children: [
+                        dataCell(s.statementNotation ? `${s.statementNotation} — ${s.description}` : s.description, 60),
+                        dataCell(`${pct.toFixed(1)}%`, 20, gradeColor(pct)),
+                        dataCell(String(s.rubricCount), 20),
+                    ],
+                });
+            }),
+        ];
+
+        blocks.push(new Table({ rows, width: { size: 100, type: WidthType.PERCENTAGE } }));
+    }
+
+    return blocks;
+}
+
+function buildCefrSection(section: Extract<ReportCardSection, { type: 'cefr' }>): (Paragraph | Table)[] {
+    const blocks: (Paragraph | Table)[] = [
+        new Paragraph({ text: 'CEFR Overview', heading: HeadingLevel.HEADING_2, spacing: { before: 360, after: 120 } }),
+    ];
+
+    const { overview } = section;
+    if (overview.cells.length === 0) {
+        blocks.push(
+            new Paragraph({
+                children: [new TextRun({ text: 'No CEFR data recorded.', size: 20, color: '6B7280' })],
+                spacing: { after: 120 },
+            })
+        );
+        return blocks;
+    }
+
+    const rows: TableRow[] = [
+        new TableRow({
+            children: [headerCell('Skill', 25), headerCell('Level', 15), headerCell('Status', 30), headerCell('Confidence', 30)],
+        }),
+        ...overview.cells.map((cell) => {
+            const confPct = normalizePct(cell.confidenceRate * 100);
+            return new TableRow({
+                children: [
+                    dataCell(cell.skill, 25),
+                    dataCell(cell.level, 15),
+                    dataCell(
+                        cell.state,
+                        30,
+                        cell.state === 'achieved' ? 'DCFCE7' : cell.state === 'developing' ? 'FEF9C3' : undefined
+                    ),
+                    dataCell(`${confPct.toFixed(0)}%`, 30),
+                ],
+            });
+        }),
+    ];
+
+    blocks.push(new Table({ rows, width: { size: 100, type: WidthType.PERCENTAGE } }));
+    return blocks;
+}
+
+function buildTestSummarySection(section: Extract<ReportCardSection, { type: 'testSummary' }>): (Paragraph | Table)[] {
+    const blocks: (Paragraph | Table)[] = [
+        new Paragraph({ text: 'Test Summary', heading: HeadingLevel.HEADING_2, spacing: { before: 360, after: 120 } }),
+    ];
+
+    const { overview } = section;
+    if (overview.skills.length === 0 && overview.questions.length === 0) {
+        blocks.push(
+            new Paragraph({
+                children: [new TextRun({ text: 'No test data available.', size: 20, color: '6B7280' })],
+                spacing: { after: 120 },
+            })
+        );
+        return blocks;
+    }
+
+    if (overview.skills.length > 0) {
+        const rows: TableRow[] = [
+            new TableRow({
+                children: [headerCell('Skill / Standard', 50), headerCell('Accuracy', 25), headerCell('Sample', 25)],
+            }),
+            ...overview.skills.map((skill) => {
+                const pct = normalizePct(skill.accuracyPct);
+                return new TableRow({
+                    children: [
+                        dataCell(skill.label, 50),
+                        new TableCell({
+                            children: [
+                                new Paragraph({
+                                    children: [
+                                        new TextRun({
+                                            text: `${pct.toFixed(1)}%`,
+                                            size: 20,
+                                            color: bucketColor(skill.bucket),
+                                        }),
+                                    ],
+                                }),
+                            ],
+                            width: { size: 25, type: WidthType.PERCENTAGE },
+                            borders: { top: BORDER, bottom: BORDER, left: NO_BORDER, right: NO_BORDER },
+                        }),
+                        dataCell(String(skill.sampleSize), 25),
+                    ],
+                });
+            }),
+        ];
+
+        blocks.push(new Table({ rows, width: { size: 100, type: WidthType.PERCENTAGE } }));
+    }
+
+    return blocks;
+}
+
+function buildReportCardSections(data: ReportCardData): (Paragraph | Table)[] {
+    const blocks: (Paragraph | Table)[] = [];
+
+    blocks.push(
+        new Paragraph({
+            text: data.studentName,
+            heading: HeadingLevel.HEADING_1,
+            spacing: { after: 80 },
+        })
+    );
+
+    blocks.push(
+        new Paragraph({
+            children: [
+                new TextRun({ text: data.className, size: 22, color: '6B7280' }),
+                data.periodLabel
+                    ? new TextRun({ text: `  ·  ${data.periodLabel}`, size: 22, color: '6B7280' })
+                    : new TextRun(''),
+            ],
+            spacing: { after: 200 },
+        })
+    );
+
+    for (const section of data.sections) {
+        switch (section.type) {
+            case 'rubrics': {
+                const summaries = summarizeRubricEntries(section.entries);
+                if (summaries.length === 0) {
+                    blocks.push(
+                        new Paragraph({
+                            text: 'Grades',
+                            heading: HeadingLevel.HEADING_2,
+                            spacing: { before: 280, after: 120 },
+                        }),
+                        new Paragraph({
+                            children: [new TextRun({ text: 'No graded rubrics in this period.', size: 20, color: '6B7280' })],
+                            spacing: { after: 120 },
+                        })
+                    );
+                } else {
+                    blocks.push(...buildRubricGradeSections(summaries));
+                }
+                break;
+            }
+            case 'standards':
+                blocks.push(...buildStandardsSection(section));
+                break;
+            case 'learningGoals': {
+                blocks.push(
+                    new Paragraph({
+                        text: 'Learning Goals',
+                        heading: HeadingLevel.HEADING_2,
+                        spacing: { before: 360, after: 120 },
+                    })
+                );
+                if (section.goals.length === 0) {
+                    blocks.push(
+                        new Paragraph({
+                            children: [new TextRun({ text: 'No learning goals tracked.', size: 20, color: '6B7280' })],
+                            spacing: { after: 120 },
+                        })
+                    );
+                } else {
+                    blocks.push(buildGoalsTable(section.goals));
+                }
+                break;
+            }
+            case 'cefr':
+                blocks.push(...buildCefrSection(section));
+                break;
+            case 'testSummary':
+                blocks.push(...buildTestSummarySection(section));
+                break;
+        }
+    }
+
+    return blocks;
+}
+
+export async function exportReportCard(data: ReportCardData): Promise<void> {
+    const blocks = buildReportCardSections(data);
+    const doc = new Document({ sections: [{ children: blocks }] });
+    const blob = await Packer.toBlob(doc);
+    const safeName = data.studentName.replace(/[^a-z0-9]/gi, '_');
+    saveAs(blob, `${safeName}_report_card.docx`);
+}
+
+export async function exportReportCardsBatch(dataList: ReportCardData[]): Promise<void> {
+    for (const data of dataList) {
+        await exportReportCard(data);
     }
 }
