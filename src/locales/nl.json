@@ -743,9 +743,7 @@
         "action_essay": "Opstel",
         "action_import_essay": "Opstel importeren",
         "anchor_help_text": "Ankerwerkstukken zijn referentie-inzendingen die worden gebruikt om je beoordeling te kalibreren. Door een inzending als anker te markeren, kun je deze naast nieuwe inzendingen vergelijken in de beoordelingsvoettekst.",
-        "aria_grade_summary": "Cijferoverzicht",
-        "help_modifier_title": "Scorecorrectie",
-        "help_modifier_content": "Voeg een globale aanpassing toe aan de eindscore. Kies percentage (bijv. +10%) of punten (bijv. +5). Voer een reden in zodat deze in het exportrapport en het auditlog verschijnt."
+        "aria_grade_summary": "Cijferoverzicht"
     },
     "rubricBuilder": {
         "action_back": "Terug",

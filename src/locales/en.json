@@ -743,9 +743,7 @@
         "action_essay": "Essay",
         "action_import_essay": "Import essay",
         "anchor_help_text": "Anchor papers are reference submissions used to calibrate your grading. Marking a submission as an anchor lets you compare it side-by-side with new submissions in the grade footer.",
-        "aria_grade_summary": "Grade summary",
-        "help_modifier_title": "Score Modifiers",
-        "help_modifier_content": "Add a global adjustment to the final score. Choose percentage (e.g. +10%) or points (e.g. +5). Enter a reason so it appears in the exported report and audit log."
+        "aria_grade_summary": "Grade summary"
     },
     "rubricBuilder": {
         "action_back": "Back",

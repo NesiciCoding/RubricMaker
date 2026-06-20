@@ -6,7 +6,6 @@ interface Props {
     children: React.ReactNode;
 }
 
-/** Small `{?}`-style icon button that reveals a help popover with usage instructions. */
 export default function HelpPopover({ title, children }: Props) {
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLSpanElement>(null);
