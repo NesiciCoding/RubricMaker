@@ -122,6 +122,10 @@
         "students_step_import_content": "Importa alumnos en bloque desde un archivo CSV, incluidas exportaciones de Magister, para configurar una clase entera de una vez."
     },
     "common": {
+        "unsaved_title": "Cambios sin guardar",
+        "unsaved_message": "Tienes cambios sin guardar. Si sales ahora, se perderán.",
+        "unsaved_leave": "Salir",
+        "unsaved_stay": "Quedarse",
         "save": "Guardar",
         "cancel": "Cancelar",
         "delete": "Eliminar",
@@ -1015,6 +1019,7 @@
         "picker_title": "Descriptores MCER Puedo",
         "picker_subtitle": "Selecciona las afirmaciones que evalúa este criterio",
         "all_skills": "Todas las habilidades",
+        "all_levels": "Todos los niveles",
         "search_placeholder": "Buscar afirmaciones Puedo…",
         "no_results": "Ningún descriptor coincide con tus filtros.",
         "selected_count": "{{count}} descriptor(es) vinculado(s)",
@@ -1057,6 +1062,7 @@
         "picker_subtitle": "Vincula afirmaciones MCER, IB o de la Taxonomía de Bloom a este criterio",
         "ib_short": "Perfil del Alumno IB",
         "blooms_short": "Taxonomía de Bloom",
+        "grammar_short": "Gramática",
         "action_link_descriptor": "Vincular Descriptor",
         "selected_count": "{{count}} descriptor(es) vinculado(s)"
     },
@@ -1462,6 +1468,12 @@
         "legend_target_level": "Nivel objetivo"
     },
     "analysis": {
+        "detection_disclaimer": "La detección de vocabulario y gramática se basa en reglas y PLN (sin IA) y es aproximada. Puede pasar por alto estructuras, marcar coincidencias falsas y no detecta palabras mal escritas — revisa siempre los resultados antes de confiar en ellos.",
+        "grammar_qualification": "Calificación gramatical",
+        "apply_comment": "Aplicar como comentario",
+        "comment_applied": "Aplicado",
+        "manual_check": "verificación manual",
+        "not_found": "no encontrado",
         "add_to_bank": "Añadir al banco",
         "added_to_bank": "Añadido"
     },

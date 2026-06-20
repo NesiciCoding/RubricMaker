@@ -1,9 +1,20 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
 import type { AppSettings, GradeScale, Test as RmTest } from '../../types';
+
+function renderBuilder(TestBuilderPage: React.ComponentType, route = '/tests/new') {
+    const router = createMemoryRouter(
+        [
+            { path: '/tests/new', element: <TestBuilderPage /> },
+            { path: '/tests/:id', element: <TestBuilderPage /> },
+        ],
+        { initialEntries: [route] }
+    );
+    return { router, ...render(<RouterProvider router={router} />) };
+}
 
 const mockSettings: AppSettings = {
     defaultGradeScaleId: 'gs1',
@@ -97,14 +108,7 @@ describe('TestBuilderPage', () => {
 
     it('creates a new test, adds a multiple-choice question, marks an option correct, and saves', async () => {
         const { default: TestBuilderPage } = await import('../TestBuilderPage');
-        render(
-            <MemoryRouter initialEntries={['/tests/new']}>
-                <Routes>
-                    <Route path="/tests/new" element={<TestBuilderPage />} />
-                    <Route path="/tests/:id" element={<TestBuilderPage />} />
-                </Routes>
-            </MemoryRouter>
-        );
+        renderBuilder(TestBuilderPage);
 
         fireEvent.change(screen.getByLabelText('tests.name_label'), { target: { value: 'My New Test' } });
 
@@ -128,16 +132,21 @@ describe('TestBuilderPage', () => {
         expect(payload.questions[0].options?.[0].isCorrect).toBe(false);
     });
 
+    it('does not show the unsaved-changes prompt after saving a new test (redirect)', async () => {
+        const { default: TestBuilderPage } = await import('../TestBuilderPage');
+        const { router } = renderBuilder(TestBuilderPage);
+
+        fireEvent.change(screen.getByLabelText('tests.name_label'), { target: { value: 'Draft' } });
+        fireEvent.click(screen.getByText('common.save'));
+
+        expect(mockAddTest).toHaveBeenCalledTimes(1);
+        await waitFor(() => expect(router.state.location.pathname).not.toBe('/tests/new'));
+        expect(screen.queryByText('common.unsaved_title')).not.toBeInTheDocument();
+    });
+
     it('shows a validation error when saving without a name', async () => {
         const { default: TestBuilderPage } = await import('../TestBuilderPage');
-        render(
-            <MemoryRouter initialEntries={['/tests/new']}>
-                <Routes>
-                    <Route path="/tests/new" element={<TestBuilderPage />} />
-                    <Route path="/tests/:id" element={<TestBuilderPage />} />
-                </Routes>
-            </MemoryRouter>
-        );
+        renderBuilder(TestBuilderPage);
 
         fireEvent.click(screen.getByText('common.save'));
 
@@ -148,14 +157,7 @@ describe('TestBuilderPage', () => {
     it('loads an existing test and saves via updateTest', async () => {
         mockTests = [mockExistingTest];
         const { default: TestBuilderPage } = await import('../TestBuilderPage');
-        render(
-            <MemoryRouter initialEntries={['/tests/t1']}>
-                <Routes>
-                    <Route path="/tests/new" element={<TestBuilderPage />} />
-                    <Route path="/tests/:id" element={<TestBuilderPage />} />
-                </Routes>
-            </MemoryRouter>
-        );
+        renderBuilder(TestBuilderPage, '/tests/t1');
 
         expect(screen.getByDisplayValue('Existing Test')).toBeInTheDocument();
 

@@ -216,6 +216,56 @@ const GRAMMAR_PATTERNS: GrammarPattern[] = [
         level: 'B1',
         detect: (t) => countMatches(t, /\b(because|therefore|consequently|as a result|due to|owing to)\b/),
     },
+    {
+        shorthand: 'PRES.PROG',
+        label: 'Present continuous (am/is/are + -ing)',
+        level: 'A1',
+        detect: (t) => countMatches(t, /\b(am|is|are|'m|'re|'s)\s+\w+ing\b/),
+    },
+    {
+        shorthand: 'FUT.WILL',
+        label: 'Future with will (will + base verb)',
+        level: 'A2',
+        detect: (t) => countMatches(t, /\b(will|'ll|won'?t)\s+\w+\b/),
+    },
+    {
+        shorthand: 'FUT.GOING',
+        label: 'Future with going to',
+        level: 'A2',
+        detect: (t) => countMatches(t, /\b(am|is|are|'m|'re|'s)\s+going\s+to\s+\w+\b/),
+    },
+    {
+        // ponytail: regular = past-tense word ending -ed; misses spelling-irregular -ed forms (e.g. "spelt"). Good-enough heuristic.
+        shorthand: 'PAST.SIMPLE.REG',
+        label: 'Past simple, regular verbs (-ed)',
+        level: 'A1',
+        detect: (_, doc) => (doc.match('#PastTense').out('array') as string[]).filter((w) => /ed$/i.test(w)).length,
+    },
+    {
+        // ponytail: irregular = past-tense word NOT ending -ed; relies on compromise's #PastTense tagging.
+        shorthand: 'PAST.SIMPLE.IRREG',
+        label: 'Past simple, irregular verbs',
+        level: 'A2',
+        detect: (_, doc) => (doc.match('#PastTense').out('array') as string[]).filter((w) => !/ed$/i.test(w)).length,
+    },
+    {
+        shorthand: 'COMP.ADJ',
+        label: 'Comparative adjectives (-er / more)',
+        level: 'A2',
+        detect: (_, doc) => doc.match('#Comparative').length,
+    },
+    {
+        shorthand: 'SUP.ADJ',
+        label: 'Superlative adjectives (-est / most)',
+        level: 'A2',
+        detect: (_, doc) => doc.match('#Superlative').length,
+    },
+    {
+        shorthand: 'ART.INDEF',
+        label: 'Indefinite article (a / an)',
+        level: 'A1',
+        detect: (t) => countMatches(t, /\b(a|an)\s+\w+/),
+    },
 ];
 
 /**
@@ -247,6 +297,23 @@ export function profileGrammar(text: string): CefrGrammarProfile {
     }
 
     return { detectedStructures: detected, estimatedLevel };
+}
+
+/**
+ * Count occurrences of specific grammar patterns (by shorthand) in the text.
+ * Used by the grammar linker to evaluate exactly the structures linked to a rubric
+ * criterion. Unknown shorthands (no matching rule) are omitted from the result.
+ */
+export function detectGrammar(text: string, shorthands: string[]): Record<string, number> {
+    const doc = nlp(text);
+    const wanted = new Set(shorthands);
+    const result: Record<string, number> = {};
+    for (const pattern of GRAMMAR_PATTERNS) {
+        if (wanted.has(pattern.shorthand)) {
+            result[pattern.shorthand] = pattern.detect(text, doc);
+        }
+    }
+    return result;
 }
 
 /**

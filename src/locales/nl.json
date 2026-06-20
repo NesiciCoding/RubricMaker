@@ -122,6 +122,10 @@
         "students_step_import_content": "Importeer leerlingen in bulk vanuit een CSV-bestand, inclusief Magister-exports, om een hele klas in één keer in te stellen."
     },
     "common": {
+        "unsaved_title": "Niet-opgeslagen wijzigingen",
+        "unsaved_message": "Je hebt niet-opgeslagen wijzigingen. Als je nu weggaat, gaan ze verloren.",
+        "unsaved_leave": "Weggaan",
+        "unsaved_stay": "Blijven",
         "save": "Opslaan",
         "cancel": "Annuleren",
         "delete": "Verwijderen",
@@ -1015,6 +1019,7 @@
         "picker_title": "ERK Kan-ik uitspraken",
         "picker_subtitle": "Selecteer uitspraken die dit criterium beoordeelt",
         "all_skills": "Alle vaardigheden",
+        "all_levels": "Alle niveaus",
         "search_placeholder": "Zoek Kan-ik uitspraken…",
         "no_results": "Geen uitspraken gevonden voor deze filters.",
         "selected_count": "{{count}} uitspraak/uitspraken gekoppeld",
@@ -1057,6 +1062,7 @@
         "picker_subtitle": "Koppel CEFR-, IB- of Bloom-uitspraken aan dit criterium",
         "ib_short": "IB-Leerprofiel",
         "blooms_short": "Taxonomie van Bloom",
+        "grammar_short": "Grammatica",
         "action_link_descriptor": "Uitspraak Koppelen",
         "selected_count": "{{count}} uitspraak/uitspraken gekoppeld"
     },
@@ -1462,6 +1468,12 @@
         "legend_target_level": "Doelniveau"
     },
     "analysis": {
+        "detection_disclaimer": "Detectie van woordenschat en grammatica is gebaseerd op regels en NLP (geen AI) en bij benadering. Het kan structuren missen, onterecht matchen en controleert geen verkeerd gespelde woorden — controleer de resultaten altijd voordat je erop vertrouwt.",
+        "grammar_qualification": "Grammaticakwalificatie",
+        "apply_comment": "Toepassen als opmerking",
+        "comment_applied": "Toegepast",
+        "manual_check": "handmatig controleren",
+        "not_found": "niet gevonden",
         "add_to_bank": "Voeg toe aan bank",
         "added_to_bank": "Toegevoegd"
     },

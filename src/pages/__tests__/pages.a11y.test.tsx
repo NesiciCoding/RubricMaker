@@ -9,7 +9,7 @@ import React from 'react';
 import { render } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { axe } from 'jest-axe';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { MemoryRouter, createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
 import type { AppSettings, Class, Student, Rubric, StudentRubric } from '../../types';
 
@@ -155,13 +155,8 @@ vi.mock('../../utils/cefrStudentAggregator', () => ({
 // ─── Helper ────────────────────────────────────────────────────────────────────
 
 function renderPage(element: React.ReactElement, route = '/', path = '/') {
-    return render(
-        <MemoryRouter initialEntries={[route]}>
-            <Routes>
-                <Route path={path} element={element} />
-            </Routes>
-        </MemoryRouter>
-    );
+    const router = createMemoryRouter([{ path, element }], { initialEntries: [route] });
+    return render(<RouterProvider router={router} />);
 }
 
 // axe with rules that require a real rendering engine or full app shell disabled.

@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { flushSync } from 'react-dom';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
     Plus,
@@ -64,6 +65,8 @@ import { exportRubricToDocx } from '../utils/docxExport';
 import { logAuditEvent } from '../services/database/AuditLogger';
 import { getSpeakingDimensions } from '../data/speakingDimensions';
 import { useToast } from '../hooks/useToast';
+import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
 import { getRubricBuilderTourSteps } from '../data/TutorialSteps';
@@ -190,6 +193,7 @@ export default function RubricBuilder() {
         subject,
         description,
         criteria,
+        gradeScaleId,
         format,
         scoringMode,
         totalMaxPoints,
@@ -197,16 +201,7 @@ export default function RubricBuilder() {
         cefrSkill,
         cefrAchieveThreshold,
     ]);
-    useEffect(() => {
-        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-            if (isDirty) {
-                e.preventDefault();
-                e.returnValue = '';
-            }
-        };
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-    }, [isDirty]);
+    const { dialogProps: unsavedDialogProps } = useUnsavedChangesGuard(isDirty);
 
     useEffect(() => {
         const EXPORT_GOOGLE_FONTS: Record<string, string> = {
@@ -384,12 +379,15 @@ export default function RubricBuilder() {
             if (affectedCount > 0) {
                 setSyncDialogRubric(savedRubric);
             }
+            flushSync(() => setIsDirty(false));
         } else {
             const newR = addRubric(rubricData);
+            // Flush only after the create succeeds, and before navigate so
+            // useBlocker doesn't see stale isDirty=true.
+            flushSync(() => setIsDirty(false));
             navigate(`/rubrics/${newR.id}`, { replace: true });
         }
         setSaved(true);
-        setIsDirty(false);
         setTimeout(() => setSaved(false), 2000);
     }, [
         name,
@@ -3408,6 +3406,7 @@ export default function RubricBuilder() {
                     </div>
                 </div>
             )}
+            <ConfirmDialog {...unsavedDialogProps} />
         </>
     );
 }

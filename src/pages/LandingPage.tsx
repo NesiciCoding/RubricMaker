@@ -32,7 +32,7 @@ const TEACHER_FEATURES = [
     {
         icon: BookOpen,
         title: 'Rubric Builder',
-        desc: 'Design rubrics with custom criteria, weighted scoring, CEFR descriptors, and version history.',
+        desc: 'Design rubrics with custom criteria, weighted scoring, CEFR descriptors, grammar standards, and version history.',
         color: '#3b82f6',
     },
     {
@@ -55,8 +55,8 @@ const TEACHER_FEATURES = [
     },
     {
         icon: Languages,
-        title: 'Vocabulary Profile',
-        desc: 'See each class and student’s CEFR vocabulary range (A1–C2) from their analysed work, and export word lists by level.',
+        title: 'Vocabulary & Grammar',
+        desc: 'See each class and student’s CEFR vocabulary range (A1–C2) from their analysed work, auto-check linked grammar in scanned essays, and export word lists by level.',
         color: '#f59e0b',
     },
     {

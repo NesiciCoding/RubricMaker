@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { flushSync } from 'react-dom';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Plus, Save, ArrowLeft, AlertCircle, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +10,8 @@ import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
+import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { nanoid } from '../utils/nanoid';
 import QuestionEditor from '../components/Tests/QuestionEditor';
 import type { TestQuestion, TestSection } from '../types';
@@ -54,6 +57,17 @@ export default function TestBuilderPage() {
     );
     const [tourRun, setTourRun] = useState(false);
     const testTourSteps = React.useMemo(() => getTestBuilderTourSteps(t), [t]);
+
+    const [isDirty, setIsDirty] = useState(false);
+    const mountedRef = useRef(false);
+    useEffect(() => {
+        if (!mountedRef.current) {
+            mountedRef.current = true;
+            return;
+        }
+        setIsDirty(true);
+    }, [name, description, questions, sections, durationMinutes, shuffleQuestions, requireSEB, gradeScaleId]);
+    const { dialogProps: unsavedDialogProps } = useUnsavedChangesGuard(isDirty);
 
     const validSectionIds = React.useMemo(() => new Set(sections.map((s) => s.id)), [sections]);
 
@@ -183,8 +197,12 @@ export default function TestBuilderPage() {
         if (existing) {
             updateTest({ ...existing, ...payload, updatedAt: new Date().toISOString() });
             showToast(t('tests.save_success'), 'success');
+            flushSync(() => setIsDirty(false));
         } else {
             const created = addTest(payload);
+            // Flush only after the create succeeds, and before navigate so
+            // useBlocker doesn't see stale isDirty=true.
+            flushSync(() => setIsDirty(false));
             showToast(t('tests.save_success'), 'success');
             navigate(`/tests/${created.id}`, { replace: true });
         }
@@ -582,6 +600,7 @@ export default function TestBuilderPage() {
                     </DragDropContext>
                 )}
             </div>
+            <ConfirmDialog {...unsavedDialogProps} />
         </>
     );
 }

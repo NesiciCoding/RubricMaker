@@ -10,6 +10,7 @@ import {
     ClipboardPaste,
     Check,
     BookOpen,
+    Info,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type {
@@ -25,6 +26,7 @@ import { extractText, UnsupportedFormatError } from '../../utils/textExtraction'
 import { analyseVocabulary } from '../../utils/vocabularyAnalyser';
 import { checkGrammar, profileGrammar, LT_ATTRIBUTION_URL } from '../../utils/grammarChecker';
 import { profileText } from '../../utils/cefrVocabularyProfiler';
+import { evaluateGrammar, buildGrammarComment } from '../../utils/grammarQualification';
 import { CEFR_LEVEL_COLORS } from '../../data/cefrDescriptors';
 import { nanoid } from '../../utils/nanoid';
 import { Skeleton, SkeletonCard } from '../ui/Skeleton';
@@ -43,6 +45,7 @@ interface Props {
     onSaveResult: (result: DocumentAnalysisResult) => void;
     onApplyToEntry: (criterionId: string, subItemId: string) => void;
     onAddToCommentBank?: (phrase: string) => void;
+    onApplyComment?: (criterionId: string, html: string) => void;
 }
 
 type Phase = 'select' | 'analysing' | 'done' | 'error';
@@ -85,8 +88,11 @@ export default function DocumentAnalysisPanel({
     onSaveResult,
     onApplyToEntry,
     onAddToCommentBank,
+    onApplyComment,
 }: Props) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const lang = i18n?.language?.startsWith('nl') ? 'nl' : 'en';
+    const [appliedComments, setAppliedComments] = useState<Set<string>>(new Set());
 
     const [selectedAttachmentId, setSelectedAttachmentId] = useState(
         existingResult?.attachmentId ?? studentAttachments[0]?.id ?? ''
@@ -115,6 +121,17 @@ export default function DocumentAnalysisPanel({
         return { vocabulary, grammar, overallEstimatedLevel };
     }, [extractedText]);
 
+    const grammarQual = useMemo(() => {
+        if (!extractedText) return [];
+        return criteria
+            .map((c) => {
+                const linked = (c.frameworkDescriptors || []).filter((d) => d.framework === 'grammar');
+                if (linked.length === 0) return null;
+                return { criterion: c, result: evaluateGrammar(linked, extractedText) };
+            })
+            .filter((x): x is { criterion: RubricCriterion; result: ReturnType<typeof evaluateGrammar> } => !!x);
+    }, [extractedText, criteria]);
+
     const selectedAttachment = studentAttachments.find((a) => a.id === selectedAttachmentId);
     const isAudioVideo =
         selectedAttachment?.mimeType.startsWith('audio/') || selectedAttachment?.mimeType.startsWith('video/');
@@ -128,6 +145,7 @@ export default function DocumentAnalysisPanel({
         setPhase('analysing');
         setProgress(0);
         setErrorMsg('');
+        setAppliedComments(new Set());
 
         try {
             let text: string;
@@ -243,6 +261,22 @@ export default function DocumentAnalysisPanel({
                 </div>
 
                 <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <div
+                        className="card"
+                        style={{
+                            padding: '10px 14px',
+                            display: 'flex',
+                            gap: 8,
+                            alignItems: 'flex-start',
+                            borderLeft: '3px solid var(--accent)',
+                        }}
+                    >
+                        <Info size={15} style={{ color: 'var(--accent)', flexShrink: 0, marginTop: 2 }} />
+                        <p className="text-xs text-muted" style={{ margin: 0, lineHeight: 1.6 }}>
+                            {t('analysis.detection_disclaimer')}
+                        </p>
+                    </div>
+
                     {/* Attachment / transcript selector */}
                     {phase !== 'analysing' && (
                         <div className="card" style={{ padding: 14 }}>
@@ -677,6 +711,92 @@ export default function DocumentAnalysisPanel({
 
                             {/* CEFR Text Profile */}
                             {cefrProfile && <CefrProfilePanel profile={cefrProfile} />}
+
+                            {/* Grammar qualification (linked grammar standards) */}
+                            {grammarQual.length > 0 && (
+                                <div>
+                                    <h4 style={{ marginBottom: 10, fontSize: '0.9rem' }}>
+                                        {t('analysis.grammar_qualification')}
+                                    </h4>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                        {grammarQual.map(({ criterion, result: qual }) => {
+                                            const applied = appliedComments.has(criterion.id);
+                                            return (
+                                                <div
+                                                    key={criterion.id}
+                                                    className="card"
+                                                    style={{
+                                                        padding: '10px 14px',
+                                                        borderLeft: `3px solid ${
+                                                            qual.passed ? 'var(--green)' : 'var(--yellow)'
+                                                        }`,
+                                                    }}
+                                                >
+                                                    <div
+                                                        style={{
+                                                            display: 'flex',
+                                                            justifyContent: 'space-between',
+                                                            alignItems: 'center',
+                                                            gap: 8,
+                                                            marginBottom: 6,
+                                                        }}
+                                                    >
+                                                        <strong style={{ fontSize: '0.875rem' }}>
+                                                            {criterion.title}
+                                                            <span
+                                                                style={{
+                                                                    marginLeft: 8,
+                                                                    fontSize: 12,
+                                                                    fontWeight: 600,
+                                                                    color: qual.passed
+                                                                        ? 'var(--green)'
+                                                                        : 'var(--yellow)',
+                                                                }}
+                                                            >
+                                                                {qual.foundCount}/{qual.autoDetectableCount}
+                                                            </span>
+                                                        </strong>
+                                                        {onApplyComment && (
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-secondary btn-xs"
+                                                                disabled={applied}
+                                                                onClick={() => {
+                                                                    onApplyComment(
+                                                                        criterion.id,
+                                                                        buildGrammarComment(qual, t, lang)
+                                                                    );
+                                                                    setAppliedComments((prev) =>
+                                                                        new Set(prev).add(criterion.id)
+                                                                    );
+                                                                }}
+                                                            >
+                                                                {applied
+                                                                    ? t('analysis.comment_applied')
+                                                                    : t('analysis.apply_comment')}
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                    <ul style={{ margin: 0, paddingLeft: 18 }}>
+                                                        {qual.items.map((item) => (
+                                                            <li
+                                                                key={item.descriptorId}
+                                                                style={{ fontSize: '0.8rem', lineHeight: 1.6 }}
+                                                            >
+                                                                {!item.autoDetectable
+                                                                    ? `⊘ ${lang === 'nl' ? item.descriptionNl : item.descriptionEn} (${t('analysis.manual_check')})`
+                                                                    : item.found
+                                                                      ? `✔ ${lang === 'nl' ? item.descriptionNl : item.descriptionEn} (${item.occurrences}×)`
+                                                                      : `✘ ${lang === 'nl' ? item.descriptionNl : item.descriptionEn} — ${t('analysis.not_found')}`}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Grammar errors */}
                             {result.grammarErrors.length > 0 && (
