@@ -1,5 +1,9 @@
 // ─── Core Domain Types for Rubric Maker ───────────────────────────────────────
 
+import type { PeriodReportEntry } from '../utils/periodReportExport';
+import type { LearningGoalAggregate } from '../utils/learningGoalsAggregator';
+import type { StandardSetGroup, CefrStudentOverview } from '../utils/cefrStudentAggregator';
+
 // ─── CEFR / ERK Types ─────────────────────────────────────────────────────────
 
 export type CefrLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
@@ -978,4 +982,54 @@ export interface LearningPathConfig {
     lowScoreThreshold: number;
     /** Minimum percentage-point gap below cohort average to trigger a recommendation (default 15) */
     cohortGapThreshold: number;
+}
+
+// ─── Report cards ──────────────────────────────────────────────────────────────
+
+export interface ReportCardConfig {
+    includeRubrics: boolean;
+    includeStandards: boolean;
+    includeLearningGoals: boolean;
+    includeCefr: boolean;
+    includeTestSummary: boolean;
+}
+
+export interface ReportCardRubricsSection {
+    type: 'rubrics';
+    entries: PeriodReportEntry[];
+}
+
+export interface ReportCardStandardsSection {
+    type: 'standards';
+    standardSets: StandardSetGroup[];
+}
+
+export interface ReportCardLearningGoalsSection {
+    type: 'learningGoals';
+    goals: LearningGoalAggregate[];
+}
+
+export interface ReportCardCefrSection {
+    type: 'cefr';
+    overview: CefrStudentOverview;
+}
+
+export interface ReportCardTestSummarySection {
+    type: 'testSummary';
+    overview: TestStrongWeakSummary;
+}
+
+export type ReportCardSection =
+    | ReportCardRubricsSection
+    | ReportCardStandardsSection
+    | ReportCardLearningGoalsSection
+    | ReportCardCefrSection
+    | ReportCardTestSummarySection;
+
+export interface ReportCardData {
+    studentId: string;
+    studentName: string;
+    className: string;
+    periodLabel?: string;
+    sections: ReportCardSection[];
 }
