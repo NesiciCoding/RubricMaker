@@ -1372,7 +1372,21 @@
         "period_no_students": "No hay estudiantes en esta clase.",
         "period_generate_btn": "Generar {{count}} informe(s)",
         "period_report_success": "Generados {{count}} informe(s).",
-        "selected": "seleccionados"
+        "selected": "seleccionados",
+        "report_card_success": "Generados {{count}} boletín(es)."
+    },
+    "reportCard": {
+        "title": "Boletín",
+        "help": "Genere un boletín DOCX consolidado por estudiante con secciones personalizables.",
+        "uses_period_picker": "Utiliza la selección de clase y estudiantes anterior, y el rango de fechas y la etiqueta del período si están definidos.",
+        "section_rubrics": "Calificaciones de rúbrica",
+        "section_standards": "Cobertura de estándares",
+        "section_learning_goals": "Objetivos de aprendizaje",
+        "section_cefr": "Resumen MCER",
+        "section_test_summary": "Resumen de pruebas",
+        "test_summary_hint": "La sección de resumen de pruebas aún no está vinculada a pruebas específicas y aparecerá vacía.",
+        "generate_single_btn": "Exportar boletín",
+        "generate_batch_btn": "Exportar {{count}} boletín(es)"
     },
     "speaking": {
         "page_title": "Sesión de Expresión Oral",

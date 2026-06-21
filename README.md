@@ -57,6 +57,7 @@ A comprehensive, offline-first rubric creation and grading tool built with React
   - **Word (.docx)**: Raw export or mail-merge templates with field substitution.
   - **CSV**: Raw data for Excel or other gradebooks.
   - **Period report**: Aggregated CEFR progress report for a class over a date range.
+  - **Report cards**: A single consolidated DOCX per student combining rubric grades, standards coverage, learning goals, and CEFR overview, with toggleable sections; export one student or batch-export a whole class.
 
 ### 6. Student Portal
 - **Shareable links**: Each student gets a unique portal link; no login required.

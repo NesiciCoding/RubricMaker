@@ -1372,7 +1372,21 @@
         "period_no_students": "No students in this class.",
         "period_generate_btn": "Generate {{count}} report(s)",
         "period_report_success": "Generated {{count}} report(s).",
-        "selected": "selected"
+        "selected": "selected",
+        "report_card_success": "Generated {{count}} report card(s)."
+    },
+    "reportCard": {
+        "title": "Report Card",
+        "help": "Generate a consolidated DOCX report card per student with customizable sections.",
+        "uses_period_picker": "Uses the class and student selection above, and the date range and period label if set.",
+        "section_rubrics": "Rubric grades",
+        "section_standards": "Standards coverage",
+        "section_learning_goals": "Learning goals",
+        "section_cefr": "CEFR overview",
+        "section_test_summary": "Test summary",
+        "test_summary_hint": "Test summary section is not yet wired to specific tests and will appear empty.",
+        "generate_single_btn": "Export report card",
+        "generate_batch_btn": "Export {{count}} report card(s)"
     },
     "speaking": {
         "page_title": "Speaking Session",

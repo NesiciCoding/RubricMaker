@@ -24,6 +24,7 @@ import { useToast } from '../hooks/useToast';
 import { calcGradeSummary } from '../utils/gradeCalc';
 import { getStudentGoalScores } from '../utils/learningGoalsAggregator';
 import { encodeFeedbackCode } from '../utils/shareCode';
+import type { ReportCardConfig } from '../types';
 
 export default function ExportPage() {
     const { t } = useTranslation();
@@ -37,6 +38,8 @@ export default function ExportPage() {
         exportTemplates,
         updateSettings,
         saveStudentRubric,
+        selfAssessments,
+        analysisResults,
     } = useApp();
     const { showToast } = useToast();
     const [selectedRubricId, setSelectedRubricId] = useState(rubrics[0]?.id ?? '');
@@ -59,6 +62,16 @@ export default function ExportPage() {
     const [generatingReport, setGeneratingReport] = useState(false);
     const [tourRun, setTourRun] = useState(false);
     const exportTourSteps = useMemo(() => getExportTourSteps(t), [t]);
+
+    // ── Report card state (reuses the period report class/student picker) ─────
+    const [reportCardConfig, setReportCardConfig] = useState<ReportCardConfig>({
+        includeRubrics: true,
+        includeStandards: true,
+        includeLearningGoals: true,
+        includeCefr: true,
+        includeTestSummary: true,
+    });
+    const [generatingReportCard, setGeneratingReportCard] = useState(false);
 
     const activeTemplateId = settings.exportTemplateId ?? '';
     const activeTemplate = exportTemplates.find((t) => t.id === activeTemplateId) ?? null;
@@ -256,38 +269,42 @@ export default function ExportPage() {
         setShowBulkComment(false);
     }
 
+    function gatherPeriodEntries(studentId: string) {
+        const fromTs = reportDateFrom ? new Date(reportDateFrom).getTime() : 0;
+        const toTs = reportDateTo ? new Date(reportDateTo + 'T23:59:59').getTime() : Infinity;
+        const srs = studentRubrics.filter(
+            (sr) =>
+                sr.studentId === studentId &&
+                sr.gradedAt &&
+                !sr.isPeerReview &&
+                !sr.notHandedIn &&
+                new Date(sr.gradedAt).getTime() >= fromTs &&
+                new Date(sr.gradedAt).getTime() <= toTs
+        );
+        const entries = srs
+            .map((sr) => {
+                const rubric = sr.rubricSnapshot ?? rubrics.find((r) => r.id === sr.rubricId);
+                if (!rubric) return null;
+                const scale =
+                    gradeScales.find((g) => g.id === (rubric.gradeScaleId ?? settings.defaultGradeScaleId)) ??
+                    gradeScales[0] ??
+                    null;
+                return { sr, rubric, scale };
+            })
+            .filter(Boolean) as import('../utils/periodReportExport').PeriodReportEntry[];
+        return { srs, entries };
+    }
+
     async function handleGeneratePeriodReports() {
         if (reportStudentIds.size === 0) return;
         setGeneratingReport(true);
         try {
             const { exportPeriodReportsBatch } = await import('../utils/periodReportExport');
-            const fromTs = reportDateFrom ? new Date(reportDateFrom).getTime() : 0;
-            const toTs = reportDateTo ? new Date(reportDateTo + 'T23:59:59').getTime() : Infinity;
             const classStudents = students.filter((s) => s.classId === reportClassId && reportStudentIds.has(s.id));
             const cls = classes.find((c) => c.id === reportClassId);
 
             const inputs = classStudents.map((student) => {
-                const srs = studentRubrics.filter(
-                    (sr) =>
-                        sr.studentId === student.id &&
-                        sr.gradedAt &&
-                        !sr.isPeerReview &&
-                        !sr.notHandedIn &&
-                        new Date(sr.gradedAt).getTime() >= fromTs &&
-                        new Date(sr.gradedAt).getTime() <= toTs
-                );
-                const entries = srs
-                    .map((sr) => {
-                        const rubric = sr.rubricSnapshot ?? rubrics.find((r) => r.id === sr.rubricId);
-                        if (!rubric) return null;
-                        const scale =
-                            gradeScales.find((g) => g.id === (rubric.gradeScaleId ?? settings.defaultGradeScaleId)) ??
-                            gradeScales[0] ??
-                            null;
-                        return { sr, rubric, scale };
-                    })
-                    .filter(Boolean) as import('../utils/periodReportExport').PeriodReportEntry[];
-
+                const { srs, entries } = gatherPeriodEntries(student.id);
                 return {
                     student,
                     className: cls?.name ?? '',
@@ -304,6 +321,56 @@ export default function ExportPage() {
             showToast(t('toast.export_error'), 'error');
         } finally {
             setGeneratingReport(false);
+        }
+    }
+
+    async function buildReportCardDataForStudent(student: (typeof students)[number]) {
+        const { entries } = gatherPeriodEntries(student.id);
+        const cls = classes.find((c) => c.id === reportClassId);
+        const { buildReportCardData } = await import('../utils/reportCardAggregator');
+        return buildReportCardData(student.id, reportCardConfig, {
+            student,
+            className: cls?.name ?? '',
+            periodLabel: reportPeriodLabel || undefined,
+            entries,
+            rubrics,
+            studentRubrics,
+            selfAssessments,
+            analysisResults,
+        });
+    }
+
+    async function handleGenerateReportCard(studentId: string) {
+        setGeneratingReportCard(true);
+        try {
+            const student = students.find((s) => s.id === studentId);
+            if (!student) return;
+            const { exportReportCard } = await import('../utils/periodReportExport');
+            const data = await buildReportCardDataForStudent(student);
+            await exportReportCard(data);
+            logAuditEvent('export', 'export_report_card', 'student', studentId, { count: 1 });
+            showToast(t('exportPage.report_card_success', { count: 1 }), 'success');
+        } catch {
+            showToast(t('toast.export_error'), 'error');
+        } finally {
+            setGeneratingReportCard(false);
+        }
+    }
+
+    async function handleGenerateReportCardsBatch() {
+        if (reportStudentIds.size === 0) return;
+        setGeneratingReportCard(true);
+        try {
+            const classStudents = students.filter((s) => s.classId === reportClassId && reportStudentIds.has(s.id));
+            const { exportReportCardsBatch } = await import('../utils/periodReportExport');
+            const dataList = await Promise.all(classStudents.map((student) => buildReportCardDataForStudent(student)));
+            await exportReportCardsBatch(dataList);
+            logAuditEvent('export', 'export_report_card', 'class', reportClassId, { count: dataList.length });
+            showToast(t('exportPage.report_card_success', { count: dataList.length }), 'success');
+        } catch {
+            showToast(t('toast.export_error'), 'error');
+        } finally {
+            setGeneratingReportCard(false);
         }
     }
 
@@ -919,6 +986,79 @@ export default function ExportPage() {
                     >
                         {generatingReport ? <Loader size={14} className="spin" /> : <Download size={14} />}
                         {t('exportPage.period_generate_btn', { count: reportStudentIds.size })}
+                    </button>
+                </div>
+            </div>
+
+            {/* ── Report Card Generator ──────────────────────────────────────── */}
+            <div className="card" style={{ marginTop: 24 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                    <ClipboardList size={16} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                    <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>{t('reportCard.title')}</h3>
+                </div>
+                <p style={{ margin: '0 0 16px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                    {t('reportCard.help')}
+                </p>
+                <p style={{ margin: '0 0 16px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                    {t('reportCard.uses_period_picker')}
+                </p>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
+                    {(
+                        [
+                            ['includeRubrics', 'reportCard.section_rubrics'],
+                            ['includeStandards', 'reportCard.section_standards'],
+                            ['includeLearningGoals', 'reportCard.section_learning_goals'],
+                            ['includeCefr', 'reportCard.section_cefr'],
+                            ['includeTestSummary', 'reportCard.section_test_summary'],
+                        ] as const
+                    ).map(([key, labelKey]) => (
+                        <label
+                            key={key}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                fontSize: '0.85rem',
+                                cursor: 'pointer',
+                            }}
+                        >
+                            <input
+                                type="checkbox"
+                                checked={reportCardConfig[key]}
+                                onChange={(e) =>
+                                    setReportCardConfig((prev) => ({ ...prev, [key]: e.target.checked }))
+                                }
+                            />
+                            {t(labelKey)}
+                        </label>
+                    ))}
+                </div>
+                {reportCardConfig.includeTestSummary && (
+                    <p style={{ margin: '0 0 16px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                        {t('reportCard.test_summary_hint')}
+                    </p>
+                )}
+
+                <div style={{ marginTop: 8, display: 'flex', justifyContent: 'flex-end', gap: 10, flexWrap: 'wrap' }}>
+                    <button
+                        className="btn btn-secondary"
+                        disabled={reportStudentIds.size !== 1 || generatingReportCard}
+                        onClick={() => {
+                            const [only] = reportStudentIds;
+                            if (only) void handleGenerateReportCard(only);
+                        }}
+                    >
+                        {generatingReportCard ? <Loader size={14} className="spin" /> : <Download size={14} />}
+                        {t('reportCard.generate_single_btn')}
+                    </button>
+                    <button
+                        className="btn btn-primary"
+                        disabled={reportStudentIds.size === 0 || generatingReportCard}
+                        onClick={handleGenerateReportCardsBatch}
+                    >
+                        {generatingReportCard ? <Loader size={14} className="spin" /> : <Download size={14} />}
+                        {t('reportCard.generate_batch_btn', { count: reportStudentIds.size })}
                     </button>
                 </div>
             </div>

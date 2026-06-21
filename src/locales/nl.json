@@ -1372,7 +1372,21 @@
         "period_no_students": "Geen leerlingen in deze klas.",
         "period_generate_btn": "{{count}} rapport(en) genereren",
         "period_report_success": "{{count}} rapport(en) gegenereerd.",
-        "selected": "geselecteerd"
+        "selected": "geselecteerd",
+        "report_card_success": "{{count}} rapport(en) gegenereerd."
+    },
+    "reportCard": {
+        "title": "Rapport",
+        "help": "Genereer een geconsolideerd DOCX-rapport per leerling met aanpasbare secties.",
+        "uses_period_picker": "Gebruikt de klas- en leerlingselectie hierboven, en de periode en labelnaam indien ingesteld.",
+        "section_rubrics": "Rubriekcijfers",
+        "section_standards": "Standaarddekking",
+        "section_learning_goals": "Leerdoelen",
+        "section_cefr": "ERK-overzicht",
+        "section_test_summary": "Toetssamenvatting",
+        "test_summary_hint": "De toetssamenvatting is nog niet gekoppeld aan specifieke toetsen en verschijnt leeg.",
+        "generate_single_btn": "Rapport exporteren",
+        "generate_batch_btn": "{{count}} rapport(en) exporteren"
     },
     "speaking": {
         "page_title": "Spreekopdracht",
