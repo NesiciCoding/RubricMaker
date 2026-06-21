@@ -1371,7 +1371,21 @@
         "period_no_students": "Keine Schüler in dieser Klasse.",
         "period_generate_btn": "{{count}} Bericht(e) erstellen",
         "period_report_success": "{{count}} Bericht(e) erstellt.",
-        "selected": "ausgewählt"
+        "selected": "ausgewählt",
+        "report_card_success": "{{count}} Zeugnis(se) erstellt."
+    },
+    "reportCard": {
+        "title": "Zeugnis",
+        "help": "Erstellen Sie ein konsolidiertes DOCX-Zeugnis pro Schüler mit anpassbaren Abschnitten.",
+        "uses_period_picker": "Verwendet die obige Klassen- und Schülerauswahl sowie den Zeitraum und das Label, falls festgelegt.",
+        "section_rubrics": "Rubriknoten",
+        "section_standards": "Standardabdeckung",
+        "section_learning_goals": "Lernziele",
+        "section_cefr": "GER-Übersicht",
+        "section_test_summary": "Testzusammenfassung",
+        "test_summary_hint": "Der Abschnitt Testzusammenfassung ist noch nicht mit bestimmten Tests verknüpft und bleibt leer.",
+        "generate_single_btn": "Zeugnis exportieren",
+        "generate_batch_btn": "{{count}} Zeugnis(se) exportieren"
     },
     "speaking": {
         "page_title": "Sprechsitzung",

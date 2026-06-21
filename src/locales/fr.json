@@ -1371,7 +1371,21 @@
         "period_no_students": "Aucun élève dans cette classe.",
         "period_generate_btn": "Générer {{count}} rapport(s)",
         "period_report_success": "{{count}} rapport(s) généré(s).",
-        "selected": "sélectionné(s)"
+        "selected": "sélectionné(s)",
+        "report_card_success": "{{count}} bulletin(s) généré(s)."
+    },
+    "reportCard": {
+        "title": "Bulletin",
+        "help": "Générez un bulletin DOCX consolidé par élève avec des sections personnalisables.",
+        "uses_period_picker": "Utilise la sélection de classe et d'élèves ci-dessus, ainsi que la période et l'étiquette si définies.",
+        "section_rubrics": "Notes de grille",
+        "section_standards": "Couverture des normes",
+        "section_learning_goals": "Objectifs d'apprentissage",
+        "section_cefr": "Aperçu CECRL",
+        "section_test_summary": "Résumé des tests",
+        "test_summary_hint": "La section résumé des tests n'est pas encore reliée à des tests spécifiques et apparaîtra vide.",
+        "generate_single_btn": "Exporter le bulletin",
+        "generate_batch_btn": "Exporter {{count}} bulletin(s)"
     },
     "speaking": {
         "page_title": "Session d'expression orale",
