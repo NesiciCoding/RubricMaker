@@ -22,6 +22,7 @@ import {
     Languages,
     ClipboardCheck,
     Radio,
+    TrendingUp,
 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useTranslation } from 'react-i18next';
@@ -105,6 +106,13 @@ const ROUTE_TREE: RouteNode[] = [
         ],
     },
     {
+        path: '/marketplace',
+        label: 'Rubric Marketplace',
+        description:
+            'Browse, publish, and clone rubrics shared by colleagues at your school. Requires cloud sync and a school.',
+        color: '#3b82f6',
+    },
+    {
         path: '/tests',
         label: 'Tests',
         description: 'Browse, create, and manage tests and quizzes for assignment to students.',
@@ -186,6 +194,13 @@ const ROUTE_TREE: RouteNode[] = [
                         path: '/students/:id/cefr-overview',
                         label: 'CEFR Overview (Student)',
                         description: 'Per-student proficiency dashboard across all CEFR skills.',
+                        color: '#10b981',
+                    },
+                    {
+                        path: '/students/:id/learning-path',
+                        label: 'Learning Path',
+                        description:
+                            'Rule-based rubric recommendations for CEFR skills where the student trails the class average, plus intervention flags for consecutive low scores.',
                         color: '#10b981',
                     },
                 ],
@@ -673,6 +688,16 @@ function RubricsTab() {
                         'Share code: a compact base64 code you can send to a colleague who can import it in one click.',
                     ]}
                 />
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    Marketplace
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    The <strong>Marketplace</strong> page lets you publish a rubric for colleagues at your school to
+                    browse and clone, and upvote the ones you find useful. It requires cloud sync to be configured and
+                    your account to belong to a school — without both, the page shows a short explanation instead of the
+                    listings. Cloning copies a listing into your own rubrics without affecting the original.
+                </p>
             </FeatureSection>
 
             <FeatureSection icon={ClipboardCheck} title="Tests & quizzes" color="#3b82f6">
@@ -846,10 +871,20 @@ function GradingTab() {
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     Importing offline submissions
                 </h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     If a student submits a test as a code instead of online (e.g. when offline), click{' '}
                     <strong>Import submission code</strong> on the Tests list, paste the code, and the submission is
                     created or updated automatically — ready for grading and results.
+                </p>
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    Test summary export
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
+                    Open <strong>Results</strong> on a test to find the <strong>Export summary</strong> panel. Choose a
+                    single student or the whole class, then export a PDF or Word summary with per-question accuracy and
+                    a strong/developing/weak breakdown by linked standard or CEFR descriptor — useful for spotting which
+                    topics a student or the class as a whole needs to revisit.
                 </p>
             </FeatureSection>
         </div>
@@ -875,6 +910,20 @@ function CefrTab() {
                     CEFR levels are computed from rubric scores when CEFR descriptors are linked to criteria. They are
                     also updated by speaking sessions and self-assessments.
                 </InfoBox>
+            </FeatureSection>
+
+            <FeatureSection icon={TrendingUp} title="Learning Paths & Interventions" color="#10b981">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    Open a student's profile and click "Learning Path" to see rule-based, offline suggestions — no AI is
+                    involved, only deterministic comparisons against class averages and score history.
+                </p>
+                <FeatureList
+                    items={[
+                        'Rubric recommendations — for each CEFR skill/level where the student scores well below the class average, untried rubrics tagged with that skill and level are suggested.',
+                        'Intervention flags — three or more consecutive low scores on the same rubric criterion, or on the same CEFR skill, raise a flag so it is easy to spot students who need extra support.',
+                        'Everything is computed on the fly from existing grades; nothing new is stored.',
+                    ]}
+                />
             </FeatureSection>
 
             <FeatureSection icon={Mic} title="Speaking Sessions" color="#f59e0b">
@@ -1045,12 +1094,28 @@ function AnalyticsTab() {
                         'DOCX — raw export or mail-merge template with field substitution ({{student_name}}, {{score}}, etc.).',
                         "CSV — raw grade data for Excel or your school's gradebook.",
                         'Period report — aggregated CEFR progress report for a class over a date range.',
+                        'Report cards — a single consolidated DOCX per student, combining rubric grades, standards coverage, learning goals, and CEFR overview into one document.',
                     ]}
                 />
                 <InfoBox color="#10b981">
                     Mail-merge DOCX templates support custom fields. Upload a .docx file with placeholder fields and the
                     app will substitute them with student data.
                 </InfoBox>
+            </FeatureSection>
+
+            <FeatureSection icon={ClipboardCheck} title="Report cards" color="#0ea5e9">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    On the <strong>Export</strong> page, below Period Report, use the Report Card panel to generate a
+                    consolidated DOCX per student. It reuses the same class and student picker, date range, and period
+                    label as the Period Report above.
+                </p>
+                <FeatureList
+                    items={[
+                        'Toggle which sections appear: rubric grades, standards coverage, learning goals, CEFR overview, and test summary.',
+                        'Export a single student’s report card, or batch-export one DOCX per selected student.',
+                        'Test summary combines every test the student took within the selected date range, showing per-skill strong/weak points.',
+                    ]}
+                />
             </FeatureSection>
 
             <FeatureSection icon={Languages} title="Vocabulary Profile dashboard" color="#f59e0b">

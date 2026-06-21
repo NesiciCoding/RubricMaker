@@ -1,24 +1,67 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit2, Trash2, Copy, ClipboardCheck, Send, BarChart3, Upload, Radio } from 'lucide-react';
+import { Plus, Edit2, Trash2, Copy, ClipboardCheck, Send, BarChart3, Upload, Radio, FileDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
+import { useToast } from '../hooks/useToast';
+import { logAuditEvent } from '../services/database/AuditLogger';
 import { nanoid } from '../utils/nanoid';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
 import TestAssignmentModal from '../components/Tests/TestAssignmentModal';
 import TestSubmissionImportModal from '../components/Tests/TestSubmissionImportModal';
 import ClassAverageAdjuster from '../components/Tests/ClassAverageAdjuster';
+import type { Test } from '../types';
 
 export default function TestListPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { tests, addTest, deleteTest, studentTests, saveStudentTest, students } = useApp();
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
+    const { showToast } = useToast();
     const [assigningTestId, setAssigningTestId] = useState<string | null>(null);
     const [importingTestId, setImportingTestId] = useState<string | null>(null);
     const [resultsTestId, setResultsTestId] = useState<string | null>(null);
+    const [exportScope, setExportScope] = useState<'single' | 'batch'>('single');
+    const [exportStudentId, setExportStudentId] = useState<string>('');
+    const [exporting, setExporting] = useState(false);
+
+    async function handleExportTestSummary(test: Test, format: 'pdf' | 'docx') {
+        const relevantStudentTests = studentTests.filter((st) => st.testId === test.id);
+        if (relevantStudentTests.length === 0) return;
+        setExporting(true);
+        try {
+            if (exportScope === 'single') {
+                const student = students.find((s) => s.id === exportStudentId);
+                if (!student) return;
+                if (format === 'pdf') {
+                    const { exportTestSummaryPdf } = await import('../utils/pdfExport');
+                    await exportTestSummaryPdf(exportStudentId, studentTests, test, student);
+                } else {
+                    const { exportTestSummaryDocx } = await import('../utils/docxExport');
+                    await exportTestSummaryDocx(exportStudentId, studentTests, test, student);
+                }
+                logAuditEvent('export', `export_test_summary_${format}`, 'test', test.id, { count: 1 });
+            } else {
+                const entries = relevantStudentTests
+                    .map((st) => ({ studentId: st.studentId, student: students.find((s) => s.id === st.studentId) }))
+                    .filter((e): e is { studentId: string; student: (typeof students)[number] } => !!e.student);
+                if (format === 'pdf') {
+                    const { exportBatchTestSummaryPdf } = await import('../utils/pdfExport');
+                    await exportBatchTestSummaryPdf(entries, studentTests, test);
+                } else {
+                    const { exportBatchTestSummaryDocx } = await import('../utils/docxExport');
+                    await exportBatchTestSummaryDocx(entries, studentTests, test);
+                }
+                logAuditEvent('export', `export_test_summary_${format}`, 'test', test.id, { count: entries.length });
+            }
+        } catch {
+            showToast(t('toast.export_error'), 'error');
+        } finally {
+            setExporting(false);
+        }
+    }
 
     function handleDuplicate(testId: string) {
         const test = tests.find((tst) => tst.id === testId);
@@ -223,6 +266,74 @@ export default function TestListPage() {
                                                 students={students}
                                                 onSaveStudentTest={saveStudentTest}
                                             />
+
+                                            <div
+                                                style={{
+                                                    marginTop: 6,
+                                                    paddingTop: 14,
+                                                    borderTop: '1px solid var(--border)',
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    gap: 8,
+                                                }}
+                                            >
+                                                <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>
+                                                    {t('tests.export.section_title')}
+                                                </div>
+                                                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                                    <select
+                                                        value={exportScope}
+                                                        onChange={(e) =>
+                                                            setExportScope(e.target.value as 'single' | 'batch')
+                                                        }
+                                                        style={{ width: 'auto' }}
+                                                    >
+                                                        <option value="single">{t('tests.export.scope_single')}</option>
+                                                        <option value="batch">{t('tests.export.scope_batch')}</option>
+                                                    </select>
+                                                    {exportScope === 'single' && (
+                                                        <select
+                                                            value={exportStudentId}
+                                                            onChange={(e) => setExportStudentId(e.target.value)}
+                                                            style={{ width: 'auto' }}
+                                                        >
+                                                            <option value="">
+                                                                {t('tests.export.select_student_placeholder')}
+                                                            </option>
+                                                            {studentTests
+                                                                .filter((st) => st.testId === test.id)
+                                                                .map((st) => {
+                                                                    const stStudent = students.find(
+                                                                        (s) => s.id === st.studentId
+                                                                    );
+                                                                    return (
+                                                                        <option key={st.id} value={st.studentId}>
+                                                                            {stStudent?.name ?? st.studentId}
+                                                                        </option>
+                                                                    );
+                                                                })}
+                                                        </select>
+                                                    )}
+                                                    <button
+                                                        className="btn btn-secondary btn-sm"
+                                                        disabled={
+                                                            exporting || (exportScope === 'single' && !exportStudentId)
+                                                        }
+                                                        onClick={() => handleExportTestSummary(test, 'pdf')}
+                                                    >
+                                                        <FileDown size={14} /> {t('tests.export.export_pdf')}
+                                                    </button>
+                                                    <button
+                                                        className="btn btn-secondary btn-sm"
+                                                        disabled={
+                                                            exporting || (exportScope === 'single' && !exportStudentId)
+                                                        }
+                                                        onClick={() => handleExportTestSummary(test, 'docx')}
+                                                    >
+                                                        <FileDown size={14} /> {t('tests.export.export_docx')}
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
                                     )}
                                 </div>

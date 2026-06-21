@@ -303,7 +303,8 @@
         "cefr_overview": "Resumen MCER",
         "vocabulary": "Vocabulario",
         "docs": "Documentación",
-        "activity_dashboard": "Panel de actividades"
+        "activity_dashboard": "Panel de actividades",
+        "marketplace": "Mercado"
     },
     "dashboard": {
         "title": "Panel",
@@ -494,6 +495,19 @@
             "import_success": "¡Entrega importada correctamente!",
             "import_error_invalid": "Código de entrega no válido. Asegúrate de haber copiado el código completo del estudiante.",
             "import_error_wrong_test": "Este código de entrega corresponde a otra prueba."
+        },
+        "export": {
+            "section_title": "Exportar resumen",
+            "scope_label": "Alcance",
+            "scope_single": "Un estudiante",
+            "scope_batch": "Toda la clase",
+            "student_label": "Estudiante",
+            "select_student_placeholder": "Selecciona un estudiante…",
+            "export_pdf": "Exportar PDF",
+            "export_docx": "Exportar Word",
+            "no_submissions": "Todavía no hay entregas para esta prueba.",
+            "summary_title": "Resumen de puntos fuertes/débiles",
+            "summary_description": "Precisión por pregunta y un desglose de puntos fuertes/débiles por estándar o descriptor CEFR vinculado, para un estudiante o toda la clase."
         },
         "taking": {
             "invalid_link_title": "Enlace no válido o caducado",
@@ -1364,7 +1378,20 @@
         "period_no_students": "No hay estudiantes en esta clase.",
         "period_generate_btn": "Generar {{count}} informe(s)",
         "period_report_success": "Generados {{count}} informe(s).",
-        "selected": "seleccionados"
+        "selected": "seleccionados",
+        "report_card_success": "Generados {{count}} boletín(es)."
+    },
+    "reportCard": {
+        "title": "Boletín",
+        "help": "Genere un boletín DOCX consolidado por estudiante con secciones personalizables.",
+        "uses_period_picker": "Utiliza la selección de clase y estudiantes anterior, y el rango de fechas y la etiqueta del período si están definidos.",
+        "section_rubrics": "Calificaciones de rúbrica",
+        "section_standards": "Cobertura de estándares",
+        "section_learning_goals": "Objetivos de aprendizaje",
+        "section_cefr": "Resumen MCER",
+        "section_test_summary": "Resumen de pruebas",
+        "generate_single_btn": "Exportar boletín",
+        "generate_batch_btn": "Exportar {{count}} boletín(es)"
     },
     "speaking": {
         "page_title": "Sesión de Expresión Oral",
@@ -1466,6 +1493,25 @@
         "cell_tooltip": "{{name}} — {{skill}} {{level}}: {{state}}",
         "open_student_detail": "Abrir detalle CEFR de {{name}}",
         "legend_target_level": "Nivel objetivo"
+    },
+    "learningPath": {
+        "page_title": "Ruta de aprendizaje",
+        "nav_label": "Ruta de aprendizaje",
+        "view_button": "Ver ruta de aprendizaje",
+        "back_to_profile": "Volver al perfil",
+        "student_not_found": "Estudiante no encontrado.",
+        "recommendations_title": "Recomendaciones de rúbricas",
+        "recommendations_subtitle": "Rúbricas no probadas para las competencias MCER en las que este estudiante va por detrás de la media de la clase. Basado en reglas, sin IA.",
+        "recommendations_empty": "No hay recomendaciones por ahora — este estudiante no va por detrás de la media en ninguna competencia evaluada.",
+        "gap_summary": "{{studentScore}}% frente a media de clase {{cohortAverage}}%",
+        "no_suggested_rubrics": "Todavía no hay rúbricas no probadas vinculadas a esta competencia y nivel.",
+        "interventions_title": "Señales de intervención",
+        "interventions_subtitle": "Tres o más puntuaciones bajas consecutivas en el mismo criterio o competencia MCER.",
+        "interventions_empty": "Sin señales de intervención — no se detectaron rachas de puntuaciones bajas consecutivas.",
+        "flag_kind_criterion": "Criterio",
+        "flag_kind_cefr_skill": "Competencia MCER",
+        "flag_streak": "{{count}} puntuaciones bajas consecutivas",
+        "flag_scores": "Puntuaciones: {{scores}}%"
     },
     "analysis": {
         "detection_disclaimer": "La detección de vocabulario y gramática se basa en reglas y PLN (sin IA) y es aproximada. Puede pasar por alto estructuras, marcar coincidencias falsas y no detecta palabras mal escritas — revisa siempre los resultados antes de confiar en ellos.",
@@ -1785,7 +1831,9 @@
         "done": "Hecho",
         "cancel": "Cancelar",
         "import_btn_one": "Importar {{count}} alumno",
-        "import_btn_other": "Importar {{count}} alumnos"
+        "import_btn_other": "Importar {{count}} alumnos",
+        "detected_format_clever": "Detectado: formato Clever",
+        "detected_format_oneroster": "Detectado: formato OneRoster"
     },
     "a11y": {
         "skip_to_content": "Saltar al contenido principal"
@@ -1797,5 +1845,25 @@
         "lww_body": "Cuando el mismo registro se edita en dos dispositivos, gana el cambio más reciente (last-write-wins). Los cambios que hagas sin conexión están protegidos y nunca se sobrescriben con datos más antiguos de la nube hasta que se hayan sincronizado.",
         "proctoring_title": "Alertas de supervisión",
         "proctoring_body": "Las alertas registran cuando un estudiante abandonó la pestaña del examen, perdió el foco o pegó contenido. Considéralas señales para revisar, no pruebas de copia — usa tu criterio junto con las respuestas."
+    },
+    "marketplace": {
+        "title": "Mercado de rúbricas",
+        "disabled_title": "Mercado no disponible",
+        "disabled_body": "Conecta Supabase y únete a un centro educativo para usar el mercado.",
+        "intro": "Explora rúbricas compartidas por colegas de tu centro, publica las tuyas y vota por las que te resulten útiles.",
+        "publish_button": "Publicar una rúbrica",
+        "publish_title": "Publicar en el mercado",
+        "publish_select_rubric": "Rúbrica",
+        "publish_select_placeholder": "Selecciona una rúbrica…",
+        "publish_attribution_label": "Atribución (opcional)",
+        "publish_attribution_placeholder": "p. ej. Compartido por Jane Doe — CC-BY-SA",
+        "publish_confirm": "Publicar",
+        "shared_by_prefix": "Compartido por",
+        "loading": "Cargando anuncios…",
+        "empty_state": "Aún no se han compartido rúbricas en tu centro.",
+        "upvote_title": "Votar",
+        "clone_title": "Clonar en mis rúbricas",
+        "clone_button": "Clonar",
+        "clone_done": "Clonado"
     }
 }

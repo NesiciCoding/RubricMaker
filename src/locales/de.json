@@ -303,7 +303,8 @@
         "cefr_overview": "GER-Übersicht",
         "vocabulary": "Wortschatz",
         "docs": "Dokumentation",
-        "activity_dashboard": "Aktivitätsdashboard"
+        "activity_dashboard": "Aktivitätsdashboard",
+        "marketplace": "Marktplatz"
     },
     "dashboard": {
         "title": "Dashboard",
@@ -494,6 +495,19 @@
             "import_success": "Abgabe erfolgreich importiert!",
             "import_error_invalid": "Ungültiger Abgabecode. Stellen Sie sicher, dass Sie den vollständigen Code kopiert haben.",
             "import_error_wrong_test": "Dieser Abgabecode gehört zu einem anderen Test."
+        },
+        "export": {
+            "section_title": "Zusammenfassung exportieren",
+            "scope_label": "Umfang",
+            "scope_single": "Einzelne Schülerin/Schüler",
+            "scope_batch": "Gesamte Klasse",
+            "student_label": "Schülerin/Schüler",
+            "select_student_placeholder": "Schülerin/Schüler auswählen…",
+            "export_pdf": "PDF exportieren",
+            "export_docx": "Word exportieren",
+            "no_submissions": "Noch keine Abgaben für diesen Test.",
+            "summary_title": "Stärken/Schwächen-Zusammenfassung",
+            "summary_description": "Genauigkeit je Frage und eine Stärken/Schwächen-Aufschlüsselung nach verknüpftem Standard oder CEFR-Deskriptor, für eine Person oder die gesamte Klasse."
         },
         "taking": {
             "invalid_link_title": "Ungültiger oder abgelaufener Link",
@@ -1364,7 +1378,20 @@
         "period_no_students": "Keine Schüler in dieser Klasse.",
         "period_generate_btn": "{{count}} Bericht(e) erstellen",
         "period_report_success": "{{count}} Bericht(e) erstellt.",
-        "selected": "ausgewählt"
+        "selected": "ausgewählt",
+        "report_card_success": "{{count}} Zeugnis(se) erstellt."
+    },
+    "reportCard": {
+        "title": "Zeugnis",
+        "help": "Erstellen Sie ein konsolidiertes DOCX-Zeugnis pro Schüler mit anpassbaren Abschnitten.",
+        "uses_period_picker": "Verwendet die obige Klassen- und Schülerauswahl sowie den Zeitraum und das Label, falls festgelegt.",
+        "section_rubrics": "Rubriknoten",
+        "section_standards": "Standardabdeckung",
+        "section_learning_goals": "Lernziele",
+        "section_cefr": "GER-Übersicht",
+        "section_test_summary": "Testzusammenfassung",
+        "generate_single_btn": "Zeugnis exportieren",
+        "generate_batch_btn": "{{count}} Zeugnis(se) exportieren"
     },
     "speaking": {
         "page_title": "Sprechsitzung",
@@ -1466,6 +1493,25 @@
         "cell_tooltip": "{{name}} — {{skill}} {{level}}: {{state}}",
         "open_student_detail": "CEFR-Detail von {{name}} öffnen",
         "legend_target_level": "Zielniveau"
+    },
+    "learningPath": {
+        "page_title": "Lernpfad",
+        "nav_label": "Lernpfad",
+        "view_button": "Lernpfad anzeigen",
+        "back_to_profile": "Zurück zum Profil",
+        "student_not_found": "Schüler nicht gefunden.",
+        "recommendations_title": "Rubrik-Empfehlungen",
+        "recommendations_subtitle": "Noch nicht versuchte Rubriken für GER-Fähigkeiten, bei denen dieser Schüler hinter dem Klassendurchschnitt zurückbleibt. Regelbasiert, keine KI.",
+        "recommendations_empty": "Derzeit keine Empfehlungen — dieser Schüler liegt bei keiner bewerteten Fähigkeit hinter dem Klassendurchschnitt.",
+        "gap_summary": "{{studentScore}}% gegenüber Klassendurchschnitt {{cohortAverage}}%",
+        "no_suggested_rubrics": "Noch keine nicht versuchten Rubriken für diese Fähigkeit und dieses Niveau verknüpft.",
+        "interventions_title": "Interventionshinweise",
+        "interventions_subtitle": "Drei oder mehr aufeinanderfolgende niedrige Bewertungen beim gleichen Kriterium oder der gleichen GER-Fähigkeit.",
+        "interventions_empty": "Keine Interventionshinweise — keine Serien aufeinanderfolgender niedriger Bewertungen festgestellt.",
+        "flag_kind_criterion": "Kriterium",
+        "flag_kind_cefr_skill": "GER-Fähigkeit",
+        "flag_streak": "{{count}} aufeinanderfolgende niedrige Bewertungen",
+        "flag_scores": "Bewertungen: {{scores}}%"
     },
     "analysis": {
         "detection_disclaimer": "Die Erkennung von Wortschatz und Grammatik basiert auf Regeln und NLP (keine KI) und ist näherungsweise. Sie kann Strukturen übersehen, falsche Treffer melden und prüft keine falsch geschriebenen Wörter — überprüfen Sie die Ergebnisse stets, bevor Sie sich darauf verlassen.",
@@ -1785,7 +1831,9 @@
         "done": "Fertig",
         "cancel": "Abbrechen",
         "import_btn_one": "{{count}} Schüler importieren",
-        "import_btn_other": "{{count}} Schüler importieren"
+        "import_btn_other": "{{count}} Schüler importieren",
+        "detected_format_clever": "Erkannt: Clever-Format",
+        "detected_format_oneroster": "Erkannt: OneRoster-Format"
     },
     "a11y": {
         "skip_to_content": "Zum Hauptinhalt springen"
@@ -1797,5 +1845,25 @@
         "lww_body": "Wenn derselbe Datensatz auf zwei Geräten bearbeitet wird, gewinnt die neueste Änderung (Last-Write-Wins). Offline vorgenommene Änderungen sind geschützt und werden niemals von älteren Cloud-Daten überschrieben, bis sie synchronisiert wurden.",
         "proctoring_title": "Aufsichtsmeldungen",
         "proctoring_body": "Meldungen erfassen, wenn ein Lernender den Test-Tab verlassen, den Fokus verloren oder Inhalte eingefügt hat. Behandeln Sie sie als Hinweise zur Überprüfung, nicht als Beweis für Betrug — nutzen Sie Ihr Urteilsvermögen zusammen mit den Antworten."
+    },
+    "marketplace": {
+        "title": "Rubrik-Marktplatz",
+        "disabled_title": "Marktplatz nicht verfügbar",
+        "disabled_body": "Verbinde Supabase und tritt einer Schule bei, um den Marktplatz zu nutzen.",
+        "intro": "Durchsuche Rubriken, die Kollegen an deiner Schule geteilt haben, veröffentliche eigene und stimme für die, die du nützlich findest.",
+        "publish_button": "Rubrik veröffentlichen",
+        "publish_title": "Auf dem Marktplatz veröffentlichen",
+        "publish_select_rubric": "Rubrik",
+        "publish_select_placeholder": "Rubrik auswählen…",
+        "publish_attribution_label": "Quellenangabe (optional)",
+        "publish_attribution_placeholder": "z. B. Geteilt von Jane Doe — CC-BY-SA",
+        "publish_confirm": "Veröffentlichen",
+        "shared_by_prefix": "Geteilt von",
+        "loading": "Angebote werden geladen…",
+        "empty_state": "An deiner Schule wurden noch keine Rubriken geteilt.",
+        "upvote_title": "Stimme",
+        "clone_title": "In meine Rubriken klonen",
+        "clone_button": "Klonen",
+        "clone_done": "Geklont"
     }
 }

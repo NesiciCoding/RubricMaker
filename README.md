@@ -14,7 +14,9 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 - **Grammar linker**: Tag criteria with English grammar standards grouped by topic (e.g. Past Simple → regular/irregular verbs), each with a CEFR level (levels follow the CEFR-J Grammar Profile). Linked grammar is auto-checked in scanned essays during grading — a per-criterion pass/fail breakdown that can be applied as a comment (rule/NLP-based detection, no AI).
 - **Rubric versioning**: Automatic snapshots on save; restore any previous version.
 - **Tests & quizzes**: Build multiple-choice, multiple-response (select all that apply), true/false, short-answer, open, fill-the-gap (with optional dropdown), matching, ordering, categorize, and hot text tests with a duration, optional Safe Exam Browser requirement, and grade scale. Link standards and CEFR descriptors per question, then assign tests to a class — each student gets a unique share link. Every question type has an in-context help button explaining how to author and answer it.
+- **Test summary export**: From a test's Results panel, export a PDF or Word summary for one student or the whole class with per-question accuracy and a strong/developing/weak breakdown by linked standard or CEFR descriptor.
 - **Live monitoring**: While a test or essay is in progress (cloud sync enabled), watch a live presence/progress view per student — response grid for tests, live word count and draft preview for essays, plus advisory proctoring flags (tab switches, copy/paste, battery, Safe Exam Browser status).
+- **Rubric Marketplace**: Publish a rubric for colleagues at your school to browse, clone, and upvote (requires cloud sync and a school).
 
 ### 2. Grading Interface
 - **Student management**: Manage students and organise them into classes, with Dutch VO track (VMBO/HAVO/VWO) support.
@@ -34,6 +36,7 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 - **CEFR overview**: Per-student and whole-class proficiency dashboards showing progress across Reading, Writing, Speaking, and Listening.
 - **Student self-assessment**: Students rate themselves against Can-Do descriptors; reflection text is stored alongside teacher scores.
 - **Cambridge English exam mapping**: Optional setting shows the Cambridge English Qualification (A2 Key, B1 Preliminary, B2 First, C1 Advanced, C2 Proficiency) alongside CEFR level badges; vocabulary items can be enriched with CEFR level and definition via an optional Cambridge Dictionary API key.
+- **Learning paths & interventions**: Rule-based (no AI) rubric recommendations for CEFR skills where a student trails the class average, plus flags for three or more consecutive low scores on the same criterion or CEFR skill — available from each student's profile.
 
 ### 4. Essay Writing
 - **Dedicated workspace**: A standalone "Essays" section (parallel to Tests) lists every essay assignment, with a builder for the prompt, rubric link, word/time limits, assigning to a class, copying per-student share links, importing submission codes, and a live monitor link.
@@ -55,6 +58,7 @@ A comprehensive, offline-first rubric creation and grading tool built with React
   - **Word (.docx)**: Raw export or mail-merge templates with field substitution.
   - **CSV**: Raw data for Excel or other gradebooks.
   - **Period report**: Aggregated CEFR progress report for a class over a date range.
+  - **Report cards**: A single consolidated DOCX per student combining rubric grades, standards coverage, learning goals, and CEFR overview, with toggleable sections; export one student or batch-export a whole class.
 
 ### 6. Student Portal
 - **Shareable links**: Each student gets a unique portal link; no login required.
@@ -137,6 +141,7 @@ npm run db:reset     # Reset and re-apply all migrations
 | `/essays/:teacherKey/monitor` | Live essay monitor (presence, live word counts, draft preview) |
 | `/speaking/:rubricId/:studentId` | Speaking session |
 | `/grade-comparative/:classId/:rubricId` | Comparative grading |
+| `/marketplace` | School rubric marketplace (browse, publish, clone, upvote) |
 | `/tests` | Test list |
 | `/tests/new` | New test |
 | `/tests/:id` | Test builder |
@@ -145,6 +150,7 @@ npm run db:reset     # Reset and re-apply all migrations
 | `/students` | Students list |
 | `/students/:id` | Student profile |
 | `/students/:id/cefr-overview` | Per-student CEFR overview |
+| `/students/:id/learning-path` | Per-student learning path — rule-based rubric recommendations and intervention flags |
 | `/cefr-overview` | Whole-class CEFR overview |
 | `/vocabulary` | Vocabulary Profile dashboard (CEFR vocabulary distribution per class/student, CSV export) |
 | `/portal/:studentId` | Student portal (public) |

@@ -303,7 +303,8 @@
         "cefr_overview": "CEFR Overzicht",
         "vocabulary": "Woordenschat",
         "docs": "Documentatie",
-        "activity_dashboard": "Activiteitenoverzicht"
+        "activity_dashboard": "Activiteitenoverzicht",
+        "marketplace": "Marktplaats"
     },
     "dashboard": {
         "title": "Dashboard",
@@ -494,6 +495,19 @@
             "import_success": "Inzending succesvol geïmporteerd!",
             "import_error_invalid": "Ongeldige inzendingscode. Controleer of je de volledige code van de leerling hebt gekopieerd.",
             "import_error_wrong_test": "Deze inzendingscode is voor een andere toets."
+        },
+        "export": {
+            "section_title": "Samenvatting exporteren",
+            "scope_label": "Bereik",
+            "scope_single": "Eén leerling",
+            "scope_batch": "Hele klas",
+            "student_label": "Leerling",
+            "select_student_placeholder": "Selecteer een leerling…",
+            "export_pdf": "Exporteer PDF",
+            "export_docx": "Exporteer Word",
+            "no_submissions": "Nog geen inzendingen voor deze toets.",
+            "summary_title": "Sterke/zwakke punten samenvatting",
+            "summary_description": "Nauwkeurigheid per vraag en een sterk/zwak overzicht per gekoppelde standaard of CEFR-descriptor, voor één leerling of de hele klas."
         },
         "taking": {
             "invalid_link_title": "Ongeldige of verlopen link",
@@ -1364,7 +1378,20 @@
         "period_no_students": "Geen leerlingen in deze klas.",
         "period_generate_btn": "{{count}} rapport(en) genereren",
         "period_report_success": "{{count}} rapport(en) gegenereerd.",
-        "selected": "geselecteerd"
+        "selected": "geselecteerd",
+        "report_card_success": "{{count}} rapport(en) gegenereerd."
+    },
+    "reportCard": {
+        "title": "Rapport",
+        "help": "Genereer een geconsolideerd DOCX-rapport per leerling met aanpasbare secties.",
+        "uses_period_picker": "Gebruikt de klas- en leerlingselectie hierboven, en de periode en labelnaam indien ingesteld.",
+        "section_rubrics": "Rubriekcijfers",
+        "section_standards": "Standaarddekking",
+        "section_learning_goals": "Leerdoelen",
+        "section_cefr": "ERK-overzicht",
+        "section_test_summary": "Toetssamenvatting",
+        "generate_single_btn": "Rapport exporteren",
+        "generate_batch_btn": "{{count}} rapport(en) exporteren"
     },
     "speaking": {
         "page_title": "Spreekopdracht",
@@ -1466,6 +1493,25 @@
         "cell_tooltip": "{{name}} — {{skill}} {{level}}: {{state}}",
         "open_student_detail": "Open CEFR-detail van {{name}}",
         "legend_target_level": "Doelniveau"
+    },
+    "learningPath": {
+        "page_title": "Leerpad",
+        "nav_label": "Leerpad",
+        "view_button": "Bekijk leerpad",
+        "back_to_profile": "Terug naar profiel",
+        "student_not_found": "Leerling niet gevonden.",
+        "recommendations_title": "Rubric-aanbevelingen",
+        "recommendations_subtitle": "Nog niet geprobeerde rubrics voor ERK-vaardigheden waarop deze leerling achterblijft bij het klasgemiddelde. Op regels gebaseerd, geen AI.",
+        "recommendations_empty": "Geen aanbevelingen op dit moment — deze leerling blijft niet achter op een beoordeelde vaardigheid.",
+        "gap_summary": "{{studentScore}}% versus klasgemiddelde {{cohortAverage}}%",
+        "no_suggested_rubrics": "Nog geen niet-geprobeerde rubrics gekoppeld aan deze vaardigheid en dit niveau.",
+        "interventions_title": "Interventiesignalen",
+        "interventions_subtitle": "Drie of meer opeenvolgende lage scores op hetzelfde criterium of dezelfde ERK-vaardigheid.",
+        "interventions_empty": "Geen interventiesignalen — geen reeksen opeenvolgende lage scores gevonden.",
+        "flag_kind_criterion": "Criterium",
+        "flag_kind_cefr_skill": "ERK-vaardigheid",
+        "flag_streak": "{{count}} opeenvolgende lage scores",
+        "flag_scores": "Scores: {{scores}}%"
     },
     "analysis": {
         "detection_disclaimer": "Detectie van woordenschat en grammatica is gebaseerd op regels en NLP (geen AI) en bij benadering. Het kan structuren missen, onterecht matchen en controleert geen verkeerd gespelde woorden — controleer de resultaten altijd voordat je erop vertrouwt.",
@@ -1785,7 +1831,9 @@
         "done": "Klaar",
         "cancel": "Annuleren",
         "import_btn_one": "{{count}} leerling importeren",
-        "import_btn_other": "{{count}} leerlingen importeren"
+        "import_btn_other": "{{count}} leerlingen importeren",
+        "detected_format_clever": "Gedetecteerd: Clever-indeling",
+        "detected_format_oneroster": "Gedetecteerd: OneRoster-indeling"
     },
     "a11y": {
         "skip_to_content": "Naar hoofdinhoud springen"
@@ -1797,5 +1845,25 @@
         "lww_body": "Wanneer hetzelfde record op twee apparaten wordt bewerkt, wint de meest recente wijziging (last-write-wins). Wijzigingen die je offline maakt zijn beschermd en worden nooit overschreven door oudere clouddata totdat ze gesynchroniseerd zijn.",
         "proctoring_title": "Toezichtsmeldingen",
         "proctoring_body": "Meldingen registreren wanneer een leerling het tabblad verliet, de focus kwijtraakte of inhoud plakte. Beschouw ze als signalen om te bekijken, niet als bewijs van fraude — gebruik je eigen oordeel naast de antwoorden."
+    },
+    "marketplace": {
+        "title": "Rubric Marktplaats",
+        "disabled_title": "Marktplaats niet beschikbaar",
+        "disabled_body": "Verbind Supabase en sluit je aan bij een school om de marktplaats te gebruiken.",
+        "intro": "Bekijk rubrics die collega's op jouw school hebben gedeeld, publiceer je eigen rubrics en stem op de rubrics die je nuttig vindt.",
+        "publish_button": "Rubric publiceren",
+        "publish_title": "Publiceren naar marktplaats",
+        "publish_select_rubric": "Rubric",
+        "publish_select_placeholder": "Selecteer een rubric…",
+        "publish_attribution_label": "Toeschrijving (optioneel)",
+        "publish_attribution_placeholder": "bijv. Gedeeld door Jane Doe — CC-BY-SA",
+        "publish_confirm": "Publiceren",
+        "shared_by_prefix": "Gedeeld door",
+        "loading": "Aanbod laden…",
+        "empty_state": "Er zijn nog geen rubrics gedeeld op jouw school.",
+        "upvote_title": "Stem",
+        "clone_title": "Klonen naar mijn rubrics",
+        "clone_button": "Klonen",
+        "clone_done": "Gekloond"
     }
 }

@@ -384,6 +384,12 @@ export default function StudentProfilePage() {
                                 </>
                             )}
                         </div>
+                        <button
+                            className="btn btn-ghost btn-sm no-print"
+                            onClick={() => navigate(`/students/${student.id}/learning-path`)}
+                        >
+                            <TrendingUp size={14} /> {t('learningPath.nav_label')}
+                        </button>
                         <button className="btn btn-ghost btn-sm no-print" onClick={() => window.print()}>
                             <Printer size={14} /> {t('common.print')}
                         </button>
@@ -925,7 +931,23 @@ export default function StudentProfilePage() {
                                             );
                                         })}
                                     </div>
-                                    <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end' }}>
+                                    <div
+                                        style={{
+                                            marginTop: 12,
+                                            display: 'flex',
+                                            justifyContent: 'flex-end',
+                                            gap: 8,
+                                            flexWrap: 'wrap',
+                                        }}
+                                    >
+                                        <button
+                                            className="btn btn-secondary btn-sm"
+                                            onClick={() => navigate(`/students/${student.id}/learning-path`)}
+                                            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                                        >
+                                            <TrendingUp size={14} />
+                                            {t('learningPath.view_button')}
+                                        </button>
                                         <button
                                             className="btn btn-primary btn-sm"
                                             onClick={() => navigate(`/students/${student.id}/cefr-overview`)}

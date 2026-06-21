@@ -1,5 +1,9 @@
 // ─── Core Domain Types for Rubric Maker ───────────────────────────────────────
 
+import type { PeriodReportEntry } from '../utils/periodReportExport';
+import type { LearningGoalAggregate } from '../utils/learningGoalsAggregator';
+import type { StandardSetGroup, CefrStudentOverview } from '../utils/cefrStudentAggregator';
+
 // ─── CEFR / ERK Types ─────────────────────────────────────────────────────────
 
 export type CefrLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
@@ -504,6 +508,21 @@ export interface SchoolMember {
     createdAt: string;
 }
 
+/** A rubric published to a school's marketplace. rubricSnapshot is frozen at publish time. */
+export interface MarketplaceListing {
+    id: string;
+    schoolId: string;
+    publishedBy: string;
+    rubricSnapshot: Rubric;
+    name: string;
+    subject?: string;
+    description?: string;
+    attribution?: string;
+    upvoteCount: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
 export interface AppSettings {
     defaultGradeScaleId: string;
     theme: 'light' | 'dark';
@@ -859,6 +878,37 @@ export interface StudentTest {
     updatedAt?: string;
 }
 
+export type TestStrengthBucket = 'strong' | 'developing' | 'weak';
+
+/** Accuracy breakdown for a single test question, aggregated across one or more StudentTest submissions */
+export interface TestQuestionBreakdown {
+    questionId: string;
+    /** Fraction of relevant answers that were fully correct, 0-100 */
+    accuracyPct: number;
+    bucket: TestStrengthBucket;
+    /** Number of StudentTest answers included in the accuracy calculation */
+    sampleSize: number;
+}
+
+/** Accuracy breakdown for a group of questions sharing a linked standard or CEFR descriptor */
+export interface TestSkillBreakdown {
+    /** Linked standard guid, CEFR descriptorId, or 'ungrouped' for questions with no link */
+    groupId: string;
+    /** Human-readable label — standard notation/description or CEFR descriptor text */
+    label: string;
+    questionIds: string[];
+    accuracyPct: number;
+    bucket: TestStrengthBucket;
+    sampleSize: number;
+}
+
+/** Strong/weak-point summary for a test, either for a single student or aggregated across the cohort */
+export interface TestStrongWeakSummary {
+    studentId: string | null;
+    questions: TestQuestionBreakdown[];
+    skills: TestSkillBreakdown[];
+}
+
 /** Configuration for a teacher-created test assignment, encoded into the student's share code */
 export interface TestAssignmentPayload {
     testId: string;
@@ -932,4 +982,91 @@ export interface CellData {
     submittedCount: number;
     totalStudents: number;
     isLinked: boolean;
+}
+
+// ─── Student Learning Paths (rule-based, no AI) ───────────────────────────────
+
+/** A single rule-based suggestion to address a below-cohort-average skill gap */
+export interface LearningPathRecommendation {
+    studentId: string;
+    skill: CefrSkill;
+    level: CefrLevel;
+    studentScore: number;
+    cohortAverage: number;
+    /** studentScore - cohortAverage, always negative for a recommendation to exist */
+    gap: number;
+    /** Rubric ids tagged with this skill/level that the student has not yet achieved */
+    suggestedRubricIds: string[];
+}
+
+/** A streak of N+ consecutive low scores on the same criterion or CEFR skill */
+export interface InterventionFlag {
+    studentId: string;
+    /** 'criterion' when tracked per RubricCriterion, 'cefrSkill' when tracked per CefrSkill */
+    kind: 'criterion' | 'cefrSkill';
+    /** criterionId for 'criterion' kind, CefrSkill value for 'cefrSkill' kind */
+    targetId: string;
+    streakLength: number;
+    /** Most recent scores in the streak, oldest first */
+    scores: number[];
+    triggeredAt: string;
+}
+
+export interface LearningPathConfig {
+    /** Number of consecutive low scores required to trigger an intervention flag (default 3) */
+    consecutiveLowThreshold: number;
+    /** Score percentage at/below which an entry counts as "low" (default 60) */
+    lowScoreThreshold: number;
+    /** Minimum percentage-point gap below cohort average to trigger a recommendation (default 15) */
+    cohortGapThreshold: number;
+}
+
+// ─── Report cards ──────────────────────────────────────────────────────────────
+
+export interface ReportCardConfig {
+    includeRubrics: boolean;
+    includeStandards: boolean;
+    includeLearningGoals: boolean;
+    includeCefr: boolean;
+    includeTestSummary: boolean;
+}
+
+export interface ReportCardRubricsSection {
+    type: 'rubrics';
+    entries: PeriodReportEntry[];
+}
+
+export interface ReportCardStandardsSection {
+    type: 'standards';
+    standardSets: StandardSetGroup[];
+}
+
+export interface ReportCardLearningGoalsSection {
+    type: 'learningGoals';
+    goals: LearningGoalAggregate[];
+}
+
+export interface ReportCardCefrSection {
+    type: 'cefr';
+    overview: CefrStudentOverview;
+}
+
+export interface ReportCardTestSummarySection {
+    type: 'testSummary';
+    overview: TestStrongWeakSummary;
+}
+
+export type ReportCardSection =
+    | ReportCardRubricsSection
+    | ReportCardStandardsSection
+    | ReportCardLearningGoalsSection
+    | ReportCardCefrSection
+    | ReportCardTestSummarySection;
+
+export interface ReportCardData {
+    studentId: string;
+    studentName: string;
+    className: string;
+    periodLabel?: string;
+    sections: ReportCardSection[];
 }

@@ -11,6 +11,8 @@ const CSV_TRANSLATIONS: Record<string, string> = {
     'csv.sync_label': 'Sync class rosters (remove students not in this CSV)',
     'csv.done': 'Done',
     'csv.cancel': 'Cancel',
+    'csv.detected_format_clever': 'Detected: Clever format',
+    'csv.detected_format_oneroster': 'Detected: OneRoster format',
 };
 
 vi.mock('react-i18next', () => ({
@@ -296,5 +298,82 @@ describe('CsvImportModal', () => {
         expect(mockDeleteStudent).toHaveBeenCalledWith('student-2');
         expect(mockDeleteStudent).not.toHaveBeenCalledWith('student-1');
         expect(screen.getByText(/1 removed/i)).toBeInTheDocument();
+    });
+
+    it('detects and auto-maps Clever CSV format (Email, First_Name, Last_Name, Last_Known_School_Name)', () => {
+        parseImpl = (_file, opts) =>
+            opts.complete({
+                data: [
+                    {
+                        Email: 'alice@school.com',
+                        First_Name: 'Alice',
+                        Last_Name: 'Anderson',
+                        Last_Known_School_Name: 'Central High',
+                    },
+                ],
+            });
+        render(<CsvImportModal {...baseProps} />);
+
+        expect(screen.getByText('Detected: Clever format')).toBeInTheDocument();
+        expect(screen.getByText('Data Preview (First 3 rows)')).toBeInTheDocument();
+        expect(screen.getByText('Alice Anderson')).toBeInTheDocument();
+        expect(screen.getByText('alice@school.com')).toBeInTheDocument();
+        expect(screen.getByText('Central High')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: /import 1 student/i }));
+        expect(mockAddStudent).toHaveBeenCalledWith({
+            name: 'Alice Anderson',
+            email: 'alice@school.com',
+            classId: 'class-central high',
+        });
+        expect(mockAddClass).toHaveBeenCalledWith({ name: 'Central High' });
+    });
+
+    it('detects and auto-maps OneRoster CSV format (givenName, familyName, email, className)', () => {
+        parseImpl = (_file, opts) =>
+            opts.complete({
+                data: [
+                    {
+                        givenName: 'Bob',
+                        familyName: 'Brown',
+                        email: 'bob@school.com',
+                        className: 'Period 1',
+                    },
+                ],
+            });
+        render(<CsvImportModal {...baseProps} />);
+
+        expect(screen.getByText('Detected: OneRoster format')).toBeInTheDocument();
+        expect(screen.getByText('Data Preview (First 3 rows)')).toBeInTheDocument();
+        expect(screen.getByText('Bob Brown')).toBeInTheDocument();
+        expect(screen.getByText('bob@school.com')).toBeInTheDocument();
+        expect(screen.getByText('Period 1')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: /import 1 student/i }));
+        expect(mockAddStudent).toHaveBeenCalledWith({
+            name: 'Bob Brown',
+            email: 'bob@school.com',
+            classId: 'class-period 1',
+        });
+        expect(mockAddClass).toHaveBeenCalledWith({ name: 'Period 1' });
+    });
+
+    it('generic format detection still works when specific formats do not match', () => {
+        parseImpl = (_file, opts) =>
+            opts.complete({
+                data: [
+                    {
+                        'Full Name': 'Charlie Chen',
+                        'Email Address': 'charlie@school.com',
+                        'Class Name': 'English 101',
+                    },
+                ],
+            });
+        render(<CsvImportModal {...baseProps} />);
+
+        expect(screen.queryByText('Detected:')).not.toBeInTheDocument();
+        expect(screen.getByText('Data Preview (First 3 rows)')).toBeInTheDocument();
+        expect(screen.getByText('Charlie Chen')).toBeInTheDocument();
+        expect(screen.getByText('charlie@school.com')).toBeInTheDocument();
     });
 });

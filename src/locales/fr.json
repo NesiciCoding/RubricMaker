@@ -303,7 +303,8 @@
         "cefr_overview": "Aperçu CECR",
         "vocabulary": "Vocabulaire",
         "docs": "Documentation",
-        "activity_dashboard": "Tableau des activités"
+        "activity_dashboard": "Tableau des activités",
+        "marketplace": "Place de marché"
     },
     "dashboard": {
         "title": "Tableau de bord",
@@ -494,6 +495,19 @@
             "import_success": "Soumission importée avec succès !",
             "import_error_invalid": "Code de soumission invalide. Vérifiez que vous avez copié le code complet envoyé par l'élève.",
             "import_error_wrong_test": "Ce code de soumission correspond à un autre test."
+        },
+        "export": {
+            "section_title": "Exporter le résumé",
+            "scope_label": "Portée",
+            "scope_single": "Un seul élève",
+            "scope_batch": "Toute la classe",
+            "student_label": "Élève",
+            "select_student_placeholder": "Sélectionner un élève…",
+            "export_pdf": "Exporter en PDF",
+            "export_docx": "Exporter en Word",
+            "no_submissions": "Aucune soumission pour ce test pour le moment.",
+            "summary_title": "Résumé des points forts/faibles",
+            "summary_description": "Précision par question et répartition des points forts/faibles par norme ou descripteur CECRL associé, pour un élève ou toute la classe."
         },
         "taking": {
             "invalid_link_title": "Lien invalide ou expiré",
@@ -1364,7 +1378,20 @@
         "period_no_students": "Aucun élève dans cette classe.",
         "period_generate_btn": "Générer {{count}} rapport(s)",
         "period_report_success": "{{count}} rapport(s) généré(s).",
-        "selected": "sélectionné(s)"
+        "selected": "sélectionné(s)",
+        "report_card_success": "{{count}} bulletin(s) généré(s)."
+    },
+    "reportCard": {
+        "title": "Bulletin",
+        "help": "Générez un bulletin DOCX consolidé par élève avec des sections personnalisables.",
+        "uses_period_picker": "Utilise la sélection de classe et d'élèves ci-dessus, ainsi que la période et l'étiquette si définies.",
+        "section_rubrics": "Notes de grille",
+        "section_standards": "Couverture des normes",
+        "section_learning_goals": "Objectifs d'apprentissage",
+        "section_cefr": "Aperçu CECRL",
+        "section_test_summary": "Résumé des tests",
+        "generate_single_btn": "Exporter le bulletin",
+        "generate_batch_btn": "Exporter {{count}} bulletin(s)"
     },
     "speaking": {
         "page_title": "Session d'expression orale",
@@ -1466,6 +1493,25 @@
         "cell_tooltip": "{{name}} — {{skill}} {{level}} : {{state}}",
         "open_student_detail": "Ouvrir le détail CECR de {{name}}",
         "legend_target_level": "Niveau cible"
+    },
+    "learningPath": {
+        "page_title": "Parcours d'apprentissage",
+        "nav_label": "Parcours d'apprentissage",
+        "view_button": "Voir le parcours d'apprentissage",
+        "back_to_profile": "Retour au profil",
+        "student_not_found": "Élève non trouvé.",
+        "recommendations_title": "Recommandations de grilles",
+        "recommendations_subtitle": "Grilles non essayées pour les compétences CECR où cet élève est en retard par rapport à la moyenne de la classe. Basé sur des règles, sans IA.",
+        "recommendations_empty": "Aucune recommandation pour le moment — cet élève n'est en retard sur aucune compétence évaluée.",
+        "gap_summary": "{{studentScore}}% contre moyenne de classe {{cohortAverage}}%",
+        "no_suggested_rubrics": "Aucune grille non essayée associée à cette compétence et ce niveau pour le moment.",
+        "interventions_title": "Signaux d'intervention",
+        "interventions_subtitle": "Trois scores faibles consécutifs ou plus sur le même critère ou la même compétence CECR.",
+        "interventions_empty": "Aucun signal d'intervention — aucune série de scores faibles consécutifs détectée.",
+        "flag_kind_criterion": "Critère",
+        "flag_kind_cefr_skill": "Compétence CECR",
+        "flag_streak": "{{count}} scores faibles consécutifs",
+        "flag_scores": "Scores : {{scores}}%"
     },
     "analysis": {
         "detection_disclaimer": "La détection du vocabulaire et de la grammaire repose sur des règles et le TAL (sans IA) et reste approximative. Elle peut manquer certaines structures, signaler de fausses correspondances et ne détecte pas les fautes d'orthographe — vérifiez toujours les résultats avant de vous y fier.",
@@ -1785,7 +1831,9 @@
         "done": "Terminer",
         "cancel": "Annuler",
         "import_btn_one": "Importer {{count}} élève",
-        "import_btn_other": "Importer {{count}} élèves"
+        "import_btn_other": "Importer {{count}} élèves",
+        "detected_format_clever": "Détecté: format Clever",
+        "detected_format_oneroster": "Détecté: format OneRoster"
     },
     "a11y": {
         "skip_to_content": "Aller au contenu principal"
@@ -1797,5 +1845,25 @@
         "lww_body": "Lorsqu'un même enregistrement est modifié sur deux appareils, la modification la plus récente l'emporte (last-write-wins). Les modifications faites hors ligne sont protégées et ne sont jamais écrasées par des données cloud plus anciennes tant qu'elles n'ont pas été synchronisées.",
         "proctoring_title": "Signalements de surveillance",
         "proctoring_body": "Les signalements enregistrent lorsqu'un élève a quitté l'onglet du test, perdu le focus ou collé du contenu. Considérez-les comme des signaux à examiner, non comme une preuve de triche — faites preuve de jugement avec les réponses."
+    },
+    "marketplace": {
+        "title": "Place de marché des rubriques",
+        "disabled_title": "Place de marché indisponible",
+        "disabled_body": "Connectez Supabase et rejoignez un établissement pour utiliser la place de marché.",
+        "intro": "Parcourez les rubriques partagées par vos collègues dans votre établissement, publiez les vôtres et votez pour celles que vous trouvez utiles.",
+        "publish_button": "Publier une rubrique",
+        "publish_title": "Publier sur la place de marché",
+        "publish_select_rubric": "Rubrique",
+        "publish_select_placeholder": "Sélectionnez une rubrique…",
+        "publish_attribution_label": "Attribution (facultatif)",
+        "publish_attribution_placeholder": "p. ex. Partagé par Jane Doe — CC-BY-SA",
+        "publish_confirm": "Publier",
+        "shared_by_prefix": "Partagé par",
+        "loading": "Chargement des annonces…",
+        "empty_state": "Aucune rubrique n'a encore été partagée dans votre établissement.",
+        "upvote_title": "Voter",
+        "clone_title": "Cloner dans mes rubriques",
+        "clone_button": "Cloner",
+        "clone_done": "Cloné"
     }
 }

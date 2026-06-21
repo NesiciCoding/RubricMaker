@@ -303,7 +303,8 @@
         "cefr_overview": "CEFR Overview",
         "vocabulary": "Vocabulary",
         "docs": "Docs",
-        "activity_dashboard": "Activity Dashboard"
+        "activity_dashboard": "Activity Dashboard",
+        "marketplace": "Marketplace"
     },
     "dashboard": {
         "title": "Dashboard",
@@ -494,6 +495,19 @@
             "import_success": "Submission imported successfully!",
             "import_error_invalid": "Invalid submission code. Make sure you copied the full code from the student.",
             "import_error_wrong_test": "This submission code is for a different test."
+        },
+        "export": {
+            "section_title": "Export summary",
+            "scope_label": "Scope",
+            "scope_single": "Single student",
+            "scope_batch": "Whole class",
+            "student_label": "Student",
+            "select_student_placeholder": "Select a student…",
+            "export_pdf": "Export PDF",
+            "export_docx": "Export Word",
+            "no_submissions": "No submissions yet for this test.",
+            "summary_title": "Strong/weak point summary",
+            "summary_description": "Per-question accuracy and a strong/weak breakdown by linked standard or CEFR descriptor, for one student or the whole class."
         },
         "taking": {
             "invalid_link_title": "Invalid or expired link",
@@ -1364,7 +1378,20 @@
         "period_no_students": "No students in this class.",
         "period_generate_btn": "Generate {{count}} report(s)",
         "period_report_success": "Generated {{count}} report(s).",
-        "selected": "selected"
+        "selected": "selected",
+        "report_card_success": "Generated {{count}} report card(s)."
+    },
+    "reportCard": {
+        "title": "Report Card",
+        "help": "Generate a consolidated DOCX report card per student with customizable sections.",
+        "uses_period_picker": "Uses the class and student selection above, and the date range and period label if set.",
+        "section_rubrics": "Rubric grades",
+        "section_standards": "Standards coverage",
+        "section_learning_goals": "Learning goals",
+        "section_cefr": "CEFR overview",
+        "section_test_summary": "Test summary",
+        "generate_single_btn": "Export report card",
+        "generate_batch_btn": "Export {{count}} report card(s)"
     },
     "speaking": {
         "page_title": "Speaking Session",
@@ -1466,6 +1493,25 @@
         "cell_tooltip": "{{name}} — {{skill}} {{level}}: {{state}}",
         "open_student_detail": "Open {{name}}'s CEFR detail",
         "legend_target_level": "Target level"
+    },
+    "learningPath": {
+        "page_title": "Learning Path",
+        "nav_label": "Learning Path",
+        "view_button": "View Learning Path",
+        "back_to_profile": "Back to Profile",
+        "student_not_found": "Student not found.",
+        "recommendations_title": "Rubric Recommendations",
+        "recommendations_subtitle": "Untried rubrics for CEFR skills where this student trails the class average. Rule-based, no AI involved.",
+        "recommendations_empty": "No recommendations right now — this student isn't trailing the class average on any assessed skill.",
+        "gap_summary": "{{studentScore}}% vs class average {{cohortAverage}}%",
+        "no_suggested_rubrics": "No untried rubrics tagged for this skill and level yet.",
+        "interventions_title": "Intervention Flags",
+        "interventions_subtitle": "Three or more consecutive low scores on the same criterion or CEFR skill.",
+        "interventions_empty": "No intervention flags — no streaks of consecutive low scores detected.",
+        "flag_kind_criterion": "Criterion",
+        "flag_kind_cefr_skill": "CEFR Skill",
+        "flag_streak": "{{count}} consecutive low scores",
+        "flag_scores": "Scores: {{scores}}%"
     },
     "analysis": {
         "detection_disclaimer": "Vocabulary and grammar detection is rule- and NLP-based (no AI) and approximate. It may miss some structures, flag false matches, and does not catch misspelled words — always review the results before relying on them.",
@@ -1785,7 +1831,9 @@
         "done": "Done",
         "cancel": "Cancel",
         "import_btn_one": "Import {{count}} Student",
-        "import_btn_other": "Import {{count}} Students"
+        "import_btn_other": "Import {{count}} Students",
+        "detected_format_clever": "Detected: Clever format",
+        "detected_format_oneroster": "Detected: OneRoster format"
     },
     "a11y": {
         "skip_to_content": "Skip to main content"
@@ -1797,5 +1845,25 @@
         "lww_body": "When the same record is edited on two devices, the most recent change wins (last-write-wins). Edits you make while offline are protected and are never overwritten by older cloud data until they have synced.",
         "proctoring_title": "Proctoring flags",
         "proctoring_body": "Flags record when a student left the test tab, lost focus, or pasted content. Treat them as signals to review, not proof of cheating — use your judgement alongside the responses."
+    },
+    "marketplace": {
+        "title": "Rubric Marketplace",
+        "disabled_title": "Marketplace unavailable",
+        "disabled_body": "Connect Supabase and join a school to use the marketplace.",
+        "intro": "Browse rubrics shared by colleagues at your school, publish your own, and upvote the ones you find useful.",
+        "publish_button": "Publish a rubric",
+        "publish_title": "Publish to marketplace",
+        "publish_select_rubric": "Rubric",
+        "publish_select_placeholder": "Select a rubric…",
+        "publish_attribution_label": "Attribution (optional)",
+        "publish_attribution_placeholder": "e.g. Shared by Jane Doe — CC-BY-SA",
+        "publish_confirm": "Publish",
+        "shared_by_prefix": "Shared by",
+        "loading": "Loading listings…",
+        "empty_state": "No rubrics have been shared at your school yet.",
+        "upvote_title": "Upvote",
+        "clone_title": "Clone into my rubrics",
+        "clone_button": "Clone",
+        "clone_done": "Cloned"
     }
 }

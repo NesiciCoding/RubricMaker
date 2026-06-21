@@ -23,6 +23,8 @@ import {
     Radio,
     ClipboardCheck,
     PenLine,
+    TrendingUp,
+    Store,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { loadSupabaseConfig } from '../services/database';
@@ -44,7 +46,7 @@ const TEACHER_FEATURES = [
     {
         icon: BarChart3,
         title: 'Analytics & Export',
-        desc: 'Grade distributions, per-criterion breakdowns, class-vs-class comparison with insights, activity dashboard, CEFR progress reports, PDF/Word/CSV export.',
+        desc: 'Grade distributions, per-criterion breakdowns, class-vs-class comparison with insights, activity dashboard, CEFR progress reports, PDF/Word/CSV export, and consolidated report cards with customizable sections.',
         color: '#06b6d4',
     },
     {
@@ -68,7 +70,7 @@ const TEACHER_FEATURES = [
     {
         icon: ClipboardCheck,
         title: 'Tests & Quizzes',
-        desc: 'Build multiple-choice, multiple-response, true/false, short-answer, open, fill-the-gap, matching, ordering, categorize, and hot text tests, assign them with a share link or Safe Exam Browser, then auto-grade and fine-tune the class average.',
+        desc: 'Build multiple-choice, multiple-response, true/false, short-answer, open, fill-the-gap, matching, ordering, categorize, and hot text tests, assign them with a share link or Safe Exam Browser, then auto-grade, fine-tune the class average, and export a strong/weak point summary per student or class.',
         color: '#3b82f6',
     },
     {
@@ -76,6 +78,18 @@ const TEACHER_FEATURES = [
         title: 'Essays',
         desc: 'Write a prompt, link a rubric, and assign it to a class from a dedicated Essays page — then track submissions, share links, and watch live progress, all in one place.',
         color: '#6366f1',
+    },
+    {
+        icon: TrendingUp,
+        title: 'Learning Paths',
+        desc: 'See which students need extra support, with rubric suggestions based on their CEFR progress compared to the class average.',
+        color: '#10b981',
+    },
+    {
+        icon: Store,
+        title: 'Rubric Marketplace',
+        desc: 'Share your best rubrics with colleagues at your school, and clone theirs.',
+        color: '#3b82f6',
     },
 ];
 

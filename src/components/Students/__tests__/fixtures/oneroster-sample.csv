@@ -1,0 +1,8 @@
+sourcedId,status,dateLastModified,givenName,familyName,email,role,classSourcedId,className
+user-001,active,2024-06-15T10:30:00Z,Alice,Jones,alice.jones@example.com,student,class-eng-1a,English 1A
+user-002,active,2024-06-15T10:30:00Z,Benjamin,Smith,benjamin.smith@example.com,student,class-eng-1a,English 1A
+user-003,active,2024-06-15T10:30:00Z,Charlotte,Sanchez,charlotte.sanchez@example.com,student,class-math-8,Mathematics Grade 8
+user-004,active,2024-06-15T10:30:00Z,David,Chen,david.chen@example.com,student,class-sci-8b,Science 8B
+user-005,active,2024-06-15T10:30:00Z,Elena,Garcia,elena.garcia@example.com,student,class-aplitt,AP Literature
+user-006,active,2024-06-15T10:30:00Z,Francisco,Lopez,francisco.lopez@example.com,student,class-calc-1,Calculus I
+user-007,inactive,2024-06-14T09:15:00Z,Grace,Lee,grace.lee@example.com,student,class-eng-1b,English 1B

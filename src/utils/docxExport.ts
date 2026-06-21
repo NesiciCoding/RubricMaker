@@ -13,8 +13,18 @@ import {
     PageBreak,
 } from 'docx';
 import { saveAs } from 'file-saver';
-import type { Rubric, RubricCriterion, StudentRubric, Student, GradeScale } from '../types';
+import type {
+    Rubric,
+    RubricCriterion,
+    StudentRubric,
+    Student,
+    GradeScale,
+    StudentTest,
+    Test,
+    TestStrengthBucket,
+} from '../types';
 import { calcGradeSummary } from './gradeCalc';
+import { calcQuestionBreakdowns, calcSkillBreakdowns } from './testSummaryAggregator';
 
 /** Extracts the first font name from a CSS font-family stack (e.g. "'Playfair Display', Georgia, serif" -> "Playfair Display"). */
 export function extractDocxFontName(fontFamily?: string): string | undefined {
@@ -470,4 +480,151 @@ export async function exportBatchDocx(
 
     const blob = await Packer.toBlob(doc);
     saveAs(blob, `${rubric.name.replace(/[^a-z0-9]/gi, '_')}_grades.docx`);
+}
+
+/** Same thresholds as bucketForAccuracy() in testSummaryAggregator.ts — keep these in sync. */
+const TEST_BUCKET_COLOR: Record<TestStrengthBucket, string> = {
+    strong: '10B981',
+    developing: 'F59E0B',
+    weak: 'EF4444',
+};
+
+function buildTestSummaryChildren(
+    studentId: string | null,
+    studentTests: StudentTest[],
+    test: Test,
+    student?: Student
+) {
+    const questions = calcQuestionBreakdowns(studentId, studentTests, test);
+    const skills = calcSkillBreakdowns(studentId, studentTests, test);
+    const questionsById = new Map(test.questions.map((q) => [q.id, q]));
+
+    const headerRow = (labels: string[]) =>
+        new TableRow({
+            tableHeader: true,
+            children: labels.map(
+                (label, i) =>
+                    new TableCell({
+                        children: [
+                            new Paragraph({
+                                children: [new TextRun({ text: label, bold: true, color: 'FFFFFF' })],
+                                alignment: i === 0 ? AlignmentType.LEFT : AlignmentType.CENTER,
+                            }),
+                        ],
+                        width: { size: i === 0 ? 60 : 20, type: WidthType.PERCENTAGE },
+                        shading: { fill: '1f2937' },
+                    })
+            ),
+        });
+
+    const breakdownRow = (label: string, accuracyPct: number, bucket: TestStrengthBucket, sampleSize: number) =>
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [new Paragraph({ children: [new TextRun(label)] })],
+                    width: { size: 60, type: WidthType.PERCENTAGE },
+                }),
+                new TableCell({
+                    children: [
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: `${accuracyPct.toFixed(0)}%`,
+                                    bold: true,
+                                    color: TEST_BUCKET_COLOR[bucket],
+                                }),
+                            ],
+                            alignment: AlignmentType.CENTER,
+                        }),
+                    ],
+                    width: { size: 20, type: WidthType.PERCENTAGE },
+                }),
+                new TableCell({
+                    children: [
+                        new Paragraph({
+                            children: [new TextRun({ text: String(sampleSize), color: '666666' })],
+                            alignment: AlignmentType.CENTER,
+                        }),
+                    ],
+                    width: { size: 20, type: WidthType.PERCENTAGE },
+                }),
+            ],
+        });
+
+    const questionTable = new Table({
+        rows: [
+            headerRow(['Question', 'Accuracy', 'Submissions']),
+            ...questions.map((qb, i) =>
+                breakdownRow(
+                    `Q${i + 1}. ${questionsById.get(qb.questionId)?.prompt ?? ''}`,
+                    qb.accuracyPct,
+                    qb.bucket,
+                    qb.sampleSize
+                )
+            ),
+        ],
+        width: { size: 100, type: WidthType.PERCENTAGE },
+    });
+
+    const children: (Paragraph | Table)[] = [
+        new Paragraph({ text: test.name, heading: HeadingLevel.HEADING_1, spacing: { after: 120 } }),
+        new Paragraph({
+            children: [
+                new TextRun({ text: 'Student: ', bold: true }),
+                new TextRun(student ? student.name : 'Whole class'),
+            ],
+            spacing: { after: 240 },
+        }),
+        new Paragraph({ text: 'Per-question accuracy', heading: HeadingLevel.HEADING_2, spacing: { after: 120 } }),
+        questionTable,
+    ];
+
+    if (skills.length > 0) {
+        children.push(
+            new Paragraph({
+                text: 'Strong / weak points by standard or descriptor',
+                heading: HeadingLevel.HEADING_2,
+                spacing: { before: 240, after: 120 },
+            }),
+            new Table({
+                rows: [
+                    headerRow(['Standard / descriptor', 'Accuracy', 'Submissions']),
+                    ...skills.map((sb) => breakdownRow(sb.label, sb.accuracyPct, sb.bucket, sb.sampleSize)),
+                ],
+                width: { size: 100, type: WidthType.PERCENTAGE },
+            })
+        );
+    }
+
+    return children;
+}
+
+export async function exportTestSummaryDocx(
+    studentId: string | null,
+    studentTests: StudentTest[],
+    test: Test,
+    student?: Student
+): Promise<void> {
+    const doc = new Document({
+        sections: [{ children: buildTestSummaryChildren(studentId, studentTests, test, student) }],
+    });
+    const blob = await Packer.toBlob(doc);
+    const namePart = student ? student.name : 'class';
+    saveAs(blob, `${test.name.replace(/[^a-z0-9]/gi, '_')}_${namePart.replace(/[^a-z0-9]/gi, '_')}_summary.docx`);
+}
+
+export async function exportBatchTestSummaryDocx(
+    entries: { studentId: string; student: Student }[],
+    studentTests: StudentTest[],
+    test: Test
+): Promise<void> {
+    const children: (Paragraph | Table)[] = [];
+    entries.forEach(({ studentId, student }, idx) => {
+        if (idx > 0) children.push(new Paragraph({ children: [new PageBreak()] }));
+        children.push(...buildTestSummaryChildren(studentId, studentTests, test, student));
+    });
+
+    const doc = new Document({ sections: [{ children }] });
+    const blob = await Packer.toBlob(doc);
+    saveAs(blob, `${test.name.replace(/[^a-z0-9]/gi, '_')}_summary_batch.docx`);
 }
