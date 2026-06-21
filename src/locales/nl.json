@@ -1384,7 +1384,6 @@
         "section_learning_goals": "Leerdoelen",
         "section_cefr": "ERK-overzicht",
         "section_test_summary": "Toetssamenvatting",
-        "test_summary_hint": "De toetssamenvatting is nog niet gekoppeld aan specifieke toetsen en verschijnt leeg.",
         "generate_single_btn": "Rapport exporteren",
         "generate_batch_btn": "{{count}} rapport(en) exporteren"
     },

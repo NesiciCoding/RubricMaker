@@ -1384,7 +1384,6 @@
         "section_learning_goals": "Objetivos de aprendizaje",
         "section_cefr": "Resumen MCER",
         "section_test_summary": "Resumen de pruebas",
-        "test_summary_hint": "La sección de resumen de pruebas aún no está vinculada a pruebas específicas y aparecerá vacía.",
         "generate_single_btn": "Exportar boletín",
         "generate_batch_btn": "Exportar {{count}} boletín(es)"
     },

@@ -161,3 +161,45 @@ export function calcTestStrongWeakSummary(
         skills: calcSkillBreakdowns(studentId, studentTests, test),
     };
 }
+
+/**
+ * Combines per-test summaries (e.g. every test a student took in a report
+ * period) into one. Questions are concatenated as-is; skills are merged by
+ * groupId with sample-size-weighted accuracy, since the same standard/CEFR
+ * descriptor can be linked across multiple tests.
+ */
+export function mergeTestStrongWeakSummaries(summaries: TestStrongWeakSummary[]): TestStrongWeakSummary {
+    if (summaries.length === 0) return { studentId: null, questions: [], skills: [] };
+
+    const questions = summaries.flatMap((s) => s.questions);
+
+    const skillGroups = new Map<string, { label: string; questionIds: string[]; samples: number; weightedSum: number }>();
+    for (const summary of summaries) {
+        for (const skill of summary.skills) {
+            const group = skillGroups.get(skill.groupId) ?? {
+                label: skill.label,
+                questionIds: [],
+                samples: 0,
+                weightedSum: 0,
+            };
+            group.questionIds.push(...skill.questionIds);
+            group.samples += skill.sampleSize;
+            group.weightedSum += skill.accuracyPct * skill.sampleSize;
+            skillGroups.set(skill.groupId, group);
+        }
+    }
+
+    const skills: TestSkillBreakdown[] = Array.from(skillGroups.entries()).map(([groupId, group]) => {
+        const accuracyPct = group.samples > 0 ? group.weightedSum / group.samples : 0;
+        return {
+            groupId,
+            label: group.label,
+            questionIds: group.questionIds,
+            accuracyPct,
+            bucket: bucketForAccuracy(accuracyPct),
+            sampleSize: group.samples,
+        };
+    });
+
+    return { studentId: summaries[0].studentId, questions, skills };
+}

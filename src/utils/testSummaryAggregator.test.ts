@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { calcQuestionBreakdowns, calcSkillBreakdowns, calcTestStrongWeakSummary, bucketForAccuracy } from './testSummaryAggregator';
+import {
+    calcQuestionBreakdowns,
+    calcSkillBreakdowns,
+    calcTestStrongWeakSummary,
+    mergeTestStrongWeakSummaries,
+    bucketForAccuracy,
+} from './testSummaryAggregator';
 import type { Test, StudentTest, TestQuestion } from '../types';
 
 const mcQuestion: TestQuestion = {
@@ -223,5 +229,33 @@ describe('calcTestStrongWeakSummary', () => {
         expect(summary.studentId).toBeNull();
         const mc = summary.questions.find((q) => q.questionId === 'q-mc');
         expect(mc?.sampleSize).toBe(2);
+    });
+});
+
+describe('mergeTestStrongWeakSummaries', () => {
+    it('returns an empty summary for no inputs', () => {
+        expect(mergeTestStrongWeakSummaries([])).toEqual({ studentId: null, questions: [], skills: [] });
+    });
+
+    it('concatenates questions and weight-averages skill accuracy across tests', () => {
+        const a = {
+            studentId: 's1',
+            questions: [{ questionId: 'q1', accuracyPct: 100, bucket: 'strong' as const, sampleSize: 1 }],
+            skills: [{ groupId: 'std-1', label: 'Standard A1', questionIds: ['q1'], accuracyPct: 100, bucket: 'strong' as const, sampleSize: 1 }],
+        };
+        const b = {
+            studentId: 's1',
+            questions: [{ questionId: 'q2', accuracyPct: 0, bucket: 'weak' as const, sampleSize: 1 }],
+            skills: [{ groupId: 'std-1', label: 'Standard A1', questionIds: ['q2'], accuracyPct: 0, bucket: 'weak' as const, sampleSize: 1 }],
+        };
+
+        const merged = mergeTestStrongWeakSummaries([a, b]);
+        expect(merged.studentId).toBe('s1');
+        expect(merged.questions).toHaveLength(2);
+        expect(merged.skills).toHaveLength(1);
+        expect(merged.skills[0].accuracyPct).toBe(50);
+        expect(merged.skills[0].bucket).toBe('weak');
+        expect(merged.skills[0].sampleSize).toBe(2);
+        expect(merged.skills[0].questionIds).toEqual(['q1', 'q2']);
     });
 });

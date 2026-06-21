@@ -1111,7 +1111,7 @@ function AnalyticsTab() {
                     items={[
                         'Toggle which sections appear: rubric grades, standards coverage, learning goals, CEFR overview, and test summary.',
                         'Export a single student’s report card, or batch-export one DOCX per selected student.',
-                        'Test summary is included as a toggle but is not yet linked to a specific test, so it currently renders as an empty section.',
+                        'Test summary combines every test the student took within the selected date range, showing per-skill strong/weak points.',
                     ]}
                 />
             </FeatureSection>

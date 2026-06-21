@@ -1384,7 +1384,6 @@
         "section_learning_goals": "Lernziele",
         "section_cefr": "GER-Übersicht",
         "section_test_summary": "Testzusammenfassung",
-        "test_summary_hint": "Der Abschnitt Testzusammenfassung ist noch nicht mit bestimmten Tests verknüpft und bleibt leer.",
         "generate_single_btn": "Zeugnis exportieren",
         "generate_batch_btn": "{{count}} Zeugnis(se) exportieren"
     },

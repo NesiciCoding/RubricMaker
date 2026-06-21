@@ -1384,7 +1384,6 @@
         "section_learning_goals": "Learning goals",
         "section_cefr": "CEFR overview",
         "section_test_summary": "Test summary",
-        "test_summary_hint": "Test summary section is not yet wired to specific tests and will appear empty.",
         "generate_single_btn": "Export report card",
         "generate_batch_btn": "Export {{count}} report card(s)"
     },

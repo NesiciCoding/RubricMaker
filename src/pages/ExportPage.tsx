@@ -40,6 +40,8 @@ export default function ExportPage() {
         saveStudentRubric,
         selfAssessments,
         analysisResults,
+        tests,
+        studentTests,
     } = useApp();
     const { showToast } = useToast();
     const [selectedRubricId, setSelectedRubricId] = useState(rubrics[0]?.id ?? '');
@@ -295,6 +297,21 @@ export default function ExportPage() {
         return { srs, entries };
     }
 
+    function gatherPeriodTests(studentId: string) {
+        const fromTs = reportDateFrom ? new Date(reportDateFrom).getTime() : 0;
+        const toTs = reportDateTo ? new Date(reportDateTo + 'T23:59:59').getTime() : Infinity;
+        const periodStudentTests = studentTests.filter((st) => {
+            if (st.studentId !== studentId || st.status !== 'graded') return false;
+            const at = st.gradedAt ?? st.submittedAt;
+            if (!at) return false;
+            const ts = new Date(at).getTime();
+            return ts >= fromTs && ts <= toTs;
+        });
+        const testIds = new Set(periodStudentTests.map((st) => st.testId));
+        const periodTests = tests.filter((test) => testIds.has(test.id));
+        return { tests: periodTests, studentTests: periodStudentTests };
+    }
+
     async function handleGeneratePeriodReports() {
         if (reportStudentIds.size === 0) return;
         setGeneratingReport(true);
@@ -326,6 +343,7 @@ export default function ExportPage() {
 
     async function buildReportCardDataForStudent(student: (typeof students)[number]) {
         const { entries } = gatherPeriodEntries(student.id);
+        const { tests: periodTests, studentTests: periodStudentTests } = gatherPeriodTests(student.id);
         const cls = classes.find((c) => c.id === reportClassId);
         const { buildReportCardData } = await import('../utils/reportCardAggregator');
         return buildReportCardData(student.id, reportCardConfig, {
@@ -337,6 +355,8 @@ export default function ExportPage() {
             studentRubrics,
             selfAssessments,
             analysisResults,
+            tests: periodTests,
+            studentTests: periodStudentTests,
         });
     }
 
@@ -1034,12 +1054,6 @@ export default function ExportPage() {
                         </label>
                     ))}
                 </div>
-                {reportCardConfig.includeTestSummary && (
-                    <p style={{ margin: '0 0 16px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                        {t('reportCard.test_summary_hint')}
-                    </p>
-                )}
-
                 <div style={{ marginTop: 8, display: 'flex', justifyContent: 'flex-end', gap: 10, flexWrap: 'wrap' }}>
                     <button
                         className="btn btn-secondary"

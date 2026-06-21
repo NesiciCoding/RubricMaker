@@ -1384,7 +1384,6 @@
         "section_learning_goals": "Objectifs d'apprentissage",
         "section_cefr": "Aperçu CECRL",
         "section_test_summary": "Résumé des tests",
-        "test_summary_hint": "La section résumé des tests n'est pas encore reliée à des tests spécifiques et apparaîtra vide.",
         "generate_single_btn": "Exporter le bulletin",
         "generate_batch_btn": "Exporter {{count}} bulletin(s)"
     },

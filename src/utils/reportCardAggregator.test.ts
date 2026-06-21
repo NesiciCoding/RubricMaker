@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { buildReportCardData } from './reportCardAggregator';
-import type { Rubric, Student, StudentRubric, ReportCardConfig } from '../types';
+import type { Rubric, Student, StudentRubric, ReportCardConfig, Test, StudentTest } from '../types';
 
 function makeRubric(overrides: Partial<Rubric> = {}): Rubric {
     return {
@@ -185,7 +185,7 @@ describe('buildReportCardData', () => {
         }
     });
 
-    it('produces an empty placeholder test summary without crashing', () => {
+    it('produces an empty test summary without crashing when no tests are passed', () => {
         const student = makeStudent();
         const result = buildReportCardData('s1', { ...allOffConfig, includeTestSummary: true }, {
             student,
@@ -199,5 +199,57 @@ describe('buildReportCardData', () => {
         expect(result.sections).toEqual([
             { type: 'testSummary', overview: { studentId: 's1', questions: [], skills: [] } },
         ]);
+    });
+
+    it('merges strong/weak breakdowns across every test the student took', () => {
+        const student = makeStudent();
+        const test: Test = {
+            id: 't1',
+            name: 'Quiz 1',
+            questions: [
+                {
+                    id: 'q1',
+                    prompt: 'Pick one',
+                    type: 'multiple-choice',
+                    points: 2,
+                    options: [
+                        { id: 'a', text: 'Right', isCorrect: true },
+                        { id: 'b', text: 'Wrong', isCorrect: false },
+                    ],
+                },
+            ],
+            requireSEB: false,
+            shuffleQuestions: false,
+            createdAt: '2024-01-01',
+        };
+        const studentTest: StudentTest = {
+            id: 'st1',
+            testId: 't1',
+            studentId: 's1',
+            answers: [{ questionId: 'q1', response: 'a' }],
+            status: 'graded',
+            startedAt: '2024-01-15',
+            gradedAt: '2024-01-15',
+        };
+
+        const result = buildReportCardData('s1', { ...allOffConfig, includeTestSummary: true }, {
+            student,
+            className: 'Class A',
+            entries: [],
+            rubrics: [],
+            studentRubrics: [],
+            selfAssessments: [],
+            tests: [test],
+            studentTests: [studentTest],
+        });
+
+        expect(result.sections).toHaveLength(1);
+        const section = result.sections[0];
+        expect(section.type).toBe('testSummary');
+        if (section.type === 'testSummary') {
+            expect(section.overview.questions).toEqual([
+                { questionId: 'q1', accuracyPct: 100, bucket: 'strong', sampleSize: 1 },
+            ]);
+        }
     });
 });

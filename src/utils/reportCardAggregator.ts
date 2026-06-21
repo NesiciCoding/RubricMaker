@@ -7,9 +7,12 @@ import type {
     ReportCardConfig,
     ReportCardData,
     ReportCardSection,
+    Test,
+    StudentTest,
 } from '../types';
 import { getCefrStudentOverview } from './cefrStudentAggregator';
 import { getStudentGoalScores } from './learningGoalsAggregator';
+import { calcTestStrongWeakSummary, mergeTestStrongWeakSummaries } from './testSummaryAggregator';
 import type { PeriodReportEntry } from './periodReportExport';
 
 export interface BuildReportCardDataInput {
@@ -21,6 +24,9 @@ export interface BuildReportCardDataInput {
     studentRubrics: StudentRubric[];
     selfAssessments: SelfAssessment[];
     analysisResults?: DocumentAnalysisResult[];
+    /** Tests + submissions in scope for the report period, used for the testSummary section */
+    tests?: Test[];
+    studentTests?: StudentTest[];
 }
 
 export function buildReportCardData(
@@ -60,10 +66,13 @@ export function buildReportCardData(
     }
 
     if (config.includeTestSummary) {
-        // ponytail: testSummaryAggregator.ts now exists but buildReportCardData has no
-        // test/studentTests inputs yet to call calcTestStrongWeakSummary with — wire this
-        // up when the report card export task decides which test(s) a report card covers.
-        sections.push({ type: 'testSummary', overview: { studentId, questions: [], skills: [] } });
+        const tests = input.tests ?? [];
+        const studentTests = input.studentTests ?? [];
+        const summaries = tests
+            .filter((test) => studentTests.some((st) => st.testId === test.id && st.studentId === studentId))
+            .map((test) => calcTestStrongWeakSummary(studentId, studentTests, test));
+        const overview = mergeTestStrongWeakSummaries(summaries);
+        sections.push({ type: 'testSummary', overview: { ...overview, studentId } });
     }
 
     return {
