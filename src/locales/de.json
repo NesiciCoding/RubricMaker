@@ -299,7 +299,8 @@
         "cefr_overview": "GER-Übersicht",
         "vocabulary": "Wortschatz",
         "docs": "Dokumentation",
-        "activity_dashboard": "Aktivitätsdashboard"
+        "activity_dashboard": "Aktivitätsdashboard",
+        "marketplace": "Marktplatz"
     },
     "dashboard": {
         "title": "Dashboard",
@@ -1819,5 +1820,25 @@
         "lww_body": "Wenn derselbe Datensatz auf zwei Geräten bearbeitet wird, gewinnt die neueste Änderung (Last-Write-Wins). Offline vorgenommene Änderungen sind geschützt und werden niemals von älteren Cloud-Daten überschrieben, bis sie synchronisiert wurden.",
         "proctoring_title": "Aufsichtsmeldungen",
         "proctoring_body": "Meldungen erfassen, wenn ein Lernender den Test-Tab verlassen, den Fokus verloren oder Inhalte eingefügt hat. Behandeln Sie sie als Hinweise zur Überprüfung, nicht als Beweis für Betrug — nutzen Sie Ihr Urteilsvermögen zusammen mit den Antworten."
+    },
+    "marketplace": {
+        "title": "Rubrik-Marktplatz",
+        "disabled_title": "Marktplatz nicht verfügbar",
+        "disabled_body": "Verbinde Supabase und tritt einer Schule bei, um den Marktplatz zu nutzen.",
+        "intro": "Durchsuche Rubriken, die Kollegen an deiner Schule geteilt haben, veröffentliche eigene und stimme für die, die du nützlich findest.",
+        "publish_button": "Rubrik veröffentlichen",
+        "publish_title": "Auf dem Marktplatz veröffentlichen",
+        "publish_select_rubric": "Rubrik",
+        "publish_select_placeholder": "Rubrik auswählen…",
+        "publish_attribution_label": "Quellenangabe (optional)",
+        "publish_attribution_placeholder": "z. B. Geteilt von Jane Doe — CC-BY-SA",
+        "publish_confirm": "Veröffentlichen",
+        "shared_by_prefix": "Geteilt von",
+        "loading": "Angebote werden geladen…",
+        "empty_state": "An deiner Schule wurden noch keine Rubriken geteilt.",
+        "upvote_title": "Stimme",
+        "clone_title": "In meine Rubriken klonen",
+        "clone_button": "Klonen",
+        "clone_done": "Geklont"
     }
 }

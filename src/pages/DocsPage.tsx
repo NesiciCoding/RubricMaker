@@ -106,6 +106,13 @@ const ROUTE_TREE: RouteNode[] = [
         ],
     },
     {
+        path: '/marketplace',
+        label: 'Rubric Marketplace',
+        description:
+            "Browse, publish, and clone rubrics shared by colleagues at your school. Requires cloud sync and a school.",
+        color: '#3b82f6',
+    },
+    {
         path: '/tests',
         label: 'Tests',
         description: 'Browse, create, and manage tests and quizzes for assignment to students.',
@@ -680,6 +687,16 @@ function RubricsTab() {
                         'Share code: a compact base64 code you can send to a colleague who can import it in one click.',
                     ]}
                 />
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    Marketplace
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    The <strong>Marketplace</strong> page lets you publish a rubric for colleagues at your school to
+                    browse and clone, and upvote the ones you find useful. It requires cloud sync to be configured and
+                    your account to belong to a school — without both, the page shows a short explanation instead of
+                    the listings. Cloning copies a listing into your own rubrics without affecting the original.
+                </p>
             </FeatureSection>
 
             <FeatureSection icon={ClipboardCheck} title="Tests & quizzes" color="#3b82f6">

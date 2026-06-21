@@ -15,6 +15,7 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 - **Tests & quizzes**: Build multiple-choice, multiple-response (select all that apply), true/false, short-answer, open, fill-the-gap (with optional dropdown), matching, ordering, categorize, and hot text tests with a duration, optional Safe Exam Browser requirement, and grade scale. Link standards and CEFR descriptors per question, then assign tests to a class — each student gets a unique share link. Every question type has an in-context help button explaining how to author and answer it.
 - **Test summary export**: From a test's Results panel, export a PDF or Word summary for one student or the whole class with per-question accuracy and a strong/developing/weak breakdown by linked standard or CEFR descriptor.
 - **Live monitoring**: While a test or essay is in progress (cloud sync enabled), watch a live presence/progress view per student — response grid for tests, live word count and draft preview for essays, plus advisory proctoring flags (tab switches, copy/paste, battery, Safe Exam Browser status).
+- **Rubric Marketplace**: Publish a rubric for colleagues at your school to browse, clone, and upvote (requires cloud sync and a school).
 
 ### 2. Grading Interface
 - **Student management**: Manage students and organise them into classes, with Dutch VO track (VMBO/HAVO/VWO) support.
@@ -138,6 +139,7 @@ npm run db:reset     # Reset and re-apply all migrations
 | `/essays/:teacherKey/monitor` | Live essay monitor (presence, live word counts, draft preview) |
 | `/speaking/:rubricId/:studentId` | Speaking session |
 | `/grade-comparative/:classId/:rubricId` | Comparative grading |
+| `/marketplace` | School rubric marketplace (browse, publish, clone, upvote) |
 | `/tests` | Test list |
 | `/tests/new` | New test |
 | `/tests/:id` | Test builder |

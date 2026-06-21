@@ -24,6 +24,7 @@ import {
     ClipboardCheck,
     PenLine,
     TrendingUp,
+    Store,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { loadSupabaseConfig } from '../services/database';
@@ -83,6 +84,12 @@ const TEACHER_FEATURES = [
         title: 'Learning Paths',
         desc: 'See which students need extra support, with rubric suggestions based on their CEFR progress compared to the class average.',
         color: '#10b981',
+    },
+    {
+        icon: Store,
+        title: 'Rubric Marketplace',
+        desc: 'Share your best rubrics with colleagues at your school, and clone theirs.',
+        color: '#3b82f6',
     },
 ];
 
