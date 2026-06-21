@@ -539,7 +539,11 @@ function GettingStartedTab() {
                     Go to <strong>Students</strong>. Click <strong>+ Add Student</strong> and fill in their name. Group
                     students into classes by setting the Class field. You can also import from a CSV or a Magister
                     export — the importer auto-detects Dutch column names and, if "Update existing students" is checked,
-                    will update matching records instead of creating duplicates.
+                    will update matching records instead of creating duplicates. Moving a student to a new class
+                    (manually, or via a re-import that detects a class transfer) keeps a "Past classes" trail on their
+                    profile — none of their grading history is lost. When "Update existing students" is on, you'll see a
+                    confirmation summarizing how many students will transfer class and how many will be archived before
+                    anything is applied — useful for promoting a whole class to the next year.
                 </Step>
                 <Step number={4} title="Grade a student">
                     Open any rubric from the Rubrics page. Click the student's name to open the grading view. Click each
@@ -667,7 +671,9 @@ function RubricsTab() {
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
                     Every save creates an automatic snapshot. Click <strong>Version History</strong> in the toolbar to
-                    browse past versions and restore any of them. Manual labels can be added before saving.
+                    browse past versions and restore any of them. Manual labels can be added before saving. Click{' '}
+                    <strong>Compare</strong> next to any version to see exactly what changed between that version and
+                    the current rubric — added/removed criteria, title and weight changes, and level point changes.
                 </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
@@ -1080,6 +1086,7 @@ function AnalyticsTab() {
                         'Essays — Assign All bulk-creates essay assignments for all unenrolled students in the class.',
                         'Tests — Open navigates to the test builder where you can share the class link.',
                         'Filter by school year and VO track to narrow the column set.',
+                        'Standards Coverage panel (below the grid) — pick a class to see every standard linked anywhere in its rubrics, split into "Assessed" (with average score) and "Not yet assessed" — the gap to address before the term ends.',
                     ]}
                 />
             </FeatureSection>

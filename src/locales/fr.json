@@ -927,6 +927,18 @@
         "version_n": "Version {{n}}",
         "criteria_count": "critères",
         "auto_save_badge": "auto",
+        "compare_version": "Comparer",
+        "version_diff": "Comparer avec la version actuelle",
+        "no_diff_changes": "Aucune différence avec la grille actuelle.",
+        "diff_added": "Ajouté",
+        "diff_removed": "Supprimé",
+        "diff_changed": "Modifié",
+        "diff_field_title": "Titre",
+        "diff_field_weight": "Pondération",
+        "diff_field_label": "Libellé",
+        "diff_field_points": "Points",
+        "diff_field_subItems": "Sous-éléments",
+        "diff_description_changed": "Description modifiée",
         "action_print": "Imprimer la rubrique",
         "section_rubric_details": "Détails de la grille",
         "action_expand_all": "Tout développer",
@@ -1314,7 +1326,13 @@
         "unlink": "Délier",
         "assign": "Assigner à tous",
         "all_assigned": "Tous assignés ✓",
-        "open": "Ouvrir"
+        "open": "Ouvrir",
+        "coverage_title": "Couverture des référentiels",
+        "coverage_empty": "Aucun référentiel lié à une grille pour cette classe.",
+        "coverage_gap_title": "Pas encore évalué",
+        "coverage_covered_title": "Évalué",
+        "coverage_no_gap": "Chaque référentiel lié a été évalué au moins une fois.",
+        "coverage_rubric_count": "{{count}} grille(s)"
     },
     "attachments": {
         "title": "Pièces jointes",
@@ -1777,7 +1795,9 @@
         "tab_portfolio": "Portfolio",
         "portfolio_empty": "Aucune activité pour cet élève.",
         "portfolio_kind_grade": "Note de rubrique",
-        "no_grades_yet": "Aucune rubrique notée pour cet élève."
+        "no_grades_yet": "Aucune rubrique notée pour cet élève.",
+        "past_classes": "Classes précédentes",
+        "unknown_class": "Classe inconnue"
     },
     "standards": {
         "remove_favorite": "Retirer le standard favori",
@@ -1833,7 +1853,10 @@
         "import_btn_one": "Importer {{count}} élève",
         "import_btn_other": "Importer {{count}} élèves",
         "detected_format_clever": "Détecté: format Clever",
-        "detected_format_oneroster": "Détecté: format OneRoster"
+        "detected_format_oneroster": "Détecté: format OneRoster",
+        "sync_confirm_title": "Confirmer la synchronisation",
+        "sync_confirm_message": "{{transferred}} élève(s) changeront de classe et {{removed}} élève(s) absents de ce fichier seront archivés. Continuer ?",
+        "sync_confirm_action": "Importer et synchroniser"
     },
     "a11y": {
         "skip_to_content": "Aller au contenu principal"

@@ -927,6 +927,18 @@
         "version_n": "Version {{n}}",
         "criteria_count": "Kriterien",
         "auto_save_badge": "auto",
+        "compare_version": "Vergleichen",
+        "version_diff": "Mit aktueller Version vergleichen",
+        "no_diff_changes": "Keine Unterschiede zur aktuellen Rubrik.",
+        "diff_added": "Hinzugefügt",
+        "diff_removed": "Entfernt",
+        "diff_changed": "Geändert",
+        "diff_field_title": "Titel",
+        "diff_field_weight": "Gewichtung",
+        "diff_field_label": "Bezeichnung",
+        "diff_field_points": "Punkte",
+        "diff_field_subItems": "Unterpunkte",
+        "diff_description_changed": "Beschreibung geändert",
         "action_print": "Rubrik drucken",
         "section_rubric_details": "Rubrik-Details",
         "action_expand_all": "Alle aufklappen",
@@ -1314,7 +1326,13 @@
         "unlink": "Trennen",
         "assign": "Allen zuweisen",
         "all_assigned": "Alle zugewiesen ✓",
-        "open": "Öffnen"
+        "open": "Öffnen",
+        "coverage_title": "Standardabdeckung",
+        "coverage_empty": "Keine Standards mit Rubriken für diese Klasse verknüpft.",
+        "coverage_gap_title": "Noch nicht bewertet",
+        "coverage_covered_title": "Bewertet",
+        "coverage_no_gap": "Jeder verknüpfte Standard wurde mindestens einmal bewertet.",
+        "coverage_rubric_count": "{{count}} Rubrik(en)"
     },
     "attachments": {
         "title": "Anhänge",
@@ -1777,7 +1795,9 @@
         "tab_portfolio": "Portfolio",
         "portfolio_empty": "Noch keine Aktivitäten für diesen Schüler.",
         "portfolio_kind_grade": "Rubrikbewertung",
-        "no_grades_yet": "Noch keine bewerteten Rubriken für diesen Schüler."
+        "no_grades_yet": "Noch keine bewerteten Rubriken für diesen Schüler.",
+        "past_classes": "Frühere Klassen",
+        "unknown_class": "Unbekannte Klasse"
     },
     "standards": {
         "remove_favorite": "Favorisierten Standard entfernen",
@@ -1833,7 +1853,10 @@
         "import_btn_one": "{{count}} Schüler importieren",
         "import_btn_other": "{{count}} Schüler importieren",
         "detected_format_clever": "Erkannt: Clever-Format",
-        "detected_format_oneroster": "Erkannt: OneRoster-Format"
+        "detected_format_oneroster": "Erkannt: OneRoster-Format",
+        "sync_confirm_title": "Synchronisierung bestätigen",
+        "sync_confirm_message": "{{transferred}} Schüler werden die Klasse wechseln und {{removed}} Schüler, die nicht in dieser Datei gefunden wurden, werden archiviert. Fortfahren?",
+        "sync_confirm_action": "Importieren & synchronisieren"
     },
     "a11y": {
         "skip_to_content": "Zum Hauptinhalt springen"

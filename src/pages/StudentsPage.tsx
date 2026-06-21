@@ -213,11 +213,23 @@ export default function StudentsPage() {
     function handleAddStudent() {
         if (!name.trim()) return;
         if (editStudent) {
+            const prev = students.find((s) => s.id === editStudent.id)!;
+            const isTransfer = prev.classId !== editStudentClassId;
             updateStudent({
-                ...students.find((s) => s.id === editStudent.id)!,
+                ...prev,
                 name,
                 email,
                 classId: editStudentClassId,
+                pastClassMemberships: isTransfer
+                    ? [
+                          ...(prev.pastClassMemberships ?? []),
+                          {
+                              classId: prev.classId,
+                              enrolledAt: prev.pastClassMemberships?.at(-1)?.leftAt,
+                              leftAt: new Date().toISOString(),
+                          },
+                      ]
+                    : prev.pastClassMemberships,
             });
         } else {
             addStudent({ name, email, classId: activeClass });

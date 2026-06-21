@@ -927,6 +927,18 @@
         "version_n": "Version {{n}}",
         "criteria_count": "criteria",
         "auto_save_badge": "auto",
+        "compare_version": "Compare",
+        "version_diff": "Compare to current",
+        "no_diff_changes": "No differences from the current rubric.",
+        "diff_added": "Added",
+        "diff_removed": "Removed",
+        "diff_changed": "Changed",
+        "diff_field_title": "Title",
+        "diff_field_weight": "Weight",
+        "diff_field_label": "Label",
+        "diff_field_points": "Points",
+        "diff_field_subItems": "Sub-items",
+        "diff_description_changed": "Description changed",
         "action_print": "Print Rubric",
         "section_rubric_details": "Rubric Details",
         "action_expand_all": "Expand all",
@@ -1314,7 +1326,13 @@
         "unlink": "Unlink",
         "assign": "Assign All",
         "all_assigned": "All Assigned ✓",
-        "open": "Open"
+        "open": "Open",
+        "coverage_title": "Standards Coverage",
+        "coverage_empty": "No standards linked to rubrics for this class.",
+        "coverage_gap_title": "Not yet assessed",
+        "coverage_covered_title": "Assessed",
+        "coverage_no_gap": "Every linked standard has been assessed at least once.",
+        "coverage_rubric_count": "{{count}} rubric(s)"
     },
     "attachments": {
         "title": "Attachments",
@@ -1777,7 +1795,9 @@
         "tab_portfolio": "Portfolio",
         "portfolio_empty": "No activity yet for this student.",
         "portfolio_kind_grade": "Rubric Grade",
-        "no_grades_yet": "No graded rubrics yet for this student."
+        "no_grades_yet": "No graded rubrics yet for this student.",
+        "past_classes": "Past classes",
+        "unknown_class": "Unknown class"
     },
     "standards": {
         "remove_favorite": "Remove favorite standard",
@@ -1833,7 +1853,10 @@
         "import_btn_one": "Import {{count}} Student",
         "import_btn_other": "Import {{count}} Students",
         "detected_format_clever": "Detected: Clever format",
-        "detected_format_oneroster": "Detected: OneRoster format"
+        "detected_format_oneroster": "Detected: OneRoster format",
+        "sync_confirm_title": "Confirm roster sync",
+        "sync_confirm_message": "{{transferred}} student(s) will transfer class, and {{removed}} student(s) not found in this file will be archived. Continue?",
+        "sync_confirm_action": "Import & sync"
     },
     "a11y": {
         "skip_to_content": "Skip to main content"

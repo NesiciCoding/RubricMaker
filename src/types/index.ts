@@ -404,12 +404,21 @@ export interface UserTemplate {
     savedAt: string;
 }
 
+export interface PastClassMembership {
+    classId: string;
+    /** When known (chained from a prior transfer); omitted rather than guessed when the actual enrollment date isn't tracked. */
+    enrolledAt?: string;
+    leftAt: string;
+}
+
 export interface Student {
     id: string;
     name: string;
     email?: string;
     studentNumber?: string;
     classId: string;
+    /** Prior class memberships, oldest first. Pushed automatically when classId changes (manual move or CSV transfer). */
+    pastClassMemberships?: PastClassMembership[];
     /** ISO timestamp set when PII was anonymized; presence means the record is anonymized. */
     anonymizedAt?: string;
     /** ISO timestamp set when the student was soft-deleted; presence means archived (pending anonymization). */
