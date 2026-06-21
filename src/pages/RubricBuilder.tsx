@@ -3379,7 +3379,7 @@ export default function RubricBuilder() {
             {diffAgainstVersionIndex !== null && existing?.versions?.[diffAgainstVersionIndex] && (
                 <RubricVersionDiffModal
                     from={existing.versions[diffAgainstVersionIndex].snapshot}
-                    to={existing}
+                    to={getRubricData()}
                     onClose={() => setDiffAgainstVersionIndex(null)}
                 />
             )}

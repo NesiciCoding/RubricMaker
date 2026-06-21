@@ -35,7 +35,12 @@ export default function RubricVersionDiffModal({ from, to, onClose }: Props) {
         <Modal titleId="version-diff-title" onClose={onClose} maxWidth={560}>
             <div className="modal-header">
                 <h3 id="version-diff-title">{t('rubricBuilder.version_diff')}</h3>
-                <button className="btn btn-ghost btn-icon" aria-label={t('common.close')} onClick={onClose}>
+                <button
+                    type="button"
+                    className="btn btn-ghost btn-icon"
+                    aria-label={t('common.close')}
+                    onClick={onClose}
+                >
                     ✕
                 </button>
             </div>

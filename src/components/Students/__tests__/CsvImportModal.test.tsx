@@ -52,6 +52,7 @@ vi.mock('../../../context/AppContext', () => ({
         addClass: mockAddClass,
         classes: mockClasses,
         students: mockStudents,
+        settings: {},
     }),
 }));
 

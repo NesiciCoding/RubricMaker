@@ -406,7 +406,8 @@ export interface UserTemplate {
 
 export interface PastClassMembership {
     classId: string;
-    enrolledAt: string;
+    /** When known (chained from a prior transfer); omitted rather than guessed when the actual enrollment date isn't tracked. */
+    enrolledAt?: string;
     leftAt: string;
 }
 

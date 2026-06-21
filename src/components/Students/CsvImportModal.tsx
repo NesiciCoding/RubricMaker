@@ -25,7 +25,7 @@ type DetectedFormat = 'generic' | 'clever' | 'oneroster' | null;
 
 export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
     const { t } = useTranslation();
-    const { addStudent, addClass, updateStudent, deleteStudent, classes, students } = useApp();
+    const { addStudent, addClass, updateStudent, deleteStudent, classes, students, settings } = useApp();
     const [parsedData, setParsedData] = useState<any[]>([]);
     const [headers, setHeaders] = useState<string[]>([]);
     const [detectedFormat, setDetectedFormat] = useState<DetectedFormat>(null);
@@ -186,7 +186,7 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                               ...(prev.pastClassMemberships ?? []),
                               {
                                   classId: prev.classId,
-                                  enrolledAt: prev.updatedAt ?? new Date(0).toISOString(),
+                                  enrolledAt: prev.pastClassMemberships?.at(-1)?.leftAt,
                                   leftAt: new Date().toISOString(),
                               },
                           ]
@@ -217,7 +217,7 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
     };
 
     const startImport = () => {
-        const defaultClassId = classes[0]?.id || '';
+        const defaultClassId = classes.find((c) => c.id === settings.activeClassId)?.id ?? classes[0]?.id ?? '';
         const rows = matchCsvRows(parsedData, mapping, classes, students, defaultClassId);
         if (syncMode) {
             setPendingImport({ rows, preview: summarizeImport(rows, students, syncMode) });

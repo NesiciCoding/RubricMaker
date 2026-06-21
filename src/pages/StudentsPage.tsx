@@ -225,7 +225,7 @@ export default function StudentsPage() {
                           ...(prev.pastClassMemberships ?? []),
                           {
                               classId: prev.classId,
-                              enrolledAt: prev.updatedAt ?? new Date(0).toISOString(),
+                              enrolledAt: prev.pastClassMemberships?.at(-1)?.leftAt,
                               leftAt: new Date().toISOString(),
                           },
                       ]
