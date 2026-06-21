@@ -295,6 +295,7 @@ describe('CsvImportModal', () => {
         const syncCheckbox = screen.getByRole('checkbox');
         fireEvent.click(syncCheckbox);
         fireEvent.click(screen.getByRole('button', { name: /import 1 student/i }));
+        fireEvent.click(screen.getByRole('button', { name: /sync_confirm_action/i }));
         expect(mockDeleteStudent).toHaveBeenCalledWith('student-2');
         expect(mockDeleteStudent).not.toHaveBeenCalledWith('student-1');
         expect(screen.getByText(/1 removed/i)).toBeInTheDocument();

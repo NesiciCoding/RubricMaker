@@ -927,6 +927,18 @@
         "version_n": "Versión {{n}}",
         "criteria_count": "criterios",
         "auto_save_badge": "auto",
+        "compare_version": "Comparar",
+        "version_diff": "Comparar con la versión actual",
+        "no_diff_changes": "Sin diferencias con la rúbrica actual.",
+        "diff_added": "Añadido",
+        "diff_removed": "Eliminado",
+        "diff_changed": "Modificado",
+        "diff_field_title": "Título",
+        "diff_field_weight": "Peso",
+        "diff_field_label": "Etiqueta",
+        "diff_field_points": "Puntos",
+        "diff_field_subItems": "Subelementos",
+        "diff_description_changed": "Descripción modificada",
         "action_print": "Imprimir Rúbrica",
         "section_rubric_details": "Detalles de la rúbrica",
         "action_expand_all": "Expandir todo",
@@ -1314,7 +1326,13 @@
         "unlink": "Desvincular",
         "assign": "Asignar a todos",
         "all_assigned": "Todos asignados ✓",
-        "open": "Abrir"
+        "open": "Abrir",
+        "coverage_title": "Cobertura de estándares",
+        "coverage_empty": "No hay estándares vinculados a rúbricas para esta clase.",
+        "coverage_gap_title": "Aún no evaluado",
+        "coverage_covered_title": "Evaluado",
+        "coverage_no_gap": "Todos los estándares vinculados se han evaluado al menos una vez.",
+        "coverage_rubric_count": "{{count}} rúbrica(s)"
     },
     "attachments": {
         "title": "Archivos adjuntos",
@@ -1777,7 +1795,9 @@
         "tab_portfolio": "Portfolio",
         "portfolio_empty": "Todavía no hay actividad para este estudiante.",
         "portfolio_kind_grade": "Calificación de rúbrica",
-        "no_grades_yet": "Aún no hay rúbricas calificadas para este estudiante."
+        "no_grades_yet": "Aún no hay rúbricas calificadas para este estudiante.",
+        "past_classes": "Clases anteriores",
+        "unknown_class": "Clase desconocida"
     },
     "standards": {
         "remove_favorite": "Quitar estándar favorito",
@@ -1833,7 +1853,10 @@
         "import_btn_one": "Importar {{count}} alumno",
         "import_btn_other": "Importar {{count}} alumnos",
         "detected_format_clever": "Detectado: formato Clever",
-        "detected_format_oneroster": "Detectado: formato OneRoster"
+        "detected_format_oneroster": "Detectado: formato OneRoster",
+        "sync_confirm_title": "Confirmar sincronización",
+        "sync_confirm_message": "{{transferred}} alumno(s) cambiarán de clase y {{removed}} alumno(s) no encontrados en este archivo se archivarán. ¿Continuar?",
+        "sync_confirm_action": "Importar y sincronizar"
     },
     "a11y": {
         "skip_to_content": "Saltar al contenido principal"

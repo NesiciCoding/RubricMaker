@@ -927,6 +927,18 @@
         "version_n": "Versie {{n}}",
         "criteria_count": "criteria",
         "auto_save_badge": "auto",
+        "compare_version": "Vergelijken",
+        "version_diff": "Vergelijken met huidige versie",
+        "no_diff_changes": "Geen verschillen met de huidige rubric.",
+        "diff_added": "Toegevoegd",
+        "diff_removed": "Verwijderd",
+        "diff_changed": "Gewijzigd",
+        "diff_field_title": "Titel",
+        "diff_field_weight": "Gewicht",
+        "diff_field_label": "Label",
+        "diff_field_points": "Punten",
+        "diff_field_subItems": "Subitems",
+        "diff_description_changed": "Beschrijving gewijzigd",
         "action_print": "Rubriek afdrukken",
         "section_rubric_details": "Rubrieksdetails",
         "action_expand_all": "Alles uitklappen",
@@ -1314,7 +1326,13 @@
         "unlink": "Ontkoppelen",
         "assign": "Aan alle toewijzen",
         "all_assigned": "Alle toegewezen ✓",
-        "open": "Openen"
+        "open": "Openen",
+        "coverage_title": "Dekking van leerdoelen",
+        "coverage_empty": "Geen standaarden gekoppeld aan rubrieken voor deze klas.",
+        "coverage_gap_title": "Nog niet getoetst",
+        "coverage_covered_title": "Getoetst",
+        "coverage_no_gap": "Elke gekoppelde standaard is minstens één keer getoetst.",
+        "coverage_rubric_count": "{{count}} rubriek(en)"
     },
     "attachments": {
         "title": "Bijlagen",
@@ -1777,7 +1795,9 @@
         "tab_portfolio": "Portfolio",
         "portfolio_empty": "Nog geen activiteit voor deze leerling.",
         "portfolio_kind_grade": "Rubricbeoordeling",
-        "no_grades_yet": "Nog geen beoordeelde rubrieken voor deze leerling."
+        "no_grades_yet": "Nog geen beoordeelde rubrieken voor deze leerling.",
+        "past_classes": "Eerdere klassen",
+        "unknown_class": "Onbekende klas"
     },
     "standards": {
         "remove_favorite": "Favoriete standaard verwijderen",
@@ -1833,7 +1853,10 @@
         "import_btn_one": "{{count}} leerling importeren",
         "import_btn_other": "{{count}} leerlingen importeren",
         "detected_format_clever": "Gedetecteerd: Clever-indeling",
-        "detected_format_oneroster": "Gedetecteerd: OneRoster-indeling"
+        "detected_format_oneroster": "Gedetecteerd: OneRoster-indeling",
+        "sync_confirm_title": "Synchronisatie bevestigen",
+        "sync_confirm_message": "{{transferred}} leerling(en) wisselen van klas en {{removed}} leerling(en) die niet in dit bestand staan worden gearchiveerd. Doorgaan?",
+        "sync_confirm_action": "Importeren & synchroniseren"
     },
     "a11y": {
         "skip_to_content": "Naar hoofdinhoud springen"

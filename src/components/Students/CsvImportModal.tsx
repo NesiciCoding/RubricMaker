@@ -4,6 +4,8 @@ import Papa from 'papaparse';
 import { Upload, CheckCircle, X, AlertTriangle, Table } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import Modal from '../ui/Modal';
+import { ConfirmDialog } from '../ui/ConfirmDialog';
+import { matchCsvRows, summarizeImport, type ImportSummary, type MatchedImportRow } from '../../utils/csvImportMatch';
 
 interface Props {
     file: File;
@@ -35,13 +37,11 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
         className: '',
     });
     const [syncMode, setSyncMode] = useState(false);
-    const [summary, setSummary] = useState<{
-        created: number;
-        updated: number;
-        transferred: number;
-        removed: number;
-    } | null>(null);
+    const [summary, setSummary] = useState<ImportSummary | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [pendingImport, setPendingImport] = useState<{ rows: MatchedImportRow[]; preview: ImportSummary } | null>(
+        null
+    );
 
     useEffect(() => {
         Papa.parse(file, {
@@ -152,91 +152,61 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
         });
     };
 
-    const handleImport = () => {
-        const classMap = new Map<string, string>(); // name (lowercase) -> id
-        classes.forEach((c) => classMap.set(c.name.toLowerCase().trim(), c.id));
-        const defaultClassId = classes[0]?.id || '';
-
+    const runImport = (rows: MatchedImportRow[]) => {
+        const classIdForNewName = new Map<string, string>(); // lowercase new class name -> created class id
         let created = 0;
         let updated = 0;
         let transferred = 0;
         const matchedIds = new Set<string>();
-        const processedIds = new Set<string>();
-        const seenCsvKeys = new Set<string>(); // skip duplicate rows within one CSV import
-        const csvClassIds = new Set<string>();
+        const touchedClassIds = new Set<string>();
 
-        parsedData.forEach((row) => {
-            let name: string;
-            if (mapping.fullName && row[mapping.fullName]) {
-                name = String(row[mapping.fullName]).trim();
-            } else {
-                const f = mapping.firstName && row[mapping.firstName] ? String(row[mapping.firstName]).trim() : '';
-                const l = mapping.lastName && row[mapping.lastName] ? String(row[mapping.lastName]).trim() : '';
-                name = [f, l].filter(Boolean).join(' ');
-            }
-            if (!name) return;
-
-            const email = mapping.email && row[mapping.email] ? String(row[mapping.email]).trim() : '';
-            const classNameToMap =
-                mapping.className && row[mapping.className] ? String(row[mapping.className]).trim() : '';
-
-            let targetClassId: string = defaultClassId;
-            if (classNameToMap) {
-                const lowerName = classNameToMap.toLowerCase();
-                if (classMap.has(lowerName)) {
-                    targetClassId = classMap.get(lowerName) || '';
-                } else {
-                    const newClass = addClass({ name: classNameToMap });
-                    classMap.set(lowerName, newClass.id);
-                    targetClassId = newClass.id;
+        rows.forEach((row) => {
+            let targetClassId: string;
+            if (row.newClassName) {
+                const key = row.newClassName.toLowerCase();
+                if (!classIdForNewName.has(key)) {
+                    classIdForNewName.set(key, addClass({ name: row.newClassName }).id);
                 }
+                targetClassId = classIdForNewName.get(key)!;
+            } else {
+                targetClassId = row.existingClassId!;
             }
-            if (!targetClassId) return;
-            csvClassIds.add(targetClassId);
+            touchedClassIds.add(targetClassId);
 
-            // Skip duplicate CSV rows (same identity already processed in this import)
-            const nameLower = name.toLowerCase();
-            const emailLower = email.toLowerCase();
-            const csvKey = emailLower ? `email:${emailLower}` : `class:${targetClassId}|name:${nameLower}`;
-            if (seenCsvKeys.has(csvKey)) return;
-            seenCsvKeys.add(csvKey);
-
-            // Upsert: match by name+class first, then by email across all classes (enables class transfer)
-            const existing =
-                students.find(
-                    (s) =>
-                        !processedIds.has(s.id) &&
-                        s.classId === targetClassId &&
-                        s.name.toLowerCase().trim() === nameLower
-                ) ??
-                (emailLower
-                    ? students.find((s) => !processedIds.has(s.id) && s.email?.toLowerCase().trim() === emailLower)
-                    : undefined);
-
-            if (existing) {
-                const isTransfer = existing.classId !== targetClassId;
+            if (row.matchedStudent) {
+                const prev = row.matchedStudent;
+                const isTransfer = prev.classId !== targetClassId;
                 updateStudent({
-                    ...existing,
-                    name,
-                    email: email || existing.email,
+                    ...prev,
+                    name: row.name,
+                    email: row.email || prev.email,
                     classId: targetClassId,
+                    pastClassMemberships: isTransfer
+                        ? [
+                              ...(prev.pastClassMemberships ?? []),
+                              {
+                                  classId: prev.classId,
+                                  enrolledAt: prev.updatedAt ?? new Date(0).toISOString(),
+                                  leftAt: new Date().toISOString(),
+                              },
+                          ]
+                        : prev.pastClassMemberships,
                     updatedAt: new Date().toISOString(),
                 });
-                processedIds.add(existing.id);
-                matchedIds.add(existing.id);
+                matchedIds.add(prev.id);
                 if (isTransfer) transferred++;
                 else updated++;
                 return;
             }
 
-            addStudent({ name, email, classId: targetClassId });
+            addStudent({ name: row.name, email: row.email, classId: targetClassId });
             created++;
         });
 
         let removed = 0;
         if (syncMode) {
             students
-                .filter((s) => csvClassIds.has(s.classId) && !matchedIds.has(s.id))
+                .filter((s) => touchedClassIds.has(s.classId) && !matchedIds.has(s.id))
                 .forEach((s) => {
                     deleteStudent(s.id);
                     removed++;
@@ -244,6 +214,16 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
         }
 
         setSummary({ created, updated, transferred, removed });
+    };
+
+    const startImport = () => {
+        const defaultClassId = classes[0]?.id || '';
+        const rows = matchCsvRows(parsedData, mapping, classes, students, defaultClassId);
+        if (syncMode) {
+            setPendingImport({ rows, preview: summarizeImport(rows, students, syncMode) });
+        } else {
+            runImport(rows);
+        }
     };
 
     const hasNameMapping = mapping.fullName || (mapping.firstName && mapping.lastName);
@@ -489,13 +469,30 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                             {t('csv.cancel')}
                         </button>
                         {!error && headers.length > 0 && (
-                            <button className="btn btn-primary" disabled={!hasNameMapping} onClick={handleImport}>
+                            <button className="btn btn-primary" disabled={!hasNameMapping} onClick={startImport}>
                                 <CheckCircle size={15} /> {t('csv.import_btn', { count: parsedData.length })}
                             </button>
                         )}
                     </>
                 )}
             </div>
+
+            <ConfirmDialog
+                open={pendingImport !== null}
+                title={t('csv.sync_confirm_title')}
+                message={t('csv.sync_confirm_message', {
+                    transferred: pendingImport?.preview.transferred ?? 0,
+                    removed: pendingImport?.preview.removed ?? 0,
+                })}
+                confirmLabel={t('csv.sync_confirm_action')}
+                cancelLabel={t('csv.cancel')}
+                danger={(pendingImport?.preview.removed ?? 0) > 0}
+                onConfirm={() => {
+                    if (pendingImport) runImport(pendingImport.rows);
+                    setPendingImport(null);
+                }}
+                onCancel={() => setPendingImport(null)}
+            />
         </Modal>
     );
 }

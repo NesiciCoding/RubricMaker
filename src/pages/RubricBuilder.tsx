@@ -33,6 +33,7 @@ import {
     GripHorizontal,
     Clock,
     RotateCcw,
+    GitCompare,
     Printer,
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
@@ -56,6 +57,7 @@ import { DEFAULT_FORMAT } from '../types';
 import { saveCriterionClipboard, loadCriterionClipboard, loadUserTemplates, saveUserTemplates } from '../store/storage';
 import { nanoid } from '../utils/nanoid';
 import StandardsPickerModal from '../components/Standards/StandardsPickerModal';
+import RubricVersionDiffModal from '../components/Modals/RubricVersionDiffModal';
 import CefrPickerModal from '../components/CEFR/CefrPickerModal';
 import Modal from '../components/ui/Modal';
 import VocabularyListEditor from '../components/Vocabulary/VocabularyListEditor';
@@ -162,6 +164,7 @@ export default function RubricBuilder() {
     const [syncDialogRubric, setSyncDialogRubric] = useState<Rubric | null>(null);
     const [showVersionHistory, setShowVersionHistory] = useState(false);
     const [versionLabel, setVersionLabel] = useState('');
+    const [diffAgainstVersionIndex, setDiffAgainstVersionIndex] = useState<number | null>(null);
     const [showPreviewStdDesc, setShowPreviewStdDesc] = useState(false);
     const [tourRun, setTourRun] = useState(false);
 
@@ -3349,6 +3352,12 @@ export default function RubricBuilder() {
                                             </div>
                                             <button
                                                 className="btn btn-secondary btn-sm"
+                                                onClick={() => setDiffAgainstVersionIndex(actualIndex)}
+                                            >
+                                                <GitCompare size={13} /> {t('rubricBuilder.compare_version')}
+                                            </button>
+                                            <button
+                                                className="btn btn-secondary btn-sm"
                                                 onClick={() => {
                                                     if (!window.confirm(t('rubricBuilder.confirm_restore'))) return;
                                                     restoreRubricVersion(id, actualIndex);
@@ -3365,6 +3374,14 @@ export default function RubricBuilder() {
                         )}
                     </div>
                 </Modal>
+            )}
+
+            {diffAgainstVersionIndex !== null && existing?.versions?.[diffAgainstVersionIndex] && (
+                <RubricVersionDiffModal
+                    from={existing.versions[diffAgainstVersionIndex].snapshot}
+                    to={existing}
+                    onClose={() => setDiffAgainstVersionIndex(null)}
+                />
             )}
 
             {syncDialogRubric && (

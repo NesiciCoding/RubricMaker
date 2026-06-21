@@ -452,6 +452,17 @@ export default function StudentProfilePage() {
                                 )}
                             </span>
                         </div>
+                        {student.pastClassMemberships && student.pastClassMemberships.length > 0 && (
+                            <div style={{ marginTop: 6, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                {t('studentProfile.past_classes')}:{' '}
+                                {student.pastClassMemberships
+                                    .map(
+                                        (m) =>
+                                            `${classes.find((c) => c.id === m.classId)?.name || t('studentProfile.unknown_class')} (${new Date(m.leftAt).toLocaleDateString()})`
+                                    )
+                                    .join(' → ')}
+                            </div>
+                        )}
                     </div>
                 </div>
 

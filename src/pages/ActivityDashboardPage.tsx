@@ -8,6 +8,8 @@ import { getActivityDashboardTourSteps } from '../data/TutorialSteps';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import { getActivityRows, buildDashboardMatrix } from '../utils/activityDashboardAggregator';
+import { getClassStandardsCoverage } from '../utils/standardsCoverageAggregator';
+import ClassCoverageGapPanel from '../components/Standards/ClassCoverageGapPanel';
 import { VO_TRACKS } from '../data/voTracks';
 import type { VoTrack } from '../types';
 
@@ -34,6 +36,7 @@ export default function ActivityDashboardPage() {
 
     const [filterYear, setFilterYear] = useState<string>('all');
     const [filterTrack, setFilterTrack] = useState<VoTrack | 'all'>('all');
+    const [coverageClassId, setCoverageClassId] = useState<string>('');
     const [tourRun, setTourRun] = useState(false);
     const activityTourSteps = useMemo(() => getActivityDashboardTourSteps(t), [t]);
 
@@ -61,6 +64,15 @@ export default function ActivityDashboardPage() {
         () =>
             buildDashboardMatrix(activities, visibleClasses, students, studentRubrics, studentTests, essayAssignments),
         [activities, visibleClasses, students, studentRubrics, studentTests, essayAssignments]
+    );
+
+    const activeCoverageClassId = coverageClassId || visibleClasses[0]?.id || '';
+    const coverage = useMemo(
+        () =>
+            activeCoverageClassId
+                ? getClassStandardsCoverage(activeCoverageClassId, classes, students, studentRubrics, rubrics)
+                : { covered: [], gap: [] },
+        [activeCoverageClassId, classes, students, studentRubrics, rubrics]
     );
 
     function toggleRubricLink(classId: string, rubricId: string, linked: boolean) {
@@ -397,6 +409,31 @@ export default function ActivityDashboardPage() {
                         </tbody>
                     </table>
                 </div>
+
+                {visibleClasses.length > 0 && (
+                    <div style={{ marginTop: 28 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                            <h3 style={{ margin: 0, fontSize: '1rem' }}>{t('activityDashboard.coverage_title')}</h3>
+                            <div className="form-group" style={{ marginBottom: 0, maxWidth: 200 }}>
+                                <label htmlFor="coverage-class-select" className="sr-only">
+                                    {t('activityDashboard.coverage_title')}
+                                </label>
+                                <select
+                                    id="coverage-class-select"
+                                    value={activeCoverageClassId}
+                                    onChange={(e) => setCoverageClassId(e.target.value)}
+                                >
+                                    {visibleClasses.map((cls) => (
+                                        <option key={cls.id} value={cls.id}>
+                                            {cls.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                        <ClassCoverageGapPanel covered={coverage.covered} gap={coverage.gap} />
+                    </div>
+                )}
             </div>
         </>
     );
