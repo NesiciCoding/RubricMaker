@@ -134,14 +134,18 @@ describe('buildReportCardData', () => {
 
     it('produces an empty rubrics section, not a crash, when the student has no graded entries', () => {
         const student = makeStudent();
-        const result = buildReportCardData('s1', { ...allOffConfig, includeRubrics: true }, {
-            student,
-            className: 'Class A',
-            entries: [],
-            rubrics: [],
-            studentRubrics: [],
-            selfAssessments: [],
-        });
+        const result = buildReportCardData(
+            's1',
+            { ...allOffConfig, includeRubrics: true },
+            {
+                student,
+                className: 'Class A',
+                entries: [],
+                rubrics: [],
+                studentRubrics: [],
+                selfAssessments: [],
+            }
+        );
 
         expect(result.sections).toHaveLength(1);
         expect(result.sections[0]).toEqual({ type: 'rubrics', entries: [] });
@@ -151,14 +155,18 @@ describe('buildReportCardData', () => {
         const student = makeStudent();
         const rubric = makeRubric();
         const sr = makeSr();
-        const result = buildReportCardData('s1', { ...allOffConfig, includeLearningGoals: true }, {
-            student,
-            className: 'Class A',
-            entries: [{ sr, rubric, scale: null }],
-            rubrics: [rubric],
-            studentRubrics: [sr],
-            selfAssessments: [],
-        });
+        const result = buildReportCardData(
+            's1',
+            { ...allOffConfig, includeLearningGoals: true },
+            {
+                student,
+                className: 'Class A',
+                entries: [{ sr, rubric, scale: null }],
+                rubrics: [rubric],
+                studentRubrics: [sr],
+                selfAssessments: [],
+            }
+        );
 
         expect(result.sections).toHaveLength(1);
         expect(result.sections[0]).toEqual({ type: 'learningGoals', goals: [] });
@@ -168,14 +176,18 @@ describe('buildReportCardData', () => {
         const student = makeStudent();
         const rubric = makeRubric();
         const sr = makeSr();
-        const result = buildReportCardData('s1', { ...allOffConfig, includeCefr: true }, {
-            student,
-            className: 'Class A',
-            entries: [{ sr, rubric, scale: null }],
-            rubrics: [rubric],
-            studentRubrics: [sr],
-            selfAssessments: [],
-        });
+        const result = buildReportCardData(
+            's1',
+            { ...allOffConfig, includeCefr: true },
+            {
+                student,
+                className: 'Class A',
+                entries: [{ sr, rubric, scale: null }],
+                rubrics: [rubric],
+                studentRubrics: [sr],
+                selfAssessments: [],
+            }
+        );
 
         expect(result.sections).toHaveLength(1);
         const section = result.sections[0];
@@ -187,14 +199,18 @@ describe('buildReportCardData', () => {
 
     it('produces an empty test summary without crashing when no tests are passed', () => {
         const student = makeStudent();
-        const result = buildReportCardData('s1', { ...allOffConfig, includeTestSummary: true }, {
-            student,
-            className: 'Class A',
-            entries: [],
-            rubrics: [],
-            studentRubrics: [],
-            selfAssessments: [],
-        });
+        const result = buildReportCardData(
+            's1',
+            { ...allOffConfig, includeTestSummary: true },
+            {
+                student,
+                className: 'Class A',
+                entries: [],
+                rubrics: [],
+                studentRubrics: [],
+                selfAssessments: [],
+            }
+        );
 
         expect(result.sections).toEqual([
             { type: 'testSummary', overview: { studentId: 's1', questions: [], skills: [] } },
@@ -232,16 +248,20 @@ describe('buildReportCardData', () => {
             gradedAt: '2024-01-15',
         };
 
-        const result = buildReportCardData('s1', { ...allOffConfig, includeTestSummary: true }, {
-            student,
-            className: 'Class A',
-            entries: [],
-            rubrics: [],
-            studentRubrics: [],
-            selfAssessments: [],
-            tests: [test],
-            studentTests: [studentTest],
-        });
+        const result = buildReportCardData(
+            's1',
+            { ...allOffConfig, includeTestSummary: true },
+            {
+                student,
+                className: 'Class A',
+                entries: [],
+                rubrics: [],
+                studentRubrics: [],
+                selfAssessments: [],
+                tests: [test],
+                studentTests: [studentTest],
+            }
+        );
 
         expect(result.sections).toHaveLength(1);
         const section = result.sections[0];

@@ -37,11 +37,7 @@ function mkCriterion(id: string, maxPts = 10): RubricCriterion {
     };
 }
 
-function mkRubric(
-    id: string,
-    criteria: RubricCriterion[],
-    extra?: Partial<Rubric>
-): Rubric {
+function mkRubric(id: string, criteria: RubricCriterion[], extra?: Partial<Rubric>): Rubric {
     return {
         id,
         name: `Rubric ${id}`,
@@ -170,10 +166,7 @@ describe('buildCohortAverages', () => {
     });
 
     it('ignores cells with zero rubricCount', () => {
-        const allCells = [
-            [{ ...mkCell('writing', 'B1', 60), rubricCount: 0 }],
-            [mkCell('writing', 'B1', 80)],
-        ];
+        const allCells = [[{ ...mkCell('writing', 'B1', 60), rubricCount: 0 }], [mkCell('writing', 'B1', 80)]];
         const averages = buildCohortAverages(allCells);
         expect(averages.get('writing__B1')).toBeCloseTo(80, 0);
     });
@@ -198,10 +191,7 @@ describe('getCriterionInterventionFlags', () => {
 
     it('does not flag exactly N-1 (2) consecutive low scores', () => {
         // low = score <= 60%; using 2/10 = 20% (low) twice
-        const srs = [
-            mkSR('a', 'r1', 's1', { c1: 2 }, '2024-01-01'),
-            mkSR('b', 'r1', 's1', { c1: 2 }, '2024-01-02'),
-        ];
+        const srs = [mkSR('a', 'r1', 's1', { c1: 2 }, '2024-01-01'), mkSR('b', 'r1', 's1', { c1: 2 }, '2024-01-02')];
         const flags = getCriterionInterventionFlags('s1', srs, [rubric]);
         expect(flags).toHaveLength(0);
     });
@@ -246,10 +236,7 @@ describe('getCriterionInterventionFlags', () => {
 
     it('respects a custom consecutiveLowThreshold config', () => {
         const config: LearningPathConfig = { ...DEFAULT_LEARNING_PATH_CONFIG, consecutiveLowThreshold: 2 };
-        const srs = [
-            mkSR('a', 'r1', 's1', { c1: 2 }, '2024-01-01'),
-            mkSR('b', 'r1', 's1', { c1: 2 }, '2024-01-02'),
-        ];
+        const srs = [mkSR('a', 'r1', 's1', { c1: 2 }, '2024-01-01'), mkSR('b', 'r1', 's1', { c1: 2 }, '2024-01-02')];
         const flags = getCriterionInterventionFlags('s1', srs, [rubric], config);
         expect(flags).toHaveLength(1);
     });
@@ -355,7 +342,15 @@ describe('stress test — large dataset', () => {
         const srs: StudentRubric[] = [];
         for (let s = 0; s < 50; s++) {
             for (let g = 0; g < 10; g++) {
-                srs.push(mkSR(`sr_${s}_${g}`, 'r1', `s${s}`, { c1: (g % 10) + 1 }, `2024-01-${String(g + 1).padStart(2, '0')}`));
+                srs.push(
+                    mkSR(
+                        `sr_${s}_${g}`,
+                        'r1',
+                        `s${s}`,
+                        { c1: (g % 10) + 1 },
+                        `2024-01-${String(g + 1).padStart(2, '0')}`
+                    )
+                );
             }
         }
         expect(() => getCriterionInterventionFlags('s0', srs, [rubric])).not.toThrow();

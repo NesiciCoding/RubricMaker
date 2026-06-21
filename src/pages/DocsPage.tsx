@@ -109,7 +109,7 @@ const ROUTE_TREE: RouteNode[] = [
         path: '/marketplace',
         label: 'Rubric Marketplace',
         description:
-            "Browse, publish, and clone rubrics shared by colleagues at your school. Requires cloud sync and a school.",
+            'Browse, publish, and clone rubrics shared by colleagues at your school. Requires cloud sync and a school.',
         color: '#3b82f6',
     },
     {
@@ -694,8 +694,8 @@ function RubricsTab() {
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
                     The <strong>Marketplace</strong> page lets you publish a rubric for colleagues at your school to
                     browse and clone, and upvote the ones you find useful. It requires cloud sync to be configured and
-                    your account to belong to a school — without both, the page shows a short explanation instead of
-                    the listings. Cloning copies a listing into your own rubrics without affecting the original.
+                    your account to belong to a school — without both, the page shows a short explanation instead of the
+                    listings. Cloning copies a listing into your own rubrics without affecting the original.
                 </p>
             </FeatureSection>
 
@@ -880,10 +880,10 @@ function GradingTab() {
                     Test summary export
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
-                    Open <strong>Results</strong> on a test to find the <strong>Export summary</strong> panel. Choose
-                    a single student or the whole class, then export a PDF or Word summary with per-question accuracy
-                    and a strong/developing/weak breakdown by linked standard or CEFR descriptor — useful for spotting
-                    which topics a student or the class as a whole needs to revisit.
+                    Open <strong>Results</strong> on a test to find the <strong>Export summary</strong> panel. Choose a
+                    single student or the whole class, then export a PDF or Word summary with per-question accuracy and
+                    a strong/developing/weak breakdown by linked standard or CEFR descriptor — useful for spotting which
+                    topics a student or the class as a whole needs to revisit.
                 </p>
             </FeatureSection>
         </div>
@@ -913,8 +913,8 @@ function CefrTab() {
 
             <FeatureSection icon={TrendingUp} title="Learning Paths & Interventions" color="#10b981">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
-                    Open a student's profile and click "Learning Path" to see rule-based, offline suggestions — no AI
-                    is involved, only deterministic comparisons against class averages and score history.
+                    Open a student's profile and click "Learning Path" to see rule-based, offline suggestions — no AI is
+                    involved, only deterministic comparisons against class averages and score history.
                 </p>
                 <FeatureList
                     items={[
@@ -1104,8 +1104,8 @@ function AnalyticsTab() {
             <FeatureSection icon={ClipboardCheck} title="Report cards" color="#0ea5e9">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     On the <strong>Export</strong> page, below Period Report, use the Report Card panel to generate a
-                    consolidated DOCX per student. It reuses the same class and student picker, date range, and
-                    period label as the Period Report above.
+                    consolidated DOCX per student. It reuses the same class and student picker, date range, and period
+                    label as the Period Report above.
                 </p>
                 <FeatureList
                     items={[

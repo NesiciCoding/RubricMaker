@@ -1046,9 +1046,7 @@ export default function ExportPage() {
                             <input
                                 type="checkbox"
                                 checked={reportCardConfig[key]}
-                                onChange={(e) =>
-                                    setReportCardConfig((prev) => ({ ...prev, [key]: e.target.checked }))
-                                }
+                                onChange={(e) => setReportCardConfig((prev) => ({ ...prev, [key]: e.target.checked }))}
                             />
                             {t(labelKey)}
                         </label>

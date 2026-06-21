@@ -317,8 +317,7 @@ export default function TestListPage() {
                                                     <button
                                                         className="btn btn-secondary btn-sm"
                                                         disabled={
-                                                            exporting ||
-                                                            (exportScope === 'single' && !exportStudentId)
+                                                            exporting || (exportScope === 'single' && !exportStudentId)
                                                         }
                                                         onClick={() => handleExportTestSummary(test, 'pdf')}
                                                     >
@@ -327,8 +326,7 @@ export default function TestListPage() {
                                                     <button
                                                         className="btn btn-secondary btn-sm"
                                                         disabled={
-                                                            exporting ||
-                                                            (exportScope === 'single' && !exportStudentId)
+                                                            exporting || (exportScope === 'single' && !exportStudentId)
                                                         }
                                                         onClick={() => handleExportTestSummary(test, 'docx')}
                                                     >

@@ -173,7 +173,10 @@ export function mergeTestStrongWeakSummaries(summaries: TestStrongWeakSummary[])
 
     const questions = summaries.flatMap((s) => s.questions);
 
-    const skillGroups = new Map<string, { label: string; questionIds: string[]; samples: number; weightedSum: number }>();
+    const skillGroups = new Map<
+        string,
+        { label: string; questionIds: string[]; samples: number; weightedSum: number }
+    >();
     for (const summary of summaries) {
         for (const skill of summary.skills) {
             const group = skillGroups.get(skill.groupId) ?? {

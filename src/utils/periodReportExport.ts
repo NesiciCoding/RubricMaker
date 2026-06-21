@@ -399,7 +399,12 @@ function buildCefrSection(section: Extract<ReportCardSection, { type: 'cefr' }>)
 
     const rows: TableRow[] = [
         new TableRow({
-            children: [headerCell('Skill', 25), headerCell('Level', 15), headerCell('Status', 30), headerCell('Confidence', 30)],
+            children: [
+                headerCell('Skill', 25),
+                headerCell('Level', 15),
+                headerCell('Status', 30),
+                headerCell('Confidence', 30),
+            ],
         }),
         ...overview.cells.map((cell) => {
             const confPct = normalizePct(cell.confidenceRate * 100);
@@ -510,7 +515,9 @@ function buildReportCardSections(data: ReportCardData): (Paragraph | Table)[] {
                             spacing: { before: 280, after: 120 },
                         }),
                         new Paragraph({
-                            children: [new TextRun({ text: 'No graded rubrics in this period.', size: 20, color: '6B7280' })],
+                            children: [
+                                new TextRun({ text: 'No graded rubrics in this period.', size: 20, color: '6B7280' }),
+                            ],
                             spacing: { after: 120 },
                         })
                     );

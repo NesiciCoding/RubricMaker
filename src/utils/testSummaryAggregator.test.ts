@@ -130,7 +130,12 @@ describe('calcQuestionBreakdowns — cohort mode', () => {
         const test = makeTest();
         const studentTests = [
             makeStudentTest({ id: 'st1', studentId: 's1', answers: [{ questionId: 'q-mc', response: 'b' }] }),
-            makeStudentTest({ id: 'st2', testId: 'other-test', studentId: 's2', answers: [{ questionId: 'q-mc', response: 'a' }] }),
+            makeStudentTest({
+                id: 'st2',
+                testId: 'other-test',
+                studentId: 's2',
+                answers: [{ questionId: 'q-mc', response: 'a' }],
+            }),
         ];
         const breakdowns = calcQuestionBreakdowns(null, studentTests, test);
         const mc = breakdowns.find((b) => b.questionId === 'q-mc');
@@ -197,7 +202,13 @@ describe('calcSkillBreakdowns', () => {
                 { id: 'y', text: 'Right', isCorrect: true },
             ],
             linkedCefrDescriptors: [
-                { descriptorId: 'cefr-1', level: 'B1', skill: 'listening', descriptionEn: 'Can understand routine info', descriptionNl: 'Kan routine-info begrijpen' },
+                {
+                    descriptorId: 'cefr-1',
+                    level: 'B1',
+                    skill: 'listening',
+                    descriptionEn: 'Can understand routine info',
+                    descriptionNl: 'Kan routine-info begrijpen',
+                },
             ],
         };
         const test = makeTest({ questions: [cefrQuestion] });
@@ -241,12 +252,30 @@ describe('mergeTestStrongWeakSummaries', () => {
         const a = {
             studentId: 's1',
             questions: [{ questionId: 'q1', accuracyPct: 100, bucket: 'strong' as const, sampleSize: 1 }],
-            skills: [{ groupId: 'std-1', label: 'Standard A1', questionIds: ['q1'], accuracyPct: 100, bucket: 'strong' as const, sampleSize: 1 }],
+            skills: [
+                {
+                    groupId: 'std-1',
+                    label: 'Standard A1',
+                    questionIds: ['q1'],
+                    accuracyPct: 100,
+                    bucket: 'strong' as const,
+                    sampleSize: 1,
+                },
+            ],
         };
         const b = {
             studentId: 's1',
             questions: [{ questionId: 'q2', accuracyPct: 0, bucket: 'weak' as const, sampleSize: 1 }],
-            skills: [{ groupId: 'std-1', label: 'Standard A1', questionIds: ['q2'], accuracyPct: 0, bucket: 'weak' as const, sampleSize: 1 }],
+            skills: [
+                {
+                    groupId: 'std-1',
+                    label: 'Standard A1',
+                    questionIds: ['q2'],
+                    accuracyPct: 0,
+                    bucket: 'weak' as const,
+                    sampleSize: 1,
+                },
+            ],
         };
 
         const merged = mergeTestStrongWeakSummaries([a, b]);

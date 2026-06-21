@@ -25,10 +25,7 @@ export default function StudentLearningPathPage() {
     const student = students.find((s) => s.id === id);
     const cls = classes.find((c) => c.id === student?.classId);
 
-    const cohortStudents = useMemo(
-        () => (cls ? students.filter((s) => s.classId === cls.id) : []),
-        [students, cls]
-    );
+    const cohortStudents = useMemo(() => (cls ? students.filter((s) => s.classId === cls.id) : []), [students, cls]);
 
     const studentOverview = useMemo(
         () =>
@@ -74,8 +71,7 @@ export default function StudentLearningPathPage() {
     );
 
     const allFlags = useMemo(
-        () =>
-            [...criterionFlags, ...cefrSkillFlags].sort((a, b) => b.triggeredAt.localeCompare(a.triggeredAt)),
+        () => [...criterionFlags, ...cefrSkillFlags].sort((a, b) => b.triggeredAt.localeCompare(a.triggeredAt)),
         [criterionFlags, cefrSkillFlags]
     );
 

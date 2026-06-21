@@ -18,7 +18,12 @@ vi.mock('docx', () => ({
 vi.mock('file-saver', () => ({ saveAs: vi.fn() }));
 
 import { saveAs } from 'file-saver';
-import { exportPeriodReport, exportPeriodReportsBatch, exportReportCard, exportReportCardsBatch } from './periodReportExport';
+import {
+    exportPeriodReport,
+    exportPeriodReportsBatch,
+    exportReportCard,
+    exportReportCardsBatch,
+} from './periodReportExport';
 import type { PeriodReportInput } from './periodReportExport';
 import type { ReportCardData } from '../types';
 

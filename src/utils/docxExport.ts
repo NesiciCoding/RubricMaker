@@ -489,7 +489,12 @@ const TEST_BUCKET_COLOR: Record<TestStrengthBucket, string> = {
     weak: 'EF4444',
 };
 
-function buildTestSummaryChildren(studentId: string | null, studentTests: StudentTest[], test: Test, student?: Student) {
+function buildTestSummaryChildren(
+    studentId: string | null,
+    studentTests: StudentTest[],
+    test: Test,
+    student?: Student
+) {
     const questions = calcQuestionBreakdowns(studentId, studentTests, test);
     const skills = calcSkillBreakdowns(studentId, studentTests, test);
     const questionsById = new Map(test.questions.map((q) => [q.id, q]));

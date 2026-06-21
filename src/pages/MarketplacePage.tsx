@@ -19,7 +19,9 @@ export default function MarketplacePage() {
     const [showPublish, setShowPublish] = useState(false);
     const [publishRubricId, setPublishRubricId] = useState('');
     const [publishAttribution, setPublishAttribution] = useState(
-        dbStatus.currentUser?.displayName ? `${t('marketplace.shared_by_prefix')} ${dbStatus.currentUser.displayName}` : ''
+        dbStatus.currentUser?.displayName
+            ? `${t('marketplace.shared_by_prefix')} ${dbStatus.currentUser.displayName}`
+            : ''
     );
     const [publishing, setPublishing] = useState(false);
     const [clonedId, setClonedId] = useState<string | null>(null);
@@ -80,9 +82,7 @@ export default function MarketplacePage() {
             return next;
         });
         setListings((prev) =>
-            prev.map((l) =>
-                l.id === listingId ? { ...l, upvoteCount: l.upvoteCount + (isUpvoted ? -1 : 1) } : l
-            )
+            prev.map((l) => (l.id === listingId ? { ...l, upvoteCount: l.upvoteCount + (isUpvoted ? -1 : 1) } : l))
         );
     }
 
@@ -95,7 +95,10 @@ export default function MarketplacePage() {
                         className="card"
                         style={{ maxWidth: 480, margin: '40px auto', textAlign: 'center', padding: 32 }}
                     >
-                        <Store size={32} style={{ margin: '0 auto 12px', display: 'block', color: 'var(--text-muted)' }} />
+                        <Store
+                            size={32}
+                            style={{ margin: '0 auto 12px', display: 'block', color: 'var(--text-muted)' }}
+                        />
                         <p style={{ fontWeight: 600, color: 'var(--text)', marginBottom: 8 }}>
                             {t('marketplace.disabled_title')}
                         </p>
