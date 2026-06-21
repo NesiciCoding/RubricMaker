@@ -45,7 +45,8 @@ function StandardRow({ entry }: { entry: StandardCoverageEntry }) {
                     }
                     style={{ flexShrink: 0, alignSelf: 'center' }}
                 >
-                    {Math.round(entry.averagePercentage)}% · {t('activityDashboard.coverage_rubric_count', { count: entry.rubricCount })}
+                    {Math.round(entry.averagePercentage)}% ·{' '}
+                    {t('activityDashboard.coverage_rubric_count', { count: entry.rubricCount })}
                 </span>
             )}
         </div>
@@ -69,7 +70,9 @@ export default function ClassCoverageGapPanel({ covered, gap }: Props) {
             <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                     <AlertTriangle size={15} style={{ color: 'var(--red, #ef4444)' }} />
-                    <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{t('activityDashboard.coverage_gap_title')}</span>
+                    <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                        {t('activityDashboard.coverage_gap_title')}
+                    </span>
                     <span className="badge">{gap.length}</span>
                 </div>
                 {gap.length === 0 ? (

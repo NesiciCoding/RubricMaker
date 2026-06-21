@@ -86,7 +86,9 @@ describe('getClassStandardsCoverage', () => {
                 title: 'Crit',
                 description: '',
                 weight: 100,
-                linkedStandards: [{ guid: 'std1', description: 'In scope', standardSetTitle: '', jurisdictionTitle: '' }],
+                linkedStandards: [
+                    { guid: 'std1', description: 'In scope', standardSetTitle: '', jurisdictionTitle: '' },
+                ],
                 levels: [{ id: 'l1', label: 'Good', minPoints: 8, maxPoints: 10, description: '', subItems: [] }],
             },
         ]);
@@ -103,13 +105,7 @@ describe('getClassStandardsCoverage', () => {
             },
         ]);
         const classesWithLink: Class[] = [{ id: 'c1', name: 'Class A', rubricIds: ['r1'] }];
-        const result = getClassStandardsCoverage(
-            'c1',
-            classesWithLink,
-            students,
-            [],
-            [linkedRubric, unlinkedRubric]
-        );
+        const result = getClassStandardsCoverage('c1', classesWithLink, students, [], [linkedRubric, unlinkedRubric]);
         expect(result.gap.map((g) => g.guid)).toEqual(['std1']);
     });
 
@@ -134,7 +130,12 @@ describe('getClassStandardsCoverage', () => {
                                     label: 'Sub',
                                     maxPoints: 5,
                                     linkedStandards: [
-                                        { guid: 'std3', description: 'Sub standard', standardSetTitle: '', jurisdictionTitle: '' },
+                                        {
+                                            guid: 'std3',
+                                            description: 'Sub standard',
+                                            standardSetTitle: '',
+                                            jurisdictionTitle: '',
+                                        },
                                     ],
                                 },
                             ],

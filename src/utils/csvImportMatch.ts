@@ -45,8 +45,7 @@ export function matchCsvRows(
         if (!name) continue;
 
         const email = mapping.email && row[mapping.email] ? String(row[mapping.email]).trim() : '';
-        const classNameToMap =
-            mapping.className && row[mapping.className] ? String(row[mapping.className]).trim() : '';
+        const classNameToMap = mapping.className && row[mapping.className] ? String(row[mapping.className]).trim() : '';
 
         let existingClassId: string | null = defaultClassId || null;
         let newClassName: string | null = null;
@@ -72,7 +71,9 @@ export function matchCsvRows(
             (existingClassId
                 ? students.find(
                       (s) =>
-                          !processedIds.has(s.id) && s.classId === existingClassId && s.name.toLowerCase().trim() === nameLower
+                          !processedIds.has(s.id) &&
+                          s.classId === existingClassId &&
+                          s.name.toLowerCase().trim() === nameLower
                   )
                 : undefined) ??
             (emailLower

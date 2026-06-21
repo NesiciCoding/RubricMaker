@@ -541,9 +541,9 @@ function GettingStartedTab() {
                     export — the importer auto-detects Dutch column names and, if "Update existing students" is checked,
                     will update matching records instead of creating duplicates. Moving a student to a new class
                     (manually, or via a re-import that detects a class transfer) keeps a "Past classes" trail on their
-                    profile — none of their grading history is lost. When "Update existing students" is on, you'll see
-                    a confirmation summarizing how many students will transfer class and how many will be archived
-                    before anything is applied — useful for promoting a whole class to the next year.
+                    profile — none of their grading history is lost. When "Update existing students" is on, you'll see a
+                    confirmation summarizing how many students will transfer class and how many will be archived before
+                    anything is applied — useful for promoting a whole class to the next year.
                 </Step>
                 <Step number={4} title="Grade a student">
                     Open any rubric from the Rubrics page. Click the student's name to open the grading view. Click each

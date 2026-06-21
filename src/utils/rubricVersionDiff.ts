@@ -62,7 +62,10 @@ function diffLevels(a: RubricLevel[], b: RubricLevel[]): LevelDiff[] {
     return diffs;
 }
 
-function diffCriterion(a: RubricCriterion, b: RubricCriterion): { fieldChanges: FieldChange[]; levelDiffs: LevelDiff[] } {
+function diffCriterion(
+    a: RubricCriterion,
+    b: RubricCriterion
+): { fieldChanges: FieldChange[]; levelDiffs: LevelDiff[] } {
     const fieldChanges: FieldChange[] = [];
     if (a.title !== b.title) fieldChanges.push({ field: 'title', from: a.title, to: b.title });
     if (a.weight !== b.weight) fieldChanges.push({ field: 'weight', from: String(a.weight), to: String(b.weight) });
@@ -77,7 +80,13 @@ export function diffRubricVersions(from: RubricSnapshot, to: RubricSnapshot): Cr
 
     for (const criterion of from.criteria) {
         if (!toById.has(criterion.id)) {
-            diffs.push({ status: 'removed', id: criterion.id, title: criterion.title, fieldChanges: [], levelDiffs: [] });
+            diffs.push({
+                status: 'removed',
+                id: criterion.id,
+                title: criterion.title,
+                fieldChanges: [],
+                levelDiffs: [],
+            });
         }
     }
     for (const criterion of to.criteria) {
