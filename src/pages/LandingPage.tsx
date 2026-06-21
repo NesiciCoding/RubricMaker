@@ -23,6 +23,7 @@ import {
     Radio,
     ClipboardCheck,
     PenLine,
+    Store,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { loadSupabaseConfig } from '../services/database';
@@ -76,6 +77,12 @@ const TEACHER_FEATURES = [
         title: 'Essays',
         desc: 'Write a prompt, link a rubric, and assign it to a class from a dedicated Essays page — then track submissions, share links, and watch live progress, all in one place.',
         color: '#6366f1',
+    },
+    {
+        icon: Store,
+        title: 'Rubric Marketplace',
+        desc: 'Share your best rubrics with colleagues at your school, and clone theirs.',
+        color: '#3b82f6',
     },
 ];
 

@@ -20,6 +20,7 @@ import {
     ClipboardCheck,
     PenLine,
     LayoutGrid,
+    Store,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
@@ -58,6 +59,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
         { to: '/', icon: LayoutDashboard, label: t('navigation.dashboard'), end: true },
         { to: '/activity-dashboard', icon: LayoutGrid, label: t('navigation.activity_dashboard') },
         { to: '/rubrics', icon: BookOpen, label: t('navigation.rubrics') },
+        { to: '/marketplace', icon: Store, label: t('navigation.marketplace') },
         { to: '/tests', icon: ClipboardCheck, label: t('navigation.tests') },
         { to: '/essays', icon: PenLine, label: t('navigation.essays') },
         { to: '/students', icon: Users, label: t('navigation.students') },

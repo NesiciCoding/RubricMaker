@@ -299,7 +299,8 @@
         "cefr_overview": "Aperçu CECR",
         "vocabulary": "Vocabulaire",
         "docs": "Documentation",
-        "activity_dashboard": "Tableau des activités"
+        "activity_dashboard": "Tableau des activités",
+        "marketplace": "Place de marché"
     },
     "dashboard": {
         "title": "Tableau de bord",
@@ -1785,5 +1786,25 @@
         "lww_body": "Lorsqu'un même enregistrement est modifié sur deux appareils, la modification la plus récente l'emporte (last-write-wins). Les modifications faites hors ligne sont protégées et ne sont jamais écrasées par des données cloud plus anciennes tant qu'elles n'ont pas été synchronisées.",
         "proctoring_title": "Signalements de surveillance",
         "proctoring_body": "Les signalements enregistrent lorsqu'un élève a quitté l'onglet du test, perdu le focus ou collé du contenu. Considérez-les comme des signaux à examiner, non comme une preuve de triche — faites preuve de jugement avec les réponses."
+    },
+    "marketplace": {
+        "title": "Place de marché des rubriques",
+        "disabled_title": "Place de marché indisponible",
+        "disabled_body": "Connectez Supabase et rejoignez un établissement pour utiliser la place de marché.",
+        "intro": "Parcourez les rubriques partagées par vos collègues dans votre établissement, publiez les vôtres et votez pour celles que vous trouvez utiles.",
+        "publish_button": "Publier une rubrique",
+        "publish_title": "Publier sur la place de marché",
+        "publish_select_rubric": "Rubrique",
+        "publish_select_placeholder": "Sélectionnez une rubrique…",
+        "publish_attribution_label": "Attribution (facultatif)",
+        "publish_attribution_placeholder": "p. ex. Partagé par Jane Doe — CC-BY-SA",
+        "publish_confirm": "Publier",
+        "shared_by_prefix": "Partagé par",
+        "loading": "Chargement des annonces…",
+        "empty_state": "Aucune rubrique n'a encore été partagée dans votre établissement.",
+        "upvote_title": "Voter",
+        "clone_title": "Cloner dans mes rubriques",
+        "clone_button": "Cloner",
+        "clone_done": "Cloné"
     }
 }

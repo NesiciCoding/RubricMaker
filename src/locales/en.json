@@ -299,7 +299,8 @@
         "cefr_overview": "CEFR Overview",
         "vocabulary": "Vocabulary",
         "docs": "Docs",
-        "activity_dashboard": "Activity Dashboard"
+        "activity_dashboard": "Activity Dashboard",
+        "marketplace": "Marketplace"
     },
     "dashboard": {
         "title": "Dashboard",
@@ -1785,5 +1786,25 @@
         "lww_body": "When the same record is edited on two devices, the most recent change wins (last-write-wins). Edits you make while offline are protected and are never overwritten by older cloud data until they have synced.",
         "proctoring_title": "Proctoring flags",
         "proctoring_body": "Flags record when a student left the test tab, lost focus, or pasted content. Treat them as signals to review, not proof of cheating — use your judgement alongside the responses."
+    },
+    "marketplace": {
+        "title": "Rubric Marketplace",
+        "disabled_title": "Marketplace unavailable",
+        "disabled_body": "Connect Supabase and join a school to use the marketplace.",
+        "intro": "Browse rubrics shared by colleagues at your school, publish your own, and upvote the ones you find useful.",
+        "publish_button": "Publish a rubric",
+        "publish_title": "Publish to marketplace",
+        "publish_select_rubric": "Rubric",
+        "publish_select_placeholder": "Select a rubric…",
+        "publish_attribution_label": "Attribution (optional)",
+        "publish_attribution_placeholder": "e.g. Shared by Jane Doe — CC-BY-SA",
+        "publish_confirm": "Publish",
+        "shared_by_prefix": "Shared by",
+        "loading": "Loading listings…",
+        "empty_state": "No rubrics have been shared at your school yet.",
+        "upvote_title": "Upvote",
+        "clone_title": "Clone into my rubrics",
+        "clone_button": "Clone",
+        "clone_done": "Cloned"
     }
 }

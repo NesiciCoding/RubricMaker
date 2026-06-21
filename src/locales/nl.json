@@ -299,7 +299,8 @@
         "cefr_overview": "CEFR Overzicht",
         "vocabulary": "Woordenschat",
         "docs": "Documentatie",
-        "activity_dashboard": "Activiteitenoverzicht"
+        "activity_dashboard": "Activiteitenoverzicht",
+        "marketplace": "Marktplaats"
     },
     "dashboard": {
         "title": "Dashboard",
@@ -1785,5 +1786,25 @@
         "lww_body": "Wanneer hetzelfde record op twee apparaten wordt bewerkt, wint de meest recente wijziging (last-write-wins). Wijzigingen die je offline maakt zijn beschermd en worden nooit overschreven door oudere clouddata totdat ze gesynchroniseerd zijn.",
         "proctoring_title": "Toezichtsmeldingen",
         "proctoring_body": "Meldingen registreren wanneer een leerling het tabblad verliet, de focus kwijtraakte of inhoud plakte. Beschouw ze als signalen om te bekijken, niet als bewijs van fraude — gebruik je eigen oordeel naast de antwoorden."
+    },
+    "marketplace": {
+        "title": "Rubric Marktplaats",
+        "disabled_title": "Marktplaats niet beschikbaar",
+        "disabled_body": "Verbind Supabase en sluit je aan bij een school om de marktplaats te gebruiken.",
+        "intro": "Bekijk rubrics die collega's op jouw school hebben gedeeld, publiceer je eigen rubrics en stem op de rubrics die je nuttig vindt.",
+        "publish_button": "Rubric publiceren",
+        "publish_title": "Publiceren naar marktplaats",
+        "publish_select_rubric": "Rubric",
+        "publish_select_placeholder": "Selecteer een rubric…",
+        "publish_attribution_label": "Toeschrijving (optioneel)",
+        "publish_attribution_placeholder": "bijv. Gedeeld door Jane Doe — CC-BY-SA",
+        "publish_confirm": "Publiceren",
+        "shared_by_prefix": "Gedeeld door",
+        "loading": "Aanbod laden…",
+        "empty_state": "Er zijn nog geen rubrics gedeeld op jouw school.",
+        "upvote_title": "Stem",
+        "clone_title": "Klonen naar mijn rubrics",
+        "clone_button": "Klonen",
+        "clone_done": "Gekloond"
     }
 }

@@ -299,7 +299,8 @@
         "cefr_overview": "Resumen MCER",
         "vocabulary": "Vocabulario",
         "docs": "Documentación",
-        "activity_dashboard": "Panel de actividades"
+        "activity_dashboard": "Panel de actividades",
+        "marketplace": "Mercado"
     },
     "dashboard": {
         "title": "Panel",
@@ -1785,5 +1786,25 @@
         "lww_body": "Cuando el mismo registro se edita en dos dispositivos, gana el cambio más reciente (last-write-wins). Los cambios que hagas sin conexión están protegidos y nunca se sobrescriben con datos más antiguos de la nube hasta que se hayan sincronizado.",
         "proctoring_title": "Alertas de supervisión",
         "proctoring_body": "Las alertas registran cuando un estudiante abandonó la pestaña del examen, perdió el foco o pegó contenido. Considéralas señales para revisar, no pruebas de copia — usa tu criterio junto con las respuestas."
+    },
+    "marketplace": {
+        "title": "Mercado de rúbricas",
+        "disabled_title": "Mercado no disponible",
+        "disabled_body": "Conecta Supabase y únete a un centro educativo para usar el mercado.",
+        "intro": "Explora rúbricas compartidas por colegas de tu centro, publica las tuyas y vota por las que te resulten útiles.",
+        "publish_button": "Publicar una rúbrica",
+        "publish_title": "Publicar en el mercado",
+        "publish_select_rubric": "Rúbrica",
+        "publish_select_placeholder": "Selecciona una rúbrica…",
+        "publish_attribution_label": "Atribución (opcional)",
+        "publish_attribution_placeholder": "p. ej. Compartido por Jane Doe — CC-BY-SA",
+        "publish_confirm": "Publicar",
+        "shared_by_prefix": "Compartido por",
+        "loading": "Cargando anuncios…",
+        "empty_state": "Aún no se han compartido rúbricas en tu centro.",
+        "upvote_title": "Votar",
+        "clone_title": "Clonar en mis rúbricas",
+        "clone_button": "Clonar",
+        "clone_done": "Clonado"
     }
 }
