@@ -166,6 +166,27 @@ npm run db:reset     # Reset and re-apply all migrations
 
 ---
 
+## Key utility modules
+
+| File | Purpose |
+|---|---|
+| `src/utils/gradeCalc.ts` | Score aggregation and weighted scoring engine |
+| `src/utils/cefrStudentAggregator.ts` | CEFR level computation across assessments |
+| `src/utils/learningGoalsAggregator.ts` | Learning goal progress tracking |
+| `src/utils/docxExport.ts` | DOCX generation via `docx` library |
+| `src/utils/docxTemplateExport.ts` | Mail-merge DOCX with field substitution |
+| `src/utils/pdfExport.ts` | PDF report generation |
+| `src/utils/textExtraction.ts` | OCR (Tesseract) + DOCX parsing (Mammoth) |
+| `src/utils/essayShareCode.ts` | Shareable codes for essay access (no auth needed) |
+| `src/utils/pinHash.ts` | PIN hashing for student self-assessment locks |
+| `src/utils/clozeParse.ts` | Parses `{{...}}` cloze gap syntax and `[[...]]` hot-text fragment syntax for test questions |
+| `src/utils/learningPathAggregator.ts` | Rule-based rubric recommendations and intervention flagging |
+| `src/utils/testSummaryAggregator.ts` | Per-question/per-skill strong-weak test breakdown |
+| `src/utils/reportCardAggregator.ts` | Composes CEFR, learning-goals, and test-summary data into one report card |
+| `src/services/standardsApi.ts` | Common Standards Project API (CCSS, NGSS) |
+
+---
+
 ## Deployment
 
 RubricMaker works in two modes:
