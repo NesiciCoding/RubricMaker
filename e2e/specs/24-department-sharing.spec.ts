@@ -50,7 +50,9 @@ test.describe('Department rubric sharing', () => {
         const colleagueList = new RubricListPage(colleaguePage);
         await colleagueList.goto();
 
-        await expect(colleaguePage.getByText('Shared with your department')).toBeVisible({ timeout: 15_000 });
+        await expect(colleaguePage.getByRole('heading', { name: 'Shared with your department' })).toBeVisible({
+            timeout: 15_000,
+        });
         await expect(colleaguePage.getByText('Department Shared Rubric')).toBeVisible({ timeout: 15_000 });
     });
 

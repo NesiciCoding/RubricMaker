@@ -468,9 +468,14 @@ export class SupabaseAdapter {
     // ── Rubrics ───────────────────────────────────────────────────────────────
 
     async fetchRubrics(): Promise<Rubric[]> {
+        // Scoped to owned rows: rubrics_shared_select and rubrics_school_select grant
+        // additional RLS visibility (individual/department shares) for the dedicated
+        // fetchSharedRubrics()/fetchSchoolSharedRubrics() calls — an unscoped select
+        // here would let those same rows leak into "my rubrics" with owner-only controls.
         const { data, error } = await this.db()
             .from('rubrics')
             .select('data')
+            .eq('owner_id', this.uid())
             .order('created_at', { ascending: false });
         if (error) {
             console.error('fetchRubrics', error);
@@ -742,7 +747,11 @@ export class SupabaseAdapter {
     }
 
     async fetchCommentBank(): Promise<CommentBankItem[]> {
-        const { data, error } = await this.db().from('comment_bank').select('data');
+        // Scoped to owned rows — see fetchRubrics() for why: comment_bank_school_select
+        // grants RLS visibility into a colleague's shared items for
+        // fetchSchoolSharedCommentBank(), and an unscoped select here would let those
+        // same rows leak into "my comment bank" with owner-only edit/delete controls.
+        const { data, error } = await this.db().from('comment_bank').select('data').eq('owner_id', this.uid());
         if (error) {
             console.error('fetchCommentBank', error);
             return [];
