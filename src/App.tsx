@@ -96,7 +96,7 @@ export default function App() {
     // Resolve student link regardless of role so new sign-ups (default role='user')
     // are auto-detected without requiring a manual admin role change.
     const linkedStudent = settings.userEmail
-        ? students.find((s) => s.email?.toLowerCase() === settings.userEmail!.toLowerCase())
+        ? (students.find((s) => s.email?.toLowerCase() === settings.userEmail!.toLowerCase()) ?? null)
         : null;
 
     // Student portal: explicit 'student' role OR email matches a student record for any
