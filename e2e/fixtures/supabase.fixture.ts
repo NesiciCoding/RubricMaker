@@ -377,7 +377,11 @@ export const test = base.extend<SupabaseFixtures>({
     ],
 
     colleagueEmail: [
-        async (_fixtures, run) => {
+        // Playwright requires the first param to be a (possibly empty) destructuring
+        // pattern; it parses this statically to detect fixture dependencies, so it
+        // cannot be renamed to a plain identifier.
+        // eslint-disable-next-line no-empty-pattern
+        async ({}, run) => {
             const email = makeTestEmail();
             await run(email);
         },
