@@ -45,6 +45,33 @@ const adminHeaders = {
     Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
 };
 
+// Mirror DEFAULT_SETTINGS + DEFAULT_FORMAT from src/store/storage.ts and src/types/index.ts.
+// A partial settings object (missing defaultFormat) crashes the rubric builder/list on hydration.
+const FULL_TEST_SETTINGS = {
+    defaultGradeScaleId: 'letter-10',
+    theme: 'dark',
+    language: 'en',
+    accentColor: '#3b82f6',
+    hasSeenTutorial: true,
+    defaultFormat: {
+        criterionColWidth: 200,
+        levelColWidth: 160,
+        fontSize: 14,
+        headerColor: '#1e3a5f',
+        headerTextColor: '#ffffff',
+        accentColor: '#3b82f6',
+        fontFamily: 'Inter, system-ui, sans-serif',
+        showWeights: true,
+        showPoints: true,
+        showCalculatedGrade: true,
+        levelOrder: 'best-first',
+        headerTextAlign: 'center',
+        showBorders: true,
+        rowStriping: false,
+        orientation: 'portrait',
+    },
+};
+
 /**
  * Create a confirmed test user, set up a school so the app skips the
  * onboarding flow, and return the Supabase magic-link URL using the admin
@@ -102,40 +129,11 @@ async function createUserAndGetMagicLink(email: string): Promise<string> {
     // Non-fatal: if school setup fails the test may see the onboarding page
 
     // Seed complete user settings so hydration doesn't overwrite state with a
-    // partial object (missing defaultFormat / language / theme crashes the
-    // rubric builder). user_settings(user_id pk, settings jsonb).
-    // Mirror DEFAULT_SETTINGS + DEFAULT_FORMAT from src/store/storage.ts and
-    // src/types/index.ts, plus hasSeenTutorial:true to suppress the tutorial.
+    // partial object. user_settings(user_id pk, settings jsonb).
     await fetch(`${SUPABASE_URL}/rest/v1/user_settings`, {
         method: 'POST',
         headers: restHeaders,
-        body: JSON.stringify({
-            user_id: user.id,
-            settings: {
-                defaultGradeScaleId: 'letter-10',
-                theme: 'dark',
-                language: 'en',
-                accentColor: '#3b82f6',
-                hasSeenTutorial: true,
-                defaultFormat: {
-                    criterionColWidth: 200,
-                    levelColWidth: 160,
-                    fontSize: 14,
-                    headerColor: '#1e3a5f',
-                    headerTextColor: '#ffffff',
-                    accentColor: '#3b82f6',
-                    fontFamily: 'Inter, system-ui, sans-serif',
-                    showWeights: true,
-                    showPoints: true,
-                    showCalculatedGrade: true,
-                    levelOrder: 'best-first',
-                    headerTextAlign: 'center',
-                    showBorders: true,
-                    rowStriping: false,
-                    orientation: 'portrait',
-                },
-            },
-        }),
+        body: JSON.stringify({ user_id: user.id, settings: FULL_TEST_SETTINGS }),
     });
     // Non-fatal if this fails; tests may see the tutorial but core behaviour still works
 
@@ -185,10 +183,7 @@ async function createColleagueAndGetMagicLink(email: string, schoolId: string): 
         fetch(`${SUPABASE_URL}/rest/v1/user_settings`, {
             method: 'POST',
             headers: restHeaders,
-            body: JSON.stringify({
-                user_id: user.id,
-                settings: { theme: 'dark', language: 'en', hasSeenTutorial: true },
-            }),
+            body: JSON.stringify({ user_id: user.id, settings: FULL_TEST_SETTINGS }),
         }),
     ]);
 
