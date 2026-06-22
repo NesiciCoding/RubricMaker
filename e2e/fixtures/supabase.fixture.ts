@@ -171,7 +171,7 @@ async function createColleagueAndGetMagicLink(email: string, schoolId: string): 
     }
     const user = (await createRes.json()) as { id: string };
 
-    await Promise.all([
+    const [schoolMemberRes, profilePatchRes, userSettingsRes] = await Promise.all([
         fetch(`${SUPABASE_URL}/rest/v1/school_members`, {
             method: 'POST',
             headers: restHeaders,
@@ -191,6 +191,21 @@ async function createColleagueAndGetMagicLink(email: string, schoolId: string): 
             }),
         }),
     ]);
+
+    const failures = (
+        [
+            ['school_members', schoolMemberRes],
+            ['profiles', profilePatchRes],
+            ['user_settings', userSettingsRes],
+        ] as const
+    ).filter(([, res]) => !res.ok);
+
+    if (failures.length > 0) {
+        const details = await Promise.all(
+            failures.map(async ([name, res]) => `${name}: ${res.status} ${await res.text()}`)
+        );
+        throw new Error(`Failed to initialize colleague user ${user.id} (${details.join('; ')})`);
+    }
 
     return generateMagicLinkForExistingUser(email);
 }
@@ -362,16 +377,16 @@ export const test = base.extend<SupabaseFixtures>({
     ],
 
     colleagueEmail: [
-        async ({}, use) => {
+        async (_fixtures, run) => {
             const email = makeTestEmail();
-            await use(email);
+            await run(email);
         },
         { scope: 'test' },
     ],
 
     colleaguePage: [
         // Depends on `supabasePage` so testUserEmail's school already exists.
-        async ({ browser, testUserEmail, colleagueEmail, supabasePage }, use) => {
+        async ({ browser, testUserEmail, colleagueEmail, supabasePage }, run) => {
             void supabasePage;
 
             const schoolId = await getSchoolIdForEmail(testUserEmail);
@@ -386,7 +401,7 @@ export const test = base.extend<SupabaseFixtures>({
                 const page = await context.newPage();
                 const magicLink = await createColleagueAndGetMagicLink(colleagueEmail, schoolId);
                 await signInViaMagicLink(page, magicLink);
-                await use(page);
+                await run(page);
             } finally {
                 await context.close();
                 await deleteTestUser(colleagueEmail);

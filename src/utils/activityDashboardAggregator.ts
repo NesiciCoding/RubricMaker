@@ -20,7 +20,6 @@ export function getActivityRows(rubrics: Rubric[], tests: Test[], essayAssignmen
     }));
     const testRows: ActivityRow[] = sortByDisplayOrder(tests).map((t) => ({ kind: 'test', id: t.id, name: t.name }));
 
-    // Group essays by teacherKey; use first assignment's title/displayOrder/createdAt as the row's
     const essayGroups = new Map<string, EssayAssignment>();
     for (const a of essayAssignments) {
         if (!essayGroups.has(a.teacherKey)) {

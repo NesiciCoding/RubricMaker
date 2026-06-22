@@ -72,8 +72,12 @@ export default function ActivityDashboardPage() {
     function handleAssignTasks() {
         if (!assignTaskCell || !assignTeacherName.trim()) return;
         const classStudents = students.filter((s) => s.classId === assignTaskCell.classId);
+        const alreadyPending = new Set(
+            pendingTasks.filter((t) => t.rubricId === assignTaskCell.rubricId).map((t) => t.studentId)
+        );
         const ungraded = classStudents.filter(
             (s) =>
+                !alreadyPending.has(s.id) &&
                 !studentRubrics.some(
                     (sr) => !sr.isPeerReview && sr.rubricId === assignTaskCell.rubricId && sr.studentId === s.id
                 )
@@ -157,7 +161,9 @@ export default function ActivityDashboardPage() {
 
     function handleDragEnd(result: DropResult) {
         if (!result.destination) return;
-        const kind = result.destination.droppableId.replace('ad-', '') as 'rubric' | 'test' | 'essay';
+        if (result.source.droppableId !== result.destination.droppableId) return;
+        if (result.source.index === result.destination.index) return;
+        const kind = result.source.droppableId.replace('ad-', '') as 'rubric' | 'test' | 'essay';
         const rows = activities.filter((a) => a.kind === kind);
         for (const [row, order] of reorderDisplayOrder(rows, result.source.index, result.destination.index)) {
             if (kind === 'rubric') {
@@ -654,8 +660,9 @@ export default function ActivityDashboardPage() {
                         </div>
                         <div className="modal-body">
                             <div className="form-group">
-                                <label>{t('gradingTasks.teacher_label')}</label>
+                                <label htmlFor="grading-task-teacher">{t('gradingTasks.teacher_label')}</label>
                                 <input
+                                    id="grading-task-teacher"
                                     type="text"
                                     autoFocus
                                     value={assignTeacherName}
@@ -664,8 +671,9 @@ export default function ActivityDashboardPage() {
                                 />
                             </div>
                             <div className="form-group">
-                                <label>{t('gradingTasks.due_date_label')}</label>
+                                <label htmlFor="grading-task-due-date">{t('gradingTasks.due_date_label')}</label>
                                 <input
+                                    id="grading-task-due-date"
                                     type="date"
                                     value={assignDueDate}
                                     onChange={(e) => setAssignDueDate(e.target.value)}

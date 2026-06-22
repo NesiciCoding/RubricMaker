@@ -1683,8 +1683,9 @@ export default function GradeStudent() {
                         {t('coGrading.modal_desc')}
                     </p>
                     <div className="form-group">
-                        <label>{t('coGrading.colleague_label')}</label>
+                        <label htmlFor="co-grader-name">{t('coGrading.colleague_label')}</label>
                         <input
+                            id="co-grader-name"
                             type="text"
                             autoFocus
                             value={coGraderName}

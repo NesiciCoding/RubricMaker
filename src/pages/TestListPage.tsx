@@ -36,6 +36,7 @@ export default function TestListPage() {
 
     function handleDragEnd(result: DropResult) {
         if (!result.destination) return;
+        if (result.destination.index === result.source.index) return;
         for (const [test, order] of reorderDisplayOrder(sortedTests, result.source.index, result.destination.index)) {
             if (test.displayOrder !== order) updateTest({ ...test, displayOrder: order });
         }
@@ -201,6 +202,7 @@ export default function TestListPage() {
                                                             </div>
                                                             <div style={{ display: 'flex', gap: 4 }}>
                                                                 <button
+                                                                    type="button"
                                                                     className="btn btn-ghost btn-icon btn-sm"
                                                                     title={t('tests.action_duplicate')}
                                                                     aria-label={t('tests.action_duplicate')}
@@ -212,6 +214,7 @@ export default function TestListPage() {
                                                                     <Copy size={14} />
                                                                 </button>
                                                                 <button
+                                                                    type="button"
                                                                     className="btn btn-ghost btn-icon btn-sm"
                                                                     title={t('tests.action_edit')}
                                                                     aria-label={t('tests.action_edit')}
@@ -223,6 +226,7 @@ export default function TestListPage() {
                                                                     <Edit2 size={14} />
                                                                 </button>
                                                                 <button
+                                                                    type="button"
                                                                     className="btn btn-ghost btn-icon btn-sm"
                                                                     title={t('tests.action_delete')}
                                                                     aria-label={t('tests.action_delete')}
@@ -273,12 +277,14 @@ export default function TestListPage() {
                                                             style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
                                                         >
                                                             <button
+                                                                type="button"
                                                                 className="btn btn-primary btn-sm"
                                                                 onClick={() => navigate(`/tests/${test.id}`)}
                                                             >
                                                                 <Edit2 size={14} /> {t('tests.action_edit')}
                                                             </button>
                                                             <button
+                                                                type="button"
                                                                 className="btn btn-secondary btn-sm"
                                                                 disabled={test.questions.length === 0}
                                                                 onClick={() => setAssigningTestId(test.id)}
@@ -286,6 +292,7 @@ export default function TestListPage() {
                                                                 <Send size={14} /> {t('tests.action_assign')}
                                                             </button>
                                                             <button
+                                                                type="button"
                                                                 className="btn btn-secondary btn-sm"
                                                                 disabled={
                                                                     studentTests.filter((st) => st.testId === test.id)
@@ -301,12 +308,14 @@ export default function TestListPage() {
                                                                 {t('tests.results.action_results')}
                                                             </button>
                                                             <button
+                                                                type="button"
                                                                 className="btn btn-secondary btn-sm"
                                                                 onClick={() => setImportingTestId(test.id)}
                                                             >
                                                                 <Upload size={14} /> {t('tests.results.action_import')}
                                                             </button>
                                                             <button
+                                                                type="button"
                                                                 className="btn btn-secondary btn-sm"
                                                                 onClick={() => navigate(`/tests/${test.id}/monitor`)}
                                                             >
@@ -341,6 +350,7 @@ export default function TestListPage() {
                                                                             return (
                                                                                 <button
                                                                                     key={st.id}
+                                                                                    type="button"
                                                                                     className="btn btn-ghost btn-sm"
                                                                                     style={{
                                                                                         justifyContent: 'flex-start',
@@ -437,6 +447,7 @@ export default function TestListPage() {
                                                                             </select>
                                                                         )}
                                                                         <button
+                                                                            type="button"
                                                                             className="btn btn-secondary btn-sm"
                                                                             disabled={
                                                                                 exporting ||
@@ -451,6 +462,7 @@ export default function TestListPage() {
                                                                             {t('tests.export.export_pdf')}
                                                                         </button>
                                                                         <button
+                                                                            type="button"
                                                                             className="btn btn-secondary btn-sm"
                                                                             disabled={
                                                                                 exporting ||

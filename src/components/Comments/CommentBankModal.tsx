@@ -236,6 +236,7 @@ export default function CommentBankModal({ onClose, onSelect }: CommentBankModal
                                         {!onSelect && item.isOwn && (
                                             <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                                                 <button
+                                                    type="button"
                                                     className="btn btn-ghost btn-icon btn-xs"
                                                     aria-label={t('rubricList.share_with_department')}
                                                     title={t('rubricList.share_with_department')}

@@ -25,7 +25,12 @@ export default function ModerationQueuePage() {
         const secondMarker = peerReviews.find((pr) => pr.id === secondMarkerEntryId);
         const baseline = studentRubrics.find((sr) => sr.id === baselineId);
         if (!secondMarker || !baseline) return;
-        saveStudentRubric({ ...baseline, entries: secondMarker.entries, overallComment: secondMarker.overallComment });
+        saveStudentRubric({
+            ...baseline,
+            entries: secondMarker.entries,
+            overallComment: secondMarker.overallComment,
+            globalModifier: secondMarker.globalModifier,
+        });
         deletePeerReview(secondMarkerEntryId);
     }
 
@@ -34,8 +39,9 @@ export default function ModerationQueuePage() {
             <Topbar title={t('coGrading.moderation_title')} />
             <div className="page-content fade-in">
                 <div className="form-group" style={{ maxWidth: 280, marginBottom: 20 }}>
-                    <label>{t('coGrading.threshold_label')}</label>
+                    <label htmlFor="moderation-threshold">{t('coGrading.threshold_label')}</label>
                     <input
+                        id="moderation-threshold"
                         type="number"
                         min={0}
                         step={0.5}
@@ -131,6 +137,7 @@ export default function ModerationQueuePage() {
 
                                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                                         <button
+                                            type="button"
                                             className="btn btn-secondary btn-sm"
                                             onClick={() =>
                                                 navigate(`/rubrics/${item.rubricId}/grade/${item.studentId}`)
@@ -139,12 +146,14 @@ export default function ModerationQueuePage() {
                                             {t('coGrading.action_view_baseline')}
                                         </button>
                                         <button
+                                            type="button"
                                             className="btn btn-secondary btn-sm"
                                             onClick={() => resolveKeepBaseline(item.secondMarkerEntry.id)}
                                         >
                                             {t('coGrading.action_keep_baseline')}
                                         </button>
                                         <button
+                                            type="button"
                                             className="btn btn-primary btn-sm"
                                             onClick={() =>
                                                 resolveAcceptSecondMarker(item.baseline.id, item.secondMarkerEntry.id)

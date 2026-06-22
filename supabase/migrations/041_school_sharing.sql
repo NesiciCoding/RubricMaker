@@ -9,7 +9,7 @@
 
 CREATE POLICY rubrics_school_select ON public.rubrics FOR SELECT TO authenticated
   USING (
-    (data->>'sharedWithSchool')::boolean IS TRUE
+    data->'sharedWithSchool' = 'true'::jsonb
     AND EXISTS (
       SELECT 1 FROM public.school_members me
       JOIN public.school_members owner_sm ON owner_sm.school_id = me.school_id
@@ -20,7 +20,7 @@ CREATE POLICY rubrics_school_select ON public.rubrics FOR SELECT TO authenticate
 
 CREATE POLICY comment_bank_school_select ON public.comment_bank FOR SELECT TO authenticated
   USING (
-    (data->>'sharedWithSchool')::boolean IS TRUE
+    data->'sharedWithSchool' = 'true'::jsonb
     AND EXISTS (
       SELECT 1 FROM public.school_members me
       JOIN public.school_members owner_sm ON owner_sm.school_id = me.school_id

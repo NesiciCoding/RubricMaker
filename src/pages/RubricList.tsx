@@ -720,6 +720,8 @@ export default function RubricList() {
                             {schoolShared.map((r) => (
                                 <div
                                     key={r.id}
+                                    role="button"
+                                    tabIndex={0}
                                     style={{
                                         padding: '12px 14px',
                                         background: 'var(--bg-elevated)',
@@ -731,6 +733,12 @@ export default function RubricList() {
                                         cursor: 'pointer',
                                     }}
                                     onClick={() => navigate(`/rubrics/${r.id}`)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            navigate(`/rubrics/${r.id}`);
+                                        }
+                                    }}
                                 >
                                     <BookOpen
                                         size={16}

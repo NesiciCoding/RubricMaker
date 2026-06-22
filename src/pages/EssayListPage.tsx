@@ -33,6 +33,7 @@ export default function EssayListPage() {
 
     function handleDragEnd(result: DropResult) {
         if (!result.destination) return;
+        if (result.destination.index === result.source.index) return;
         for (const [group, order] of reorderDisplayOrder(groups, result.source.index, result.destination.index)) {
             if (group.displayOrder !== order) updateEssayGroup(group.teacherKey, { displayOrder: order });
         }
@@ -138,6 +139,7 @@ export default function EssayListPage() {
                                                             </div>
                                                             <div style={{ display: 'flex', gap: 4 }}>
                                                                 <button
+                                                                    type="button"
                                                                     className="btn btn-ghost btn-icon btn-sm"
                                                                     title={t('tests.action_edit')}
                                                                     aria-label={t('tests.action_edit')}
@@ -146,6 +148,7 @@ export default function EssayListPage() {
                                                                     <Edit2 size={14} />
                                                                 </button>
                                                                 <button
+                                                                    type="button"
                                                                     className="btn btn-ghost btn-icon btn-sm"
                                                                     title={t('tests.action_delete')}
                                                                     aria-label={t('tests.action_delete')}
@@ -183,6 +186,7 @@ export default function EssayListPage() {
                                                             style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
                                                         >
                                                             <button
+                                                                type="button"
                                                                 className="btn btn-primary btn-sm"
                                                                 onClick={() => navigate(`/essays/${teacherKey}`)}
                                                             >

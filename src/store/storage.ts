@@ -513,7 +513,19 @@ export function importFullBackup(json: string): boolean {
             else console.warn('[importFullBackup] essayTemplates failed validation — skipped');
         }
         if (data.gradingTasks !== undefined) {
-            if (isObjectArray(data.gradingTasks)) saveGradingTasks(data.gradingTasks as GradingTask[]);
+            if (
+                Array.isArray(data.gradingTasks) &&
+                data.gradingTasks.every(
+                    (t) =>
+                        isPlainObject(t) &&
+                        typeof (t as Record<string, unknown>).id === 'string' &&
+                        typeof (t as Record<string, unknown>).rubricId === 'string' &&
+                        typeof (t as Record<string, unknown>).studentId === 'string' &&
+                        typeof (t as Record<string, unknown>).assignedToTeacher === 'string' &&
+                        typeof (t as Record<string, unknown>).assignedAt === 'string'
+                )
+            )
+                saveGradingTasks(data.gradingTasks as GradingTask[]);
             else console.warn('[importFullBackup] gradingTasks failed validation — skipped');
         }
         if (data.userTemplates !== undefined) {

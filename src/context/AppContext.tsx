@@ -569,7 +569,9 @@ function reducer(state: StoreData, action: Action): StoreData {
             return { ...state, essayTemplates: next };
         }
         case 'ADD_GRADING_TASKS': {
-            const next = [...state.gradingTasks, ...action.payload];
+            const byId = new Map(state.gradingTasks.map((task) => [task.id, task]));
+            for (const task of action.payload) byId.set(task.id, task);
+            const next = Array.from(byId.values());
             saveGradingTasks(next);
             return { ...state, gradingTasks: next };
         }
