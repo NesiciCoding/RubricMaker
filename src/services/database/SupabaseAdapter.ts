@@ -17,6 +17,7 @@ import type {
     DocumentAnalysisResult,
     EssayAssignment,
     EssayTemplate,
+    GradingTask,
     StudentEssayAssignmentSummary,
     Test,
     StudentTest,
@@ -467,9 +468,14 @@ export class SupabaseAdapter {
     // ── Rubrics ───────────────────────────────────────────────────────────────
 
     async fetchRubrics(): Promise<Rubric[]> {
+        // Scoped to owned rows: rubrics_shared_select and rubrics_school_select grant
+        // additional RLS visibility (individual/department shares) for the dedicated
+        // fetchSharedRubrics()/fetchSchoolSharedRubrics() calls — an unscoped select
+        // here would let those same rows leak into "my rubrics" with owner-only controls.
         const { data, error } = await this.db()
             .from('rubrics')
             .select('data')
+            .eq('owner_id', this.uid())
             .order('created_at', { ascending: false });
         if (error) {
             console.error('fetchRubrics', error);
@@ -726,8 +732,26 @@ export class SupabaseAdapter {
 
     // ── Comment Bank ──────────────────────────────────────────────────────────
 
+    /** Comment bank items a colleague in the same school has opted to share read-only with the whole school. */
+    async fetchSchoolSharedCommentBank(): Promise<CommentBankItem[]> {
+        const { data, error } = await this.db()
+            .from('comment_bank')
+            .select('owner_id, data')
+            .eq('data->>sharedWithSchool', 'true')
+            .neq('owner_id', this.uid());
+        if (error) {
+            console.error('fetchSchoolSharedCommentBank', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as CommentBankItem).filter(Boolean);
+    }
+
     async fetchCommentBank(): Promise<CommentBankItem[]> {
-        const { data, error } = await this.db().from('comment_bank').select('data');
+        // Scoped to owned rows — see fetchRubrics() for why: comment_bank_school_select
+        // grants RLS visibility into a colleague's shared items for
+        // fetchSchoolSharedCommentBank(), and an unscoped select here would let those
+        // same rows leak into "my comment bank" with owner-only edit/delete controls.
+        const { data, error } = await this.db().from('comment_bank').select('data').eq('owner_id', this.uid());
         if (error) {
             console.error('fetchCommentBank', error);
             return [];
@@ -1079,6 +1103,27 @@ export class SupabaseAdapter {
         return error ? { success: false, error: error.message } : { success: true };
     }
 
+    async fetchGradingTasks(): Promise<GradingTask[]> {
+        const { data, error } = await this.db().from('grading_tasks').select('data');
+        if (error) {
+            console.error('fetchGradingTasks', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as GradingTask);
+    }
+
+    async upsertGradingTask(t: GradingTask): Promise<SyncResult> {
+        const { error } = await this.db()
+            .from('grading_tasks')
+            .upsert({ id: t.id, owner_id: this.uid(), data: t }, { onConflict: 'id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteGradingTask(id: string): Promise<SyncResult> {
+        const { error } = await this.db().from('grading_tasks').delete().eq('id', id).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
     // ── Essay assignments & submissions (teacher side) ────────────────────────
 
     /** Persist the assignment to the DB so the student page can validate it */
@@ -1388,6 +1433,20 @@ export class SupabaseAdapter {
         return (data ?? [])
             .map((r) => (r as unknown as { rubrics: { data: unknown } }).rubrics?.data as Rubric)
             .filter(Boolean);
+    }
+
+    /** Rubrics a colleague in the same school has opted to share read-only with the whole school. */
+    async fetchSchoolSharedRubrics(): Promise<Rubric[]> {
+        const { data, error } = await this.db()
+            .from('rubrics')
+            .select('owner_id, data')
+            .eq('data->>sharedWithSchool', 'true')
+            .neq('owner_id', this.uid());
+        if (error) {
+            console.error('fetchSchoolSharedRubrics', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as Rubric).filter(Boolean);
     }
 
     // ── Rubric Marketplace ────────────────────────────────────────────────────

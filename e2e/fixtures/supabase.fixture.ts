@@ -45,6 +45,33 @@ const adminHeaders = {
     Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
 };
 
+// Mirror DEFAULT_SETTINGS + DEFAULT_FORMAT from src/store/storage.ts and src/types/index.ts.
+// A partial settings object (missing defaultFormat) crashes the rubric builder/list on hydration.
+const FULL_TEST_SETTINGS = {
+    defaultGradeScaleId: 'letter-10',
+    theme: 'dark',
+    language: 'en',
+    accentColor: '#3b82f6',
+    hasSeenTutorial: true,
+    defaultFormat: {
+        criterionColWidth: 200,
+        levelColWidth: 160,
+        fontSize: 14,
+        headerColor: '#1e3a5f',
+        headerTextColor: '#ffffff',
+        accentColor: '#3b82f6',
+        fontFamily: 'Inter, system-ui, sans-serif',
+        showWeights: true,
+        showPoints: true,
+        showCalculatedGrade: true,
+        levelOrder: 'best-first',
+        headerTextAlign: 'center',
+        showBorders: true,
+        rowStriping: false,
+        orientation: 'portrait',
+    },
+};
+
 /**
  * Create a confirmed test user, set up a school so the app skips the
  * onboarding flow, and return the Supabase magic-link URL using the admin
@@ -102,42 +129,78 @@ async function createUserAndGetMagicLink(email: string): Promise<string> {
     // Non-fatal: if school setup fails the test may see the onboarding page
 
     // Seed complete user settings so hydration doesn't overwrite state with a
-    // partial object (missing defaultFormat / language / theme crashes the
-    // rubric builder). user_settings(user_id pk, settings jsonb).
-    // Mirror DEFAULT_SETTINGS + DEFAULT_FORMAT from src/store/storage.ts and
-    // src/types/index.ts, plus hasSeenTutorial:true to suppress the tutorial.
+    // partial object. user_settings(user_id pk, settings jsonb).
     await fetch(`${SUPABASE_URL}/rest/v1/user_settings`, {
         method: 'POST',
         headers: restHeaders,
-        body: JSON.stringify({
-            user_id: user.id,
-            settings: {
-                defaultGradeScaleId: 'letter-10',
-                theme: 'dark',
-                language: 'en',
-                accentColor: '#3b82f6',
-                hasSeenTutorial: true,
-                defaultFormat: {
-                    criterionColWidth: 200,
-                    levelColWidth: 160,
-                    fontSize: 14,
-                    headerColor: '#1e3a5f',
-                    headerTextColor: '#ffffff',
-                    accentColor: '#3b82f6',
-                    fontFamily: 'Inter, system-ui, sans-serif',
-                    showWeights: true,
-                    showPoints: true,
-                    showCalculatedGrade: true,
-                    levelOrder: 'best-first',
-                    headerTextAlign: 'center',
-                    showBorders: true,
-                    rowStriping: false,
-                    orientation: 'portrait',
-                },
-            },
-        }),
+        body: JSON.stringify({ user_id: user.id, settings: FULL_TEST_SETTINGS }),
     });
     // Non-fatal if this fails; tests may see the tutorial but core behaviour still works
+
+    return generateMagicLinkForExistingUser(email);
+}
+
+/** Look up the school_id assigned to a user's profile (set by createUserAndGetMagicLink). */
+async function getSchoolIdForEmail(email: string): Promise<string | null> {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?email=eq.${encodeURIComponent(email)}&select=school_id`, {
+        headers: adminHeaders,
+    });
+    if (!res.ok) return null;
+    const rows = (await res.json()) as { school_id: string | null }[];
+    return rows[0]?.school_id ?? null;
+}
+
+/**
+ * Create a second confirmed user who joins an EXISTING school (a colleague at
+ * the same school, as opposed to `secondSupabasePage` which is the same user
+ * on a second device). Used by department-sharing/co-grading tests that need
+ * two distinct teacher accounts in the same school.
+ */
+async function createColleagueAndGetMagicLink(email: string, schoolId: string): Promise<string> {
+    const restHeaders = { ...adminHeaders, Prefer: 'return=representation' };
+
+    const createRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+        method: 'POST',
+        headers: adminHeaders,
+        body: JSON.stringify({ email, email_confirm: true }),
+    });
+    if (!createRes.ok) {
+        throw new Error(`Failed to create colleague user: ${createRes.status} ${await createRes.text()}`);
+    }
+    const user = (await createRes.json()) as { id: string };
+
+    const [schoolMemberRes, profilePatchRes, userSettingsRes] = await Promise.all([
+        fetch(`${SUPABASE_URL}/rest/v1/school_members`, {
+            method: 'POST',
+            headers: restHeaders,
+            body: JSON.stringify({ school_id: schoolId, profile_id: user.id }),
+        }),
+        fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`, {
+            method: 'PATCH',
+            headers: restHeaders,
+            body: JSON.stringify({ school_id: schoolId }),
+        }),
+        fetch(`${SUPABASE_URL}/rest/v1/user_settings`, {
+            method: 'POST',
+            headers: restHeaders,
+            body: JSON.stringify({ user_id: user.id, settings: FULL_TEST_SETTINGS }),
+        }),
+    ]);
+
+    const failures = (
+        [
+            ['school_members', schoolMemberRes],
+            ['profiles', profilePatchRes],
+            ['user_settings', userSettingsRes],
+        ] as const
+    ).filter(([, res]) => !res.ok);
+
+    if (failures.length > 0) {
+        const details = await Promise.all(
+            failures.map(async ([name, res]) => `${name}: ${res.status} ${await res.text()}`)
+        );
+        throw new Error(`Failed to initialize colleague user ${user.id} (${details.join('; ')})`);
+    }
 
     return generateMagicLinkForExistingUser(email);
 }
@@ -256,6 +319,13 @@ export type SupabaseFixtures = {
      * existing user repeatedly, so no second user is created.
      */
     secondSupabasePage: Page;
+    /** Email of a second, distinct teacher account in the SAME school as `testUserEmail`. */
+    colleagueEmail: string;
+    /**
+     * A page signed in as `colleagueEmail` — a real second teacher at the same
+     * school as `supabasePage`'s user, for department-sharing/co-grading tests.
+     */
+    colleaguePage: Page;
 };
 
 // ── Fixture implementation ────────────────────────────────────────────────────
@@ -296,6 +366,44 @@ export const test = base.extend<SupabaseFixtures>({
                 await use(page);
             } finally {
                 await context.close();
+            }
+        },
+        { scope: 'test' },
+    ],
+
+    colleagueEmail: [
+        // Playwright requires the first param to be a (possibly empty) destructuring
+        // pattern; it parses this statically to detect fixture dependencies, so it
+        // cannot be renamed to a plain identifier.
+        // eslint-disable-next-line no-empty-pattern
+        async ({}, run) => {
+            const email = makeTestEmail();
+            await run(email);
+        },
+        { scope: 'test' },
+    ],
+
+    colleaguePage: [
+        // Depends on `supabasePage` so testUserEmail's school already exists.
+        async ({ browser, testUserEmail, colleagueEmail, supabasePage }, run) => {
+            void supabasePage;
+
+            const schoolId = await getSchoolIdForEmail(testUserEmail);
+            if (!schoolId) {
+                throw new Error(
+                    `No school_id found for ${testUserEmail} — cannot create a colleague in the same school`
+                );
+            }
+
+            const context = await browser.newContext();
+            try {
+                const page = await context.newPage();
+                const magicLink = await createColleagueAndGetMagicLink(colleagueEmail, schoolId);
+                await signInViaMagicLink(page, magicLink);
+                await run(page);
+            } finally {
+                await context.close();
+                await deleteTestUser(colleagueEmail);
             }
         },
         { scope: 'test' },

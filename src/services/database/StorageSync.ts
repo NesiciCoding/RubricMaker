@@ -22,6 +22,7 @@ import type {
     DocumentAnalysisResult,
     EssayAssignment,
     EssayTemplate,
+    GradingTask,
     Test,
     StudentTest,
 } from '../../types';
@@ -379,6 +380,7 @@ class StorageSyncService {
                 tests,
                 studentTests,
                 essayTemplates,
+                gradingTasks,
                 attachments,
                 settings,
                 profile,
@@ -399,6 +401,7 @@ class StorageSyncService {
                 this.adapter.fetchTests(),
                 this.adapter.fetchStudentTests(),
                 this.adapter.fetchEssayTemplates(),
+                this.adapter.fetchGradingTasks(),
                 this.attachmentSync.hydrateAttachments(),
                 this.adapter.fetchSettings(),
                 this.adapter.fetchMyProfile(),
@@ -464,6 +467,7 @@ class StorageSyncService {
                 tests,
                 studentTests,
                 essayTemplates,
+                gradingTasks,
                 attachments,
                 ...(mergedSettings ? { settings: mergedSettings as StoreData['settings'] } : {}),
             };
@@ -512,6 +516,7 @@ class StorageSyncService {
                 ...state.tests.map((t) => this.adapter.upsertTest(t)),
                 ...state.studentTests.map((st) => this.adapter.upsertStudentTest(st)),
                 ...state.essayTemplates.map((et) => this.adapter.upsertEssayTemplate(et)),
+                ...state.gradingTasks.map((gt) => this.adapter.upsertGradingTask(gt)),
                 this.adapter.saveSettings(state.settings),
             ];
             await Promise.all(ups);
@@ -628,6 +633,10 @@ class StorageSyncService {
                 case 'essayTemplate':
                     if (action === 'upsert') result = await this.adapter.upsertEssayTemplate(payload as EssayTemplate);
                     else if (id) result = await this.adapter.deleteEssayTemplate(id);
+                    break;
+                case 'gradingTask':
+                    if (action === 'upsert') result = await this.adapter.upsertGradingTask(payload as GradingTask);
+                    else if (id) result = await this.adapter.deleteGradingTask(id);
                     break;
                 case 'settings':
                     if (action === 'upsert')

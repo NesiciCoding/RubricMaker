@@ -1,6 +1,19 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit2, Trash2, Copy, ClipboardCheck, Send, BarChart3, Upload, Radio, FileDown } from 'lucide-react';
+import {
+    Plus,
+    Edit2,
+    Trash2,
+    Copy,
+    ClipboardCheck,
+    Send,
+    BarChart3,
+    Upload,
+    Radio,
+    FileDown,
+    GripVertical,
+} from 'lucide-react';
+import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
@@ -13,11 +26,21 @@ import TestAssignmentModal from '../components/Tests/TestAssignmentModal';
 import TestSubmissionImportModal from '../components/Tests/TestSubmissionImportModal';
 import ClassAverageAdjuster from '../components/Tests/ClassAverageAdjuster';
 import type { Test } from '../types';
+import { sortByDisplayOrder, reorderDisplayOrder } from '../utils/displayOrder';
 
 export default function TestListPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { tests, addTest, deleteTest, studentTests, saveStudentTest, students } = useApp();
+    const { tests, addTest, updateTest, deleteTest, studentTests, saveStudentTest, students } = useApp();
+    const sortedTests = sortByDisplayOrder(tests);
+
+    function handleDragEnd(result: DropResult) {
+        if (!result.destination) return;
+        if (result.destination.index === result.source.index) return;
+        for (const [test, order] of reorderDisplayOrder(sortedTests, result.source.index, result.destination.index)) {
+            if (test.displayOrder !== order) updateTest({ ...test, displayOrder: order });
+        }
+    }
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
     const { showToast } = useToast();
     const [assigningTestId, setAssigningTestId] = useState<string | null>(null);
@@ -108,238 +131,365 @@ export default function TestListPage() {
                         </button>
                     </div>
                 ) : (
-                    <div
-                        style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-                            gap: 16,
-                        }}
-                    >
-                        {tests.map((test) => {
-                            const totalPoints = test.questions.reduce((sum, q) => sum + (q.points || 0), 0);
-                            return (
+                    <DragDropContext onDragEnd={handleDragEnd}>
+                        <Droppable droppableId="test-list">
+                            {(droppableProvided) => (
                                 <div
-                                    key={test.id}
-                                    className="card"
-                                    style={{ cursor: 'pointer', transition: 'border-color var(--transition)' }}
-                                    onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
-                                    onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
+                                    ref={droppableProvided.innerRef}
+                                    {...droppableProvided.droppableProps}
+                                    style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                                        gap: 16,
+                                    }}
                                 >
-                                    <div
-                                        style={{
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'flex-start',
-                                            marginBottom: 12,
-                                        }}
-                                    >
-                                        <div>
-                                            <h3>{test.name}</h3>
-                                            <div className="text-muted text-xs" style={{ marginTop: 2 }}>
-                                                {new Date(test.createdAt).toLocaleDateString()}
-                                            </div>
-                                        </div>
-                                        <div style={{ display: 'flex', gap: 4 }}>
-                                            <button
-                                                className="btn btn-ghost btn-icon btn-sm"
-                                                title={t('tests.action_duplicate')}
-                                                aria-label={t('tests.action_duplicate')}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleDuplicate(test.id);
-                                                }}
-                                            >
-                                                <Copy size={14} />
-                                            </button>
-                                            <button
-                                                className="btn btn-ghost btn-icon btn-sm"
-                                                title={t('tests.action_edit')}
-                                                aria-label={t('tests.action_edit')}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    navigate(`/tests/${test.id}`);
-                                                }}
-                                            >
-                                                <Edit2 size={14} />
-                                            </button>
-                                            <button
-                                                className="btn btn-ghost btn-icon btn-sm"
-                                                title={t('tests.action_delete')}
-                                                aria-label={t('tests.action_delete')}
-                                                style={{ color: 'var(--red)' }}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleDelete(test.id, test.name);
-                                                }}
-                                            >
-                                                <Trash2 size={14} />
-                                            </button>
-                                        </div>
-                                    </div>
+                                    {sortedTests.map((test, idx) => {
+                                        const totalPoints = test.questions.reduce((sum, q) => sum + (q.points || 0), 0);
+                                        return (
+                                            <Draggable key={test.id} draggableId={test.id} index={idx}>
+                                                {(dragProvided) => (
+                                                    <div
+                                                        ref={dragProvided.innerRef}
+                                                        {...dragProvided.draggableProps}
+                                                        className="card"
+                                                        style={{
+                                                            cursor: 'pointer',
+                                                            transition: 'border-color var(--transition)',
+                                                            ...dragProvided.draggableProps.style,
+                                                        }}
+                                                        onMouseEnter={(e) =>
+                                                            (e.currentTarget.style.borderColor = 'var(--accent)')
+                                                        }
+                                                        onMouseLeave={(e) =>
+                                                            (e.currentTarget.style.borderColor = 'var(--border)')
+                                                        }
+                                                    >
+                                                        <div
+                                                            style={{
+                                                                display: 'flex',
+                                                                justifyContent: 'space-between',
+                                                                alignItems: 'flex-start',
+                                                                marginBottom: 12,
+                                                            }}
+                                                        >
+                                                            <div
+                                                                style={{
+                                                                    display: 'flex',
+                                                                    alignItems: 'flex-start',
+                                                                    gap: 6,
+                                                                }}
+                                                            >
+                                                                <span
+                                                                    {...dragProvided.dragHandleProps}
+                                                                    aria-label={t('rubricList.drag_to_reorder')}
+                                                                    style={{
+                                                                        cursor: 'grab',
+                                                                        color: 'var(--text-dim)',
+                                                                        marginTop: 3,
+                                                                    }}
+                                                                >
+                                                                    <GripVertical size={15} />
+                                                                </span>
+                                                                <div>
+                                                                    <h3>{test.name}</h3>
+                                                                    <div
+                                                                        className="text-muted text-xs"
+                                                                        style={{ marginTop: 2 }}
+                                                                    >
+                                                                        {new Date(test.createdAt).toLocaleDateString()}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div style={{ display: 'flex', gap: 4 }}>
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                                    title={t('tests.action_duplicate')}
+                                                                    aria-label={t('tests.action_duplicate')}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleDuplicate(test.id);
+                                                                    }}
+                                                                >
+                                                                    <Copy size={14} />
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                                    title={t('tests.action_edit')}
+                                                                    aria-label={t('tests.action_edit')}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        navigate(`/tests/${test.id}`);
+                                                                    }}
+                                                                >
+                                                                    <Edit2 size={14} />
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                                    title={t('tests.action_delete')}
+                                                                    aria-label={t('tests.action_delete')}
+                                                                    style={{ color: 'var(--red)' }}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleDelete(test.id, test.name);
+                                                                    }}
+                                                                >
+                                                                    <Trash2 size={14} />
+                                                                </button>
+                                                            </div>
+                                                        </div>
 
-                                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
-                                        <span className="badge badge-blue">
-                                            {t('tests.question_count', { count: test.questions.length })}
-                                        </span>
-                                        <span className="badge badge-purple">
-                                            {t('tests.total_points', { points: totalPoints })}
-                                        </span>
-                                        {test.requireSEB && (
-                                            <span className="badge badge-green">{t('tests.seb_badge')}</span>
-                                        )}
-                                    </div>
+                                                        <div
+                                                            style={{
+                                                                display: 'flex',
+                                                                gap: 8,
+                                                                flexWrap: 'wrap',
+                                                                marginBottom: 14,
+                                                            }}
+                                                        >
+                                                            <span className="badge badge-blue">
+                                                                {t('tests.question_count', {
+                                                                    count: test.questions.length,
+                                                                })}
+                                                            </span>
+                                                            <span className="badge badge-purple">
+                                                                {t('tests.total_points', { points: totalPoints })}
+                                                            </span>
+                                                            {test.requireSEB && (
+                                                                <span className="badge badge-green">
+                                                                    {t('tests.seb_badge')}
+                                                                </span>
+                                                            )}
+                                                        </div>
 
-                                    {test.description && (
-                                        <p className="text-muted text-sm truncate" style={{ marginBottom: 14 }}>
-                                            {test.description}
-                                        </p>
-                                    )}
+                                                        {test.description && (
+                                                            <p
+                                                                className="text-muted text-sm truncate"
+                                                                style={{ marginBottom: 14 }}
+                                                            >
+                                                                {test.description}
+                                                            </p>
+                                                        )}
 
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                        <button
-                                            className="btn btn-primary btn-sm"
-                                            onClick={() => navigate(`/tests/${test.id}`)}
-                                        >
-                                            <Edit2 size={14} /> {t('tests.action_edit')}
-                                        </button>
-                                        <button
-                                            className="btn btn-secondary btn-sm"
-                                            disabled={test.questions.length === 0}
-                                            onClick={() => setAssigningTestId(test.id)}
-                                        >
-                                            <Send size={14} /> {t('tests.action_assign')}
-                                        </button>
-                                        <button
-                                            className="btn btn-secondary btn-sm"
-                                            disabled={studentTests.filter((st) => st.testId === test.id).length === 0}
-                                            onClick={() => setResultsTestId(resultsTestId === test.id ? null : test.id)}
-                                        >
-                                            <BarChart3 size={14} /> {t('tests.results.action_results')}
-                                        </button>
-                                        <button
-                                            className="btn btn-secondary btn-sm"
-                                            onClick={() => setImportingTestId(test.id)}
-                                        >
-                                            <Upload size={14} /> {t('tests.results.action_import')}
-                                        </button>
-                                        <button
-                                            className="btn btn-secondary btn-sm"
-                                            onClick={() => navigate(`/tests/${test.id}/monitor`)}
-                                        >
-                                            <Radio size={14} /> {t('tests.monitor.action_monitor')}
-                                        </button>
-                                    </div>
-
-                                    {resultsTestId === test.id && (
-                                        <div
-                                            style={{
-                                                marginTop: 14,
-                                                paddingTop: 14,
-                                                borderTop: '1px solid var(--border)',
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                gap: 10,
-                                            }}
-                                        >
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                                                {studentTests
-                                                    .filter((st) => st.testId === test.id)
-                                                    .map((st) => {
-                                                        const stStudent = students.find((s) => s.id === st.studentId);
-                                                        return (
+                                                        <div
+                                                            style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
+                                                        >
                                                             <button
-                                                                key={st.id}
-                                                                className="btn btn-ghost btn-sm"
-                                                                style={{ justifyContent: 'flex-start' }}
+                                                                type="button"
+                                                                className="btn btn-primary btn-sm"
+                                                                onClick={() => navigate(`/tests/${test.id}`)}
+                                                            >
+                                                                <Edit2 size={14} /> {t('tests.action_edit')}
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-secondary btn-sm"
+                                                                disabled={test.questions.length === 0}
+                                                                onClick={() => setAssigningTestId(test.id)}
+                                                            >
+                                                                <Send size={14} /> {t('tests.action_assign')}
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-secondary btn-sm"
+                                                                disabled={
+                                                                    studentTests.filter((st) => st.testId === test.id)
+                                                                        .length === 0
+                                                                }
                                                                 onClick={() =>
-                                                                    navigate(`/tests/${test.id}/results/${st.id}`)
+                                                                    setResultsTestId(
+                                                                        resultsTestId === test.id ? null : test.id
+                                                                    )
                                                                 }
                                                             >
-                                                                {stStudent?.name ?? st.studentId}
+                                                                <BarChart3 size={14} />{' '}
+                                                                {t('tests.results.action_results')}
                                                             </button>
-                                                        );
-                                                    })}
-                                            </div>
-                                            <ClassAverageAdjuster
-                                                test={test}
-                                                studentTests={studentTests.filter((st) => st.testId === test.id)}
-                                                students={students}
-                                                onSaveStudentTest={saveStudentTest}
-                                            />
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-secondary btn-sm"
+                                                                onClick={() => setImportingTestId(test.id)}
+                                                            >
+                                                                <Upload size={14} /> {t('tests.results.action_import')}
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-secondary btn-sm"
+                                                                onClick={() => navigate(`/tests/${test.id}/monitor`)}
+                                                            >
+                                                                <Radio size={14} /> {t('tests.monitor.action_monitor')}
+                                                            </button>
+                                                        </div>
 
-                                            <div
-                                                style={{
-                                                    marginTop: 6,
-                                                    paddingTop: 14,
-                                                    borderTop: '1px solid var(--border)',
-                                                    display: 'flex',
-                                                    flexDirection: 'column',
-                                                    gap: 8,
-                                                }}
-                                            >
-                                                <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>
-                                                    {t('tests.export.section_title')}
-                                                </div>
-                                                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                                                    <select
-                                                        value={exportScope}
-                                                        onChange={(e) =>
-                                                            setExportScope(e.target.value as 'single' | 'batch')
-                                                        }
-                                                        style={{ width: 'auto' }}
-                                                    >
-                                                        <option value="single">{t('tests.export.scope_single')}</option>
-                                                        <option value="batch">{t('tests.export.scope_batch')}</option>
-                                                    </select>
-                                                    {exportScope === 'single' && (
-                                                        <select
-                                                            value={exportStudentId}
-                                                            onChange={(e) => setExportStudentId(e.target.value)}
-                                                            style={{ width: 'auto' }}
-                                                        >
-                                                            <option value="">
-                                                                {t('tests.export.select_student_placeholder')}
-                                                            </option>
-                                                            {studentTests
-                                                                .filter((st) => st.testId === test.id)
-                                                                .map((st) => {
-                                                                    const stStudent = students.find(
-                                                                        (s) => s.id === st.studentId
-                                                                    );
-                                                                    return (
-                                                                        <option key={st.id} value={st.studentId}>
-                                                                            {stStudent?.name ?? st.studentId}
-                                                                        </option>
-                                                                    );
-                                                                })}
-                                                        </select>
-                                                    )}
-                                                    <button
-                                                        className="btn btn-secondary btn-sm"
-                                                        disabled={
-                                                            exporting || (exportScope === 'single' && !exportStudentId)
-                                                        }
-                                                        onClick={() => handleExportTestSummary(test, 'pdf')}
-                                                    >
-                                                        <FileDown size={14} /> {t('tests.export.export_pdf')}
-                                                    </button>
-                                                    <button
-                                                        className="btn btn-secondary btn-sm"
-                                                        disabled={
-                                                            exporting || (exportScope === 'single' && !exportStudentId)
-                                                        }
-                                                        onClick={() => handleExportTestSummary(test, 'docx')}
-                                                    >
-                                                        <FileDown size={14} /> {t('tests.export.export_docx')}
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
+                                                        {resultsTestId === test.id && (
+                                                            <div
+                                                                style={{
+                                                                    marginTop: 14,
+                                                                    paddingTop: 14,
+                                                                    borderTop: '1px solid var(--border)',
+                                                                    display: 'flex',
+                                                                    flexDirection: 'column',
+                                                                    gap: 10,
+                                                                }}
+                                                            >
+                                                                <div
+                                                                    style={{
+                                                                        display: 'flex',
+                                                                        flexDirection: 'column',
+                                                                        gap: 6,
+                                                                    }}
+                                                                >
+                                                                    {studentTests
+                                                                        .filter((st) => st.testId === test.id)
+                                                                        .map((st) => {
+                                                                            const stStudent = students.find(
+                                                                                (s) => s.id === st.studentId
+                                                                            );
+                                                                            return (
+                                                                                <button
+                                                                                    key={st.id}
+                                                                                    type="button"
+                                                                                    className="btn btn-ghost btn-sm"
+                                                                                    style={{
+                                                                                        justifyContent: 'flex-start',
+                                                                                    }}
+                                                                                    onClick={() =>
+                                                                                        navigate(
+                                                                                            `/tests/${test.id}/results/${st.id}`
+                                                                                        )
+                                                                                    }
+                                                                                >
+                                                                                    {stStudent?.name ?? st.studentId}
+                                                                                </button>
+                                                                            );
+                                                                        })}
+                                                                </div>
+                                                                <ClassAverageAdjuster
+                                                                    test={test}
+                                                                    studentTests={studentTests.filter(
+                                                                        (st) => st.testId === test.id
+                                                                    )}
+                                                                    students={students}
+                                                                    onSaveStudentTest={saveStudentTest}
+                                                                />
+
+                                                                <div
+                                                                    style={{
+                                                                        marginTop: 6,
+                                                                        paddingTop: 14,
+                                                                        borderTop: '1px solid var(--border)',
+                                                                        display: 'flex',
+                                                                        flexDirection: 'column',
+                                                                        gap: 8,
+                                                                    }}
+                                                                >
+                                                                    <div
+                                                                        style={{ fontWeight: 600, fontSize: '0.85rem' }}
+                                                                    >
+                                                                        {t('tests.export.section_title')}
+                                                                    </div>
+                                                                    <div
+                                                                        style={{
+                                                                            display: 'flex',
+                                                                            gap: 8,
+                                                                            flexWrap: 'wrap',
+                                                                        }}
+                                                                    >
+                                                                        <select
+                                                                            value={exportScope}
+                                                                            onChange={(e) =>
+                                                                                setExportScope(
+                                                                                    e.target.value as 'single' | 'batch'
+                                                                                )
+                                                                            }
+                                                                            style={{ width: 'auto' }}
+                                                                        >
+                                                                            <option value="single">
+                                                                                {t('tests.export.scope_single')}
+                                                                            </option>
+                                                                            <option value="batch">
+                                                                                {t('tests.export.scope_batch')}
+                                                                            </option>
+                                                                        </select>
+                                                                        {exportScope === 'single' && (
+                                                                            <select
+                                                                                value={exportStudentId}
+                                                                                onChange={(e) =>
+                                                                                    setExportStudentId(e.target.value)
+                                                                                }
+                                                                                style={{ width: 'auto' }}
+                                                                            >
+                                                                                <option value="">
+                                                                                    {t(
+                                                                                        'tests.export.select_student_placeholder'
+                                                                                    )}
+                                                                                </option>
+                                                                                {studentTests
+                                                                                    .filter(
+                                                                                        (st) => st.testId === test.id
+                                                                                    )
+                                                                                    .map((st) => {
+                                                                                        const stStudent = students.find(
+                                                                                            (s) => s.id === st.studentId
+                                                                                        );
+                                                                                        return (
+                                                                                            <option
+                                                                                                key={st.id}
+                                                                                                value={st.studentId}
+                                                                                            >
+                                                                                                {stStudent?.name ??
+                                                                                                    st.studentId}
+                                                                                            </option>
+                                                                                        );
+                                                                                    })}
+                                                                            </select>
+                                                                        )}
+                                                                        <button
+                                                                            type="button"
+                                                                            className="btn btn-secondary btn-sm"
+                                                                            disabled={
+                                                                                exporting ||
+                                                                                (exportScope === 'single' &&
+                                                                                    !exportStudentId)
+                                                                            }
+                                                                            onClick={() =>
+                                                                                handleExportTestSummary(test, 'pdf')
+                                                                            }
+                                                                        >
+                                                                            <FileDown size={14} />{' '}
+                                                                            {t('tests.export.export_pdf')}
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            className="btn btn-secondary btn-sm"
+                                                                            disabled={
+                                                                                exporting ||
+                                                                                (exportScope === 'single' &&
+                                                                                    !exportStudentId)
+                                                                            }
+                                                                            onClick={() =>
+                                                                                handleExportTestSummary(test, 'docx')
+                                                                            }
+                                                                        >
+                                                                            <FileDown size={14} />{' '}
+                                                                            {t('tests.export.export_docx')}
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </Draggable>
+                                        );
+                                    })}
+                                    {droppableProvided.placeholder}
                                 </div>
-                            );
-                        })}
-                    </div>
+                            )}
+                        </Droppable>
+                    </DragDropContext>
                 )}
 
                 <ConfirmDialog {...confirmDialogProps} />

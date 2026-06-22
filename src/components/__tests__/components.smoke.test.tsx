@@ -274,10 +274,7 @@ describe('CommentBankModal', () => {
 
     it('clicking Edit button on an item shows form with item text', () => {
         render(<CommentBankModal onClose={vi.fn()} />);
-        // Find edit button (no text, svg icon button)
-        const editBtn = screen
-            .getAllByRole('button')
-            .find((b) => b.querySelector('svg') && b.className?.includes('ghost') && b.className?.includes('xs'));
+        const editBtn = screen.queryByRole('button', { name: 'common.edit' });
         if (editBtn) {
             fireEvent.click(editBtn);
             const textarea = screen.getByPlaceholderText(/write your comment/i);
@@ -290,12 +287,9 @@ describe('CommentBankModal', () => {
 
     it('clicking Trash button on an item triggers delete without crash', () => {
         render(<CommentBankModal onClose={vi.fn()} />);
-        const btns = screen
-            .getAllByRole('button')
-            .filter((b) => b.querySelector('svg') && b.className?.includes('ghost') && b.className?.includes('xs'));
-        // The second small icon button is the trash button (edit=0, delete=1)
-        if (btns.length >= 2) {
-            fireEvent.click(btns[1]);
+        const deleteBtn = screen.queryByRole('button', { name: 'common.delete' });
+        if (deleteBtn) {
+            fireEvent.click(deleteBtn);
         }
         // No crash — item removed from DOM (commentBank mock is empty after delete call)
         expect(document.body).toBeTruthy();

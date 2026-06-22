@@ -304,7 +304,8 @@
         "vocabulary": "Vocabulary",
         "docs": "Docs",
         "activity_dashboard": "Activity Dashboard",
-        "marketplace": "Marketplace"
+        "marketplace": "Marketplace",
+        "moderation": "Moderation"
     },
     "dashboard": {
         "title": "Dashboard",
@@ -339,6 +340,7 @@
     },
     "rubricList": {
         "title": "Rubrics",
+        "drag_to_reorder": "Drag to reorder",
         "all_subjects": "All Subjects",
         "import_rubric": "Import Rubric",
         "new_rubric": "New Rubric",
@@ -359,6 +361,9 @@
         "action_compare": "Compare",
         "shared_with_me": "Shared with me",
         "shared_badge": "Shared",
+        "share_with_department": "Share with my department (read-only)",
+        "shared_with_department": "Shared with your department",
+        "department_badge": "Department",
         "action_essay": "Essay",
         "essay_pick_class_title": "Assign Essay to Class",
         "essay_pick_class_desc": "Select a class to assign the \"{{rubric}}\" essay to. Each student will get their own unique link.",
@@ -985,6 +990,26 @@
         "add_round": "Add round",
         "view_analytics": "View analytics"
     },
+    "coGrading": {
+        "action_co_grade": "Co-grade",
+        "modal_title": "Send for second marking",
+        "modal_desc": "A colleague grades this submission independently. Any disagreement above the moderation threshold will show up in the Moderation queue.",
+        "colleague_label": "Colleague's name or email",
+        "colleague_placeholder": "e.g. j.smith@school.org",
+        "action_start": "Start co-grading",
+        "moderation_title": "Moderation queue",
+        "threshold_label": "Flag disagreements of at least this many points",
+        "moderation_empty": "No disputed gradings",
+        "moderation_empty_desc": "Co-graded submissions with a point disagreement at or above the threshold will appear here.",
+        "second_marker_label": "second marker: {{name}}",
+        "delta_badge": "Δ {{delta}} pts",
+        "col_criterion": "Criterion",
+        "col_baseline": "Original",
+        "col_second_marker": "Second marker",
+        "action_view_baseline": "View original grading",
+        "action_keep_baseline": "Keep original",
+        "action_accept_second_marker": "Accept second marker's grade"
+    },
     "peerAnalytics": {
         "title": "Peer Review Analytics — {{rubricName}}",
         "rubric_not_found": "Rubric not found.",
@@ -1333,6 +1358,18 @@
         "coverage_covered_title": "Assessed",
         "coverage_no_gap": "Every linked standard has been assessed at least once.",
         "coverage_rubric_count": "{{count}} rubric(s)"
+    },
+    "gradingTasks": {
+        "assign_title": "Assign ungraded submissions to a teacher",
+        "assign_button": "Assign",
+        "pending_title": "{{count}} pending grading task(s)",
+        "assigned_to": "assigned to {{name}}",
+        "due": "due {{date}}",
+        "modal_title": "Assign grading task",
+        "teacher_label": "Teacher's name or email",
+        "teacher_placeholder": "e.g. j.smith@school.org",
+        "due_date_label": "Due date (optional)",
+        "action_assign": "Assign"
     },
     "attachments": {
         "title": "Attachments",

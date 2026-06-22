@@ -14,10 +14,20 @@ export class TestListPage extends BasePage {
         return this.page.locator('.card').filter({ has: this.page.getByRole('heading', { name }) });
     }
 
+    cardTitles() {
+        return this.page.locator('.card h3').allTextContents();
+    }
+
+    dragHandle(name: string): Locator {
+        return this.testCard(name).getByLabel(/drag to reorder/i);
+    }
+
     // ── Assignment modal ──────────────────────────────────────────────────────
 
     async openAssignModal(testName: string): Promise<void> {
-        await this.testCard(testName).getByRole('button', { name: /assign to students/i }).click();
+        await this.testCard(testName)
+            .getByRole('button', { name: /assign to students/i })
+            .click();
     }
 
     assignmentModal(): Locator {
@@ -43,7 +53,9 @@ export class TestListPage extends BasePage {
     // ── Import submission modal ──────────────────────────────────────────────
 
     async openImportModal(testName: string): Promise<void> {
-        await this.testCard(testName).getByRole('button', { name: /import submission code/i }).click();
+        await this.testCard(testName)
+            .getByRole('button', { name: /import submission code/i })
+            .click();
     }
 
     importModal(): Locator {
@@ -55,7 +67,9 @@ export class TestListPage extends BasePage {
     }
 
     async clickImport(): Promise<void> {
-        await this.importModal().getByRole('button', { name: /^import submission$/i }).click();
+        await this.importModal()
+            .getByRole('button', { name: /^import submission$/i })
+            .click();
     }
 
     importSuccessMessage(): Locator {
@@ -69,7 +83,9 @@ export class TestListPage extends BasePage {
     // ── Results navigation ────────────────────────────────────────────────────
 
     async openResultsList(testName: string): Promise<void> {
-        await this.testCard(testName).getByRole('button', { name: /^results$/i }).click();
+        await this.testCard(testName)
+            .getByRole('button', { name: /^results$/i })
+            .click();
     }
 
     async openStudentResults(studentName: string): Promise<void> {
@@ -79,7 +95,9 @@ export class TestListPage extends BasePage {
     // ── Class average adjuster ────────────────────────────────────────────────
 
     classAverageAdjuster(testName: string): Locator {
-        return this.testCard(testName).locator('.card').filter({ hasText: /class average adjustment/i });
+        return this.testCard(testName)
+            .locator('.card')
+            .filter({ hasText: /class average adjustment/i });
     }
 
     async setTargetAverage(testName: string, value: number): Promise<void> {
@@ -88,6 +106,8 @@ export class TestListPage extends BasePage {
     }
 
     async applyAdjustment(testName: string): Promise<void> {
-        await this.classAverageAdjuster(testName).getByRole('button', { name: /apply adjustment/i }).click();
+        await this.classAverageAdjuster(testName)
+            .getByRole('button', { name: /apply adjustment/i })
+            .click();
     }
 }

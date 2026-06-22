@@ -304,7 +304,8 @@
         "vocabulary": "Vocabulario",
         "docs": "Documentación",
         "activity_dashboard": "Panel de actividades",
-        "marketplace": "Mercado"
+        "marketplace": "Mercado",
+        "moderation": "Moderación"
     },
     "dashboard": {
         "title": "Panel",
@@ -339,6 +340,7 @@
     },
     "rubricList": {
         "title": "Rúbricas",
+        "drag_to_reorder": "Arrastra para reordenar",
         "all_subjects": "Todas las asignaturas",
         "import_rubric": "Importar Rúbrica",
         "new_rubric": "Nueva Rúbrica",
@@ -359,6 +361,9 @@
         "action_compare": "Comparar",
         "shared_with_me": "Compartido conmigo",
         "shared_badge": "Compartido",
+        "share_with_department": "Compartir con mi departamento (solo lectura)",
+        "shared_with_department": "Compartido con tu departamento",
+        "department_badge": "Departamento",
         "action_essay": "Redacción",
         "essay_pick_class_title": "Asignar redacción a una clase",
         "essay_pick_class_desc": "Seleccione una clase para asignar la redacción \"{{rubric}}\". Cada estudiante recibirá su propio enlace único.",
@@ -985,6 +990,26 @@
         "add_round": "Añadir ronda",
         "view_analytics": "Ver estadísticas"
     },
+    "coGrading": {
+        "action_co_grade": "Segunda corrección",
+        "modal_title": "Enviar para segunda corrección",
+        "modal_desc": "Un colega corrige esta entrega de forma independiente. Cualquier discrepancia por encima del umbral de moderación aparecerá en la cola de moderación.",
+        "colleague_label": "Nombre o correo del colega",
+        "colleague_placeholder": "p. ej. j.smith@school.org",
+        "action_start": "Iniciar segunda corrección",
+        "moderation_title": "Cola de moderación",
+        "threshold_label": "Marcar discrepancias a partir de esta cantidad de puntos",
+        "moderation_empty": "Sin correcciones en disputa",
+        "moderation_empty_desc": "Las entregas con segunda corrección con una discrepancia igual o superior al umbral aparecerán aquí.",
+        "second_marker_label": "segundo corrector: {{name}}",
+        "delta_badge": "Δ {{delta}} pts",
+        "col_criterion": "Criterio",
+        "col_baseline": "Original",
+        "col_second_marker": "Segundo corrector",
+        "action_view_baseline": "Ver corrección original",
+        "action_keep_baseline": "Mantener original",
+        "action_accept_second_marker": "Aceptar la nota del segundo corrector"
+    },
     "peerAnalytics": {
         "title": "Estadísticas de revisión por pares — {{rubricName}}",
         "rubric_not_found": "Rúbrica no encontrada.",
@@ -1333,6 +1358,18 @@
         "coverage_covered_title": "Evaluado",
         "coverage_no_gap": "Todos los estándares vinculados se han evaluado al menos una vez.",
         "coverage_rubric_count": "{{count}} rúbrica(s)"
+    },
+    "gradingTasks": {
+        "assign_title": "Asignar entregas sin corregir a un docente",
+        "assign_button": "Asignar",
+        "pending_title": "{{count}} tarea(s) de corrección pendiente(s)",
+        "assigned_to": "asignado a {{name}}",
+        "due": "vence {{date}}",
+        "modal_title": "Asignar tarea de corrección",
+        "teacher_label": "Nombre o correo del docente",
+        "teacher_placeholder": "p. ej. j.smith@school.org",
+        "due_date_label": "Fecha límite (opcional)",
+        "action_assign": "Asignar"
     },
     "attachments": {
         "title": "Archivos adjuntos",

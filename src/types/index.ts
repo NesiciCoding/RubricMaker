@@ -392,6 +392,10 @@ export interface Rubric {
     versions?: RubricVersion[];
     /** Vocabulary and grammar items to detect when analysing student documents */
     vocabularyItems?: VocabularyItem[];
+    /** Manual sort position in list views (RubricList, Activity Dashboard); undefined sorts last by createdAt */
+    displayOrder?: number;
+    /** When true, every teacher in the owner's school can view (read-only) this rubric */
+    sharedWithSchool?: boolean;
 }
 
 /** A user-saved rubric template stored locally. */
@@ -616,6 +620,8 @@ export interface CommentBankItem {
     createdAt: string;
     /** ISO timestamp of the last local edit; used for last-write-wins sync conflict resolution */
     updatedAt?: string;
+    /** When true, every teacher in the owner's school can view (read-only) this comment */
+    sharedWithSchool?: boolean;
 }
 
 // ─── Speaking / Oral Assessment Types ────────────────────────────────────────
@@ -700,6 +706,8 @@ export interface EssayAssignment {
     supabaseUrl?: string;
     /** Teacher's Supabase anon key — embedded so the student's browser can connect */
     supabaseAnonKey?: string;
+    /** Manual sort position in list views (EssayListPage, Activity Dashboard), shared across the teacherKey group; undefined sorts last by createdAt */
+    displayOrder?: number;
 }
 
 /** Saved essay configuration not yet assigned to any student — used to prepare assignments in advance */
@@ -715,6 +723,21 @@ export interface EssayTemplate {
     readOnlyAfterSubmit: boolean;
     expiresAt?: string;
     createdAt: string;
+}
+
+/**
+ * Assigns a batch of ungraded submissions to a specific teacher. Completion is derived
+ * (not stored) by checking whether a matching StudentRubric.gradedAt already exists for
+ * (rubricId, studentId) — avoids a second source of truth for "is this graded yet".
+ */
+export interface GradingTask {
+    id: string;
+    rubricId: string;
+    studentId: string;
+    assignedToTeacher: string;
+    assignedBy?: string;
+    assignedAt: string;
+    dueDate?: string;
 }
 
 export interface StudentEssayAssignmentSummary {
@@ -842,6 +865,8 @@ export interface Test {
     createdAt: string;
     /** ISO timestamp of the last local edit; used for last-write-wins sync conflict resolution */
     updatedAt?: string;
+    /** Manual sort position in list views (TestListPage, Activity Dashboard); undefined sorts last by createdAt */
+    displayOrder?: number;
 }
 
 export type ProctorEventType = 'tab_switch' | 'copy' | 'paste' | 'cut' | 'battery' | 'heartbeat' | 'seb_status';

@@ -47,6 +47,7 @@ const AdminPage = lazy(() => import('./pages/AdminPage'));
 const DocsPage = lazy(() => import('./pages/DocsPage'));
 const ActivityDashboardPage = lazy(() => import('./pages/ActivityDashboardPage'));
 const MarketplacePage = lazy(() => import('./pages/MarketplacePage'));
+const ModerationQueuePage = lazy(() => import('./pages/ModerationQueuePage'));
 
 // Forces GradeStudent to remount when studentId changes so useState re-initialises.
 function GradeStudentRoute() {
@@ -95,7 +96,7 @@ export default function App() {
     // Resolve student link regardless of role so new sign-ups (default role='user')
     // are auto-detected without requiring a manual admin role change.
     const linkedStudent = settings.userEmail
-        ? students.find((s) => s.email?.toLowerCase() === settings.userEmail!.toLowerCase())
+        ? (students.find((s) => s.email?.toLowerCase() === settings.userEmail!.toLowerCase()) ?? null)
         : null;
 
     // Student portal: explicit 'student' role OR email matches a student record for any
@@ -215,6 +216,7 @@ export default function App() {
                                 <Route path="/export" element={<ExportPage />} />
                                 <Route path="/statistics" element={<StatisticsPage />} />
                                 <Route path="/activity-dashboard" element={<ActivityDashboardPage />} />
+                                <Route path="/moderation" element={<ModerationQueuePage />} />
                                 <Route path="/comments" element={<CommentBankPage />} />
                                 <Route path="/marketplace" element={<MarketplacePage />} />
                                 <Route path="/settings" element={<SettingsPage />} />

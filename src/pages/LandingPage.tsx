@@ -25,6 +25,7 @@ import {
     PenLine,
     TrendingUp,
     Store,
+    UserCheck,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { loadSupabaseConfig } from '../services/database';
@@ -90,6 +91,12 @@ const TEACHER_FEATURES = [
         title: 'Rubric Marketplace',
         desc: 'Share your best rubrics with colleagues at your school, and clone theirs.',
         color: '#3b82f6',
+    },
+    {
+        icon: UserCheck,
+        title: 'Department Collaboration',
+        desc: 'Send work to a colleague for a second opinion, share rubrics and comment bank items read-only across your department, and assign batches of ungraded work to specific teachers.',
+        color: '#f59e0b',
     },
 ];
 

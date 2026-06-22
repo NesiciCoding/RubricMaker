@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LayoutGrid } from 'lucide-react';
+import { LayoutGrid, GripVertical, ClipboardList, X } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { useTranslation } from 'react-i18next';
 import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
@@ -10,8 +11,10 @@ import { useApp } from '../context/AppContext';
 import { getActivityRows, buildDashboardMatrix } from '../utils/activityDashboardAggregator';
 import { getClassStandardsCoverage } from '../utils/standardsCoverageAggregator';
 import ClassCoverageGapPanel from '../components/Standards/ClassCoverageGapPanel';
+import { reorderDisplayOrder } from '../utils/displayOrder';
 import { VO_TRACKS } from '../data/voTracks';
 import type { VoTrack } from '../types';
+import { nanoid } from '../utils/nanoid';
 
 const SECTION_LABELS: Record<string, string> = {
     rubric: 'activityDashboard.section_rubrics',
@@ -32,13 +35,66 @@ export default function ActivityDashboardPage() {
         studentTests,
         updateClass,
         addEssayAssignments,
+        updateRubric,
+        updateTest,
+        updateEssayGroup,
+        gradingTasks,
+        addGradingTasks,
+        deleteGradingTask,
     } = useApp();
 
     const [filterYear, setFilterYear] = useState<string>('all');
     const [filterTrack, setFilterTrack] = useState<VoTrack | 'all'>('all');
     const [coverageClassId, setCoverageClassId] = useState<string>('');
     const [tourRun, setTourRun] = useState(false);
+    const [assignTaskCell, setAssignTaskCell] = useState<{ classId: string; rubricId: string } | null>(null);
+    const [assignTeacherName, setAssignTeacherName] = useState('');
+    const [assignDueDate, setAssignDueDate] = useState('');
     const activityTourSteps = useMemo(() => getActivityDashboardTourSteps(t), [t]);
+
+    const pendingTasks = useMemo(
+        () =>
+            gradingTasks.filter(
+                (task) =>
+                    !studentRubrics.some(
+                        (sr) => !sr.isPeerReview && sr.rubricId === task.rubricId && sr.studentId === task.studentId
+                    )
+            ),
+        [gradingTasks, studentRubrics]
+    );
+
+    function openAssignTaskModal(classId: string, rubricId: string) {
+        setAssignTaskCell({ classId, rubricId });
+        setAssignTeacherName('');
+        setAssignDueDate('');
+    }
+
+    function handleAssignTasks() {
+        if (!assignTaskCell || !assignTeacherName.trim()) return;
+        const classStudents = students.filter((s) => s.classId === assignTaskCell.classId);
+        const alreadyPending = new Set(
+            pendingTasks.filter((t) => t.rubricId === assignTaskCell.rubricId).map((t) => t.studentId)
+        );
+        const ungraded = classStudents.filter(
+            (s) =>
+                !alreadyPending.has(s.id) &&
+                !studentRubrics.some(
+                    (sr) => !sr.isPeerReview && sr.rubricId === assignTaskCell.rubricId && sr.studentId === s.id
+                )
+        );
+        const now = new Date().toISOString();
+        addGradingTasks(
+            ungraded.map((s) => ({
+                id: nanoid(),
+                rubricId: assignTaskCell.rubricId,
+                studentId: s.id,
+                assignedToTeacher: assignTeacherName.trim(),
+                assignedAt: now,
+                dueDate: assignDueDate || undefined,
+            }))
+        );
+        setAssignTaskCell(null);
+    }
 
     const yearOptions = useMemo(() => {
         const years = new Set(classes.map((c) => c.year).filter((y): y is string => !!y));
@@ -102,6 +158,26 @@ export default function ActivityDashboardPage() {
     }
 
     const kinds: Array<'rubric' | 'test' | 'essay'> = ['rubric', 'test', 'essay'];
+
+    function handleDragEnd(result: DropResult) {
+        if (!result.destination) return;
+        if (result.source.droppableId !== result.destination.droppableId) return;
+        if (result.source.index === result.destination.index) return;
+        const kind = result.source.droppableId.replace('ad-', '') as 'rubric' | 'test' | 'essay';
+        const rows = activities.filter((a) => a.kind === kind);
+        for (const [row, order] of reorderDisplayOrder(rows, result.source.index, result.destination.index)) {
+            if (kind === 'rubric') {
+                const r = rubrics.find((x) => x.id === row.id);
+                if (r && r.displayOrder !== order) updateRubric({ ...r, displayOrder: order });
+            } else if (kind === 'test') {
+                const tst = tests.find((x) => x.id === row.id);
+                if (tst && tst.displayOrder !== order) updateTest({ ...tst, displayOrder: order });
+            } else {
+                const group = essayAssignments.find((x) => x.teacherKey === row.id);
+                if (group && group.displayOrder !== order) updateEssayGroup(row.id, { displayOrder: order });
+            }
+        }
+    }
 
     if (activities.length === 0) {
         return (
@@ -180,6 +256,54 @@ export default function ActivityDashboardPage() {
                     </div>
                 )}
 
+                {pendingTasks.length > 0 && (
+                    <div className="card" style={{ marginBottom: 20 }}>
+                        <h3 style={{ margin: '0 0 10px 0', fontSize: '0.95rem' }}>
+                            {t('gradingTasks.pending_title', { count: pendingTasks.length })}
+                        </h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {pendingTasks.map((task) => {
+                                const rubric = rubrics.find((r) => r.id === task.rubricId);
+                                const student = students.find((s) => s.id === task.studentId);
+                                return (
+                                    <div
+                                        key={task.id}
+                                        style={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            fontSize: '0.82rem',
+                                            padding: '6px 8px',
+                                            background: 'var(--bg-elevated)',
+                                            borderRadius: 6,
+                                        }}
+                                    >
+                                        <span>
+                                            {student?.name ?? task.studentId} — {rubric?.name ?? task.rubricId} ·{' '}
+                                            <span style={{ color: 'var(--text-muted)' }}>
+                                                {t('gradingTasks.assigned_to', { name: task.assignedToTeacher })}
+                                            </span>
+                                            {task.dueDate && (
+                                                <span style={{ color: 'var(--text-muted)' }}>
+                                                    {' '}
+                                                    · {t('gradingTasks.due', { date: task.dueDate })}
+                                                </span>
+                                            )}
+                                        </span>
+                                        <button
+                                            className="btn btn-ghost btn-icon btn-xs"
+                                            aria-label={t('common.delete')}
+                                            onClick={() => deleteGradingTask(task.id)}
+                                        >
+                                            <X size={13} />
+                                        </button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
                 <div data-tour="ad-grid" style={{ overflowX: 'auto' }}>
                     <table
                         style={{
@@ -237,176 +361,261 @@ export default function ActivityDashboardPage() {
                                 ))}
                             </tr>
                         </thead>
-                        <tbody>
+                        <DragDropContext onDragEnd={handleDragEnd}>
                             {kinds.map((kind) => {
                                 const rows = activities.filter((a) => a.kind === kind);
                                 if (rows.length === 0) return null;
                                 return (
-                                    <React.Fragment key={kind}>
-                                        <tr>
-                                            <td
-                                                colSpan={visibleClasses.length + 1}
-                                                style={{
-                                                    padding: '10px 12px 4px',
-                                                    fontWeight: 700,
-                                                    fontSize: '0.72rem',
-                                                    textTransform: 'uppercase',
-                                                    letterSpacing: '0.06em',
-                                                    color: 'var(--text-muted)',
-                                                    background: 'var(--bg-elevated)',
-                                                    borderTop: '1px solid var(--border)',
-                                                }}
+                                    <Droppable droppableId={`ad-${kind}`} key={kind}>
+                                        {(droppableProvided) => (
+                                            <tbody
+                                                ref={droppableProvided.innerRef}
+                                                {...droppableProvided.droppableProps}
                                             >
-                                                {t(SECTION_LABELS[kind])}
-                                            </td>
-                                        </tr>
-                                        {rows.map((activity) => (
-                                            <tr key={activity.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                                                <td
-                                                    style={{
-                                                        position: 'sticky',
-                                                        left: 0,
-                                                        zIndex: 1,
-                                                        background: 'var(--bg-card)',
-                                                        padding: '8px 12px',
-                                                        maxWidth: 200,
-                                                        overflow: 'hidden',
-                                                        textOverflow: 'ellipsis',
-                                                        whiteSpace: 'nowrap',
-                                                    }}
-                                                    title={activity.name}
-                                                >
-                                                    <button
-                                                        type="button"
-                                                        className="btn btn-ghost btn-sm"
-                                                        style={{ padding: 0, color: 'var(--accent)', fontWeight: 500 }}
-                                                        onClick={() => {
-                                                            if (activity.kind === 'rubric')
-                                                                navigate(`/rubrics/${activity.id}`);
-                                                            else if (activity.kind === 'test')
-                                                                navigate(`/tests/${activity.id}`);
-                                                            else navigate(`/essays/${activity.id}`);
+                                                <tr>
+                                                    <td
+                                                        colSpan={visibleClasses.length + 1}
+                                                        style={{
+                                                            padding: '10px 12px 4px',
+                                                            fontWeight: 700,
+                                                            fontSize: '0.72rem',
+                                                            textTransform: 'uppercase',
+                                                            letterSpacing: '0.06em',
+                                                            color: 'var(--text-muted)',
+                                                            background: 'var(--bg-elevated)',
+                                                            borderTop: '1px solid var(--border)',
                                                         }}
                                                     >
-                                                        {activity.name}
-                                                    </button>
-                                                </td>
-
-                                                {visibleClasses.map((cls) => {
-                                                    const cell = matrix[`${activity.kind}:${activity.id}`]?.[
-                                                        cls.id
-                                                    ] ?? {
-                                                        submittedCount: 0,
-                                                        totalStudents: 0,
-                                                        isLinked: false,
-                                                    };
-                                                    return (
-                                                        <td
-                                                            key={cls.id}
-                                                            style={{
-                                                                padding: '6px 8px',
-                                                                textAlign: 'center',
-                                                                verticalAlign: 'middle',
-                                                            }}
-                                                        >
-                                                            {cell.totalStudents === 0 ? (
-                                                                <span
-                                                                    className="text-muted"
-                                                                    style={{ fontSize: '0.75rem' }}
-                                                                >
-                                                                    —
-                                                                </span>
-                                                            ) : (
-                                                                <div
+                                                        {t(SECTION_LABELS[kind])}
+                                                    </td>
+                                                </tr>
+                                                {rows.map((activity, idx) => (
+                                                    <Draggable
+                                                        key={activity.id}
+                                                        draggableId={`${kind}:${activity.id}`}
+                                                        index={idx}
+                                                    >
+                                                        {(dragProvided) => (
+                                                            <tr
+                                                                ref={dragProvided.innerRef}
+                                                                {...dragProvided.draggableProps}
+                                                                style={{
+                                                                    borderBottom: '1px solid var(--border)',
+                                                                    ...dragProvided.draggableProps.style,
+                                                                }}
+                                                            >
+                                                                <td
                                                                     style={{
-                                                                        display: 'flex',
-                                                                        flexDirection: 'column',
-                                                                        alignItems: 'center',
-                                                                        gap: 4,
+                                                                        position: 'sticky',
+                                                                        left: 0,
+                                                                        zIndex: 1,
+                                                                        background: 'var(--bg-card)',
+                                                                        padding: '8px 12px',
+                                                                        maxWidth: 200,
+                                                                        overflow: 'hidden',
+                                                                        textOverflow: 'ellipsis',
+                                                                        whiteSpace: 'nowrap',
                                                                     }}
+                                                                    title={activity.name}
                                                                 >
                                                                     <span
+                                                                        {...dragProvided.dragHandleProps}
+                                                                        aria-label={t('rubricList.drag_to_reorder')}
                                                                         style={{
-                                                                            fontSize: '0.78rem',
-                                                                            color:
-                                                                                cell.submittedCount > 0
-                                                                                    ? 'var(--accent)'
-                                                                                    : 'var(--text-muted)',
-                                                                            fontWeight: 600,
+                                                                            cursor: 'grab',
+                                                                            color: 'var(--text-dim)',
+                                                                            marginRight: 6,
+                                                                            display: 'inline-flex',
+                                                                            verticalAlign: 'middle',
                                                                         }}
                                                                     >
-                                                                        {cell.submittedCount}/{cell.totalStudents}
+                                                                        <GripVertical size={13} />
                                                                     </span>
+                                                                    <button
+                                                                        type="button"
+                                                                        className="btn btn-ghost btn-sm"
+                                                                        style={{
+                                                                            padding: 0,
+                                                                            color: 'var(--accent)',
+                                                                            fontWeight: 500,
+                                                                        }}
+                                                                        onClick={() => {
+                                                                            if (activity.kind === 'rubric')
+                                                                                navigate(`/rubrics/${activity.id}`);
+                                                                            else if (activity.kind === 'test')
+                                                                                navigate(`/tests/${activity.id}`);
+                                                                            else navigate(`/essays/${activity.id}`);
+                                                                        }}
+                                                                    >
+                                                                        {activity.name}
+                                                                    </button>
+                                                                </td>
 
-                                                                    {activity.kind === 'rubric' && (
-                                                                        <button
-                                                                            className={`btn btn-sm ${cell.isLinked ? 'btn-secondary' : 'btn-primary'}`}
+                                                                {visibleClasses.map((cls) => {
+                                                                    const cell = matrix[
+                                                                        `${activity.kind}:${activity.id}`
+                                                                    ]?.[cls.id] ?? {
+                                                                        submittedCount: 0,
+                                                                        totalStudents: 0,
+                                                                        isLinked: false,
+                                                                    };
+                                                                    return (
+                                                                        <td
+                                                                            key={cls.id}
                                                                             style={{
-                                                                                fontSize: '0.7rem',
-                                                                                padding: '2px 8px',
+                                                                                padding: '6px 8px',
+                                                                                textAlign: 'center',
+                                                                                verticalAlign: 'middle',
                                                                             }}
-                                                                            onClick={() =>
-                                                                                toggleRubricLink(
-                                                                                    cls.id,
-                                                                                    activity.id,
-                                                                                    cell.isLinked
-                                                                                )
-                                                                            }
                                                                         >
-                                                                            {cell.isLinked
-                                                                                ? t('activityDashboard.unlink')
-                                                                                : t('activityDashboard.link')}
-                                                                        </button>
-                                                                    )}
+                                                                            {cell.totalStudents === 0 ? (
+                                                                                <span
+                                                                                    className="text-muted"
+                                                                                    style={{ fontSize: '0.75rem' }}
+                                                                                >
+                                                                                    —
+                                                                                </span>
+                                                                            ) : (
+                                                                                <div
+                                                                                    style={{
+                                                                                        display: 'flex',
+                                                                                        flexDirection: 'column',
+                                                                                        alignItems: 'center',
+                                                                                        gap: 4,
+                                                                                    }}
+                                                                                >
+                                                                                    <span
+                                                                                        style={{
+                                                                                            fontSize: '0.78rem',
+                                                                                            color:
+                                                                                                cell.submittedCount > 0
+                                                                                                    ? 'var(--accent)'
+                                                                                                    : 'var(--text-muted)',
+                                                                                            fontWeight: 600,
+                                                                                        }}
+                                                                                    >
+                                                                                        {cell.submittedCount}/
+                                                                                        {cell.totalStudents}
+                                                                                    </span>
 
-                                                                    {activity.kind === 'essay' && (
-                                                                        <button
-                                                                            className={`btn btn-sm ${cell.isLinked ? 'btn-ghost' : 'btn-primary'}`}
-                                                                            style={{
-                                                                                fontSize: '0.7rem',
-                                                                                padding: '2px 8px',
-                                                                            }}
-                                                                            disabled={
-                                                                                cell.isLinked &&
-                                                                                cell.submittedCount >=
-                                                                                    cell.totalStudents
-                                                                            }
-                                                                            onClick={() =>
-                                                                                assignEssayToClass(cls.id, activity.id)
-                                                                            }
-                                                                        >
-                                                                            {cell.isLinked &&
-                                                                            cell.submittedCount >= cell.totalStudents
-                                                                                ? t('activityDashboard.all_assigned')
-                                                                                : t('activityDashboard.assign')}
-                                                                        </button>
-                                                                    )}
+                                                                                    {activity.kind === 'rubric' && (
+                                                                                        <button
+                                                                                            className={`btn btn-sm ${cell.isLinked ? 'btn-secondary' : 'btn-primary'}`}
+                                                                                            style={{
+                                                                                                fontSize: '0.7rem',
+                                                                                                padding: '2px 8px',
+                                                                                            }}
+                                                                                            onClick={() =>
+                                                                                                toggleRubricLink(
+                                                                                                    cls.id,
+                                                                                                    activity.id,
+                                                                                                    cell.isLinked
+                                                                                                )
+                                                                                            }
+                                                                                        >
+                                                                                            {cell.isLinked
+                                                                                                ? t(
+                                                                                                      'activityDashboard.unlink'
+                                                                                                  )
+                                                                                                : t(
+                                                                                                      'activityDashboard.link'
+                                                                                                  )}
+                                                                                        </button>
+                                                                                    )}
 
-                                                                    {activity.kind === 'test' && (
-                                                                        <button
-                                                                            className="btn btn-ghost btn-sm"
-                                                                            style={{
-                                                                                fontSize: '0.7rem',
-                                                                                padding: '2px 8px',
-                                                                            }}
-                                                                            onClick={() =>
-                                                                                navigate(`/tests/${activity.id}`)
-                                                                            }
-                                                                        >
-                                                                            {t('activityDashboard.open')}
-                                                                        </button>
-                                                                    )}
-                                                                </div>
-                                                            )}
-                                                        </td>
-                                                    );
-                                                })}
-                                            </tr>
-                                        ))}
-                                    </React.Fragment>
+                                                                                    {activity.kind === 'rubric' &&
+                                                                                        cell.submittedCount <
+                                                                                            cell.totalStudents && (
+                                                                                            <button
+                                                                                                className="btn btn-ghost btn-sm"
+                                                                                                style={{
+                                                                                                    fontSize: '0.7rem',
+                                                                                                    padding: '2px 8px',
+                                                                                                }}
+                                                                                                title={t(
+                                                                                                    'gradingTasks.assign_title'
+                                                                                                )}
+                                                                                                onClick={() =>
+                                                                                                    openAssignTaskModal(
+                                                                                                        cls.id,
+                                                                                                        activity.id
+                                                                                                    )
+                                                                                                }
+                                                                                            >
+                                                                                                <ClipboardList
+                                                                                                    size={11}
+                                                                                                />{' '}
+                                                                                                {t(
+                                                                                                    'gradingTasks.assign_button'
+                                                                                                )}
+                                                                                            </button>
+                                                                                        )}
+
+                                                                                    {activity.kind === 'essay' && (
+                                                                                        <button
+                                                                                            className={`btn btn-sm ${cell.isLinked ? 'btn-ghost' : 'btn-primary'}`}
+                                                                                            style={{
+                                                                                                fontSize: '0.7rem',
+                                                                                                padding: '2px 8px',
+                                                                                            }}
+                                                                                            disabled={
+                                                                                                cell.isLinked &&
+                                                                                                cell.submittedCount >=
+                                                                                                    cell.totalStudents
+                                                                                            }
+                                                                                            onClick={() =>
+                                                                                                assignEssayToClass(
+                                                                                                    cls.id,
+                                                                                                    activity.id
+                                                                                                )
+                                                                                            }
+                                                                                        >
+                                                                                            {cell.isLinked &&
+                                                                                            cell.submittedCount >=
+                                                                                                cell.totalStudents
+                                                                                                ? t(
+                                                                                                      'activityDashboard.all_assigned'
+                                                                                                  )
+                                                                                                : t(
+                                                                                                      'activityDashboard.assign'
+                                                                                                  )}
+                                                                                        </button>
+                                                                                    )}
+
+                                                                                    {activity.kind === 'test' && (
+                                                                                        <button
+                                                                                            className="btn btn-ghost btn-sm"
+                                                                                            style={{
+                                                                                                fontSize: '0.7rem',
+                                                                                                padding: '2px 8px',
+                                                                                            }}
+                                                                                            onClick={() =>
+                                                                                                navigate(
+                                                                                                    `/tests/${activity.id}`
+                                                                                                )
+                                                                                            }
+                                                                                        >
+                                                                                            {t(
+                                                                                                'activityDashboard.open'
+                                                                                            )}
+                                                                                        </button>
+                                                                                    )}
+                                                                                </div>
+                                                                            )}
+                                                                        </td>
+                                                                    );
+                                                                })}
+                                                            </tr>
+                                                        )}
+                                                    </Draggable>
+                                                ))}
+                                                {droppableProvided.placeholder}
+                                            </tbody>
+                                        )}
+                                    </Droppable>
                                 );
                             })}
-                        </tbody>
+                        </DragDropContext>
                     </table>
                 </div>
 
@@ -435,6 +644,57 @@ export default function ActivityDashboardPage() {
                     </div>
                 )}
             </div>
+
+            {assignTaskCell && (
+                <div className="modal-overlay" onClick={() => setAssignTaskCell(null)}>
+                    <div className="modal" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3>{t('gradingTasks.modal_title')}</h3>
+                            <button
+                                className="btn btn-ghost btn-icon"
+                                aria-label={t('common.close')}
+                                onClick={() => setAssignTaskCell(null)}
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+                        <div className="modal-body">
+                            <div className="form-group">
+                                <label htmlFor="grading-task-teacher">{t('gradingTasks.teacher_label')}</label>
+                                <input
+                                    id="grading-task-teacher"
+                                    type="text"
+                                    autoFocus
+                                    value={assignTeacherName}
+                                    onChange={(e) => setAssignTeacherName(e.target.value)}
+                                    placeholder={t('gradingTasks.teacher_placeholder')}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label htmlFor="grading-task-due-date">{t('gradingTasks.due_date_label')}</label>
+                                <input
+                                    id="grading-task-due-date"
+                                    type="date"
+                                    value={assignDueDate}
+                                    onChange={(e) => setAssignDueDate(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn btn-secondary" onClick={() => setAssignTaskCell(null)}>
+                                {t('common.cancel')}
+                            </button>
+                            <button
+                                className="btn btn-primary"
+                                disabled={!assignTeacherName.trim()}
+                                onClick={handleAssignTasks}
+                            >
+                                {t('gradingTasks.action_assign')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 }

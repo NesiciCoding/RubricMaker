@@ -17,6 +17,8 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 - **Test summary export**: From a test's Results panel, export a PDF or Word summary for one student or the whole class with per-question accuracy and a strong/developing/weak breakdown by linked standard or CEFR descriptor.
 - **Live monitoring**: While a test or essay is in progress (cloud sync enabled), watch a live presence/progress view per student — response grid for tests, live word count and draft preview for essays, plus advisory proctoring flags (tab switches, copy/paste, battery, Safe Exam Browser status).
 - **Rubric Marketplace**: Publish a rubric for colleagues at your school to browse, clone, and upvote (requires cloud sync and a school).
+- **Department sharing**: Mark a rubric (or a Comment Bank item) read-only-visible to every teacher in your school with one toggle — unlike the Marketplace, this shares the live rubric, not a cloned snapshot.
+- **Manual reordering**: Drag-to-reorder rubrics, tests, and essays in their respective lists and on the Activity Dashboard (per teacher, persists across reloads).
 
 ### 2. Grading Interface
 - **Student management**: Manage students and organise them into classes, with Dutch VO track (VMBO/HAVO/VWO) support.
@@ -29,6 +31,8 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 - **Peer review**: Students review each other's work against the same rubric.
 - **Peer review analytics**: Compare peer grades against the teacher baseline (consistency and leniency bias per reviewer), a feedback heatmap of which criteria attract the most peer comments, and round-over-round trends.
 - **Self-assessment**: Students self-assess against CEFR Can-Do statements.
+- **Co-grading & moderation**: Send a graded submission to a colleague for an independent second marking (reuses the peer review screen and math, applied teacher-to-teacher). Disputes above a configurable point threshold surface in a Moderation queue with a per-criterion delta breakdown and a keep/accept resolution.
+- **Grading task assignment**: From the Activity Dashboard, batch-assign a class's ungraded submissions for a rubric to a specific colleague; pending tasks list above the grid and clear automatically once graded.
 
 ### 3. CEFR & Language Assessment
 
@@ -49,7 +53,7 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 
 ### 5. Analytics & Reporting
 - **Statistics dashboard**: Class performance with Average, Median, Highest, and Lowest scores; grade distribution charts; per-criterion performance breakdown. A **Compare** tab lets you select up to 4 classes side-by-side — grouped average bars, per-criterion gap chart, multi-class trend overlay, and a collapsible Insights panel that flags struggling classes, weak criteria, and inter-class divergence.
-- **Activity Dashboard**: Grid of every rubric, test, and essay against every class — see submitted/total counts at a glance and take quick actions (link/unlink rubrics, bulk-assign essays, open test builder). Filter by school year and VO track.
+- **Activity Dashboard**: Grid of every rubric, test, and essay against every class — see submitted/total counts at a glance and take quick actions (link/unlink rubrics, bulk-assign essays, open test builder, assign ungraded students to a colleague, drag-reorder rows). Filter by school year and VO track.
 - **Vocabulary Profile dashboard**: Per-class and per-student CEFR vocabulary distribution (A1–C2), aggregated from document analysis results, with CSV export of vocabulary lists filtered by CEFR band.
 - **Student profiles**: Individual progress view across all rubrics, CEFR levels, and essays. A **Portfolio** tab shows a unified chronological timeline of grades, speaking sessions, and self-assessments.
 - **Overdue tracking**: Highlights students with assignments past due dates.
@@ -158,7 +162,8 @@ npm run db:reset     # Reset and re-apply all migrations
 | `/attachments` | Attachment manager |
 | `/comments` | Comment bank |
 | `/statistics` | Statistics dashboard (by-rubric, by-student, multi-class compare with insights) |
-| `/activity-dashboard` | Activity Dashboard — rubric/test/essay × class grid with link/assign actions |
+| `/activity-dashboard` | Activity Dashboard — rubric/test/essay × class grid with link/assign/reorder actions, pending grading-task list |
+| `/moderation` | Moderation queue — disputed co-graded submissions, per-criterion delta, keep/accept resolution |
 | `/export` | Export page |
 | `/settings` | Settings |
 | `/admin` | Admin panel (admin role only) |
@@ -183,6 +188,8 @@ npm run db:reset     # Reset and re-apply all migrations
 | `src/utils/learningPathAggregator.ts` | Rule-based rubric recommendations and intervention flagging |
 | `src/utils/testSummaryAggregator.ts` | Per-question/per-skill strong-weak test breakdown |
 | `src/utils/reportCardAggregator.ts` | Composes CEFR, learning-goals, and test-summary data into one report card |
+| `src/utils/coGradingModerationQueue.ts` | Flags disputed co-graded submissions (delta above threshold) for the Moderation queue |
+| `src/utils/displayOrder.ts` | Shared sort/reorder helpers for manually-orderable list views |
 | `src/services/standardsApi.ts` | Common Standards Project API (CCSS, NGSS) |
 
 ---

@@ -304,7 +304,8 @@
         "vocabulary": "Vocabulaire",
         "docs": "Documentation",
         "activity_dashboard": "Tableau des activités",
-        "marketplace": "Place de marché"
+        "marketplace": "Place de marché",
+        "moderation": "Modération"
     },
     "dashboard": {
         "title": "Tableau de bord",
@@ -339,6 +340,7 @@
     },
     "rubricList": {
         "title": "Rubriques",
+        "drag_to_reorder": "Glisser pour réordonner",
         "all_subjects": "Toutes les matières",
         "import_rubric": "Importer une rubrique",
         "new_rubric": "Nouvelle rubrique",
@@ -359,6 +361,9 @@
         "action_compare": "Comparer",
         "shared_with_me": "Partagé avec moi",
         "shared_badge": "Partagé",
+        "share_with_department": "Partager avec mon département (lecture seule)",
+        "shared_with_department": "Partagé avec votre département",
+        "department_badge": "Département",
         "action_essay": "Dissertation",
         "essay_pick_class_title": "Assigner la dissertation à une classe",
         "essay_pick_class_desc": "Sélectionnez une classe pour assigner la dissertation \"{{rubric}}\". Chaque élève recevra son propre lien unique.",
@@ -985,6 +990,26 @@
         "add_round": "Ajouter un tour",
         "view_analytics": "Voir les statistiques"
     },
+    "coGrading": {
+        "action_co_grade": "Double correction",
+        "modal_title": "Envoyer pour une seconde correction",
+        "modal_desc": "Un collègue corrige cette copie indépendamment. Tout désaccord supérieur au seuil de modération apparaîtra dans la file de modération.",
+        "colleague_label": "Nom ou e-mail du collègue",
+        "colleague_placeholder": "ex. j.smith@school.org",
+        "action_start": "Démarrer la double correction",
+        "moderation_title": "File de modération",
+        "threshold_label": "Signaler les désaccords à partir de ce nombre de points",
+        "moderation_empty": "Aucune correction contestée",
+        "moderation_empty_desc": "Les copies en double correction avec un écart au moins égal au seuil apparaîtront ici.",
+        "second_marker_label": "second correcteur : {{name}}",
+        "delta_badge": "Δ {{delta}} pts",
+        "col_criterion": "Critère",
+        "col_baseline": "Original",
+        "col_second_marker": "Second correcteur",
+        "action_view_baseline": "Voir la correction originale",
+        "action_keep_baseline": "Garder l'original",
+        "action_accept_second_marker": "Accepter la note du second correcteur"
+    },
     "peerAnalytics": {
         "title": "Analyse des évaluations par les pairs — {{rubricName}}",
         "rubric_not_found": "Grille introuvable.",
@@ -1333,6 +1358,18 @@
         "coverage_covered_title": "Évalué",
         "coverage_no_gap": "Chaque référentiel lié a été évalué au moins une fois.",
         "coverage_rubric_count": "{{count}} grille(s)"
+    },
+    "gradingTasks": {
+        "assign_title": "Attribuer les copies non corrigées à un enseignant",
+        "assign_button": "Attribuer",
+        "pending_title": "{{count}} tâche(s) de correction en attente",
+        "assigned_to": "attribué à {{name}}",
+        "due": "échéance {{date}}",
+        "modal_title": "Attribuer une tâche de correction",
+        "teacher_label": "Nom ou e-mail de l'enseignant",
+        "teacher_placeholder": "ex. j.smith@school.org",
+        "due_date_label": "Date d'échéance (facultatif)",
+        "action_assign": "Attribuer"
     },
     "attachments": {
         "title": "Pièces jointes",
