@@ -21,6 +21,7 @@ import {
     PenLine,
     LayoutGrid,
     Store,
+    UserCheck,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
@@ -67,6 +68,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
     ];
 
     const navItemsBottom = [
+        { to: '/moderation', icon: UserCheck, label: t('navigation.moderation') },
         { to: '/attachments', icon: FileText, label: t('navigation.attachments') },
         { to: '/export', icon: Download, label: t('navigation.export') },
         { to: '/statistics', icon: BarChart3, label: t('navigation.statistics') },

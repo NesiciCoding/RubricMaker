@@ -63,6 +63,12 @@ vi.mock('../../context/AppContext', () => ({
         attachments: [],
         updateClass: vi.fn(),
         addEssayAssignments: vi.fn(),
+        updateRubric: vi.fn(),
+        updateTest: vi.fn(),
+        updateEssayGroup: vi.fn(),
+        gradingTasks: [],
+        addGradingTasks: vi.fn(),
+        deleteGradingTask: vi.fn(),
     }),
 }));
 

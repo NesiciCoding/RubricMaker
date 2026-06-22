@@ -10,22 +10,27 @@ import type {
     ActivityRow,
     CellData,
 } from '../types';
+import { sortByDisplayOrder } from './displayOrder';
 
 export function getActivityRows(rubrics: Rubric[], tests: Test[], essayAssignments: EssayAssignment[]): ActivityRow[] {
-    const rubricRows: ActivityRow[] = rubrics.map((r) => ({ kind: 'rubric', id: r.id, name: r.name }));
-    const testRows: ActivityRow[] = tests.map((t) => ({ kind: 'test', id: t.id, name: t.name }));
+    const rubricRows: ActivityRow[] = sortByDisplayOrder(rubrics).map((r) => ({
+        kind: 'rubric',
+        id: r.id,
+        name: r.name,
+    }));
+    const testRows: ActivityRow[] = sortByDisplayOrder(tests).map((t) => ({ kind: 'test', id: t.id, name: t.name }));
 
-    // Group essays by teacherKey; use first assignment's title as the row name
-    const essayGroups = new Map<string, string>();
+    // Group essays by teacherKey; use first assignment's title/displayOrder/createdAt as the row's
+    const essayGroups = new Map<string, EssayAssignment>();
     for (const a of essayAssignments) {
         if (!essayGroups.has(a.teacherKey)) {
-            essayGroups.set(a.teacherKey, a.title);
+            essayGroups.set(a.teacherKey, a);
         }
     }
-    const essayRows: ActivityRow[] = Array.from(essayGroups.entries()).map(([key, title]) => ({
+    const essayRows: ActivityRow[] = sortByDisplayOrder(Array.from(essayGroups.values())).map((a) => ({
         kind: 'essay' as ActivityKind,
-        id: key,
-        name: title,
+        id: a.teacherKey,
+        name: a.title,
     }));
 
     return [...rubricRows, ...testRows, ...essayRows];

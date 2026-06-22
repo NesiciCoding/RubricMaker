@@ -1,7 +1,9 @@
-import React, { useState, useMemo } from 'react';
-import { X, Plus, Search, Trash2, Edit2, Tag, Save } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { X, Plus, Search, Trash2, Edit2, Tag, Save, Users2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
+import { useDbStatus } from '../../hooks/useDbStatus';
+import { storageSync } from '../../services/database';
 import { CommentBankItem } from '../../types';
 import Modal from '../ui/Modal';
 
@@ -13,23 +15,41 @@ interface CommentBankModalProps {
 export default function CommentBankModal({ onClose, onSelect }: CommentBankModalProps) {
     const { t } = useTranslation();
     const { commentBank, addCommentBankItem, updateCommentBankItem, deleteCommentBankItem } = useApp();
+    const dbStatus = useDbStatus();
+    const [schoolShared, setSchoolShared] = useState<CommentBankItem[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
     const [editingId, setEditingId] = useState<string | null>(null);
     const [isCreating, setIsCreating] = useState(false);
 
+    useEffect(() => {
+        if (!dbStatus.isConnected) {
+            setSchoolShared([]);
+            return;
+        }
+        storageSync.adapter.fetchSchoolSharedCommentBank().then(setSchoolShared);
+    }, [dbStatus.isConnected]);
+
     // Form state for creating/editing
     const [formText, setFormText] = useState('');
     const [formTags, setFormTags] = useState('');
 
+    const combinedItems = useMemo<Array<CommentBankItem & { isOwn: boolean }>>(
+        () => [
+            ...commentBank.map((item) => ({ ...item, isOwn: true })),
+            ...schoolShared.map((item) => ({ ...item, isOwn: false })),
+        ],
+        [commentBank, schoolShared]
+    );
+
     const allTags = useMemo(() => {
         const tags = new Set<string>();
-        commentBank.forEach((item) => item.tags.forEach((t) => tags.add(t)));
+        combinedItems.forEach((item) => item.tags.forEach((t) => tags.add(t)));
         return Array.from(tags).sort();
-    }, [commentBank]);
+    }, [combinedItems]);
 
     const filteredItems = useMemo(() => {
-        return commentBank
+        return combinedItems
             .filter((item) => {
                 const matchesSearch =
                     item.text.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -38,7 +58,7 @@ export default function CommentBankModal({ onClose, onSelect }: CommentBankModal
                 return matchesSearch && matchesTags;
             })
             .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-    }, [commentBank, searchTerm, selectedTags]);
+    }, [combinedItems, searchTerm, selectedTags]);
 
     const handleEdit = (item: CommentBankItem) => {
         setEditingId(item.id);
@@ -213,8 +233,25 @@ export default function CommentBankModal({ onClose, onSelect }: CommentBankModal
                                         <div style={{ fontSize: '0.95rem', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
                                             {item.text}
                                         </div>
-                                        {!onSelect && (
-                                            <div style={{ display: 'flex', gap: 4 }}>
+                                        {!onSelect && item.isOwn && (
+                                            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                                                <button
+                                                    className="btn btn-ghost btn-icon btn-xs"
+                                                    aria-label={t('rubricList.share_with_department')}
+                                                    title={t('rubricList.share_with_department')}
+                                                    style={{
+                                                        color: item.sharedWithSchool ? 'var(--accent)' : undefined,
+                                                    }}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        updateCommentBankItem({
+                                                            ...item,
+                                                            sharedWithSchool: !item.sharedWithSchool,
+                                                        });
+                                                    }}
+                                                >
+                                                    <Users2 size={12} />
+                                                </button>
                                                 <button
                                                     className="btn btn-ghost btn-icon btn-xs"
                                                     aria-label={t('common.edit')}
@@ -237,6 +274,21 @@ export default function CommentBankModal({ onClose, onSelect }: CommentBankModal
                                                     <Trash2 size={12} />
                                                 </button>
                                             </div>
+                                        )}
+                                        {!item.isOwn && (
+                                            <span
+                                                style={{
+                                                    fontSize: '0.65rem',
+                                                    padding: '2px 6px',
+                                                    borderRadius: 4,
+                                                    background: 'var(--accent-soft)',
+                                                    color: 'var(--accent)',
+                                                    fontWeight: 500,
+                                                    flexShrink: 0,
+                                                }}
+                                            >
+                                                {t('rubricList.department_badge')}
+                                            </span>
                                         )}
                                     </div>
                                     {item.tags.length > 0 && (

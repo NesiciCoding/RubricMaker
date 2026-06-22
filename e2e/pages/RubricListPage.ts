@@ -54,4 +54,13 @@ export class RubricListPage extends BasePage {
     isRubricVisible(name: string) {
         return this.page.getByText(name, { exact: true }).isVisible();
     }
+
+    /** Ordered card titles as currently rendered — reflects manual drag-reorder/displayOrder. */
+    cardTitles() {
+        return this.page.locator('.card h3').allTextContents();
+    }
+
+    dragHandle(name: string) {
+        return this.getRubricCard(name).getByLabel(/drag to reorder/i);
+    }
 }

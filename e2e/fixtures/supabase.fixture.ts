@@ -142,6 +142,59 @@ async function createUserAndGetMagicLink(email: string): Promise<string> {
     return generateMagicLinkForExistingUser(email);
 }
 
+/** Look up the school_id assigned to a user's profile (set by createUserAndGetMagicLink). */
+async function getSchoolIdForEmail(email: string): Promise<string | null> {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?email=eq.${encodeURIComponent(email)}&select=school_id`, {
+        headers: adminHeaders,
+    });
+    if (!res.ok) return null;
+    const rows = (await res.json()) as { school_id: string | null }[];
+    return rows[0]?.school_id ?? null;
+}
+
+/**
+ * Create a second confirmed user who joins an EXISTING school (a colleague at
+ * the same school, as opposed to `secondSupabasePage` which is the same user
+ * on a second device). Used by department-sharing/co-grading tests that need
+ * two distinct teacher accounts in the same school.
+ */
+async function createColleagueAndGetMagicLink(email: string, schoolId: string): Promise<string> {
+    const restHeaders = { ...adminHeaders, Prefer: 'return=representation' };
+
+    const createRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+        method: 'POST',
+        headers: adminHeaders,
+        body: JSON.stringify({ email, email_confirm: true }),
+    });
+    if (!createRes.ok) {
+        throw new Error(`Failed to create colleague user: ${createRes.status} ${await createRes.text()}`);
+    }
+    const user = (await createRes.json()) as { id: string };
+
+    await Promise.all([
+        fetch(`${SUPABASE_URL}/rest/v1/school_members`, {
+            method: 'POST',
+            headers: restHeaders,
+            body: JSON.stringify({ school_id: schoolId, profile_id: user.id }),
+        }),
+        fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`, {
+            method: 'PATCH',
+            headers: restHeaders,
+            body: JSON.stringify({ school_id: schoolId }),
+        }),
+        fetch(`${SUPABASE_URL}/rest/v1/user_settings`, {
+            method: 'POST',
+            headers: restHeaders,
+            body: JSON.stringify({
+                user_id: user.id,
+                settings: { theme: 'dark', language: 'en', hasSeenTutorial: true },
+            }),
+        }),
+    ]);
+
+    return generateMagicLinkForExistingUser(email);
+}
+
 /**
  * Generate a fresh magic-link sign-in URL for an EXISTING user — does not
  * create a user. The admin `generate_link` API can be called repeatedly for
@@ -256,6 +309,13 @@ export type SupabaseFixtures = {
      * existing user repeatedly, so no second user is created.
      */
     secondSupabasePage: Page;
+    /** Email of a second, distinct teacher account in the SAME school as `testUserEmail`. */
+    colleagueEmail: string;
+    /**
+     * A page signed in as `colleagueEmail` — a real second teacher at the same
+     * school as `supabasePage`'s user, for department-sharing/co-grading tests.
+     */
+    colleaguePage: Page;
 };
 
 // ── Fixture implementation ────────────────────────────────────────────────────
@@ -296,6 +356,40 @@ export const test = base.extend<SupabaseFixtures>({
                 await use(page);
             } finally {
                 await context.close();
+            }
+        },
+        { scope: 'test' },
+    ],
+
+    colleagueEmail: [
+        async ({}, use) => {
+            const email = makeTestEmail();
+            await use(email);
+        },
+        { scope: 'test' },
+    ],
+
+    colleaguePage: [
+        // Depends on `supabasePage` so testUserEmail's school already exists.
+        async ({ browser, testUserEmail, colleagueEmail, supabasePage }, use) => {
+            void supabasePage;
+
+            const schoolId = await getSchoolIdForEmail(testUserEmail);
+            if (!schoolId) {
+                throw new Error(
+                    `No school_id found for ${testUserEmail} — cannot create a colleague in the same school`
+                );
+            }
+
+            const context = await browser.newContext();
+            try {
+                const page = await context.newPage();
+                const magicLink = await createColleagueAndGetMagicLink(colleagueEmail, schoolId);
+                await signInViaMagicLink(page, magicLink);
+                await use(page);
+            } finally {
+                await context.close();
+                await deleteTestUser(colleagueEmail);
             }
         },
         { scope: 'test' },

@@ -21,6 +21,7 @@ import type {
     EssayAssignment,
     EssaySubmission,
     EssayTemplate,
+    GradingTask,
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 import { nanoid } from '../utils/nanoid';
@@ -224,6 +225,7 @@ const KEYS = {
     essayAssignments: 'rm_essay_assignments',
     essaySubmissions: 'rm_essay_submissions',
     essayTemplates: 'rm_essay_templates',
+    gradingTasks: 'rm_grading_tasks',
 };
 
 // ─── Generic helpers ───────────────────────────────────────────────────────────
@@ -271,6 +273,7 @@ export interface StoreData {
     essayAssignments: EssayAssignment[];
     essaySubmissions: EssaySubmission[];
     essayTemplates: EssayTemplate[];
+    gradingTasks: GradingTask[];
 }
 
 export function loadStore(): StoreData {
@@ -296,6 +299,7 @@ export function loadStore(): StoreData {
         essayAssignments: load<EssayAssignment[]>(KEYS.essayAssignments, []),
         essaySubmissions: load<EssaySubmission[]>(KEYS.essaySubmissions, []),
         essayTemplates: load<EssayTemplate[]>(KEYS.essayTemplates, []),
+        gradingTasks: load<GradingTask[]>(KEYS.gradingTasks, []),
     };
 }
 
@@ -358,6 +362,9 @@ export function saveEssaySubmissions(submissions: EssaySubmission[]) {
 }
 export function saveEssayTemplates(templates: EssayTemplate[]) {
     save(KEYS.essayTemplates, templates);
+}
+export function saveGradingTasks(tasks: GradingTask[]) {
+    save(KEYS.gradingTasks, tasks);
 }
 
 // ─── Full Backup / Restore ─────────────────────────────────────────────────────
@@ -504,6 +511,10 @@ export function importFullBackup(json: string): boolean {
         if (data.essayTemplates !== undefined) {
             if (isObjectArray(data.essayTemplates)) saveEssayTemplates(data.essayTemplates as EssayTemplate[]);
             else console.warn('[importFullBackup] essayTemplates failed validation — skipped');
+        }
+        if (data.gradingTasks !== undefined) {
+            if (isObjectArray(data.gradingTasks)) saveGradingTasks(data.gradingTasks as GradingTask[]);
+            else console.warn('[importFullBackup] gradingTasks failed validation — skipped');
         }
         if (data.userTemplates !== undefined) {
             if (

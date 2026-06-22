@@ -304,7 +304,8 @@
         "vocabulary": "Wortschatz",
         "docs": "Dokumentation",
         "activity_dashboard": "Aktivitätsdashboard",
-        "marketplace": "Marktplatz"
+        "marketplace": "Marktplatz",
+        "moderation": "Moderation"
     },
     "dashboard": {
         "title": "Dashboard",
@@ -339,6 +340,7 @@
     },
     "rubricList": {
         "title": "Rubriken",
+        "drag_to_reorder": "Ziehen zum Neuordnen",
         "all_subjects": "Alle Fächer",
         "import_rubric": "Rubrik importieren",
         "new_rubric": "Neue Rubrik",
@@ -359,6 +361,9 @@
         "action_compare": "Vergleichen",
         "shared_with_me": "Mit mir geteilt",
         "shared_badge": "Geteilt",
+        "share_with_department": "Mit meiner Fachgruppe teilen (nur lesen)",
+        "shared_with_department": "Mit deiner Fachgruppe geteilt",
+        "department_badge": "Fachgruppe",
         "action_essay": "Aufsatz",
         "essay_pick_class_title": "Aufsatz einer Klasse zuweisen",
         "essay_pick_class_desc": "Wählen Sie eine Klasse, um den \"{{rubric}}\" Aufsatz zuzuweisen. Jeder Schüler erhält einen eigenen einzigartigen Link.",
@@ -985,6 +990,26 @@
         "add_round": "Runde hinzufügen",
         "view_analytics": "Statistiken anzeigen"
     },
+    "coGrading": {
+        "action_co_grade": "Zweitkorrektur",
+        "modal_title": "Zur Zweitkorrektur senden",
+        "modal_desc": "Eine Kollegin oder ein Kollege bewertet diese Abgabe unabhängig. Abweichungen über dem Moderationsschwellenwert erscheinen in der Moderationswarteschlange.",
+        "colleague_label": "Name oder E-Mail der Kollegin/des Kollegen",
+        "colleague_placeholder": "z. B. j.smith@school.org",
+        "action_start": "Zweitkorrektur starten",
+        "moderation_title": "Moderationswarteschlange",
+        "threshold_label": "Abweichungen ab dieser Punktzahl markieren",
+        "moderation_empty": "Keine strittigen Bewertungen",
+        "moderation_empty_desc": "Zweitkorrigierte Abgaben mit einer Abweichung ab dem Schwellenwert erscheinen hier.",
+        "second_marker_label": "Zweitkorrektor: {{name}}",
+        "delta_badge": "Δ {{delta}} Pkt.",
+        "col_criterion": "Kriterium",
+        "col_baseline": "Original",
+        "col_second_marker": "Zweitkorrektor",
+        "action_view_baseline": "Originalbewertung ansehen",
+        "action_keep_baseline": "Original beibehalten",
+        "action_accept_second_marker": "Bewertung des Zweitkorrektors übernehmen"
+    },
     "peerAnalytics": {
         "title": "Peer-Review-Statistiken — {{rubricName}}",
         "rubric_not_found": "Rubrik nicht gefunden.",
@@ -1333,6 +1358,18 @@
         "coverage_covered_title": "Bewertet",
         "coverage_no_gap": "Jeder verknüpfte Standard wurde mindestens einmal bewertet.",
         "coverage_rubric_count": "{{count}} Rubrik(en)"
+    },
+    "gradingTasks": {
+        "assign_title": "Unkorrigierte Abgaben einer Lehrkraft zuweisen",
+        "assign_button": "Zuweisen",
+        "pending_title": "{{count}} offene Korrekturaufgabe(n)",
+        "assigned_to": "zugewiesen an {{name}}",
+        "due": "Fällig am {{date}}",
+        "modal_title": "Korrekturaufgabe zuweisen",
+        "teacher_label": "Name oder E-Mail der Lehrkraft",
+        "teacher_placeholder": "z. B. j.smith@school.org",
+        "due_date_label": "Fälligkeitsdatum (optional)",
+        "action_assign": "Zuweisen"
     },
     "attachments": {
         "title": "Anhänge",

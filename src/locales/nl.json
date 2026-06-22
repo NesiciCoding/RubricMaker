@@ -304,7 +304,8 @@
         "vocabulary": "Woordenschat",
         "docs": "Documentatie",
         "activity_dashboard": "Activiteitenoverzicht",
-        "marketplace": "Marktplaats"
+        "marketplace": "Marktplaats",
+        "moderation": "Moderatie"
     },
     "dashboard": {
         "title": "Dashboard",
@@ -339,6 +340,7 @@
     },
     "rubricList": {
         "title": "Rubrieken",
+        "drag_to_reorder": "Sleep om te herordenen",
         "all_subjects": "Alle onderwerpen",
         "import_rubric": "Rubriek Importeren",
         "new_rubric": "Nieuwe Rubriek",
@@ -359,6 +361,9 @@
         "action_compare": "Vergelijken",
         "shared_with_me": "Gedeeld met mij",
         "shared_badge": "Gedeeld",
+        "share_with_department": "Delen met mijn vakgroep (alleen-lezen)",
+        "shared_with_department": "Gedeeld met je vakgroep",
+        "department_badge": "Vakgroep",
         "action_essay": "Opstel",
         "essay_pick_class_title": "Opstelopdracht toewijzen aan klas",
         "essay_pick_class_desc": "Selecteer een klas om de \"{{rubric}}\" opdracht toe te wijzen. Elke leerling krijgt een eigen unieke link.",
@@ -985,6 +990,26 @@
         "add_round": "Ronde toevoegen",
         "view_analytics": "Analyse bekijken"
     },
+    "coGrading": {
+        "action_co_grade": "Tweede beoordelaar",
+        "modal_title": "Versturen voor tweede beoordeling",
+        "modal_desc": "Een collega beoordeelt dit werk onafhankelijk. Verschillen boven de moderatiedrempel verschijnen in de moderatiewachtrij.",
+        "colleague_label": "Naam of e-mail van collega",
+        "colleague_placeholder": "bijv. j.smith@school.org",
+        "action_start": "Start tweede beoordeling",
+        "moderation_title": "Moderatiewachtrij",
+        "threshold_label": "Markeer verschillen vanaf dit aantal punten",
+        "moderation_empty": "Geen betwiste beoordelingen",
+        "moderation_empty_desc": "Tweede-beoordeelde inzendingen met een verschil op of boven de drempel verschijnen hier.",
+        "second_marker_label": "tweede beoordelaar: {{name}}",
+        "delta_badge": "Δ {{delta}} pt",
+        "col_criterion": "Criterium",
+        "col_baseline": "Origineel",
+        "col_second_marker": "Tweede beoordelaar",
+        "action_view_baseline": "Bekijk originele beoordeling",
+        "action_keep_baseline": "Origineel behouden",
+        "action_accept_second_marker": "Beoordeling tweede beoordelaar accepteren"
+    },
     "peerAnalytics": {
         "title": "Peerreview-analyse — {{rubricName}}",
         "rubric_not_found": "Rubriek niet gevonden.",
@@ -1333,6 +1358,18 @@
         "coverage_covered_title": "Getoetst",
         "coverage_no_gap": "Elke gekoppelde standaard is minstens één keer getoetst.",
         "coverage_rubric_count": "{{count}} rubriek(en)"
+    },
+    "gradingTasks": {
+        "assign_title": "Wijs niet-beoordeelde inzendingen toe aan een docent",
+        "assign_button": "Toewijzen",
+        "pending_title": "{{count}} openstaande beoordelingstaak/taken",
+        "assigned_to": "toegewezen aan {{name}}",
+        "due": "deadline {{date}}",
+        "modal_title": "Beoordelingstaak toewijzen",
+        "teacher_label": "Naam of e-mail van de docent",
+        "teacher_placeholder": "bijv. j.smith@school.org",
+        "due_date_label": "Deadline (optioneel)",
+        "action_assign": "Toewijzen"
     },
     "attachments": {
         "title": "Bijlagen",

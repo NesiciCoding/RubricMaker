@@ -16,8 +16,10 @@ import {
     Layers,
     Eye,
     Users2,
+    GripVertical,
     X,
 } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import Topbar from '../components/Layout/Topbar';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
@@ -35,11 +37,12 @@ import type { ParsedRubric } from '../utils/rubricImport';
 import { encodeRubricShareCode, decodeRubricShareCode } from '../utils/rubricImport';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
+import { sortByDisplayOrder, reorderDisplayOrder } from '../utils/displayOrder';
 
 export default function RubricList() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { rubrics, students, classes, studentRubrics, addRubric, deleteRubric, settings } = useApp();
+    const { rubrics, students, classes, studentRubrics, addRubric, updateRubric, deleteRubric, settings } = useApp();
     const [search, setSearch] = useState('');
     const [subjectFilter, setSubjectFilter] = useState<string>('all');
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
@@ -52,6 +55,7 @@ export default function RubricList() {
     const [diffTrack, setDiffTrack] = useState<VoTrack>('havo');
     const [diffCefr, setDiffCefr] = useState<CefrLevel>('B1');
     const [sharedWithMe, setSharedWithMe] = useState<Rubric[]>([]);
+    const [schoolShared, setSchoolShared] = useState<Rubric[]>([]);
     const dbStatus = useDbStatus();
 
     // Rubric sharing flow (Supabase mode only)
@@ -118,10 +122,17 @@ export default function RubricList() {
     useEffect(() => {
         if (!dbStatus.isConnected) {
             setSharedWithMe([]);
+            setSchoolShared([]);
             return;
         }
         storageSync.adapter.fetchSharedRubrics().then(setSharedWithMe);
+        storageSync.adapter.fetchSchoolSharedRubrics().then(setSchoolShared);
     }, [dbStatus.isConnected]);
+
+    function toggleSharedWithSchool(rubricId: string, shared: boolean) {
+        const r = rubrics.find((x) => x.id === rubricId);
+        if (r) updateRubric({ ...r, sharedWithSchool: shared });
+    }
 
     function handleCopyShareCode(rubricId: string) {
         const rubric = rubrics.find((r) => r.id === rubricId);
@@ -165,13 +176,22 @@ export default function RubricList() {
 
     const uniqueSubjects = Array.from(new Set(rubrics.map((r) => r.subject).filter(Boolean))).sort();
 
-    const filtered = rubrics.filter((r) => {
+    const filtered = sortByDisplayOrder(rubrics).filter((r) => {
         const matchesSearch =
             r.name.toLowerCase().includes(search.toLowerCase()) ||
             r.subject.toLowerCase().includes(search.toLowerCase());
         const matchesSubject = subjectFilter === 'all' || r.subject === subjectFilter;
         return matchesSearch && matchesSubject;
     });
+    // ponytail: reordering only writes back when the list is unfiltered, so dragged positions map 1:1 onto displayOrder
+    const reorderable = !search.trim() && subjectFilter === 'all';
+
+    function handleDragEnd(result: DropResult) {
+        if (!result.destination || !reorderable) return;
+        for (const [rubric, order] of reorderDisplayOrder(filtered, result.source.index, result.destination.index)) {
+            if (rubric.displayOrder !== order) updateRubric({ ...rubric, displayOrder: order });
+        }
+    }
 
     function openDifferentiate(rubricId: string) {
         const defaultTrack: VoTrack = 'havo';
@@ -301,234 +321,325 @@ export default function RubricList() {
                         </button>
                     </div>
                 ) : (
-                    <div
-                        style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-                            gap: 16,
-                        }}
-                    >
-                        {filtered.map((r) => {
-                            const gradedStudents = [
-                                ...new Set(
-                                    studentRubrics.filter((sr) => sr.rubricId === r.id).map((sr) => sr.studentId)
-                                ),
-                            ];
-                            return (
+                    <DragDropContext onDragEnd={handleDragEnd}>
+                        <Droppable droppableId="rubric-list">
+                            {(droppableProvided) => (
                                 <div
-                                    key={r.id}
-                                    className="card"
-                                    style={{ cursor: 'pointer', transition: 'border-color var(--transition)' }}
-                                    onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
-                                    onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
+                                    ref={droppableProvided.innerRef}
+                                    {...droppableProvided.droppableProps}
+                                    style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                                        gap: 16,
+                                    }}
                                 >
-                                    <div
-                                        style={{
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'flex-start',
-                                            marginBottom: 12,
-                                        }}
-                                    >
-                                        <div>
-                                            <h3>{r.name}</h3>
-                                            {r.subject && (
-                                                <div className="text-muted text-xs" style={{ marginTop: 2 }}>
-                                                    {r.subject}
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div style={{ display: 'flex', gap: 4 }}>
-                                            {dbStatus.isConnected && (
-                                                <button
-                                                    className="btn btn-ghost btn-icon btn-sm"
-                                                    title={t('rubricList.action_share_colleague')}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        openShareModal(r.id, r.name);
-                                                    }}
-                                                >
-                                                    <Users2 size={14} />
-                                                </button>
-                                            )}
-                                            <button
-                                                className="btn btn-ghost btn-icon btn-sm"
-                                                title="Copy share code (for other teachers)"
-                                                style={{
-                                                    color: copiedId === r.id ? 'var(--green, #22c55e)' : undefined,
-                                                }}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleCopyShareCode(r.id);
-                                                }}
+                                    {filtered.map((r, idx) => {
+                                        const gradedStudents = [
+                                            ...new Set(
+                                                studentRubrics
+                                                    .filter((sr) => sr.rubricId === r.id)
+                                                    .map((sr) => sr.studentId)
+                                            ),
+                                        ];
+                                        return (
+                                            <Draggable
+                                                key={r.id}
+                                                draggableId={r.id}
+                                                index={idx}
+                                                isDragDisabled={!reorderable}
                                             >
-                                                {copiedId === r.id ? <Check size={14} /> : <Share2 size={14} />}
-                                            </button>
-                                            <button
-                                                className="btn btn-ghost btn-icon btn-sm"
-                                                title="Share preview with students (copy link)"
-                                                style={{
-                                                    color:
-                                                        copiedId === 'preview-' + r.id
-                                                            ? 'var(--green, #22c55e)'
-                                                            : undefined,
-                                                }}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleSharePreview(r.id);
-                                                }}
-                                            >
-                                                {copiedId === 'preview-' + r.id ? (
-                                                    <Check size={14} />
-                                                ) : (
-                                                    <Eye size={14} />
-                                                )}
-                                            </button>
-                                            <button
-                                                className="btn btn-ghost btn-icon btn-sm"
-                                                title={t('voTrack.differentiate_title')}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    openDifferentiate(r.id);
-                                                }}
-                                            >
-                                                <Layers size={14} />
-                                            </button>
-                                            <button
-                                                className="btn btn-ghost btn-icon btn-sm"
-                                                title={t('rubricList.action_duplicate')}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleDuplicate(r.id);
-                                                }}
-                                            >
-                                                <Copy size={14} />
-                                            </button>
-                                            <button
-                                                className="btn btn-ghost btn-icon btn-sm"
-                                                title={t('rubricList.action_edit')}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    navigate(`/rubrics/${r.id}`);
-                                                }}
-                                            >
-                                                <Edit2 size={14} />
-                                            </button>
-                                            <button
-                                                className="btn btn-ghost btn-icon btn-sm"
-                                                title={t('rubricList.action_delete')}
-                                                style={{ color: 'var(--red)' }}
-                                                onClick={async (e) => {
-                                                    e.stopPropagation();
-                                                    const ok = await confirm({
-                                                        title: t('rubricList.delete_rubric_title'),
-                                                        message: t('rubricList.delete_rubric_warning'),
-                                                        confirmLabel: t('common.delete'),
-                                                    });
-                                                    if (ok) deleteRubric(r.id);
-                                                }}
-                                            >
-                                                <Trash2 size={14} />
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
-                                        <span className="badge badge-blue">
-                                            {r.criteria.length} {t('rubricList.criteria_count')}
-                                        </span>
-                                        <span className="badge badge-purple">
-                                            {r.criteria[0]?.levels.length ?? 0} {t('rubricList.levels_count')}
-                                        </span>
-                                        <span className="badge badge-green">
-                                            {gradedStudents.length} {t('rubricList.students_graded_count')}
-                                        </span>
-                                        {r.cefrTargetLevel && <CefrBadge level={r.cefrTargetLevel} size="sm" />}
-                                    </div>
-
-                                    {r.description && (
-                                        <p className="text-muted text-sm truncate" style={{ marginBottom: 14 }}>
-                                            {r.description}
-                                        </p>
-                                    )}
-
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                        <button
-                                            className="btn btn-primary btn-sm"
-                                            onClick={() => navigate(`/rubrics/${r.id}`)}
-                                        >
-                                            <Edit2 size={14} /> {t('rubricList.edit_rubric')}
-                                        </button>
-                                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                                            <button
-                                                className="btn btn-secondary btn-sm"
-                                                style={{ flex: '1 1 auto' }}
-                                                onClick={() => navigate('/students')}
-                                            >
-                                                <Users size={14} /> {t('rubricList.grade_students')}
-                                            </button>
-                                            <button
-                                                className="btn btn-secondary btn-sm compare-btn-tutorial"
-                                                style={{ flex: '1 1 auto' }}
-                                                title={
-                                                    settings.activeClassId
-                                                        ? 'Start Comparative Grading'
-                                                        : "You'll choose a class on the next screen"
-                                                }
-                                                onClick={() => {
-                                                    const activeClass = classes.find(
-                                                        (c) => c.id === settings.activeClassId
-                                                    );
-                                                    navigate(
-                                                        `/grade-comparative/${activeClass ? activeClass.id : 'all'}/${r.id}`
-                                                    );
-                                                }}
-                                            >
-                                                <GitCompare size={14} /> {t('rubricList.action_compare')}
-                                            </button>
-                                            {/* Speaking session launcher */}
-                                            {(() => {
-                                                const classStudents = settings.activeClassId
-                                                    ? students.filter((s) => s.classId === settings.activeClassId)
-                                                    : students;
-                                                if (classStudents.length === 0) return null;
-                                                return (
-                                                    <div style={{ position: 'relative', flex: '1 1 auto' }}>
-                                                        <select
-                                                            value=""
-                                                            onChange={(e) => {
-                                                                if (e.target.value)
-                                                                    navigate(`/speaking/${r.id}/${e.target.value}`);
-                                                            }}
+                                                {(dragProvided) => (
+                                                    <div
+                                                        ref={dragProvided.innerRef}
+                                                        {...dragProvided.draggableProps}
+                                                        className="card"
+                                                        style={{
+                                                            cursor: 'pointer',
+                                                            transition: 'border-color var(--transition)',
+                                                            ...dragProvided.draggableProps.style,
+                                                        }}
+                                                        onMouseEnter={(e) =>
+                                                            (e.currentTarget.style.borderColor = 'var(--accent)')
+                                                        }
+                                                        onMouseLeave={(e) =>
+                                                            (e.currentTarget.style.borderColor = 'var(--border)')
+                                                        }
+                                                    >
+                                                        <div
                                                             style={{
-                                                                width: '100%',
-                                                                padding: '5px 8px',
-                                                                borderRadius: 6,
-                                                                border: '1px solid var(--border)',
-                                                                background: 'var(--bg-elevated)',
-                                                                color: 'var(--text)',
-                                                                fontSize: '0.8rem',
-                                                                cursor: 'pointer',
+                                                                display: 'flex',
+                                                                justifyContent: 'space-between',
+                                                                alignItems: 'flex-start',
+                                                                marginBottom: 12,
                                                             }}
                                                         >
-                                                            <option value="" disabled>
-                                                                {t('rubricList.speaking_select_student')}
-                                                            </option>
-                                                            {classStudents.map((s) => (
-                                                                <option key={s.id} value={s.id}>
-                                                                    {s.name}
-                                                                </option>
-                                                            ))}
-                                                        </select>
+                                                            <div
+                                                                style={{
+                                                                    display: 'flex',
+                                                                    alignItems: 'flex-start',
+                                                                    gap: 6,
+                                                                }}
+                                                            >
+                                                                {reorderable && (
+                                                                    <span
+                                                                        {...dragProvided.dragHandleProps}
+                                                                        aria-label={t('rubricList.drag_to_reorder')}
+                                                                        style={{
+                                                                            cursor: 'grab',
+                                                                            color: 'var(--text-dim)',
+                                                                            marginTop: 3,
+                                                                        }}
+                                                                    >
+                                                                        <GripVertical size={15} />
+                                                                    </span>
+                                                                )}
+                                                                <div>
+                                                                    <h3>{r.name}</h3>
+                                                                    {r.subject && (
+                                                                        <div
+                                                                            className="text-muted text-xs"
+                                                                            style={{ marginTop: 2 }}
+                                                                        >
+                                                                            {r.subject}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            <div style={{ display: 'flex', gap: 4 }}>
+                                                                {dbStatus.isConnected && (
+                                                                    <button
+                                                                        className="btn btn-ghost btn-icon btn-sm"
+                                                                        title={t('rubricList.action_share_colleague')}
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            openShareModal(r.id, r.name);
+                                                                        }}
+                                                                    >
+                                                                        <Users2 size={14} />
+                                                                    </button>
+                                                                )}
+                                                                <button
+                                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                                    title="Copy share code (for other teachers)"
+                                                                    style={{
+                                                                        color:
+                                                                            copiedId === r.id
+                                                                                ? 'var(--green, #22c55e)'
+                                                                                : undefined,
+                                                                    }}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleCopyShareCode(r.id);
+                                                                    }}
+                                                                >
+                                                                    {copiedId === r.id ? (
+                                                                        <Check size={14} />
+                                                                    ) : (
+                                                                        <Share2 size={14} />
+                                                                    )}
+                                                                </button>
+                                                                <button
+                                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                                    title="Share preview with students (copy link)"
+                                                                    style={{
+                                                                        color:
+                                                                            copiedId === 'preview-' + r.id
+                                                                                ? 'var(--green, #22c55e)'
+                                                                                : undefined,
+                                                                    }}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleSharePreview(r.id);
+                                                                    }}
+                                                                >
+                                                                    {copiedId === 'preview-' + r.id ? (
+                                                                        <Check size={14} />
+                                                                    ) : (
+                                                                        <Eye size={14} />
+                                                                    )}
+                                                                </button>
+                                                                <button
+                                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                                    title={t('voTrack.differentiate_title')}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        openDifferentiate(r.id);
+                                                                    }}
+                                                                >
+                                                                    <Layers size={14} />
+                                                                </button>
+                                                                <button
+                                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                                    title={t('rubricList.action_duplicate')}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleDuplicate(r.id);
+                                                                    }}
+                                                                >
+                                                                    <Copy size={14} />
+                                                                </button>
+                                                                <button
+                                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                                    title={t('rubricList.action_edit')}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        navigate(`/rubrics/${r.id}`);
+                                                                    }}
+                                                                >
+                                                                    <Edit2 size={14} />
+                                                                </button>
+                                                                <button
+                                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                                    title={t('rubricList.action_delete')}
+                                                                    style={{ color: 'var(--red)' }}
+                                                                    onClick={async (e) => {
+                                                                        e.stopPropagation();
+                                                                        const ok = await confirm({
+                                                                            title: t('rubricList.delete_rubric_title'),
+                                                                            message: t(
+                                                                                'rubricList.delete_rubric_warning'
+                                                                            ),
+                                                                            confirmLabel: t('common.delete'),
+                                                                        });
+                                                                        if (ok) deleteRubric(r.id);
+                                                                    }}
+                                                                >
+                                                                    <Trash2 size={14} />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+
+                                                        <div
+                                                            style={{
+                                                                display: 'flex',
+                                                                gap: 8,
+                                                                flexWrap: 'wrap',
+                                                                marginBottom: 14,
+                                                            }}
+                                                        >
+                                                            <span className="badge badge-blue">
+                                                                {r.criteria.length} {t('rubricList.criteria_count')}
+                                                            </span>
+                                                            <span className="badge badge-purple">
+                                                                {r.criteria[0]?.levels.length ?? 0}{' '}
+                                                                {t('rubricList.levels_count')}
+                                                            </span>
+                                                            <span className="badge badge-green">
+                                                                {gradedStudents.length}{' '}
+                                                                {t('rubricList.students_graded_count')}
+                                                            </span>
+                                                            {r.cefrTargetLevel && (
+                                                                <CefrBadge level={r.cefrTargetLevel} size="sm" />
+                                                            )}
+                                                        </div>
+
+                                                        {r.description && (
+                                                            <p
+                                                                className="text-muted text-sm truncate"
+                                                                style={{ marginBottom: 14 }}
+                                                            >
+                                                                {r.description}
+                                                            </p>
+                                                        )}
+
+                                                        <div
+                                                            style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
+                                                        >
+                                                            <button
+                                                                className="btn btn-primary btn-sm"
+                                                                onClick={() => navigate(`/rubrics/${r.id}`)}
+                                                            >
+                                                                <Edit2 size={14} /> {t('rubricList.edit_rubric')}
+                                                            </button>
+                                                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                                                <button
+                                                                    className="btn btn-secondary btn-sm"
+                                                                    style={{ flex: '1 1 auto' }}
+                                                                    onClick={() => navigate('/students')}
+                                                                >
+                                                                    <Users size={14} /> {t('rubricList.grade_students')}
+                                                                </button>
+                                                                <button
+                                                                    className="btn btn-secondary btn-sm compare-btn-tutorial"
+                                                                    style={{ flex: '1 1 auto' }}
+                                                                    title={
+                                                                        settings.activeClassId
+                                                                            ? 'Start Comparative Grading'
+                                                                            : "You'll choose a class on the next screen"
+                                                                    }
+                                                                    onClick={() => {
+                                                                        const activeClass = classes.find(
+                                                                            (c) => c.id === settings.activeClassId
+                                                                        );
+                                                                        navigate(
+                                                                            `/grade-comparative/${activeClass ? activeClass.id : 'all'}/${r.id}`
+                                                                        );
+                                                                    }}
+                                                                >
+                                                                    <GitCompare size={14} />{' '}
+                                                                    {t('rubricList.action_compare')}
+                                                                </button>
+                                                                {/* Speaking session launcher */}
+                                                                {(() => {
+                                                                    const classStudents = settings.activeClassId
+                                                                        ? students.filter(
+                                                                              (s) =>
+                                                                                  s.classId === settings.activeClassId
+                                                                          )
+                                                                        : students;
+                                                                    if (classStudents.length === 0) return null;
+                                                                    return (
+                                                                        <div
+                                                                            style={{
+                                                                                position: 'relative',
+                                                                                flex: '1 1 auto',
+                                                                            }}
+                                                                        >
+                                                                            <select
+                                                                                value=""
+                                                                                onChange={(e) => {
+                                                                                    if (e.target.value)
+                                                                                        navigate(
+                                                                                            `/speaking/${r.id}/${e.target.value}`
+                                                                                        );
+                                                                                }}
+                                                                                style={{
+                                                                                    width: '100%',
+                                                                                    padding: '5px 8px',
+                                                                                    borderRadius: 6,
+                                                                                    border: '1px solid var(--border)',
+                                                                                    background: 'var(--bg-elevated)',
+                                                                                    color: 'var(--text)',
+                                                                                    fontSize: '0.8rem',
+                                                                                    cursor: 'pointer',
+                                                                                }}
+                                                                            >
+                                                                                <option value="" disabled>
+                                                                                    {t(
+                                                                                        'rubricList.speaking_select_student'
+                                                                                    )}
+                                                                                </option>
+                                                                                {classStudents.map((s) => (
+                                                                                    <option key={s.id} value={s.id}>
+                                                                                        {s.name}
+                                                                                    </option>
+                                                                                ))}
+                                                                            </select>
+                                                                        </div>
+                                                                    );
+                                                                })()}
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                );
-                                            })()}
-                                        </div>
-                                    </div>
+                                                )}
+                                            </Draggable>
+                                        );
+                                    })}
+                                    {droppableProvided.placeholder}
                                 </div>
-                            );
-                        })}
-                    </div>
+                            )}
+                        </Droppable>
+                    </DragDropContext>
                 )}
 
                 {sharedWithMe.length > 0 && (
@@ -590,6 +701,72 @@ export default function RubricList() {
                                         }}
                                     >
                                         {t('rubricList.shared_badge')}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {schoolShared.length > 0 && (
+                    <div style={{ marginTop: 32 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                            <Users2 size={15} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>
+                                {t('rubricList.shared_with_department')}
+                            </h3>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            {schoolShared.map((r) => (
+                                <div
+                                    key={r.id}
+                                    style={{
+                                        padding: '12px 14px',
+                                        background: 'var(--bg-elevated)',
+                                        borderRadius: 10,
+                                        border: '1px solid var(--border)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 12,
+                                        cursor: 'pointer',
+                                    }}
+                                    onClick={() => navigate(`/rubrics/${r.id}`)}
+                                >
+                                    <BookOpen
+                                        size={16}
+                                        style={{ color: 'var(--text-muted)', flexShrink: 0 }}
+                                        aria-hidden="true"
+                                    />
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div
+                                            style={{
+                                                fontWeight: 600,
+                                                fontSize: '0.9rem',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap',
+                                            }}
+                                        >
+                                            {r.name}
+                                        </div>
+                                        {r.subject && (
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                {r.subject}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <span
+                                        style={{
+                                            fontSize: '0.7rem',
+                                            padding: '2px 7px',
+                                            borderRadius: 4,
+                                            background: 'var(--accent-soft)',
+                                            color: 'var(--accent)',
+                                            fontWeight: 500,
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        {t('rubricList.department_badge')}
                                     </span>
                                 </div>
                             ))}
@@ -804,6 +981,28 @@ export default function RubricList() {
                             <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
                                 {t('rubricList.share_modal_desc', { rubric: shareModal.rubricName })}
                             </p>
+
+                            <label
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 8,
+                                    marginBottom: 16,
+                                    padding: '8px 10px',
+                                    background: 'var(--bg-elevated)',
+                                    borderRadius: 8,
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={
+                                        rubrics.find((r) => r.id === shareModal.rubricId)?.sharedWithSchool ?? false
+                                    }
+                                    onChange={(e) => toggleSharedWithSchool(shareModal.rubricId, e.target.checked)}
+                                />
+                                <span style={{ fontSize: '0.85rem' }}>{t('rubricList.share_with_department')}</span>
+                            </label>
                             <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
                                 <input
                                     type="email"

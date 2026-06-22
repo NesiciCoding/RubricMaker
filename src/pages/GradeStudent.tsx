@@ -21,6 +21,7 @@ import {
     HelpCircle,
     Minus,
     Plus,
+    UserCheck,
 } from 'lucide-react';
 import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
@@ -197,6 +198,8 @@ export default function GradeStudent() {
     const [showAnalysisPanel, setShowAnalysisPanel] = useState(false);
     const [showEssayAssignment, setShowEssayAssignment] = useState(false);
     const [showEssayImport, setShowEssayImport] = useState(false);
+    const [showCoGradeModal, setShowCoGradeModal] = useState(false);
+    const [coGraderName, setCoGraderName] = useState('');
     const [slipSheetData, setSlipSheetData] = useState<{
         assignment: EssayAssignment;
         students: { id: string; name: string }[];
@@ -599,6 +602,15 @@ export default function GradeStudent() {
                         >
                             <XCircle size={15} /> {t('gradeStudent.action_not_handed_in')}
                         </button>
+                        {existingSR && (
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => setShowCoGradeModal(true)}
+                                title={t('coGrading.action_co_grade')}
+                            >
+                                <UserCheck size={15} /> {t('coGrading.action_co_grade')}
+                            </button>
+                        )}
                         <button
                             className="btn btn-secondary btn-sm no-print"
                             onClick={() => setTourRun(true)}
@@ -1651,6 +1663,52 @@ export default function GradeStudent() {
                     students={slipSheetData.students}
                     onClose={() => setSlipSheetData(null)}
                 />
+            )}
+
+            {showCoGradeModal && (
+                <Modal titleId="co-grade-title" onClose={() => setShowCoGradeModal(false)} maxWidth={420}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                        <h3 id="co-grade-title" style={{ margin: 0, flex: 1 }}>
+                            {t('coGrading.modal_title')}
+                        </h3>
+                        <button
+                            className="btn btn-ghost btn-icon"
+                            aria-label={t('common.close')}
+                            onClick={() => setShowCoGradeModal(false)}
+                        >
+                            <X size={18} />
+                        </button>
+                    </div>
+                    <p className="text-muted text-sm" style={{ marginBottom: 14 }}>
+                        {t('coGrading.modal_desc')}
+                    </p>
+                    <div className="form-group">
+                        <label>{t('coGrading.colleague_label')}</label>
+                        <input
+                            type="text"
+                            autoFocus
+                            value={coGraderName}
+                            onChange={(e) => setCoGraderName(e.target.value)}
+                            placeholder={t('coGrading.colleague_placeholder')}
+                        />
+                    </div>
+                    <div className="modal-footer" style={{ marginTop: 18 }}>
+                        <button className="btn btn-secondary" onClick={() => setShowCoGradeModal(false)}>
+                            {t('common.cancel')}
+                        </button>
+                        <button
+                            className="btn btn-primary"
+                            disabled={!coGraderName.trim()}
+                            onClick={() =>
+                                navigate(
+                                    `/rubrics/${rubricId}/peer-review/${studentId}?reviewerId=${encodeURIComponent(coGraderName.trim())}`
+                                )
+                            }
+                        >
+                            <UserCheck size={15} /> {t('coGrading.action_start')}
+                        </button>
+                    </div>
+                </Modal>
             )}
 
             {showShortcuts && (

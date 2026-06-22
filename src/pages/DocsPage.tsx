@@ -77,7 +77,8 @@ const ROUTE_TREE: RouteNode[] = [
                     {
                         path: '/rubrics/:rubricId/peer-review/:studentId',
                         label: 'Peer Review',
-                        description: 'Students review each other against the same rubric.',
+                        description:
+                            'Students review each other against the same rubric. The same screen, reached via the "Co-grade" button on Grade Student, lets a colleague act as a second marker.',
                         color: '#8b5cf6',
                         badge: 'Student',
                     },
@@ -263,8 +264,15 @@ const ROUTE_TREE: RouteNode[] = [
         path: '/activity-dashboard',
         label: 'Activity Dashboard',
         description:
-            'Grid of all rubrics, tests, and essays vs classes — link, assign, and monitor coverage at a glance.',
+            'Grid of all rubrics, tests, and essays vs classes — link, assign, and monitor coverage at a glance. Rows can be drag-reordered, and ungraded cells can be assigned to a specific teacher as a grading task.',
         color: '#0ea5e9',
+    },
+    {
+        path: '/moderation',
+        label: 'Moderation',
+        description:
+            "Queue of co-graded submissions where two teachers disagree above a configurable point threshold — compare per-criterion deltas and keep or accept the second marker's grade.",
+        color: '#f59e0b',
     },
     {
         path: '/export',
@@ -704,6 +712,26 @@ function RubricsTab() {
                     your account to belong to a school — without both, the page shows a short explanation instead of the
                     listings. Cloning copies a listing into your own rubrics without affecting the original.
                 </p>
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    Department sharing
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    Unlike the Marketplace (publish a copy for others to clone), the share dialog on the Rubrics list
+                    has a <strong>"Share with my department"</strong> checkbox that makes the live rubric read-only
+                    visible to every colleague in your school — edits you make keep flowing through automatically.
+                    Requires cloud sync and a school. Rubrics shared this way by colleagues appear in a "Shared with
+                    your department" section on the Rubrics list.
+                </p>
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    Manual reordering
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    Drag the grip handle on a rubric card to reorder the Rubrics list. The same drag-to-reorder works on
+                    the Tests list, the Essays list, and each section of the Activity Dashboard. Order is per-teacher
+                    and persists across reloads.
+                </p>
             </FeatureSection>
 
             <FeatureSection icon={ClipboardCheck} title="Tests & quizzes" color="#3b82f6">
@@ -838,13 +866,27 @@ function GradingTab() {
                         'Peer Review Analytics (/peer-analytics/:rubricId) — open from the Peer Review screen to see consistency scores comparing peer grades to your baseline, a feedback heatmap of which criteria get the most comments, and round-over-round trends. Reviews are matched to reviewers via their student ID; older records without one are shown as "Anonymous reviewer".',
                     ]}
                 />
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    Co-grading &amp; moderation
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
+                    Click <strong>Co-grade</strong> on a graded student's page and enter a colleague's name or email to
+                    send the submission for an independent second marking — it opens the same screen as peer review,
+                    just with a colleague instead of a classmate as the reviewer. Any submission where the two grades
+                    disagree by more than a configurable point threshold shows up in <strong>Moderation</strong> in the
+                    sidebar, with a per-criterion delta breakdown and a one-click choice to keep the original grade or
+                    accept the second marker's.
+                </p>
             </FeatureSection>
 
             <FeatureSection icon={MessageSquare} title="Comment Bank" color="#06b6d4">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
                     Go to <strong>Comment Bank</strong> in the sidebar to manage your snippets. Organise them with tags
                     (e.g. "writing", "grammar", "effort"). During grading, click the comment icon to open the bank and
-                    insert any snippet into the feedback field with one click.
+                    insert any snippet into the feedback field with one click. With cloud sync connected, click the
+                    department icon on an item to share it read-only with every other teacher in your school; items
+                    shared by colleagues appear in the bank with a "Department" badge.
                 </p>
             </FeatureSection>
 
@@ -1082,13 +1124,19 @@ function AnalyticsTab() {
                 </p>
                 <FeatureList
                     items={[
-                        "Rubrics — Link/Unlink adds or removes the rubric from a class's assignment list.",
+                        "Rubrics — Link/Unlink adds or removes the rubric from a class's assignment list. When a cell has ungraded students, an Assign button lets you hand that batch to a specific colleague as a grading task.",
                         'Essays — Assign All bulk-creates essay assignments for all unenrolled students in the class.',
                         'Tests — Open navigates to the test builder where you can share the class link.',
                         'Filter by school year and VO track to narrow the column set.',
                         'Standards Coverage panel (below the grid) — pick a class to see every standard linked anywhere in its rubrics, split into "Assessed" (with average score) and "Not yet assessed" — the gap to address before the term ends.',
+                        'Drag the grip handle on any row to reorder rubrics, tests, or essays within their section.',
                     ]}
                 />
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginTop: 8 }}>
+                    Pending grading tasks (assigned but not yet graded) are listed above the grid, with the assignee's
+                    name and an optional due date. A task automatically disappears once a grade is saved for that
+                    student and rubric — there's nothing to mark "done" manually.
+                </p>
             </FeatureSection>
 
             <FeatureSection icon={Download} title="Export options" color="#10b981">

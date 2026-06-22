@@ -29,6 +29,7 @@ import type {
     EssayAssignment,
     EssaySubmission,
     EssayTemplate,
+    GradingTask,
     Test,
     StudentTest,
     UserRole,
@@ -56,6 +57,7 @@ import {
     saveEssayAssignments,
     saveEssaySubmissions,
     saveEssayTemplates,
+    saveGradingTasks,
     importFullBackup,
     loadPendingQueue,
 } from '../store/storage';
@@ -133,7 +135,9 @@ type Action =
     | { type: 'DELETE_ESSAY_GROUP'; teacherKey: string }
     | { type: 'ADD_ESSAY_SUBMISSION'; payload: EssaySubmission }
     | { type: 'SAVE_ESSAY_TEMPLATE'; payload: EssayTemplate }
-    | { type: 'DELETE_ESSAY_TEMPLATE'; id: string };
+    | { type: 'DELETE_ESSAY_TEMPLATE'; id: string }
+    | { type: 'ADD_GRADING_TASKS'; payload: GradingTask[] }
+    | { type: 'DELETE_GRADING_TASK'; id: string };
 
 function reducer(state: StoreData, action: Action): StoreData {
     switch (action.type) {
@@ -564,6 +568,16 @@ function reducer(state: StoreData, action: Action): StoreData {
             saveEssayTemplates(next);
             return { ...state, essayTemplates: next };
         }
+        case 'ADD_GRADING_TASKS': {
+            const next = [...state.gradingTasks, ...action.payload];
+            saveGradingTasks(next);
+            return { ...state, gradingTasks: next };
+        }
+        case 'DELETE_GRADING_TASK': {
+            const next = state.gradingTasks.filter((task) => task.id !== action.id);
+            saveGradingTasks(next);
+            return { ...state, gradingTasks: next };
+        }
         default:
             return state;
     }
@@ -664,6 +678,9 @@ interface AppContextValue extends StoreData {
     // Essay templates (local drafts, not yet assigned to students)
     saveEssayTemplate: (t: EssayTemplate) => void;
     deleteEssayTemplate: (id: string) => void;
+    // Grading task assignment (batch-assign ungraded submissions to a teacher)
+    addGradingTasks: (tasks: GradingTask[]) => void;
+    deleteGradingTask: (id: string) => void;
     // Database sync
     connectDatabase: (config: DatabaseConfig) => Promise<boolean>;
     disconnectDatabase: () => void;
@@ -756,6 +773,7 @@ async function flushToLocalStorage(merged: StoreData) {
         saveTests,
         saveStudentTests,
         saveEssayTemplates,
+        saveGradingTasks,
     } = await import('../store/storage');
     saveRubrics(merged.rubrics);
     saveStudents(merged.students);
@@ -775,6 +793,7 @@ async function flushToLocalStorage(merged: StoreData) {
     saveTests(merged.tests);
     saveStudentTests(merged.studentTests);
     saveEssayTemplates(merged.essayTemplates);
+    saveGradingTasks(merged.gradingTasks);
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -1310,6 +1329,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'DELETE_ESSAY_TEMPLATE', id });
         storageSync.pushOne('essayTemplate', 'delete', null, id);
     }, []);
+    const addGradingTasks = useCallback((tasks: GradingTask[]) => {
+        dispatch({ type: 'ADD_GRADING_TASKS', payload: tasks });
+        tasks.forEach((task) => storageSync.pushOne('gradingTask', 'upsert', task));
+    }, []);
+    const deleteGradingTask = useCallback((id: string) => {
+        dispatch({ type: 'DELETE_GRADING_TASK', id });
+        storageSync.pushOne('gradingTask', 'delete', null, id);
+    }, []);
 
     // ─── Database sync ────────────────────────────────────────────────
     const connectDatabase = useCallback(
@@ -1573,6 +1600,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         addEssaySubmission,
         saveEssayTemplate,
         deleteEssayTemplate,
+        addGradingTasks,
+        deleteGradingTask,
         connectDatabase,
         disconnectDatabase,
         pushAllToDatabase,

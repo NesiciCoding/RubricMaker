@@ -17,6 +17,7 @@ import type {
     DocumentAnalysisResult,
     EssayAssignment,
     EssayTemplate,
+    GradingTask,
     StudentEssayAssignmentSummary,
     Test,
     StudentTest,
@@ -726,6 +727,20 @@ export class SupabaseAdapter {
 
     // ── Comment Bank ──────────────────────────────────────────────────────────
 
+    /** Comment bank items a colleague in the same school has opted to share read-only with the whole school. */
+    async fetchSchoolSharedCommentBank(): Promise<CommentBankItem[]> {
+        const { data, error } = await this.db()
+            .from('comment_bank')
+            .select('owner_id, data')
+            .eq('data->>sharedWithSchool', 'true')
+            .neq('owner_id', this.uid());
+        if (error) {
+            console.error('fetchSchoolSharedCommentBank', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as CommentBankItem).filter(Boolean);
+    }
+
     async fetchCommentBank(): Promise<CommentBankItem[]> {
         const { data, error } = await this.db().from('comment_bank').select('data');
         if (error) {
@@ -1079,6 +1094,27 @@ export class SupabaseAdapter {
         return error ? { success: false, error: error.message } : { success: true };
     }
 
+    async fetchGradingTasks(): Promise<GradingTask[]> {
+        const { data, error } = await this.db().from('grading_tasks').select('data');
+        if (error) {
+            console.error('fetchGradingTasks', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as GradingTask);
+    }
+
+    async upsertGradingTask(t: GradingTask): Promise<SyncResult> {
+        const { error } = await this.db()
+            .from('grading_tasks')
+            .upsert({ id: t.id, owner_id: this.uid(), data: t }, { onConflict: 'id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteGradingTask(id: string): Promise<SyncResult> {
+        const { error } = await this.db().from('grading_tasks').delete().eq('id', id).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
     // ── Essay assignments & submissions (teacher side) ────────────────────────
 
     /** Persist the assignment to the DB so the student page can validate it */
@@ -1388,6 +1424,20 @@ export class SupabaseAdapter {
         return (data ?? [])
             .map((r) => (r as unknown as { rubrics: { data: unknown } }).rubrics?.data as Rubric)
             .filter(Boolean);
+    }
+
+    /** Rubrics a colleague in the same school has opted to share read-only with the whole school. */
+    async fetchSchoolSharedRubrics(): Promise<Rubric[]> {
+        const { data, error } = await this.db()
+            .from('rubrics')
+            .select('owner_id, data')
+            .eq('data->>sharedWithSchool', 'true')
+            .neq('owner_id', this.uid());
+        if (error) {
+            console.error('fetchSchoolSharedRubrics', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as Rubric).filter(Boolean);
     }
 
     // ── Rubric Marketplace ────────────────────────────────────────────────────
