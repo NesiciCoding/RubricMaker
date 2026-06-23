@@ -27,7 +27,7 @@ import { useDbStatus } from '../hooks/useDbStatus';
 import { storageSync } from '../services/database';
 import { DEFAULT_FORMAT } from '../types';
 import type { Rubric } from '../types';
-import type { VoTrack, CefrLevel } from '../types';
+import type { VoTrack, CefrLevel, CohortFilter as CohortFilterValue } from '../types';
 import { VO_TRACKS, VO_TRACK_LABELS, VO_TRACK_COLORS, VO_TRACK_DEFAULT_CEFR } from '../data/voTracks';
 import { CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
 import CefrBadge from '../components/CEFR/CefrBadge';
@@ -38,12 +38,7 @@ import { encodeRubricShareCode, decodeRubricShareCode } from '../utils/rubricImp
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
 import { sortByDisplayOrder, reorderDisplayOrder } from '../utils/displayOrder';
-import {
-    getCohortStudentIds,
-    isAllCohorts,
-    ALL_COHORTS,
-    type CohortFilter as CohortFilterValue,
-} from '../utils/cohortAggregator';
+import { getCohortStudentIds, isAllCohorts, ALL_COHORTS } from '../utils/cohortAggregator';
 import CohortFilter from '../components/CohortFilter';
 
 export default function RubricList() {

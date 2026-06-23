@@ -768,7 +768,8 @@
         "back_to_roster": "Back to Roster",
         "action_class_menu": "Class options",
         "action_edit_student": "Edit student",
-        "action_delete_student": "Delete student"
+        "action_delete_student": "Delete student",
+        "link_rubrics": "Link rubrics"
     },
     "gradeStudent": {
         "title_prefix": "Grading:",

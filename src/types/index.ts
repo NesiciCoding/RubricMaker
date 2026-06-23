@@ -448,6 +448,11 @@ export interface Class {
     displayOrder?: number;
 }
 
+export interface CohortFilter {
+    voTrack: VoTrack | 'all';
+    year: string | 'all';
+}
+
 export interface ScoreEntry {
     criterionId: string;
     levelId: string | null; // null = not yet graded

@@ -768,7 +768,8 @@
         "back_to_roster": "Zurück zur Liste",
         "action_class_menu": "Klassenoptionen",
         "action_edit_student": "Schüler bearbeiten",
-        "action_delete_student": "Schüler löschen"
+        "action_delete_student": "Schüler löschen",
+        "link_rubrics": "Rubriken verknüpfen"
     },
     "gradeStudent": {
         "title_prefix": "Benotung:",

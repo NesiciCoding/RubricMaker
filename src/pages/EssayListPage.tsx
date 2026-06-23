@@ -8,12 +8,8 @@ import { useApp } from '../context/AppContext';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
 import { sortByDisplayOrder, reorderDisplayOrder } from '../utils/displayOrder';
-import {
-    getCohortStudentIds,
-    isAllCohorts,
-    ALL_COHORTS,
-    type CohortFilter as CohortFilterValue,
-} from '../utils/cohortAggregator';
+import { getCohortStudentIds, isAllCohorts, ALL_COHORTS } from '../utils/cohortAggregator';
+import type { CohortFilter as CohortFilterValue } from '../types';
 import CohortFilter from '../components/CohortFilter';
 
 export default function EssayListPage() {
@@ -23,7 +19,10 @@ export default function EssayListPage() {
         useApp();
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
     const [cohortFilter, setCohortFilter] = React.useState<CohortFilterValue>(ALL_COHORTS);
-    const cohortStudentIds = getCohortStudentIds(students, classes, cohortFilter);
+    const cohortStudentIds = React.useMemo(
+        () => getCohortStudentIds(students, classes, cohortFilter),
+        [students, classes, cohortFilter]
+    );
     const reorderable = isAllCohorts(cohortFilter);
 
     const groups = React.useMemo(() => {

@@ -405,6 +405,7 @@ export default function StudentsPage() {
                                                             <GripVertical size={13} />
                                                         </span>
                                                         <button
+                                                            type="button"
                                                             className={`nav-item ${c.id === activeClass ? 'active' : ''}`}
                                                             onClick={() => setActiveClass(c.id)}
                                                             style={{ flex: 1 }}
@@ -439,7 +440,11 @@ export default function StudentsPage() {
                                                                 )}
                                                                 {c.rubricIds && c.rubricIds.length > 0 && (
                                                                     <span
-                                                                        title={`${c.rubricIds.length} rubric${c.rubricIds.length !== 1 ? 's' : ''} linked`}
+                                                                        title={`${c.rubricIds.length} ${
+                                                                            c.rubricIds.length !== 1
+                                                                                ? t('studentsPage.rubric_plural')
+                                                                                : t('studentsPage.rubric_single')
+                                                                        }`}
                                                                         style={{
                                                                             display: 'inline-flex',
                                                                             alignItems: 'center',
@@ -455,6 +460,7 @@ export default function StudentsPage() {
                                                         </button>
 
                                                         <button
+                                                            type="button"
                                                             className="btn btn-ghost btn-icon btn-sm"
                                                             aria-label={t('studentsPage.action_class_menu')}
                                                             aria-expanded={classMenuOpen === c.id}
@@ -488,6 +494,7 @@ export default function StudentsPage() {
                                                                 onClick={(e) => e.stopPropagation()}
                                                             >
                                                                 <button
+                                                                    type="button"
                                                                     className="btn btn-ghost btn-sm"
                                                                     style={{
                                                                         width: '100%',
@@ -503,6 +510,7 @@ export default function StudentsPage() {
                                                                     {t('studentsPage.action_rename')}
                                                                 </button>
                                                                 <button
+                                                                    type="button"
                                                                     className="btn btn-ghost btn-sm"
                                                                     style={{
                                                                         width: '100%',
@@ -514,10 +522,11 @@ export default function StudentsPage() {
                                                                         setClassMenuOpen(null);
                                                                     }}
                                                                 >
-                                                                    <Link size={13} style={{ marginRight: 4 }} /> Link
-                                                                    rubrics
+                                                                    <Link size={13} style={{ marginRight: 4 }} />{' '}
+                                                                    {t('studentsPage.link_rubrics')}
                                                                 </button>
                                                                 <button
+                                                                    type="button"
                                                                     className="btn btn-ghost btn-sm"
                                                                     style={{
                                                                         width: '100%',
@@ -532,6 +541,7 @@ export default function StudentsPage() {
                                                                     {t('studentsPage.action_merge')}
                                                                 </button>
                                                                 <button
+                                                                    type="button"
                                                                     className="btn btn-ghost btn-sm text-red"
                                                                     style={{
                                                                         width: '100%',

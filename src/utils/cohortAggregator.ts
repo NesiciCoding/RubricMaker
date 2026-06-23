@@ -1,14 +1,7 @@
-import type { Class, Student, VoTrack } from '../types';
-
-/** A cohort groups students by shared track/entry-year, derived from current + past class memberships — no membership table needed. */
-export interface CohortFilter {
-    voTrack: VoTrack | 'all';
-    year: string | 'all';
-}
+import type { Class, CohortFilter, Student } from '../types';
 
 export const ALL_COHORTS: CohortFilter = { voTrack: 'all', year: 'all' };
 
-/** Returns the ids of every student whose current class, or any past class, matches the given track/year. */
 export function getCohortStudentIds(students: Student[], classes: Class[], filter: CohortFilter): Set<string> {
     const classesById = new Map(classes.map((c) => [c.id, c]));
     const matches = (classId: string | undefined) => {

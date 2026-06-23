@@ -25,14 +25,9 @@ import { useConfirm } from '../hooks/useConfirm';
 import TestAssignmentModal from '../components/Tests/TestAssignmentModal';
 import TestSubmissionImportModal from '../components/Tests/TestSubmissionImportModal';
 import ClassAverageAdjuster from '../components/Tests/ClassAverageAdjuster';
-import type { Test } from '../types';
+import type { Test, CohortFilter as CohortFilterValue } from '../types';
 import { sortByDisplayOrder, reorderDisplayOrder } from '../utils/displayOrder';
-import {
-    getCohortStudentIds,
-    isAllCohorts,
-    ALL_COHORTS,
-    type CohortFilter as CohortFilterValue,
-} from '../utils/cohortAggregator';
+import { getCohortStudentIds, isAllCohorts, ALL_COHORTS } from '../utils/cohortAggregator';
 import CohortFilter from '../components/CohortFilter';
 
 export default function TestListPage() {
@@ -40,13 +35,20 @@ export default function TestListPage() {
     const navigate = useNavigate();
     const { tests, addTest, updateTest, deleteTest, studentTests, saveStudentTest, students, classes } = useApp();
     const [cohortFilter, setCohortFilter] = useState<CohortFilterValue>(ALL_COHORTS);
-    const cohortStudentIds = getCohortStudentIds(students, classes, cohortFilter);
-    const visibleTests = sortByDisplayOrder(tests).filter(
-        (test) =>
-            isAllCohorts(cohortFilter) ||
-            studentTests.some((st) => st.testId === test.id && cohortStudentIds.has(st.studentId))
+    const allCohorts = isAllCohorts(cohortFilter);
+    const cohortStudentIds = React.useMemo(
+        () => getCohortStudentIds(students, classes, cohortFilter),
+        [students, classes, cohortFilter]
     );
-    const reorderable = isAllCohorts(cohortFilter);
+    const visibleTests = React.useMemo(() => {
+        const sorted = sortByDisplayOrder(tests);
+        if (allCohorts) return sorted;
+        const cohortTestIds = new Set(
+            studentTests.filter((st) => cohortStudentIds.has(st.studentId)).map((st) => st.testId)
+        );
+        return sorted.filter((test) => cohortTestIds.has(test.id));
+    }, [tests, studentTests, cohortStudentIds, allCohorts]);
+    const reorderable = allCohorts;
 
     function handleDragEnd(result: DropResult) {
         if (!result.destination || !reorderable) return;

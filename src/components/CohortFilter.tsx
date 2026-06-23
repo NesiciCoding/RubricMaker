@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { VO_TRACKS } from '../data/voTracks';
-import type { Class } from '../types';
-import type { CohortFilter as CohortFilterValue } from '../utils/cohortAggregator';
+import type { Class, CohortFilter as CohortFilterValue } from '../types';
 
 /** Year/track cohort filter, reused across RubricList, TestListPage, EssayListPage, and the Activity Dashboard (Phase 8.5). */
 export default function CohortFilter({
