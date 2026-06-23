@@ -43,264 +43,252 @@ interface RouteNode {
 
 // ── Route tree ─────────────────────────────────────────────────────────────────
 
-const ROUTE_TREE: RouteNode[] = [
-    {
-        path: '/',
-        label: 'Dashboard',
-        description: 'Overview of rubrics, students, recent activity, and quick-start templates.',
-        color: '#6366f1',
-    },
-    {
-        path: '/rubrics',
-        label: 'Rubrics',
-        description: 'Browse, create, import and manage all rubrics.',
-        color: '#3b82f6',
-        children: [
-            {
-                path: '/rubrics/new',
-                label: 'New Rubric',
-                description: 'Create a rubric from scratch or a template.',
-                color: '#3b82f6',
-            },
-            {
-                path: '/rubrics/:id',
-                label: 'Rubric Builder',
-                description: 'Edit criteria, levels, CEFR descriptors, standards, and scoring mode.',
-                color: '#3b82f6',
-                children: [
-                    {
-                        path: '/rubrics/:rubricId/grade/:studentId',
-                        label: 'Grade Student',
-                        description: 'Interactive grading with comment bank, voice input, and file attachments.',
-                        color: '#8b5cf6',
-                    },
-                    {
-                        path: '/rubrics/:rubricId/peer-review/:studentId',
-                        label: 'Peer Review',
-                        description:
-                            'Students review each other against the same rubric. The same screen, reached via the "Co-grade" button on Grade Student, lets a colleague act as a second marker.',
-                        color: '#8b5cf6',
-                        badge: 'Student',
-                    },
-                    {
-                        path: '/peer-analytics/:rubricId',
-                        label: 'Peer Review Analytics',
-                        description:
-                            'Consistency scoring of peer reviews against the teacher baseline, feedback heatmaps, and reviewer trends.',
-                        color: '#8b5cf6',
-                    },
-                    {
-                        path: '/rubrics/:rubricId/self-assess/:studentId',
-                        label: 'Self-Assessment',
-                        description: 'Students self-assess against CEFR Can-Do statements.',
-                        color: '#8b5cf6',
-                        badge: 'Student',
-                    },
-                ],
-            },
-            {
-                path: '/grade-comparative/:classId/:rubricId',
-                label: 'Comparative Grading',
-                description: 'Grade two students side-by-side for calibration and consistency.',
-                color: '#06b6d4',
-            },
-        ],
-    },
-    {
-        path: '/marketplace',
-        label: 'Rubric Marketplace',
-        description:
-            'Browse, publish, and clone rubrics shared by colleagues at your school. Requires cloud sync and a school.',
-        color: '#3b82f6',
-    },
-    {
-        path: '/tests',
-        label: 'Tests',
-        description: 'Browse, create, and manage tests and quizzes for assignment to students.',
-        color: '#3b82f6',
-        children: [
-            {
-                path: '/tests/new',
-                label: 'New Test',
-                description:
-                    'Create a test from scratch with multiple-choice, multiple-response, true/false, short-answer, open, fill-the-gap, matching, ordering, categorize, and hot text questions.',
-                color: '#3b82f6',
-            },
-            {
-                path: '/tests/:id',
-                label: 'Test Builder',
-                description:
-                    'Edit test settings (duration, shuffle, Safe Exam Browser requirement, grade scale) and questions, including standards and CEFR linking.',
-                color: '#3b82f6',
-            },
-            {
-                path: '/tests/:testId/results/:studentTestId',
-                label: 'Test Results',
-                description:
-                    "Review a student's submission: auto-scored answers, manual grading for open questions, grade mapping, standards/CEFR breakdowns, and a session integrity panel.",
-                color: '#3b82f6',
-            },
-            {
-                path: '/tests/:testId/monitor',
-                label: 'Live Test Monitor',
-                description:
-                    'Watch a running test in real time: who is online, their progress on each question, and proctoring signals (tab switches, copy/paste, battery, Safe Exam Browser status).',
-                color: '#3b82f6',
-            },
-        ],
-    },
-    {
-        path: '/essays',
-        label: 'Essays',
-        description: 'Browse, create, and manage essay assignments for your classes.',
-        color: '#6366f1',
-        children: [
-            {
-                path: '/essays/new',
-                label: 'New Essay',
-                description: 'Write a prompt, link a rubric, and assign it to students in a class.',
-                color: '#6366f1',
-            },
-            {
-                path: '/essays/:teacherKey',
-                label: 'Essay Builder',
-                description:
-                    'Edit the prompt, rubric link, and settings; manage assigned students, copy share links, and import submission codes.',
-                color: '#6366f1',
-                children: [
-                    {
-                        path: '/essays/:teacherKey/monitor',
-                        label: 'Live Essay Monitor',
-                        description:
-                            'Watch students write in real time: presence, live word counts, last-activity timestamps, and an expandable draft preview.',
-                        color: '#8b5cf6',
-                    },
-                ],
-            },
-        ],
-    },
-    {
-        path: '/students',
-        label: 'Students',
-        description: 'Manage students and classes, view progress, configure VO tracks.',
-        color: '#10b981',
-        children: [
-            {
-                path: '/students/:id',
-                label: 'Student Profile',
-                description: 'Individual grades, CEFR levels, essays, and overdue tracking.',
-                color: '#10b981',
-                children: [
-                    {
-                        path: '/students/:id/cefr-overview',
-                        label: 'CEFR Overview (Student)',
-                        description: 'Per-student proficiency dashboard across all CEFR skills.',
-                        color: '#10b981',
-                    },
-                    {
-                        path: '/students/:id/learning-path',
-                        label: 'Learning Path',
-                        description:
-                            'Rule-based rubric recommendations for CEFR skills where the student trails the class average, plus intervention flags for consecutive low scores.',
-                        color: '#10b981',
-                    },
-                ],
-            },
-        ],
-    },
-    {
-        path: '/cefr-overview',
-        label: 'CEFR Overview',
-        description: 'Whole-class CEFR proficiency dashboard across Reading, Writing, Speaking, Listening.',
-        color: '#f59e0b',
-    },
-    {
-        path: '/vocabulary',
-        label: 'Vocabulary Profile',
-        description:
-            'CEFR vocabulary distribution (A1–C2) per class and student, derived from document analysis, with CSV export of vocabulary lists by band.',
-        color: '#f59e0b',
-    },
-    {
-        path: '/speaking/:rubricId/:studentId',
-        label: 'Speaking Session',
-        description: 'Structured speaking assessments with six CEFR-aligned dimensions.',
-        color: '#f59e0b',
-    },
-    {
-        path: '/portal/:studentId',
-        label: 'Student Portal',
-        description: 'Students view feedback, submit essays, and complete self-assessments. No login required.',
-        color: '#06b6d4',
-        badge: 'Public',
-    },
-    {
-        path: '/test/:code',
-        label: 'Take a Test',
-        description:
-            'Students open a shared link to take a test — answer questions, optional countdown timer, and submit. No login required.',
-        color: '#06b6d4',
-        badge: 'Student',
-    },
-    {
-        path: '/attachments',
-        label: 'Attachments',
-        description: 'Manage uploaded files; OCR and document analysis powered by Tesseract and Mammoth.',
-        color: '#64748b',
-    },
-    {
-        path: '/comments',
-        label: 'Comment Bank',
-        description: 'Reusable feedback snippets organised by tag, insertable during grading.',
-        color: '#64748b',
-    },
-    {
-        path: '/statistics',
-        label: 'Statistics',
-        description: 'Grade distributions, per-criterion performance, class comparison, and trend analysis.',
-        color: '#64748b',
-    },
-    {
-        path: '/activity-dashboard',
-        label: 'Activity Dashboard',
-        description:
-            'Grid of all rubrics, tests, and essays vs classes — link, assign, and monitor coverage at a glance. Rows can be drag-reordered, and ungraded cells can be assigned to a specific teacher as a grading task.',
-        color: '#0ea5e9',
-    },
-    {
-        path: '/moderation',
-        label: 'Moderation',
-        description:
-            "Queue of co-graded submissions where two teachers disagree above a configurable point threshold — compare per-criterion deltas and keep or accept the second marker's grade.",
-        color: '#f59e0b',
-    },
-    {
-        path: '/export',
-        label: 'Export',
-        description: 'Export graded rubrics as PDF, DOCX (with mail-merge), or CSV.',
-        color: '#64748b',
-    },
-    {
-        path: '/settings',
-        label: 'Settings',
-        description: 'Theme, accent colour, grade scales, language, and backup/restore.',
-        color: '#64748b',
-    },
-    {
-        path: '/admin',
-        label: 'Admin Panel',
-        description: 'User roles, school management, database connection, integrations, data retention.',
-        color: '#ef4444',
-        badge: 'Admin only',
-    },
-    {
-        path: '/privacy',
-        label: 'Privacy Statement',
-        description: 'Full privacy policy for the application.',
-        color: '#94a3b8',
-        badge: 'Public',
-    },
-];
+function getRouteTree(t: TFunction): RouteNode[] {
+    return [
+        {
+            path: '/',
+            label: 'Dashboard',
+            description: t('docs.route_dashboard_desc'),
+            color: '#6366f1',
+        },
+        {
+            path: '/rubrics',
+            label: 'Rubrics',
+            description: t('docs.route_rubrics_desc'),
+            color: '#3b82f6',
+            children: [
+                {
+                    path: '/rubrics/new',
+                    label: 'New Rubric',
+                    description: t('docs.route_rubrics_new_desc'),
+                    color: '#3b82f6',
+                },
+                {
+                    path: '/rubrics/:id',
+                    label: 'Rubric Builder',
+                    description: t('docs.route_rubric_builder_desc'),
+                    color: '#3b82f6',
+                    children: [
+                        {
+                            path: '/rubrics/:rubricId/grade/:studentId',
+                            label: 'Grade Student',
+                            description: t('docs.route_grade_student_desc'),
+                            color: '#8b5cf6',
+                        },
+                        {
+                            path: '/rubrics/:rubricId/peer-review/:studentId',
+                            label: 'Peer Review',
+                            description: t('docs.route_peer_review_desc'),
+                            color: '#8b5cf6',
+                            badge: 'Student',
+                        },
+                        {
+                            path: '/peer-analytics/:rubricId',
+                            label: 'Peer Review Analytics',
+                            description: t('docs.route_peer_analytics_desc'),
+                            color: '#8b5cf6',
+                        },
+                        {
+                            path: '/rubrics/:rubricId/self-assess/:studentId',
+                            label: 'Self-Assessment',
+                            description: t('docs.route_self_assess_desc'),
+                            color: '#8b5cf6',
+                            badge: 'Student',
+                        },
+                    ],
+                },
+                {
+                    path: '/grade-comparative/:classId/:rubricId',
+                    label: 'Comparative Grading',
+                    description: t('docs.route_comparative_grading_desc'),
+                    color: '#06b6d4',
+                },
+            ],
+        },
+        {
+            path: '/marketplace',
+            label: 'Rubric Marketplace',
+            description: t('docs.route_marketplace_desc'),
+            color: '#3b82f6',
+        },
+        {
+            path: '/tests',
+            label: 'Tests',
+            description: t('docs.route_tests_desc'),
+            color: '#3b82f6',
+            children: [
+                {
+                    path: '/tests/new',
+                    label: 'New Test',
+                    description: t('docs.route_tests_new_desc'),
+                    color: '#3b82f6',
+                },
+                {
+                    path: '/tests/:id',
+                    label: 'Test Builder',
+                    description: t('docs.route_test_builder_desc'),
+                    color: '#3b82f6',
+                },
+                {
+                    path: '/tests/:testId/results/:studentTestId',
+                    label: 'Test Results',
+                    description: t('docs.route_test_results_desc'),
+                    color: '#3b82f6',
+                },
+                {
+                    path: '/tests/:testId/monitor',
+                    label: 'Live Test Monitor',
+                    description: t('docs.route_test_monitor_desc'),
+                    color: '#3b82f6',
+                },
+            ],
+        },
+        {
+            path: '/essays',
+            label: 'Essays',
+            description: t('docs.route_essays_desc'),
+            color: '#6366f1',
+            children: [
+                {
+                    path: '/essays/new',
+                    label: 'New Essay',
+                    description: t('docs.route_essays_new_desc'),
+                    color: '#6366f1',
+                },
+                {
+                    path: '/essays/:teacherKey',
+                    label: 'Essay Builder',
+                    description: t('docs.route_essay_builder_desc'),
+                    color: '#6366f1',
+                    children: [
+                        {
+                            path: '/essays/:teacherKey/monitor',
+                            label: 'Live Essay Monitor',
+                            description: t('docs.route_essay_monitor_desc'),
+                            color: '#8b5cf6',
+                        },
+                    ],
+                },
+            ],
+        },
+        {
+            path: '/students',
+            label: 'Students',
+            description: t('docs.route_students_desc'),
+            color: '#10b981',
+            children: [
+                {
+                    path: '/students/:id',
+                    label: 'Student Profile',
+                    description: t('docs.route_student_profile_desc'),
+                    color: '#10b981',
+                    children: [
+                        {
+                            path: '/students/:id/cefr-overview',
+                            label: 'CEFR Overview (Student)',
+                            description: t('docs.route_student_cefr_overview_desc'),
+                            color: '#10b981',
+                        },
+                        {
+                            path: '/students/:id/learning-path',
+                            label: 'Learning Path',
+                            description: t('docs.route_learning_path_desc'),
+                            color: '#10b981',
+                        },
+                    ],
+                },
+            ],
+        },
+        {
+            path: '/cefr-overview',
+            label: 'CEFR Overview',
+            description: t('docs.route_cefr_overview_desc'),
+            color: '#f59e0b',
+        },
+        {
+            path: '/vocabulary',
+            label: 'Vocabulary Profile',
+            description: t('docs.route_vocabulary_desc'),
+            color: '#f59e0b',
+        },
+        {
+            path: '/speaking/:rubricId/:studentId',
+            label: 'Speaking Session',
+            description: t('docs.route_speaking_session_desc'),
+            color: '#f59e0b',
+        },
+        {
+            path: '/portal/:studentId',
+            label: 'Student Portal',
+            description: t('docs.route_student_portal_desc'),
+            color: '#06b6d4',
+            badge: 'Public',
+        },
+        {
+            path: '/test/:code',
+            label: 'Take a Test',
+            description: t('docs.route_take_test_desc'),
+            color: '#06b6d4',
+            badge: 'Student',
+        },
+        {
+            path: '/attachments',
+            label: 'Attachments',
+            description: t('docs.route_attachments_desc'),
+            color: '#64748b',
+        },
+        {
+            path: '/comments',
+            label: 'Comment Bank',
+            description: t('docs.route_comments_desc'),
+            color: '#64748b',
+        },
+        {
+            path: '/statistics',
+            label: 'Statistics',
+            description: t('docs.route_statistics_desc'),
+            color: '#64748b',
+        },
+        {
+            path: '/activity-dashboard',
+            label: 'Activity Dashboard',
+            description: t('docs.route_activity_dashboard_desc'),
+            color: '#0ea5e9',
+        },
+        {
+            path: '/moderation',
+            label: 'Moderation',
+            description: t('docs.route_moderation_desc'),
+            color: '#f59e0b',
+        },
+        {
+            path: '/export',
+            label: 'Export',
+            description: t('docs.route_export_desc'),
+            color: '#64748b',
+        },
+        {
+            path: '/settings',
+            label: 'Settings',
+            description: t('docs.route_settings_desc'),
+            color: '#64748b',
+        },
+        {
+            path: '/admin',
+            label: 'Admin Panel',
+            description: t('docs.route_admin_desc'),
+            color: '#ef4444',
+            badge: 'Admin only',
+        },
+        {
+            path: '/privacy',
+            label: 'Privacy Statement',
+            description: t('docs.route_privacy_desc'),
+            color: '#94a3b8',
+            badge: 'Public',
+        },
+    ];
+}
 
 // ── Docs sections ──────────────────────────────────────────────────────────────
 
@@ -509,15 +497,19 @@ function InfoBox({ children, color = 'var(--accent)' }: { children: React.ReactN
 // ── Tab content ────────────────────────────────────────────────────────────────
 
 function RouteMapTab() {
+    const { t } = useTranslation();
+    const routeTree = getRouteTree(t);
     return (
         <div>
             <p style={{ color: 'var(--text-muted)', marginBottom: 24, fontSize: '0.9rem', lineHeight: 1.6 }}>
-                All application routes and their parent-child relationships. Routes marked{' '}
-                <strong style={{ color: '#1d4ed8' }}>Public</strong> are accessible without logging in. Routes marked{' '}
-                <strong style={{ color: '#dc2626' }}>Admin only</strong> require the admin role.
+                {t('docs.route_map_intro')}{' '}
+                <strong style={{ color: '#1d4ed8' }}>{t('docs.route_map_intro_public')}</strong>{' '}
+                {t('docs.route_map_intro_middle')}{' '}
+                <strong style={{ color: '#dc2626' }}>{t('docs.route_map_intro_admin')}</strong>{' '}
+                {t('docs.route_map_intro_suffix')}
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {ROUTE_TREE.map((node) => (
+                {routeTree.map((node) => (
                     <RouteCard key={node.path} node={node} />
                 ))}
             </div>
@@ -529,63 +521,56 @@ function GettingStartedTab() {
     const { t } = useTranslation();
     return (
         <div>
-            <FeatureSection icon={CheckCircle} title="Quick Start" color="#10b981">
+            <FeatureSection icon={CheckCircle} title={t('docs.gs_quick_start_title')} color="#10b981">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 20 }}>
-                    RubricMaker works entirely offline — all data lives in your browser. No account is needed. You can
-                    optionally connect a Supabase database later for multi-device sync.
+                    {t('docs.gs_quick_start_intro')}
                 </p>
-                <Step number={1} title="Choose your mode">
-                    On the landing page, click <strong>Continue without account</strong> to use the app offline, or{' '}
-                    <strong>Teacher Login</strong> to connect a cloud database. You can always add cloud sync later from
-                    Settings.
+                <Step number={1} title={t('docs.gs_step1_title')}>
+                    {t('docs.gs_step1_body_prefix')} <strong>{t('docs.gs_step1_body_continue_offline')}</strong>{' '}
+                    {t('docs.gs_step1_body_middle')} <strong>{t('docs.gs_step1_body_teacher_login')}</strong>{' '}
+                    {t('docs.gs_step1_body_suffix')}
                 </Step>
-                <Step number={2} title="Create your first rubric">
-                    Go to <strong>Rubrics → New Rubric</strong>. Pick a quick-start template or start from scratch. Give
-                    it a name, subject, and description. Add criteria and levels, then click <strong>Save</strong>.
+                <Step number={2} title={t('docs.gs_step2_title')}>
+                    {t('docs.gs_step2_body_prefix')} <strong>{t('docs.gs_step2_body_nav')}</strong>.{' '}
+                    {t('docs.gs_step2_body_suffix')} <strong>{t('docs.gs_step2_body_save')}</strong>
+                    {t('docs.gs_step2_body_end')}
                 </Step>
-                <Step number={3} title="Add students">
-                    Go to <strong>Students</strong>. Click <strong>+ Add Student</strong> and fill in their name. Group
-                    students into classes by setting the Class field. You can also import from a CSV or a Magister
-                    export — the importer auto-detects Dutch column names and, if "Update existing students" is checked,
-                    will update matching records instead of creating duplicates. Moving a student to a new class
-                    (manually, or via a re-import that detects a class transfer) keeps a "Past classes" trail on their
-                    profile — none of their grading history is lost. When "Update existing students" is on, you'll see a
-                    confirmation summarizing how many students will transfer class and how many will be archived before
-                    anything is applied — useful for promoting a whole class to the next year.
+                <Step number={3} title={t('docs.gs_step3_title')}>
+                    {t('docs.gs_step3_body_prefix')} <strong>{t('docs.gs_step3_body_students')}</strong>.{' '}
+                    <strong>{t('docs.gs_step3_body_add')}</strong> {t('docs.gs_step3_body_rest')}
                 </Step>
-                <Step number={4} title="Grade a student">
-                    Open any rubric from the Rubrics page. Click the student's name to open the grading view. Click each
-                    criterion level, add comments, attach files, and click <strong>Save &amp; Next</strong>.
+                <Step number={4} title={t('docs.gs_step4_title')}>
+                    {t('docs.gs_step4_body_prefix')} <strong>{t('docs.gs_step4_body_save_next')}</strong>
+                    {t('docs.gs_step4_body_end')}
                 </Step>
-                <Step number={5} title="Share feedback">
-                    Each student has a unique portal link (shown in their profile). Share it so they can view grades,
-                    submit essays, and complete self-assessments — no login required on their end.
+                <Step number={5} title={t('docs.gs_step5_title')}>
+                    {t('docs.gs_step5_body')}
                 </Step>
 
                 <InfoBox>
-                    <strong>Guided tour:</strong> A built-in Joyride walkthrough runs the first time you log in. You can
-                    restart it at any time from <strong>Settings → Guided tour</strong>.{' '}
-                    {t('docs.guided_tour_page_tours_prefix')} <strong>"{t('tutorial.rb_tour_button')}"</strong>{' '}
-                    {t('docs.guided_tour_page_tours_suffix')}
+                    <strong>{t('docs.gs_guided_tour_label')}</strong> {t('docs.gs_guided_tour_body')}{' '}
+                    <strong>{t('docs.gs_guided_tour_settings_path')}</strong>
+                    {t('docs.gs_guided_tour_end')} {t('docs.guided_tour_page_tours_prefix')}{' '}
+                    <strong>"{t('tutorial.rb_tour_button')}"</strong> {t('docs.guided_tour_page_tours_suffix')}
                 </InfoBox>
             </FeatureSection>
 
-            <FeatureSection icon={Layers} title="Modes of operation" color="#6366f1">
+            <FeatureSection icon={Layers} title={t('docs.gs_modes_title')} color="#6366f1">
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
                     {[
                         {
-                            title: 'Offline / Local',
-                            desc: 'All data in browser localStorage. Nothing sent to a server. Works on any static host.',
+                            title: t('docs.gs_mode_offline_title'),
+                            desc: t('docs.gs_mode_offline_desc'),
                             color: '#64748b',
                         },
                         {
-                            title: 'Cloud sync',
-                            desc: 'Connect a Supabase project (self-hosted or supabase.com) for multi-device access and sharing.',
+                            title: t('docs.gs_mode_cloud_title'),
+                            desc: t('docs.gs_mode_cloud_desc'),
                             color: '#6366f1',
                         },
                         {
-                            title: 'Docker (full stack)',
-                            desc: 'docker-compose up spins up the frontend + Supabase + Caddy (HTTPS). Recommended for schools.',
+                            title: t('docs.gs_mode_docker_title'),
+                            desc: t('docs.gs_mode_docker_desc'),
                             color: '#0891b2',
                         },
                     ].map((m) => (
@@ -610,16 +595,17 @@ function GettingStartedTab() {
                 </div>
             </FeatureSection>
 
-            <FeatureSection icon={Settings} title="Themes & appearance" color="#ec4899">
+            <FeatureSection icon={Settings} title={t('docs.gs_themes_title')} color="#ec4899">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 12 }}>
-                    Personalise the look of the app and your exported rubrics from <strong>Settings → General</strong>.
+                    {t('docs.gs_themes_intro_prefix')} <strong>{t('docs.gs_themes_intro_path')}</strong>
+                    {t('docs.gs_themes_intro_end')}
                 </p>
                 <FeatureList
                     items={[
-                        'Accent color — pick a custom hex color or one of 8 preset swatches.',
-                        'Interface font — choose the typeface used throughout the app (Inter, Nunito, Source Sans 3, Lato, Roboto).',
-                        'Theme bundles — Academy, Nature, Midnight, Warm, Slate, and Rose apply a matching accent color, interface font, and rubric header color in one click.',
-                        'Rubric export font — in the Rubric Builder formatting panel, choose the font used for headings in PDF and Word exports, including decorative options like Playfair Display, Oswald, Bebas Neue, Special Elite, and Courier Prime.',
+                        t('docs.gs_themes_item_accent'),
+                        t('docs.gs_themes_item_font'),
+                        t('docs.gs_themes_item_bundles'),
+                        t('docs.gs_themes_item_export_font'),
                     ]}
                 />
             </FeatureSection>
@@ -628,187 +614,167 @@ function GettingStartedTab() {
 }
 
 function RubricsTab() {
+    const { t } = useTranslation();
     return (
         <div>
-            <FeatureSection icon={BookOpen} title="Rubric Builder" color="#3b82f6">
+            <FeatureSection icon={BookOpen} title={t('docs.rb_builder_title')} color="#3b82f6">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
-                    The Rubric Builder is the core of RubricMaker. Open any rubric from the Rubrics list, or create a
-                    new one, to enter the builder.
+                    {t('docs.rb_builder_intro')}
                 </p>
                 <InfoBox>
-                    Switch between <strong>Form view</strong> (detailed editing) and <strong>Designer view</strong>{' '}
-                    (table layout) at any time using the toggle in the toolbar.
+                    {t('docs.rb_builder_views_prefix')} <strong>{t('docs.rb_builder_views_form')}</strong>{' '}
+                    {t('docs.rb_builder_views_form_desc')} {t('docs.rb_builder_views_and')}{' '}
+                    <strong>{t('docs.rb_builder_views_designer')}</strong>{' '}
+                    {t('docs.rb_builder_views_designer_desc')} {t('docs.rb_builder_views_suffix')}
                 </InfoBox>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
-                    Scoring modes
+                    {t('docs.rb_scoring_modes_title')}
                 </h3>
                 <FeatureList
                     items={[
-                        'Total Points — raw score from all criteria levels.',
-                        'Weighted Percentage — each criterion has a weight (%). Final score is the weighted average.',
-                        'Single-Point Rubric — one level per criterion (meets / does not meet); pass/fail logic.',
+                        t('docs.rb_scoring_modes_item_total'),
+                        t('docs.rb_scoring_modes_item_weighted'),
+                        t('docs.rb_scoring_modes_item_single'),
                     ]}
                 />
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
-                    Level options
+                    {t('docs.rb_level_options_title')}
                 </h3>
                 <FeatureList
                     items={[
-                        'Sub-item checklists within a level (students must complete specific items).',
-                        'Point ranges — set a min and max; teacher picks a value inside the range during grading.',
-                        'Score modifiers — apply %, point, or level adjustments with an optional reason.',
+                        t('docs.rb_level_options_item_checklist'),
+                        t('docs.rb_level_options_item_ranges'),
+                        t('docs.rb_level_options_item_modifiers'),
                     ]}
                 />
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
-                    Standards & framework links
+                    {t('docs.rb_standards_title')}
                 </h3>
                 <FeatureList
                     items={[
-                        'CEFR Can-Do descriptors — attach specific descriptors per criterion.',
-                        "IB Learner Profile attributes and Bloom's Taxonomy levels.",
-                        'CCSS, NGSS, and state standards via the Common Standards Project API.',
-                        'Grammar linker — open the alignment picker and switch to the Grammar tab. Each grammar topic is a header (e.g. Past Simple) and its distinctions (regular verbs, irregular verbs) are separate, individually linkable standards. Filter by CEFR level (levels follow the CEFR-J Grammar Profile). Linked grammar can be auto-checked in scanned essays during grading — see Grading.',
+                        t('docs.rb_standards_item_cefr'),
+                        t('docs.rb_standards_item_ib'),
+                        t('docs.rb_standards_item_ccss'),
+                        t('docs.rb_standards_item_grammar'),
                     ]}
                 />
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
-                    Version history
+                    {t('docs.rb_version_history_title')}
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
-                    Every save creates an automatic snapshot. Click <strong>Version History</strong> in the toolbar to
-                    browse past versions and restore any of them. Manual labels can be added before saving. Click{' '}
-                    <strong>Compare</strong> next to any version to see exactly what changed between that version and
-                    the current rubric — added/removed criteria, title and weight changes, and level point changes.
+                    {t('docs.rb_version_history_body_prefix')} <strong>{t('docs.rb_version_history_body_button')}</strong>{' '}
+                    {t('docs.rb_version_history_body_mid')} <strong>{t('docs.rb_version_history_body_compare')}</strong>{' '}
+                    {t('docs.rb_version_history_body_suffix')}
                 </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
-                    Save as Template
+                    {t('docs.rb_save_template_title')}
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
-                    Use the <strong>Save as Template</strong> button to store the current rubric as a reusable template.
-                    Your saved templates appear under <em>My Templates</em> when creating a new rubric on the Dashboard.
+                    {t('docs.rb_save_template_body_prefix')} <strong>{t('docs.rb_save_template_body_button')}</strong>{' '}
+                    {t('docs.rb_save_template_body_mid')} <em>{t('docs.rb_save_template_body_my_templates')}</em>{' '}
+                    {t('docs.rb_save_template_body_suffix')}
                 </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
-                    Import & export
+                    {t('docs.rb_import_export_title')}
                 </h3>
                 <FeatureList
                     items={[
-                        'Import: upload a JSON file exported from another RubricMaker instance, or paste a share code.',
-                        'Export: PDF rubric document, DOCX, or raw JSON for backup.',
-                        'Share code: a compact base64 code you can send to a colleague who can import it in one click.',
+                        t('docs.rb_import_export_item_import'),
+                        t('docs.rb_import_export_item_export'),
+                        t('docs.rb_import_export_item_share_code'),
                     ]}
                 />
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
-                    Marketplace
+                    {t('docs.rb_marketplace_title')}
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
-                    The <strong>Marketplace</strong> page lets you publish a rubric for colleagues at your school to
-                    browse and clone, and upvote the ones you find useful. It requires cloud sync to be configured and
-                    your account to belong to a school — without both, the page shows a short explanation instead of the
-                    listings. Cloning copies a listing into your own rubrics without affecting the original.
+                    {t('docs.rb_marketplace_body_prefix')} <strong>{t('docs.rb_marketplace_body_name')}</strong>{' '}
+                    {t('docs.rb_marketplace_body_suffix')}
                 </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
-                    Department sharing
+                    {t('docs.rb_department_sharing_title')}
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
-                    Unlike the Marketplace (publish a copy for others to clone), the share dialog on the Rubrics list
-                    has a <strong>"Share with my department"</strong> checkbox that makes the live rubric read-only
-                    visible to every colleague in your school — edits you make keep flowing through automatically.
-                    Requires cloud sync and a school. Rubrics shared this way by colleagues appear in a "Shared with
-                    your department" section on the Rubrics list.
+                    {t('docs.rb_department_sharing_body_prefix')}{' '}
+                    <strong>{t('docs.rb_department_sharing_body_checkbox')}</strong>{' '}
+                    {t('docs.rb_department_sharing_body_suffix')}
                 </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
-                    Manual reordering
+                    {t('docs.rb_reorder_title')}
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
-                    Drag the grip handle on a rubric card to reorder the Rubrics list. The same drag-to-reorder works on
-                    the Tests list, the Essays list, the class list on the Students page, and each section of the
-                    Activity Dashboard. Order is per-teacher and persists across reloads.
+                    {t('docs.rb_reorder_body')}
                 </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
-                    Cohort filtering
+                    {t('docs.rb_cohort_filtering_title')}
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
-                    The Rubrics, Tests, and Essays lists have a year/track filter alongside search. A cohort is every
-                    student who shares that year/track now or in any past class they've moved through — so a rubric or
-                    test stays visible for a cohort even after some of its students transfer to a different class.
-                    Manual reordering is disabled while a cohort filter is active, since dragged positions can't map
-                    cleanly onto the full unfiltered order.
+                    {t('docs.rb_cohort_filtering_body')}
                 </p>
             </FeatureSection>
 
-            <FeatureSection icon={ClipboardCheck} title="Tests & quizzes" color="#3b82f6">
+            <FeatureSection icon={ClipboardCheck} title={t('docs.rb_tests_title')} color="#3b82f6">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
-                    Build tests and quizzes from the <strong>Tests</strong> page. Add multiple-choice, multiple-response
-                    (select all that apply), true/false, short-answer, open, fill-the-gap, matching, ordering,
-                    categorize, and hot text questions, set a duration and grade scale, and optionally require Safe Exam
-                    Browser. Link standards and CEFR descriptors per question, then assign the test to a class — each
-                    student gets a unique share link to complete it. Every question type has a small{' '}
-                    <strong>{'{?}'}</strong> help button for both you and your students explaining how to author and
-                    answer it.
+                    {t('docs.rb_tests_intro')} <strong>{t('docs.rb_tests_intro_page')}</strong>{' '}
+                    {t('docs.rb_tests_intro_body')} <strong>{t('docs.rb_tests_intro_help_icon')}</strong>{' '}
+                    {t('docs.rb_tests_intro_suffix')}
                 </p>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
-                    <strong>Fill-the-gap questions</strong> use <code>{'{{...}}'}</code> markers in the question text.
-                    Write <code>{'{{Paris}}'}</code> to create a blank that students type into — add alternative correct
-                    spellings separated by a pipe, e.g. <code>{'{{Paris|City of Paris}}'}</code>. For a dropdown instead
-                    of free text, choose the <strong>Fill the gap (dropdown)</strong> type and list the correct answer
-                    first, e.g. <code>{'{{Paris|London|Berlin}}'}</code> — students see the options in a shuffled order.
-                    The builder's "Insert gap" / "Insert dropdown gap" buttons add the markers for you, and a preview
-                    shows the parsed gaps and their correct answers.
+                    <strong>{t('docs.rb_tests_fillgap_label')}</strong> {t('docs.rb_tests_fillgap_uses')}{' '}
+                    <code>{'{{...}}'}</code> {t('docs.rb_tests_fillgap_markers')} <code>{'{{Paris}}'}</code>{' '}
+                    {t('docs.rb_tests_fillgap_blank')} <code>{'{{Paris|City of Paris}}'}</code>.{' '}
+                    {t('docs.rb_tests_fillgap_dropdown_intro')}{' '}
+                    <strong>{t('docs.rb_tests_fillgap_dropdown_type')}</strong> {t('docs.rb_tests_fillgap_dropdown_list')}{' '}
+                    <code>{'{{Paris|London|Berlin}}'}</code> {t('docs.rb_tests_fillgap_body_suffix')}
                 </p>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
-                    <strong>Matching, ordering, and categorize questions</strong> let students work with several related
-                    items at once. For <strong>matching</strong>, enter left/right pairs — students see the left items
-                    in order and pick a matching right item from a dropdown for each. For
-                    <strong> ordering</strong>, enter the items in their correct order using the up/down arrows —
-                    students see them shuffled and reorder them with arrows. For <strong>categorize</strong>, define
-                    categories and assign each item to the category it belongs to — students sort each item into a
-                    category via a dropdown. All three support an <strong>Allow partial credit</strong> toggle, which
-                    awards points proportionally for each correct pair, position, or item instead of all-or-nothing.
+                    <strong>{t('docs.rb_tests_matching_label')}</strong> {t('docs.rb_tests_matching_body')}{' '}
+                    <strong>{t('docs.rb_tests_matching_word')}</strong>
+                    {t('docs.rb_tests_matching_body2')} <strong>{t('docs.rb_tests_ordering_word')}</strong>
+                    {t('docs.rb_tests_ordering_body')} <strong>{t('docs.rb_tests_categorize_word')}</strong>
+                    {t('docs.rb_tests_categorize_body')} <strong>{t('docs.rb_tests_partial_credit_label')}</strong>{' '}
+                    {t('docs.rb_tests_partial_credit_body')}
                 </p>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
-                    <strong>Hot text questions</strong> ask students to click selectable words or phrases within a
-                    passage. Write the passage and wrap each selectable fragment in double square brackets, e.g.{' '}
-                    <code>{'The capital of [[France]] is [[Paris]].'}</code> — the "Insert selectable fragment" button
-                    wraps your current text selection for you. Below the passage, use the checkmarks to mark which
-                    fragments students should select. Students click highlighted fragments to toggle them on or off.
-                    <strong> Allow partial credit</strong> awards points per fragment instead of all-or-nothing.
+                    <strong>{t('docs.rb_tests_hottext_label')}</strong> {t('docs.rb_tests_hottext_body')}{' '}
+                    <code>{t('docs.rb_tests_hottext_example')}</code> {t('docs.rb_tests_hottext_body2')}
+                    <strong> {t('docs.rb_tests_hottext_body3')}</strong> {t('docs.rb_tests_hottext_body4')}
                 </p>
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
-                    What students see
+                    {t('docs.rb_tests_student_view_title')}
                 </h3>
                 <FeatureList
                     items={[
-                        'If the test requires Safe Exam Browser, students see a blocking screen until they open the link inside SEB.',
-                        'A countdown timer (when set) shows time remaining and auto-submits the test when it reaches zero.',
-                        'Answers are autosaved to the device as the student works, so a reload or browser crash restores their progress.',
-                        'Submitting produces a confirmation and, when no cloud sync is configured, a submission code for the student to send to their teacher.',
+                        t('docs.rb_tests_student_view_item_seb'),
+                        t('docs.rb_tests_student_view_item_timer'),
+                        t('docs.rb_tests_student_view_item_autosave'),
+                        t('docs.rb_tests_student_view_item_submit'),
                     ]}
                 />
             </FeatureSection>
 
-            <FeatureSection icon={Radio} title="Live monitoring" color="#ef4444">
+            <FeatureSection icon={Radio} title={t('docs.rb_live_monitor_title')} color="#ef4444">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
-                    While a test or essay is in progress, click <strong>Monitor</strong> (from the Tests page for a
-                    test, or from the assignment dialog for an essay) to open a live view of the session. This requires
-                    cloud sync to be enabled — without it, the page explains that you can review progress after the fact
-                    from each student's saved answers or draft instead.
+                    {t('docs.rb_live_monitor_intro_prefix')} <strong>{t('docs.rb_live_monitor_button')}</strong>{' '}
+                    {t('docs.rb_live_monitor_intro_suffix')}
                 </p>
                 <FeatureList
                     items={[
-                        'Presence — a coloured dot shows whether each student is active, idle, or disconnected, based on how recently their browser checked in.',
-                        'Response grid (tests) — a students-by-questions matrix, colour-coded as students answer. Click a question header to open a gallery of every answer to that question.',
-                        'Live draft preview (essays) — a card per student with a live word count, last-activity timestamp, and an expandable preview of what they are currently writing.',
-                        'Hide names — toggle to anonymise the view, useful when sharing your screen.',
-                        'Proctoring flags — counts of tab switches, copy/paste/cut, battery level, and Safe Exam Browser status. These are advisory signals only: a determined student can spoof them, so use them to prompt a conversation, not as definitive proof.',
+                        t('docs.rb_live_monitor_item_presence'),
+                        t('docs.rb_live_monitor_item_grid'),
+                        t('docs.rb_live_monitor_item_draft'),
+                        t('docs.rb_live_monitor_item_hide_names'),
+                        t('docs.rb_live_monitor_item_proctoring'),
                     ]}
                 />
             </FeatureSection>
@@ -817,133 +783,124 @@ function RubricsTab() {
 }
 
 function GradingTab() {
+    const { t } = useTranslation();
     return (
         <div>
-            <FeatureSection icon={PenLine} title="Grading interface" color="#8b5cf6">
+            <FeatureSection icon={PenLine} title={t('docs.gr_interface_title')} color="#8b5cf6">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
-                    Open a rubric from the Rubrics list, then click a student's name to enter the grading view. Use{' '}
-                    <strong>Save &amp; Next</strong> to move through your class efficiently.
+                    {t('docs.gr_interface_intro_prefix')} <strong>{t('docs.gr_interface_save_next')}</strong>{' '}
+                    {t('docs.gr_interface_intro_suffix')}
                 </p>
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
-                    Scoring
+                    {t('docs.gr_scoring_title')}
                 </h3>
                 <FeatureList
                     items={[
-                        'Click any level cell to select it. Click again to deselect.',
-                        'For point ranges, use the slider to choose a value within the allowed range.',
-                        'Toggle sub-items inside a level with checkboxes.',
-                        'Apply score modifiers (% bonus, point deduction, level adjustment) with a reason.',
+                        t('docs.gr_scoring_item_select'),
+                        t('docs.gr_scoring_item_slider'),
+                        t('docs.gr_scoring_item_subitems'),
+                        t('docs.gr_scoring_item_modifiers'),
                     ]}
                 />
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
-                    Mobile grading
+                    {t('docs.gr_mobile_title')}
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
-                    On phones and iPad portrait the grading view is touch-optimised. Point-range and sub-item sliders
-                    gain a <strong>− / +</strong> stepper for precise scoring without dragging a thin slider, the level
-                    cards and score pickers use larger tap targets, and the Save bar stays pinned to the bottom of the
-                    screen. Comparative grading stacks into a single column so each student's panel is full-width.
+                    {t('docs.gr_mobile_body_prefix')} <strong>{t('docs.gr_mobile_stepper')}</strong>{' '}
+                    {t('docs.gr_mobile_body_suffix')}
                 </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
-                    Feedback tools
+                    {t('docs.gr_feedback_title')}
                 </h3>
                 <FeatureList
                     items={[
-                        'Comment Bank — insert reusable snippets by tag. Build the bank from the Comment Bank page.',
-                        "Voice grading — dictate comments hands-free using the browser's speech recognition API.",
-                        'Per-criterion notes in addition to the overall feedback field.',
-                        'File attachments — upload evidence files (images, PDFs) per graded rubric.',
+                        t('docs.gr_feedback_item_comment_bank'),
+                        t('docs.gr_feedback_item_voice'),
+                        t('docs.gr_feedback_item_notes'),
+                        t('docs.gr_feedback_item_attachments'),
                     ]}
                 />
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
-                    Comparative grading
+                    {t('docs.gr_comparative_title')}
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
-                    Click <strong>Compare</strong> on the Rubrics list to open the side-by-side grading view. Grade two
-                    students at once for calibration and anchor-based grading. The interface adaptively suggests level
-                    adjustments when there is a mismatch between students' scores.
+                    {t('docs.gr_comparative_body_prefix')} <strong>{t('docs.gr_comparative_button')}</strong>{' '}
+                    {t('docs.gr_comparative_body_suffix')}
                 </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
-                    Peer review &amp; self-assessment
+                    {t('docs.gr_peer_title')}
                 </h3>
                 <FeatureList
                     items={[
-                        "Peer Review — share a URL with a student to review a classmate's work.",
-                        'Self-Assessment — students rate themselves against CEFR Can-Do statements. Results are stored alongside teacher scores.',
-                        'Peer Review Analytics (/peer-analytics/:rubricId) — open from the Peer Review screen to see consistency scores comparing peer grades to your baseline, a feedback heatmap of which criteria get the most comments, and round-over-round trends. Reviews are matched to reviewers via their student ID; older records without one are shown as "Anonymous reviewer".',
+                        t('docs.gr_peer_item_peer_review'),
+                        t('docs.gr_peer_item_self_assess'),
+                        t('docs.gr_peer_item_analytics'),
                     ]}
                 />
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
-                    Co-grading &amp; moderation
+                    {t('docs.gr_cograding_title')}
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
-                    Click <strong>Co-grade</strong> on a graded student's page and enter a colleague's name or email to
-                    send the submission for an independent second marking — it opens the same screen as peer review,
-                    just with a colleague instead of a classmate as the reviewer. Any submission where the two grades
-                    disagree by more than a configurable point threshold shows up in <strong>Moderation</strong> in the
-                    sidebar, with a per-criterion delta breakdown and a one-click choice to keep the original grade or
-                    accept the second marker's.
+                    {t('docs.gr_cograding_body_prefix')} <strong>{t('docs.gr_cograding_button')}</strong>{' '}
+                    {t('docs.gr_cograding_body_mid')} <strong>{t('docs.gr_cograding_moderation')}</strong>{' '}
+                    {t('docs.gr_cograding_body_suffix')}
                 </p>
             </FeatureSection>
 
-            <FeatureSection icon={MessageSquare} title="Comment Bank" color="#06b6d4">
+            <FeatureSection icon={MessageSquare} title={t('docs.gr_comment_bank_title')} color="#06b6d4">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
-                    Go to <strong>Comment Bank</strong> in the sidebar to manage your snippets. Organise them with tags
-                    (e.g. "writing", "grammar", "effort"). During grading, click the comment icon to open the bank and
-                    insert any snippet into the feedback field with one click. With cloud sync connected, click the
-                    department icon on an item to share it read-only with every other teacher in your school; items
-                    shared by colleagues appear in the bank with a "Department" badge.
+                    {t('docs.gr_comment_bank_body_prefix')} <strong>{t('docs.gr_comment_bank_nav')}</strong>{' '}
+                    {t('docs.gr_comment_bank_body')}
                 </p>
             </FeatureSection>
 
-            <FeatureSection icon={ClipboardCheck} title="Test results &amp; grading" color="#3b82f6">
+            <FeatureSection icon={ClipboardCheck} title={t('docs.gr_test_results_title')} color="#3b82f6">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
-                    From the <strong>Tests</strong> list, click <strong>Results</strong> on a test to see every
-                    student's submission and open results at <code>/tests/:testId/results/:studentTestId</code>.
+                    {t('docs.gr_test_results_intro_prefix')} <strong>{t('docs.gr_test_results_intro_tests')}</strong>{' '}
+                    {t('docs.gr_test_results_intro_mid')} <strong>{t('docs.gr_test_results_intro_button')}</strong>{' '}
+                    {t('docs.gr_test_results_intro_suffix')}{' '}
+                    <code>/tests/:testId/results/:studentTestId</code>.
                 </p>
                 <FeatureList
                     items={[
-                        'Multiple-choice and exact-match short-answer questions are auto-scored and marked correct/incorrect.',
-                        "Open questions (and short-answer questions without a model answer) get a manual points input — clamped to the question's max — plus a feedback field.",
-                        "Total points, percentage, and a letter/scale grade (from the test's grade scale) are shown at the top of the page.",
-                        'Standards and CEFR breakdowns roll up points earned per linked standard or Can-Do descriptor, mirroring the Learning Goals view.',
-                        'A "Session integrity" panel summarises proctoring events (tab switches, copy/paste, battery, SEB status) captured while the student took the test.',
+                        t('docs.gr_test_results_item_autoscore'),
+                        t('docs.gr_test_results_item_open'),
+                        t('docs.gr_test_results_item_grade'),
+                        t('docs.gr_test_results_item_standards'),
+                        t('docs.gr_test_results_item_integrity'),
                     ]}
                 />
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
-                    Class average adjustment
+                    {t('docs.gr_class_avg_title')}
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
-                    Open <strong>Results</strong> on a test to see the Class average adjustment tool. Enter a target
-                    average percentage, preview how each student's points and percentage would change with a uniform
-                    point adjustment, then <strong>Apply adjustment</strong>. Raw answer scores are never overwritten —
-                    the adjustment is stored separately and is fully reversible with <strong>Revert adjustment</strong>,
-                    and the audit trail records when it was applied.
+                    {t('docs.gr_class_avg_body_prefix')} <strong>{t('docs.gr_class_avg_body_results')}</strong>{' '}
+                    {t('docs.gr_class_avg_body_suffix')} <strong>{t('docs.gr_class_avg_apply')}</strong>
+                    {t('docs.gr_class_avg_body2')} <strong>{t('docs.gr_class_avg_revert')}</strong>
+                    {t('docs.gr_class_avg_body3')}
                 </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
-                    Importing offline submissions
+                    {t('docs.gr_import_offline_title')}
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
-                    If a student submits a test as a code instead of online (e.g. when offline), click{' '}
-                    <strong>Import submission code</strong> on the Tests list, paste the code, and the submission is
-                    created or updated automatically — ready for grading and results.
+                    {t('docs.gr_import_offline_body_prefix')} <strong>{t('docs.gr_import_offline_button')}</strong>{' '}
+                    {t('docs.gr_import_offline_body_suffix')}
                 </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
-                    Test summary export
+                    {t('docs.gr_test_summary_title')}
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
-                    Open <strong>Results</strong> on a test to find the <strong>Export summary</strong> panel. Choose a
-                    single student or the whole class, then export a PDF or Word summary with per-question accuracy and
-                    a strong/developing/weak breakdown by linked standard or CEFR descriptor — useful for spotting which
-                    topics a student or the class as a whole needs to revisit.
+                    {t('docs.gr_test_summary_body_prefix')} <strong>{t('docs.gr_test_summary_body_results')}</strong>{' '}
+                    {t('docs.gr_test_summary_body_suffix')} <strong>{t('docs.gr_test_summary_export_panel')}</strong>{' '}
+                    {t('docs.gr_test_summary_body2')}
                 </p>
             </FeatureSection>
         </div>
@@ -951,82 +908,68 @@ function GradingTab() {
 }
 
 function CefrTab() {
+    const { t } = useTranslation();
     return (
         <div>
-            <FeatureSection icon={GraduationCap} title="CEFR Overview" color="#f59e0b">
+            <FeatureSection icon={GraduationCap} title={t('docs.ce_overview_title')} color="#f59e0b">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
-                    The CEFR (Common European Framework of Reference) module tracks language proficiency across Reading,
-                    Writing, Speaking, and Listening — aligned to Dutch VO targets (VMBO-BB through VWO).
+                    {t('docs.ce_overview_intro')}
                 </p>
                 <FeatureList
                     items={[
-                        'Whole-class overview (/cefr-overview) — heatmap of all students across CEFR levels per skill.',
-                        'Per-student overview — timeline of assessed levels, self-assessment scores alongside teacher scores.',
-                        'Progress tracking — see which students are on-track, ahead, or behind their VO target level.',
+                        t('docs.ce_overview_item_whole_class'),
+                        t('docs.ce_overview_item_per_student'),
+                        t('docs.ce_overview_item_progress'),
                     ]}
                 />
-                <InfoBox color="#f59e0b">
-                    CEFR levels are computed from rubric scores when CEFR descriptors are linked to criteria. They are
-                    also updated by speaking sessions and self-assessments.
-                </InfoBox>
+                <InfoBox color="#f59e0b">{t('docs.ce_overview_info')}</InfoBox>
             </FeatureSection>
 
-            <FeatureSection icon={TrendingUp} title="Learning Paths & Interventions" color="#10b981">
+            <FeatureSection icon={TrendingUp} title={t('docs.ce_learning_paths_title')} color="#10b981">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
-                    Open a student's profile and click "Learning Path" to see rule-based, offline suggestions — no AI is
-                    involved, only deterministic comparisons against class averages and score history.
+                    {t('docs.ce_learning_paths_intro')}
                 </p>
                 <FeatureList
                     items={[
-                        'Rubric recommendations — for each CEFR skill/level where the student scores well below the class average, untried rubrics tagged with that skill and level are suggested.',
-                        'Intervention flags — three or more consecutive low scores on the same rubric criterion, or on the same CEFR skill, raise a flag so it is easy to spot students who need extra support.',
-                        'Everything is computed on the fly from existing grades; nothing new is stored.',
+                        t('docs.ce_learning_paths_item_recs'),
+                        t('docs.ce_learning_paths_item_flags'),
+                        t('docs.ce_learning_paths_item_computed'),
                     ]}
                 />
             </FeatureSection>
 
-            <FeatureSection icon={Mic} title="Speaking Sessions" color="#f59e0b">
+            <FeatureSection icon={Mic} title={t('docs.ce_speaking_title')} color="#f59e0b">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
-                    Start a speaking session from either of two entry points:
+                    {t('docs.ce_speaking_intro')}
                 </p>
                 <FeatureList
                     items={[
-                        'Student Profile → "Speaking Session" button in the top bar. With one rubric it navigates directly; with multiple rubrics a dropdown lets you pick.',
-                        'Rubrics → find a rubric card → "Speaking…" dropdown at the bottom — select a student to jump straight into the session.',
-                        'Past sessions appear in a "Speaking Sessions" card on the Student Profile, each with a link to reopen and extend it.',
-                        'Inside the session: set a timer, mark pronunciation quick-marks (word stress, th-sound, etc.), score the linked rubric criteria, and add an overall comment.',
-                        "Results are saved to the student's CEFR history and are visible on the CEFR Overview heatmap.",
-                        'Record audio (and, with cloud sync enabled, video) directly inside the session — recordings are saved with the session and play back from the "Portfolio" tab on the Student Profile.',
+                        t('docs.ce_speaking_item_profile'),
+                        t('docs.ce_speaking_item_rubrics'),
+                        t('docs.ce_speaking_item_past'),
+                        t('docs.ce_speaking_item_inside'),
+                        t('docs.ce_speaking_item_results'),
+                        t('docs.ce_speaking_item_recording'),
                     ]}
                 />
-                <InfoBox color="#f59e0b">
-                    Recordings are privacy-first: without cloud sync configured, audio recording is available but files
-                    stay only in this browser's storage (cleared if the user clears browsing data); video recording is
-                    disabled in that case. With cloud sync enabled, both audio and video recordings sync to the
-                    teacher's private storage. A single recording is capped at 50MB.
-                </InfoBox>
+                <InfoBox color="#f59e0b">{t('docs.ce_speaking_info')}</InfoBox>
             </FeatureSection>
 
-            <FeatureSection icon={Globe} title="Student Self-Assessment" color="#10b981">
+            <FeatureSection icon={Globe} title={t('docs.ce_self_assess_title')} color="#10b981">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
-                    Students access self-assessment via their portal link or a direct URL. They rate themselves against
-                    the Can-Do descriptors attached to a rubric's criteria. Their ratings and reflection text are stored
-                    alongside the teacher's scores and are visible on the Student Profile and CEFR Overview pages.
+                    {t('docs.ce_self_assess_body')}
                 </p>
             </FeatureSection>
 
-            <FeatureSection icon={Award} title="Cambridge English Exam Labels" color="#f59e0b">
+            <FeatureSection icon={Award} title={t('docs.ce_cambridge_title')} color="#f59e0b">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
-                    Enable "Show Cambridge exam labels" in Settings → General to display the Cambridge English
-                    Qualification that maps to each CEFR level (A2 Key, B1 Preliminary, B2 First, C1 Advanced, C2
-                    Proficiency) as a subtle secondary label next to CEFR badges on the Student CEFR Overview and
-                    Student Profile pages. A1 has no main-suite Cambridge exam, so no label is shown for it.
+                    {t('docs.ce_cambridge_intro')}
                 </p>
                 <FeatureList
                     items={[
-                        'Rubric Builder vocabulary panel — when a Cambridge Dictionary API key is set in Admin → Integrations, each word gets a "Look up" button that fetches its CEFR level and definition.',
-                        'Lookups only fill in empty CEFR level / definition fields and never overwrite values you already entered.',
-                        'Without an API key, the lookup button is hidden and the app continues to work fully offline using the bundled CEFR-J vocabulary data.',
+                        t('docs.ce_cambridge_item_lookup'),
+                        t('docs.ce_cambridge_item_fill'),
+                        t('docs.ce_cambridge_item_offline'),
                     ]}
                 />
             </FeatureSection>
@@ -1035,67 +978,60 @@ function CefrTab() {
 }
 
 function EssaysTab() {
+    const { t } = useTranslation();
     return (
         <div>
-            <FeatureSection icon={FileText} title="Essays workspace" color="#6366f1">
+            <FeatureSection icon={FileText} title={t('docs.es_workspace_title')} color="#6366f1">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
-                    The <strong>Essays</strong> section in the sidebar is the dedicated home for essay assignments —
-                    separate from the Rubrics page. It lists every essay you have created, grouped by assignment, with
-                    the linked rubric, the number of assigned students, and how many have submitted.
+                    {t('docs.es_workspace_intro_prefix')} <strong>{t('docs.es_workspace_intro_name')}</strong>{' '}
+                    {t('docs.es_workspace_intro_suffix')}
                 </p>
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
-                    Creating an essay
+                    {t('docs.es_creating_title')}
                 </h3>
                 <FeatureList
                     items={[
-                        'Click "New Essay" to open the builder: write the title and prompt, set optional word count limits (min/max), a time limit, and a deadline.',
-                        'Use the rubric connector to link a rubric for structured feedback after grading.',
-                        'Enable "Read-only after submit" to lock essays once submitted.',
-                        'Enable "Require Safe Exam Browser (SEB)" to lock the assignment to the SEB app — download the .seb config from the assignment dialog to distribute to students.',
-                        'Click "Assign to students" to pick a class — each selected student gets their own share link and submission code.',
-                        'Once assigned, the builder lists every student with their submission status and a per-student "Copy link" button.',
-                        'Use "Import submission code" to add a student\'s completed essay (pasted code) when no database connection is configured.',
-                        'Click "Monitor" to open the live essay monitor for the assignment.',
-                        'Save configuration — click "Save configuration" in the assignment dialog footer to store the title, prompt, limits, and deadline locally for this rubric. The form auto-fills from the saved configuration the next time you open the assignment dialog, so you can prepare assignments in advance and only share links when you are ready.',
+                        t('docs.es_creating_item_new'),
+                        t('docs.es_creating_item_rubric'),
+                        t('docs.es_creating_item_readonly'),
+                        t('docs.es_creating_item_seb'),
+                        t('docs.es_creating_item_assign'),
+                        t('docs.es_creating_item_status'),
+                        t('docs.es_creating_item_import'),
+                        t('docs.es_creating_item_monitor'),
+                        t('docs.es_creating_item_save_config'),
                     ]}
                 />
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
-                    Rich text editor (A4 page mode)
+                    {t('docs.es_editor_title')}
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
-                    Students write in a TipTap-powered editor with a full formatting toolbar: bold, italic, headings,
-                    lists, tables, text colour, highlight, superscript, and more. Toggle <strong>Page view</strong> in
-                    the toolbar to switch to an A4-sized paper layout with realistic margins — ideal for essay writing
-                    practice.
+                    {t('docs.es_editor_body_prefix')} <strong>{t('docs.es_editor_page_view')}</strong>{' '}
+                    {t('docs.es_editor_body_suffix')}
                 </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
-                    Document analysis
+                    {t('docs.es_doc_analysis_title')}
                 </h3>
                 <FeatureList
                     items={[
-                        'Upload a DOCX or PDF to import text into the editor.',
-                        'OCR via Tesseract.js for scanned images or PDFs.',
-                        'Vocabulary and grammar checking via LanguageTool integration.',
-                        'Grammar qualification — if a rubric criterion has linked grammar standards (see Rubric Builder → Grammar tab), scanning the essay reports per-criterion which structures the student demonstrated (✔), which were not found (✘), and which need a manual check (⊘). Detection is approximate, rule/NLP-based (no AI), using the CEFR-J Grammar Profile. Click "Apply as comment" to append the summary to that criterion\'s feedback.',
+                        t('docs.es_doc_analysis_item_upload'),
+                        t('docs.es_doc_analysis_item_ocr'),
+                        t('docs.es_doc_analysis_item_grammar_check'),
+                        t('docs.es_doc_analysis_item_grammar_qual'),
                     ]}
                 />
             </FeatureSection>
 
-            <FeatureSection icon={FileSearch} title="Submission flow" color="#3b82f6">
+            <FeatureSection icon={FileSearch} title={t('docs.es_submission_title')} color="#3b82f6">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
-                    Students visit the essay URL or enter the submission code in the Student Portal. After an optional
-                    email verification gate, they write and submit. Drafts are auto-saved to localStorage every few
-                    seconds. After submission, teachers open the linked rubric's grading view and click{' '}
-                    <strong>Import Essay</strong> to pull the submission from the database (or paste the student's
-                    submission code if no database is connected) — the essay text is then added as an attachment,
-                    visible in both the normal and comparative grading views.
+                    {t('docs.es_submission_body1')} <strong>{t('docs.es_submission_import_button')}</strong>{' '}
+                    {t('docs.es_submission_body2')}
                 </p>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
-                    If an assignment requires Safe Exam Browser and the student opens the link outside of SEB,
-                    submission is blocked and a banner offers a <strong>Download .seb config</strong> button so the
-                    student can get the right config file and reopen the assignment inside SEB.
+                    {t('docs.es_submission_body3_prefix')} <strong>{t('docs.es_submission_download_button')}</strong>{' '}
+                    {t('docs.es_submission_body3_suffix')}
                 </p>
             </FeatureSection>
         </div>
@@ -1103,176 +1039,166 @@ function EssaysTab() {
 }
 
 function AnalyticsTab() {
+    const { t } = useTranslation();
     return (
         <div>
-            <FeatureSection icon={BookOpen} title="Student portfolio view" color="#8b5cf6">
+            <FeatureSection icon={BookOpen} title={t('docs.an_portfolio_title')} color="#8b5cf6">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
-                    Open a student from the <strong>Students</strong> page. The <strong>Portfolio</strong> tab shows a
-                    chronological timeline that combines rubric grades, speaking sessions, and self-assessments in one
-                    scrollable view. Each entry shows the date, type, rubric name, and score with a direct link to view
-                    or edit the full record.
+                    {t('docs.an_portfolio_body_prefix')} <strong>{t('docs.an_portfolio_students_nav')}</strong>{' '}
+                    {t('docs.an_portfolio_body_mid')} <strong>{t('docs.an_portfolio_tab_name')}</strong>{' '}
+                    {t('docs.an_portfolio_body_suffix')}
                 </p>
             </FeatureSection>
 
-            <FeatureSection icon={BarChart3} title="Statistics dashboard" color="#3b82f6">
+            <FeatureSection icon={BarChart3} title={t('docs.an_stats_title')} color="#3b82f6">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
-                    Go to <strong>Statistics</strong> in the sidebar. Filter by class, track, and year. Three views:
+                    {t('docs.an_stats_intro_prefix')} <strong>{t('docs.an_stats_nav')}</strong>{' '}
+                    {t('docs.an_stats_intro_suffix')}
                 </p>
                 <FeatureList
                     items={[
-                        'By Rubric — grade distribution, per-criterion averages, score histogram, class trend.',
-                        'By Student — per-student rubric history and criterion radar comparison.',
-                        'Compare — select up to 4 classes, compare averages, criterion gaps, and trend lines side by side. Collapsible Insights panel flags struggling classes, weak criteria, and divergence between classes.',
-                        'Track and year filter dropdowns scope the class selector to Dutch VO tracks (VMBO/HAVO/VWO) and school year.',
+                        t('docs.an_stats_item_by_rubric'),
+                        t('docs.an_stats_item_by_student'),
+                        t('docs.an_stats_item_compare'),
+                        t('docs.an_stats_item_filters'),
                     ]}
                 />
             </FeatureSection>
 
-            <FeatureSection icon={BarChart3} title="Activity Dashboard" color="#0ea5e9">
+            <FeatureSection icon={BarChart3} title={t('docs.an_activity_title')} color="#0ea5e9">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
-                    Go to <strong>Activity Dashboard</strong> in the sidebar. Rows are rubrics, tests, and essays;
-                    columns are classes. Each cell shows how many students submitted/were graded and a quick action:
+                    {t('docs.an_activity_intro_prefix')} <strong>{t('docs.an_activity_nav')}</strong>{' '}
+                    {t('docs.an_activity_intro_suffix')}
                 </p>
                 <FeatureList
                     items={[
-                        "Rubrics — Link/Unlink adds or removes the rubric from a class's assignment list. When a cell has ungraded students, an Assign button lets you hand that batch to a specific colleague as a grading task.",
-                        'Essays — Assign All bulk-creates essay assignments for all unenrolled students in the class.',
-                        'Tests — Open navigates to the test builder where you can share the class link.',
-                        'Filter by school year and VO track to narrow the column set.',
-                        'Standards Coverage panel (below the grid) — pick a class to see every standard linked anywhere in its rubrics, split into "Assessed" (with average score) and "Not yet assessed" — the gap to address before the term ends.',
-                        'Drag the grip handle on any row to reorder rubrics, tests, or essays within their section.',
+                        t('docs.an_activity_item_rubrics'),
+                        t('docs.an_activity_item_essays'),
+                        t('docs.an_activity_item_tests'),
+                        t('docs.an_activity_item_filter'),
+                        t('docs.an_activity_item_coverage'),
+                        t('docs.an_activity_item_reorder'),
                     ]}
                 />
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginTop: 8 }}>
-                    Pending grading tasks (assigned but not yet graded) are listed above the grid, with the assignee's
-                    name and an optional due date. A task automatically disappears once a grade is saved for that
-                    student and rubric — there's nothing to mark "done" manually.
+                    {t('docs.an_activity_pending')}
                 </p>
             </FeatureSection>
 
-            <FeatureSection icon={Download} title="Export options" color="#10b981">
+            <FeatureSection icon={Download} title={t('docs.an_export_title')} color="#10b981">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
-                    Go to <strong>Export</strong> in the sidebar. Choose your format and scope.
+                    {t('docs.an_export_intro_prefix')} <strong>{t('docs.an_export_nav')}</strong>{' '}
+                    {t('docs.an_export_intro_suffix')}
                 </p>
                 <FeatureList
                     items={[
-                        'PDF — individual student reports or bulk class export in one PDF.',
-                        'DOCX — raw export or mail-merge template with field substitution ({{student_name}}, {{score}}, etc.).',
-                        "CSV — raw grade data for Excel or your school's gradebook.",
-                        'Period report — aggregated CEFR progress report for a class over a date range.',
-                        'Report cards — a single consolidated DOCX per student, combining rubric grades, standards coverage, learning goals, and CEFR overview into one document.',
+                        t('docs.an_export_item_pdf'),
+                        t('docs.an_export_item_docx', { interpolation: { prefix: '⟦', suffix: '⟧' } }),
+                        t('docs.an_export_item_csv'),
+                        t('docs.an_export_item_period'),
+                        t('docs.an_export_item_report_cards'),
                     ]}
                 />
-                <InfoBox color="#10b981">
-                    Mail-merge DOCX templates support custom fields. Upload a .docx file with placeholder fields and the
-                    app will substitute them with student data.
-                </InfoBox>
+                <InfoBox color="#10b981">{t('docs.an_export_info')}</InfoBox>
             </FeatureSection>
 
-            <FeatureSection icon={ClipboardCheck} title="Report cards" color="#0ea5e9">
+            <FeatureSection icon={ClipboardCheck} title={t('docs.an_report_cards_title')} color="#0ea5e9">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
-                    On the <strong>Export</strong> page, below Period Report, use the Report Card panel to generate a
-                    consolidated DOCX per student. It reuses the same class and student picker, date range, and period
-                    label as the Period Report above.
+                    {t('docs.an_report_cards_intro')}
                 </p>
                 <FeatureList
                     items={[
-                        'Toggle which sections appear: rubric grades, standards coverage, learning goals, CEFR overview, and test summary.',
-                        'Export a single student’s report card, or batch-export one DOCX per selected student.',
-                        'Test summary combines every test the student took within the selected date range, showing per-skill strong/weak points.',
+                        t('docs.an_report_cards_item_toggle'),
+                        t('docs.an_report_cards_item_export'),
+                        t('docs.an_report_cards_item_summary'),
                     ]}
                 />
             </FeatureSection>
 
-            <FeatureSection icon={Languages} title="Vocabulary Profile dashboard" color="#f59e0b">
+            <FeatureSection icon={Languages} title={t('docs.an_vocab_title')} color="#f59e0b">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
-                    Go to <strong>Vocabulary</strong> in the sidebar (<code>/vocabulary</code>). This dashboard
-                    aggregates CEFR vocabulary levels (A1–C2) detected in students' analysed documents.
+                    {t('docs.an_vocab_intro_prefix')}<code>/vocabulary</code>
+                    {t('docs.an_vocab_intro_suffix')}
                 </p>
                 <FeatureList
                     items={[
-                        'Per-class stacked bar chart of vocabulary level distribution, with a class selector.',
-                        'Per-student drill-down showing each student’s estimated vocabulary level and profiled word count.',
-                        'CSV export of vocabulary words — filter by a single CEFR band (A1–C2) or export all levels — with word, level, definition, and source columns.',
+                        t('docs.an_vocab_item_chart'),
+                        t('docs.an_vocab_item_drilldown'),
+                        t('docs.an_vocab_item_csv'),
                     ]}
                 />
-                <InfoBox color="#f59e0b">
-                    This dashboard is read-only and derives entirely from existing document analysis results (see
-                    Attachments → Analyse) and rubric vocabulary lists — analyse student submissions first to populate
-                    it.
-                </InfoBox>
+                <InfoBox color="#f59e0b">{t('docs.an_vocab_info')}</InfoBox>
             </FeatureSection>
         </div>
     );
 }
 
 function DataTab() {
+    const { t } = useTranslation();
     return (
         <div>
-            <FeatureSection icon={Database} title="Data management" color="#6366f1">
+            <FeatureSection icon={Database} title={t('docs.da_management_title')} color="#6366f1">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
-                    All data lives in localStorage by default. Supabase sync is optional.
+                    {t('docs.da_management_intro')}
                 </p>
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
-                    Backup &amp; restore
+                    {t('docs.da_backup_title')}
                 </h3>
                 <FeatureList
                     items={[
-                        'Export entire dataset to a single JSON file from Settings.',
-                        'Restore from any prior backup JSON — replaces all current data.',
-                        'Docker deployments: use scripts/backup.sh and scripts/restore.sh for server-side backups.',
+                        t('docs.da_backup_item_export'),
+                        t('docs.da_backup_item_restore'),
+                        t('docs.da_backup_item_docker'),
                     ]}
                 />
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
-                    Supabase sync
+                    {t('docs.da_sync_title')}
                 </h3>
                 <FeatureList
                     items={[
-                        'Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to enable sync.',
-                        'LocalStorage stays the source of truth; Supabase is a sync layer.',
-                        'Multi-teacher collaboration: share rubrics between accounts in the same Supabase project.',
-                        'Email OTP login — optional; requires SMTP configuration in Docker.',
-                        'Conflict resolution: when local and cloud data differ, the newest change wins. Edits made while offline are protected and never overwritten by older cloud data until they have synced.',
+                        t('docs.da_sync_item_env'),
+                        t('docs.da_sync_item_source'),
+                        t('docs.da_sync_item_collab'),
+                        t('docs.da_sync_item_otp'),
+                        t('docs.da_sync_item_conflict'),
                     ]}
                 />
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
-                    Stress-test logging
+                    {t('docs.da_stress_title')}
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
-                    Admins can build with <code>VITE_STRESS_TEST_LOGGING=true</code> to record diagnostic events
-                    (actions, sync results, errors — never essay text, comments, or grades) to a{' '}
-                    <code>client_logs</code> table during a pilot. Useful for running a full-class test before rollout.
-                    Disable by rebuilding without the flag once the pilot is done.
+                    {t('docs.da_stress_body_prefix')} <code>VITE_STRESS_TEST_LOGGING=true</code>{' '}
+                    {t('docs.da_stress_body_mid')} <code>client_logs</code> {t('docs.da_stress_body_suffix')}
                 </p>
             </FeatureSection>
 
-            <FeatureSection icon={Shield} title="Admin panel" color="#ef4444">
+            <FeatureSection icon={Shield} title={t('docs.da_admin_title')} color="#ef4444">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
-                    Accessible at <code>/admin</code> for users with the <strong>admin</strong> role.
+                    {t('docs.da_admin_intro_prefix')} <code>/admin</code> {t('docs.da_admin_intro_suffix')}
                 </p>
                 <FeatureList
                     items={[
-                        'Users tab — assign roles (admin, teacher, student), invite colleagues.',
-                        'Schools tab — manage school names and branding.',
-                        'Database tab — configure Supabase connection, push/pull data, manage sharing.',
-                        'Integrations tab — Standards API key, Cambridge Dictionary API key.',
-                        'Data tab — anonymise student data, bulk delete, compliance tools.',
-                        'Retention tab — set automatic data retention policies per school.',
-                        'Audit Log tab — filterable, paginated log of role changes, grade saves, exports, and auth events; admins see all entries, teachers see their own. Entries are retained for 3 years (admin), 1 year (grade), 1 month (export/auth) then automatically purged.',
+                        t('docs.da_admin_item_users'),
+                        t('docs.da_admin_item_schools'),
+                        t('docs.da_admin_item_database'),
+                        t('docs.da_admin_item_integrations'),
+                        t('docs.da_admin_item_data'),
+                        t('docs.da_admin_item_retention'),
+                        t('docs.da_admin_item_audit'),
                     ]}
                 />
             </FeatureSection>
 
-            <FeatureSection icon={Settings} title="Settings" color="#64748b">
+            <FeatureSection icon={Settings} title={t('docs.da_settings_title')} color="#64748b">
                 <FeatureList
                     items={[
-                        'Theme — dark / light, accent colour picker, 8 quick presets, or choose a named theme bundle (Academy, Nature, Midnight, Warm, Slate, Rose) that sets font, accent, and export colour in one click.',
-                        'Grade scales — create custom scales (1–10, A–F, etc.) and set a default.',
-                        'Language — English, Dutch, French, German, Spanish.',
-                        'Guided tour — restart the onboarding walkthrough.',
-                        'Backup / restore — download or upload the full dataset JSON.',
+                        t('docs.da_settings_item_theme'),
+                        t('docs.da_settings_item_scales'),
+                        t('docs.da_settings_item_lang'),
+                        t('docs.da_settings_item_tour'),
+                        t('docs.da_settings_item_backup'),
                     ]}
                 />
             </FeatureSection>
