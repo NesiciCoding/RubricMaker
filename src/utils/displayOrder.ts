@@ -1,11 +1,11 @@
 /** Shared sort/reorder helpers for manually-orderable list views (RubricList, TestListPage, EssayListPage, Activity Dashboard). */
 
-export function sortByDisplayOrder<T extends { displayOrder?: number; createdAt: string }>(items: T[]): T[] {
+export function sortByDisplayOrder<T extends { displayOrder?: number; createdAt?: string }>(items: T[]): T[] {
     return [...items].sort((a, b) => {
         if (a.displayOrder != null && b.displayOrder != null) return a.displayOrder - b.displayOrder;
         if (a.displayOrder != null) return -1;
         if (b.displayOrder != null) return 1;
-        return a.createdAt.localeCompare(b.createdAt);
+        return (a.createdAt ?? '').localeCompare(b.createdAt ?? '');
     });
 }
 

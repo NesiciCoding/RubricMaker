@@ -5,6 +5,7 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 ## Features
 
 ### 1. Rubric Builder
+
 - **Flexible structure**: Create rubrics with custom criteria and performance levels.
 - **Scoring modes**: Total Points (raw score), Weighted Percentage, and Single-Point Rubric.
 - **Advanced level options**: sub-item checklists within a level, point ranges (min/max), and score modifiers.
@@ -18,9 +19,11 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 - **Live monitoring**: While a test or essay is in progress (cloud sync enabled), watch a live presence/progress view per student — response grid for tests, live word count and draft preview for essays, plus advisory proctoring flags (tab switches, copy/paste, battery, Safe Exam Browser status).
 - **Rubric Marketplace**: Publish a rubric for colleagues at your school to browse, clone, and upvote (requires cloud sync and a school).
 - **Department sharing**: Mark a rubric (or a Comment Bank item) read-only-visible to every teacher in your school with one toggle — unlike the Marketplace, this shares the live rubric, not a cloned snapshot.
-- **Manual reordering**: Drag-to-reorder rubrics, tests, and essays in their respective lists and on the Activity Dashboard (per teacher, persists across reloads).
+- **Manual reordering**: Drag-to-reorder rubrics, tests, essays, and classes in their respective lists and on the Activity Dashboard (per teacher, persists across reloads).
+- **Cohort filtering**: Filter the Rubrics, Tests, and Essays lists by year/track cohort — a student counts as in-cohort via their current class or any past class they've transferred from, so items stay visible to a cohort across a class change.
 
 ### 2. Grading Interface
+
 - **Student management**: Manage students and organise them into classes, with Dutch VO track (VMBO/HAVO/VWO) support.
 - **Interactive grading**: Click levels, toggle sub-items, or use the slider for point ranges.
 - **Score modifiers**: Apply percentage, point, or level adjustments with a reason.
@@ -43,6 +46,7 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 - **Learning paths & interventions**: Rule-based (no AI) rubric recommendations for CEFR skills where a student trails the class average, plus flags for three or more consecutive low scores on the same criterion or CEFR skill — available from each student's profile.
 
 ### 4. Essay Writing
+
 - **Dedicated workspace**: A standalone "Essays" section (parallel to Tests) lists every essay assignment, with a builder for the prompt, rubric link, word/time limits, assigning to a class, copying per-student share links, importing submission codes, and a live monitor link.
 - **Essay assignments**: Teachers create prompts with optional CEFR-linked rubrics.
 - **Rich text editor**: TipTap (ProseMirror) editor with formatting toolbar.
@@ -52,19 +56,21 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 - **Peer review**: Classmates leave structured feedback on submissions.
 
 ### 5. Analytics & Reporting
+
 - **Statistics dashboard**: Class performance with Average, Median, Highest, and Lowest scores; grade distribution charts; per-criterion performance breakdown. A **Compare** tab lets you select up to 4 classes side-by-side — grouped average bars, per-criterion gap chart, multi-class trend overlay, and a collapsible Insights panel that flags struggling classes, weak criteria, and inter-class divergence.
 - **Activity Dashboard**: Grid of every rubric, test, and essay against every class — see submitted/total counts at a glance and take quick actions (link/unlink rubrics, bulk-assign essays, open test builder, assign ungraded students to a colleague, drag-reorder rows). Filter by school year and VO track.
 - **Vocabulary Profile dashboard**: Per-class and per-student CEFR vocabulary distribution (A1–C2), aggregated from document analysis results, with CSV export of vocabulary lists filtered by CEFR band.
 - **Student profiles**: Individual progress view across all rubrics, CEFR levels, and essays. A **Portfolio** tab shows a unified chronological timeline of grades, speaking sessions, and self-assessments.
 - **Overdue tracking**: Highlights students with assignments past due dates.
 - **Export options**:
-  - **PDF**: Individual student reports or bulk class export.
-  - **Word (.docx)**: Raw export or mail-merge templates with field substitution.
-  - **CSV**: Raw data for Excel or other gradebooks.
-  - **Period report**: Aggregated CEFR progress report for a class over a date range.
-  - **Report cards**: A single consolidated DOCX per student combining rubric grades, standards coverage, learning goals, and CEFR overview, with toggleable sections; export one student or batch-export a whole class.
+    - **PDF**: Individual student reports or bulk class export.
+    - **Word (.docx)**: Raw export or mail-merge templates with field substitution.
+    - **CSV**: Raw data for Excel or other gradebooks.
+    - **Period report**: Aggregated CEFR progress report for a class over a date range.
+    - **Report cards**: A single consolidated DOCX per student combining rubric grades, standards coverage, learning goals, and CEFR overview, with toggleable sections; export one student or batch-export a whole class.
 
 ### 6. Student Portal
+
 - **Shareable links**: Each student gets a unique portal link; no login required.
 - **View feedback**: Students see their grades, teacher comments, and attached files.
 - **Submit essays**: Anonymous essay submission via submission codes.
@@ -101,14 +107,16 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 To run the project locally:
 
 1. **Install dependencies**:
-   ```bash
-   npm install
-   ```
+
+    ```bash
+    npm install
+    ```
 
 2. **Start the development server**:
-   ```bash
-   npm run dev
-   ```
+
+    ```bash
+    npm run dev
+    ```
 
 3. Open [http://localhost:5173](http://localhost:5173) in your browser.
 
@@ -129,68 +137,69 @@ npm run db:reset     # Reset and re-apply all migrations
 
 ## Routes
 
-| Path | Page |
-|---|---|
-| `/` | Dashboard |
-| `/rubrics` | Rubric list |
-| `/rubrics/new` | New rubric |
-| `/rubrics/:id` | Rubric builder |
-| `/rubrics/:rubricId/grade/:studentId` | Grade a student |
-| `/rubrics/:rubricId/peer-review/:studentId` | Peer review view |
-| `/peer-analytics/:rubricId` | Peer review analytics (consistency, feedback heatmap, reviewer trends) |
-| `/rubrics/:rubricId/self-assess/:studentId` | Student self-assessment |
-| `/essays` | Essay list |
-| `/essays/new` | New essay |
-| `/essays/:teacherKey` | Essay builder (prompt, rubric link, assign students, import submissions) |
-| `/essays/:teacherKey/monitor` | Live essay monitor (presence, live word counts, draft preview) |
-| `/speaking/:rubricId/:studentId` | Speaking session |
-| `/grade-comparative/:classId/:rubricId` | Comparative grading |
-| `/marketplace` | School rubric marketplace (browse, publish, clone, upvote) |
-| `/tests` | Test list |
-| `/tests/new` | New test |
-| `/tests/:id` | Test builder |
-| `/tests/:testId/results/:studentTestId` | Test results, manual grading, and class-average adjustment |
-| `/tests/:testId/monitor` | Live test monitor (presence, response grid, proctoring flags) |
-| `/students` | Students list |
-| `/students/:id` | Student profile |
-| `/students/:id/cefr-overview` | Per-student CEFR overview |
-| `/students/:id/learning-path` | Per-student learning path — rule-based rubric recommendations and intervention flags |
-| `/cefr-overview` | Whole-class CEFR overview |
-| `/vocabulary` | Vocabulary Profile dashboard (CEFR vocabulary distribution per class/student, CSV export) |
-| `/portal/:studentId` | Student portal (public) |
-| `/test/:code` | Take a test (public, no login — answer questions, optional timer, submit) |
-| `/attachments` | Attachment manager |
-| `/comments` | Comment bank |
-| `/statistics` | Statistics dashboard (by-rubric, by-student, multi-class compare with insights) |
-| `/activity-dashboard` | Activity Dashboard — rubric/test/essay × class grid with link/assign/reorder actions, pending grading-task list |
-| `/moderation` | Moderation queue — disputed co-graded submissions, per-criterion delta, keep/accept resolution |
-| `/export` | Export page |
-| `/settings` | Settings |
-| `/admin` | Admin panel (admin role only) |
-| `/privacy` | Privacy statement |
+| Path                                        | Page                                                                                                            |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `/`                                         | Dashboard                                                                                                       |
+| `/rubrics`                                  | Rubric list                                                                                                     |
+| `/rubrics/new`                              | New rubric                                                                                                      |
+| `/rubrics/:id`                              | Rubric builder                                                                                                  |
+| `/rubrics/:rubricId/grade/:studentId`       | Grade a student                                                                                                 |
+| `/rubrics/:rubricId/peer-review/:studentId` | Peer review view                                                                                                |
+| `/peer-analytics/:rubricId`                 | Peer review analytics (consistency, feedback heatmap, reviewer trends)                                          |
+| `/rubrics/:rubricId/self-assess/:studentId` | Student self-assessment                                                                                         |
+| `/essays`                                   | Essay list                                                                                                      |
+| `/essays/new`                               | New essay                                                                                                       |
+| `/essays/:teacherKey`                       | Essay builder (prompt, rubric link, assign students, import submissions)                                        |
+| `/essays/:teacherKey/monitor`               | Live essay monitor (presence, live word counts, draft preview)                                                  |
+| `/speaking/:rubricId/:studentId`            | Speaking session                                                                                                |
+| `/grade-comparative/:classId/:rubricId`     | Comparative grading                                                                                             |
+| `/marketplace`                              | School rubric marketplace (browse, publish, clone, upvote)                                                      |
+| `/tests`                                    | Test list                                                                                                       |
+| `/tests/new`                                | New test                                                                                                        |
+| `/tests/:id`                                | Test builder                                                                                                    |
+| `/tests/:testId/results/:studentTestId`     | Test results, manual grading, and class-average adjustment                                                      |
+| `/tests/:testId/monitor`                    | Live test monitor (presence, response grid, proctoring flags)                                                   |
+| `/students`                                 | Students list                                                                                                   |
+| `/students/:id`                             | Student profile                                                                                                 |
+| `/students/:id/cefr-overview`               | Per-student CEFR overview                                                                                       |
+| `/students/:id/learning-path`               | Per-student learning path — rule-based rubric recommendations and intervention flags                            |
+| `/cefr-overview`                            | Whole-class CEFR overview                                                                                       |
+| `/vocabulary`                               | Vocabulary Profile dashboard (CEFR vocabulary distribution per class/student, CSV export)                       |
+| `/portal/:studentId`                        | Student portal (public)                                                                                         |
+| `/test/:code`                               | Take a test (public, no login — answer questions, optional timer, submit)                                       |
+| `/attachments`                              | Attachment manager                                                                                              |
+| `/comments`                                 | Comment bank                                                                                                    |
+| `/statistics`                               | Statistics dashboard (by-rubric, by-student, multi-class compare with insights)                                 |
+| `/activity-dashboard`                       | Activity Dashboard — rubric/test/essay × class grid with link/assign/reorder actions, pending grading-task list |
+| `/moderation`                               | Moderation queue — disputed co-graded submissions, per-criterion delta, keep/accept resolution                  |
+| `/export`                                   | Export page                                                                                                     |
+| `/settings`                                 | Settings                                                                                                        |
+| `/admin`                                    | Admin panel (admin role only)                                                                                   |
+| `/privacy`                                  | Privacy statement                                                                                               |
 
 ---
 
 ## Key utility modules
 
-| File | Purpose |
-|---|---|
-| `src/utils/gradeCalc.ts` | Score aggregation and weighted scoring engine |
-| `src/utils/cefrStudentAggregator.ts` | CEFR level computation across assessments |
-| `src/utils/learningGoalsAggregator.ts` | Learning goal progress tracking |
-| `src/utils/docxExport.ts` | DOCX generation via `docx` library |
-| `src/utils/docxTemplateExport.ts` | Mail-merge DOCX with field substitution |
-| `src/utils/pdfExport.ts` | PDF report generation |
-| `src/utils/textExtraction.ts` | OCR (Tesseract) + DOCX parsing (Mammoth) |
-| `src/utils/essayShareCode.ts` | Shareable codes for essay access (no auth needed) |
-| `src/utils/pinHash.ts` | PIN hashing for student self-assessment locks |
-| `src/utils/clozeParse.ts` | Parses `{{...}}` cloze gap syntax and `[[...]]` hot-text fragment syntax for test questions |
-| `src/utils/learningPathAggregator.ts` | Rule-based rubric recommendations and intervention flagging |
-| `src/utils/testSummaryAggregator.ts` | Per-question/per-skill strong-weak test breakdown |
-| `src/utils/reportCardAggregator.ts` | Composes CEFR, learning-goals, and test-summary data into one report card |
-| `src/utils/coGradingModerationQueue.ts` | Flags disputed co-graded submissions (delta above threshold) for the Moderation queue |
-| `src/utils/displayOrder.ts` | Shared sort/reorder helpers for manually-orderable list views |
-| `src/services/standardsApi.ts` | Common Standards Project API (CCSS, NGSS) |
+| File                                    | Purpose                                                                                     |
+| --------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `src/utils/gradeCalc.ts`                | Score aggregation and weighted scoring engine                                               |
+| `src/utils/cefrStudentAggregator.ts`    | CEFR level computation across assessments                                                   |
+| `src/utils/learningGoalsAggregator.ts`  | Learning goal progress tracking                                                             |
+| `src/utils/docxExport.ts`               | DOCX generation via `docx` library                                                          |
+| `src/utils/docxTemplateExport.ts`       | Mail-merge DOCX with field substitution                                                     |
+| `src/utils/pdfExport.ts`                | PDF report generation                                                                       |
+| `src/utils/textExtraction.ts`           | OCR (Tesseract) + DOCX parsing (Mammoth)                                                    |
+| `src/utils/essayShareCode.ts`           | Shareable codes for essay access (no auth needed)                                           |
+| `src/utils/pinHash.ts`                  | PIN hashing for student self-assessment locks                                               |
+| `src/utils/clozeParse.ts`               | Parses `{{...}}` cloze gap syntax and `[[...]]` hot-text fragment syntax for test questions |
+| `src/utils/learningPathAggregator.ts`   | Rule-based rubric recommendations and intervention flagging                                 |
+| `src/utils/testSummaryAggregator.ts`    | Per-question/per-skill strong-weak test breakdown                                           |
+| `src/utils/reportCardAggregator.ts`     | Composes CEFR, learning-goals, and test-summary data into one report card                   |
+| `src/utils/coGradingModerationQueue.ts` | Flags disputed co-graded submissions (delta above threshold) for the Moderation queue       |
+| `src/utils/displayOrder.ts`             | Shared sort/reorder helpers for manually-orderable list views                               |
+| `src/utils/cohortAggregator.ts`         | Derives a cohort's student set from current + past class memberships by year/track          |
+| `src/services/standardsApi.ts`          | Common Standards Project API (CCSS, NGSS)                                                   |
 
 ---
 
@@ -347,6 +356,7 @@ shows and how to customize them.
 No database sync — all data stays in the browser. Works on any static host.
 
 **Build:**
+
 ```bash
 npm run build   # output in dist/
 ```

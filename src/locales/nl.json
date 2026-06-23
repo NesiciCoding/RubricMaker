@@ -768,7 +768,8 @@
         "back_to_roster": "Terug naar Leerlingenlijst",
         "action_class_menu": "Klas opties",
         "action_edit_student": "Leerling bewerken",
-        "action_delete_student": "Leerling verwijderen"
+        "action_delete_student": "Leerling verwijderen",
+        "link_rubrics": "Rubrics koppelen"
     },
     "gradeStudent": {
         "title_prefix": "Beoordeling:",

@@ -25,19 +25,35 @@ import { useConfirm } from '../hooks/useConfirm';
 import TestAssignmentModal from '../components/Tests/TestAssignmentModal';
 import TestSubmissionImportModal from '../components/Tests/TestSubmissionImportModal';
 import ClassAverageAdjuster from '../components/Tests/ClassAverageAdjuster';
-import type { Test } from '../types';
+import type { Test, CohortFilter as CohortFilterValue } from '../types';
 import { sortByDisplayOrder, reorderDisplayOrder } from '../utils/displayOrder';
+import { getCohortStudentIds, isAllCohorts, ALL_COHORTS } from '../utils/cohortAggregator';
+import CohortFilter from '../components/CohortFilter';
 
 export default function TestListPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { tests, addTest, updateTest, deleteTest, studentTests, saveStudentTest, students } = useApp();
-    const sortedTests = sortByDisplayOrder(tests);
+    const { tests, addTest, updateTest, deleteTest, studentTests, saveStudentTest, students, classes } = useApp();
+    const [cohortFilter, setCohortFilter] = useState<CohortFilterValue>(ALL_COHORTS);
+    const allCohorts = isAllCohorts(cohortFilter);
+    const cohortStudentIds = React.useMemo(
+        () => getCohortStudentIds(students, classes, cohortFilter),
+        [students, classes, cohortFilter]
+    );
+    const visibleTests = React.useMemo(() => {
+        const sorted = sortByDisplayOrder(tests);
+        if (allCohorts) return sorted;
+        const cohortTestIds = new Set(
+            studentTests.filter((st) => cohortStudentIds.has(st.studentId)).map((st) => st.testId)
+        );
+        return sorted.filter((test) => cohortTestIds.has(test.id));
+    }, [tests, studentTests, cohortStudentIds, allCohorts]);
+    const reorderable = allCohorts;
 
     function handleDragEnd(result: DropResult) {
-        if (!result.destination) return;
+        if (!result.destination || !reorderable) return;
         if (result.destination.index === result.source.index) return;
-        for (const [test, order] of reorderDisplayOrder(sortedTests, result.source.index, result.destination.index)) {
+        for (const [test, order] of reorderDisplayOrder(visibleTests, result.source.index, result.destination.index)) {
             if (test.displayOrder !== order) updateTest({ ...test, displayOrder: order });
         }
     }
@@ -121,7 +137,10 @@ export default function TestListPage() {
                 }
             />
             <div className="page-content fade-in">
-                {tests.length === 0 ? (
+                <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+                    <CohortFilter classes={classes} value={cohortFilter} onChange={setCohortFilter} />
+                </div>
+                {visibleTests.length === 0 ? (
                     <div className="empty-state">
                         <ClipboardCheck size={40} />
                         <h3>{t('tests.no_tests')}</h3>
@@ -138,15 +157,21 @@ export default function TestListPage() {
                                     ref={droppableProvided.innerRef}
                                     {...droppableProvided.droppableProps}
                                     style={{
-                                        display: 'grid',
-                                        gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                                        // ponytail: flex-wrap, not CSS grid — see RubricList for why @hello-pangea/dnd needs this
+                                        display: 'flex',
+                                        flexWrap: 'wrap',
                                         gap: 16,
                                     }}
                                 >
-                                    {sortedTests.map((test, idx) => {
+                                    {visibleTests.map((test, idx) => {
                                         const totalPoints = test.questions.reduce((sum, q) => sum + (q.points || 0), 0);
                                         return (
-                                            <Draggable key={test.id} draggableId={test.id} index={idx}>
+                                            <Draggable
+                                                key={test.id}
+                                                draggableId={test.id}
+                                                index={idx}
+                                                isDragDisabled={!reorderable}
+                                            >
                                                 {(dragProvided) => (
                                                     <div
                                                         ref={dragProvided.innerRef}
@@ -155,6 +180,8 @@ export default function TestListPage() {
                                                         style={{
                                                             cursor: 'pointer',
                                                             transition: 'border-color var(--transition)',
+                                                            flex: '1 1 320px',
+                                                            maxWidth: 480,
                                                             ...dragProvided.draggableProps.style,
                                                         }}
                                                         onMouseEnter={(e) =>
@@ -179,17 +206,19 @@ export default function TestListPage() {
                                                                     gap: 6,
                                                                 }}
                                                             >
-                                                                <span
-                                                                    {...dragProvided.dragHandleProps}
-                                                                    aria-label={t('rubricList.drag_to_reorder')}
-                                                                    style={{
-                                                                        cursor: 'grab',
-                                                                        color: 'var(--text-dim)',
-                                                                        marginTop: 3,
-                                                                    }}
-                                                                >
-                                                                    <GripVertical size={15} />
-                                                                </span>
+                                                                {reorderable && (
+                                                                    <span
+                                                                        {...dragProvided.dragHandleProps}
+                                                                        aria-label={t('rubricList.drag_to_reorder')}
+                                                                        style={{
+                                                                            cursor: 'grab',
+                                                                            color: 'var(--text-dim)',
+                                                                            marginTop: 3,
+                                                                        }}
+                                                                    >
+                                                                        <GripVertical size={15} />
+                                                                    </span>
+                                                                )}
                                                                 <div>
                                                                     <h3>{test.name}</h3>
                                                                     <div

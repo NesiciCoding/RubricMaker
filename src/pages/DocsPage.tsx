@@ -729,8 +729,19 @@ function RubricsTab() {
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
                     Drag the grip handle on a rubric card to reorder the Rubrics list. The same drag-to-reorder works on
-                    the Tests list, the Essays list, and each section of the Activity Dashboard. Order is per-teacher
-                    and persists across reloads.
+                    the Tests list, the Essays list, the class list on the Students page, and each section of the
+                    Activity Dashboard. Order is per-teacher and persists across reloads.
+                </p>
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    Cohort filtering
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    The Rubrics, Tests, and Essays lists have a year/track filter alongside search. A cohort is every
+                    student who shares that year/track now or in any past class they've moved through — so a rubric or
+                    test stays visible for a cohort even after some of its students transfer to a different class.
+                    Manual reordering is disabled while a cohort filter is active, since dragged positions can't map
+                    cleanly onto the full unfiltered order.
                 </p>
             </FeatureSection>
 

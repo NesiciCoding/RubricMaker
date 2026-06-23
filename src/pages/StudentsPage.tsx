@@ -15,9 +15,11 @@ import {
     GraduationCap,
     ClipboardCopy,
     FileText,
+    GripVertical,
 } from 'lucide-react';
 import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
+import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { getStudentsTourSteps } from '../data/TutorialSteps';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
@@ -27,6 +29,7 @@ import { useTranslation, Trans } from 'react-i18next';
 import { VO_TRACKS, VO_TRACK_LABELS, VO_TRACK_COLORS } from '../data/voTracks';
 import type { VoTrack, StudentRubric, Rubric, GradeScale } from '../types';
 import { calcGradeSummary, calcEntryPoints } from '../utils/gradeCalc';
+import { sortByDisplayOrder, reorderDisplayOrder } from '../utils/displayOrder';
 
 /** Strip HTML tags from TiptapEditor output for plain-text summary export. */
 function stripHtml(html: string): string {
@@ -120,6 +123,14 @@ export default function StudentsPage() {
     // Initialize active class from settings, falling back to the first available class
     const initialClassId = classes.find((c) => c.id === settings.activeClassId)?.id ?? classes[0]?.id ?? '';
     const [activeClass, setActiveClass] = useState(initialClassId);
+
+    const sortedClasses = sortByDisplayOrder(classes);
+    function handleClassDragEnd(result: DropResult) {
+        if (!result.destination) return;
+        for (const [c, order] of reorderDisplayOrder(sortedClasses, result.source.index, result.destination.index)) {
+            if (c.displayOrder !== order) updateClass({ ...c, displayOrder: order });
+        }
+    }
 
     // Persist active class selection so back navigation maintains context
     React.useEffect(() => {
@@ -361,134 +372,199 @@ export default function StudentsPage() {
                         <div className="card-header">
                             <h3>{t('studentsPage.classes')}</h3>
                         </div>
-                        {classes.map((c) => (
-                            <div key={c.id} style={{ position: 'relative' }}>
-                                <button
-                                    className={`nav-item ${c.id === activeClass ? 'active' : ''}`}
-                                    onClick={() => setActiveClass(c.id)}
-                                >
-                                    <UsersIcon size={15} />
-                                    <span className="truncate">{c.name}</span>
-                                    <span
-                                        style={{
-                                            marginLeft: 'auto',
-                                            fontSize: '0.75rem',
-                                            opacity: 0.7,
-                                            paddingRight: 24,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 4,
-                                        }}
-                                    >
-                                        {c.voTrack && (
-                                            <span
-                                                style={{
-                                                    fontSize: 9,
-                                                    fontWeight: 700,
-                                                    padding: '1px 5px',
-                                                    borderRadius: 3,
-                                                    background: VO_TRACK_COLORS[c.voTrack],
-                                                    color: '#fff',
-                                                    opacity: 1,
-                                                }}
-                                            >
-                                                {VO_TRACK_LABELS[c.voTrack]}
-                                            </span>
-                                        )}
-                                        {c.rubricIds && c.rubricIds.length > 0 && (
-                                            <span
-                                                title={`${c.rubricIds.length} rubric${c.rubricIds.length !== 1 ? 's' : ''} linked`}
-                                                style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}
-                                            >
-                                                <BookOpen size={11} />
-                                                {c.rubricIds.length}
-                                            </span>
-                                        )}
-                                        {students.filter((s) => s.classId === c.id).length}
-                                    </span>
-                                </button>
-
-                                <button
-                                    className="btn btn-ghost btn-icon btn-sm"
-                                    aria-label={t('studentsPage.action_class_menu')}
-                                    aria-expanded={classMenuOpen === c.id}
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setClassMenuOpen(classMenuOpen === c.id ? null : c.id);
-                                    }}
-                                    style={{
-                                        position: 'absolute',
-                                        right: 4,
-                                        top: '50%',
-                                        transform: 'translateY(-50%)',
-                                        opacity: classMenuOpen === c.id ? 1 : 0.4,
-                                    }}
-                                >
-                                    <MoreVertical size={14} />
-                                </button>
-
-                                {classMenuOpen === c.id && (
+                        <DragDropContext onDragEnd={handleClassDragEnd}>
+                            <Droppable droppableId="class-list">
+                                {(classDroppableProvided) => (
                                     <div
-                                        className="card"
-                                        style={{
-                                            position: 'absolute',
-                                            right: 0,
-                                            top: '100%',
-                                            zIndex: 10,
-                                            padding: 4,
-                                            minWidth: 160,
-                                            boxShadow: 'var(--shadow-lg)',
-                                        }}
-                                        onClick={(e) => e.stopPropagation()}
+                                        ref={classDroppableProvided.innerRef}
+                                        {...classDroppableProvided.droppableProps}
                                     >
-                                        <button
-                                            className="btn btn-ghost btn-sm"
-                                            style={{ width: '100%', justifyContent: 'flex-start' }}
-                                            onClick={() => {
-                                                setRenameClassId(c.id);
-                                                setRenameClassVal(c.name);
-                                                setRenameClassTrack(c.voTrack ?? '');
-                                                setClassMenuOpen(null);
-                                            }}
-                                        >
-                                            {t('studentsPage.action_rename')}
-                                        </button>
-                                        <button
-                                            className="btn btn-ghost btn-sm"
-                                            style={{ width: '100%', justifyContent: 'flex-start' }}
-                                            onClick={() => {
-                                                setActiveClass(c.id);
-                                                setShowLinkRubrics(true);
-                                                setClassMenuOpen(null);
-                                            }}
-                                        >
-                                            <Link size={13} style={{ marginRight: 4 }} /> Link rubrics
-                                        </button>
-                                        <button
-                                            className="btn btn-ghost btn-sm"
-                                            style={{ width: '100%', justifyContent: 'flex-start' }}
-                                            onClick={() => {
-                                                setMergeClassId(c.id);
-                                                setMergeTargetId('');
-                                                setClassMenuOpen(null);
-                                            }}
-                                        >
-                                            {t('studentsPage.action_merge')}
-                                        </button>
-                                        <button
-                                            className="btn btn-ghost btn-sm text-red"
-                                            style={{ width: '100%', justifyContent: 'flex-start' }}
-                                            onClick={() => {
-                                                setDeleteClassId(c.id);
-                                                setClassMenuOpen(null);
-                                            }}
-                                        >
-                                            {t('studentsPage.action_delete')}
-                                        </button>
+                                        {sortedClasses.map((c, classIdx) => (
+                                            <Draggable key={c.id} draggableId={c.id} index={classIdx}>
+                                                {(classDragProvided) => (
+                                                    <div
+                                                        ref={classDragProvided.innerRef}
+                                                        {...classDragProvided.draggableProps}
+                                                        style={{
+                                                            position: 'relative',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            ...classDragProvided.draggableProps.style,
+                                                        }}
+                                                    >
+                                                        <span
+                                                            {...classDragProvided.dragHandleProps}
+                                                            aria-label={t('rubricList.drag_to_reorder')}
+                                                            style={{
+                                                                cursor: 'grab',
+                                                                color: 'var(--text-dim)',
+                                                                display: 'flex',
+                                                                padding: '0 2px',
+                                                            }}
+                                                        >
+                                                            <GripVertical size={13} />
+                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            className={`nav-item ${c.id === activeClass ? 'active' : ''}`}
+                                                            onClick={() => setActiveClass(c.id)}
+                                                            style={{ flex: 1 }}
+                                                        >
+                                                            <UsersIcon size={15} />
+                                                            <span className="truncate">{c.name}</span>
+                                                            <span
+                                                                style={{
+                                                                    marginLeft: 'auto',
+                                                                    fontSize: '0.75rem',
+                                                                    opacity: 0.7,
+                                                                    paddingRight: 24,
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: 4,
+                                                                }}
+                                                            >
+                                                                {c.voTrack && (
+                                                                    <span
+                                                                        style={{
+                                                                            fontSize: 9,
+                                                                            fontWeight: 700,
+                                                                            padding: '1px 5px',
+                                                                            borderRadius: 3,
+                                                                            background: VO_TRACK_COLORS[c.voTrack],
+                                                                            color: '#fff',
+                                                                            opacity: 1,
+                                                                        }}
+                                                                    >
+                                                                        {VO_TRACK_LABELS[c.voTrack]}
+                                                                    </span>
+                                                                )}
+                                                                {c.rubricIds && c.rubricIds.length > 0 && (
+                                                                    <span
+                                                                        title={`${c.rubricIds.length} ${
+                                                                            c.rubricIds.length !== 1
+                                                                                ? t('studentsPage.rubric_plural')
+                                                                                : t('studentsPage.rubric_single')
+                                                                        }`}
+                                                                        style={{
+                                                                            display: 'inline-flex',
+                                                                            alignItems: 'center',
+                                                                            gap: 2,
+                                                                        }}
+                                                                    >
+                                                                        <BookOpen size={11} />
+                                                                        {c.rubricIds.length}
+                                                                    </span>
+                                                                )}
+                                                                {students.filter((s) => s.classId === c.id).length}
+                                                            </span>
+                                                        </button>
+
+                                                        <button
+                                                            type="button"
+                                                            className="btn btn-ghost btn-icon btn-sm"
+                                                            aria-label={t('studentsPage.action_class_menu')}
+                                                            aria-expanded={classMenuOpen === c.id}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setClassMenuOpen(classMenuOpen === c.id ? null : c.id);
+                                                            }}
+                                                            style={{
+                                                                position: 'absolute',
+                                                                right: 4,
+                                                                top: '50%',
+                                                                transform: 'translateY(-50%)',
+                                                                opacity: classMenuOpen === c.id ? 1 : 0.4,
+                                                            }}
+                                                        >
+                                                            <MoreVertical size={14} />
+                                                        </button>
+
+                                                        {classMenuOpen === c.id && (
+                                                            <div
+                                                                className="card"
+                                                                style={{
+                                                                    position: 'absolute',
+                                                                    right: 0,
+                                                                    top: '100%',
+                                                                    zIndex: 10,
+                                                                    padding: 4,
+                                                                    minWidth: 160,
+                                                                    boxShadow: 'var(--shadow-lg)',
+                                                                }}
+                                                                onClick={(e) => e.stopPropagation()}
+                                                            >
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-ghost btn-sm"
+                                                                    style={{
+                                                                        width: '100%',
+                                                                        justifyContent: 'flex-start',
+                                                                    }}
+                                                                    onClick={() => {
+                                                                        setRenameClassId(c.id);
+                                                                        setRenameClassVal(c.name);
+                                                                        setRenameClassTrack(c.voTrack ?? '');
+                                                                        setClassMenuOpen(null);
+                                                                    }}
+                                                                >
+                                                                    {t('studentsPage.action_rename')}
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-ghost btn-sm"
+                                                                    style={{
+                                                                        width: '100%',
+                                                                        justifyContent: 'flex-start',
+                                                                    }}
+                                                                    onClick={() => {
+                                                                        setActiveClass(c.id);
+                                                                        setShowLinkRubrics(true);
+                                                                        setClassMenuOpen(null);
+                                                                    }}
+                                                                >
+                                                                    <Link size={13} style={{ marginRight: 4 }} />{' '}
+                                                                    {t('studentsPage.link_rubrics')}
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-ghost btn-sm"
+                                                                    style={{
+                                                                        width: '100%',
+                                                                        justifyContent: 'flex-start',
+                                                                    }}
+                                                                    onClick={() => {
+                                                                        setMergeClassId(c.id);
+                                                                        setMergeTargetId('');
+                                                                        setClassMenuOpen(null);
+                                                                    }}
+                                                                >
+                                                                    {t('studentsPage.action_merge')}
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-ghost btn-sm text-red"
+                                                                    style={{
+                                                                        width: '100%',
+                                                                        justifyContent: 'flex-start',
+                                                                    }}
+                                                                    onClick={() => {
+                                                                        setDeleteClassId(c.id);
+                                                                        setClassMenuOpen(null);
+                                                                    }}
+                                                                >
+                                                                    {t('studentsPage.action_delete')}
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </Draggable>
+                                        ))}
+                                        {classDroppableProvided.placeholder}
                                     </div>
                                 )}
-                            </div>
-                        ))}
+                            </Droppable>
+                        </DragDropContext>
                         <div style={{ marginTop: 12, display: 'flex', gap: 6 }}>
                             <input
                                 type="text"

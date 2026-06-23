@@ -768,7 +768,8 @@
         "back_to_roster": "Volver al listado",
         "action_class_menu": "Opciones de clase",
         "action_edit_student": "Editar estudiante",
-        "action_delete_student": "Eliminar estudiante"
+        "action_delete_student": "Eliminar estudiante",
+        "link_rubrics": "Vincular rúbricas"
     },
     "gradeStudent": {
         "title_prefix": "Calificando:",
