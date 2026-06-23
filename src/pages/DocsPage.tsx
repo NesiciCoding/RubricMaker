@@ -624,8 +624,8 @@ function RubricsTab() {
                 <InfoBox>
                     {t('docs.rb_builder_views_prefix')} <strong>{t('docs.rb_builder_views_form')}</strong>{' '}
                     {t('docs.rb_builder_views_form_desc')} {t('docs.rb_builder_views_and')}{' '}
-                    <strong>{t('docs.rb_builder_views_designer')}</strong>{' '}
-                    {t('docs.rb_builder_views_designer_desc')} {t('docs.rb_builder_views_suffix')}
+                    <strong>{t('docs.rb_builder_views_designer')}</strong> {t('docs.rb_builder_views_designer_desc')}{' '}
+                    {t('docs.rb_builder_views_suffix')}
                 </InfoBox>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
@@ -666,8 +666,9 @@ function RubricsTab() {
                     {t('docs.rb_version_history_title')}
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
-                    {t('docs.rb_version_history_body_prefix')} <strong>{t('docs.rb_version_history_body_button')}</strong>{' '}
-                    {t('docs.rb_version_history_body_mid')} <strong>{t('docs.rb_version_history_body_compare')}</strong>{' '}
+                    {t('docs.rb_version_history_body_prefix')}{' '}
+                    <strong>{t('docs.rb_version_history_body_button')}</strong> {t('docs.rb_version_history_body_mid')}{' '}
+                    <strong>{t('docs.rb_version_history_body_compare')}</strong>{' '}
                     {t('docs.rb_version_history_body_suffix')}
                 </p>
 
@@ -734,8 +735,9 @@ function RubricsTab() {
                     <code>{'{{...}}'}</code> {t('docs.rb_tests_fillgap_markers')} <code>{'{{Paris}}'}</code>{' '}
                     {t('docs.rb_tests_fillgap_blank')} <code>{'{{Paris|City of Paris}}'}</code>.{' '}
                     {t('docs.rb_tests_fillgap_dropdown_intro')}{' '}
-                    <strong>{t('docs.rb_tests_fillgap_dropdown_type')}</strong> {t('docs.rb_tests_fillgap_dropdown_list')}{' '}
-                    <code>{'{{Paris|London|Berlin}}'}</code> {t('docs.rb_tests_fillgap_body_suffix')}
+                    <strong>{t('docs.rb_tests_fillgap_dropdown_type')}</strong>{' '}
+                    {t('docs.rb_tests_fillgap_dropdown_list')} <code>{'{{Paris|London|Berlin}}'}</code>{' '}
+                    {t('docs.rb_tests_fillgap_body_suffix')}
                 </p>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     <strong>{t('docs.rb_tests_matching_label')}</strong> {t('docs.rb_tests_matching_body')}{' '}
@@ -863,8 +865,7 @@ function GradingTab() {
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     {t('docs.gr_test_results_intro_prefix')} <strong>{t('docs.gr_test_results_intro_tests')}</strong>{' '}
                     {t('docs.gr_test_results_intro_mid')} <strong>{t('docs.gr_test_results_intro_button')}</strong>{' '}
-                    {t('docs.gr_test_results_intro_suffix')}{' '}
-                    <code>/tests/:testId/results/:studentTestId</code>.
+                    {t('docs.gr_test_results_intro_suffix')} <code>/tests/:testId/results/:studentTestId</code>.
                 </p>
                 <FeatureList
                     items={[
@@ -1117,7 +1118,8 @@ function AnalyticsTab() {
 
             <FeatureSection icon={Languages} title={t('docs.an_vocab_title')} color="#f59e0b">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
-                    {t('docs.an_vocab_intro_prefix')}<code>/vocabulary</code>
+                    {t('docs.an_vocab_intro_prefix')}
+                    <code>/vocabulary</code>
                     {t('docs.an_vocab_intro_suffix')}
                 </p>
                 <FeatureList
