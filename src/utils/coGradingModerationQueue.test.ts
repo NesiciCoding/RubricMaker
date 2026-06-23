@@ -63,6 +63,40 @@ describe('isSecondMarkerEntry', () => {
         const studentPeerReview: StudentRubric = { ...secondMarker('l1'), gradedBy: 'stu1' };
         expect(isSecondMarkerEntry(studentPeerReview, students)).toBe(false);
     });
+
+    it('returns false when gradedBy is missing', () => {
+        const entry: StudentRubric = { ...secondMarker('l1'), gradedBy: undefined };
+        expect(isSecondMarkerEntry(entry, students)).toBe(false);
+    });
+
+    it('returns false for entries that are not peer reviews', () => {
+        const entry: StudentRubric = { ...secondMarker('l1'), isPeerReview: false };
+        expect(isSecondMarkerEntry(entry, students)).toBe(false);
+    });
+
+    describe('with a known colleague directory (exact id matching)', () => {
+        const colleagueIds = ['colleague-uuid-1', 'colleague-uuid-2'];
+
+        it('treats a peer review as a co-grade when gradedBy exactly matches a colleague id', () => {
+            const entry: StudentRubric = { ...secondMarker('l1'), gradedBy: 'colleague-uuid-1' };
+            expect(isSecondMarkerEntry(entry, students, colleagueIds)).toBe(true);
+        });
+
+        it('rejects a near-miss id that does not exactly match a colleague id', () => {
+            const entry: StudentRubric = { ...secondMarker('l1'), gradedBy: 'colleague-uuid-1 ' };
+            expect(isSecondMarkerEntry(entry, students, colleagueIds)).toBe(false);
+        });
+
+        it('does not misclassify a student peer review even if a colleague directory is provided', () => {
+            const entry: StudentRubric = { ...secondMarker('l1'), gradedBy: 'stu1' };
+            expect(isSecondMarkerEntry(entry, students, colleagueIds)).toBe(false);
+        });
+
+        it('rejects gradedBy values absent from the colleague directory, regardless of student list', () => {
+            const entry: StudentRubric = { ...secondMarker('l1'), gradedBy: 'unknown-legacy-free-text' };
+            expect(isSecondMarkerEntry(entry, students, colleagueIds)).toBe(false);
+        });
+    });
 });
 
 describe('getModerationQueue', () => {
@@ -82,6 +116,19 @@ describe('getModerationQueue', () => {
     it('ignores real student peer reviews', () => {
         const studentPeerReview = { ...secondMarker('l2'), gradedBy: 'stu1' };
         const queue = getModerationQueue([rubric], [baseline()], [studentPeerReview], students, 1);
+        expect(queue).toHaveLength(0);
+    });
+
+    it('uses exact colleague-id matching when a colleague directory is supplied', () => {
+        const entry = { ...secondMarker('l2'), gradedBy: 'colleague-uuid-1' };
+        const queue = getModerationQueue([rubric], [baseline()], [entry], students, 1, ['colleague-uuid-1']);
+        expect(queue).toHaveLength(1);
+        expect(queue[0].secondMarkerId).toBe('colleague-uuid-1');
+    });
+
+    it('ignores entries whose gradedBy is absent from a supplied colleague directory', () => {
+        const entry = { ...secondMarker('l2'), gradedBy: 'colleague-uuid-1 typo' };
+        const queue = getModerationQueue([rubric], [baseline()], [entry], students, 1, ['colleague-uuid-1']);
         expect(queue).toHaveLength(0);
     });
 });
