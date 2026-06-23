@@ -38,7 +38,7 @@ interface RouteNode {
     description: string;
     color: string;
     children?: RouteNode[];
-    badge?: string;
+    badge?: 'public' | 'student' | 'admin';
 }
 
 // ── Route tree ─────────────────────────────────────────────────────────────────
@@ -80,7 +80,7 @@ function getRouteTree(t: TFunction): RouteNode[] {
                             label: 'Peer Review',
                             description: t('docs.route_peer_review_desc'),
                             color: '#8b5cf6',
-                            badge: 'Student',
+                            badge: 'student',
                         },
                         {
                             path: '/peer-analytics/:rubricId',
@@ -93,7 +93,7 @@ function getRouteTree(t: TFunction): RouteNode[] {
                             label: 'Self-Assessment',
                             description: t('docs.route_self_assess_desc'),
                             color: '#8b5cf6',
-                            badge: 'Student',
+                            badge: 'student',
                         },
                     ],
                 },
@@ -222,14 +222,14 @@ function getRouteTree(t: TFunction): RouteNode[] {
             label: 'Student Portal',
             description: t('docs.route_student_portal_desc'),
             color: '#06b6d4',
-            badge: 'Public',
+            badge: 'public',
         },
         {
             path: '/test/:code',
             label: 'Take a Test',
             description: t('docs.route_take_test_desc'),
             color: '#06b6d4',
-            badge: 'Student',
+            badge: 'student',
         },
         {
             path: '/attachments',
@@ -278,14 +278,14 @@ function getRouteTree(t: TFunction): RouteNode[] {
             label: 'Admin Panel',
             description: t('docs.route_admin_desc'),
             color: '#ef4444',
-            badge: 'Admin only',
+            badge: 'admin',
         },
         {
             path: '/privacy',
             label: 'Privacy Statement',
             description: t('docs.route_privacy_desc'),
             color: '#94a3b8',
-            badge: 'Public',
+            badge: 'public',
         },
     ];
 }
@@ -307,7 +307,14 @@ function getTabs(t: TFunction): { id: TabId; label: string; icon: React.ElementT
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
+const BADGE_LABEL_KEYS: Record<NonNullable<RouteNode['badge']>, string> = {
+    public: 'docs.badge_public',
+    student: 'docs.badge_student',
+    admin: 'docs.badge_admin',
+};
+
 function RouteCard({ node, depth = 0 }: { node: RouteNode; depth?: number }) {
+    const { t } = useTranslation();
     return (
         <div style={{ marginLeft: depth * 24 }}>
             <div
@@ -347,21 +354,21 @@ function RouteCard({ node, depth = 0 }: { node: RouteNode; depth?: number }) {
                                     padding: '1px 7px',
                                     borderRadius: 20,
                                     background:
-                                        node.badge === 'Admin only'
+                                        node.badge === 'admin'
                                             ? '#fee2e2'
-                                            : node.badge === 'Student'
+                                            : node.badge === 'student'
                                               ? '#d1fae5'
                                               : '#dbeafe',
                                     color:
-                                        node.badge === 'Admin only'
+                                        node.badge === 'admin'
                                             ? '#dc2626'
-                                            : node.badge === 'Student'
+                                            : node.badge === 'student'
                                               ? '#065f46'
                                               : '#1d4ed8',
                                     fontWeight: 600,
                                 }}
                             >
-                                {node.badge}
+                                {t(BADGE_LABEL_KEYS[node.badge])}
                             </span>
                         )}
                     </div>
@@ -551,7 +558,8 @@ function GettingStartedTab() {
                     <strong>{t('docs.gs_guided_tour_label')}</strong> {t('docs.gs_guided_tour_body')}{' '}
                     <strong>{t('docs.gs_guided_tour_settings_path')}</strong>
                     {t('docs.gs_guided_tour_end')} {t('docs.guided_tour_page_tours_prefix')}{' '}
-                    <strong>"{t('tutorial.rb_tour_button')}"</strong> {t('docs.guided_tour_page_tours_suffix')}
+                    <strong>&ldquo;{t('tutorial.rb_tour_button')}&rdquo;</strong>{' '}
+                    {t('docs.guided_tour_page_tours_suffix')}
                 </InfoBox>
             </FeatureSection>
 
