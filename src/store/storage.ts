@@ -240,11 +240,26 @@ function load<T>(key: string, fallback: T): T {
     }
 }
 
+function isQuotaExceededError(e: unknown): boolean {
+    return e instanceof DOMException && e.name === 'QuotaExceededError';
+}
+
+let quotaExceededHandler: (() => void) | null = null;
+
+/** Registers a callback fired whenever a write is dropped due to a full localStorage quota. */
+export function onStorageQuotaExceeded(handler: () => void): void {
+    quotaExceededHandler = handler;
+}
+
 function save<T>(key: string, value: T): void {
     try {
         localStorage.setItem(key, JSON.stringify(value));
     } catch (e) {
         console.error('[storage] write failed (quota exceeded?):', key, e);
+        if (isQuotaExceededError(e)) {
+            quotaExceededHandler?.();
+            return;
+        }
         throw e;
     }
 }
