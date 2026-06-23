@@ -140,13 +140,20 @@ type Action =
     | { type: 'ADD_GRADING_TASKS'; payload: GradingTask[] }
     | { type: 'DELETE_GRADING_TASK'; id: string };
 
+// When a Supabase connection is live, the Supabase push is the durable write and the
+// local copy is redundant; only fall back to localStorage while genuinely offline. A
+// failed push still lands in the pending-sync queue (storage.ts) as a per-record buffer.
+function isOffline(): boolean {
+    return !navigator.onLine || !storageSync.isConnected();
+}
+
 function reducer(state: StoreData, action: Action): StoreData {
     switch (action.type) {
         case 'SET_ALL':
             return action.payload;
         case 'ADD_RUBRIC': {
             const next = [...state.rubrics, action.payload];
-            saveRubrics(next);
+            if (isOffline()) saveRubrics(next);
             return { ...state, rubrics: next };
         }
         case 'UPDATE_RUBRIC': {
@@ -165,23 +172,23 @@ function reducer(state: StoreData, action: Action): StoreData {
                 incoming = { ...incoming, versions: [...manuals, ...autos, autoVersion] };
             }
             const next = state.rubrics.map((r) => (r.id === action.payload.id ? incoming : r));
-            saveRubrics(next);
+            if (isOffline()) saveRubrics(next);
             return { ...state, rubrics: next };
         }
         case 'DELETE_RUBRIC': {
             const next = state.rubrics.filter((r) => r.id !== action.id);
-            saveRubrics(next);
+            if (isOffline()) saveRubrics(next);
             return { ...state, rubrics: next };
         }
         case 'ADD_STUDENT': {
             const next = [...state.students, { ...action.payload, updatedAt: new Date().toISOString() }];
-            saveStudents(next);
+            if (isOffline()) saveStudents(next);
             return { ...state, students: next };
         }
         case 'UPDATE_STUDENT': {
             const payload = { ...action.payload, updatedAt: new Date().toISOString() };
             const next = state.students.map((s) => (s.id === payload.id ? payload : s));
-            saveStudents(next);
+            if (isOffline()) saveStudents(next);
             return { ...state, students: next };
         }
         case 'DELETE_STUDENT': {
@@ -190,14 +197,14 @@ function reducer(state: StoreData, action: Action): StoreData {
                     ? { ...s, archivedAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
                     : s
             );
-            saveStudents(next);
+            if (isOffline()) saveStudents(next);
             return { ...state, students: next };
         }
         case 'RESTORE_STUDENT': {
             const next = state.students.map((s) =>
                 s.id === action.id ? { ...s, archivedAt: undefined, updatedAt: new Date().toISOString() } : s
             );
-            saveStudents(next);
+            if (isOffline()) saveStudents(next);
             return { ...state, students: next };
         }
         case 'ANONYMIZE_STUDENT': {
@@ -212,23 +219,23 @@ function reducer(state: StoreData, action: Action): StoreData {
                     updatedAt: new Date().toISOString(),
                 };
             });
-            saveStudents(next);
+            if (isOffline()) saveStudents(next);
             return { ...state, students: next };
         }
         case 'ADD_CLASS': {
             const next = [...state.classes, { ...action.payload, updatedAt: new Date().toISOString() }];
-            saveClasses(next);
+            if (isOffline()) saveClasses(next);
             return { ...state, classes: next };
         }
         case 'UPDATE_CLASS': {
             const payload = { ...action.payload, updatedAt: new Date().toISOString() };
             const next = state.classes.map((c) => (c.id === payload.id ? payload : c));
-            saveClasses(next);
+            if (isOffline()) saveClasses(next);
             return { ...state, classes: next };
         }
         case 'DELETE_CLASS': {
             const next = state.classes.filter((c) => c.id !== action.id);
-            saveClasses(next);
+            if (isOffline()) saveClasses(next);
             return { ...state, classes: next };
         }
         case 'SAVE_STUDENT_RUBRIC': {
@@ -238,12 +245,12 @@ function reducer(state: StoreData, action: Action): StoreData {
                 exists >= 0
                     ? state.studentRubrics.map((sr) => (sr.id === payload.id ? payload : sr))
                     : [...state.studentRubrics, payload];
-            saveStudentRubrics(next);
+            if (isOffline()) saveStudentRubrics(next);
             return { ...state, studentRubrics: next };
         }
         case 'DELETE_STUDENT_RUBRIC': {
             const next = state.studentRubrics.filter((sr) => sr.id !== action.id);
-            saveStudentRubrics(next);
+            if (isOffline()) saveStudentRubrics(next);
             return { ...state, studentRubrics: next };
         }
         case 'SAVE_RUBRIC_SELF_ASSESSMENT': {
@@ -257,91 +264,91 @@ function reducer(state: StoreData, action: Action): StoreData {
                 updatedAt: new Date().toISOString(),
             };
             const next = state.studentRubrics.map((sr) => (sr.id === action.id ? updated : sr));
-            saveStudentRubrics(next);
+            if (isOffline()) saveStudentRubrics(next);
             return { ...state, studentRubrics: next };
         }
         case 'ADD_ATTACHMENT': {
             const next = [...state.attachments, action.payload];
-            saveAttachments(next);
+            if (isOffline()) saveAttachments(next);
             return { ...state, attachments: next };
         }
         case 'DELETE_ATTACHMENT': {
             const next = state.attachments.filter((a) => a.id !== action.id);
-            saveAttachments(next);
+            if (isOffline()) saveAttachments(next);
             return { ...state, attachments: next };
         }
         case 'ADD_GRADE_SCALE': {
             const next = [...state.gradeScales, { ...action.payload, updatedAt: new Date().toISOString() }];
-            saveGradeScales(next);
+            if (isOffline()) saveGradeScales(next);
             return { ...state, gradeScales: next };
         }
         case 'UPDATE_GRADE_SCALE': {
             const payload = { ...action.payload, updatedAt: new Date().toISOString() };
             const next = state.gradeScales.map((gs) => (gs.id === payload.id ? payload : gs));
-            saveGradeScales(next);
+            if (isOffline()) saveGradeScales(next);
             return { ...state, gradeScales: next };
         }
         case 'DELETE_GRADE_SCALE': {
             const next = state.gradeScales.filter((gs) => gs.id !== action.id);
-            saveGradeScales(next);
+            if (isOffline()) saveGradeScales(next);
             return { ...state, gradeScales: next };
         }
         case 'ADD_COMMENT_SNIPPET': {
             const next = [...state.commentSnippets, { ...action.payload, updatedAt: new Date().toISOString() }];
-            saveCommentSnippets(next);
+            if (isOffline()) saveCommentSnippets(next);
             return { ...state, commentSnippets: next };
         }
         case 'UPDATE_COMMENT_SNIPPET': {
             const payload = { ...action.payload, updatedAt: new Date().toISOString() };
             const next = state.commentSnippets.map((cs) => (cs.id === payload.id ? payload : cs));
-            saveCommentSnippets(next);
+            if (isOffline()) saveCommentSnippets(next);
             return { ...state, commentSnippets: next };
         }
         case 'DELETE_COMMENT_SNIPPET': {
             const next = state.commentSnippets.filter((cs) => cs.id !== action.id);
-            saveCommentSnippets(next);
+            if (isOffline()) saveCommentSnippets(next);
             return { ...state, commentSnippets: next };
         }
         case 'UPDATE_SETTINGS': {
             const next = { ...state.settings, ...action.payload };
-            saveSettings(next);
+            if (isOffline()) saveSettings(next);
             return { ...state, settings: next };
         }
         case 'ADD_FAVORITE_STANDARD': {
             if (state.favoriteStandards.some((s) => s.guid === action.payload.guid)) return state;
             const next = [...state.favoriteStandards, action.payload];
-            saveFavoriteStandards(next);
+            if (isOffline()) saveFavoriteStandards(next);
             return { ...state, favoriteStandards: next };
         }
         case 'REMOVE_FAVORITE_STANDARD': {
             const next = state.favoriteStandards.filter((s) => s.guid !== action.guid);
-            saveFavoriteStandards(next);
+            if (isOffline()) saveFavoriteStandards(next);
             return { ...state, favoriteStandards: next };
         }
         case 'ADD_COMMENT_BANK_ITEM': {
             const next = [...state.commentBank, { ...action.payload, updatedAt: new Date().toISOString() }];
-            saveCommentBank(next);
+            if (isOffline()) saveCommentBank(next);
             return { ...state, commentBank: next };
         }
         case 'UPDATE_COMMENT_BANK_ITEM': {
             const payload = { ...action.payload, updatedAt: new Date().toISOString() };
             const next = state.commentBank.map((i) => (i.id === payload.id ? payload : i));
-            saveCommentBank(next);
+            if (isOffline()) saveCommentBank(next);
             return { ...state, commentBank: next };
         }
         case 'DELETE_COMMENT_BANK_ITEM': {
             const next = state.commentBank.filter((i) => i.id !== action.id);
-            saveCommentBank(next);
+            if (isOffline()) saveCommentBank(next);
             return { ...state, commentBank: next };
         }
         case 'ADD_EXPORT_TEMPLATE': {
             const next = [...state.exportTemplates, action.payload];
-            saveExportTemplates(next);
+            if (isOffline()) saveExportTemplates(next);
             return { ...state, exportTemplates: next };
         }
         case 'DELETE_EXPORT_TEMPLATE': {
             const next = state.exportTemplates.filter((t) => t.id !== action.id);
-            saveExportTemplates(next);
+            if (isOffline()) saveExportTemplates(next);
             return { ...state, exportTemplates: next };
         }
         case 'SAVE_PEER_REVIEW': {
@@ -351,12 +358,12 @@ function reducer(state: StoreData, action: Action): StoreData {
                 exists >= 0
                     ? state.peerReviews.map((sr) => (sr.id === payload.id ? payload : sr))
                     : [...state.peerReviews, payload];
-            savePeerReviews(next);
+            if (isOffline()) savePeerReviews(next);
             return { ...state, peerReviews: next };
         }
         case 'DELETE_PEER_REVIEW': {
             const next = state.peerReviews.filter((sr) => sr.id !== action.id);
-            savePeerReviews(next);
+            if (isOffline()) savePeerReviews(next);
             return { ...state, peerReviews: next };
         }
         case 'SAVE_SELF_ASSESSMENT': {
@@ -366,12 +373,12 @@ function reducer(state: StoreData, action: Action): StoreData {
                 exists >= 0
                     ? state.selfAssessments.map((sa) => (sa.id === payload.id ? payload : sa))
                     : [...state.selfAssessments, payload];
-            saveSelfAssessments(next);
+            if (isOffline()) saveSelfAssessments(next);
             return { ...state, selfAssessments: next };
         }
         case 'DELETE_SELF_ASSESSMENT': {
             const next = state.selfAssessments.filter((sa) => sa.id !== action.id);
-            saveSelfAssessments(next);
+            if (isOffline()) saveSelfAssessments(next);
             return { ...state, selfAssessments: next };
         }
         case 'SAVE_SPEAKING_SESSION': {
@@ -380,12 +387,12 @@ function reducer(state: StoreData, action: Action): StoreData {
             const next = existing
                 ? state.speakingSessions.map((s) => (s.id === payload.id ? payload : s))
                 : [...state.speakingSessions, payload];
-            saveSpeakingSessions(next);
+            if (isOffline()) saveSpeakingSessions(next);
             return { ...state, speakingSessions: next };
         }
         case 'DELETE_SPEAKING_SESSION': {
             const next = state.speakingSessions.filter((s) => s.id !== action.id);
-            saveSpeakingSessions(next);
+            if (isOffline()) saveSpeakingSessions(next);
             return { ...state, speakingSessions: next };
         }
         case 'SYNC_RUBRIC_SNAPSHOT': {
@@ -404,9 +411,9 @@ function reducer(state: StoreData, action: Action): StoreData {
                 return { ...sr, rubricSnapshot: updatedRubric, entries: [...sr.entries, ...newEntries] };
             };
             const nextSRs = state.studentRubrics.map(syncSr);
-            saveStudentRubrics(nextSRs);
+            if (isOffline()) saveStudentRubrics(nextSRs);
             const nextPRs = state.peerReviews.map(syncSr);
-            savePeerReviews(nextPRs);
+            if (isOffline()) savePeerReviews(nextPRs);
             return { ...state, studentRubrics: nextSRs, peerReviews: nextPRs };
         }
         case 'SAVE_RUBRIC_VERSION': {
@@ -420,7 +427,7 @@ function reducer(state: StoreData, action: Action): StoreData {
             };
             const updated = { ...rubric, versions: [...(rubric.versions ?? []), version] };
             const next = state.rubrics.map((r) => (r.id === action.rubricId ? updated : r));
-            saveRubrics(next);
+            if (isOffline()) saveRubrics(next);
             return { ...state, rubrics: next };
         }
         case 'RESTORE_RUBRIC_VERSION': {
@@ -434,7 +441,7 @@ function reducer(state: StoreData, action: Action): StoreData {
                 updatedAt: new Date().toISOString(),
             };
             const next = state.rubrics.map((r) => (r.id === action.rubricId ? restored : r));
-            saveRubrics(next);
+            if (isOffline()) saveRubrics(next);
             return { ...state, rubrics: next };
         }
         case 'ADD_VOCABULARY_ITEM': {
@@ -442,7 +449,7 @@ function reducer(state: StoreData, action: Action): StoreData {
                 if (r.id !== action.rubricId) return r;
                 return { ...r, vocabularyItems: [...(r.vocabularyItems ?? []), action.payload] };
             });
-            saveRubrics(next);
+            if (isOffline()) saveRubrics(next);
             return { ...state, rubrics: next };
         }
         case 'UPDATE_VOCABULARY_ITEM': {
@@ -455,7 +462,7 @@ function reducer(state: StoreData, action: Action): StoreData {
                     ),
                 };
             });
-            saveRubrics(next);
+            if (isOffline()) saveRubrics(next);
             return { ...state, rubrics: next };
         }
         case 'DELETE_VOCABULARY_ITEM': {
@@ -463,7 +470,7 @@ function reducer(state: StoreData, action: Action): StoreData {
                 if (r.id !== action.rubricId) return r;
                 return { ...r, vocabularyItems: (r.vocabularyItems ?? []).filter((v) => v.id !== action.itemId) };
             });
-            saveRubrics(next);
+            if (isOffline()) saveRubrics(next);
             return { ...state, rubrics: next };
         }
         case 'DELETE_VOCABULARY_ITEMS_BATCH': {
@@ -472,7 +479,7 @@ function reducer(state: StoreData, action: Action): StoreData {
                 if (r.id !== action.rubricId) return r;
                 return { ...r, vocabularyItems: (r.vocabularyItems ?? []).filter((v) => !idSet.has(v.id)) };
             });
-            saveRubrics(next);
+            if (isOffline()) saveRubrics(next);
             return { ...state, rubrics: next };
         }
         case 'SAVE_ANALYSIS_RESULT': {
@@ -482,30 +489,30 @@ function reducer(state: StoreData, action: Action): StoreData {
                 exists >= 0
                     ? state.analysisResults.map((r) => (r.id === payload.id ? payload : r))
                     : [...state.analysisResults, payload];
-            saveAnalysisResults(next);
+            if (isOffline()) saveAnalysisResults(next);
             return { ...state, analysisResults: next };
         }
         case 'DELETE_ANALYSIS_RESULT': {
             const next = state.analysisResults.filter((r) => r.id !== action.id);
-            saveAnalysisResults(next);
+            if (isOffline()) saveAnalysisResults(next);
             return { ...state, analysisResults: next };
         }
         case 'ADD_TEST': {
             const next = [...state.tests, action.payload];
-            saveTests(next);
+            if (isOffline()) saveTests(next);
             return { ...state, tests: next };
         }
         case 'UPDATE_TEST': {
             const payload = { ...action.payload, updatedAt: new Date().toISOString() };
             const next = state.tests.map((t) => (t.id === payload.id ? payload : t));
-            saveTests(next);
+            if (isOffline()) saveTests(next);
             return { ...state, tests: next };
         }
         case 'DELETE_TEST': {
             const next = state.tests.filter((t) => t.id !== action.id);
-            saveTests(next);
+            if (isOffline()) saveTests(next);
             const nextStudentTests = state.studentTests.filter((st) => st.testId !== action.id);
-            saveStudentTests(nextStudentTests);
+            if (isOffline()) saveStudentTests(nextStudentTests);
             return { ...state, tests: next, studentTests: nextStudentTests };
         }
         case 'SAVE_STUDENT_TEST': {
@@ -515,12 +522,12 @@ function reducer(state: StoreData, action: Action): StoreData {
                 exists >= 0
                     ? state.studentTests.map((st) => (st.id === payload.id ? payload : st))
                     : [...state.studentTests, payload];
-            saveStudentTests(next);
+            if (isOffline()) saveStudentTests(next);
             return { ...state, studentTests: next };
         }
         case 'DELETE_STUDENT_TEST': {
             const next = state.studentTests.filter((st) => st.id !== action.id);
-            saveStudentTests(next);
+            if (isOffline()) saveStudentTests(next);
             return { ...state, studentTests: next };
         }
         case 'ADD_ESSAY_ASSIGNMENTS': {
@@ -561,24 +568,24 @@ function reducer(state: StoreData, action: Action): StoreData {
                 exists >= 0
                     ? state.essayTemplates.map((t) => (t.id === action.payload.id ? action.payload : t))
                     : [...state.essayTemplates, action.payload];
-            saveEssayTemplates(next);
+            if (isOffline()) saveEssayTemplates(next);
             return { ...state, essayTemplates: next };
         }
         case 'DELETE_ESSAY_TEMPLATE': {
             const next = state.essayTemplates.filter((t) => t.id !== action.id);
-            saveEssayTemplates(next);
+            if (isOffline()) saveEssayTemplates(next);
             return { ...state, essayTemplates: next };
         }
         case 'ADD_GRADING_TASKS': {
             const byId = new Map(state.gradingTasks.map((task) => [task.id, task]));
             for (const task of action.payload) byId.set(task.id, task);
             const next = Array.from(byId.values());
-            saveGradingTasks(next);
+            if (isOffline()) saveGradingTasks(next);
             return { ...state, gradingTasks: next };
         }
         case 'DELETE_GRADING_TASK': {
             const next = state.gradingTasks.filter((task) => task.id !== action.id);
-            saveGradingTasks(next);
+            if (isOffline()) saveGradingTasks(next);
             return { ...state, gradingTasks: next };
         }
         default:

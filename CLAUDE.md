@@ -52,16 +52,24 @@ npm run db:reset     # Reset and re-apply all migrations
 ### Data flow
 
 ```
-User action → AppContext dispatch → useReducer → new state
-                                               → storage.ts (localStorage write)
-                                               → StorageSync (optional Supabase write)
+User action → AppContext dispatch → useReducer → new state (always)
+                                               → storage.ts (localStorage write — only while offline/disconnected)
+                                               → StorageSync (Supabase write — only while connected)
 ```
 
 `src/store/storage.ts` is the single write point for persistence. Never write to `localStorage` directly from components or hooks.
 
 ### Offline-first rule
 
-LocalStorage is always the source of truth. Supabase is an **optional sync layer** — the app must work completely without it. The `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` env vars are optional; if absent, all database sync is silently skipped.
+The app must work completely without Supabase: the `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` env vars are optional, and if absent, all database sync is silently skipped and `localStorage` is the sole, permanent store (unchanged legacy behavior).
+
+When a Supabase connection is live, `localStorage` is no longer a permanent duplicate copy — it's only a temporary buffer:
+
+- The reducer (`src/context/AppContext.tsx`, `isOffline()`) only writes an entity to `localStorage` when `!navigator.onLine || !storageSync.isConnected()`. While connected, persistence is the Supabase push (`StorageSync.pushOne`, fired from the delta-sync effect after each dispatch).
+- If a push fails while otherwise "connected" (RLS error, transient failure), it falls back to the pending-sync queue (`rm_pending_sync` in `storage.ts`) as a per-record retry buffer — this is the only copy of that edit in `localStorage` until the retry succeeds, at which point it's cleared.
+- On reconnect, `StorageSync.flushPendingQueue()` retries the queue; on initial connect/login, `hydrate()` pulls from Supabase and writes a merged snapshot back to `localStorage` purely as an offline-readiness cache for the next boot — not as a live mirror of every edit.
+
+Do not reintroduce code that writes a full entity array to `localStorage` unconditionally — gate it through `isOffline()` (or the existing pending-queue mechanism) so a connected session doesn't keep a redundant local copy.
 
 ### State management
 
