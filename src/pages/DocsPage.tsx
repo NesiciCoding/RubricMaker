@@ -1301,7 +1301,9 @@ export default function DocsPage() {
                     <div className="card" style={{ minHeight: 600 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24 }}>
                             <LayoutDashboard size={14} style={{ color: 'var(--text-dim)' }} />
-                            <span style={{ fontSize: '0.78rem', color: 'var(--text-dim)' }}>Docs</span>
+                            <span style={{ fontSize: '0.78rem', color: 'var(--text-dim)' }}>
+                                {t('navigation.docs')}
+                            </span>
                             <ArrowRight size={12} style={{ color: 'var(--text-dim)' }} />
                             <span style={{ fontSize: '0.78rem', color: 'var(--text)' }}>
                                 {tabs.find((tab) => tab.id === activeTab)?.label}
