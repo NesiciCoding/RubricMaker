@@ -467,7 +467,11 @@ export default function TestBuilderPage() {
                                         {uncategorised.map((question, index) => (
                                             <Draggable key={question.id} draggableId={question.id} index={index}>
                                                 {(draggable) => (
-                                                    <div ref={draggable.innerRef} {...draggable.draggableProps}>
+                                                    <div
+                                                        ref={draggable.innerRef}
+                                                        {...draggable.draggableProps}
+                                                        style={draggable.draggableProps.style as React.CSSProperties}
+                                                    >
                                                         <QuestionEditor
                                                             question={question}
                                                             index={questions.indexOf(question)}
@@ -557,6 +561,10 @@ export default function TestBuilderPage() {
                                                                     <div
                                                                         ref={draggable.innerRef}
                                                                         {...draggable.draggableProps}
+                                                                        style={
+                                                                            draggable.draggableProps
+                                                                                .style as React.CSSProperties
+                                                                        }
                                                                     >
                                                                         <QuestionEditor
                                                                             question={question}
