@@ -23,12 +23,18 @@ export interface ModerationQueueItem {
 /**
  * A second-marker grade is stored as a StudentRubric with isPeerReview=true (reusing the
  * peer-review model end to end), distinguished from a real student peer review only by
- * `gradedBy` not matching any known student id — there is no dedicated field for this.
- * ponytail: heuristic ceiling — if a colleague's chosen id ever collides with a student id
- * this misclassifies; add a dedicated `isCoGrade` flag if that becomes a real risk.
+ * `gradedBy` — there is no dedicated field for this.
+ *
+ * `gradedBy` is a colleague profile id (UUID, picked from the school directory) when one is
+ * available, or free text (legacy entries / offline mode without a Supabase school) otherwise.
+ * `colleagueIds`, when provided, lets callers do exact matching against the known directory
+ * instead of the student-id heuristic. Without it (e.g. no Supabase session) this falls back
+ * to "not a known student id", same as before.
  */
-export function isSecondMarkerEntry(entry: StudentRubric, students: Student[]): boolean {
-    return entry.isPeerReview && !!entry.gradedBy && !students.some((s) => s.id === entry.gradedBy);
+export function isSecondMarkerEntry(entry: StudentRubric, students: Student[], colleagueIds?: string[]): boolean {
+    if (!entry.isPeerReview || !entry.gradedBy) return false;
+    if (colleagueIds) return colleagueIds.includes(entry.gradedBy);
+    return !students.some((s) => s.id === entry.gradedBy);
 }
 
 export function getModerationQueue(
@@ -36,12 +42,13 @@ export function getModerationQueue(
     studentRubrics: StudentRubric[],
     peerReviews: StudentRubric[],
     students: Student[],
-    thresholdPoints: number
+    thresholdPoints: number,
+    colleagueIds?: string[]
 ): ModerationQueueItem[] {
     const queue: ModerationQueueItem[] = [];
 
     for (const secondMarkerEntry of peerReviews) {
-        if (!isSecondMarkerEntry(secondMarkerEntry, students)) continue;
+        if (!isSecondMarkerEntry(secondMarkerEntry, students, colleagueIds)) continue;
         const rubric = rubrics.find((r) => r.id === secondMarkerEntry.rubricId);
         if (!rubric) continue;
         const baseline = studentRubrics.find(

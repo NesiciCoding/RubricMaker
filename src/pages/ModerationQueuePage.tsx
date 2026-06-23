@@ -1,20 +1,56 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserCheck, AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
+import { useDbStatus } from '../hooks/useDbStatus';
 import { getModerationQueue } from '../utils/coGradingModerationQueue';
+import type { DbUser } from '../services/database';
 
 export default function ModerationQueuePage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { rubrics, studentRubrics, peerReviews, students, saveStudentRubric, deletePeerReview } = useApp();
+    const {
+        rubrics,
+        studentRubrics,
+        peerReviews,
+        students,
+        settings,
+        saveStudentRubric,
+        deletePeerReview,
+        fetchSchoolMembers,
+    } = useApp();
+    const dbStatus = useDbStatus();
     const [threshold, setThreshold] = useState(2);
+    const [colleagues, setColleagues] = useState<DbUser[]>([]);
+
+    useEffect(() => {
+        if (!dbStatus.isConnected || !settings.schoolId) {
+            setColleagues([]);
+            return;
+        }
+        fetchSchoolMembers(settings.schoolId).then(setColleagues);
+    }, [dbStatus.isConnected, settings.schoolId, fetchSchoolMembers]);
+
+    function resolveReviewerName(reviewerId: string) {
+        const colleague = colleagues.find((c) => c.id === reviewerId);
+        return colleague ? colleague.displayName || colleague.email || reviewerId : reviewerId;
+    }
+
+    const colleagueIds = useMemo(() => colleagues.map((c) => c.id), [colleagues]);
 
     const queue = useMemo(
-        () => getModerationQueue(rubrics, studentRubrics, peerReviews, students, threshold),
-        [rubrics, studentRubrics, peerReviews, students, threshold]
+        () =>
+            getModerationQueue(
+                rubrics,
+                studentRubrics,
+                peerReviews,
+                students,
+                threshold,
+                colleagueIds.length > 0 ? colleagueIds : undefined
+            ),
+        [rubrics, studentRubrics, peerReviews, students, threshold, colleagueIds]
     );
 
     function resolveKeepBaseline(secondMarkerEntryId: string) {
@@ -78,7 +114,9 @@ export default function ModerationQueuePage() {
                                             </div>
                                             <div className="text-muted text-xs" style={{ marginTop: 4 }}>
                                                 {rubric?.name} ·{' '}
-                                                {t('coGrading.second_marker_label', { name: item.secondMarkerId })}
+                                                {t('coGrading.second_marker_label', {
+                                                    name: resolveReviewerName(item.secondMarkerId),
+                                                })}
                                             </div>
                                         </div>
                                         <span className="badge badge-orange">

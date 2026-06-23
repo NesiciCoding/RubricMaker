@@ -882,9 +882,12 @@ function GradingTab() {
                     Co-grading &amp; moderation
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
-                    Click <strong>Co-grade</strong> on a graded student's page and enter a colleague's name or email to
-                    send the submission for an independent second marking — it opens the same screen as peer review,
-                    just with a colleague instead of a classmate as the reviewer. Any submission where the two grades
+                    Click <strong>Co-grade</strong> on a graded student's page to send the submission for an independent
+                    second marking — it opens the same screen as peer review, just with a colleague instead of a
+                    classmate as the reviewer. With cloud sync connected and a school set up, pick the colleague from a
+                    dropdown populated from your school's member list, so the same colleague is always recognised as the
+                    same reviewer even if their name is typed differently elsewhere. Without cloud sync (or no school
+                    yet), the dialog falls back to a free-text name/email field. Any submission where the two grades
                     disagree by more than a configurable point threshold shows up in <strong>Moderation</strong> in the
                     sidebar, with a per-criterion delta breakdown and a one-click choice to keep the original grade or
                     accept the second marker's.

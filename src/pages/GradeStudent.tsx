@@ -38,8 +38,10 @@ import { useApp } from '../context/AppContext';
 import { useTranslation } from 'react-i18next';
 import { useVoiceGrading } from '../hooks/useVoiceGrading';
 import { useMediaRecorder } from '../hooks/useMediaRecorder';
+import { useDbStatus } from '../hooks/useDbStatus';
 import TiptapEditor, { type TiptapEditorHandle } from '../components/Editor/TiptapEditor';
 import type { ScoreEntry, Modifier, EssayAssignment } from '../types';
+import type { DbUser } from '../services/database';
 import { calcGradeSummary } from '../utils/gradeCalc';
 import { exportSinglePdf } from '../utils/pdfExport';
 import { logAuditEvent } from '../services/database/AuditLogger';
@@ -153,7 +155,9 @@ export default function GradeStudent() {
         fetchEssaySubmissionsForStudent,
         deleteEssaySubmission,
         getEssaySignedUrl,
+        fetchSchoolMembers,
     } = useApp();
+    const dbStatus = useDbStatus();
 
     const existingSR = studentRubrics.find((sr) => sr.rubricId === rubricId && sr.studentId === studentId);
     const liveRubric = rubrics.find((r) => r.id === rubricId);
@@ -200,6 +204,8 @@ export default function GradeStudent() {
     const [showEssayImport, setShowEssayImport] = useState(false);
     const [showCoGradeModal, setShowCoGradeModal] = useState(false);
     const [coGraderName, setCoGraderName] = useState('');
+    const [colleagues, setColleagues] = useState<DbUser[]>([]);
+    const [selectedColleagueId, setSelectedColleagueId] = useState('');
     const [slipSheetData, setSlipSheetData] = useState<{
         assignment: EssayAssignment;
         students: { id: string; name: string }[];
@@ -335,6 +341,23 @@ export default function GradeStudent() {
             criterionCardsRef.current[focusedCriterionIdx]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
     }, [focusedCriterionIdx]);
+
+    // Colleague picker for co-grading needs Supabase + a school; without either it
+    // falls back to the free-text input (see CLAUDE.md offline-first rule).
+    React.useEffect(() => {
+        if (!showCoGradeModal || !dbStatus.isConnected || !settings.schoolId) {
+            setColleagues([]);
+            return;
+        }
+        let cancelled = false;
+        fetchSchoolMembers(settings.schoolId).then((members) => {
+            if (cancelled) return;
+            setColleagues(members.filter((m) => m.id !== dbStatus.userId));
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [showCoGradeModal, dbStatus.isConnected, dbStatus.userId, settings.schoolId, fetchSchoolMembers]);
 
     // Keyboard shortcuts
     React.useEffect(() => {
@@ -1682,29 +1705,59 @@ export default function GradeStudent() {
                     <p className="text-muted text-sm" style={{ marginBottom: 14 }}>
                         {t('coGrading.modal_desc')}
                     </p>
-                    <div className="form-group">
-                        <label htmlFor="co-grader-name">{t('coGrading.colleague_label')}</label>
-                        <input
-                            id="co-grader-name"
-                            type="text"
-                            autoFocus
-                            value={coGraderName}
-                            onChange={(e) => setCoGraderName(e.target.value)}
-                            placeholder={t('coGrading.colleague_placeholder')}
-                        />
-                    </div>
+                    {dbStatus.isConnected && settings.schoolId ? (
+                        <div className="form-group">
+                            <label htmlFor="co-grader-select">{t('coGrading.colleague_label')}</label>
+                            <select
+                                id="co-grader-select"
+                                autoFocus
+                                value={selectedColleagueId}
+                                onChange={(e) => setSelectedColleagueId(e.target.value)}
+                            >
+                                <option value="">{t('coGrading.colleague_select_placeholder')}</option>
+                                {colleagues.map((c) => (
+                                    <option key={c.id} value={c.id}>
+                                        {c.displayName || c.email || c.id}
+                                    </option>
+                                ))}
+                            </select>
+                            {colleagues.length === 0 && (
+                                <p className="text-muted text-xs" style={{ marginTop: 6 }}>
+                                    {t('coGrading.colleague_none')}
+                                </p>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="form-group">
+                            <label htmlFor="co-grader-name">{t('coGrading.colleague_label')}</label>
+                            <input
+                                id="co-grader-name"
+                                type="text"
+                                autoFocus
+                                value={coGraderName}
+                                onChange={(e) => setCoGraderName(e.target.value)}
+                                placeholder={t('coGrading.colleague_placeholder')}
+                            />
+                        </div>
+                    )}
                     <div className="modal-footer" style={{ marginTop: 18 }}>
                         <button className="btn btn-secondary" onClick={() => setShowCoGradeModal(false)}>
                             {t('common.cancel')}
                         </button>
                         <button
                             className="btn btn-primary"
-                            disabled={!coGraderName.trim()}
-                            onClick={() =>
-                                navigate(
-                                    `/rubrics/${rubricId}/peer-review/${studentId}?reviewerId=${encodeURIComponent(coGraderName.trim())}`
-                                )
+                            disabled={
+                                dbStatus.isConnected && settings.schoolId ? !selectedColleagueId : !coGraderName.trim()
                             }
+                            onClick={() => {
+                                const reviewerId =
+                                    dbStatus.isConnected && settings.schoolId
+                                        ? selectedColleagueId
+                                        : coGraderName.trim();
+                                navigate(
+                                    `/rubrics/${rubricId}/peer-review/${studentId}?reviewerId=${encodeURIComponent(reviewerId)}`
+                                );
+                            }}
                         >
                             <UserCheck size={15} /> {t('coGrading.action_start')}
                         </button>
