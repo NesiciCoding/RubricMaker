@@ -444,6 +444,8 @@ export interface Class {
     voTrack?: VoTrack;
     /** ISO timestamp of the last local edit; used for last-write-wins sync conflict resolution */
     updatedAt?: string;
+    /** Manual sort position in the class list (StudentsPage); undefined sorts last by insertion order */
+    displayOrder?: number;
 }
 
 export interface ScoreEntry {

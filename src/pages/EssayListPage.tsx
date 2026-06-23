@@ -8,12 +8,23 @@ import { useApp } from '../context/AppContext';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
 import { sortByDisplayOrder, reorderDisplayOrder } from '../utils/displayOrder';
+import {
+    getCohortStudentIds,
+    isAllCohorts,
+    ALL_COHORTS,
+    type CohortFilter as CohortFilterValue,
+} from '../utils/cohortAggregator';
+import CohortFilter from '../components/CohortFilter';
 
 export default function EssayListPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { essayAssignments, essaySubmissions, rubrics, deleteEssayGroup, updateEssayGroup } = useApp();
+    const { essayAssignments, essaySubmissions, rubrics, deleteEssayGroup, updateEssayGroup, students, classes } =
+        useApp();
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
+    const [cohortFilter, setCohortFilter] = React.useState<CohortFilterValue>(ALL_COHORTS);
+    const cohortStudentIds = getCohortStudentIds(students, classes, cohortFilter);
+    const reorderable = isAllCohorts(cohortFilter);
 
     const groups = React.useMemo(() => {
         const byKey = new Map<string, typeof essayAssignments>();
@@ -28,11 +39,13 @@ export default function EssayListPage() {
             displayOrder: rows[0]?.displayOrder,
             createdAt: rows[0]?.createdAt ?? '',
         }));
-        return sortByDisplayOrder(unsorted);
-    }, [essayAssignments]);
+        return sortByDisplayOrder(unsorted).filter(
+            (g) => isAllCohorts(cohortFilter) || g.rows.some((r) => cohortStudentIds.has(r.studentId))
+        );
+    }, [essayAssignments, cohortFilter, cohortStudentIds]);
 
     function handleDragEnd(result: DropResult) {
-        if (!result.destination) return;
+        if (!result.destination || !reorderable) return;
         if (result.destination.index === result.source.index) return;
         for (const [group, order] of reorderDisplayOrder(groups, result.source.index, result.destination.index)) {
             if (group.displayOrder !== order) updateEssayGroup(group.teacherKey, { displayOrder: order });
@@ -59,6 +72,9 @@ export default function EssayListPage() {
                 }
             />
             <div className="page-content fade-in">
+                <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+                    <CohortFilter classes={classes} value={cohortFilter} onChange={setCohortFilter} />
+                </div>
                 {groups.length === 0 ? (
                     <div className="empty-state">
                         <FileText size={40} />
@@ -76,8 +92,9 @@ export default function EssayListPage() {
                                     ref={droppableProvided.innerRef}
                                     {...droppableProvided.droppableProps}
                                     style={{
-                                        display: 'grid',
-                                        gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                                        // ponytail: flex-wrap, not CSS grid — see RubricList for why @hello-pangea/dnd needs this
+                                        display: 'flex',
+                                        flexWrap: 'wrap',
                                         gap: 16,
                                     }}
                                 >
@@ -90,7 +107,12 @@ export default function EssayListPage() {
                                                 .map((s) => s.assignmentStudentId)
                                         ).size;
                                         return (
-                                            <Draggable key={teacherKey} draggableId={teacherKey} index={idx}>
+                                            <Draggable
+                                                key={teacherKey}
+                                                draggableId={teacherKey}
+                                                index={idx}
+                                                isDragDisabled={!reorderable}
+                                            >
                                                 {(dragProvided) => (
                                                     <div
                                                         ref={dragProvided.innerRef}
@@ -98,6 +120,8 @@ export default function EssayListPage() {
                                                         className="card"
                                                         style={{
                                                             transition: 'border-color var(--transition)',
+                                                            flex: '1 1 320px',
+                                                            maxWidth: 480,
                                                             ...dragProvided.draggableProps.style,
                                                         }}
                                                     >
@@ -116,17 +140,19 @@ export default function EssayListPage() {
                                                                     gap: 6,
                                                                 }}
                                                             >
-                                                                <span
-                                                                    {...dragProvided.dragHandleProps}
-                                                                    aria-label={t('rubricList.drag_to_reorder')}
-                                                                    style={{
-                                                                        cursor: 'grab',
-                                                                        color: 'var(--text-dim)',
-                                                                        marginTop: 3,
-                                                                    }}
-                                                                >
-                                                                    <GripVertical size={15} />
-                                                                </span>
+                                                                {reorderable && (
+                                                                    <span
+                                                                        {...dragProvided.dragHandleProps}
+                                                                        aria-label={t('rubricList.drag_to_reorder')}
+                                                                        style={{
+                                                                            cursor: 'grab',
+                                                                            color: 'var(--text-dim)',
+                                                                            marginTop: 3,
+                                                                        }}
+                                                                    >
+                                                                        <GripVertical size={15} />
+                                                                    </span>
+                                                                )}
                                                                 <div>
                                                                     <h3>{first.title}</h3>
                                                                     <div

@@ -38,6 +38,13 @@ import { encodeRubricShareCode, decodeRubricShareCode } from '../utils/rubricImp
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
 import { sortByDisplayOrder, reorderDisplayOrder } from '../utils/displayOrder';
+import {
+    getCohortStudentIds,
+    isAllCohorts,
+    ALL_COHORTS,
+    type CohortFilter as CohortFilterValue,
+} from '../utils/cohortAggregator';
+import CohortFilter from '../components/CohortFilter';
 
 export default function RubricList() {
     const { t } = useTranslation();
@@ -45,6 +52,7 @@ export default function RubricList() {
     const { rubrics, students, classes, studentRubrics, addRubric, updateRubric, deleteRubric, settings } = useApp();
     const [search, setSearch] = useState('');
     const [subjectFilter, setSubjectFilter] = useState<string>('all');
+    const [cohortFilter, setCohortFilter] = useState<CohortFilterValue>(ALL_COHORTS);
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
     const [showImport, setShowImport] = useState(false);
     const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -176,15 +184,19 @@ export default function RubricList() {
 
     const uniqueSubjects = Array.from(new Set(rubrics.map((r) => r.subject).filter(Boolean))).sort();
 
+    const cohortStudentIds = getCohortStudentIds(students, classes, cohortFilter);
     const filtered = sortByDisplayOrder(rubrics).filter((r) => {
         const matchesSearch =
             r.name.toLowerCase().includes(search.toLowerCase()) ||
             r.subject.toLowerCase().includes(search.toLowerCase());
         const matchesSubject = subjectFilter === 'all' || r.subject === subjectFilter;
-        return matchesSearch && matchesSubject;
+        const matchesCohort =
+            isAllCohorts(cohortFilter) ||
+            studentRubrics.some((sr) => sr.rubricId === r.id && cohortStudentIds.has(sr.studentId));
+        return matchesSearch && matchesSubject && matchesCohort;
     });
     // ponytail: reordering only writes back when the list is unfiltered, so dragged positions map 1:1 onto displayOrder
-    const reorderable = !search.trim() && subjectFilter === 'all';
+    const reorderable = !search.trim() && subjectFilter === 'all' && isAllCohorts(cohortFilter);
 
     function handleDragEnd(result: DropResult) {
         if (!result.destination || !reorderable) return;
@@ -309,6 +321,7 @@ export default function RubricList() {
                             ))}
                         </select>
                     )}
+                    <CohortFilter classes={classes} value={cohortFilter} onChange={setCohortFilter} />
                 </div>
 
                 {filtered.length === 0 ? (
@@ -328,8 +341,11 @@ export default function RubricList() {
                                     ref={droppableProvided.innerRef}
                                     {...droppableProvided.droppableProps}
                                     style={{
-                                        display: 'grid',
-                                        gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                                        // ponytail: flex-wrap, not CSS grid — @hello-pangea/dnd computes displacement from
+                                        // sibling bounding rects and doesn't support grid track layout, so cross-row drags
+                                        // would animate incorrectly and couldn't drop between two cards in a different row
+                                        display: 'flex',
+                                        flexWrap: 'wrap',
                                         gap: 16,
                                     }}
                                 >
@@ -356,6 +372,8 @@ export default function RubricList() {
                                                         style={{
                                                             cursor: 'pointer',
                                                             transition: 'border-color var(--transition)',
+                                                            flex: '1 1 320px',
+                                                            maxWidth: 480,
                                                             ...dragProvided.draggableProps.style,
                                                         }}
                                                         onMouseEnter={(e) =>
