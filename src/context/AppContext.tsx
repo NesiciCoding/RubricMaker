@@ -60,6 +60,7 @@ import {
     saveGradingTasks,
     importFullBackup,
     loadPendingQueue,
+    onStorageQuotaExceeded,
 } from '../store/storage';
 import { mergeStoreData } from '../utils/syncMerge';
 import { useTranslation } from 'react-i18next';
@@ -804,6 +805,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const currentStateRef = useRef(state);
     const { showToast } = useToast();
     const { t } = useTranslation();
+
+    // storage.ts swallows quota errors internally (the write is dropped, not
+    // retried) so a reducer case never throws mid-update; this just surfaces
+    // that failure to the user instead of letting it pass silently.
+    useEffect(() => {
+        onStorageQuotaExceeded(() => showToast(t('toast.storage_full'), 'error'));
+    }, [showToast, t]);
 
     // Keep currentStateRef in sync so the reconnect handler always sees fresh state
     useEffect(() => {

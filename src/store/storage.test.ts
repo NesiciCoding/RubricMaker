@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
     loadStore,
     saveRubrics,
@@ -27,6 +27,7 @@ import {
     loadTestTimer,
     saveTestTimer,
     clearTestTimer,
+    onStorageQuotaExceeded,
 } from './storage';
 import type { Rubric, Student, Class, AppSettings, RubricFormat } from '../types';
 import { DEFAULT_FORMAT } from '../types';
@@ -120,6 +121,30 @@ describe('save functions', () => {
             },
         ]);
         expect(loadStore().studentRubrics[0].id).toBe('sr1');
+    });
+
+    it('drops the write and notifies the registered handler when localStorage quota is exceeded', () => {
+        const handler = vi.fn();
+        onStorageQuotaExceeded(handler);
+        const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+            throw new DOMException('quota exceeded', 'QuotaExceededError');
+        });
+
+        expect(() => saveStudentRubrics([])).not.toThrow();
+        expect(handler).toHaveBeenCalledTimes(1);
+
+        setItemSpy.mockRestore();
+        onStorageQuotaExceeded(() => {});
+    });
+
+    it('re-throws non-quota write errors instead of swallowing them', () => {
+        const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+            throw new Error('disk error');
+        });
+
+        expect(() => saveStudentRubrics([])).toThrow('disk error');
+
+        setItemSpy.mockRestore();
     });
 
     it('saveAttachments persists', () => {
