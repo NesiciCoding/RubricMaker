@@ -54,6 +54,7 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 - **Document analysis**: OCR via Tesseract.js and DOCX parsing via Mammoth; vocabulary and grammar checking on uploaded documents.
 - **Essay import**: Import student essay text from uploaded DOCX or PDF files.
 - **Peer review**: Classmates leave structured feedback on submissions.
+- **Essay export**: From the Export page, export a student essay (or several at once) as Markdown, DOCX, or PDF — as separate files or combined into one document — optionally with the rubric grade and grammar/vocabulary analysis attached.
 
 ### 5. Analytics & Reporting
 

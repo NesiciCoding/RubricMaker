@@ -1050,6 +1050,20 @@ function EssaysTab() {
                     {t('docs.es_submission_body3_suffix')}
                 </p>
             </FeatureSection>
+
+            <FeatureSection icon={Download} title={t('docs.es_export_title')} color="#10b981">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    {t('docs.es_export_intro_prefix')} <strong>{t('docs.es_export_nav')}</strong>{' '}
+                    {t('docs.es_export_intro_suffix')}
+                </p>
+                <FeatureList
+                    items={[
+                        t('docs.es_export_item_formats'),
+                        t('docs.es_export_item_batch'),
+                        t('docs.es_export_item_combined'),
+                    ]}
+                />
+            </FeatureSection>
         </div>
     );
 }
