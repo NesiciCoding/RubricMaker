@@ -194,7 +194,11 @@ export default function ExportPage() {
                         skippedNames.push(student.name);
                         continue;
                     }
-                    const essayScale = gradeScales.find((g) => g.id === essayRubric.gradeScaleId) ?? null;
+                    const essayScaleId = essayRubric.gradeScaleId ?? settings.defaultGradeScaleId;
+                    const essayScale =
+                        essayScaleId && essayScaleId !== 'none'
+                            ? (gradeScales.find((g) => g.id === essayScaleId) ?? null)
+                            : null;
                     const analysis = analysisResults.find(
                         (ar) => ar.studentId === student.id && ar.rubricId === essayRubric.id
                     );
@@ -1051,7 +1055,9 @@ export default function ExportPage() {
                                     ) : (
                                         <Square size={13} />
                                     )}{' '}
-                                    {t('exportPage.select_all')}
+                                    {selectedEssayStudentIds.size === essaySubmittedEntries.length
+                                        ? t('exportPage.deselect_all')
+                                        : t('exportPage.select_all')}
                                 </button>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                     {essaySubmittedEntries.map(({ student }) => (

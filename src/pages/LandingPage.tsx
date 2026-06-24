@@ -48,7 +48,7 @@ const TEACHER_FEATURES = [
     {
         icon: BarChart3,
         title: 'Analytics & Export',
-        desc: 'See class trends at a glance, then export grades, report cards, and student essays as PDF, Word, Markdown, or CSV — one at a time or in a batch.',
+        desc: 'See class progress at a glance, then export grades, report cards, and essays in the format that works for you.',
         color: '#06b6d4',
     },
     {
