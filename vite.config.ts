@@ -2,6 +2,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { visualizer } from 'rollup-plugin-visualizer'
+import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
   plugins: [
@@ -10,6 +11,37 @@ export default defineConfig({
       filename: 'dist/stats.html',
       gzipSize: true,
       brotliSize: true,
+    }),
+    VitePWA({
+      registerType: 'prompt',
+      includeAssets: ['rubric-icon.svg', 'pwa-192.png', 'pwa-512.png'],
+      manifest: {
+        name: 'RubricMaker',
+        short_name: 'RubricMaker',
+        description: 'Create, fill, and export educational rubrics with ease',
+        theme_color: '#3b82f6',
+        background_color: '#0f1219',
+        display: 'standalone',
+        start_url: '.',
+        scope: '.',
+        icons: [
+          { src: 'rubric-icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+          { src: 'pwa-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: 'pwa-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+        ],
+      },
+      workbox: {
+        // Never let the service worker cache Supabase requests — a cached
+        // response could make a failed sync request look like it succeeded.
+        // Path-only (no host) so this matches both hosted (*.supabase.co)
+        // and self-hosted/reverse-proxied Supabase deployments.
+        runtimeCaching: [
+          {
+            urlPattern: /\/(rest|auth|realtime|storage|functions)\/v\d+\//,
+            handler: 'NetworkOnly',
+          },
+        ],
+      },
     }),
   ],
   base: './',

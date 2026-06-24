@@ -80,9 +80,14 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 
 - **Theme bundles**: Six named bundles (Academy, Nature, Midnight, Warm, Slate, Rose) set accent colour, UI font, and export header colour in one click. Eight quick accent-colour presets are also available.
 - **WCAG 2.1 AA**: Icon-only buttons carry `aria-label`; tab navigation uses `role="tablist"` / `role="tab"` with `aria-selected`; axe-core audits run in CI on key pages and components.
+- **Dyslexia-friendly reading mode**: Optional Settings toggle increases line-height and letter-spacing app-wide for dyslexic readers.
 - **In-app help**: A Joyride guided tour runs on first login and can be restarted from Settings. Page-specific tours are available on the Rubric Builder, Statistics, and Export pages via the "Tour this page" button.
 
-### 8. Data Management
+### 8. Installation
+
+- **Installable PWA**: RubricMaker can be installed to a device's home screen or desktop (look for the install icon in the browser address bar) for an app-like, browser-chrome-free launch — useful for shared classroom devices. This only affects installability of the static app shell; it does not change the offline-first localStorage data model, and the service worker never caches Supabase API requests (`/rest/`, `/auth/`, `/realtime/`, `/storage/`, `/functions/` paths are always network-only).
+
+### 9. Data Management
 
 - **Offline-first**: All data lives in the browser's `localStorage`. No account required.
 - **Cloud sync** (optional): Supabase backend for multi-device access and multi-teacher collaboration. Sync hydrates `localStorage` from Supabase on load and after reconnect; per-record conflicts resolve last-write-wins (newest `updatedAt` wins), and offline edits queued in the pending-sync queue are protected from being clobbered by stale cloud data until they are pushed (see `src/utils/syncMerge.ts`).

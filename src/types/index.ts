@@ -595,6 +595,8 @@ export interface AppSettings {
     colorPreset?: string;
     /** Whether to send an email notification to the student when a grade is saved (Supabase mode only). */
     notifyStudentsOnGrade?: boolean;
+    /** Wider letter-spacing and increased line-height app-wide, for dyslexic readers. */
+    dyslexiaFriendlyMode?: boolean;
 }
 
 export type UiFontFamily = 'Inter' | 'Nunito' | 'Source Sans 3' | 'Lato' | 'Roboto';

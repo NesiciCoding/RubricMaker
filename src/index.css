@@ -4,6 +4,8 @@
 /* ─── Design Tokens ─────────────────────────────────────────────────────────── */
 :root {
     --font: 'Inter', system-ui, sans-serif;
+    --line-height: 1.55;
+    --letter-spacing: normal;
 
     /* surfaces - Modern Dark (Sleek professional palette) */
     --bg: #0f1219;
@@ -78,7 +80,8 @@ body,
     background: var(--bg);
     color: var(--text);
     font-size: 15px;
-    line-height: 1.55;
+    line-height: var(--line-height, 1.55);
+    letter-spacing: var(--letter-spacing, normal);
     -webkit-font-smoothing: antialiased;
 }
 
@@ -129,7 +132,7 @@ svg {
 /* Skip navigation link */
 .skip-nav {
     position: absolute;
-    left: -9999px;
+    inset-inline-start: -9999px;
     top: 0;
     z-index: 9999;
     padding: 8px 16px;
@@ -140,7 +143,7 @@ svg {
     text-decoration: none;
 }
 .skip-nav:focus {
-    left: 0;
+    inset-inline-start: 0;
 }
 
 /* ─── Scrollbar ─────────────────────────────────────────────────────────────── */
@@ -199,7 +202,7 @@ h3 {
 .sidebar {
     width: var(--sidebar-w);
     background: var(--bg-raised);
-    border-right: 1px solid var(--border);
+    border-inline-end: 1px solid var(--border);
     display: flex;
     flex-direction: column;
     padding: 0;
@@ -261,7 +264,7 @@ h3 {
     border: none;
     background: none;
     width: 100%;
-    text-align: left;
+    text-align: start;
     text-decoration: none;
 }
 
@@ -287,7 +290,7 @@ h3 {
 .nav-item[data-tooltip]::after {
     content: attr(data-tooltip);
     position: absolute;
-    left: calc(100% + 10px);
+    inset-inline-start: calc(100% + 10px);
     top: 50%;
     transform: translateY(-50%);
     background: var(--bg-elevated);
@@ -321,7 +324,7 @@ h3 {
     align-items: center;
     gap: 8px;
     width: 100%;
-    text-align: left;
+    text-align: start;
     padding: 8px 14px;
     background: none;
     border: none;
@@ -448,7 +451,7 @@ h3 {
 .btn-loading::after {
     content: '';
     position: absolute;
-    right: 10px;
+    inset-inline-end: 10px;
     top: 50%;
     transform: translateY(-50%);
     width: 12px;
@@ -583,7 +586,7 @@ select.input-error {
 }
 
 .data-table th {
-    text-align: left;
+    text-align: start;
     padding: 10px 14px;
     background: var(--bg-elevated);
     color: var(--text-muted);
@@ -642,7 +645,7 @@ select.input-error {
 .rubric-grid .level-cell {
     cursor: pointer;
     transition: all var(--transition);
-    text-align: left;
+    text-align: start;
     min-width: 140px;
 }
 
@@ -788,8 +791,8 @@ select.input-error {
 .grade-footer {
     position: fixed;
     bottom: 0;
-    left: var(--sidebar-w);
-    right: 0;
+    inset-inline-start: var(--sidebar-w);
+    inset-inline-end: 0;
     z-index: 200;
     display: flex;
     align-items: center;
@@ -809,7 +812,7 @@ select.input-error {
     border: 1.5px solid var(--border);
     background: var(--bg-elevated);
     cursor: pointer;
-    text-align: left;
+    text-align: start;
     transition:
         border-color var(--transition),
         background var(--transition),
@@ -973,7 +976,7 @@ select.input-error {
         display: block !important;
     }
     .main-area {
-        margin-left: 0 !important;
+        margin-inline-start: 0 !important;
         width: 100% !important;
     }
     .page-content {
@@ -1093,7 +1096,7 @@ select.input-error {
     /* Sidebar becomes a fixed overlay drawer */
     .sidebar {
         position: fixed;
-        left: 0;
+        inset-inline-start: 0;
         top: 0;
         bottom: 0;
         z-index: 400;
@@ -1121,7 +1124,7 @@ select.input-error {
     }
 
     .main-area {
-        margin-left: 0 !important;
+        margin-inline-start: 0 !important;
         width: 100%;
     }
 
@@ -1131,7 +1134,7 @@ select.input-error {
 
     /* Grade footer spans full width when sidebar is an overlay */
     .grade-footer {
-        left: 0;
+        inset-inline-start: 0;
         padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
     }
 }
@@ -1544,6 +1547,6 @@ select.input-error {
 
 .tiptap-editor-content ul,
 .tiptap-editor-content ol {
-    padding-left: 1.25rem;
+    padding-inline-start: 1.25rem;
     margin-bottom: 8px;
 }

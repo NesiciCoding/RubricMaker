@@ -166,6 +166,9 @@
         "language_de": "Deutsch",
         "language_es": "Español",
         "language_help": "Choisissez votre langue préférée pour l'interface.",
+        "dyslexia_section_title": "Accessibilité de lecture",
+        "dyslexia_mode_label": "Mode de lecture adapté à la dyslexie",
+        "dyslexia_mode_help": "Augmente l'interligne et l'espacement des lettres dans toute l'application pour améliorer la lisibilité pour les lecteurs dyslexiques.",
         "standards_integration": "Intégration des Standards",
         "standards_help_1": "Pour lier des standards (CCSS, NGSS, etc.) depuis le <strong>Common Standards Project</strong>, vous avez besoin d'une clé API gratuite.",
         "standards_api_key": "Clé API CSP",
@@ -1054,6 +1057,9 @@
         "sync_flushed": "De retour en ligne — toutes les modifications synchronisées.",
         "copy_paste_failed": "Copier/coller échoué. Veuillez réessayer.",
         "sync_offline_cache": "Vous êtes hors ligne — utilisation des données en cache local."
+    },
+    "pwa": {
+        "update_available_confirm": "Une nouvelle version de RubricMaker est disponible. Recharger maintenant ?"
     },
     "cefr": {
         "rubric_section_title": "Niveau CECR / ERK",
@@ -1955,6 +1961,9 @@
         "gs_themes_item_font": "Police de l'interface — choisissez la police utilisée dans toute l'application (Inter, Nunito, Source Sans 3, Lato, Roboto).",
         "gs_themes_item_bundles": "Ensembles de thèmes — Academy, Nature, Midnight, Warm, Slate et Rose appliquent en un clic une couleur d'accent, une police d'interface et une couleur d'en-tête de rubrique assorties.",
         "gs_themes_item_export_font": "Police d'export des rubriques — dans le panneau de mise en forme du Créateur de rubriques, choisissez la police utilisée pour les titres dans les exports PDF et Word, y compris des options décoratives comme Playfair Display, Oswald, Bebas Neue, Special Elite et Courier Prime.",
+        "gs_themes_item_dyslexia": "Mode de lecture adapté à la dyslexie — un réglage qui augmente l'interligne et l'espacement des lettres dans toute l'application pour améliorer la lisibilité des lecteurs dyslexiques.",
+        "gs_install_title": "Installer RubricMaker comme une application",
+        "gs_install_body": "RubricMaker peut être installé sur l'écran d'accueil ou le bureau de votre appareil pour un lancement plus rapide, sans l'interface du navigateur — recherchez une icône d'installation dans la barre d'adresse de votre navigateur, ou l'option \"Installer\" dans son menu. L'application continue de fonctionner entièrement hors ligne, exactement comme la version navigateur.",
         "rb_builder_title": "Créateur de rubriques",
         "rb_builder_intro": "Le Créateur de rubriques est le cœur de RubricMaker. Ouvrez n'importe quelle rubrique depuis la liste des rubriques, ou créez-en une nouvelle, pour entrer dans le créateur.",
         "rb_builder_views_prefix": "Basculez à tout moment entre la",

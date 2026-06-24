@@ -614,8 +614,15 @@ function GettingStartedTab() {
                         t('docs.gs_themes_item_font'),
                         t('docs.gs_themes_item_bundles'),
                         t('docs.gs_themes_item_export_font'),
+                        t('docs.gs_themes_item_dyslexia'),
                     ]}
                 />
+            </FeatureSection>
+
+            <FeatureSection icon={Download} title={t('docs.gs_install_title')} color="#0ea5e9">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    {t('docs.gs_install_body')}
+                </p>
             </FeatureSection>
         </div>
     );

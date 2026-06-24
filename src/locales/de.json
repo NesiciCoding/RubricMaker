@@ -166,6 +166,9 @@
         "language_de": "Deutsch",
         "language_es": "Español",
         "language_help": "Wählen Sie Ihre bevorzugte Sprache für die Oberfläche.",
+        "dyslexia_section_title": "Lese-Barrierefreiheit",
+        "dyslexia_mode_label": "Legasthenie-freundlicher Lesemodus",
+        "dyslexia_mode_help": "Erhöht den Zeilen- und Buchstabenabstand in der gesamten App, um die Lesbarkeit für legasthene Leser zu verbessern.",
         "standards_integration": "Standards-Integration",
         "standards_help_1": "Um Standards (CCSS, NGSS usw.) aus dem <strong>Common Standards Project</strong> zu verknüpfen, benötigen Sie einen kostenlosen API-Schlüssel.",
         "standards_api_key": "CSP API-Schlüssel",
@@ -1054,6 +1057,9 @@
         "sync_flushed": "Wieder online — alle Änderungen synchronisiert.",
         "copy_paste_failed": "Kopieren/Einfügen fehlgeschlagen. Bitte versuchen Sie es erneut.",
         "sync_offline_cache": "Sie sind offline — es werden lokal zwischengespeicherte Daten verwendet."
+    },
+    "pwa": {
+        "update_available_confirm": "Eine neue Version von RubricMaker ist verfügbar. Jetzt neu laden?"
     },
     "cefr": {
         "rubric_section_title": "GER / ERK-Niveau",
@@ -1955,6 +1961,9 @@
         "gs_themes_item_font": "Schriftart der Oberfläche — wähle die in der gesamten App verwendete Schriftart (Inter, Nunito, Source Sans 3, Lato, Roboto).",
         "gs_themes_item_bundles": "Theme-Bundles — Academy, Nature, Midnight, Warm, Slate und Rose wenden mit einem Klick eine passende Akzentfarbe, Schriftart der Oberfläche und Rubrik-Kopfzeilenfarbe an.",
         "gs_themes_item_export_font": "Export-Schriftart für Rubriken — wähle im Formatierungspanel des Rubrik-Editors die Schriftart für Überschriften in PDF- und Word-Exporten, einschließlich dekorativer Optionen wie Playfair Display, Oswald, Bebas Neue, Special Elite und Courier Prime.",
+        "gs_themes_item_dyslexia": "Legasthenie-freundlicher Lesemodus — eine Einstellung, die den Zeilen- und Buchstabenabstand in der gesamten App erhöht, um die Lesbarkeit für legasthene Leser zu verbessern.",
+        "gs_install_title": "RubricMaker als App installieren",
+        "gs_install_body": "RubricMaker kann auf dem Startbildschirm oder Desktop deines Geräts installiert werden, für einen schnelleren, app-ähnlichen Start ohne Browser-Oberfläche — achte auf ein Installationssymbol in der Adressleiste deines Browsers oder die Option \"Installieren\" im Browser-Menü. Die App funktioniert weiterhin vollständig offline, genau wie die Browser-Version.",
         "rb_builder_title": "Rubriken-Editor",
         "rb_builder_intro": "Der Rubriken-Editor ist das Herzstück von RubricMaker. Öffne eine beliebige Rubrik aus der Rubrikenliste oder erstelle eine neue, um den Editor zu öffnen.",
         "rb_builder_views_prefix": "Wechsle jederzeit über den Umschalter in der Symbolleiste zwischen",

@@ -7,6 +7,9 @@ import { ToastProvider } from './context/ToastContext';
 import './index.css';
 import './i18n';
 import { logEvent } from './services/logging/clientLogger';
+import { setupPwaUpdatePrompt } from './pwa';
+
+setupPwaUpdatePrompt();
 
 // Student-facing pages are outside AppProvider — they work from URL-encoded data only
 const StudentFeedbackPage = lazy(() => import('./pages/StudentFeedbackPage'));
