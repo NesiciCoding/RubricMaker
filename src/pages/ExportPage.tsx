@@ -148,7 +148,15 @@ export default function ExportPage() {
                 const student = students.find((st) => st.id === s.assignmentStudentId);
                 return assignment && student ? { assignment, student, submission: s } : null;
             })
-            .filter((x): x is { assignment: (typeof essayAssignments)[number]; student: Student; submission: (typeof essaySubmissions)[number] } => x !== null);
+            .filter(
+                (
+                    x
+                ): x is {
+                    assignment: (typeof essayAssignments)[number];
+                    student: Student;
+                    submission: (typeof essaySubmissions)[number];
+                } => x !== null
+            );
     }, [essayTeacherKey, essaySubmissions, essayAssignments, students]);
 
     function toggleEssayStudent(id: string) {
@@ -181,8 +189,7 @@ export default function ExportPage() {
                     );
                     const essayRubric = rubrics.find((r) => r.id === assignment.rubricId);
                     if (!sr || !essayRubric) continue;
-                    const essayScale =
-                        gradeScales.find((g) => g.id === essayRubric.gradeScaleId) ?? null;
+                    const essayScale = gradeScales.find((g) => g.id === essayRubric.gradeScaleId) ?? null;
                     const analysis = analysisResults.find(
                         (ar) => ar.studentId === student.id && ar.rubricId === essayRubric.id
                     );
@@ -201,7 +208,9 @@ export default function ExportPage() {
                 const { exportEssaysBatch } = await import('../utils/essayExport');
                 await exportEssaysBatch(toExport, essayFormat, essayBatchMode);
             }
-            logAuditEvent('export', `export_essays_${essayFormat}`, 'essay', essayTeacherKey, { count: toExport.length });
+            logAuditEvent('export', `export_essays_${essayFormat}`, 'essay', essayTeacherKey, {
+                count: toExport.length,
+            });
         } catch {
             showToast(t('toast.export_error'), 'error');
         } finally {
@@ -1022,7 +1031,11 @@ export default function ExportPage() {
                             <p className="text-muted text-sm">{t('exportPage.essays_no_submissions')}</p>
                         ) : (
                             <div style={{ marginBottom: 12 }}>
-                                <button className="btn btn-ghost btn-sm" onClick={toggleAllEssayStudents} style={{ marginBottom: 8 }}>
+                                <button
+                                    className="btn btn-ghost btn-sm"
+                                    onClick={toggleAllEssayStudents}
+                                    style={{ marginBottom: 8 }}
+                                >
                                     {selectedEssayStudentIds.size === essaySubmittedEntries.length ? (
                                         <CheckSquare size={13} />
                                     ) : (
@@ -1032,7 +1045,10 @@ export default function ExportPage() {
                                 </button>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                     {essaySubmittedEntries.map(({ student }) => (
-                                        <label key={student.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <label
+                                            key={student.id}
+                                            style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+                                        >
                                             <input
                                                 type="checkbox"
                                                 checked={selectedEssayStudentIds.has(student.id)}
@@ -1045,10 +1061,21 @@ export default function ExportPage() {
                             </div>
                         )}
 
-                        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: 12 }}>
+                        <div
+                            style={{
+                                display: 'flex',
+                                gap: 16,
+                                flexWrap: 'wrap',
+                                alignItems: 'flex-end',
+                                marginBottom: 12,
+                            }}
+                        >
                             <div className="form-group" style={{ marginBottom: 0 }}>
                                 <label style={{ fontSize: '0.8rem' }}>{t('exportPage.essays_format')}</label>
-                                <select value={essayFormat} onChange={(e) => setEssayFormat(e.target.value as typeof essayFormat)}>
+                                <select
+                                    value={essayFormat}
+                                    onChange={(e) => setEssayFormat(e.target.value as typeof essayFormat)}
+                                >
                                     <option value="pdf">PDF</option>
                                     <option value="docx">DOCX</option>
                                     <option value="markdown">Markdown</option>

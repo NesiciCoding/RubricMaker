@@ -473,7 +473,6 @@ export async function exportBatchDocx(
         children.push(...buildRubricGridDocxChildren(rubric, sr, scale, student));
     });
 
-
     const doc = new Document({
         styles: buildDocxStyles(fmt.fontFamily),
         sections: [

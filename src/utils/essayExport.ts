@@ -128,8 +128,11 @@ export function htmlToDocxChildren(html: string): Paragraph[] {
     for (const node of Array.from(root.children)) {
         const tag = node.tagName;
         if (tag === 'H1' || tag === 'H2' || tag === 'H3') {
-            const heading = tag === 'H1' ? HeadingLevel.HEADING_1 : tag === 'H2' ? HeadingLevel.HEADING_2 : HeadingLevel.HEADING_3;
-            children.push(new Paragraph({ heading, children: Array.from(node.childNodes).flatMap((c) => inlineDocxRuns(c)) }));
+            const heading =
+                tag === 'H1' ? HeadingLevel.HEADING_1 : tag === 'H2' ? HeadingLevel.HEADING_2 : HeadingLevel.HEADING_3;
+            children.push(
+                new Paragraph({ heading, children: Array.from(node.childNodes).flatMap((c) => inlineDocxRuns(c)) })
+            );
         } else if (tag === 'BLOCKQUOTE') {
             children.push(
                 new Paragraph({
@@ -171,7 +174,9 @@ function essayDocxHeader(assignment: EssayLike, student: Student, submission: Es
     return [
         new Paragraph({ text: assignment.title, heading: HeadingLevel.HEADING_1, spacing: { after: 80 } }),
         new Paragraph({
-            children: [new TextRun({ text: essayHeaderLine(assignment, student, submission), color: '6b7280', size: 20 })],
+            children: [
+                new TextRun({ text: essayHeaderLine(assignment, student, submission), color: '6b7280', size: 20 }),
+            ],
             spacing: { after: 240 },
         }),
     ];
@@ -188,12 +193,22 @@ function essayHtmlHeader(assignment: EssayLike, student: Student, submission: Es
 
 export async function exportEssayMarkdown(assignment: EssayLike, student: Student, submission: EssaySubmission) {
     const md = `# ${assignment.title}\n\n_${essayHeaderLine(assignment, student, submission)}_\n\n${htmlToMarkdown(submission.contentHtml)}\n`;
-    saveAs(new Blob([md], { type: 'text/markdown' }), `${safeFilename(student.name)}_${safeFilename(assignment.title)}.md`);
+    saveAs(
+        new Blob([md], { type: 'text/markdown' }),
+        `${safeFilename(student.name)}_${safeFilename(assignment.title)}.md`
+    );
 }
 
 export async function exportEssayDocx(assignment: EssayLike, student: Student, submission: EssaySubmission) {
     const doc = new Document({
-        sections: [{ children: [...essayDocxHeader(assignment, student, submission), ...htmlToDocxChildren(submission.contentHtml)] }],
+        sections: [
+            {
+                children: [
+                    ...essayDocxHeader(assignment, student, submission),
+                    ...htmlToDocxChildren(submission.contentHtml),
+                ],
+            },
+        ],
     });
     const blob = await Packer.toBlob(doc);
     saveAs(blob, `${safeFilename(student.name)}_${safeFilename(assignment.title)}.docx`);
@@ -209,7 +224,11 @@ interface EssayBatchEntry {
     submission: EssaySubmission;
 }
 
-export async function exportEssaysBatch(entries: EssayBatchEntry[], format: 'markdown' | 'docx' | 'pdf', mode: 'separate' | 'combined') {
+export async function exportEssaysBatch(
+    entries: EssayBatchEntry[],
+    format: 'markdown' | 'docx' | 'pdf',
+    mode: 'separate' | 'combined'
+) {
     if (mode === 'separate') {
         for (const { assignment, student, submission } of entries) {
             if (format === 'markdown') await exportEssayMarkdown(assignment, student, submission);
@@ -250,13 +269,20 @@ export async function exportEssaysBatch(entries: EssayBatchEntry[], format: 'mar
 
 function analysisDocxChildren(analysis: DocumentAnalysisResult, vocabularyItems: VocabularyItem[]): Paragraph[] {
     const children: Paragraph[] = [
-        new Paragraph({ text: 'Grammar & Vocabulary Analysis', heading: HeadingLevel.HEADING_2, spacing: { before: 240, after: 120 } }),
+        new Paragraph({
+            text: 'Grammar & Vocabulary Analysis',
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 240, after: 120 },
+        }),
     ];
     for (const item of analysis.detectedItems) {
         const phrase = vocabularyItems.find((v) => v.id === item.vocabularyItemId)?.phrase ?? item.vocabularyItemId;
         children.push(
             new Paragraph({
-                children: [new TextRun({ text: `${item.found ? '✓' : '✗'} ${phrase}`, bold: true }), new TextRun(` — ${item.occurrences} occurrence(s)`)],
+                children: [
+                    new TextRun({ text: `${item.found ? '✓' : '✗'} ${phrase}`, bold: true }),
+                    new TextRun(` — ${item.occurrences} occurrence(s)`),
+                ],
             })
         );
     }
