@@ -151,7 +151,7 @@ function buildRubricGridHtml(rubric: Rubric, sr?: StudentRubric): string {
   `;
 }
 
-function buildRubricHTML(
+export function buildRubricHTML(
     sr: StudentRubric,
     rubric: Rubric,
     student: Student,
@@ -252,7 +252,7 @@ export function googleFontsLinkFor(fontFamily?: string): string {
     return `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?${familyParams}&display=swap">`;
 }
 
-function printHtml(html: string, orientation?: 'portrait' | 'landscape', fontFamily?: string) {
+export function printHtml(html: string, orientation?: 'portrait' | 'landscape', fontFamily?: string) {
     return new Promise<void>((resolve) => {
         const iframe = document.createElement('iframe');
         iframe.style.position = 'fixed';

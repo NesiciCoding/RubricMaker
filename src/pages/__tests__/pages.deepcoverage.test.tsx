@@ -99,6 +99,8 @@ const mockUseApp = {
     selfAssessments: [],
     speakingSessions: [],
     analysisResults: [],
+    essayAssignments: [],
+    essaySubmissions: [],
     dispatch: noop,
     addRubric: vi.fn(() => mockRubric),
     updateRubric: noop,

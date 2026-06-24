@@ -84,6 +84,8 @@ const mockUseApp = {
     selfAssessments: [],
     speakingSessions: [] as SpeakingSession[],
     analysisResults: [],
+    essayAssignments: [],
+    essaySubmissions: [],
     dispatch: noop,
     addRubric: vi.fn(() => mockRubric),
     updateRubric: noop,

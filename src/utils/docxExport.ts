@@ -258,6 +258,202 @@ export async function exportRubricToDocx(rubric: Rubric) {
     saveAs(blob, `${rubric.name.replace(/[^a-z0-9]/gi, '_')}_rubric.docx`);
 }
 
+function parseMdSimple(text: string): TextRun[] {
+    if (!text) return [new TextRun('')];
+    // Strip basic HTML tags from TipTap output
+    const stripped = text
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    return [new TextRun(stripped)];
+}
+
+/** Builds the student-name heading, score line, and criteria grid for one graded rubric — shared by exportBatchDocx and the essay+rubric combined export. */
+export function buildRubricGridDocxChildren(
+    rubric: Rubric,
+    sr: StudentRubric,
+    scale: GradeScale | null,
+    student: Student
+): (Paragraph | Table)[] {
+    const fmt = rubric.format;
+    const children: (Paragraph | Table)[] = [];
+    const effectiveRubric = sr.rubricSnapshot ?? rubric;
+    const summary = calcGradeSummary(sr, effectiveRubric.criteria, scale, effectiveRubric);
+
+    children.push(
+        new Paragraph({
+            text: student.name,
+            heading: HeadingLevel.HEADING_1,
+            spacing: { after: 120 },
+        })
+    );
+
+    // Score summary line
+    const gradeText = scale
+        ? `${summary.letterGrade} · ${summary.modifiedPercentage.toFixed(1)}% · ${summary.rawScore}/${summary.configuredMaxPoints} pts`
+        : `${summary.modifiedPercentage.toFixed(1)}% · ${summary.rawScore}/${summary.configuredMaxPoints} pts`;
+    children.push(
+        new Paragraph({
+            children: [new TextRun({ text: gradeText, bold: true, size: 24 })],
+            spacing: { after: 240 },
+        })
+    );
+
+    // Per-criterion results table
+    const isSinglePoint = effectiveRubric.scoringMode === 'single-point';
+    const headerFill = fmt.headerColor.replace('#', '');
+
+    const tableRows = isSinglePoint
+        ? [
+              // Single-point 3-column header: Not Yet | Proficiency Standard | Exceeds
+              new TableRow({
+                  tableHeader: true,
+                  children: ['Not Yet', 'Proficiency Standard', 'Exceeds'].map(
+                      (label) =>
+                          new TableCell({
+                              children: [
+                                  new Paragraph({
+                                      children: [new TextRun({ text: label, bold: true, color: 'FFFFFF' })],
+                                      alignment: AlignmentType.CENTER,
+                                  }),
+                              ],
+                              width: { size: 33, type: WidthType.PERCENTAGE },
+                              shading: { fill: headerFill },
+                          })
+                  ),
+              }),
+              // Single-point data rows
+              ...effectiveRubric.criteria.map((c) => {
+                  const entry = sr.entries.find((e) => e.criterionId === c.id);
+                  const outcome = entry?.singlePointOutcome;
+                  const comment = entry?.comment
+                      ? entry.comment
+                            .replace(/<[^>]*>/g, ' ')
+                            .replace(/\s+/g, ' ')
+                            .trim()
+                      : '';
+                  const profDesc = c.levels[0]?.description ?? c.description ?? '';
+
+                  const notYetRuns: TextRun[] = [
+                      new TextRun({ text: outcome === 'not-yet' ? '✗ Not Yet' : '', bold: true }),
+                  ];
+                  if (outcome === 'not-yet' && comment)
+                      notYetRuns.push(new TextRun({ text: `\n${comment}`, break: 1 }));
+
+                  const centerRuns: TextRun[] = [new TextRun({ text: c.title, bold: true })];
+                  if (profDesc) centerRuns.push(new TextRun({ text: `\n${profDesc}`, break: 1, color: '555555' }));
+                  if (outcome === 'meets' && comment)
+                      centerRuns.push(new TextRun({ text: `\n${comment}`, break: 1, italics: true }));
+
+                  const exceedsRuns: TextRun[] = [
+                      new TextRun({ text: outcome === 'exceeds' ? '▲ Exceeds' : '', bold: true }),
+                  ];
+                  if (outcome === 'exceeds' && comment)
+                      exceedsRuns.push(new TextRun({ text: `\n${comment}`, break: 1 }));
+
+                  return new TableRow({
+                      children: [
+                          new TableCell({
+                              children: [new Paragraph({ children: notYetRuns })],
+                              width: { size: 33, type: WidthType.PERCENTAGE },
+                              shading: outcome === 'not-yet' ? { fill: 'FEE2E2' } : { fill: 'F8F9FA' },
+                          }),
+                          new TableCell({
+                              children: [new Paragraph({ children: centerRuns })],
+                              width: { size: 34, type: WidthType.PERCENTAGE },
+                              shading: outcome === 'meets' ? { fill: 'DBEAFE' } : {},
+                          }),
+                          new TableCell({
+                              children: [new Paragraph({ children: exceedsRuns })],
+                              width: { size: 33, type: WidthType.PERCENTAGE },
+                              shading: outcome === 'exceeds' ? { fill: 'D1FAE5' } : { fill: 'F8F9FA' },
+                          }),
+                      ],
+                  });
+              }),
+          ]
+        : [
+              // Standard 3-column header: Criterion | Level / Outcome | Comment
+              new TableRow({
+                  tableHeader: true,
+                  children: ['Criterion', 'Level / Outcome', 'Comment'].map(
+                      (label, ci) =>
+                          new TableCell({
+                              children: [
+                                  new Paragraph({
+                                      children: [new TextRun({ text: label, bold: true, color: 'FFFFFF' })],
+                                  }),
+                              ],
+                              width: { size: ci === 0 ? 25 : ci === 1 ? 25 : 50, type: WidthType.PERCENTAGE },
+                              shading: { fill: headerFill },
+                          })
+                  ),
+              }),
+              // Standard data rows
+              ...effectiveRubric.criteria.map((c) => {
+                  const entry = sr.entries.find((e) => e.criterionId === c.id);
+                  let levelLabel = '—';
+                  if (entry?.singlePointOutcome) {
+                      levelLabel =
+                          entry.singlePointOutcome === 'exceeds'
+                              ? '▲ Exceeds'
+                              : entry.singlePointOutcome === 'meets'
+                                ? '✓ Meets'
+                                : '✗ Not yet';
+                  } else if (entry?.levelId) {
+                      const level = c.levels.find((l) => l.id === entry.levelId);
+                      levelLabel = level ? level.label : '—';
+                  }
+                  const comment = entry?.comment
+                      ? entry.comment
+                            .replace(/<[^>]*>/g, ' ')
+                            .replace(/\s+/g, ' ')
+                            .trim()
+                      : '';
+                  return new TableRow({
+                      children: [
+                          new TableCell({
+                              children: [new Paragraph({ children: [new TextRun({ text: c.title, bold: true })] })],
+                              width: { size: 25, type: WidthType.PERCENTAGE },
+                              shading: { fill: 'F8F9FA' },
+                          }),
+                          new TableCell({
+                              children: [new Paragraph({ children: [new TextRun(levelLabel)] })],
+                              width: { size: 25, type: WidthType.PERCENTAGE },
+                          }),
+                          new TableCell({
+                              children: [new Paragraph({ children: parseMdSimple(comment) })],
+                              width: { size: 50, type: WidthType.PERCENTAGE },
+                          }),
+                      ],
+                  });
+              }),
+          ];
+
+    children.push(
+        new Table({
+            rows: tableRows,
+            width: { size: 100, type: WidthType.PERCENTAGE },
+        })
+    );
+
+    // Overall comment
+    if (sr.overallComment) {
+        const overall = sr.overallComment
+            .replace(/<[^>]*>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+        children.push(
+            new Paragraph({
+                children: [new TextRun({ text: 'Overall comment: ', bold: true }), new TextRun(overall)],
+                spacing: { before: 200 },
+            })
+        );
+    }
+
+    return children;
+}
+
 /** Export graded results for multiple students into a single DOCX file, one page per student. */
 export async function exportBatchDocx(
     entries: { sr: StudentRubric; student: Student }[],
@@ -266,200 +462,17 @@ export async function exportBatchDocx(
 ): Promise<void> {
     const fmt = rubric.format;
 
-    const parseMdSimple = (text: string): TextRun[] => {
-        if (!text) return [new TextRun('')];
-        // Strip basic HTML tags from TipTap output
-        const stripped = text
-            .replace(/<[^>]*>/g, ' ')
-            .replace(/\s+/g, ' ')
-            .trim();
-        return [new TextRun(stripped)];
-    };
-
     const children: (Paragraph | Table)[] = [];
 
     entries.forEach(({ sr, student }, idx) => {
-        const effectiveRubric = sr.rubricSnapshot ?? rubric;
-        const summary = calcGradeSummary(sr, effectiveRubric.criteria, scale, effectiveRubric);
-
         // Page break before every student except the first
         if (idx > 0) {
             children.push(new Paragraph({ children: [new PageBreak()] }));
         }
 
-        // Student name heading
-        children.push(
-            new Paragraph({
-                text: student.name,
-                heading: HeadingLevel.HEADING_1,
-                spacing: { after: 120 },
-                ...(idx > 0 ? { pageBreakBefore: false } : {}),
-            })
-        );
-
-        // Score summary line
-        const gradeText = scale
-            ? `${summary.letterGrade} · ${summary.modifiedPercentage.toFixed(1)}% · ${summary.rawScore}/${summary.configuredMaxPoints} pts`
-            : `${summary.modifiedPercentage.toFixed(1)}% · ${summary.rawScore}/${summary.configuredMaxPoints} pts`;
-        children.push(
-            new Paragraph({
-                children: [new TextRun({ text: gradeText, bold: true, size: 24 })],
-                spacing: { after: 240 },
-            })
-        );
-
-        // Per-criterion results table
-        const isSinglePoint = effectiveRubric.scoringMode === 'single-point';
-        const headerFill = fmt.headerColor.replace('#', '');
-
-        const tableRows = isSinglePoint
-            ? [
-                  // Single-point 3-column header: Not Yet | Proficiency Standard | Exceeds
-                  new TableRow({
-                      tableHeader: true,
-                      children: ['Not Yet', 'Proficiency Standard', 'Exceeds'].map(
-                          (label) =>
-                              new TableCell({
-                                  children: [
-                                      new Paragraph({
-                                          children: [new TextRun({ text: label, bold: true, color: 'FFFFFF' })],
-                                          alignment: AlignmentType.CENTER,
-                                      }),
-                                  ],
-                                  width: { size: 33, type: WidthType.PERCENTAGE },
-                                  shading: { fill: headerFill },
-                              })
-                      ),
-                  }),
-                  // Single-point data rows
-                  ...effectiveRubric.criteria.map((c) => {
-                      const entry = sr.entries.find((e) => e.criterionId === c.id);
-                      const outcome = entry?.singlePointOutcome;
-                      const comment = entry?.comment
-                          ? entry.comment
-                                .replace(/<[^>]*>/g, ' ')
-                                .replace(/\s+/g, ' ')
-                                .trim()
-                          : '';
-                      const profDesc = c.levels[0]?.description ?? c.description ?? '';
-
-                      const notYetRuns: TextRun[] = [
-                          new TextRun({ text: outcome === 'not-yet' ? '✗ Not Yet' : '', bold: true }),
-                      ];
-                      if (outcome === 'not-yet' && comment)
-                          notYetRuns.push(new TextRun({ text: `\n${comment}`, break: 1 }));
-
-                      const centerRuns: TextRun[] = [new TextRun({ text: c.title, bold: true })];
-                      if (profDesc) centerRuns.push(new TextRun({ text: `\n${profDesc}`, break: 1, color: '555555' }));
-                      if (outcome === 'meets' && comment)
-                          centerRuns.push(new TextRun({ text: `\n${comment}`, break: 1, italics: true }));
-
-                      const exceedsRuns: TextRun[] = [
-                          new TextRun({ text: outcome === 'exceeds' ? '▲ Exceeds' : '', bold: true }),
-                      ];
-                      if (outcome === 'exceeds' && comment)
-                          exceedsRuns.push(new TextRun({ text: `\n${comment}`, break: 1 }));
-
-                      return new TableRow({
-                          children: [
-                              new TableCell({
-                                  children: [new Paragraph({ children: notYetRuns })],
-                                  width: { size: 33, type: WidthType.PERCENTAGE },
-                                  shading: outcome === 'not-yet' ? { fill: 'FEE2E2' } : { fill: 'F8F9FA' },
-                              }),
-                              new TableCell({
-                                  children: [new Paragraph({ children: centerRuns })],
-                                  width: { size: 34, type: WidthType.PERCENTAGE },
-                                  shading: outcome === 'meets' ? { fill: 'DBEAFE' } : {},
-                              }),
-                              new TableCell({
-                                  children: [new Paragraph({ children: exceedsRuns })],
-                                  width: { size: 33, type: WidthType.PERCENTAGE },
-                                  shading: outcome === 'exceeds' ? { fill: 'D1FAE5' } : { fill: 'F8F9FA' },
-                              }),
-                          ],
-                      });
-                  }),
-              ]
-            : [
-                  // Standard 3-column header: Criterion | Level / Outcome | Comment
-                  new TableRow({
-                      tableHeader: true,
-                      children: ['Criterion', 'Level / Outcome', 'Comment'].map(
-                          (label, ci) =>
-                              new TableCell({
-                                  children: [
-                                      new Paragraph({
-                                          children: [new TextRun({ text: label, bold: true, color: 'FFFFFF' })],
-                                      }),
-                                  ],
-                                  width: { size: ci === 0 ? 25 : ci === 1 ? 25 : 50, type: WidthType.PERCENTAGE },
-                                  shading: { fill: headerFill },
-                              })
-                      ),
-                  }),
-                  // Standard data rows
-                  ...effectiveRubric.criteria.map((c) => {
-                      const entry = sr.entries.find((e) => e.criterionId === c.id);
-                      let levelLabel = '—';
-                      if (entry?.singlePointOutcome) {
-                          levelLabel =
-                              entry.singlePointOutcome === 'exceeds'
-                                  ? '▲ Exceeds'
-                                  : entry.singlePointOutcome === 'meets'
-                                    ? '✓ Meets'
-                                    : '✗ Not yet';
-                      } else if (entry?.levelId) {
-                          const level = c.levels.find((l) => l.id === entry.levelId);
-                          levelLabel = level ? level.label : '—';
-                      }
-                      const comment = entry?.comment
-                          ? entry.comment
-                                .replace(/<[^>]*>/g, ' ')
-                                .replace(/\s+/g, ' ')
-                                .trim()
-                          : '';
-                      return new TableRow({
-                          children: [
-                              new TableCell({
-                                  children: [new Paragraph({ children: [new TextRun({ text: c.title, bold: true })] })],
-                                  width: { size: 25, type: WidthType.PERCENTAGE },
-                                  shading: { fill: 'F8F9FA' },
-                              }),
-                              new TableCell({
-                                  children: [new Paragraph({ children: [new TextRun(levelLabel)] })],
-                                  width: { size: 25, type: WidthType.PERCENTAGE },
-                              }),
-                              new TableCell({
-                                  children: [new Paragraph({ children: parseMdSimple(comment) })],
-                                  width: { size: 50, type: WidthType.PERCENTAGE },
-                              }),
-                          ],
-                      });
-                  }),
-              ];
-
-        children.push(
-            new Table({
-                rows: tableRows,
-                width: { size: 100, type: WidthType.PERCENTAGE },
-            })
-        );
-
-        // Overall comment
-        if (sr.overallComment) {
-            const overall = sr.overallComment
-                .replace(/<[^>]*>/g, ' ')
-                .replace(/\s+/g, ' ')
-                .trim();
-            children.push(
-                new Paragraph({
-                    children: [new TextRun({ text: 'Overall comment: ', bold: true }), new TextRun(overall)],
-                    spacing: { before: 200 },
-                })
-            );
-        }
+        children.push(...buildRubricGridDocxChildren(rubric, sr, scale, student));
     });
+
 
     const doc = new Document({
         styles: buildDocxStyles(fmt.fontFamily),

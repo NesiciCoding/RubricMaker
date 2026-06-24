@@ -24,7 +24,7 @@ import { useToast } from '../hooks/useToast';
 import { calcGradeSummary } from '../utils/gradeCalc';
 import { getStudentGoalScores } from '../utils/learningGoalsAggregator';
 import { encodeFeedbackCode } from '../utils/shareCode';
-import type { ReportCardConfig } from '../types';
+import type { ReportCardConfig, Student } from '../types';
 
 export default function ExportPage() {
     const { t } = useTranslation();
@@ -42,6 +42,8 @@ export default function ExportPage() {
         analysisResults,
         tests,
         studentTests,
+        essayAssignments,
+        essaySubmissions,
     } = useApp();
     const { showToast } = useToast();
     const [selectedRubricId, setSelectedRubricId] = useState(rubrics[0]?.id ?? '');
@@ -74,6 +76,14 @@ export default function ExportPage() {
         includeTestSummary: true,
     });
     const [generatingReportCard, setGeneratingReportCard] = useState(false);
+
+    // ── Essay export state ──────────────────────────────────────────────────────
+    const [essayTeacherKey, setEssayTeacherKey] = useState('');
+    const [selectedEssayStudentIds, setSelectedEssayStudentIds] = useState<Set<string>>(new Set());
+    const [essayFormat, setEssayFormat] = useState<'markdown' | 'docx' | 'pdf'>('pdf');
+    const [essayBatchMode, setEssayBatchMode] = useState<'separate' | 'combined'>('separate');
+    const [includeRubricAnalysis, setIncludeRubricAnalysis] = useState(false);
+    const [exportingEssays, setExportingEssays] = useState(false);
 
     const activeTemplateId = settings.exportTemplateId ?? '';
     const activeTemplate = exportTemplates.find((t) => t.id === activeTemplateId) ?? null;
@@ -113,6 +123,89 @@ export default function ExportPage() {
             setSelectedStudentIds(new Set());
         } else {
             setSelectedStudentIds(new Set(gradedStudents.map((x) => x.student!.id)));
+        }
+    }
+
+    // ── Essay export ────────────────────────────────────────────────────────────
+    const essayGroups = useMemo(() => {
+        const byKey = new Map<string, typeof essayAssignments>();
+        for (const a of essayAssignments) {
+            const existing = byKey.get(a.teacherKey);
+            if (existing) existing.push(a);
+            else byKey.set(a.teacherKey, [a]);
+        }
+        return Array.from(byKey.entries()).map(([teacherKey, rows]) => ({ teacherKey, title: rows[0].title }));
+    }, [essayAssignments]);
+
+    const essaySubmittedEntries = useMemo(() => {
+        if (!essayTeacherKey) return [];
+        return essaySubmissions
+            .filter((s) => s.teacherKey === essayTeacherKey)
+            .map((s) => {
+                const assignment = essayAssignments.find(
+                    (a) => a.teacherKey === essayTeacherKey && a.studentId === s.assignmentStudentId
+                );
+                const student = students.find((st) => st.id === s.assignmentStudentId);
+                return assignment && student ? { assignment, student, submission: s } : null;
+            })
+            .filter((x): x is { assignment: (typeof essayAssignments)[number]; student: Student; submission: (typeof essaySubmissions)[number] } => x !== null);
+    }, [essayTeacherKey, essaySubmissions, essayAssignments, students]);
+
+    function toggleEssayStudent(id: string) {
+        setSelectedEssayStudentIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    }
+
+    function toggleAllEssayStudents() {
+        if (selectedEssayStudentIds.size === essaySubmittedEntries.length) {
+            setSelectedEssayStudentIds(new Set());
+        } else {
+            setSelectedEssayStudentIds(new Set(essaySubmittedEntries.map((e) => e.student.id)));
+        }
+    }
+
+    async function handleEssayExport() {
+        const toExport = essaySubmittedEntries.filter((e) => selectedEssayStudentIds.has(e.student.id));
+        if (toExport.length === 0) return;
+        setExportingEssays(true);
+        try {
+            if (includeRubricAnalysis && (essayFormat === 'docx' || essayFormat === 'pdf')) {
+                const { exportEssayWithRubric } = await import('../utils/essayExport');
+                for (const { assignment, student, submission } of toExport) {
+                    const sr = studentRubrics.find(
+                        (s) => s.rubricId === assignment.rubricId && s.studentId === assignment.studentId
+                    );
+                    const essayRubric = rubrics.find((r) => r.id === assignment.rubricId);
+                    if (!sr || !essayRubric) continue;
+                    const essayScale =
+                        gradeScales.find((g) => g.id === essayRubric.gradeScaleId) ?? null;
+                    const analysis = analysisResults.find(
+                        (ar) => ar.studentId === student.id && ar.rubricId === essayRubric.id
+                    );
+                    await exportEssayWithRubric(
+                        assignment,
+                        student,
+                        submission,
+                        sr,
+                        essayRubric,
+                        essayScale,
+                        essayFormat,
+                        analysis
+                    );
+                }
+            } else {
+                const { exportEssaysBatch } = await import('../utils/essayExport');
+                await exportEssaysBatch(toExport, essayFormat, essayBatchMode);
+            }
+            logAuditEvent('export', `export_essays_${essayFormat}`, 'essay', essayTeacherKey, { count: toExport.length });
+        } catch {
+            showToast(t('toast.export_error'), 'error');
+        } finally {
+            setExportingEssays(false);
         }
     }
 
@@ -894,6 +987,103 @@ export default function ExportPage() {
                                 })}
                             </tbody>
                         </table>
+                    </>
+                )}
+            </div>
+
+            {/* ── Essay export ──────────────────────────────────────────────────── */}
+            <div className="card" style={{ marginTop: 24 }} data-tour="export-essays">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                    <FileText size={16} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                    <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>{t('exportPage.essays_title')}</h3>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: 12 }}>
+                    <label>{t('exportPage.essays_select_assignment')}</label>
+                    <select
+                        value={essayTeacherKey}
+                        onChange={(e) => {
+                            setEssayTeacherKey(e.target.value);
+                            setSelectedEssayStudentIds(new Set());
+                        }}
+                    >
+                        <option value="">{t('exportPage.essays_select_assignment_placeholder')}</option>
+                        {essayGroups.map((g) => (
+                            <option key={g.teacherKey} value={g.teacherKey}>
+                                {g.title}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                {essayTeacherKey && (
+                    <>
+                        {essaySubmittedEntries.length === 0 ? (
+                            <p className="text-muted text-sm">{t('exportPage.essays_no_submissions')}</p>
+                        ) : (
+                            <div style={{ marginBottom: 12 }}>
+                                <button className="btn btn-ghost btn-sm" onClick={toggleAllEssayStudents} style={{ marginBottom: 8 }}>
+                                    {selectedEssayStudentIds.size === essaySubmittedEntries.length ? (
+                                        <CheckSquare size={13} />
+                                    ) : (
+                                        <Square size={13} />
+                                    )}{' '}
+                                    {t('exportPage.select_all')}
+                                </button>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                    {essaySubmittedEntries.map(({ student }) => (
+                                        <label key={student.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedEssayStudentIds.has(student.id)}
+                                                onChange={() => toggleEssayStudent(student.id)}
+                                            />
+                                            {student.name}
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: 12 }}>
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label style={{ fontSize: '0.8rem' }}>{t('exportPage.essays_format')}</label>
+                                <select value={essayFormat} onChange={(e) => setEssayFormat(e.target.value as typeof essayFormat)}>
+                                    <option value="pdf">PDF</option>
+                                    <option value="docx">DOCX</option>
+                                    <option value="markdown">Markdown</option>
+                                </select>
+                            </div>
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label style={{ fontSize: '0.8rem' }}>{t('exportPage.essays_batch_mode')}</label>
+                                <select
+                                    value={essayBatchMode}
+                                    onChange={(e) => setEssayBatchMode(e.target.value as typeof essayBatchMode)}
+                                    disabled={includeRubricAnalysis}
+                                >
+                                    <option value="separate">{t('exportPage.essays_mode_separate')}</option>
+                                    <option value="combined">{t('exportPage.essays_mode_combined')}</option>
+                                </select>
+                            </div>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                                <input
+                                    type="checkbox"
+                                    checked={includeRubricAnalysis}
+                                    disabled={essayFormat === 'markdown'}
+                                    onChange={(e) => setIncludeRubricAnalysis(e.target.checked)}
+                                />
+                                {t('exportPage.essays_include_rubric_analysis')}
+                            </label>
+                        </div>
+
+                        <button
+                            className="btn btn-primary btn-sm"
+                            disabled={exportingEssays || selectedEssayStudentIds.size === 0}
+                            onClick={handleEssayExport}
+                        >
+                            {exportingEssays ? <Loader size={13} className="spin" /> : <Download size={13} />}
+                            {t('exportPage.essays_export_button')}
+                        </button>
                     </>
                 )}
             </div>

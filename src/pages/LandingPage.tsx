@@ -48,7 +48,7 @@ const TEACHER_FEATURES = [
     {
         icon: BarChart3,
         title: 'Analytics & Export',
-        desc: 'Grade distributions, per-criterion breakdowns, class-vs-class comparison with insights, activity dashboard, CEFR progress reports, PDF/Word/CSV export, and consolidated report cards with customizable sections.',
+        desc: 'Grade distributions, per-criterion breakdowns, class-vs-class comparison with insights, activity dashboard, CEFR progress reports, PDF/Word/CSV export, consolidated report cards, and essay exports (Markdown/DOCX/PDF, single or batch, with rubric grade + analysis).',
         color: '#06b6d4',
     },
     {

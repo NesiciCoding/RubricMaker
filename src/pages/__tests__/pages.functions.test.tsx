@@ -115,6 +115,8 @@ function makeApp(overrides = {}) {
         selfAssessments: [],
         speakingSessions: [],
         analysisResults: [],
+        essayAssignments: [],
+        essaySubmissions: [],
         dispatch: noop,
         addRubric: vi.fn(() => mockRubric),
         updateRubric: noop,
