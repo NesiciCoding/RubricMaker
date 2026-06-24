@@ -69,6 +69,7 @@ import { storageSync, loadSupabaseConfig, saveSupabaseConfig } from '../services
 import type { DatabaseConfig, DbUser, SyncResult } from '../services/database';
 import { useToast } from '../hooks/useToast';
 import { buildAccentScale, ACCENT_SCALE_STEPS } from '../utils/accentScale';
+import { isRtlLanguage } from '../utils/rtlLanguages';
 import {
     logEvent,
     initClientLogger,
@@ -872,6 +873,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
             link.href = `https://fonts.googleapis.com/css2?family=${GOOGLE_FONTS[fontKey]}&display=swap`;
         }
     }, [state.settings.uiFontFamily]);
+
+    useEffect(() => {
+        document.documentElement.dir = isRtlLanguage(state.settings.language) ? 'rtl' : 'ltr';
+    }, [state.settings.language]);
+
+    useEffect(() => {
+        const root = document.documentElement;
+        if (state.settings.dyslexiaFriendlyMode) {
+            root.style.setProperty('--line-height', '1.8');
+            root.style.setProperty('--letter-spacing', '0.04em');
+        } else {
+            root.style.removeProperty('--line-height');
+            root.style.removeProperty('--letter-spacing');
+        }
+    }, [state.settings.dyslexiaFriendlyMode]);
 
     // ── Startup: detect local mode / existing session / OAuth callback ────────
     useEffect(() => {

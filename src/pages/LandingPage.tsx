@@ -26,6 +26,7 @@ import {
     TrendingUp,
     Store,
     UserCheck,
+    Download,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { loadSupabaseConfig } from '../services/database';
@@ -97,6 +98,12 @@ const TEACHER_FEATURES = [
         title: 'Department Collaboration',
         desc: 'Send work to a colleague for a second opinion, share rubrics and comment bank items read-only across your department, and assign batches of ungraded work to specific teachers.',
         color: '#f59e0b',
+    },
+    {
+        icon: Download,
+        title: 'Install as an App',
+        desc: 'Add RubricMaker to your home screen or desktop for a faster, app-like launch — great for shared classroom devices, and works fully offline.',
+        color: '#0ea5e9',
     },
 ];
 

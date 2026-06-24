@@ -675,6 +675,36 @@ export default function SettingsPage() {
                             </label>
                         </div>
 
+                        {/* Dyslexia-friendly reading mode */}
+                        <div className="card" style={{ marginBottom: 24 }}>
+                            <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
+                                <BookOpen size={20} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                                <h3 style={{ margin: 0 }}>{t('settings.dyslexia_section_title')}</h3>
+                            </div>
+                            <label
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 10,
+                                    cursor: 'pointer',
+                                    userSelect: 'none',
+                                }}
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={!!settings.dyslexiaFriendlyMode}
+                                    onChange={(e) => updateSettings({ dyslexiaFriendlyMode: e.target.checked })}
+                                    style={{ accentColor: 'var(--accent)' }}
+                                />
+                                <div>
+                                    <div style={{ fontWeight: 500 }}>{t('settings.dyslexia_mode_label')}</div>
+                                    <div className="text-xs text-muted" style={{ marginTop: 2 }}>
+                                        {t('settings.dyslexia_mode_help')}
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+
                         {/* Guided tour */}
                         <div className="card">
                             <h3 style={{ marginBottom: 16 }}>{t('tutorial.restart_section_title')}</h3>
