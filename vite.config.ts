@@ -14,7 +14,7 @@ export default defineConfig({
     }),
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['rubric-icon.svg'],
+      includeAssets: ['rubric-icon.svg', 'pwa-192.png', 'pwa-512.png'],
       manifest: {
         name: 'RubricMaker',
         short_name: 'RubricMaker',
@@ -24,7 +24,11 @@ export default defineConfig({
         display: 'standalone',
         start_url: '.',
         scope: '.',
-        icons: [{ src: 'rubric-icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' }],
+        icons: [
+          { src: 'rubric-icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+          { src: 'pwa-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: 'pwa-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+        ],
       },
       workbox: {
         // Never let the service worker cache Supabase requests — a cached

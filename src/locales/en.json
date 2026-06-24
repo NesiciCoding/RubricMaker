@@ -1058,6 +1058,9 @@
         "copy_paste_failed": "Copy/paste failed. Please try again.",
         "sync_offline_cache": "You're offline — using locally cached data."
     },
+    "pwa": {
+        "update_available_confirm": "A new version of RubricMaker is available. Reload now?"
+    },
     "cefr": {
         "rubric_section_title": "CEFR / ERK Level",
         "rubric_section_subtitle": "Optional – for EFL assessment tracking",

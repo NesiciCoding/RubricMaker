@@ -1058,6 +1058,9 @@
         "copy_paste_failed": "Kopiëren/plakken mislukt. Probeer het opnieuw.",
         "sync_offline_cache": "Je bent offline — lokaal gecachte gegevens worden gebruikt."
     },
+    "pwa": {
+        "update_available_confirm": "Er is een nieuwe versie van RubricMaker beschikbaar. Nu opnieuw laden?"
+    },
     "cefr": {
         "rubric_section_title": "CEFR / ERK Niveau",
         "rubric_section_subtitle": "Optioneel – voor het bijhouden van ERK-niveaus",

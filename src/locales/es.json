@@ -1058,6 +1058,9 @@
         "copy_paste_failed": "Error al copiar/pegar. Por favor, inténtalo de nuevo.",
         "sync_offline_cache": "Estás sin conexión — usando datos almacenados en caché local."
     },
+    "pwa": {
+        "update_available_confirm": "Hay una nueva versión de RubricMaker disponible. ¿Recargar ahora?"
+    },
     "cefr": {
         "rubric_section_title": "Nivel MCER / ERK",
         "rubric_section_subtitle": "Opcional – para el seguimiento de la evaluación de idiomas",

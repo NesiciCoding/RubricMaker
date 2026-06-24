@@ -1058,6 +1058,9 @@
         "copy_paste_failed": "Copier/coller échoué. Veuillez réessayer.",
         "sync_offline_cache": "Vous êtes hors ligne — utilisation des données en cache local."
     },
+    "pwa": {
+        "update_available_confirm": "Une nouvelle version de RubricMaker est disponible. Recharger maintenant ?"
+    },
     "cefr": {
         "rubric_section_title": "Niveau CECR / ERK",
         "rubric_section_subtitle": "Optionnel — pour le suivi en langue étrangère",

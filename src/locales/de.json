@@ -1058,6 +1058,9 @@
         "copy_paste_failed": "Kopieren/Einfügen fehlgeschlagen. Bitte versuchen Sie es erneut.",
         "sync_offline_cache": "Sie sind offline — es werden lokal zwischengespeicherte Daten verwendet."
     },
+    "pwa": {
+        "update_available_confirm": "Eine neue Version von RubricMaker ist verfügbar. Jetzt neu laden?"
+    },
     "cefr": {
         "rubric_section_title": "GER / ERK-Niveau",
         "rubric_section_subtitle": "Optional — für die Fremdsprachennachverfolgung",
