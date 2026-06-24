@@ -1,5 +1,6 @@
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, PageBreak, type Table } from 'docx';
 import { saveAs } from 'file-saver';
+import DOMPurify from 'dompurify';
 import type {
     EssayAssignment,
     EssaySubmission,
@@ -17,6 +18,15 @@ type EssayLike = Pick<EssayAssignment, 'title'>;
 
 function safeFilename(name: string): string {
     return name.replace(/[^a-z0-9]/gi, '_');
+}
+
+export function escapeHtml(value: string): string {
+    return value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 // ponytail: walks only the tags EssayEditor's TipTap config actually emits (p, h1-3, strong/em/u/s,
@@ -185,9 +195,9 @@ function essayDocxHeader(assignment: EssayLike, student: Student, submission: Es
 function essayHtmlHeader(assignment: EssayLike, student: Student, submission: EssaySubmission): string {
     return `
   <div class="print-page" style="page-break-after: always; color: #1e293b; background: #fff;">
-    <h1 style="margin:0 0 4px;font-size:20px">${assignment.title}</h1>
-    <div style="color:#6b7280;font-size:13px;margin-bottom:18px">${essayHeaderLine(assignment, student, submission)}</div>
-    ${submission.contentHtml}
+    <h1 style="margin:0 0 4px;font-size:20px">${escapeHtml(assignment.title)}</h1>
+    <div style="color:#6b7280;font-size:13px;margin-bottom:18px">${escapeHtml(essayHeaderLine(assignment, student, submission))}</div>
+    ${DOMPurify.sanitize(submission.contentHtml)}
   </div>`;
 }
 
@@ -299,10 +309,10 @@ function analysisHtml(analysis: DocumentAnalysisResult, vocabularyItems: Vocabul
     const vocabRows = analysis.detectedItems
         .map((item) => {
             const phrase = vocabularyItems.find((v) => v.id === item.vocabularyItemId)?.phrase ?? item.vocabularyItemId;
-            return `<li>${item.found ? '✓' : '✗'} <strong>${phrase}</strong> — ${item.occurrences} occurrence(s)</li>`;
+            return `<li>${item.found ? '✓' : '✗'} <strong>${escapeHtml(phrase)}</strong> — ${item.occurrences} occurrence(s)</li>`;
         })
         .join('');
-    const grammarRows = analysis.grammarErrors.map((err) => `<li>${err.message}</li>`).join('');
+    const grammarRows = analysis.grammarErrors.map((err) => `<li>${escapeHtml(err.message)}</li>`).join('');
     return `
     <div style="margin-top:18px;page-break-inside: avoid;">
       <h2 style="font-size:16px">Grammar &amp; Vocabulary Analysis</h2>

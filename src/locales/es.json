@@ -1441,6 +1441,7 @@
         "essays_mode_combined": "Combinar en un solo documento",
         "essays_include_rubric_analysis": "Incluir calificación de rúbrica + análisis",
         "essays_export_button": "Exportar ensayos",
+        "essays_skipped_ungraded": "Omitido (aún no calificado con esta rúbrica): {{names}}",
         "period_select_class": "Seleccionar una clase…",
         "period_report_title": "Informe de Período / Boletín",
         "period_report_help": "Genera un informe DOCX por estudiante que resume todas las calificaciones y retroalimentación dentro de un rango de fechas.",

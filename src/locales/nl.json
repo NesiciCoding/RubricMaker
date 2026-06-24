@@ -1441,6 +1441,7 @@
         "essays_mode_combined": "Combineren in één document",
         "essays_include_rubric_analysis": "Rubriekcijfer + analyse toevoegen",
         "essays_export_button": "Essays exporteren",
+        "essays_skipped_ungraded": "Overgeslagen (nog niet beoordeeld met deze rubriek): {{names}}",
         "period_select_class": "Selecteer een klas…",
         "period_report_title": "Perioderapport / Rapportkaart",
         "period_report_help": "Genereer een DOCX-rapport per leerling met alle cijfers en feedback binnen een datumbereik.",

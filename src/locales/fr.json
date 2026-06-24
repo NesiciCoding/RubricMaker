@@ -1441,6 +1441,7 @@
         "essays_mode_combined": "Combiner en un seul document",
         "essays_include_rubric_analysis": "Inclure la note de la grille + l'analyse",
         "essays_export_button": "Exporter les dissertations",
+        "essays_skipped_ungraded": "Ignoré (pas encore noté avec cette grille) : {{names}}",
         "period_select_class": "Sélectionner une classe…",
         "period_report_title": "Bulletin / Rapport de période",
         "period_report_help": "Générez un rapport DOCX par élève résumant toutes les notes et retours sur une période donnée.",

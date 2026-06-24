@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { htmlToMarkdown, htmlToDocxChildren } from './essayExport';
+import { htmlToMarkdown, htmlToDocxChildren, escapeHtml } from './essayExport';
 
 const FIXTURE_HTML = `
 <h1>My Essay</h1>
@@ -36,5 +36,12 @@ describe('htmlToDocxChildren', () => {
         const children = htmlToDocxChildren(FIXTURE_HTML);
         // h1, p, 2 list items (ul), 2 list items (ol), blockquote, hr = 8
         expect(children.length).toBe(8);
+    });
+});
+
+describe('escapeHtml', () => {
+    it('escapes markup-significant characters so user-controlled strings cannot inject markup', () => {
+        expect(escapeHtml('<script>alert(1)</script>')).toBe('&lt;script&gt;alert(1)&lt;/script&gt;');
+        expect(escapeHtml('A & B "quoted" \'single\'')).toBe('A &amp; B &quot;quoted&quot; &#39;single&#39;');
     });
 });

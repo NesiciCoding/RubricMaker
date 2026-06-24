@@ -181,6 +181,8 @@ export default function ExportPage() {
         if (toExport.length === 0) return;
         setExportingEssays(true);
         try {
+            let exportedCount = 0;
+            const skippedNames: string[] = [];
             if (includeRubricAnalysis && (essayFormat === 'docx' || essayFormat === 'pdf')) {
                 const { exportEssayWithRubric } = await import('../utils/essayExport');
                 for (const { assignment, student, submission } of toExport) {
@@ -188,7 +190,10 @@ export default function ExportPage() {
                         (s) => s.rubricId === assignment.rubricId && s.studentId === assignment.studentId
                     );
                     const essayRubric = rubrics.find((r) => r.id === assignment.rubricId);
-                    if (!sr || !essayRubric) continue;
+                    if (!sr || !essayRubric) {
+                        skippedNames.push(student.name);
+                        continue;
+                    }
                     const essayScale = gradeScales.find((g) => g.id === essayRubric.gradeScaleId) ?? null;
                     const analysis = analysisResults.find(
                         (ar) => ar.studentId === student.id && ar.rubricId === essayRubric.id
@@ -203,13 +208,18 @@ export default function ExportPage() {
                         essayFormat,
                         analysis
                     );
+                    exportedCount += 1;
+                }
+                if (skippedNames.length > 0) {
+                    showToast(t('exportPage.essays_skipped_ungraded', { names: skippedNames.join(', ') }), 'error');
                 }
             } else {
                 const { exportEssaysBatch } = await import('../utils/essayExport');
                 await exportEssaysBatch(toExport, essayFormat, essayBatchMode);
+                exportedCount = toExport.length;
             }
             logAuditEvent('export', `export_essays_${essayFormat}`, 'essay', essayTeacherKey, {
-                count: toExport.length,
+                count: exportedCount,
             });
         } catch {
             showToast(t('toast.export_error'), 'error');
@@ -1074,7 +1084,11 @@ export default function ExportPage() {
                                 <label style={{ fontSize: '0.8rem' }}>{t('exportPage.essays_format')}</label>
                                 <select
                                     value={essayFormat}
-                                    onChange={(e) => setEssayFormat(e.target.value as typeof essayFormat)}
+                                    onChange={(e) => {
+                                        const next = e.target.value as typeof essayFormat;
+                                        setEssayFormat(next);
+                                        if (next === 'markdown') setIncludeRubricAnalysis(false);
+                                    }}
                                 >
                                     <option value="pdf">PDF</option>
                                     <option value="docx">DOCX</option>
@@ -1086,7 +1100,7 @@ export default function ExportPage() {
                                 <select
                                     value={essayBatchMode}
                                     onChange={(e) => setEssayBatchMode(e.target.value as typeof essayBatchMode)}
-                                    disabled={includeRubricAnalysis}
+                                    disabled={includeRubricAnalysis && essayFormat !== 'markdown'}
                                 >
                                     <option value="separate">{t('exportPage.essays_mode_separate')}</option>
                                     <option value="combined">{t('exportPage.essays_mode_combined')}</option>

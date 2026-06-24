@@ -289,9 +289,12 @@ export function buildRubricGridDocxChildren(
     );
 
     // Score summary line
-    const gradeText = scale
-        ? `${summary.letterGrade} · ${summary.modifiedPercentage.toFixed(1)}% · ${summary.rawScore}/${summary.configuredMaxPoints} pts`
-        : `${summary.modifiedPercentage.toFixed(1)}% · ${summary.rawScore}/${summary.configuredMaxPoints} pts`;
+    const gradeText =
+        fmt.showCalculatedGrade === false
+            ? `${summary.rawScore}/${summary.configuredMaxPoints} pts`
+            : scale
+              ? `${summary.letterGrade} · ${summary.modifiedPercentage.toFixed(1)}% · ${summary.rawScore}/${summary.configuredMaxPoints} pts`
+              : `${summary.modifiedPercentage.toFixed(1)}% · ${summary.rawScore}/${summary.configuredMaxPoints} pts`;
     children.push(
         new Paragraph({
             children: [new TextRun({ text: gradeText, bold: true, size: 24 })],
