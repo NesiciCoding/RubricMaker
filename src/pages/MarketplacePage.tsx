@@ -2,10 +2,12 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Store, ThumbsUp, Copy, Upload, Check } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
+import CefrBadge from '../components/CEFR/CefrBadge';
 import { useApp } from '../context/AppContext';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { storageSync } from '../services/database';
-import type { MarketplaceListing } from '../types';
+import { CEFR_LEVELS } from '../data/cefrDescriptors';
+import type { CefrLevel, MarketplaceListing } from '../types';
 
 export default function MarketplacePage() {
     const { t } = useTranslation();
@@ -25,6 +27,13 @@ export default function MarketplacePage() {
     );
     const [publishing, setPublishing] = useState(false);
     const [clonedId, setClonedId] = useState<string | null>(null);
+    const [publishCefrLevels, setPublishCefrLevels] = useState<CefrLevel[]>([]);
+
+    function toggleCefrLevel(level: CefrLevel) {
+        setPublishCefrLevels((prev) =>
+            prev.includes(level) ? prev.filter((l) => l !== level) : [...prev, level]
+        );
+    }
 
     const canUseMarketplace = dbStatus.isConnected && !!schoolId;
 
@@ -50,12 +59,14 @@ export default function MarketplacePage() {
         const result = await storageSync.adapter.publishToMarketplace(
             schoolId,
             rubric,
-            publishAttribution.trim() || undefined
+            publishAttribution.trim() || undefined,
+            { cefrLevels: publishCefrLevels.length ? publishCefrLevels : undefined }
         );
         setPublishing(false);
         if (result) {
             setShowPublish(false);
             setPublishRubricId('');
+            setPublishCefrLevels([]);
             await load();
         }
     }
@@ -146,6 +157,22 @@ export default function MarketplacePage() {
                                 onChange={(e) => setPublishAttribution(e.target.value)}
                                 placeholder={t('marketplace.publish_attribution_placeholder')}
                             />
+                            <label className="text-xs text-muted">{t('marketplace.publish_cefr_label')}</label>
+                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                {CEFR_LEVELS.map((level) => {
+                                    const active = publishCefrLevels.includes(level);
+                                    return (
+                                        <button
+                                            key={level}
+                                            type="button"
+                                            className={`btn btn-sm ${active ? 'btn-primary' : 'btn-secondary'}`}
+                                            onClick={() => toggleCefrLevel(level)}
+                                        >
+                                            {level}
+                                        </button>
+                                    );
+                                })}
+                            </div>
                             <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                                 <button
                                     className="btn btn-primary btn-sm"
@@ -187,6 +214,13 @@ export default function MarketplacePage() {
                                     {listing.subject && (
                                         <div className="text-muted text-xs" style={{ marginTop: 2 }}>
                                             {listing.subject}
+                                        </div>
+                                    )}
+                                    {listing.cefrLevels && listing.cefrLevels.length > 0 && (
+                                        <div style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
+                                            {listing.cefrLevels.map((level) => (
+                                                <CefrBadge key={level} level={level} size="sm" />
+                                            ))}
                                         </div>
                                     )}
                                 </div>

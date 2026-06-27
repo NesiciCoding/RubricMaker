@@ -19,6 +19,7 @@ function mkCell(skill: CefrCellData['skill'], level: CefrCellData['level'], avgS
         avgScore,
         threshold: 70,
         rubricAchieved: avgScore >= 70,
+        evidence: [],
         totalDescriptors: 0,
         confidentCount: 0,
         confidenceRate: 0,

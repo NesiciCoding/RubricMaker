@@ -712,7 +712,7 @@ function RubricsTab() {
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
                     {t('docs.rb_marketplace_body_prefix')} <strong>{t('docs.rb_marketplace_body_name')}</strong>{' '}
-                    {t('docs.rb_marketplace_body_suffix')}
+                    {t('docs.rb_marketplace_body_suffix')} {t('docs.rb_marketplace_cefr_tags_body')}
                 </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
@@ -792,6 +792,7 @@ function RubricsTab() {
                         t('docs.rb_live_monitor_item_draft'),
                         t('docs.rb_live_monitor_item_hide_names'),
                         t('docs.rb_live_monitor_item_proctoring'),
+                        t('docs.rb_live_monitor_item_nudge'),
                     ]}
                 />
             </FeatureSection>
@@ -867,6 +868,11 @@ function GradingTab() {
                     {t('docs.gr_cograding_body_mid')} <strong>{t('docs.gr_cograding_moderation')}</strong>{' '}
                     {t('docs.gr_cograding_body_suffix')}
                 </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    {t('docs.gr_cograding_reconcile_body_prefix')}{' '}
+                    <strong>{t('docs.gr_cograding_reconcile_button')}</strong>{' '}
+                    {t('docs.gr_cograding_reconcile_body_suffix')}
+                </p>
             </FeatureSection>
 
             <FeatureSection icon={MessageSquare} title={t('docs.gr_comment_bank_title')} color="#06b6d4">
@@ -936,6 +942,7 @@ function CefrTab() {
                         t('docs.ce_overview_item_whole_class'),
                         t('docs.ce_overview_item_per_student'),
                         t('docs.ce_overview_item_progress'),
+                        t('docs.ce_overview_item_evidence'),
                     ]}
                 />
                 <InfoBox color="#f59e0b">{t('docs.ce_overview_info')}</InfoBox>

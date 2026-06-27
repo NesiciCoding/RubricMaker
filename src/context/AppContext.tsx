@@ -841,8 +841,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }, [state.settings.theme]);
 
     useEffect(() => {
-        const accent = state.settings.accentColor || '#3b82f6';
         const root = document.documentElement;
+        const accent = state.settings.accentColor;
+        if (!accent) {
+            // No custom accent chosen — let the theme's own --accent (Warm Scholar tokens, per light/dark) stand.
+            root.style.removeProperty('--accent');
+            root.style.removeProperty('--accent-hover');
+            root.style.removeProperty('--accent-soft');
+            root.style.removeProperty('--accent-glow');
+            for (const step of ACCENT_SCALE_STEPS) {
+                root.style.removeProperty(`--accent-${step}`);
+            }
+            return;
+        }
         root.style.setProperty('--accent', accent);
         root.style.setProperty('--accent-hover', accent);
         root.style.setProperty('--accent-soft', `${accent}26`);
@@ -854,8 +865,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }, [state.settings.accentColor]);
 
     useEffect(() => {
-        const fontKey = state.settings.uiFontFamily || 'Inter';
+        const fontKey = state.settings.uiFontFamily;
+        if (!fontKey) {
+            // No custom UI font chosen — let the theme's own --font (Hanken Grotesk) stand.
+            document.documentElement.style.removeProperty('--font');
+            return;
+        }
         const GOOGLE_FONTS: Record<string, string> = {
+            Inter: 'Inter:wght@300;400;500;600;700',
             Nunito: 'Nunito:wght@400;500;600;700',
             'Source Sans 3': 'Source+Sans+3:wght@400;500;600;700',
             Lato: 'Lato:wght@400;700',

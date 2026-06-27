@@ -21,6 +21,7 @@ import {
     Settings,
     Eye,
     EyeOff,
+    Sparkles,
 } from 'lucide-react';
 import CommentBankModal from '../components/Comments/CommentBankModal';
 import TemplateUploadModal from '../components/Rubric/TemplateUploadModal';
@@ -31,6 +32,7 @@ import { useToast } from '../hooks/useToast';
 import { useDbStatus } from '../hooks/useDbStatus';
 import type { GradeScale, GradeRange, UserRole } from '../types';
 import { exportFullBackup } from '../store/storage';
+import { seedDemoData } from '../utils/seedDemoData';
 import { hashPin, verifyPin, isHashed } from '../utils/pinHash';
 import { THEME_BUNDLES, ACCENT_PRESETS } from '../data/themes';
 
@@ -142,7 +144,7 @@ export default function SettingsPage() {
     const [deleteScaleId, setDeleteScaleId] = useState<string | null>(null);
     const [showCommentBank, setShowCommentBank] = useState(false);
     const [showTemplateUpload, setShowTemplateUpload] = useState(false);
-    const [accentInput, setAccentInput] = useState(settings.accentColor || '#3b82f6');
+    const [accentInput, setAccentInput] = useState(settings.accentColor || '#37b49c');
     const [accentError, setAccentError] = useState(false);
 
     useEffect(() => {
@@ -228,6 +230,11 @@ export default function SettingsPage() {
     }
 
     // ─── Other handlers ──────────────────────────────────────────────────────────
+
+    function handleLoadSampleData() {
+        seedDemoData();
+        window.location.reload();
+    }
 
     function handleBackupExport() {
         const json = exportFullBackup();
@@ -464,7 +471,7 @@ export default function SettingsPage() {
                                             <input
                                                 type="color"
                                                 aria-label={t('settings.accent_color_label') + ' (picker)'}
-                                                value={/^#[0-9A-Fa-f]{6}$/.test(accentInput) ? accentInput : '#3b82f6'}
+                                                value={/^#[0-9A-Fa-f]{6}$/.test(accentInput) ? accentInput : '#37b49c'}
                                                 onChange={(e) => handleAccentChange(e.target.value)}
                                                 style={{
                                                     width: 36,
@@ -1341,6 +1348,21 @@ export default function SettingsPage() {
                                         cannot be undone.
                                     </div>
                                 </div>
+
+                                {/* Dev-only: seed demo data for design/UX review — never shown in production builds */}
+                                {import.meta.env.DEV && (
+                                    <div className="card" style={{ marginBottom: 24 }}>
+                                        <h3 style={{ marginBottom: 16 }}>Dev: sample data</h3>
+                                        <button className="btn btn-secondary" onClick={handleLoadSampleData}>
+                                            <Sparkles size={16} aria-hidden="true" /> Load sample data
+                                        </button>
+                                        <p className="text-muted text-sm" style={{ marginTop: 12 }}>
+                                            Populates classes, students, CEFR-tagged rubrics with grades, tests, essays,
+                                            and comment-bank entries for design review. Overwrites current data — only
+                                            available in dev builds.
+                                        </p>
+                                    </div>
+                                )}
 
                                 {/* Admin password */}
                                 <div

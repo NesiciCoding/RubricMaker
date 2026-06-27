@@ -27,6 +27,14 @@ export interface CefrCellDescriptor {
     confidentInSelfAssess: boolean;
 }
 
+export interface CefrCellEvidence {
+    rubricId: string;
+    rubricName: string;
+    gradedAt: string;
+    score: number;
+    threshold: number;
+}
+
 export interface CefrCellData {
     skill: CefrSkill;
     level: CefrLevel;
@@ -35,6 +43,7 @@ export interface CefrCellData {
     avgScore: number;
     threshold: number;
     rubricAchieved: boolean;
+    evidence: CefrCellEvidence[];
     // Self-assessment side
     totalDescriptors: number;
     confidentCount: number;
@@ -82,6 +91,7 @@ interface CellAccumulator {
     directlyAchieved: boolean;
     // descriptorId → confident (last-write wins across multiple self-assessments)
     confidenceByDescriptor: Map<string, boolean>;
+    evidence: CefrCellEvidence[];
 }
 
 interface StandardAccumulator {
@@ -145,11 +155,20 @@ export function getCefrStudentOverview(
                     thresholds: [],
                     directlyAchieved: false,
                     confidenceByDescriptor: new Map(),
+                    evidence: [],
                 });
             }
             const acc = cellAccMap.get(key)!;
+            const threshold = rubric.cefrAchieveThreshold ?? 70;
             acc.scores.push(summary.modifiedPercentage);
-            acc.thresholds.push(rubric.cefrAchieveThreshold ?? 70);
+            acc.thresholds.push(threshold);
+            acc.evidence.push({
+                rubricId: sr.rubricId,
+                rubricName: rubric.name,
+                gradedAt: sr.gradedAt!,
+                score: summary.modifiedPercentage,
+                threshold,
+            });
         }
 
         // ── Per-criterion/level CEFR aggregation ──────────────────────────────
@@ -174,6 +193,7 @@ export function getCefrStudentOverview(
                     thresholds: [],
                     directlyAchieved: false,
                     confidenceByDescriptor: new Map(),
+                    evidence: [],
                 });
             }
             // Flag this cell as directly achieved — not subject to percentage averaging.
@@ -273,6 +293,7 @@ export function getCefrStudentOverview(
                     thresholds: [],
                     directlyAchieved: false,
                     confidenceByDescriptor: new Map(),
+                    evidence: [],
                 });
             }
             // Last-write wins for same descriptor across multiple self-assessments
@@ -346,6 +367,9 @@ export function getCefrStudentOverview(
               : 'not-started';
 
         const cellKey = `${acc.skill}__${acc.level}`;
+        const evidence = [...acc.evidence].sort(
+            (a, b) => new Date(a.gradedAt).getTime() - new Date(b.gradedAt).getTime()
+        );
         return {
             skill: acc.skill,
             level: acc.level,
@@ -353,6 +377,7 @@ export function getCefrStudentOverview(
             avgScore,
             threshold,
             rubricAchieved,
+            evidence,
             totalDescriptors,
             confidentCount,
             confidenceRate,

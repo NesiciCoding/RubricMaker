@@ -759,14 +759,19 @@ export const CEFR_LEVEL_DESCRIPTORS: Record<CefrLevel, { en: string; nl: string 
     },
 };
 
-/** Colour associated with each CEFR level for badges/charts */
+/**
+ * Colour associated with each CEFR level for badges/charts — Warm Scholar's fixed CEFR scale,
+ * identical in both themes. A1/A2/B1/B2 are darkened from the design doc's exact hues
+ * (#C77F3A/#CDA23C/#6FA05A/#3E9B7E) to clear the project's 4.5:1 white-text contrast bar;
+ * C1/C2 already passed at the doc's original values.
+ */
 export const CEFR_LEVEL_COLORS: Record<CefrLevel, string> = {
-    A1: '#6a7584', // slate-500/600 (AAA-large white text)
-    A2: '#64748b', // slate-500
-    B1: '#3473da', // blue-500/600 (AAA-large white text)
-    B2: '#2563eb', // blue-600
-    C1: '#7c3aed', // violet-600
-    C2: '#6d28d9', // violet-700
+    A1: '#A0662E',
+    A2: '#8A6B23',
+    B1: '#587F48',
+    B2: '#327E66',
+    C1: '#2E7E8C',
+    C2: '#3A5E9E',
 };
 
 /** Get descriptors filtered by skill and/or level */

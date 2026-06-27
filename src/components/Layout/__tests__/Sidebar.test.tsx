@@ -1,6 +1,6 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import Sidebar from '../Sidebar';
 
@@ -8,8 +8,6 @@ let mockUserRole: string = 'user';
 
 vi.mock('../../../context/AppContext', () => ({
     useApp: () => ({
-        rubrics: [{ id: 'r1' }, { id: 'r2' }],
-        students: [{ id: 's1' }],
         settings: { userRole: mockUserRole },
     }),
 }));
@@ -30,49 +28,38 @@ function renderSidebar(initialRoute = '/') {
 
 describe('Sidebar', () => {
     beforeEach(() => {
-        localStorage.clear();
         mockUserRole = 'user';
     });
 
-    it('renders the brand name when expanded', () => {
+    it('renders the domain rail', () => {
         renderSidebar();
-        expect(screen.getByText('Rubric Maker')).toBeInTheDocument();
+        expect(screen.getAllByText('sidebar.domain_overview').length).toBeGreaterThan(0);
+        expect(screen.getByText('sidebar.domain_assessments')).toBeInTheDocument();
+        expect(screen.getByText('sidebar.domain_students')).toBeInTheDocument();
+        expect(screen.getByText('sidebar.domain_grading')).toBeInTheDocument();
+        expect(screen.getByText('sidebar.domain_insights')).toBeInTheDocument();
+        expect(screen.getByText('sidebar.domain_library')).toBeInTheDocument();
     });
 
-    it('shows rubric count', () => {
-        renderSidebar();
-        expect(screen.getByText('2')).toBeInTheDocument();
-    });
-
-    it('shows student count', () => {
-        renderSidebar();
-        expect(screen.getByText('1')).toBeInTheDocument();
-    });
-
-    it('shows nav items', () => {
-        renderSidebar();
+    it('shows the Overview domain sub-items by default at /', () => {
+        renderSidebar('/');
         expect(screen.getByText('navigation.dashboard')).toBeInTheDocument();
+        expect(screen.getByText('navigation.activity_dashboard')).toBeInTheDocument();
+    });
+
+    it('shows the Assessments domain sub-items when on a rubrics route', () => {
+        renderSidebar('/rubrics');
         expect(screen.getByText('navigation.rubrics')).toBeInTheDocument();
+        expect(screen.getByText('navigation.tests')).toBeInTheDocument();
+        expect(screen.getByText('navigation.essays')).toBeInTheDocument();
+        expect(screen.getByText('navigation.marketplace')).toBeInTheDocument();
     });
 
-    it('collapses when toggle button clicked', () => {
-        renderSidebar();
-        const toggleBtn = screen.getByRole('button', { name: 'sidebar.collapse' });
-        fireEvent.click(toggleBtn);
-        expect(screen.queryByText('Rubric Maker')).toBeNull();
-    });
-
-    it('expands again after collapse', () => {
-        renderSidebar();
-        fireEvent.click(screen.getByRole('button', { name: 'sidebar.collapse' }));
-        fireEvent.click(screen.getByRole('button', { name: 'sidebar.expand' }));
-        expect(screen.getByText('Rubric Maker')).toBeInTheDocument();
-    });
-
-    it('restores collapsed state from localStorage', () => {
-        localStorage.setItem('rm_sidebar_collapsed', 'true');
-        renderSidebar();
-        expect(screen.queryByText('Rubric Maker')).toBeNull();
+    it('shows the Students domain sub-items when on a students route', () => {
+        renderSidebar('/students');
+        expect(screen.getByText('navigation.students')).toBeInTheDocument();
+        expect(screen.getByText('navigation.cefr_overview')).toBeInTheDocument();
+        expect(screen.getByText('navigation.vocabulary')).toBeInTheDocument();
     });
 
     it('renders settings nav link', () => {
@@ -90,6 +77,5 @@ describe('Sidebar', () => {
         mockUserRole = 'admin';
         renderSidebar();
         expect(screen.getByText('admin.title')).toBeInTheDocument();
-        mockUserRole = 'user';
     });
 });
