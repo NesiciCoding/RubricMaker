@@ -236,8 +236,7 @@ export default function EssayListPage() {
                                                                             height: '100%',
                                                                             width: `${
                                                                                 rows.length
-                                                                                    ? (submittedCount /
-                                                                                          rows.length) *
+                                                                                    ? (submittedCount / rows.length) *
                                                                                       100
                                                                                     : 0
                                                                             }%`,
