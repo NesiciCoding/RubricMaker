@@ -170,6 +170,23 @@ export default function StudentCefrOverviewPage() {
                     </button>
                 </div>
 
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 24 }}>
+                    <button
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => navigate(`/students/${student.id}/learning-path`)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                    >
+                        <ExternalLink size={14} /> {t('learningPath.view_button')}
+                    </button>
+                    <button
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => navigate('/vocabulary')}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                    >
+                        <ExternalLink size={14} /> {t('navigation.vocabulary')}
+                    </button>
+                </div>
+
                 {/* Summary stat cards */}
                 {overview && (
                     <div className="grid-3" style={{ marginBottom: 24 }}>

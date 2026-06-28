@@ -97,7 +97,9 @@ export default function CefrOverviewGrid({ cells, targetLevel, lang }: Props) {
                                 overflow: 'hidden',
                             }}
                         >
-                            <span className="truncate">{CEFR_SKILL_LABELS[skill][lang]}</span>
+                            <span className="truncate" title={CEFR_SKILL_LABELS[skill][lang]}>
+                                {CEFR_SKILL_LABELS[skill][lang]}
+                            </span>
                         </div>
 
                         {/* Level cells */}
