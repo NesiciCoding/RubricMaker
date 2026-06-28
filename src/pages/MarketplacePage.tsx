@@ -240,7 +240,10 @@ export default function MarketplacePage() {
                             )}
                             <div className="form-group" style={{ marginBottom: 0, maxWidth: 180 }}>
                                 <label>{t('marketplace.sort_label')}</label>
-                                <select value={sortBy} onChange={(e) => setSortBy(e.target.value as 'newest' | 'upvotes')}>
+                                <select
+                                    value={sortBy}
+                                    onChange={(e) => setSortBy(e.target.value as 'newest' | 'upvotes')}
+                                >
                                     <option value="newest">{t('marketplace.sort_newest')}</option>
                                     <option value="upvotes">{t('marketplace.sort_upvotes')}</option>
                                 </select>
@@ -254,81 +257,81 @@ export default function MarketplacePage() {
                             }}
                         >
                             {visibleListings.map((listing) => (
-                            <div key={listing.id} className="card">
-                                <div style={{ marginBottom: 8 }}>
-                                    <h3>{listing.name}</h3>
-                                    {listing.subject && (
-                                        <div className="text-muted text-xs" style={{ marginTop: 2 }}>
-                                            {listing.subject}
-                                        </div>
-                                    )}
-                                    {listing.cefrLevels && listing.cefrLevels.length > 0 && (
-                                        <div style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
-                                            {listing.cefrLevels.map((level) => (
-                                                <CefrBadge key={level} level={level} size="sm" />
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                                {listing.description && (
-                                    <p
-                                        style={{
-                                            fontSize: '0.85rem',
-                                            color: 'var(--text-muted)',
-                                            marginBottom: 8,
-                                        }}
-                                    >
-                                        {listing.description}
-                                    </p>
-                                )}
-                                {listing.attribution && (
-                                    <p
-                                        style={{
-                                            fontSize: '0.75rem',
-                                            color: 'var(--text-muted)',
-                                            fontStyle: 'italic',
-                                            marginBottom: 12,
-                                        }}
-                                    >
-                                        {listing.attribution}
-                                    </p>
-                                )}
-                                <div
-                                    style={{
-                                        display: 'flex',
-                                        gap: 8,
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                    }}
-                                >
-                                    <button
-                                        className="btn btn-ghost btn-sm"
-                                        style={{
-                                            color: myUpvotes.has(listing.id) ? 'var(--accent)' : undefined,
-                                        }}
-                                        onClick={() => handleToggleUpvote(listing.id)}
-                                        title={t('marketplace.upvote_title')}
-                                    >
-                                        <ThumbsUp size={14} /> {listing.upvoteCount}
-                                    </button>
-                                    <button
-                                        className="btn btn-secondary btn-sm"
-                                        onClick={() => handleClone(listing.id)}
-                                        title={t('marketplace.clone_title')}
-                                    >
-                                        {clonedId === listing.id ? (
-                                            <>
-                                                <Check size={14} /> {t('marketplace.clone_done')}
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Copy size={14} /> {t('marketplace.clone_button')}
-                                            </>
+                                <div key={listing.id} className="card">
+                                    <div style={{ marginBottom: 8 }}>
+                                        <h3>{listing.name}</h3>
+                                        {listing.subject && (
+                                            <div className="text-muted text-xs" style={{ marginTop: 2 }}>
+                                                {listing.subject}
+                                            </div>
                                         )}
-                                    </button>
+                                        {listing.cefrLevels && listing.cefrLevels.length > 0 && (
+                                            <div style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
+                                                {listing.cefrLevels.map((level) => (
+                                                    <CefrBadge key={level} level={level} size="sm" />
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                    {listing.description && (
+                                        <p
+                                            style={{
+                                                fontSize: '0.85rem',
+                                                color: 'var(--text-muted)',
+                                                marginBottom: 8,
+                                            }}
+                                        >
+                                            {listing.description}
+                                        </p>
+                                    )}
+                                    {listing.attribution && (
+                                        <p
+                                            style={{
+                                                fontSize: '0.75rem',
+                                                color: 'var(--text-muted)',
+                                                fontStyle: 'italic',
+                                                marginBottom: 12,
+                                            }}
+                                        >
+                                            {listing.attribution}
+                                        </p>
+                                    )}
+                                    <div
+                                        style={{
+                                            display: 'flex',
+                                            gap: 8,
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                        }}
+                                    >
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            style={{
+                                                color: myUpvotes.has(listing.id) ? 'var(--accent)' : undefined,
+                                            }}
+                                            onClick={() => handleToggleUpvote(listing.id)}
+                                            title={t('marketplace.upvote_title')}
+                                        >
+                                            <ThumbsUp size={14} /> {listing.upvoteCount}
+                                        </button>
+                                        <button
+                                            className="btn btn-secondary btn-sm"
+                                            onClick={() => handleClone(listing.id)}
+                                            title={t('marketplace.clone_title')}
+                                        >
+                                            {clonedId === listing.id ? (
+                                                <>
+                                                    <Check size={14} /> {t('marketplace.clone_done')}
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Copy size={14} /> {t('marketplace.clone_button')}
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
                         </div>
                     </>
                 )}
