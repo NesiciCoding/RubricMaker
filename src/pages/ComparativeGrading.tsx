@@ -790,15 +790,19 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                             paddingRight: 4,
                         }}
                     >
-                        {/* Student A attachments — shown first */}
-                        <div className="card" style={{ background: 'var(--bg-elevated)' }}>
-                            <h3 style={{ marginBottom: 12 }}>{t('comparativeGrading.attachments')}</h3>
-                            {attA.length === 0 ? (
-                                <p className="text-muted text-sm">{t('comparativeGrading.no_attachments')}</p>
-                            ) : (
-                                attA.map((a) => <AttachmentViewer key={a.id} attachment={a} />)
-                            )}
-                        </div>
+                        {/* Student A attachments — shown first; collapsed to a strip when empty */}
+                        {attA.length === 0 ? (
+                            <p className="text-muted text-sm" style={{ padding: '4px 2px' }}>
+                                {t('comparativeGrading.attachments')}: {t('comparativeGrading.no_attachments')}
+                            </p>
+                        ) : (
+                            <div className="card" style={{ background: 'var(--bg-elevated)' }}>
+                                <h3 style={{ marginBottom: 12 }}>{t('comparativeGrading.attachments')}</h3>
+                                {attA.map((a) => (
+                                    <AttachmentViewer key={a.id} attachment={a} />
+                                ))}
+                            </div>
+                        )}
 
                         {/* Per-student progress — collapsible */}
                         <div
@@ -1459,14 +1463,18 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                 <EssayPanel key={a.id} attachment={a} label={t('essay.essay_text_label')} />
                             ))}
 
-                        <div className="card" style={{ background: 'var(--bg-elevated)' }}>
-                            <h3 style={{ marginBottom: 12 }}>{t('comparativeGrading.attachments')}</h3>
-                            {attB.length === 0 ? (
-                                <p className="text-muted text-sm">{t('comparativeGrading.no_attachments')}</p>
-                            ) : (
-                                attB.map((a) => <AttachmentViewer key={a.id} attachment={a} />)
-                            )}
-                        </div>
+                        {attB.length === 0 ? (
+                            <p className="text-muted text-sm" style={{ padding: '4px 2px' }}>
+                                {t('comparativeGrading.attachments')}: {t('comparativeGrading.no_attachments')}
+                            </p>
+                        ) : (
+                            <div className="card" style={{ background: 'var(--bg-elevated)' }}>
+                                <h3 style={{ marginBottom: 12 }}>{t('comparativeGrading.attachments')}</h3>
+                                {attB.map((a) => (
+                                    <AttachmentViewer key={a.id} attachment={a} />
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
