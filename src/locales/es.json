@@ -358,6 +358,7 @@
         "no_rubrics": "Aún no hay rúbricas",
         "create_first_instruction": "Crea tu primera rúbrica para comenzar.",
         "create_rubric": "Crear Rúbrica",
+        "dev_open_preview": "Abrir vista previa como estudiante (solo dev)",
         "action_duplicate": "Duplicar",
         "action_edit": "Editar",
         "action_delete": "Eliminar",
@@ -457,6 +458,7 @@
         "assignment_links_label": "Enlaces de los estudiantes",
         "assignment_link_for": "Enlace de la prueba para {{name}}",
         "copy_all_links": "Copiar todos los enlaces ({{count}})",
+        "dev_open_as_student": "Abrir como estudiante (solo dev)",
         "results": {
             "title": "Resultados de la prueba",
             "not_found": "No se ha podido encontrar esta entrega.",
@@ -1765,6 +1767,7 @@
         "copied": "¡Copiado!",
         "copy_link": "Copiar enlace",
         "link_copied": "¡Enlace copiado!",
+        "dev_open_as_student": "Abrir como estudiante (solo dev)",
         "print_slips": "Imprimir fichas de clase ({{count}} estudiantes)",
         "download_seb": "Descargar configuración .seb",
         "save_template": "Guardar configuración",

@@ -17,6 +17,7 @@ import {
     MessageSquare,
     ClipboardList,
     ChevronDown,
+    ExternalLink,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
@@ -1056,6 +1057,17 @@ export default function ExportPage() {
                                                     >
                                                         <Share2 size={13} />
                                                     </button>
+                                                    {import.meta.env.DEV && rubric && (
+                                                        <a
+                                                            className="btn btn-ghost btn-icon btn-sm"
+                                                            title="Open as student (dev only)"
+                                                            href={`${window.location.origin}${window.location.pathname}#/feedback/${encodeFeedbackCode({ sr, rubric, student, scale })}`}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                        >
+                                                            <ExternalLink size={13} />
+                                                        </a>
+                                                    )}
                                                 </td>
                                             </tr>
                                         );

@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { X, Copy, Check, ClipboardCheck, Database } from 'lucide-react';
+import { X, Copy, Check, ClipboardCheck, Database, ExternalLink } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Modal from '../ui/Modal';
 import { useApp } from '../../context/AppContext';
@@ -230,6 +230,19 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
                                             ? t('essay_assignment.copied')
                                             : t('essay_assignment.copy')}
                                     </button>
+                                    {import.meta.env.DEV && (
+                                        <a
+                                            className="btn btn-ghost btn-icon btn-sm"
+                                            style={{ flexShrink: 0 }}
+                                            title={t('tests.dev_open_as_student')}
+                                            aria-label={t('tests.dev_open_as_student')}
+                                            href={buildUrl(s.id)}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                        >
+                                            <ExternalLink size={14} />
+                                        </a>
+                                    )}
                                 </div>
                             ))}
                         </div>

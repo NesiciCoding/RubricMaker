@@ -358,6 +358,7 @@
         "no_rubrics": "Noch keine Rubriken",
         "create_first_instruction": "Erstellen Sie Ihre erste Rubrik, um loszulegen.",
         "create_rubric": "Rubrik erstellen",
+        "dev_open_preview": "Vorschau als Schüler öffnen (nur Dev)",
         "action_duplicate": "Duplizieren",
         "action_edit": "Bearbeiten",
         "action_delete": "Löschen",
@@ -457,6 +458,7 @@
         "assignment_links_label": "Schülerlinks",
         "assignment_link_for": "Testlink für {{name}}",
         "copy_all_links": "Alle Links kopieren ({{count}})",
+        "dev_open_as_student": "Als Schüler öffnen (nur Dev)",
         "results": {
             "title": "Testergebnisse",
             "not_found": "Diese Abgabe wurde nicht gefunden.",
@@ -1660,6 +1662,7 @@
         "copied": "Kopiert!",
         "copy_link": "Link kopieren",
         "link_copied": "Link kopiert!",
+        "dev_open_as_student": "Als Schüler öffnen (nur Dev)",
         "print_slips": "Klassenzettel drucken ({{count}} Schüler)",
         "download_seb": ".seb-Konfiguration herunterladen",
         "save_template": "Konfiguration speichern",
