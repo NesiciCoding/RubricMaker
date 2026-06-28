@@ -301,7 +301,7 @@ describe('AttachmentsPage', () => {
 
     it('shows empty state', () => {
         renderPage(<AttachmentsPage />);
-        expect(screen.getByText(/empty|no attachments|upload/i) || true).toBeTruthy();
+        expect(screen.getAllByText(/empty|no attachments|upload/i).length).toBeGreaterThan(0);
     });
 
     it('shows attachment table when attachments exist', () => {

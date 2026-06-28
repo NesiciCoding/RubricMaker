@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Upload, Paperclip, Trash2, Download, Link2, Users } from 'lucide-react';
+import { Upload, Paperclip, Trash2, Download, Link2, Users, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
@@ -158,8 +158,12 @@ export default function AttachmentsPage() {
                 {/* File list */}
                 {attachments.length === 0 ? (
                     <div className="empty-state">
-                        <Paperclip size={32} />
-                        <p>{t('attachments.empty_state')}</p>
+                        <Paperclip size={40} />
+                        <h3>{t('attachments.empty_state')}</h3>
+                        <p className="text-muted text-sm">{t('attachments.empty_state_subtitle')}</p>
+                        <button className="btn btn-primary btn-sm" onClick={() => fileRef.current?.click()}>
+                            <Plus size={14} /> {t('attachments.empty_state_cta')}
+                        </button>
                     </div>
                 ) : (
                     <table className="data-table">
