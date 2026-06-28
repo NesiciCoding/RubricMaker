@@ -517,6 +517,7 @@ describe('ExportPage deep coverage', () => {
 
     it('student checkbox toggles selection', () => {
         renderPage(<ExportPage />);
+        fireEvent.click(screen.getByText('exportPage.rubric_section_title'));
         const checkboxes = screen.getAllByRole('checkbox');
         if (checkboxes.length > 0) {
             fireEvent.click(checkboxes[checkboxes.length - 1]);
@@ -527,6 +528,7 @@ describe('ExportPage deep coverage', () => {
 
     it('"select all" checkbox toggles all students', () => {
         renderPage(<ExportPage />);
+        fireEvent.click(screen.getByText('exportPage.rubric_section_title'));
         const checkboxes = screen.getAllByRole('checkbox');
         if (checkboxes.length > 0) {
             fireEvent.click(checkboxes[0]);
@@ -537,6 +539,7 @@ describe('ExportPage deep coverage', () => {
 
     it('pad for double-sided checkbox toggles state', () => {
         renderPage(<ExportPage />);
+        fireEvent.click(screen.getByText('exportPage.rubric_section_title'));
         const checkboxes = screen.getAllByRole('checkbox');
         const padCheckbox = checkboxes.find((c) => c.id?.match(/pad|double/i));
         if (padCheckbox) {
@@ -557,6 +560,7 @@ describe('ExportPage deep coverage', () => {
 
     it('rubric select change updates selected rubric', () => {
         renderPage(<ExportPage />);
+        fireEvent.click(screen.getByText('exportPage.rubric_section_title'));
         const selects = screen.getAllByRole('combobox');
         if (selects.length > 0) {
             fireEvent.change(selects[0], { target: { value: 'r1' } });
