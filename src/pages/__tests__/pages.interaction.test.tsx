@@ -557,7 +557,9 @@ describe('AttachmentsPage interactions', () => {
     it('shows empty attachments message', () => {
         renderPage(<AttachmentsPage />);
         // No attachments in mock
-        expect(screen.getAllByText(/no attachments|empty|upload/i).length).toBeGreaterThan(0);
+        expect(screen.getByText('attachments.empty_state')).toBeInTheDocument();
+        expect(screen.getByText('attachments.empty_state_subtitle')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'attachments.empty_state_cta' })).toBeInTheDocument();
     });
 });
 

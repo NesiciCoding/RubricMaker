@@ -301,7 +301,9 @@ describe('AttachmentsPage', () => {
 
     it('shows empty state', () => {
         renderPage(<AttachmentsPage />);
-        expect(screen.getAllByText(/empty|no attachments|upload/i).length).toBeGreaterThan(0);
+        expect(screen.getByText('attachments.empty_state')).toBeInTheDocument();
+        expect(screen.getByText('attachments.empty_state_subtitle')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'attachments.empty_state_cta' })).toBeInTheDocument();
     });
 
     it('shows attachment table when attachments exist', () => {
