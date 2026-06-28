@@ -1549,6 +1549,7 @@
         "cell_achieved": "Erreicht",
         "cell_developing": "In Entwicklung",
         "cell_not_started": "Nicht begonnen",
+        "table_header_overall": "Gesamt",
         "cell_rubric_score": "{{score}}% ({{count}} Rubrik(en))",
         "cell_confidence": "{{confident}}/{{total}} sicher",
         "cell_no_data": "Keine Daten",
