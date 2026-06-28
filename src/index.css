@@ -1269,6 +1269,23 @@ select.input-error {
     }
 }
 
+/* ─── iPad landscape grading optimisation ────────────────────────────────────── */
+@media (max-width: 1024px) and (orientation: landscape) {
+    .comparative-grid {
+        grid-template-columns: 1fr !important;
+        overflow: visible !important;
+    }
+
+    .grade-footer {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .comparative-level-select {
+        min-height: 44px;
+    }
+}
+
 /* ─── Touch device overrides ─────────────────────────────────────────────────── */
 @media (hover: none) {
     /* Show the stepper as a touch alternative to the slider */
