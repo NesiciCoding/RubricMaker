@@ -112,8 +112,7 @@ export default function StatisticsPage() {
         setSelectedClassId((prev) => (prev === 'all' || visibleIds.has(prev) ? prev : 'all'));
         setCompareClassIds((prev) => prev.filter((id) => visibleIds.has(id)));
     }, [filteredClasses]);
-    const [sortKey, setSortKey] = useState<'name' | 'score' | 'raw' | 'grade' | 'progress'>('name');
-    const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+    const [expandedHeatmapStudentId, setExpandedHeatmapStudentId] = useState<string | null>(null);
 
     // ── Student view state ────────────────────────────────────────────────────
     const [selectedStudentId, setSelectedStudentId] = useState<string>('');
@@ -143,6 +142,7 @@ export default function StatisticsPage() {
 
     // ── Persisted chart preferences (on-screen toggles) ──────────────────────
     const criterionChartType = settings.statisticsCriterionChartType ?? 'bar';
+    const distributionMode = settings.statisticsDistributionMode ?? 'letter';
     const excludeNHI = settings.statisticsExcludeNotHandedIn ?? false;
 
     // ── Rubric view data ──────────────────────────────────────────────────────
@@ -334,29 +334,8 @@ export default function StatisticsPage() {
                 (d): d is { sr: StudentRubric; student: Student; summary: GradeSummary } => !!d.student && !!d.summary
             );
 
-        return data.sort((a, b) => {
-            let valA: string | number, valB: string | number;
-            if (sortKey === 'name') {
-                valA = a.student.name.toLowerCase();
-                valB = b.student.name.toLowerCase();
-            } else if (sortKey === 'score') {
-                valA = a.summary.modifiedPercentage;
-                valB = b.summary.modifiedPercentage;
-            } else if (sortKey === 'raw') {
-                valA = a.summary.rawScore;
-                valB = b.summary.rawScore;
-            } else if (sortKey === 'grade') {
-                valA = a.summary.letterGrade;
-                valB = b.summary.letterGrade;
-            } else {
-                valA = a.summary.gradedCount / (a.summary.totalCriteria || 1);
-                valB = b.summary.gradedCount / (b.summary.totalCriteria || 1);
-            }
-            if (valA < valB) return sortDir === 'asc' ? -1 : 1;
-            if (valA > valB) return sortDir === 'asc' ? 1 : -1;
-            return 0;
-        });
-    }, [rubric, studentRubrics, students, scale, sortKey, sortDir]);
+        return data.sort((a, b) => a.student.name.toLowerCase().localeCompare(b.student.name.toLowerCase()));
+    }, [rubric, studentRubrics, students, scale]);
 
     const heatmapScores = useMemo(() => {
         if (!rubric) return {};
@@ -372,15 +351,6 @@ export default function StatisticsPage() {
         });
         return result;
     }, [tableData, rubric]);
-
-    function handleSort(key: typeof sortKey) {
-        if (sortKey === key) {
-            setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-        } else {
-            setSortKey(key);
-            setSortDir(key === 'name' ? 'asc' : 'desc');
-        }
-    }
 
     // ── Student view data ─────────────────────────────────────────────────────
     const studentViewTableData = useMemo(() => {
@@ -1211,48 +1181,92 @@ export default function StatisticsPage() {
                                         marginBottom: 20,
                                     }}
                                 >
-                                    {/* Grade distribution */}
+                                    {/* Score distribution — Letter grade or percentage bucket */}
                                     <div className="card">
-                                        <h3 style={{ marginBottom: 16 }}>{t('statistics.grade_distribution')}</h3>
-                                        {stats.distribution.length === 0 ? (
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center',
+                                                marginBottom: 16,
+                                            }}
+                                        >
+                                            <h3 style={{ margin: 0 }}>{t('statistics.grade_distribution')}</h3>
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    background: 'var(--bg-elevated)',
+                                                    borderRadius: 8,
+                                                    padding: 4,
+                                                }}
+                                            >
+                                                <button
+                                                    className={`btn btn-sm ${distributionMode === 'letter' ? 'btn-primary' : 'btn-ghost'}`}
+                                                    onClick={() =>
+                                                        updateSettings({ statisticsDistributionMode: 'letter' })
+                                                    }
+                                                >
+                                                    {t('statistics.distribution_letter')}
+                                                </button>
+                                                <button
+                                                    className={`btn btn-sm ${distributionMode === 'percentage' ? 'btn-primary' : 'btn-ghost'}`}
+                                                    onClick={() =>
+                                                        updateSettings({ statisticsDistributionMode: 'percentage' })
+                                                    }
+                                                >
+                                                    {t('statistics.distribution_percentage')}
+                                                </button>
+                                            </div>
+                                        </div>
+                                        {distributionMode === 'letter' ? (
+                                            stats.distribution.length === 0 ? (
+                                                <div className="empty-state" style={{ height: 280 }}>
+                                                    <p className="text-muted text-sm">
+                                                        {t('statistics.no_grade_scale')}
+                                                    </p>
+                                                </div>
+                                            ) : (
+                                                <ResponsiveContainer width="100%" height={280}>
+                                                    <BarChart
+                                                        data={stats.distribution}
+                                                        margin={{ top: 4, right: 8, bottom: 0, left: -16 }}
+                                                    >
+                                                        <XAxis
+                                                            dataKey="label"
+                                                            tick={{ fill: 'var(--text-muted)', fontSize: 12 }}
+                                                        />
+                                                        <YAxis
+                                                            tick={{ fill: 'var(--text-muted)', fontSize: 12 }}
+                                                            allowDecimals={false}
+                                                            domain={[0, (max: number) => Math.max(max + 1, 3)]}
+                                                        />
+                                                        <Tooltip
+                                                            contentStyle={{
+                                                                background: 'var(--bg-card)',
+                                                                border: '1px solid var(--border)',
+                                                                borderRadius: 8,
+                                                            }}
+                                                            labelStyle={{ color: 'var(--text)', fontWeight: 600 }}
+                                                            itemStyle={{ color: 'var(--text-muted)' }}
+                                                            formatter={(v: unknown) => [
+                                                                typeof v === 'number' ? v : 0,
+                                                                t('statistics.students'),
+                                                            ]}
+                                                        />
+                                                        <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={60}>
+                                                            {stats.distribution.map((entry, i) => (
+                                                                <Cell key={i} fill={entry.color} />
+                                                            ))}
+                                                        </Bar>
+                                                    </BarChart>
+                                                </ResponsiveContainer>
+                                            )
+                                        ) : summaries.length >= 2 ? (
+                                            <ScoreHistogram scores={summaries.map((s) => s.modifiedPercentage)} />
+                                        ) : (
                                             <div className="empty-state" style={{ height: 280 }}>
                                                 <p className="text-muted text-sm">{t('statistics.no_grade_scale')}</p>
                                             </div>
-                                        ) : (
-                                            <ResponsiveContainer width="100%" height={280}>
-                                                <BarChart
-                                                    data={stats.distribution}
-                                                    margin={{ top: 4, right: 8, bottom: 0, left: -16 }}
-                                                >
-                                                    <XAxis
-                                                        dataKey="label"
-                                                        tick={{ fill: 'var(--text-muted)', fontSize: 12 }}
-                                                    />
-                                                    <YAxis
-                                                        tick={{ fill: 'var(--text-muted)', fontSize: 12 }}
-                                                        allowDecimals={false}
-                                                        domain={[0, (max: number) => Math.max(max + 1, 3)]}
-                                                    />
-                                                    <Tooltip
-                                                        contentStyle={{
-                                                            background: 'var(--bg-card)',
-                                                            border: '1px solid var(--border)',
-                                                            borderRadius: 8,
-                                                        }}
-                                                        labelStyle={{ color: 'var(--text)', fontWeight: 600 }}
-                                                        itemStyle={{ color: 'var(--text-muted)' }}
-                                                        formatter={(v: unknown) => [
-                                                            typeof v === 'number' ? v : 0,
-                                                            t('statistics.students'),
-                                                        ]}
-                                                    />
-                                                    <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={60}>
-                                                        {stats.distribution.map((entry, i) => (
-                                                            <Cell key={i} fill={entry.color} />
-                                                        ))}
-                                                    </Bar>
-                                                </BarChart>
-                                            </ResponsiveContainer>
                                         )}
                                     </div>
 
@@ -1289,14 +1303,6 @@ export default function StatisticsPage() {
                                         <div ref={criterionChartRef}>{renderCriterionChart(340)}</div>
                                     </div>
                                 </div>
-
-                                {/* Score histogram */}
-                                {summaries.length >= 2 && (
-                                    <div className="card" style={{ marginBottom: 20 }}>
-                                        <h3 style={{ marginBottom: 16 }}>{t('statistics.score_distribution')}</h3>
-                                        <ScoreHistogram scores={summaries.map((s) => s.modifiedPercentage)} />
-                                    </div>
-                                )}
 
                                 {/* Bloom's taxonomy pyramid */}
                                 {bloomsData && summaries.length > 0 && (
@@ -1339,10 +1345,13 @@ export default function StatisticsPage() {
                                     </div>
                                 )}
 
-                                {/* Criterion heat map */}
+                                {/* Criterion heat map — click a student's name to expand score/grade detail */}
                                 {tableData.length > 0 && rubric && (
-                                    <div className="card" style={{ marginBottom: 20 }}>
-                                        <h3 style={{ marginBottom: 16 }}>{t('statistics.heatmap')}</h3>
+                                    <div className="card">
+                                        <h3 style={{ marginBottom: 4 }}>{t('statistics.heatmap')}</h3>
+                                        <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
+                                            {t('statistics.heatmap_subtitle')}
+                                        </p>
                                         <CriterionHeatmap
                                             students={tableData.map((d) => ({
                                                 id: d.student.id,
@@ -1350,90 +1359,55 @@ export default function StatisticsPage() {
                                             }))}
                                             criteria={rubric.criteria.map((c) => ({ id: c.id, title: c.title }))}
                                             scores={heatmapScores}
+                                            expandedId={expandedHeatmapStudentId}
+                                            onToggleExpand={(id) =>
+                                                setExpandedHeatmapStudentId((cur) => (cur === id ? null : id))
+                                            }
+                                            renderDetail={(studentId) => {
+                                                const row = tableData.find((d) => d.student.id === studentId);
+                                                if (!row) return null;
+                                                const { sr, summary } = row;
+                                                return (
+                                                    <div
+                                                        style={{
+                                                            display: 'flex',
+                                                            gap: 20,
+                                                            flexWrap: 'wrap',
+                                                            fontSize: '0.82rem',
+                                                            background: 'var(--bg-elevated)',
+                                                            borderRadius: 6,
+                                                            padding: '8px 12px',
+                                                        }}
+                                                    >
+                                                        <span>
+                                                            {t('statistics.table_score')}:{' '}
+                                                            <strong>{summary.modifiedPercentage.toFixed(1)}%</strong>
+                                                        </span>
+                                                        <span>
+                                                            {t('statistics.table_raw')}:{' '}
+                                                            <strong>
+                                                                {summary.rawScore}/{summary.maxRawScore}
+                                                            </strong>
+                                                        </span>
+                                                        <span>
+                                                            {t('statistics.table_grade')}:{' '}
+                                                            <strong style={{ color: summary.gradeColor }}>
+                                                                {summary.letterGrade}
+                                                            </strong>
+                                                        </span>
+                                                        <span>
+                                                            {t('statistics.table_criteria_done')}:{' '}
+                                                            <strong>
+                                                                {summary.gradedCount}/{summary.totalCriteria}
+                                                            </strong>
+                                                        </span>
+                                                        {sr.notHandedIn && <span className="text-muted">(NHI)</span>}
+                                                    </div>
+                                                );
+                                            }}
                                         />
                                     </div>
                                 )}
-
-                                {/* Student scores table */}
-                                <div className="card">
-                                    <h3 style={{ marginBottom: 14 }}>{t('statistics.student_scores')}</h3>
-                                    <table className="data-table">
-                                        <thead>
-                                            <tr>
-                                                <th
-                                                    style={{ cursor: 'pointer', userSelect: 'none' }}
-                                                    onClick={() => handleSort('name')}
-                                                >
-                                                    {t('statistics.table_student')}{' '}
-                                                    {sortKey === 'name' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
-                                                </th>
-                                                <th
-                                                    style={{ cursor: 'pointer', userSelect: 'none' }}
-                                                    onClick={() => handleSort('score')}
-                                                >
-                                                    {t('statistics.table_score')}{' '}
-                                                    {sortKey === 'score' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
-                                                </th>
-                                                <th
-                                                    style={{ cursor: 'pointer', userSelect: 'none' }}
-                                                    onClick={() => handleSort('raw')}
-                                                >
-                                                    {t('statistics.table_raw')}{' '}
-                                                    {sortKey === 'raw' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
-                                                </th>
-                                                <th
-                                                    style={{ cursor: 'pointer', userSelect: 'none' }}
-                                                    onClick={() => handleSort('grade')}
-                                                >
-                                                    {t('statistics.table_grade')}{' '}
-                                                    {sortKey === 'grade' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
-                                                </th>
-                                                <th
-                                                    style={{ cursor: 'pointer', userSelect: 'none' }}
-                                                    onClick={() => handleSort('progress')}
-                                                >
-                                                    {t('statistics.table_criteria_done')}{' '}
-                                                    {sortKey === 'progress' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {tableData.map(({ sr, student, summary }) => (
-                                                <tr
-                                                    key={sr.id}
-                                                    style={{
-                                                        borderLeft: `4px solid ${summary.gradeColor}`,
-                                                        background: `${summary.gradeColor}08`,
-                                                    }}
-                                                >
-                                                    <td style={{ fontWeight: 500, paddingLeft: 16 }}>
-                                                        {student.name}
-                                                        {sr.notHandedIn && (
-                                                            <span
-                                                                className="text-muted text-sm"
-                                                                style={{ marginLeft: 6 }}
-                                                            >
-                                                                (NHI)
-                                                            </span>
-                                                        )}
-                                                    </td>
-                                                    <td>{summary.modifiedPercentage.toFixed(1)}%</td>
-                                                    <td>
-                                                        {summary.rawScore}/{summary.maxRawScore}
-                                                    </td>
-                                                    <td>
-                                                        <span style={{ color: summary.gradeColor, fontWeight: 700 }}>
-                                                            {summary.letterGrade}
-                                                        </span>
-                                                    </td>
-                                                    <td>
-                                                        {summary.gradedCount}/{summary.totalCriteria}
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
                             </>
                         )}
                     </>
