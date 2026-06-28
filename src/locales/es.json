@@ -748,6 +748,7 @@
         "table_name": "Nombre",
         "table_email": "Correo electrónico",
         "table_grades": "Calificaciones",
+        "table_overall": "General",
         "table_actions": "Acciones",
         "rubric_single": "rúbrica",
         "rubric_plural": "rúbricas",

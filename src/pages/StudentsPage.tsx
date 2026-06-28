@@ -28,7 +28,7 @@ import CsvImportModal from '../components/Students/CsvImportModal';
 import { useTranslation, Trans } from 'react-i18next';
 import { VO_TRACKS, VO_TRACK_LABELS, VO_TRACK_COLORS } from '../data/voTracks';
 import type { VoTrack, StudentRubric, Rubric, GradeScale } from '../types';
-import { calcGradeSummary, calcEntryPoints } from '../utils/gradeCalc';
+import { calcGradeSummary, calcEntryPoints, calcLetterGrade, calcGradeColor } from '../utils/gradeCalc';
 import { sortByDisplayOrder, reorderDisplayOrder } from '../utils/displayOrder';
 
 /** Strip HTML tags from TiptapEditor output for plain-text summary export. */
@@ -100,6 +100,40 @@ function buildStudentSummary(
     return `${studentName}\n${'─'.repeat(studentName.length)}\n\n${blocks.join('\n\n---\n\n')}`;
 }
 
+function calcGradedPercentages(
+    srs: StudentRubric[],
+    rubrics: Rubric[],
+    gradeScales: GradeScale[],
+    defaultGradeScaleId: string
+): number[] {
+    return srs
+        .map((sr) => {
+            const liveR = rubrics.find((r) => r.id === sr.rubricId);
+            const r = sr.rubricSnapshot || liveR;
+            if (!r) return null;
+            const scaleId = r.gradeScaleId ?? defaultGradeScaleId;
+            const scale = scaleId === 'none' ? null : (gradeScales.find((g) => g.id === scaleId) ?? gradeScales[0]);
+            const summary = calcGradeSummary(sr, r.criteria, scale, r);
+            return summary.gradedCount > 0 ? summary.modifiedPercentage : null;
+        })
+        .filter((p): p is number => p !== null);
+}
+
+function calcStudentOverall(
+    pcts: number[],
+    gradeScales: GradeScale[],
+    defaultGradeScaleId: string
+): { pct: number; letter: string; color: string } | null {
+    if (pcts.length === 0) return null;
+    const avg = pcts.reduce((sum, p) => sum + p, 0) / pcts.length;
+    const scale = gradeScales.find((g) => g.id === defaultGradeScaleId) ?? gradeScales[0] ?? null;
+    return {
+        pct: avg,
+        letter: scale ? calcLetterGrade(avg, scale) : `${Math.round(avg)}%`,
+        color: scale ? calcGradeColor(avg, scale) : 'var(--text)',
+    };
+}
+
 export default function StudentsPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -150,6 +184,7 @@ export default function StudentsPage() {
 
     // Context Menu State for Classes
     const [classMenuOpen, setClassMenuOpen] = useState<string | null>(null);
+    const [gradeMenuOpen, setGradeMenuOpen] = useState<string | null>(null);
 
     // Class Management Modal States
     const [renameClassId, setRenameClassId] = useState<string | null>(null);
@@ -213,8 +248,18 @@ export default function StudentsPage() {
                 valA = (a.email ?? '').toLowerCase();
                 valB = (b.email ?? '').toLowerCase();
             } else {
-                valA = studentRubrics.filter((sr) => sr.studentId === a.id).length;
-                valB = studentRubrics.filter((sr) => sr.studentId === b.id).length;
+                valA = calcGradedPercentages(
+                    studentRubrics.filter((sr) => sr.studentId === a.id),
+                    rubrics,
+                    gradeScales,
+                    settings.defaultGradeScaleId
+                ).length;
+                valB = calcGradedPercentages(
+                    studentRubrics.filter((sr) => sr.studentId === b.id),
+                    rubrics,
+                    gradeScales,
+                    settings.defaultGradeScaleId
+                ).length;
             }
             if (valA < valB) return sortDir === 'asc' ? -1 : 1;
             if (valA > valB) return sortDir === 'asc' ? 1 : -1;
@@ -297,7 +342,10 @@ export default function StudentsPage() {
 
     // Helper to close all context menus on outside click
     React.useEffect(() => {
-        const handleClick = () => setClassMenuOpen(null);
+        const handleClick = () => {
+            setClassMenuOpen(null);
+            setGradeMenuOpen(null);
+        };
         window.addEventListener('click', handleClick);
         return () => window.removeEventListener('click', handleClick);
     }, []);
@@ -366,7 +414,7 @@ export default function StudentsPage() {
                 }
             />
             <div className="page-content fade-in">
-                <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 20 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(220px, 280px) 1fr', gap: 20 }}>
                     {/* Class list */}
                     <div className="card" style={{ height: 'fit-content' }}>
                         <div className="card-header">
@@ -411,7 +459,12 @@ export default function StudentsPage() {
                                                             style={{ flex: 1 }}
                                                         >
                                                             <UsersIcon size={15} />
-                                                            <span className="truncate">{c.name}</span>
+                                                            <span
+                                                                title={c.name}
+                                                                style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}
+                                                            >
+                                                                {c.name}
+                                                            </span>
                                                             <span
                                                                 style={{
                                                                     marginLeft: 'auto',
@@ -670,12 +723,25 @@ export default function StudentsPage() {
                                             {t('studentsPage.table_grades')}
                                             {sortArrow('grades')}
                                         </th>
+                                        <th>{t('studentsPage.table_overall')}</th>
                                         <th>{t('studentsPage.table_actions')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {filteredStudents.map((s) => {
-                                        const graded = studentRubrics.filter((sr) => sr.studentId === s.id).length;
+                                        const studentSrs = studentRubrics.filter((sr) => sr.studentId === s.id);
+                                        const gradedPcts = calcGradedPercentages(
+                                            studentSrs,
+                                            rubrics,
+                                            gradeScales,
+                                            settings.defaultGradeScaleId
+                                        );
+                                        const graded = gradedPcts.length;
+                                        const overall = calcStudentOverall(
+                                            gradedPcts,
+                                            gradeScales,
+                                            settings.defaultGradeScaleId
+                                        );
                                         return (
                                             <tr key={s.id}>
                                                 <td style={{ fontWeight: 500 }}>{s.name}</td>
@@ -695,19 +761,85 @@ export default function StudentsPage() {
                                                     )}
                                                 </td>
                                                 <td>
-                                                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                                                        {classRubrics.map((r) => (
-                                                            <button
-                                                                key={r.id}
-                                                                className="btn btn-primary btn-sm"
-                                                                onClick={() =>
-                                                                    navigate(`/rubrics/${r.id}/grade/${s.id}`)
-                                                                }
-                                                            >
-                                                                {t('studentsPage.grade_prefix')} {r.name.slice(0, 12)}
-                                                                {r.name.length > 12 ? '…' : ''}
-                                                            </button>
-                                                        ))}
+                                                    {overall ? (
+                                                        <span
+                                                            className="badge"
+                                                            style={{
+                                                                background: overall.color,
+                                                                color: '#fff',
+                                                            }}
+                                                            title={`${Math.round(overall.pct)}%`}
+                                                        >
+                                                            {overall.letter}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-muted text-sm">—</span>
+                                                    )}
+                                                </td>
+                                                <td>
+                                                    <div
+                                                        style={{
+                                                            display: 'flex',
+                                                            gap: 6,
+                                                            flexWrap: 'wrap',
+                                                            position: 'relative',
+                                                        }}
+                                                    >
+                                                        {classRubrics.length > 0 && (
+                                                            <div style={{ position: 'relative' }}>
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-primary btn-sm"
+                                                                    aria-haspopup="menu"
+                                                                    aria-expanded={gradeMenuOpen === s.id}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setGradeMenuOpen(
+                                                                            gradeMenuOpen === s.id ? null : s.id
+                                                                        );
+                                                                    }}
+                                                                >
+                                                                    {t('studentsPage.grade_prefix')} ▾
+                                                                </button>
+                                                                {gradeMenuOpen === s.id && (
+                                                                    <div
+                                                                        className="card"
+                                                                        role="menu"
+                                                                        style={{
+                                                                            position: 'absolute',
+                                                                            left: 0,
+                                                                            top: '100%',
+                                                                            zIndex: 10,
+                                                                            padding: 4,
+                                                                            minWidth: 180,
+                                                                            boxShadow: 'var(--shadow-lg)',
+                                                                        }}
+                                                                        onClick={(e) => e.stopPropagation()}
+                                                                    >
+                                                                        {classRubrics.map((r) => (
+                                                                            <button
+                                                                                key={r.id}
+                                                                                type="button"
+                                                                                role="menuitem"
+                                                                                className="btn btn-ghost btn-sm"
+                                                                                style={{
+                                                                                    width: '100%',
+                                                                                    justifyContent: 'flex-start',
+                                                                                }}
+                                                                                onClick={() => {
+                                                                                    setGradeMenuOpen(null);
+                                                                                    navigate(
+                                                                                        `/rubrics/${r.id}/grade/${s.id}`
+                                                                                    );
+                                                                                }}
+                                                                            >
+                                                                                {r.name}
+                                                                            </button>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
                                                         <button
                                                             className="btn btn-secondary btn-icon btn-sm"
                                                             onClick={() => navigate(`/students/${s.id}`)}
