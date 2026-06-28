@@ -1956,8 +1956,8 @@ export default function RubricBuilder() {
                                                                                 ref={levelProvided.innerRef}
                                                                                 style={{
                                                                                     display: 'flex',
+                                                                                    flexWrap: 'wrap',
                                                                                     gap: 10,
-                                                                                    minWidth: 'max-content',
                                                                                     paddingBottom: 4,
                                                                                 }}
                                                                             >
@@ -1993,8 +1993,8 @@ export default function RubricBuilder() {
                                                                                                                     level.id
                                                                                                                 }
                                                                                                                 style={{
-                                                                                                                    width: 210,
-                                                                                                                    flexShrink: 0,
+                                                                                                                    flex: '1 1 190px',
+                                                                                                                    minWidth: 190,
                                                                                                                     background:
                                                                                                                         'var(--bg-elevated)',
                                                                                                                     border: '1px solid var(--border)',
@@ -2278,15 +2278,39 @@ export default function RubricBuilder() {
                                                                                                                         CEFR
                                                                                                                         level
                                                                                                                     </div>
-                                                                                                                    <div
+                                                                                                                    <select
+                                                                                                                        aria-label="CEFR level"
+                                                                                                                        value={
+                                                                                                                            level.cefrLevel ??
+                                                                                                                            ''
+                                                                                                                        }
+                                                                                                                        onChange={(
+                                                                                                                            e
+                                                                                                                        ) =>
+                                                                                                                            updateLevel(
+                                                                                                                                criterion.id,
+                                                                                                                                level.id,
+                                                                                                                                {
+                                                                                                                                    cefrLevel:
+                                                                                                                                        (e
+                                                                                                                                            .target
+                                                                                                                                            .value as
+                                                                                                                                            | CefrLevel
+                                                                                                                                            | '') ||
+                                                                                                                                        undefined,
+                                                                                                                                }
+                                                                                                                            )
+                                                                                                                        }
                                                                                                                         style={{
-                                                                                                                            display:
-                                                                                                                                'flex',
-                                                                                                                            gap: 4,
-                                                                                                                            flexWrap:
-                                                                                                                                'wrap',
+                                                                                                                            fontSize:
+                                                                                                                                '0.78rem',
+                                                                                                                            padding:
+                                                                                                                                '3px 6px',
                                                                                                                         }}
                                                                                                                     >
+                                                                                                                        <option value="">
+                                                                                                                            —
+                                                                                                                        </option>
                                                                                                                         {(
                                                                                                                             [
                                                                                                                                 'A1',
@@ -2299,56 +2323,22 @@ export default function RubricBuilder() {
                                                                                                                         ).map(
                                                                                                                             (
                                                                                                                                 lvl
-                                                                                                                            ) => {
-                                                                                                                                const active =
-                                                                                                                                    level.cefrLevel ===
-                                                                                                                                    lvl;
-                                                                                                                                return (
-                                                                                                                                    <button
-                                                                                                                                        key={
-                                                                                                                                            lvl
-                                                                                                                                        }
-                                                                                                                                        type="button"
-                                                                                                                                        onClick={() =>
-                                                                                                                                            updateLevel(
-                                                                                                                                                criterion.id,
-                                                                                                                                                level.id,
-                                                                                                                                                {
-                                                                                                                                                    cefrLevel:
-                                                                                                                                                        active
-                                                                                                                                                            ? undefined
-                                                                                                                                                            : lvl,
-                                                                                                                                                }
-                                                                                                                                            )
-                                                                                                                                        }
-                                                                                                                                        style={{
-                                                                                                                                            padding:
-                                                                                                                                                '2px 8px',
-                                                                                                                                            borderRadius: 4,
-                                                                                                                                            border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
-                                                                                                                                            background:
-                                                                                                                                                active
-                                                                                                                                                    ? 'var(--accent)'
-                                                                                                                                                    : 'var(--bg-elevated)',
-                                                                                                                                            color: active
-                                                                                                                                                ? '#fff'
-                                                                                                                                                : 'var(--text-muted)',
-                                                                                                                                            fontSize:
-                                                                                                                                                '0.72rem',
-                                                                                                                                            fontWeight: 700,
-                                                                                                                                            cursor: 'pointer',
-                                                                                                                                            letterSpacing:
-                                                                                                                                                '0.02em',
-                                                                                                                                        }}
-                                                                                                                                    >
-                                                                                                                                        {
-                                                                                                                                            lvl
-                                                                                                                                        }
-                                                                                                                                    </button>
-                                                                                                                                );
-                                                                                                                            }
+                                                                                                                            ) => (
+                                                                                                                                <option
+                                                                                                                                    key={
+                                                                                                                                        lvl
+                                                                                                                                    }
+                                                                                                                                    value={
+                                                                                                                                        lvl
+                                                                                                                                    }
+                                                                                                                                >
+                                                                                                                                    {
+                                                                                                                                        lvl
+                                                                                                                                    }
+                                                                                                                                </option>
+                                                                                                                            )
                                                                                                                         )}
-                                                                                                                    </div>
+                                                                                                                    </select>
                                                                                                                 </div>
 
                                                                                                                 {/* Sub-items toggle */}
