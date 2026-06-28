@@ -2402,6 +2402,11 @@
         "upvote_title": "Voter",
         "clone_title": "Cloner dans mes rubriques",
         "clone_button": "Cloner",
-        "clone_done": "Cloné"
+        "clone_done": "Cloné",
+        "filter_subject_label": "Matière",
+        "filter_subject_all": "Toutes les matières",
+        "sort_label": "Trier par",
+        "sort_newest": "Plus récent",
+        "sort_upvotes": "Plus voté"
     }
 }

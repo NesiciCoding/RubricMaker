@@ -2402,6 +2402,11 @@
         "upvote_title": "Votar",
         "clone_title": "Clonar en mis rúbricas",
         "clone_button": "Clonar",
-        "clone_done": "Clonado"
+        "clone_done": "Clonado",
+        "filter_subject_label": "Asignatura",
+        "filter_subject_all": "Todas las asignaturas",
+        "sort_label": "Ordenar por",
+        "sort_newest": "Más reciente",
+        "sort_upvotes": "Más votado"
     }
 }
