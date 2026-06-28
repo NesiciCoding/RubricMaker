@@ -126,8 +126,9 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
     ];
 
     const activeDomain =
-        domains.find((d) => d.matchPrefixes.some((p) => (p === '/' ? location.pathname === '/' : location.pathname.startsWith(p)))) ??
-        domains[0];
+        domains.find((d) =>
+            d.matchPrefixes.some((p) => (p === '/' ? location.pathname === '/' : location.pathname.startsWith(p)))
+        ) ?? domains[0];
 
     const renderNavLink = ({ to, icon: Icon, label, end }: SubItem) => (
         <NavLink

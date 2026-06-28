@@ -305,10 +305,7 @@ export default function StudentCefrOverviewPage() {
                                                 <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>
                                                     {skillLabel}
                                                 </span>
-                                                <span
-                                                    className="text-muted text-xs"
-                                                    style={{ marginLeft: 'auto' }}
-                                                >
+                                                <span className="text-muted text-xs" style={{ marginLeft: 'auto' }}>
                                                     {t(
                                                         cell.rubricAchieved
                                                             ? 'cefrOverview.rationale_achieved'

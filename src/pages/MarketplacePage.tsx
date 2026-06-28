@@ -30,9 +30,7 @@ export default function MarketplacePage() {
     const [publishCefrLevels, setPublishCefrLevels] = useState<CefrLevel[]>([]);
 
     function toggleCefrLevel(level: CefrLevel) {
-        setPublishCefrLevels((prev) =>
-            prev.includes(level) ? prev.filter((l) => l !== level) : [...prev, level]
-        );
+        setPublishCefrLevels((prev) => (prev.includes(level) ? prev.filter((l) => l !== level) : [...prev, level]));
     }
 
     const canUseMarketplace = dbStatus.isConnected && !!schoolId;

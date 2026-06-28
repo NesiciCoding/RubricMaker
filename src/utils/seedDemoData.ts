@@ -45,18 +45,7 @@ export function seedDemoData(): void {
         { name: 'VWO 3B', voTrack: 'vwo' },
         { name: 'VMBO-TL 2C', voTrack: 'vmbo-tl' },
     ];
-    const firstNames = [
-        'Anna',
-        'Liam',
-        'Sara',
-        'Noah',
-        'Emma',
-        'Lucas',
-        'Mila',
-        'Finn',
-        'Zoe',
-        'Daan',
-    ];
+    const firstNames = ['Anna', 'Liam', 'Sara', 'Noah', 'Emma', 'Lucas', 'Mila', 'Finn', 'Zoe', 'Daan'];
     const lastNames = ['Jansen', 'de Vries', 'Bakker', 'Visser', 'Smit'];
 
     const classes: Class[] = classDefs.map((c) => ({ id: nanoid(), name: c.name, voTrack: c.voTrack }));
@@ -132,7 +121,12 @@ export function seedDemoData(): void {
             cefrTargetLevel: 'A2',
             cefrSkill: 'reading',
             criteria: [
-                mkCriterion('Main idea identification', 50, cefrLevelTiers('reading', ['B1', 'A2', 'A1', 'A1']), 'reading'),
+                mkCriterion(
+                    'Main idea identification',
+                    50,
+                    cefrLevelTiers('reading', ['B1', 'A2', 'A1', 'A1']),
+                    'reading'
+                ),
                 mkCriterion('Detail extraction', 50, cefrLevelTiers('reading', ['B1', 'A2', 'A1', 'A1']), 'reading'),
             ],
         }),
@@ -195,7 +189,12 @@ export function seedDemoData(): void {
             cefrTargetLevel: 'B2',
             cefrSkill: 'listening',
             criteria: [
-                mkCriterion('Gist understanding', 50, cefrLevelTiers('listening', ['C1', 'B2', 'B1', 'A2']), 'listening'),
+                mkCriterion(
+                    'Gist understanding',
+                    50,
+                    cefrLevelTiers('listening', ['C1', 'B2', 'B1', 'A2']),
+                    'listening'
+                ),
                 mkCriterion('Specific detail', 50, cefrLevelTiers('listening', ['C1', 'B2', 'B1', 'A2']), 'listening'),
             ],
         }),
@@ -231,8 +230,11 @@ export function seedDemoData(): void {
                 id: nanoid(),
                 rubricId: rubric.id,
                 studentId: student.id,
-                entries: rubric.criteria.map((c) => mkEntry(c, basePct + ((c.weight % 10) - 5), 'Good effort overall.')),
-                overallComment: basePct >= 80 ? 'Strong work — keep it up!' : 'Solid effort, review the feedback below.',
+                entries: rubric.criteria.map((c) =>
+                    mkEntry(c, basePct + ((c.weight % 10) - 5), 'Good effort overall.')
+                ),
+                overallComment:
+                    basePct >= 80 ? 'Strong work — keep it up!' : 'Solid effort, review the feedback below.',
                 gradedAt: daysAgo(3 + ri * 4 + (i % 10)),
                 isPeerReview: false,
             });
@@ -243,7 +245,9 @@ export function seedDemoData(): void {
     // Co-graded dispute: second marker grades the same baseline with a noticeably different score (Moderation queue content).
     const disputeStudent = students[0];
     const disputeRubric = rubrics[0];
-    const baseline = studentRubrics.find((sr) => sr.studentId === disputeStudent.id && sr.rubricId === disputeRubric.id);
+    const baseline = studentRubrics.find(
+        (sr) => sr.studentId === disputeStudent.id && sr.rubricId === disputeRubric.id
+    );
     if (baseline) {
         peerReviews.push({
             id: nanoid(),
@@ -290,7 +294,11 @@ export function seedDemoData(): void {
             description: 'Past simple vs present perfect',
             questions: [
                 mkQuestion('She ___ to Paris last year.', ['went', 'has gone', 'go', 'going'], 0),
-                mkQuestion('I ___ never ___ sushi before.', ['have / eaten', 'did / eat', 'has / eat', 'am / eating'], 0),
+                mkQuestion(
+                    'I ___ never ___ sushi before.',
+                    ['have / eaten', 'did / eat', 'has / eat', 'am / eating'],
+                    0
+                ),
             ],
             requireSEB: false,
             shuffleQuestions: false,
