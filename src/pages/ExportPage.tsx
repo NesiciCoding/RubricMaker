@@ -16,6 +16,7 @@ import {
     XCircle,
     MessageSquare,
     ClipboardList,
+    ChevronDown,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
@@ -49,6 +50,16 @@ export default function ExportPage() {
     const [selectedRubricId, setSelectedRubricId] = useState(rubrics[0]?.id ?? '');
     const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());
     const [exporting, setExporting] = useState(false);
+    const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
+        new Set(['rubric', 'essays', 'period', 'reportCard'])
+    );
+    const toggleSection = (key: string) =>
+        setCollapsedSections((prev) => {
+            const next = new Set(prev);
+            if (next.has(key)) next.delete(key);
+            else next.add(key);
+            return next;
+        });
 
     const rubric = rubrics.find((r) => r.id === selectedRubricId);
 
@@ -539,776 +550,933 @@ export default function ExportPage() {
                 }
             />
             <div className="page-content fade-in">
-                <div data-tour="export-rubric" className="card" style={{ marginBottom: 20 }}>
-                    <div className="form-group" style={{ marginBottom: 16 }}>
-                        <label>{t('exportPage.select_rubric')}</label>
-                        <select
-                            value={selectedRubricId}
-                            onChange={(e) => {
-                                setSelectedRubricId(e.target.value);
-                                setSelectedStudentIds(new Set());
-                                setOrientation(undefined);
-                            }}
-                        >
-                            {rubrics.map((r) => (
-                                <option key={r.id} value={r.id}>
-                                    {r.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Word export template selector */}
-                    <div data-tour="export-template" style={{ borderTop: '1px solid var(--border)', paddingTop: 14 }}>
-                        <div
-                            style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                marginBottom: 8,
-                            }}
-                        >
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 8,
-                                    fontWeight: 600,
-                                    fontSize: '0.88rem',
+                <button
+                    type="button"
+                    className="card"
+                    onClick={() => toggleSection('rubric')}
+                    aria-expanded={!collapsedSections.has('rubric')}
+                    aria-controls="export-section-rubric"
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        width: '100%',
+                        textAlign: 'left',
+                        marginBottom: collapsedSections.has('rubric') ? 20 : 0,
+                        cursor: 'pointer',
+                    }}
+                >
+                    <FileText size={16} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                    <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, flex: 1 }}>
+                        {t('exportPage.rubric_section_title')}
+                    </h3>
+                    <ChevronDown
+                        size={16}
+                        style={{
+                            color: 'var(--text-muted)',
+                            transform: collapsedSections.has('rubric') ? 'none' : 'rotate(180deg)',
+                            transition: 'transform 0.2s',
+                        }}
+                    />
+                </button>
+                <div
+                    id="export-section-rubric"
+                    style={{ display: collapsedSections.has('rubric') ? 'none' : undefined }}
+                >
+                    <div data-tour="export-rubric" className="card" style={{ marginBottom: 20 }}>
+                        <div className="form-group" style={{ marginBottom: 16 }}>
+                            <label>{t('exportPage.select_rubric')}</label>
+                            <select
+                                value={selectedRubricId}
+                                onChange={(e) => {
+                                    setSelectedRubricId(e.target.value);
+                                    setSelectedStudentIds(new Set());
+                                    setOrientation(undefined);
                                 }}
                             >
-                                <Layout size={14} /> {t('exportPage.word_template_label')}
-                            </div>
-                            <button
-                                className="btn btn-secondary btn-sm"
-                                disabled={!rubric || exporting}
-                                onClick={handleWordExport}
-                            >
-                                {exporting ? <Loader size={13} className="spin" /> : <Download size={13} />}
-                                {activeTemplate
-                                    ? t('exportPage.export_word_template', { template: activeTemplate.name })
-                                    : t('exportPage.export_word_default')}
-                            </button>
-                        </div>
-                        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                            <select
-                                style={{ flex: 1, minWidth: 180, maxWidth: 340 }}
-                                value={activeTemplateId}
-                                onChange={(e) => updateSettings({ exportTemplateId: e.target.value || undefined })}
-                            >
-                                <option value="">{t('exportPage.template_default_option')}</option>
-                                {exportTemplates.map((t) => (
-                                    <option key={t.id} value={t.id}>
-                                        {t.name} ({t.levelHeaders.length} levels)
+                                {rubrics.map((r) => (
+                                    <option key={r.id} value={r.id}>
+                                        {r.name}
                                     </option>
                                 ))}
                             </select>
-                            {activeTemplate && (
-                                <button
-                                    className="btn btn-ghost btn-icon btn-sm"
-                                    title="Clear template"
-                                    onClick={() => updateSettings({ exportTemplateId: undefined })}
+                        </div>
+
+                        <div
+                            data-tour="export-template"
+                            style={{ borderTop: '1px solid var(--border)', paddingTop: 14 }}
+                        >
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    marginBottom: 8,
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 8,
+                                        fontWeight: 600,
+                                        fontSize: '0.88rem',
+                                    }}
                                 >
-                                    <X size={13} />
+                                    <Layout size={14} /> {t('exportPage.word_template_label')}
+                                </div>
+                                <button
+                                    className="btn btn-secondary btn-sm"
+                                    disabled={!rubric || exporting}
+                                    onClick={handleWordExport}
+                                >
+                                    {exporting ? <Loader size={13} className="spin" /> : <Download size={13} />}
+                                    {activeTemplate
+                                        ? t('exportPage.export_word_template', { template: activeTemplate.name })
+                                        : t('exportPage.export_word_default')}
                                 </button>
+                            </div>
+                            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                                <select
+                                    style={{ flex: 1, minWidth: 180, maxWidth: 340 }}
+                                    value={activeTemplateId}
+                                    onChange={(e) => updateSettings({ exportTemplateId: e.target.value || undefined })}
+                                >
+                                    <option value="">{t('exportPage.template_default_option')}</option>
+                                    {exportTemplates.map((t) => (
+                                        <option key={t.id} value={t.id}>
+                                            {t.name} ({t.levelHeaders.length} levels)
+                                        </option>
+                                    ))}
+                                </select>
+                                {activeTemplate && (
+                                    <button
+                                        className="btn btn-ghost btn-icon btn-sm"
+                                        title="Clear template"
+                                        onClick={() => updateSettings({ exportTemplateId: undefined })}
+                                    >
+                                        <X size={13} />
+                                    </button>
+                                )}
+                            </div>
+                            {exportTemplates.length === 0 ? (
+                                <div
+                                    className="text-muted text-xs"
+                                    style={{
+                                        marginTop: 6,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        flexWrap: 'wrap',
+                                        gap: 6,
+                                    }}
+                                >
+                                    <span>
+                                        {t('exportPage.no_templates_help_prefix', 'No templates saved. Upload one in')}{' '}
+                                        <strong>
+                                            {t('exportPage.no_templates_help_location', 'Settings → Export Templates')}
+                                        </strong>
+                                        .
+                                    </span>
+                                    <a
+                                        href="sample-template.docx"
+                                        download="sample-template.docx"
+                                        className="btn btn-ghost btn-icon btn-sm"
+                                        style={{
+                                            padding: '0 6px',
+                                            height: 20,
+                                            display: 'inline-flex',
+                                            alignSelf: 'center',
+                                            alignItems: 'center',
+                                            gap: 4,
+                                            textDecoration: 'none',
+                                            color: 'var(--accent)',
+                                        }}
+                                    >
+                                        <Download size={10} /> {t('exportPage.download_sample')}
+                                    </a>
+                                </div>
+                            ) : (
+                                <div
+                                    className="text-muted text-xs"
+                                    style={{
+                                        marginTop: 6,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        flexWrap: 'wrap',
+                                        gap: 6,
+                                    }}
+                                >
+                                    <a
+                                        href="sample-template.docx"
+                                        download="sample-template.docx"
+                                        className="btn btn-ghost btn-icon btn-sm"
+                                        style={{
+                                            padding: '0 6px',
+                                            height: 20,
+                                            display: 'inline-flex',
+                                            alignSelf: 'center',
+                                            alignItems: 'center',
+                                            gap: 4,
+                                            textDecoration: 'none',
+                                            color: 'var(--accent)',
+                                        }}
+                                    >
+                                        <Download size={10} /> {t('exportPage.download_sample')}
+                                    </a>
+                                </div>
                             )}
                         </div>
-                        {exportTemplates.length === 0 ? (
-                            <div
-                                className="text-muted text-xs"
-                                style={{
-                                    marginTop: 6,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    flexWrap: 'wrap',
-                                    gap: 6,
-                                }}
-                            >
-                                <span>
-                                    {t('exportPage.no_templates_help_prefix', 'No templates saved. Upload one in')}{' '}
-                                    <strong>
-                                        {t('exportPage.no_templates_help_location', 'Settings → Export Templates')}
-                                    </strong>
-                                    .
-                                </span>
-                                <a
-                                    href="sample-template.docx"
-                                    download="sample-template.docx"
-                                    className="btn btn-ghost btn-icon btn-sm"
+
+                        <div
+                            data-tour="export-grades"
+                            style={{ borderTop: '1px solid var(--border)', paddingTop: 14, marginTop: 14 }}
+                        >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div
                                     style={{
-                                        padding: '0 6px',
-                                        height: 20,
-                                        display: 'inline-flex',
-                                        alignSelf: 'center',
+                                        display: 'flex',
                                         alignItems: 'center',
-                                        gap: 4,
-                                        textDecoration: 'none',
-                                        color: 'var(--accent)',
+                                        gap: 8,
+                                        fontWeight: 600,
+                                        fontSize: '0.88rem',
                                     }}
                                 >
-                                    <Download size={10} /> {t('exportPage.download_sample')}
-                                </a>
-                            </div>
-                        ) : (
-                            <div
-                                className="text-muted text-xs"
-                                style={{
-                                    marginTop: 6,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    flexWrap: 'wrap',
-                                    gap: 6,
-                                }}
-                            >
-                                <a
-                                    href="sample-template.docx"
-                                    download="sample-template.docx"
-                                    className="btn btn-ghost btn-icon btn-sm"
-                                    style={{
-                                        padding: '0 6px',
-                                        height: 20,
-                                        display: 'inline-flex',
-                                        alignSelf: 'center',
-                                        alignItems: 'center',
-                                        gap: 4,
-                                        textDecoration: 'none',
-                                        color: 'var(--accent)',
-                                    }}
+                                    <FileText size={14} /> {t('exportPage.csv_label')}
+                                </div>
+                                <button
+                                    className="btn btn-secondary btn-sm"
+                                    disabled={!rubric || exporting || selectedStudentIds.size === 0}
+                                    onClick={handleCsvExport}
                                 >
-                                    <Download size={10} /> {t('exportPage.download_sample')}
-                                </a>
+                                    <Download size={13} />
+                                    {selectedStudentIds.size === 0
+                                        ? t('exportPage.csv_select_prompt')
+                                        : t('exportPage.csv_export_count', { count: selectedStudentIds.size })}
+                                </button>
                             </div>
-                        )}
+                        </div>
                     </div>
 
-                    {/* CSV export */}
-                    <div
-                        data-tour="export-grades"
-                        style={{ borderTop: '1px solid var(--border)', paddingTop: 14, marginTop: 14 }}
-                    >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    {!rubric ? (
+                        <div className="empty-state">
+                            <FileText size={32} />
+                            <p>{t('exportPage.no_rubric')}</p>
+                        </div>
+                    ) : gradedStudents.length === 0 ? (
+                        <div className="empty-state">
+                            <Users size={32} />
+                            <p>{t('exportPage.no_students')}</p>
+                        </div>
+                    ) : (
+                        <>
                             <div
                                 style={{
                                     display: 'flex',
+                                    justifyContent: 'space-between',
                                     alignItems: 'center',
-                                    gap: 8,
-                                    fontWeight: 600,
-                                    fontSize: '0.88rem',
+                                    marginBottom: 14,
                                 }}
                             >
-                                <FileText size={14} /> {t('exportPage.csv_label')}
+                                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                                    <button className="btn btn-ghost btn-sm" onClick={toggleAll}>
+                                        {selectedStudentIds.size === gradedStudents.length ? (
+                                            <CheckSquare size={15} />
+                                        ) : (
+                                            <Square size={15} />
+                                        )}
+                                        {selectedStudentIds.size === gradedStudents.length
+                                            ? t('exportPage.deselect_all')
+                                            : t('exportPage.select_all')}
+                                    </button>
+                                    <span className="text-muted text-sm">
+                                        {t('exportPage.selected_count', {
+                                            count: selectedStudentIds.size,
+                                            total: gradedStudents.length,
+                                        })}
+                                    </span>
+                                </div>
+                                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginRight: 10 }}>
+                                        <label
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 4,
+                                                marginLeft: 6,
+                                                fontSize: '0.85rem',
+                                                cursor: 'pointer',
+                                                color: 'var(--text-muted)',
+                                            }}
+                                            title="Adds to blank page so each student starts on a new physical sheet"
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={padForDoubleSided}
+                                                onChange={(e) => setPadForDoubleSided(e.target.checked)}
+                                            />
+                                            {t('exportPage.pad_double_sided')}
+                                        </label>
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 6,
+                                                marginLeft: 12,
+                                                borderLeft: '1px solid var(--border)',
+                                                paddingLeft: 12,
+                                            }}
+                                        >
+                                            <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                                {t('rubricBuilder.format_orientation')}:
+                                            </label>
+                                            <select
+                                                value={orientation || rubric.format.orientation || 'portrait'}
+                                                onChange={(e) =>
+                                                    setOrientation(e.target.value as 'portrait' | 'landscape')
+                                                }
+                                                style={{ height: 30, fontSize: '0.85rem', padding: '0 8px' }}
+                                            >
+                                                <option value="portrait">{t('rubricBuilder.format_portrait')}</option>
+                                                <option value="landscape">{t('rubricBuilder.format_landscape')}</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <button
+                                        className="btn btn-secondary"
+                                        disabled={selectedStudentIds.size === 0 || exporting}
+                                        onClick={handleBatchDocxExport}
+                                        title="Export graded results as a Word document"
+                                    >
+                                        {exporting ? <Loader size={15} className="spin" /> : <Download size={15} />}
+                                        {t('exportPage.batch_docx_export', { count: selectedStudentIds.size })}
+                                    </button>
+                                    <button
+                                        className="btn btn-primary"
+                                        disabled={selectedStudentIds.size === 0 || exporting}
+                                        onClick={() => handleExport()}
+                                    >
+                                        {exporting ? <Loader size={15} className="spin" /> : <Download size={15} />}
+                                        {exporting
+                                            ? t('exportPage.preparing_print')
+                                            : t('exportPage.print_to_pdf', { count: selectedStudentIds.size })}
+                                    </button>
+                                </div>
                             </div>
-                            <button
-                                className="btn btn-secondary btn-sm"
-                                disabled={!rubric || exporting || selectedStudentIds.size === 0}
-                                onClick={handleCsvExport}
+
+                            {selectedStudentIds.size > 0 && (
+                                <div
+                                    style={{
+                                        background: 'var(--bg-elevated)',
+                                        border: '1px solid var(--border)',
+                                        borderRadius: 8,
+                                        padding: '10px 14px',
+                                        marginBottom: 12,
+                                        display: 'flex',
+                                        gap: 10,
+                                        alignItems: 'center',
+                                        flexWrap: 'wrap',
+                                    }}
+                                >
+                                    <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                                        {selectedStudentIds.size} selected —
+                                    </span>
+                                    <button className="btn btn-secondary btn-sm" onClick={handleBulkMarkNHI}>
+                                        <XCircle size={13} /> {t('exportPage.bulk_nhi')}
+                                    </button>
+                                    <button
+                                        className="btn btn-secondary btn-sm"
+                                        onClick={() => setShowBulkComment((v) => !v)}
+                                    >
+                                        <MessageSquare size={13} /> {t('exportPage.bulk_add_comment')}
+                                    </button>
+                                    {showBulkComment && (
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                gap: 8,
+                                                alignItems: 'center',
+                                                flex: 1,
+                                                minWidth: 260,
+                                            }}
+                                        >
+                                            <input
+                                                type="text"
+                                                value={bulkCommentText}
+                                                onChange={(e) => setBulkCommentText(e.target.value)}
+                                                placeholder={t('exportPage.bulk_comment_placeholder')}
+                                                style={{ flex: 1 }}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') handleBulkComment();
+                                                }}
+                                                autoFocus
+                                            />
+                                            <button
+                                                className="btn btn-primary btn-sm"
+                                                onClick={handleBulkComment}
+                                                disabled={!bulkCommentText.trim()}
+                                            >
+                                                {t('exportPage.bulk_comment_confirm')}
+                                            </button>
+                                            <button
+                                                className="btn btn-ghost btn-icon btn-sm"
+                                                aria-label={t('common.close')}
+                                                onClick={() => setShowBulkComment(false)}
+                                            >
+                                                <X size={13} />
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            <table className="data-table">
+                                <thead>
+                                    <tr>
+                                        <th style={{ width: 40 }}></th>
+                                        <th>{t('exportPage.table_student')}</th>
+                                        <th>{t('exportPage.table_grade')}</th>
+                                        <th>{t('exportPage.table_score')}</th>
+                                        <th>{t('exportPage.table_progress')}</th>
+                                        <th>{t('exportPage.table_actions')}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {gradedStudents.map(({ sr, student, summary }) => {
+                                        if (!student || !summary) return null;
+                                        const isSelected = selectedStudentIds.has(student.id);
+                                        return (
+                                            <tr
+                                                key={student.id}
+                                                onClick={() => toggleStudent(student.id)}
+                                                style={{ cursor: 'pointer' }}
+                                            >
+                                                <td onClick={(e) => e.stopPropagation()}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={isSelected}
+                                                        aria-labelledby={`export-student-${student.id}`}
+                                                        onChange={() => toggleStudent(student.id)}
+                                                    />
+                                                </td>
+                                                <td id={`export-student-${student.id}`} style={{ fontWeight: 500 }}>
+                                                    {student.name}
+                                                    {sr.feedbackOnly && (
+                                                        <span
+                                                            style={{
+                                                                marginLeft: 8,
+                                                                fontSize: '0.7rem',
+                                                                background: '#fef3c7',
+                                                                color: '#92400e',
+                                                                border: '1px solid #fcd34d',
+                                                                borderRadius: 4,
+                                                                padding: '1px 6px',
+                                                                fontWeight: 600,
+                                                                verticalAlign: 'middle',
+                                                            }}
+                                                        >
+                                                            {t('exportPage.feedback_only_badge')}
+                                                        </span>
+                                                    )}
+                                                    {sr.isAnchor && (
+                                                        <span
+                                                            style={{
+                                                                marginLeft: 6,
+                                                                fontSize: '0.7rem',
+                                                                background: '#ede9fe',
+                                                                color: '#6d28d9',
+                                                                border: '1px solid #c4b5fd',
+                                                                borderRadius: 4,
+                                                                padding: '1px 6px',
+                                                                fontWeight: 600,
+                                                                verticalAlign: 'middle',
+                                                            }}
+                                                        >
+                                                            {t('exportPage.anchor_badge')}
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td>
+                                                    <span
+                                                        className="grade-chip"
+                                                        style={{
+                                                            background: summary.gradeColor + '22',
+                                                            color: summary.gradeColor,
+                                                            border: `1.5px solid ${summary.gradeColor}`,
+                                                            minWidth: 36,
+                                                            height: 36,
+                                                            fontSize: '1rem',
+                                                        }}
+                                                    >
+                                                        {summary.letterGrade}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    {summary.modifiedPercentage.toFixed(1)}% ({summary.rawScore}/
+                                                    {summary.maxRawScore})
+                                                </td>
+                                                <td>
+                                                    <div className="progress-bar" style={{ width: 120 }}>
+                                                        <div
+                                                            className="progress-bar-fill"
+                                                            style={{
+                                                                width: `${(summary.gradedCount / Math.max(summary.totalCriteria, 1)) * 100}%`,
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <div className="text-xs text-muted">
+                                                        {summary.gradedCount}/{summary.totalCriteria}
+                                                    </div>
+                                                </td>
+                                                <td
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    style={{ display: 'flex', gap: 6, alignItems: 'center' }}
+                                                >
+                                                    <button
+                                                        className="btn btn-secondary btn-sm"
+                                                        onClick={() => handleExport(student.id)}
+                                                        disabled={exporting}
+                                                    >
+                                                        <Download size={13} /> PDF
+                                                    </button>
+                                                    <button
+                                                        className="btn btn-ghost btn-sm"
+                                                        title="Copy student feedback link"
+                                                        onClick={() => {
+                                                            if (!rubric) return;
+                                                            const code = encodeFeedbackCode({
+                                                                sr,
+                                                                rubric,
+                                                                student,
+                                                                scale,
+                                                            });
+                                                            const url = `${window.location.origin}${window.location.pathname}#/feedback/${code}`;
+                                                            navigator.clipboard.writeText(url);
+                                                            showToast('Feedback link copied to clipboard', 'success');
+                                                        }}
+                                                    >
+                                                        <Share2 size={13} />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </>
+                    )}
+                </div>
+
+                <div className="card" style={{ marginTop: 24 }} data-tour="export-essays">
+                    <button
+                        type="button"
+                        onClick={() => toggleSection('essays')}
+                        aria-expanded={!collapsedSections.has('essays')}
+                        aria-controls="export-section-essays"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            marginBottom: collapsedSections.has('essays') ? 0 : 16,
+                            width: '100%',
+                            textAlign: 'left',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: 0,
+                        }}
+                    >
+                        <FileText size={16} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                        <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, flex: 1 }}>
+                            {t('exportPage.essays_title')}
+                        </h3>
+                        <ChevronDown
+                            size={16}
+                            style={{
+                                color: 'var(--text-muted)',
+                                transform: collapsedSections.has('essays') ? 'none' : 'rotate(180deg)',
+                                transition: 'transform 0.2s',
+                            }}
+                        />
+                    </button>
+
+                    <div
+                        id="export-section-essays"
+                        style={{ display: collapsedSections.has('essays') ? 'none' : undefined }}
+                    >
+                        <div className="form-group" style={{ marginBottom: 12 }}>
+                            <label>{t('exportPage.essays_select_assignment')}</label>
+                            <select
+                                value={essayTeacherKey}
+                                onChange={(e) => {
+                                    setEssayTeacherKey(e.target.value);
+                                    setSelectedEssayStudentIds(new Set());
+                                }}
                             >
-                                <Download size={13} />
-                                {selectedStudentIds.size === 0
-                                    ? t('exportPage.csv_select_prompt')
-                                    : t('exportPage.csv_export_count', { count: selectedStudentIds.size })}
+                                <option value="">{t('exportPage.essays_select_assignment_placeholder')}</option>
+                                {essayGroups.map((g) => (
+                                    <option key={g.teacherKey} value={g.teacherKey}>
+                                        {g.title}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {essayTeacherKey && (
+                            <>
+                                {essaySubmittedEntries.length === 0 ? (
+                                    <p className="text-muted text-sm">{t('exportPage.essays_no_submissions')}</p>
+                                ) : (
+                                    <div style={{ marginBottom: 12 }}>
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            onClick={toggleAllEssayStudents}
+                                            style={{ marginBottom: 8 }}
+                                        >
+                                            {selectedEssayStudentIds.size === essaySubmittedEntries.length ? (
+                                                <CheckSquare size={13} />
+                                            ) : (
+                                                <Square size={13} />
+                                            )}{' '}
+                                            {selectedEssayStudentIds.size === essaySubmittedEntries.length
+                                                ? t('exportPage.deselect_all')
+                                                : t('exportPage.select_all')}
+                                        </button>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                            {essaySubmittedEntries.map(({ student }) => (
+                                                <label
+                                                    key={student.id}
+                                                    style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedEssayStudentIds.has(student.id)}
+                                                        onChange={() => toggleEssayStudent(student.id)}
+                                                    />
+                                                    {student.name}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        gap: 16,
+                                        flexWrap: 'wrap',
+                                        alignItems: 'flex-end',
+                                        marginBottom: 12,
+                                    }}
+                                >
+                                    <div className="form-group" style={{ marginBottom: 0 }}>
+                                        <label style={{ fontSize: '0.8rem' }}>{t('exportPage.essays_format')}</label>
+                                        <select
+                                            value={essayFormat}
+                                            onChange={(e) => {
+                                                const next = e.target.value as typeof essayFormat;
+                                                setEssayFormat(next);
+                                                if (next === 'markdown') setIncludeRubricAnalysis(false);
+                                            }}
+                                        >
+                                            <option value="pdf">PDF</option>
+                                            <option value="docx">DOCX</option>
+                                            <option value="markdown">Markdown</option>
+                                        </select>
+                                    </div>
+                                    <div className="form-group" style={{ marginBottom: 0 }}>
+                                        <label style={{ fontSize: '0.8rem' }}>
+                                            {t('exportPage.essays_batch_mode')}
+                                        </label>
+                                        <select
+                                            value={essayBatchMode}
+                                            onChange={(e) => setEssayBatchMode(e.target.value as typeof essayBatchMode)}
+                                            disabled={includeRubricAnalysis && essayFormat !== 'markdown'}
+                                        >
+                                            <option value="separate">{t('exportPage.essays_mode_separate')}</option>
+                                            <option value="combined">{t('exportPage.essays_mode_combined')}</option>
+                                        </select>
+                                    </div>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={includeRubricAnalysis}
+                                            disabled={essayFormat === 'markdown'}
+                                            onChange={(e) => setIncludeRubricAnalysis(e.target.checked)}
+                                        />
+                                        {t('exportPage.essays_include_rubric_analysis')}
+                                    </label>
+                                </div>
+
+                                <button
+                                    className="btn btn-primary btn-sm"
+                                    disabled={exportingEssays || selectedEssayStudentIds.size === 0}
+                                    onClick={handleEssayExport}
+                                >
+                                    {exportingEssays ? <Loader size={13} className="spin" /> : <Download size={13} />}
+                                    {t('exportPage.essays_export_button')}
+                                </button>
+                            </>
+                        )}
+                    </div>
+                </div>
+
+                <div className="card" style={{ marginTop: 24 }}>
+                    <button
+                        type="button"
+                        onClick={() => toggleSection('period')}
+                        aria-expanded={!collapsedSections.has('period')}
+                        aria-controls="export-section-period"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            marginBottom: collapsedSections.has('period') ? 0 : 16,
+                            width: '100%',
+                            textAlign: 'left',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: 0,
+                        }}
+                    >
+                        <ClipboardList size={16} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                        <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, flex: 1 }}>
+                            {t('exportPage.period_report_title')}
+                        </h3>
+                        <ChevronDown
+                            size={16}
+                            style={{
+                                color: 'var(--text-muted)',
+                                transform: collapsedSections.has('period') ? 'none' : 'rotate(180deg)',
+                                transition: 'transform 0.2s',
+                            }}
+                        />
+                    </button>
+                    <div
+                        id="export-section-period"
+                        style={{ display: collapsedSections.has('period') ? 'none' : undefined }}
+                    >
+                        <p style={{ margin: '0 0 16px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                            {t('exportPage.period_report_help')}
+                        </p>
+
+                        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
+                            <div className="form-group" style={{ flex: '1 1 160px', marginBottom: 0 }}>
+                                <label style={{ fontSize: '0.8rem' }}>{t('exportPage.period_class')}</label>
+                                <select
+                                    value={reportClassId}
+                                    onChange={(e) => {
+                                        setReportClassId(e.target.value);
+                                        setReportStudentIds(new Set());
+                                    }}
+                                >
+                                    <option value="">{t('exportPage.period_select_class')}</option>
+                                    {classes.map((c) => (
+                                        <option key={c.id} value={c.id}>
+                                            {c.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="form-group" style={{ flex: '1 1 130px', marginBottom: 0 }}>
+                                <label style={{ fontSize: '0.8rem' }}>{t('exportPage.period_from')}</label>
+                                <input
+                                    type="date"
+                                    value={reportDateFrom}
+                                    onChange={(e) => setReportDateFrom(e.target.value)}
+                                />
+                            </div>
+                            <div className="form-group" style={{ flex: '1 1 130px', marginBottom: 0 }}>
+                                <label style={{ fontSize: '0.8rem' }}>{t('exportPage.period_to')}</label>
+                                <input
+                                    type="date"
+                                    value={reportDateTo}
+                                    onChange={(e) => setReportDateTo(e.target.value)}
+                                />
+                            </div>
+                            <div className="form-group" style={{ flex: '1 1 160px', marginBottom: 0 }}>
+                                <label style={{ fontSize: '0.8rem' }}>{t('exportPage.period_label_field')}</label>
+                                <input
+                                    type="text"
+                                    value={reportPeriodLabel}
+                                    onChange={(e) => setReportPeriodLabel(e.target.value)}
+                                    placeholder={t('exportPage.period_label_placeholder')}
+                                />
+                            </div>
+                        </div>
+
+                        {reportClassId &&
+                            (() => {
+                                const classStudents = students.filter((s) => s.classId === reportClassId);
+                                if (classStudents.length === 0)
+                                    return (
+                                        <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                                            {t('exportPage.period_no_students')}
+                                        </p>
+                                    );
+                                const allSelected = classStudents.every((s) => reportStudentIds.has(s.id));
+                                return (
+                                    <div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                                            <button
+                                                className="btn btn-ghost btn-sm"
+                                                onClick={() =>
+                                                    setReportStudentIds(
+                                                        allSelected
+                                                            ? new Set()
+                                                            : new Set(classStudents.map((s) => s.id))
+                                                    )
+                                                }
+                                            >
+                                                {allSelected ? <CheckSquare size={14} /> : <Square size={14} />}
+                                                {allSelected
+                                                    ? t('exportPage.deselect_all')
+                                                    : t('exportPage.select_all')}
+                                            </button>
+                                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                                {reportStudentIds.size} / {classStudents.length}{' '}
+                                                {t('exportPage.selected')}
+                                            </span>
+                                        </div>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                            {classStudents.map((s) => (
+                                                <button
+                                                    key={s.id}
+                                                    className={`btn btn-sm ${reportStudentIds.has(s.id) ? 'btn-primary' : 'btn-secondary'}`}
+                                                    onClick={() =>
+                                                        setReportStudentIds((prev) => {
+                                                            const n = new Set(prev);
+                                                            if (n.has(s.id)) n.delete(s.id);
+                                                            else n.add(s.id);
+                                                            return n;
+                                                        })
+                                                    }
+                                                >
+                                                    {s.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+
+                        <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
+                            <button
+                                className="btn btn-primary"
+                                disabled={reportStudentIds.size === 0 || generatingReport}
+                                onClick={handleGeneratePeriodReports}
+                            >
+                                {generatingReport ? <Loader size={14} className="spin" /> : <Download size={14} />}
+                                {t('exportPage.period_generate_btn', { count: reportStudentIds.size })}
                             </button>
                         </div>
                     </div>
                 </div>
 
-                {!rubric ? (
-                    <div className="empty-state">
-                        <FileText size={32} />
-                        <p>{t('exportPage.no_rubric')}</p>
-                    </div>
-                ) : gradedStudents.length === 0 ? (
-                    <div className="empty-state">
-                        <Users size={32} />
-                        <p>{t('exportPage.no_students')}</p>
-                    </div>
-                ) : (
-                    <>
-                        <div
-                            style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                marginBottom: 14,
-                            }}
-                        >
-                            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                                <button className="btn btn-ghost btn-sm" onClick={toggleAll}>
-                                    {selectedStudentIds.size === gradedStudents.length ? (
-                                        <CheckSquare size={15} />
-                                    ) : (
-                                        <Square size={15} />
-                                    )}
-                                    {selectedStudentIds.size === gradedStudents.length
-                                        ? t('exportPage.deselect_all')
-                                        : t('exportPage.select_all')}
-                                </button>
-                                <span className="text-muted text-sm">
-                                    {t('exportPage.selected_count', {
-                                        count: selectedStudentIds.size,
-                                        total: gradedStudents.length,
-                                    })}
-                                </span>
-                            </div>
-                            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginRight: 10 }}>
-                                    <label
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 4,
-                                            marginLeft: 6,
-                                            fontSize: '0.85rem',
-                                            cursor: 'pointer',
-                                            color: 'var(--text-muted)',
-                                        }}
-                                        title="Adds to blank page so each student starts on a new physical sheet"
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            checked={padForDoubleSided}
-                                            onChange={(e) => setPadForDoubleSided(e.target.checked)}
-                                        />
-                                        {t('exportPage.pad_double_sided')}
-                                    </label>
-                                    <div
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 6,
-                                            marginLeft: 12,
-                                            borderLeft: '1px solid var(--border)',
-                                            paddingLeft: 12,
-                                        }}
-                                    >
-                                        <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                                            {t('rubricBuilder.format_orientation')}:
-                                        </label>
-                                        <select
-                                            value={orientation || rubric.format.orientation || 'portrait'}
-                                            onChange={(e) => setOrientation(e.target.value as 'portrait' | 'landscape')}
-                                            style={{ height: 30, fontSize: '0.85rem', padding: '0 8px' }}
-                                        >
-                                            <option value="portrait">{t('rubricBuilder.format_portrait')}</option>
-                                            <option value="landscape">{t('rubricBuilder.format_landscape')}</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <button
-                                    className="btn btn-secondary"
-                                    disabled={selectedStudentIds.size === 0 || exporting}
-                                    onClick={handleBatchDocxExport}
-                                    title="Export graded results as a Word document"
-                                >
-                                    {exporting ? <Loader size={15} className="spin" /> : <Download size={15} />}
-                                    {t('exportPage.batch_docx_export', { count: selectedStudentIds.size })}
-                                </button>
-                                <button
-                                    className="btn btn-primary"
-                                    disabled={selectedStudentIds.size === 0 || exporting}
-                                    onClick={() => handleExport()}
-                                >
-                                    {exporting ? <Loader size={15} className="spin" /> : <Download size={15} />}
-                                    {exporting
-                                        ? t('exportPage.preparing_print')
-                                        : t('exportPage.print_to_pdf', { count: selectedStudentIds.size })}
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Bulk action bar */}
-                        {selectedStudentIds.size > 0 && (
-                            <div
-                                style={{
-                                    background: 'var(--bg-elevated)',
-                                    border: '1px solid var(--border)',
-                                    borderRadius: 8,
-                                    padding: '10px 14px',
-                                    marginBottom: 12,
-                                    display: 'flex',
-                                    gap: 10,
-                                    alignItems: 'center',
-                                    flexWrap: 'wrap',
-                                }}
-                            >
-                                <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-                                    {selectedStudentIds.size} selected —
-                                </span>
-                                <button className="btn btn-secondary btn-sm" onClick={handleBulkMarkNHI}>
-                                    <XCircle size={13} /> {t('exportPage.bulk_nhi')}
-                                </button>
-                                <button
-                                    className="btn btn-secondary btn-sm"
-                                    onClick={() => setShowBulkComment((v) => !v)}
-                                >
-                                    <MessageSquare size={13} /> {t('exportPage.bulk_add_comment')}
-                                </button>
-                                {showBulkComment && (
-                                    <div
-                                        style={{
-                                            display: 'flex',
-                                            gap: 8,
-                                            alignItems: 'center',
-                                            flex: 1,
-                                            minWidth: 260,
-                                        }}
-                                    >
-                                        <input
-                                            type="text"
-                                            value={bulkCommentText}
-                                            onChange={(e) => setBulkCommentText(e.target.value)}
-                                            placeholder={t('exportPage.bulk_comment_placeholder')}
-                                            style={{ flex: 1 }}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter') handleBulkComment();
-                                            }}
-                                            autoFocus
-                                        />
-                                        <button
-                                            className="btn btn-primary btn-sm"
-                                            onClick={handleBulkComment}
-                                            disabled={!bulkCommentText.trim()}
-                                        >
-                                            {t('exportPage.bulk_comment_confirm')}
-                                        </button>
-                                        <button
-                                            className="btn btn-ghost btn-icon btn-sm"
-                                            aria-label={t('common.close')}
-                                            onClick={() => setShowBulkComment(false)}
-                                        >
-                                            <X size={13} />
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        <table className="data-table">
-                            <thead>
-                                <tr>
-                                    <th style={{ width: 40 }}></th>
-                                    <th>{t('exportPage.table_student')}</th>
-                                    <th>{t('exportPage.table_grade')}</th>
-                                    <th>{t('exportPage.table_score')}</th>
-                                    <th>{t('exportPage.table_progress')}</th>
-                                    <th>{t('exportPage.table_actions')}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {gradedStudents.map(({ sr, student, summary }) => {
-                                    if (!student || !summary) return null;
-                                    const isSelected = selectedStudentIds.has(student.id);
-                                    return (
-                                        <tr
-                                            key={student.id}
-                                            onClick={() => toggleStudent(student.id)}
-                                            style={{ cursor: 'pointer' }}
-                                        >
-                                            <td onClick={(e) => e.stopPropagation()}>
-                                                <input
-                                                    type="checkbox"
-                                                    checked={isSelected}
-                                                    onChange={() => toggleStudent(student.id)}
-                                                />
-                                            </td>
-                                            <td style={{ fontWeight: 500 }}>
-                                                {student.name}
-                                                {sr.feedbackOnly && (
-                                                    <span
-                                                        style={{
-                                                            marginLeft: 8,
-                                                            fontSize: '0.7rem',
-                                                            background: '#fef3c7',
-                                                            color: '#92400e',
-                                                            border: '1px solid #fcd34d',
-                                                            borderRadius: 4,
-                                                            padding: '1px 6px',
-                                                            fontWeight: 600,
-                                                            verticalAlign: 'middle',
-                                                        }}
-                                                    >
-                                                        {t('exportPage.feedback_only_badge')}
-                                                    </span>
-                                                )}
-                                                {sr.isAnchor && (
-                                                    <span
-                                                        style={{
-                                                            marginLeft: 6,
-                                                            fontSize: '0.7rem',
-                                                            background: '#ede9fe',
-                                                            color: '#6d28d9',
-                                                            border: '1px solid #c4b5fd',
-                                                            borderRadius: 4,
-                                                            padding: '1px 6px',
-                                                            fontWeight: 600,
-                                                            verticalAlign: 'middle',
-                                                        }}
-                                                    >
-                                                        {t('exportPage.anchor_badge')}
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td>
-                                                <span
-                                                    className="grade-chip"
-                                                    style={{
-                                                        background: summary.gradeColor + '22',
-                                                        color: summary.gradeColor,
-                                                        border: `1.5px solid ${summary.gradeColor}`,
-                                                        minWidth: 36,
-                                                        height: 36,
-                                                        fontSize: '1rem',
-                                                    }}
-                                                >
-                                                    {summary.letterGrade}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                {summary.modifiedPercentage.toFixed(1)}% ({summary.rawScore}/
-                                                {summary.maxRawScore})
-                                            </td>
-                                            <td>
-                                                <div className="progress-bar" style={{ width: 120 }}>
-                                                    <div
-                                                        className="progress-bar-fill"
-                                                        style={{
-                                                            width: `${(summary.gradedCount / Math.max(summary.totalCriteria, 1)) * 100}%`,
-                                                        }}
-                                                    />
-                                                </div>
-                                                <div className="text-xs text-muted">
-                                                    {summary.gradedCount}/{summary.totalCriteria}
-                                                </div>
-                                            </td>
-                                            <td
-                                                onClick={(e) => e.stopPropagation()}
-                                                style={{ display: 'flex', gap: 6, alignItems: 'center' }}
-                                            >
-                                                <button
-                                                    className="btn btn-secondary btn-sm"
-                                                    onClick={() => handleExport(student.id)}
-                                                    disabled={exporting}
-                                                >
-                                                    <Download size={13} /> PDF
-                                                </button>
-                                                <button
-                                                    className="btn btn-ghost btn-sm"
-                                                    title="Copy student feedback link"
-                                                    onClick={() => {
-                                                        if (!rubric) return;
-                                                        const code = encodeFeedbackCode({ sr, rubric, student, scale });
-                                                        const url = `${window.location.origin}${window.location.pathname}#/feedback/${code}`;
-                                                        navigator.clipboard.writeText(url);
-                                                        showToast('Feedback link copied to clipboard', 'success');
-                                                    }}
-                                                >
-                                                    <Share2 size={13} />
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </>
-                )}
-            </div>
-
-            {/* ── Essay export ──────────────────────────────────────────────────── */}
-            <div className="card" style={{ marginTop: 24 }} data-tour="export-essays">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-                    <FileText size={16} style={{ color: 'var(--accent)' }} aria-hidden="true" />
-                    <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>{t('exportPage.essays_title')}</h3>
-                </div>
-
-                <div className="form-group" style={{ marginBottom: 12 }}>
-                    <label>{t('exportPage.essays_select_assignment')}</label>
-                    <select
-                        value={essayTeacherKey}
-                        onChange={(e) => {
-                            setEssayTeacherKey(e.target.value);
-                            setSelectedEssayStudentIds(new Set());
+                <div className="card" style={{ marginTop: 24 }}>
+                    <button
+                        type="button"
+                        onClick={() => toggleSection('reportCard')}
+                        aria-expanded={!collapsedSections.has('reportCard')}
+                        aria-controls="export-section-reportCard"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            marginBottom: collapsedSections.has('reportCard') ? 0 : 16,
+                            width: '100%',
+                            textAlign: 'left',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: 0,
                         }}
                     >
-                        <option value="">{t('exportPage.essays_select_assignment_placeholder')}</option>
-                        {essayGroups.map((g) => (
-                            <option key={g.teacherKey} value={g.teacherKey}>
-                                {g.title}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                {essayTeacherKey && (
-                    <>
-                        {essaySubmittedEntries.length === 0 ? (
-                            <p className="text-muted text-sm">{t('exportPage.essays_no_submissions')}</p>
-                        ) : (
-                            <div style={{ marginBottom: 12 }}>
-                                <button
-                                    className="btn btn-ghost btn-sm"
-                                    onClick={toggleAllEssayStudents}
-                                    style={{ marginBottom: 8 }}
-                                >
-                                    {selectedEssayStudentIds.size === essaySubmittedEntries.length ? (
-                                        <CheckSquare size={13} />
-                                    ) : (
-                                        <Square size={13} />
-                                    )}{' '}
-                                    {selectedEssayStudentIds.size === essaySubmittedEntries.length
-                                        ? t('exportPage.deselect_all')
-                                        : t('exportPage.select_all')}
-                                </button>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                    {essaySubmittedEntries.map(({ student }) => (
-                                        <label
-                                            key={student.id}
-                                            style={{ display: 'flex', alignItems: 'center', gap: 8 }}
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedEssayStudentIds.has(student.id)}
-                                                onChange={() => toggleEssayStudent(student.id)}
-                                            />
-                                            {student.name}
-                                        </label>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        <div
+                        <ClipboardList size={16} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                        <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, flex: 1 }}>
+                            {t('reportCard.title')}
+                        </h3>
+                        <ChevronDown
+                            size={16}
                             style={{
-                                display: 'flex',
-                                gap: 16,
-                                flexWrap: 'wrap',
-                                alignItems: 'flex-end',
-                                marginBottom: 12,
+                                color: 'var(--text-muted)',
+                                transform: collapsedSections.has('reportCard') ? 'none' : 'rotate(180deg)',
+                                transition: 'transform 0.2s',
                             }}
-                        >
-                            <div className="form-group" style={{ marginBottom: 0 }}>
-                                <label style={{ fontSize: '0.8rem' }}>{t('exportPage.essays_format')}</label>
-                                <select
-                                    value={essayFormat}
-                                    onChange={(e) => {
-                                        const next = e.target.value as typeof essayFormat;
-                                        setEssayFormat(next);
-                                        if (next === 'markdown') setIncludeRubricAnalysis(false);
+                        />
+                    </button>
+                    <div
+                        id="export-section-reportCard"
+                        style={{ display: collapsedSections.has('reportCard') ? 'none' : undefined }}
+                    >
+                        <p style={{ margin: '0 0 16px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                            {t('reportCard.help')}
+                        </p>
+                        <p style={{ margin: '0 0 16px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                            {t('reportCard.uses_period_picker')}
+                        </p>
+
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
+                            {(
+                                [
+                                    ['includeRubrics', 'reportCard.section_rubrics'],
+                                    ['includeStandards', 'reportCard.section_standards'],
+                                    ['includeLearningGoals', 'reportCard.section_learning_goals'],
+                                    ['includeCefr', 'reportCard.section_cefr'],
+                                    ['includeTestSummary', 'reportCard.section_test_summary'],
+                                ] as const
+                            ).map(([key, labelKey]) => (
+                                <label
+                                    key={key}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 6,
+                                        fontSize: '0.85rem',
+                                        cursor: 'pointer',
                                     }}
                                 >
-                                    <option value="pdf">PDF</option>
-                                    <option value="docx">DOCX</option>
-                                    <option value="markdown">Markdown</option>
-                                </select>
-                            </div>
-                            <div className="form-group" style={{ marginBottom: 0 }}>
-                                <label style={{ fontSize: '0.8rem' }}>{t('exportPage.essays_batch_mode')}</label>
-                                <select
-                                    value={essayBatchMode}
-                                    onChange={(e) => setEssayBatchMode(e.target.value as typeof essayBatchMode)}
-                                    disabled={includeRubricAnalysis && essayFormat !== 'markdown'}
-                                >
-                                    <option value="separate">{t('exportPage.essays_mode_separate')}</option>
-                                    <option value="combined">{t('exportPage.essays_mode_combined')}</option>
-                                </select>
-                            </div>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                                <input
-                                    type="checkbox"
-                                    checked={includeRubricAnalysis}
-                                    disabled={essayFormat === 'markdown'}
-                                    onChange={(e) => setIncludeRubricAnalysis(e.target.checked)}
-                                />
-                                {t('exportPage.essays_include_rubric_analysis')}
-                            </label>
-                        </div>
-
-                        <button
-                            className="btn btn-primary btn-sm"
-                            disabled={exportingEssays || selectedEssayStudentIds.size === 0}
-                            onClick={handleEssayExport}
-                        >
-                            {exportingEssays ? <Loader size={13} className="spin" /> : <Download size={13} />}
-                            {t('exportPage.essays_export_button')}
-                        </button>
-                    </>
-                )}
-            </div>
-
-            {/* ── Period / Report Card Generator ─────────────────────────────── */}
-            <div className="card" style={{ marginTop: 24 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-                    <ClipboardList size={16} style={{ color: 'var(--accent)' }} aria-hidden="true" />
-                    <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>
-                        {t('exportPage.period_report_title')}
-                    </h3>
-                </div>
-                <p style={{ margin: '0 0 16px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                    {t('exportPage.period_report_help')}
-                </p>
-
-                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
-                    <div className="form-group" style={{ flex: '1 1 160px', marginBottom: 0 }}>
-                        <label style={{ fontSize: '0.8rem' }}>{t('exportPage.period_class')}</label>
-                        <select
-                            value={reportClassId}
-                            onChange={(e) => {
-                                setReportClassId(e.target.value);
-                                setReportStudentIds(new Set());
-                            }}
-                        >
-                            <option value="">{t('exportPage.period_select_class')}</option>
-                            {classes.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                    {c.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="form-group" style={{ flex: '1 1 130px', marginBottom: 0 }}>
-                        <label style={{ fontSize: '0.8rem' }}>{t('exportPage.period_from')}</label>
-                        <input type="date" value={reportDateFrom} onChange={(e) => setReportDateFrom(e.target.value)} />
-                    </div>
-                    <div className="form-group" style={{ flex: '1 1 130px', marginBottom: 0 }}>
-                        <label style={{ fontSize: '0.8rem' }}>{t('exportPage.period_to')}</label>
-                        <input type="date" value={reportDateTo} onChange={(e) => setReportDateTo(e.target.value)} />
-                    </div>
-                    <div className="form-group" style={{ flex: '1 1 160px', marginBottom: 0 }}>
-                        <label style={{ fontSize: '0.8rem' }}>{t('exportPage.period_label_field')}</label>
-                        <input
-                            type="text"
-                            value={reportPeriodLabel}
-                            onChange={(e) => setReportPeriodLabel(e.target.value)}
-                            placeholder={t('exportPage.period_label_placeholder')}
-                        />
-                    </div>
-                </div>
-
-                {/* Student selector for this class */}
-                {reportClassId &&
-                    (() => {
-                        const classStudents = students.filter((s) => s.classId === reportClassId);
-                        if (classStudents.length === 0)
-                            return (
-                                <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                                    {t('exportPage.period_no_students')}
-                                </p>
-                            );
-                        const allSelected = classStudents.every((s) => reportStudentIds.has(s.id));
-                        return (
-                            <div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                                    <button
-                                        className="btn btn-ghost btn-sm"
-                                        onClick={() =>
-                                            setReportStudentIds(
-                                                allSelected ? new Set() : new Set(classStudents.map((s) => s.id))
-                                            )
+                                    <input
+                                        type="checkbox"
+                                        checked={reportCardConfig[key]}
+                                        onChange={(e) =>
+                                            setReportCardConfig((prev) => ({ ...prev, [key]: e.target.checked }))
                                         }
-                                    >
-                                        {allSelected ? <CheckSquare size={14} /> : <Square size={14} />}
-                                        {allSelected ? t('exportPage.deselect_all') : t('exportPage.select_all')}
-                                    </button>
-                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                        {reportStudentIds.size} / {classStudents.length} {t('exportPage.selected')}
-                                    </span>
-                                </div>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                                    {classStudents.map((s) => (
-                                        <button
-                                            key={s.id}
-                                            className={`btn btn-sm ${reportStudentIds.has(s.id) ? 'btn-primary' : 'btn-secondary'}`}
-                                            onClick={() =>
-                                                setReportStudentIds((prev) => {
-                                                    const n = new Set(prev);
-                                                    if (n.has(s.id)) n.delete(s.id);
-                                                    else n.add(s.id);
-                                                    return n;
-                                                })
-                                            }
-                                        >
-                                            {s.name}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        );
-                    })()}
-
-                <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
-                    <button
-                        className="btn btn-primary"
-                        disabled={reportStudentIds.size === 0 || generatingReport}
-                        onClick={handleGeneratePeriodReports}
-                    >
-                        {generatingReport ? <Loader size={14} className="spin" /> : <Download size={14} />}
-                        {t('exportPage.period_generate_btn', { count: reportStudentIds.size })}
-                    </button>
-                </div>
-            </div>
-
-            {/* ── Report Card Generator ──────────────────────────────────────── */}
-            <div className="card" style={{ marginTop: 24 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-                    <ClipboardList size={16} style={{ color: 'var(--accent)' }} aria-hidden="true" />
-                    <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>{t('reportCard.title')}</h3>
-                </div>
-                <p style={{ margin: '0 0 16px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                    {t('reportCard.help')}
-                </p>
-                <p style={{ margin: '0 0 16px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                    {t('reportCard.uses_period_picker')}
-                </p>
-
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
-                    {(
-                        [
-                            ['includeRubrics', 'reportCard.section_rubrics'],
-                            ['includeStandards', 'reportCard.section_standards'],
-                            ['includeLearningGoals', 'reportCard.section_learning_goals'],
-                            ['includeCefr', 'reportCard.section_cefr'],
-                            ['includeTestSummary', 'reportCard.section_test_summary'],
-                        ] as const
-                    ).map(([key, labelKey]) => (
-                        <label
-                            key={key}
+                                    />
+                                    {t(labelKey)}
+                                </label>
+                            ))}
+                        </div>
+                        <div
                             style={{
+                                marginTop: 8,
                                 display: 'flex',
-                                alignItems: 'center',
-                                gap: 6,
-                                fontSize: '0.85rem',
-                                cursor: 'pointer',
+                                justifyContent: 'flex-end',
+                                gap: 10,
+                                flexWrap: 'wrap',
                             }}
                         >
-                            <input
-                                type="checkbox"
-                                checked={reportCardConfig[key]}
-                                onChange={(e) => setReportCardConfig((prev) => ({ ...prev, [key]: e.target.checked }))}
-                            />
-                            {t(labelKey)}
-                        </label>
-                    ))}
-                </div>
-                <div style={{ marginTop: 8, display: 'flex', justifyContent: 'flex-end', gap: 10, flexWrap: 'wrap' }}>
-                    <button
-                        className="btn btn-secondary"
-                        disabled={reportStudentIds.size !== 1 || generatingReportCard}
-                        onClick={() => {
-                            const [only] = reportStudentIds;
-                            if (only) void handleGenerateReportCard(only);
-                        }}
-                    >
-                        {generatingReportCard ? <Loader size={14} className="spin" /> : <Download size={14} />}
-                        {t('reportCard.generate_single_btn')}
-                    </button>
-                    <button
-                        className="btn btn-primary"
-                        disabled={reportStudentIds.size === 0 || generatingReportCard}
-                        onClick={handleGenerateReportCardsBatch}
-                    >
-                        {generatingReportCard ? <Loader size={14} className="spin" /> : <Download size={14} />}
-                        {t('reportCard.generate_batch_btn', { count: reportStudentIds.size })}
-                    </button>
+                            <button
+                                className="btn btn-secondary"
+                                disabled={reportStudentIds.size !== 1 || generatingReportCard}
+                                onClick={() => {
+                                    const [only] = reportStudentIds;
+                                    if (only) void handleGenerateReportCard(only);
+                                }}
+                            >
+                                {generatingReportCard ? <Loader size={14} className="spin" /> : <Download size={14} />}
+                                {t('reportCard.generate_single_btn')}
+                            </button>
+                            <button
+                                className="btn btn-primary"
+                                disabled={reportStudentIds.size === 0 || generatingReportCard}
+                                onClick={handleGenerateReportCardsBatch}
+                            >
+                                {generatingReportCard ? <Loader size={14} className="spin" /> : <Download size={14} />}
+                                {t('reportCard.generate_batch_btn', { count: reportStudentIds.size })}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </>

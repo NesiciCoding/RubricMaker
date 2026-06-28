@@ -1411,6 +1411,7 @@
         "table_actions": "Acties"
     },
     "exportPage": {
+        "rubric_section_title": "Rubriekexport",
         "select_rubric": "Selecteer Rubriek om te Exporteren",
         "word_template_label": "Word Exportsjabloon",
         "export_word_template": "Word Exporteren ({{template}})",

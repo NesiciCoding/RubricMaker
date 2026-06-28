@@ -1411,6 +1411,7 @@
         "table_actions": "Aktionen"
     },
     "exportPage": {
+        "rubric_section_title": "Rubrik-Export",
         "select_rubric": "Zu exportierende Rubrik auswählen",
         "word_template_label": "Word-Exportvorlage",
         "export_word_template": "Word exportieren ({{template}})",

@@ -8,6 +8,7 @@ export class ExportPage extends BasePage {
 
     async goto(): Promise<void> {
         await this.navigate('/export');
+        await this.page.getByRole('button', { name: 'Rubric Export' }).click();
     }
 
     async selectRubric(rubricName: string): Promise<void> {
