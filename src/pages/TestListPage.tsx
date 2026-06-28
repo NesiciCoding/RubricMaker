@@ -317,6 +317,7 @@ export default function TestListPage() {
                                                                     type="button"
                                                                     className="btn btn-ghost btn-icon btn-sm"
                                                                     title={t('tests.action_assign')}
+                                                                    aria-label={t('tests.action_assign')}
                                                                     disabled={test.questions.length === 0}
                                                                     onClick={() => setAssigningTestId(test.id)}
                                                                 >
@@ -326,6 +327,9 @@ export default function TestListPage() {
                                                                     type="button"
                                                                     className="btn btn-ghost btn-icon btn-sm"
                                                                     title={t('tests.results.action_results')}
+                                                                    aria-label={t('tests.results.action_results')}
+                                                                    aria-expanded={resultsTestId === test.id}
+                                                                    aria-controls={`test-results-${test.id}`}
                                                                     disabled={
                                                                         studentTests.filter(
                                                                             (st) => st.testId === test.id
@@ -349,6 +353,7 @@ export default function TestListPage() {
                                                                     type="button"
                                                                     className="btn btn-ghost btn-icon btn-sm"
                                                                     title={t('tests.results.action_import')}
+                                                                    aria-label={t('tests.results.action_import')}
                                                                     onClick={() => setImportingTestId(test.id)}
                                                                 >
                                                                     <Upload size={14} />
@@ -357,6 +362,7 @@ export default function TestListPage() {
                                                                     type="button"
                                                                     className="btn btn-ghost btn-icon btn-sm"
                                                                     title={t('tests.monitor.action_monitor')}
+                                                                    aria-label={t('tests.monitor.action_monitor')}
                                                                     onClick={() =>
                                                                         navigate(`/tests/${test.id}/monitor`)
                                                                     }
@@ -368,6 +374,7 @@ export default function TestListPage() {
 
                                                         {resultsTestId === test.id && (
                                                             <div
+                                                                id={`test-results-${test.id}`}
                                                                 style={{
                                                                     marginTop: 14,
                                                                     paddingTop: 14,
