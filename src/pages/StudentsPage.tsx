@@ -100,7 +100,6 @@ function buildStudentSummary(
     return `${studentName}\n${'─'.repeat(studentName.length)}\n\n${blocks.join('\n\n---\n\n')}`;
 }
 
-/** Modified percentage for each of a student's actually-graded rubrics (gradedCount > 0), excluding assigned-but-unscored ones. */
 function calcGradedPercentages(
     srs: StudentRubric[],
     rubrics: Rubric[],
@@ -120,7 +119,6 @@ function calcGradedPercentages(
         .filter((p): p is number => p !== null);
 }
 
-/** Average modified percentage across a student's graded rubrics, for the "Overall" column. */
 function calcStudentOverall(
     pcts: number[],
     gradeScales: GradeScale[],
@@ -250,8 +248,18 @@ export default function StudentsPage() {
                 valA = (a.email ?? '').toLowerCase();
                 valB = (b.email ?? '').toLowerCase();
             } else {
-                valA = studentRubrics.filter((sr) => sr.studentId === a.id).length;
-                valB = studentRubrics.filter((sr) => sr.studentId === b.id).length;
+                valA = calcGradedPercentages(
+                    studentRubrics.filter((sr) => sr.studentId === a.id),
+                    rubrics,
+                    gradeScales,
+                    settings.defaultGradeScaleId
+                ).length;
+                valB = calcGradedPercentages(
+                    studentRubrics.filter((sr) => sr.studentId === b.id),
+                    rubrics,
+                    gradeScales,
+                    settings.defaultGradeScaleId
+                ).length;
             }
             if (valA < valB) return sortDir === 'asc' ? -1 : 1;
             if (valA > valB) return sortDir === 'asc' ? 1 : -1;
