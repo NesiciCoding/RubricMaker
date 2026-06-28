@@ -554,6 +554,8 @@ export default function ExportPage() {
                     type="button"
                     className="card"
                     onClick={() => toggleSection('rubric')}
+                    aria-expanded={!collapsedSections.has('rubric')}
+                    aria-controls="export-section-rubric"
                     style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -577,7 +579,10 @@ export default function ExportPage() {
                         }}
                     />
                 </button>
-                <div style={{ display: collapsedSections.has('rubric') ? 'none' : undefined }}>
+                <div
+                    id="export-section-rubric"
+                    style={{ display: collapsedSections.has('rubric') ? 'none' : undefined }}
+                >
                     <div data-tour="export-rubric" className="card" style={{ marginBottom: 20 }}>
                         <div className="form-group" style={{ marginBottom: 16 }}>
                             <label>{t('exportPage.select_rubric')}</label>
@@ -597,7 +602,6 @@ export default function ExportPage() {
                             </select>
                         </div>
 
-                        {/* Word export template selector */}
                         <div
                             data-tour="export-template"
                             style={{ borderTop: '1px solid var(--border)', paddingTop: 14 }}
@@ -723,7 +727,6 @@ export default function ExportPage() {
                             )}
                         </div>
 
-                        {/* CSV export */}
                         <div
                             data-tour="export-grades"
                             style={{ borderTop: '1px solid var(--border)', paddingTop: 14, marginTop: 14 }}
@@ -860,7 +863,6 @@ export default function ExportPage() {
                                 </div>
                             </div>
 
-                            {/* Bulk action bar */}
                             {selectedStudentIds.size > 0 && (
                                 <div
                                     style={{
@@ -952,10 +954,11 @@ export default function ExportPage() {
                                                     <input
                                                         type="checkbox"
                                                         checked={isSelected}
+                                                        aria-labelledby={`export-student-${student.id}`}
                                                         onChange={() => toggleStudent(student.id)}
                                                     />
                                                 </td>
-                                                <td style={{ fontWeight: 500 }}>
+                                                <td id={`export-student-${student.id}`} style={{ fontWeight: 500 }}>
                                                     {student.name}
                                                     {sr.feedbackOnly && (
                                                         <span
@@ -1063,11 +1066,12 @@ export default function ExportPage() {
                     )}
                 </div>
 
-                {/* ── Essay export ──────────────────────────────────────────────────── */}
                 <div className="card" style={{ marginTop: 24 }} data-tour="export-essays">
                     <button
                         type="button"
                         onClick={() => toggleSection('essays')}
+                        aria-expanded={!collapsedSections.has('essays')}
+                        aria-controls="export-section-essays"
                         style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -1095,7 +1099,10 @@ export default function ExportPage() {
                         />
                     </button>
 
-                    <div style={{ display: collapsedSections.has('essays') ? 'none' : undefined }}>
+                    <div
+                        id="export-section-essays"
+                        style={{ display: collapsedSections.has('essays') ? 'none' : undefined }}
+                    >
                         <div className="form-group" style={{ marginBottom: 12 }}>
                             <label>{t('exportPage.essays_select_assignment')}</label>
                             <select
@@ -1213,11 +1220,12 @@ export default function ExportPage() {
                     </div>
                 </div>
 
-                {/* ── Period / Report Card Generator ─────────────────────────────── */}
                 <div className="card" style={{ marginTop: 24 }}>
                     <button
                         type="button"
                         onClick={() => toggleSection('period')}
+                        aria-expanded={!collapsedSections.has('period')}
+                        aria-controls="export-section-period"
                         style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -1244,7 +1252,10 @@ export default function ExportPage() {
                             }}
                         />
                     </button>
-                    <div style={{ display: collapsedSections.has('period') ? 'none' : undefined }}>
+                    <div
+                        id="export-section-period"
+                        style={{ display: collapsedSections.has('period') ? 'none' : undefined }}
+                    >
                         <p style={{ margin: '0 0 16px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                             {t('exportPage.period_report_help')}
                         </p>
@@ -1294,7 +1305,6 @@ export default function ExportPage() {
                             </div>
                         </div>
 
-                        {/* Student selector for this class */}
                         {reportClassId &&
                             (() => {
                                 const classStudents = students.filter((s) => s.classId === reportClassId);
@@ -1363,11 +1373,12 @@ export default function ExportPage() {
                     </div>
                 </div>
 
-                {/* ── Report Card Generator ──────────────────────────────────────── */}
                 <div className="card" style={{ marginTop: 24 }}>
                     <button
                         type="button"
                         onClick={() => toggleSection('reportCard')}
+                        aria-expanded={!collapsedSections.has('reportCard')}
+                        aria-controls="export-section-reportCard"
                         style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -1394,7 +1405,10 @@ export default function ExportPage() {
                             }}
                         />
                     </button>
-                    <div style={{ display: collapsedSections.has('reportCard') ? 'none' : undefined }}>
+                    <div
+                        id="export-section-reportCard"
+                        style={{ display: collapsedSections.has('reportCard') ? 'none' : undefined }}
+                    >
                         <p style={{ margin: '0 0 16px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                             {t('reportCard.help')}
                         </p>
