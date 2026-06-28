@@ -202,7 +202,11 @@ export default function StudentPortalPage() {
     const navLinks = [
         { id: 'portal-section-grades', label: t('studentPortal.grade_history'), visible: history.length > 1 },
         { id: 'portal-section-cefr', label: t('studentPortal.cefr_progress'), visible: cefrProgress.length > 0 },
-        { id: 'portal-section-peer-reviews', label: t('studentPortal.peer_reviews_received', 'Peer Reviews'), visible: hasPeerReviews },
+        {
+            id: 'portal-section-peer-reviews',
+            label: t('studentPortal.peer_reviews_received', 'Peer Reviews'),
+            visible: hasPeerReviews,
+        },
         { id: 'portal-section-feedback', label: t('studentPortal.rubric_grades'), visible: history.length > 0 },
     ].filter((link) => link.visible);
 
@@ -460,7 +464,10 @@ export default function StudentPortalPage() {
                     const received = peerReviews.filter((pr) => pr.studentId === studentId && pr.gradedAt);
                     if (received.length === 0) return null;
                     return (
-                        <Section id="portal-section-peer-reviews" title={t('studentPortal.peer_reviews_received', 'Peer Reviews')}>
+                        <Section
+                            id="portal-section-peer-reviews"
+                            title={t('studentPortal.peer_reviews_received', 'Peer Reviews')}
+                        >
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                                 {received.map((pr) => {
                                     const rubric = rubrics.find((r) => r.id === pr.rubricId);
