@@ -100,24 +100,32 @@ function buildStudentSummary(
     return `${studentName}\n${'─'.repeat(studentName.length)}\n\n${blocks.join('\n\n---\n\n')}`;
 }
 
-/** Average modified percentage across a student's graded rubrics, for the "Overall" column. */
-function calcStudentOverall(
+/** Modified percentage for each of a student's actually-graded rubrics (gradedCount > 0), excluding assigned-but-unscored ones. */
+function calcGradedPercentages(
     srs: StudentRubric[],
     rubrics: Rubric[],
     gradeScales: GradeScale[],
     defaultGradeScaleId: string
-): { pct: number; letter: string; color: string } | null {
-    if (srs.length === 0) return null;
-    const pcts = srs
+): number[] {
+    return srs
         .map((sr) => {
             const liveR = rubrics.find((r) => r.id === sr.rubricId);
             const r = sr.rubricSnapshot || liveR;
             if (!r) return null;
             const scaleId = r.gradeScaleId ?? defaultGradeScaleId;
             const scale = scaleId === 'none' ? null : (gradeScales.find((g) => g.id === scaleId) ?? gradeScales[0]);
-            return calcGradeSummary(sr, r.criteria, scale, r).modifiedPercentage;
+            const summary = calcGradeSummary(sr, r.criteria, scale, r);
+            return summary.gradedCount > 0 ? summary.modifiedPercentage : null;
         })
         .filter((p): p is number => p !== null);
+}
+
+/** Average modified percentage across a student's graded rubrics, for the "Overall" column. */
+function calcStudentOverall(
+    pcts: number[],
+    gradeScales: GradeScale[],
+    defaultGradeScaleId: string
+): { pct: number; letter: string; color: string } | null {
     if (pcts.length === 0) return null;
     const avg = pcts.reduce((sum, p) => sum + p, 0) / pcts.length;
     const scale = gradeScales.find((g) => g.id === defaultGradeScaleId) ?? gradeScales[0] ?? null;
@@ -326,7 +334,10 @@ export default function StudentsPage() {
 
     // Helper to close all context menus on outside click
     React.useEffect(() => {
-        const handleClick = () => setClassMenuOpen(null);
+        const handleClick = () => {
+            setClassMenuOpen(null);
+            setGradeMenuOpen(null);
+        };
         window.addEventListener('click', handleClick);
         return () => window.removeEventListener('click', handleClick);
     }, []);
@@ -440,7 +451,10 @@ export default function StudentsPage() {
                                                             style={{ flex: 1 }}
                                                         >
                                                             <UsersIcon size={15} />
-                                                            <span title={c.name} style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                            <span
+                                                                title={c.name}
+                                                                style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}
+                                                            >
                                                                 {c.name}
                                                             </span>
                                                             <span
@@ -708,10 +722,15 @@ export default function StudentsPage() {
                                 <tbody>
                                     {filteredStudents.map((s) => {
                                         const studentSrs = studentRubrics.filter((sr) => sr.studentId === s.id);
-                                        const graded = studentSrs.length;
-                                        const overall = calcStudentOverall(
+                                        const gradedPcts = calcGradedPercentages(
                                             studentSrs,
                                             rubrics,
+                                            gradeScales,
+                                            settings.defaultGradeScaleId
+                                        );
+                                        const graded = gradedPcts.length;
+                                        const overall = calcStudentOverall(
+                                            gradedPcts,
                                             gradeScales,
                                             settings.defaultGradeScaleId
                                         );
@@ -761,6 +780,7 @@ export default function StudentsPage() {
                                                         {classRubrics.length > 0 && (
                                                             <div style={{ position: 'relative' }}>
                                                                 <button
+                                                                    type="button"
                                                                     className="btn btn-primary btn-sm"
                                                                     aria-haspopup="menu"
                                                                     aria-expanded={gradeMenuOpen === s.id}
@@ -791,6 +811,7 @@ export default function StudentsPage() {
                                                                         {classRubrics.map((r) => (
                                                                             <button
                                                                                 key={r.id}
+                                                                                type="button"
                                                                                 role="menuitem"
                                                                                 className="btn btn-ghost btn-sm"
                                                                                 style={{
