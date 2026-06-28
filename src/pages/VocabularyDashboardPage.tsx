@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Download, BookOpen, Users } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Download, BookOpen, Users, Gauge, Map } from 'lucide-react';
 import Papa from 'papaparse';
 import { saveAs } from 'file-saver';
 import Topbar from '../components/Layout/Topbar';
@@ -179,6 +180,15 @@ export default function VocabularyDashboardPage() {
                                             >
                                                 {t('vocabProfile.table_header_analyses')}
                                             </th>
+                                            <th
+                                                style={{
+                                                    padding: '8px 10px',
+                                                    textAlign: 'center',
+                                                    color: 'var(--text-muted)',
+                                                }}
+                                            >
+                                                {t('vocabProfile.table_header_links')}
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -193,6 +203,30 @@ export default function VocabularyDashboardPage() {
                                                 </td>
                                                 <td style={{ padding: '8px 10px', textAlign: 'center' }}>
                                                     {sp.analysisCount}
+                                                </td>
+                                                <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                                                    <div
+                                                        style={{
+                                                            display: 'flex',
+                                                            gap: 6,
+                                                            justifyContent: 'center',
+                                                        }}
+                                                    >
+                                                        <Link
+                                                            to={`/students/${sp.studentId}/cefr-overview`}
+                                                            className="btn btn-ghost btn-icon btn-sm"
+                                                            title={t('vocabProfile.link_cefr_overview')}
+                                                        >
+                                                            <Gauge size={14} />
+                                                        </Link>
+                                                        <Link
+                                                            to={`/students/${sp.studentId}/learning-path`}
+                                                            className="btn btn-ghost btn-icon btn-sm"
+                                                            title={t('vocabProfile.link_learning_path')}
+                                                        >
+                                                            <Map size={14} />
+                                                        </Link>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))}
