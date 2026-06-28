@@ -81,7 +81,9 @@ export function useLiveSessionTelemetry({
     const eventsRef = useRef<ProctorEvent[]>([]);
     // Mirrors `onNudge` so the channel-setup effect doesn't need it in its deps (avoids resubscribing on every render).
     const onNudgeRef = useRef(onNudge);
-    onNudgeRef.current = onNudge;
+    useEffect(() => {
+        onNudgeRef.current = onNudge;
+    }, [onNudge]);
 
     const hasDb = !!(supabaseUrl && supabaseAnonKey);
 
