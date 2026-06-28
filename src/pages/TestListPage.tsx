@@ -339,9 +339,7 @@ export default function TestListPage() {
                                                                     }}
                                                                     onClick={() =>
                                                                         setResultsTestId(
-                                                                            resultsTestId === test.id
-                                                                                ? null
-                                                                                : test.id
+                                                                            resultsTestId === test.id ? null : test.id
                                                                         )
                                                                     }
                                                                 >
