@@ -748,6 +748,7 @@
         "table_name": "Naam",
         "table_email": "E-mail",
         "table_grades": "Cijfers",
+        "table_overall": "Gemiddeld",
         "table_actions": "Acties",
         "rubric_single": "rubriek",
         "rubric_plural": "rubrieken",

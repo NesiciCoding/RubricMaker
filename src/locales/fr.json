@@ -748,6 +748,7 @@
         "table_name": "Nom",
         "table_email": "E-mail",
         "table_grades": "Notes",
+        "table_overall": "Global",
         "table_actions": "Actions",
         "rubric_single": "rubrique",
         "rubric_plural": "rubriques",
