@@ -131,7 +131,7 @@ describe('TestListPage', () => {
                 <TestListPage />
             </MemoryRouter>
         );
-        const assignBtn = screen.getByText(/tests.action_assign/);
+        const assignBtn = screen.getByTitle('tests.action_assign');
         fireEvent.click(assignBtn);
         expect(screen.getByText(/tests.assignment_modal_title/)).toBeInTheDocument();
     });

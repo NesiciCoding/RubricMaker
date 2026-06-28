@@ -312,44 +312,60 @@ export default function TestListPage() {
                                                             >
                                                                 <Edit2 size={14} /> {t('tests.action_edit')}
                                                             </button>
-                                                            <button
-                                                                type="button"
-                                                                className="btn btn-secondary btn-sm"
-                                                                disabled={test.questions.length === 0}
-                                                                onClick={() => setAssigningTestId(test.id)}
-                                                            >
-                                                                <Send size={14} /> {t('tests.action_assign')}
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                className="btn btn-secondary btn-sm"
-                                                                disabled={
-                                                                    studentTests.filter((st) => st.testId === test.id)
-                                                                        .length === 0
-                                                                }
-                                                                onClick={() =>
-                                                                    setResultsTestId(
-                                                                        resultsTestId === test.id ? null : test.id
-                                                                    )
-                                                                }
-                                                            >
-                                                                <BarChart3 size={14} />{' '}
-                                                                {t('tests.results.action_results')}
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                className="btn btn-secondary btn-sm"
-                                                                onClick={() => setImportingTestId(test.id)}
-                                                            >
-                                                                <Upload size={14} /> {t('tests.results.action_import')}
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                className="btn btn-secondary btn-sm"
-                                                                onClick={() => navigate(`/tests/${test.id}/monitor`)}
-                                                            >
-                                                                <Radio size={14} /> {t('tests.monitor.action_monitor')}
-                                                            </button>
+                                                            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                                    title={t('tests.action_assign')}
+                                                                    disabled={test.questions.length === 0}
+                                                                    onClick={() => setAssigningTestId(test.id)}
+                                                                >
+                                                                    <Send size={14} />
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                                    title={t('tests.results.action_results')}
+                                                                    disabled={
+                                                                        studentTests.filter(
+                                                                            (st) => st.testId === test.id
+                                                                        ).length === 0
+                                                                    }
+                                                                    style={{
+                                                                        color:
+                                                                            resultsTestId === test.id
+                                                                                ? 'var(--accent)'
+                                                                                : undefined,
+                                                                    }}
+                                                                    onClick={() =>
+                                                                        setResultsTestId(
+                                                                            resultsTestId === test.id
+                                                                                ? null
+                                                                                : test.id
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <BarChart3 size={14} />
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                                    title={t('tests.results.action_import')}
+                                                                    onClick={() => setImportingTestId(test.id)}
+                                                                >
+                                                                    <Upload size={14} />
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                                    title={t('tests.monitor.action_monitor')}
+                                                                    onClick={() =>
+                                                                        navigate(`/tests/${test.id}/monitor`)
+                                                                    }
+                                                                >
+                                                                    <Radio size={14} />
+                                                                </button>
+                                                            </div>
                                                         </div>
 
                                                         {resultsTestId === test.id && (
