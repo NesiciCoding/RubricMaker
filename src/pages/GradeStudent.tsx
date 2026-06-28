@@ -592,57 +592,73 @@ export default function GradeStudent() {
                                 ? t('gradeStudent.nav_scope_current_class')
                                 : t('gradeStudent.nav_scope_rubric_classes')}
                         </button>
-                        <button className="btn btn-secondary btn-sm" onClick={() => setShowAttachPanel((p) => !p)}>
-                            <Paperclip size={15} /> {t('gradeStudent.action_attachments')}
+                        <button
+                            className="btn btn-ghost btn-icon btn-sm"
+                            onClick={() => setShowAttachPanel((p) => !p)}
+                            title={t('gradeStudent.action_attachments')}
+                            aria-label={t('gradeStudent.action_attachments')}
+                        >
+                            <Paperclip size={15} />
                         </button>
                         {studentAttachments.length > 0 && (
                             <button
-                                className="btn btn-secondary btn-sm"
+                                className="btn btn-ghost btn-icon btn-sm"
                                 onClick={() => setShowAnalysisPanel(true)}
                                 title={t('analysis.open_panel', 'Analyse student document')}
+                                aria-label={t('analysis.open_panel', 'Analyse student document')}
                             >
-                                <ScanSearch size={15} /> {t('analysis.button', 'Analyse')}
+                                <ScanSearch size={15} />
                             </button>
                         )}
                         <button
-                            className="btn btn-secondary btn-sm"
+                            className="btn btn-ghost btn-icon btn-sm"
                             onClick={() => setShowEssayAssignment(true)}
                             title={t('gradeStudent.action_essay')}
+                            aria-label={t('gradeStudent.action_essay')}
                         >
-                            <PenLine size={15} /> {t('gradeStudent.action_essay')}
+                            <PenLine size={15} />
                         </button>
                         <button
-                            className="btn btn-secondary btn-sm"
+                            className="btn btn-ghost btn-icon btn-sm"
                             onClick={() => setShowEssayImport(true)}
                             title={t('gradeStudent.action_import_essay')}
+                            aria-label={t('gradeStudent.action_import_essay')}
                         >
-                            <Upload size={15} /> {t('gradeStudent.action_import_essay')}
+                            <Upload size={15} />
                         </button>
                         <button
-                            className="btn btn-secondary btn-sm"
+                            className="btn btn-ghost btn-icon btn-sm"
                             onClick={handleNotHandedIn}
                             title={t('gradeStudent.action_not_handed_in')}
+                            aria-label={t('gradeStudent.action_not_handed_in')}
                         >
-                            <XCircle size={15} /> {t('gradeStudent.action_not_handed_in')}
+                            <XCircle size={15} />
                         </button>
                         {existingSR && (
                             <button
-                                className="btn btn-secondary btn-sm"
+                                className="btn btn-ghost btn-icon btn-sm"
                                 onClick={() => setShowCoGradeModal(true)}
                                 title={t('coGrading.action_co_grade')}
+                                aria-label={t('coGrading.action_co_grade')}
                             >
-                                <UserCheck size={15} /> {t('coGrading.action_co_grade')}
+                                <UserCheck size={15} />
                             </button>
                         )}
                         <button
-                            className="btn btn-secondary btn-sm no-print"
+                            className="btn btn-ghost btn-icon btn-sm no-print"
                             onClick={() => setTourRun(true)}
                             title={t('tutorial.grading_tour_button')}
+                            aria-label={t('tutorial.grading_tour_button')}
                         >
-                            <HelpCircle size={15} /> {t('tutorial.grading_tour_button')}
+                            <HelpCircle size={15} />
                         </button>
-                        <button className="btn btn-secondary btn-sm no-print" onClick={handlePrint}>
-                            <Printer size={15} /> {t('gradeStudent.action_print')}
+                        <button
+                            className="btn btn-ghost btn-icon btn-sm no-print"
+                            onClick={handlePrint}
+                            title={t('gradeStudent.action_print')}
+                            aria-label={t('gradeStudent.action_print')}
+                        >
+                            <Printer size={15} />
                         </button>
                         <button className="btn btn-primary btn-sm" onClick={handleSave}>
                             <Save size={15} /> {saved ? t('gradeStudent.action_saved') : t('gradeStudent.action_save')}
@@ -916,6 +932,7 @@ export default function GradeStudent() {
                                             }
                                             style={{ color: entry.comment ? 'var(--accent)' : 'var(--text-dim)' }}
                                             title={t('gradeStudent.comment_open_bank')}
+                                            aria-label={t('gradeStudent.comment_open_bank')}
                                         >
                                             <MessageSquare size={15} />
                                         </button>
@@ -1398,7 +1415,7 @@ export default function GradeStudent() {
                                                 onClick={() => setShowCommentBankFor(c.id)}
                                                 title={t('gradeStudent.comment_open_bank')}
                                             >
-                                                <BookOpen size={16} />
+                                                <BookOpen size={16} /> {t('gradeStudent.comment_open_bank')}
                                             </button>
                                         </div>
                                         {/* Audio feedback */}
