@@ -69,7 +69,7 @@ const DEFAULT_SETTINGS: AppSettings = {
     defaultGradeScaleId: 'letter-10',
     theme: 'dark',
     language: 'en',
-    accentColor: '#3b82f6',
+    accentColor: '',
     defaultFormat: DEFAULT_FORMAT,
 };
 

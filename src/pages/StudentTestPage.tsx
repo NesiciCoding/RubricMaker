@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { ToastContext } from '../context/ToastContext';
 import { createClient } from '@supabase/supabase-js';
 import { Clock, CheckCircle, Copy, AlertTriangle, Loader2, Eye, ChevronUp, ChevronDown, Lightbulb } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -182,6 +183,7 @@ export default function StudentTestPage() {
         [answers]
     );
 
+    const { showToast } = useContext(ToastContext);
     const telemetry = useLiveSessionTelemetry({
         kind: 'test',
         assignmentKey: assignment?.teacherKey ?? '',
@@ -189,6 +191,7 @@ export default function StudentTestPage() {
         getSnapshot,
         supabaseUrl: assignment?.supabaseUrl,
         supabaseAnonKey: assignment?.supabaseAnonKey,
+        onNudge: (message) => showToast(message, 'info'),
     });
 
     const handleSubmit = useCallback(async () => {

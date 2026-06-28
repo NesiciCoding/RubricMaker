@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, useContext } from 'react';
 import { useParams } from 'react-router-dom';
+import { ToastContext } from '../context/ToastContext';
 import { Clock, CheckCircle, Copy, AlertTriangle, Mail, Loader2, Save, Eye, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import EssayEditor from '../components/Editor/EssayEditor';
@@ -347,6 +348,7 @@ export default function StudentEssayPage() {
     // (also the /essays/:assignmentId/monitor route param). Held back until the
     // student id is resolved so we never broadcast on an unstable key.
     const resolvedStudentId = resolvedContent?.studentId ?? assignment?.studentId ?? '';
+    const { showToast } = useContext(ToastContext);
     const telemetry = useLiveSessionTelemetry({
         kind: 'essay',
         assignmentKey: resolvedStudentId ? `${assignment?.teacherKey ?? ''}:${resolvedStudentId}` : '',
@@ -354,6 +356,7 @@ export default function StudentEssayPage() {
         getSnapshot,
         supabaseUrl: assignment?.supabaseUrl,
         supabaseAnonKey: assignment?.supabaseAnonKey,
+        onNudge: (message) => showToast(message, 'info'),
     });
 
     const handleSubmit = useCallback(async () => {

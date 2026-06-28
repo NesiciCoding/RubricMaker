@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import { useDbStatus } from '../hooks/useDbStatus';
-import { getModerationQueue } from '../utils/coGradingModerationQueue';
+import { buildReconciledEntries, getModerationQueue, ModerationQueueItem } from '../utils/coGradingModerationQueue';
 import type { DbUser } from '../services/database';
 
 export default function ModerationQueuePage() {
@@ -68,6 +68,11 @@ export default function ModerationQueuePage() {
             globalModifier: secondMarker.globalModifier,
         });
         deletePeerReview(secondMarkerEntryId);
+    }
+
+    function resolveReconcile(item: ModerationQueueItem) {
+        saveStudentRubric({ ...item.baseline, entries: buildReconciledEntries(item) });
+        deletePeerReview(item.secondMarkerEntry.id);
     }
 
     return (
@@ -192,12 +197,19 @@ export default function ModerationQueuePage() {
                                         </button>
                                         <button
                                             type="button"
-                                            className="btn btn-primary btn-sm"
+                                            className="btn btn-secondary btn-sm"
                                             onClick={() =>
                                                 resolveAcceptSecondMarker(item.baseline.id, item.secondMarkerEntry.id)
                                             }
                                         >
                                             {t('coGrading.action_accept_second_marker')}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn btn-primary btn-sm"
+                                            onClick={() => resolveReconcile(item)}
+                                        >
+                                            {t('coGrading.action_reconcile')}
                                         </button>
                                     </div>
                                 </div>

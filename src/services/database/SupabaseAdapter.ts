@@ -22,6 +22,7 @@ import type {
     Test,
     StudentTest,
     MarketplaceListing,
+    CefrLevel,
 } from '../../types';
 import type { DatabaseConfig, DbUser, SyncResult } from './types';
 import { nanoid } from '../../utils/nanoid';
@@ -1460,6 +1461,7 @@ export class SupabaseAdapter {
         subject: string | null;
         description: string | null;
         attribution: string | null;
+        cefr_levels: string[] | null;
         upvote_count: number;
         created_at: string;
         updated_at: string;
@@ -1473,6 +1475,7 @@ export class SupabaseAdapter {
             subject: row.subject ?? undefined,
             description: row.description ?? undefined,
             attribution: row.attribution ?? undefined,
+            cefrLevels: (row.cefr_levels as CefrLevel[] | null) ?? undefined,
             upvoteCount: row.upvote_count,
             createdAt: row.created_at,
             updatedAt: row.updated_at,
@@ -1485,7 +1488,7 @@ export class SupabaseAdapter {
         const { data, error } = await this.client
             .from('marketplace_listings')
             .select(
-                'id, school_id, published_by, rubric_snapshot, name, subject, description, attribution, upvote_count, created_at, updated_at'
+                'id, school_id, published_by, rubric_snapshot, name, subject, description, attribution, cefr_levels, upvote_count, created_at, updated_at'
             )
             .eq('school_id', schoolId)
             .order('created_at', { ascending: false });
@@ -1500,7 +1503,7 @@ export class SupabaseAdapter {
         schoolId: string,
         rubric: Rubric,
         attribution?: string,
-        options?: { name?: string; subject?: string; description?: string }
+        options?: { name?: string; subject?: string; description?: string; cefrLevels?: CefrLevel[] }
     ): Promise<MarketplaceListing | null> {
         if (!this.client || !this.userId) return null;
         const { data, error } = await this.client
@@ -1513,9 +1516,10 @@ export class SupabaseAdapter {
                 subject: options?.subject ?? rubric.subject ?? null,
                 description: options?.description ?? rubric.description ?? null,
                 attribution: attribution ?? null,
+                cefr_levels: options?.cefrLevels?.length ? options.cefrLevels : null,
             })
             .select(
-                'id, school_id, published_by, rubric_snapshot, name, subject, description, attribution, upvote_count, created_at, updated_at'
+                'id, school_id, published_by, rubric_snapshot, name, subject, description, attribution, cefr_levels, upvote_count, created_at, updated_at'
             )
             .single();
         if (error || !data) {

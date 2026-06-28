@@ -79,6 +79,7 @@ function makeCell(overrides: Partial<CefrCellData> = {}): CefrCellData {
         threshold: 70,
         confidenceRate: 0,
         rubricAchieved: false,
+        evidence: [],
         totalDescriptors: 0,
         confidentCount: 0,
         descriptors: [],

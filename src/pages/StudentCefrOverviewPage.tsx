@@ -10,6 +10,7 @@ import StandardsCoveragePanel from '../components/Standards/StandardsCoveragePan
 import { useApp } from '../context/AppContext';
 import { getCefrStudentOverview } from '../utils/cefrStudentAggregator';
 import { VO_TRACK_LABELS, VO_TRACK_COLORS, VO_TRACK_DEFAULT_CEFR } from '../data/voTracks';
+import { CEFR_SKILL_LABELS } from '../data/cefrDescriptors';
 
 /**
  * Renders the CEFR overview page for the student identified by the current route `id`.
@@ -253,6 +254,98 @@ export default function StudentCefrOverviewPage() {
                         ) : (
                             <CefrOverviewGrid cells={overview.cells} targetLevel={targetLevel} lang={lang} />
                         )}
+                    </div>
+                )}
+
+                {/* Skill evidence & rationale */}
+                {overview && overview.cells.some((c) => c.rubricCount > 0) && (
+                    <div className="card" style={{ marginBottom: 24 }}>
+                        <h3
+                            style={{
+                                marginBottom: 6,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 8,
+                            }}
+                        >
+                            <Award size={18} style={{ color: 'var(--accent)' }} />
+                            {t('cefrOverview.evidence_title')}
+                        </h3>
+                        <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
+                            {t('cefrOverview.evidence_subtitle')}
+                        </p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                            {overview.cells
+                                .filter((c) => c.rubricCount > 0)
+                                .map((cell) => {
+                                    const skillLabel = CEFR_SKILL_LABELS[cell.skill]?.[lang] ?? cell.skill;
+                                    return (
+                                        <div
+                                            key={`${cell.skill}__${cell.level}`}
+                                            style={{
+                                                border: '1px solid var(--border)',
+                                                borderRadius: 10,
+                                                padding: '12px 14px',
+                                            }}
+                                        >
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 8,
+                                                    marginBottom: 6,
+                                                    flexWrap: 'wrap',
+                                                }}
+                                            >
+                                                <CefrBadge
+                                                    level={cell.level}
+                                                    size="sm"
+                                                    showCambridgeLabel={settings.showCambridgeLabels}
+                                                />
+                                                <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                                                    {skillLabel}
+                                                </span>
+                                                <span className="text-muted text-xs" style={{ marginLeft: 'auto' }}>
+                                                    {t(
+                                                        cell.rubricAchieved
+                                                            ? 'cefrOverview.rationale_achieved'
+                                                            : 'cefrOverview.rationale_developing',
+                                                        {
+                                                            score: Math.round(cell.avgScore),
+                                                            count: cell.rubricCount,
+                                                            threshold: Math.round(cell.threshold),
+                                                        }
+                                                    )}
+                                                </span>
+                                            </div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                                {cell.evidence.map((ev, i) => (
+                                                    <div
+                                                        key={`${ev.rubricId}__${i}`}
+                                                        style={{
+                                                            display: 'flex',
+                                                            justifyContent: 'space-between',
+                                                            gap: 12,
+                                                            fontSize: '0.82rem',
+                                                            color: 'var(--text-muted)',
+                                                        }}
+                                                    >
+                                                        <span>{ev.rubricName}</span>
+                                                        <span style={{ flexShrink: 0 }}>
+                                                            {new Date(ev.gradedAt).toLocaleDateString(undefined, {
+                                                                month: 'short',
+                                                                day: 'numeric',
+                                                                year: 'numeric',
+                                                            })}{' '}
+                                                            · {Math.round(ev.score)}%
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                        </div>
                     </div>
                 )}
 

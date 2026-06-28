@@ -538,6 +538,7 @@ export interface MarketplaceListing {
     subject?: string;
     description?: string;
     attribution?: string;
+    cefrLevels?: CefrLevel[];
     upvoteCount: number;
     createdAt: string;
     updatedAt: string;

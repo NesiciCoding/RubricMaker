@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { createClient, type RealtimeChannel, type SupabaseClient } from '@supabase/supabase-js';
-import { Eye, EyeOff, AlertTriangle, Database } from 'lucide-react';
+import { Eye, EyeOff, AlertTriangle, Database, Send } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import HelpPopover from '../components/ui/HelpPopover';
@@ -143,14 +143,17 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
 
     // ── Subscribe to one Realtime channel per monitored student ───────────────────
     const clientRef = useRef<SupabaseClient | null>(null);
+    const channelsRef = useRef<Map<string, RealtimeChannel>>(new Map());
     useEffect(() => {
         if (!hasDb || monitorStudents.length === 0) return;
         const client = createClient(config!.supabaseUrl, config!.supabaseAnonKey, {
             auth: { persistSession: false, autoRefreshToken: false },
         });
         clientRef.current = client;
+        const channelMap = new Map<string, RealtimeChannel>();
         const channels: RealtimeChannel[] = monitorStudents.map((row) => {
             const channel = client.channel(`monitor:${kind}:${assignmentKeyFor(row.studentId)}`);
+            channelMap.set(row.studentId, channel);
             channel
                 .on('broadcast', { event: 'event' }, ({ payload }) => {
                     setLiveStates((prev) => {
@@ -181,13 +184,23 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                 .subscribe();
             return channel;
         });
+        channelsRef.current = channelMap;
 
         return () => {
             channels.forEach((c) => void client.removeChannel(c));
+            channelsRef.current = new Map();
             clientRef.current = null;
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [hasDb, kind, params.testId, params.assignmentId, monitorStudents.map((r) => r.studentId).join(',')]);
+
+    function sendNudge(studentId: string) {
+        channelsRef.current.get(studentId)?.send({
+            type: 'broadcast',
+            event: 'nudge',
+            payload: { message: t('tests.monitor.nudge_message') },
+        });
+    }
 
     // ── Re-render periodically so presence ages (active → idle → disconnected) ────
     const [tick, setTick] = useState(0);
@@ -362,6 +375,15 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                             {displayName(row, index)}
                                         </span>
                                         <PresenceBadge presence={row.presence} status={row.status} />
+                                        <button
+                                            type="button"
+                                            className="btn btn-ghost btn-sm"
+                                            onClick={() => sendNudge(row.studentId)}
+                                            title={t('tests.monitor.nudge_button')}
+                                            style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+                                        >
+                                            <Send size={13} /> {t('tests.monitor.nudge_button')}
+                                        </button>
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                                         {row.flags.tabSwitchCount > 0 && (

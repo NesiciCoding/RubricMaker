@@ -36,6 +36,8 @@ export interface UseLiveSessionTelemetryOptions {
     /** When provided (DB mode), heartbeats/events/snapshots broadcast on a Realtime channel. */
     supabaseUrl?: string;
     supabaseAnonKey?: string;
+    /** Called when a teacher sends a "nudge" broadcast on this session's monitor channel. */
+    onNudge?: (message: string) => void;
 }
 
 export interface UseLiveSessionTelemetryReturn {
@@ -65,6 +67,7 @@ export function useLiveSessionTelemetry({
     getSnapshot,
     supabaseUrl,
     supabaseAnonKey,
+    onNudge,
 }: UseLiveSessionTelemetryOptions): UseLiveSessionTelemetryReturn {
     const [events, setEvents] = useState<ProctorEvent[]>([]);
     const [isBroadcasting, setIsBroadcasting] = useState(false);
@@ -76,6 +79,11 @@ export function useLiveSessionTelemetry({
     // Mirrors `events` so flush() can read the latest log synchronously —
     // setState updaters are not guaranteed to run before flush() returns.
     const eventsRef = useRef<ProctorEvent[]>([]);
+    // Mirrors `onNudge` so the channel-setup effect doesn't need it in its deps (avoids resubscribing on every render).
+    const onNudgeRef = useRef(onNudge);
+    useEffect(() => {
+        onNudgeRef.current = onNudge;
+    }, [onNudge]);
 
     const hasDb = !!(supabaseUrl && supabaseAnonKey);
 
@@ -102,6 +110,9 @@ export function useLiveSessionTelemetry({
             auth: { persistSession: false, autoRefreshToken: false },
         });
         const channel = client.channel(`monitor:${kind}:${assignmentKey}`);
+        channel.on('broadcast', { event: 'nudge' }, ({ payload }) => {
+            onNudgeRef.current?.((payload as { message: string }).message);
+        });
         channel.subscribe((status) => {
             setIsBroadcasting(status === 'SUBSCRIBED');
         });

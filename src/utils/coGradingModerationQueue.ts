@@ -1,4 +1,4 @@
-import { Rubric, Student, StudentRubric } from '../types';
+import { Rubric, ScoreEntry, Student, StudentRubric } from '../types';
 import { calcEntryPoints } from './gradeCalc';
 
 export interface ModerationCriterionDelta {
@@ -93,4 +93,21 @@ export function getModerationQueue(
     }
 
     return queue.sort((a, b) => b.totalAbsDelta - a.totalAbsDelta);
+}
+
+/**
+ * Merges a baseline grade and a second-marker grade into a single agreed score —
+ * for each criterion, averages the two markers' points and sets it as an override,
+ * keeping the rest of the baseline entry (comment, attachment, etc.) untouched.
+ */
+export function buildReconciledEntries(item: ModerationQueueItem): ScoreEntry[] {
+    const deltaByCriterion = new Map(item.criteria.map((c) => [c.criterionId, c]));
+    return item.baseline.entries.map((entry) => {
+        const delta = deltaByCriterion.get(entry.criterionId);
+        if (!delta) return entry;
+        return {
+            ...entry,
+            overridePoints: (delta.baselinePoints + delta.secondMarkerPoints) / 2,
+        };
+    });
 }
