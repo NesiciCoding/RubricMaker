@@ -1213,6 +1213,8 @@
         "sign_out": "Se déconnecter",
         "copy_link": "Copier le lien du portail",
         "link_copied": "Copié !",
+        "teacher_preview_banner": "Aperçu en tant qu'élève — voici ce que l'élève voit, sans la navigation enseignant.",
+        "section_nav_label": "Aller à la section",
         "view_portal_btn": "Vue élève",
         "stat_rubrics": "Rubriques notées",
         "stat_average": "Moyenne",

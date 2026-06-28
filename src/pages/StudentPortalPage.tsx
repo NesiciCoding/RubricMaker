@@ -197,6 +197,16 @@ export default function StudentPortalPage() {
     );
     const completedEssays = essayRows.filter((r) => !!r.submission);
     const expiredEssays = essayRows.filter((r) => !r.submission && r.expiresAt && new Date(r.expiresAt) <= new Date());
+    const hasPeerReviews = peerReviews.some((pr) => pr.studentId === studentId && pr.gradedAt);
+
+    const navLinks = [
+        { id: 'portal-section-grades', label: t('studentPortal.grade_history'), visible: history.length > 1 },
+        { id: 'portal-section-cefr', label: t('studentPortal.cefr_progress'), visible: cefrProgress.length > 0 },
+        { id: 'portal-section-peer-reviews', label: t('studentPortal.peer_reviews_received', 'Peer Reviews'), visible: hasPeerReviews },
+        { id: 'portal-section-feedback', label: t('studentPortal.rubric_grades'), visible: history.length > 0 },
+    ].filter((link) => link.visible);
+
+    const isTeacherPreview = settings.userRole !== 'student';
 
     function handleCopyLink() {
         navigator.clipboard.writeText(portalUrl);
@@ -226,6 +236,21 @@ export default function StudentPortalPage() {
                     },
                 }}
             />
+            {isTeacherPreview && (
+                <div
+                    style={{
+                        background: 'color-mix(in srgb, var(--accent) 12%, transparent)',
+                        borderBottom: '1px solid var(--border)',
+                        padding: '8px 24px',
+                        textAlign: 'center',
+                        fontSize: '0.8rem',
+                        color: 'var(--accent)',
+                        fontWeight: 600,
+                    }}
+                >
+                    {t('studentPortal.teacher_preview_banner')}
+                </div>
+            )}
             {/* Header */}
             <div
                 style={{
@@ -265,6 +290,37 @@ export default function StudentPortalPage() {
                 </div>
             </div>
 
+            {navLinks.length > 1 && (
+                <nav
+                    aria-label={t('studentPortal.section_nav_label')}
+                    style={{
+                        position: 'sticky',
+                        top: 0,
+                        zIndex: 10,
+                        background: 'var(--bg)',
+                        borderBottom: '1px solid var(--border)',
+                        display: 'flex',
+                        gap: 4,
+                        justifyContent: 'center',
+                        flexWrap: 'wrap',
+                        padding: '8px 16px',
+                    }}
+                >
+                    {navLinks.map((link) => (
+                        <button
+                            key={link.id}
+                            type="button"
+                            className="btn btn-ghost btn-sm"
+                            onClick={() =>
+                                document.getElementById(link.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                            }
+                        >
+                            {link.label}
+                        </button>
+                    ))}
+                </nav>
+            )}
+
             <div
                 data-tour="portal-content"
                 style={{
@@ -278,8 +334,14 @@ export default function StudentPortalPage() {
             >
                 {/* Summary stats */}
                 <div
+                    id="portal-section-top"
                     data-tour="portal-stats"
-                    style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}
+                    style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+                        gap: 12,
+                        scrollMarginTop: 70,
+                    }}
                 >
                     <StatCard
                         icon={<BookOpen size={16} />}
@@ -304,7 +366,7 @@ export default function StudentPortalPage() {
 
                 {/* Grade history chart */}
                 {history.length > 1 && (
-                    <Section title={t('studentPortal.grade_history')}>
+                    <Section id="portal-section-grades" title={t('studentPortal.grade_history')}>
                         <ResponsiveContainer width="100%" height={200}>
                             <LineChart data={history} margin={{ top: 5, right: 16, left: 0, bottom: 5 }}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
@@ -337,7 +399,7 @@ export default function StudentPortalPage() {
 
                 {/* CEFR progress */}
                 {cefrProgress.length > 0 && (
-                    <Section title={t('studentPortal.cefr_progress')}>
+                    <Section id="portal-section-cefr" title={t('studentPortal.cefr_progress')}>
                         <CefrProgressChart entries={cefrProgress} />
                     </Section>
                 )}
@@ -398,7 +460,7 @@ export default function StudentPortalPage() {
                     const received = peerReviews.filter((pr) => pr.studentId === studentId && pr.gradedAt);
                     if (received.length === 0) return null;
                     return (
-                        <Section title={t('studentPortal.peer_reviews_received', 'Peer Reviews')}>
+                        <Section id="portal-section-peer-reviews" title={t('studentPortal.peer_reviews_received', 'Peer Reviews')}>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                                 {received.map((pr) => {
                                     const rubric = rubrics.find((r) => r.id === pr.rubricId);
@@ -449,7 +511,7 @@ export default function StudentPortalPage() {
 
                 {/* Rubric grades list */}
                 {history.length > 0 && (
-                    <Section title={t('studentPortal.rubric_grades')}>
+                    <Section id="portal-section-feedback" title={t('studentPortal.rubric_grades')}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                             {[...history].reverse().map((h) => (
                                 <div
@@ -765,14 +827,16 @@ function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string
     );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, id, children }: { title: string; id?: string; children: React.ReactNode }) {
     return (
         <div
+            id={id}
             style={{
                 background: 'var(--bg-elevated)',
                 border: '1px solid var(--border)',
                 borderRadius: 12,
                 padding: '18px 20px',
+                scrollMarginTop: 70,
             }}
         >
             <h3
