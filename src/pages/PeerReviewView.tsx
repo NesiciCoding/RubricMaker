@@ -148,14 +148,23 @@ export default function PeerReviewView() {
                     </div>
                     <p className="text-muted text-sm">{rubric.description}</p>
                     {/* Round selector */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                    <div
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 10,
+                            marginTop: 14,
+                            paddingTop: 14,
+                            borderTop: '1px solid var(--border)',
+                        }}
+                    >
+                        <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 700 }}>
                             {t('peerReview.round_label')}:
                         </span>
                         {Array.from({ length: Math.max(maxRound, activeRound) }, (_, i) => i + 1).map((round) => (
                             <button
                                 key={round}
-                                className={`btn btn-sm ${activeRound === round ? 'btn-primary' : 'btn-secondary'}`}
+                                className={`btn ${activeRound === round ? 'btn-primary' : 'btn-secondary'}`}
                                 onClick={() => {
                                     if (isDirty && !window.confirm('Unsaved changes will be lost. Continue?')) return;
                                     setActiveRound(round);
