@@ -1373,6 +1373,7 @@
         "assign": "Aan alle toewijzen",
         "all_assigned": "Alle toegewezen ✓",
         "open": "Openen",
+        "legend": "Rubrics: Koppelen/Ontkoppelen bepaalt of een klas de rubric ziet. Toetsen: Openen springt naar de toets. Essays: Aan alle toewijzen wijst het essay toe aan elke nog niet beoordeelde leerling in de klas.",
         "coverage_title": "Dekking van leerdoelen",
         "coverage_empty": "Geen standaarden gekoppeld aan rubrieken voor deze klas.",
         "coverage_gap_title": "Nog niet getoetst",

@@ -304,6 +304,10 @@ export default function ActivityDashboardPage() {
                     </div>
                 )}
 
+                <p className="text-muted text-sm" style={{ marginBottom: 10 }}>
+                    {t('activityDashboard.legend')}
+                </p>
+
                 <div data-tour="ad-grid" style={{ overflowX: 'auto' }}>
                     <table
                         style={{
