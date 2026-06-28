@@ -406,8 +406,8 @@ export default function RubricList() {
                                                                         <GripVertical size={15} />
                                                                     </span>
                                                                 )}
-                                                                <div>
-                                                                    <h3>{r.name}</h3>
+                                                                <div style={{ minWidth: 0 }}>
+                                                                    <h3 className="truncate">{r.name}</h3>
                                                                     {r.subject && (
                                                                         <div
                                                                             className="text-muted text-xs"
@@ -418,7 +418,7 @@ export default function RubricList() {
                                                                     )}
                                                                 </div>
                                                             </div>
-                                                            <div style={{ display: 'flex', gap: 4 }}>
+                                                            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                                                                 {dbStatus.isConnected && (
                                                                     <button
                                                                         className="btn btn-ghost btn-icon btn-sm"
