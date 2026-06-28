@@ -201,18 +201,61 @@ export default function EssayListPage() {
                                                             <span className="badge badge-purple">
                                                                 {t('essays.assigned_students_title')}: {rows.length}
                                                             </span>
-                                                            <span className="badge badge-green">
-                                                                {t('essays.submission_status_submitted')}:{' '}
-                                                                {submittedCount}/{rows.length}
-                                                            </span>
+                                                            <div
+                                                                style={{
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: 6,
+                                                                    minWidth: 120,
+                                                                }}
+                                                            >
+                                                                <span className="text-muted text-xs">
+                                                                    {t('essays.submission_status_submitted')}
+                                                                </span>
+                                                                <div
+                                                                    role="progressbar"
+                                                                    aria-valuenow={
+                                                                        rows.length
+                                                                            ? Math.round(
+                                                                                  (submittedCount / rows.length) * 100
+                                                                              )
+                                                                            : 0
+                                                                    }
+                                                                    aria-valuemin={0}
+                                                                    aria-valuemax={100}
+                                                                    style={{
+                                                                        flex: 1,
+                                                                        height: 6,
+                                                                        borderRadius: 3,
+                                                                        background: 'var(--border)',
+                                                                        overflow: 'hidden',
+                                                                    }}
+                                                                >
+                                                                    <div
+                                                                        style={{
+                                                                            height: '100%',
+                                                                            width: `${
+                                                                                rows.length
+                                                                                    ? (submittedCount /
+                                                                                          rows.length) *
+                                                                                      100
+                                                                                    : 0
+                                                                            }%`,
+                                                                            background: 'var(--green, #22c55e)',
+                                                                        }}
+                                                                    />
+                                                                </div>
+                                                                <span className="text-muted text-xs">
+                                                                    {submittedCount}/{rows.length}
+                                                                </span>
+                                                            </div>
                                                         </div>
 
-                                                        <div
-                                                            style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
-                                                        >
+                                                        <div style={{ display: 'flex', gap: 8 }}>
                                                             <button
                                                                 type="button"
                                                                 className="btn btn-primary btn-sm"
+                                                                style={{ flex: '1 1 auto' }}
                                                                 onClick={() => navigate(`/essays/${teacherKey}`)}
                                                             >
                                                                 <Edit2 size={14} /> {t('tests.action_edit')}
@@ -220,6 +263,7 @@ export default function EssayListPage() {
                                                             <Link
                                                                 to={`/essays/${teacherKey}/monitor`}
                                                                 className="btn btn-secondary btn-sm"
+                                                                style={{ flex: '1 1 auto' }}
                                                             >
                                                                 <Radio size={14} /> {t('essays.action_monitor')}
                                                             </Link>
