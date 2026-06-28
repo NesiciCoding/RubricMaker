@@ -563,6 +563,8 @@ export interface AppSettings {
     hasSeenTutorial?: boolean;
     /** Chart type for the per-criterion statistics panel (on-screen toggle) */
     statisticsCriterionChartType?: 'bar' | 'radar';
+    /** Distribution chart mode for the statistics panel (on-screen toggle) */
+    statisticsDistributionMode?: 'letter' | 'percentage';
     /** Whether "Not handed in" students are excluded from class statistics */
     statisticsExcludeNotHandedIn?: boolean;
     /**
