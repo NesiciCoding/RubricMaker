@@ -29,7 +29,7 @@ export function dateGroupLabel(iso: string, t: TFunction): string {
     const key = dayKey(iso);
     if (key === new Date().toDateString()) return t('dashboard.date_today', 'Today');
     if (key === new Date(Date.now() - 86_400_000).toDateString()) return t('dashboard.date_yesterday', 'Yesterday');
-    return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function timeAgo(iso: string): string {
@@ -285,7 +285,8 @@ export default function Dashboard() {
                                 {recentActivity.map((item, idx) => {
                                     const groupLabel = dateGroupLabel(item.timestamp, t);
                                     const showGroupHeader =
-                                        idx === 0 || groupLabel !== dateGroupLabel(recentActivity[idx - 1].timestamp, t);
+                                        idx === 0 ||
+                                        groupLabel !== dateGroupLabel(recentActivity[idx - 1].timestamp, t);
                                     return (
                                         <React.Fragment key={idx}>
                                             {showGroupHeader && (
@@ -314,69 +315,81 @@ export default function Dashboard() {
                                                     border: '1px solid var(--border)',
                                                 }}
                                             >
-                                        <div style={{ flexShrink: 0 }}>
-                                            {item.type === 'grading' ? (
-                                                <CheckCircle size={16} style={{ color: 'var(--green)' }} />
-                                            ) : (
-                                                <BookOpen size={16} style={{ color: 'var(--accent)' }} />
-                                            )}
-                                        </div>
-                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                            {item.type === 'grading' ? (
-                                                <div style={{ fontSize: '0.85rem' }}>
-                                                    {t('dashboard.activity_graded_prefix', 'Graded')}{' '}
-                                                    <strong>{item.studentName}</strong>
-                                                    {' — '}
-                                                    {item.rubricName}
+                                                <div style={{ flexShrink: 0 }}>
+                                                    {item.type === 'grading' ? (
+                                                        <CheckCircle size={16} style={{ color: 'var(--green)' }} />
+                                                    ) : (
+                                                        <BookOpen size={16} style={{ color: 'var(--accent)' }} />
+                                                    )}
                                                 </div>
-                                            ) : (
-                                                <div style={{ fontSize: '0.85rem' }}>
-                                                    {t('dashboard.activity_updated_prefix', 'Updated')}{' '}
-                                                    <strong>{item.rubricName}</strong>
+                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                    {item.type === 'grading' ? (
+                                                        <div style={{ fontSize: '0.85rem' }}>
+                                                            {t('dashboard.activity_graded_prefix', 'Graded')}{' '}
+                                                            <strong>{item.studentName}</strong>
+                                                            {' — '}
+                                                            {item.rubricName}
+                                                        </div>
+                                                    ) : (
+                                                        <div style={{ fontSize: '0.85rem' }}>
+                                                            {t('dashboard.activity_updated_prefix', 'Updated')}{' '}
+                                                            <strong>{item.rubricName}</strong>
+                                                        </div>
+                                                    )}
                                                 </div>
-                                            )}
-                                        </div>
-                                        <span
-                                            className="text-muted text-xs"
-                                            style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 }}
-                                        >
-                                            {item.type === 'grading' &&
-                                                (() => {
-                                                    const days = feedbackAge.get(item.studentId);
-                                                    if (days === undefined) return null;
-                                                    if (days >= 10)
-                                                        return (
-                                                            <span title={`${days}d ago — feedback may be stale`}>
-                                                                <Clock size={11} style={{ color: 'var(--red)' }} />
-                                                            </span>
-                                                        );
-                                                    if (days >= 7)
-                                                        return (
-                                                            <span title={`${days}d ago`}>
-                                                                <Clock
-                                                                    size={11}
-                                                                    style={{ color: 'var(--yellow, #f59e0b)' }}
-                                                                />
-                                                            </span>
-                                                        );
-                                                    return null;
-                                                })()}
-                                            {timeAgo(item.timestamp)}
-                                        </span>
-                                        <button
-                                            className="btn btn-ghost btn-sm"
-                                            style={{ flexShrink: 0, fontSize: '0.75rem', padding: '3px 8px' }}
-                                            onClick={() =>
-                                                item.type === 'grading'
-                                                    ? navigate(`/rubrics/${item.rubricId}/grade/${item.studentId}`)
-                                                    : navigate(`/rubrics/${item.rubricId}`)
-                                            }
-                                        >
-                                            {item.type === 'grading'
-                                                ? t('dashboard.action_resume')
-                                                : t('dashboard.action_open')}{' '}
-                                            <ArrowRight size={12} />
-                                        </button>
+                                                <span
+                                                    className="text-muted text-xs"
+                                                    style={{
+                                                        flexShrink: 0,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 4,
+                                                    }}
+                                                >
+                                                    {item.type === 'grading' &&
+                                                        (() => {
+                                                            const days = feedbackAge.get(item.studentId);
+                                                            if (days === undefined) return null;
+                                                            if (days >= 10)
+                                                                return (
+                                                                    <span
+                                                                        title={`${days}d ago — feedback may be stale`}
+                                                                    >
+                                                                        <Clock
+                                                                            size={11}
+                                                                            style={{ color: 'var(--red)' }}
+                                                                        />
+                                                                    </span>
+                                                                );
+                                                            if (days >= 7)
+                                                                return (
+                                                                    <span title={`${days}d ago`}>
+                                                                        <Clock
+                                                                            size={11}
+                                                                            style={{ color: 'var(--yellow, #f59e0b)' }}
+                                                                        />
+                                                                    </span>
+                                                                );
+                                                            return null;
+                                                        })()}
+                                                    {timeAgo(item.timestamp)}
+                                                </span>
+                                                <button
+                                                    className="btn btn-ghost btn-sm"
+                                                    style={{ flexShrink: 0, fontSize: '0.75rem', padding: '3px 8px' }}
+                                                    onClick={() =>
+                                                        item.type === 'grading'
+                                                            ? navigate(
+                                                                  `/rubrics/${item.rubricId}/grade/${item.studentId}`
+                                                              )
+                                                            : navigate(`/rubrics/${item.rubricId}`)
+                                                    }
+                                                >
+                                                    {item.type === 'grading'
+                                                        ? t('dashboard.action_resume')
+                                                        : t('dashboard.action_open')}{' '}
+                                                    <ArrowRight size={12} />
+                                                </button>
                                             </div>
                                         </React.Fragment>
                                     );
