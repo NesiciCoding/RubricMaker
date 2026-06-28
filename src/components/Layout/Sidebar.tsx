@@ -77,7 +77,15 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
             key: 'assessments',
             icon: BookOpen,
             label: t('sidebar.domain_assessments'),
-            matchPrefixes: ['/rubrics', '/tests', '/essays', '/marketplace', '/peer-analytics', '/grade-comparative'],
+            matchPrefixes: [
+                '/rubrics',
+                '/tests',
+                '/essays',
+                '/marketplace',
+                '/peer-analytics',
+                '/grade-comparative',
+                '/speaking',
+            ],
             items: [
                 { to: '/rubrics', icon: BookOpen, label: t('navigation.rubrics') },
                 { to: '/tests', icon: ClipboardCheck, label: t('navigation.tests') },
@@ -125,10 +133,17 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
         },
     ];
 
-    const activeDomain =
-        domains.find((d) =>
-            d.matchPrefixes.some((p) => (p === '/' ? location.pathname === '/' : location.pathname.startsWith(p)))
-        ) ?? domains[0];
+    const matchedDomain = domains.find((d) =>
+        d.matchPrefixes.some((p) => (p === '/' ? location.pathname === '/' : location.pathname.startsWith(p)))
+    );
+    // Footer pages (/settings, /docs, /admin, /privacy) and unmapped dynamic routes match no
+    // domain — keep the previously-active domain highlighted instead of jumping to Overview.
+    const [lastDomainKey, setLastDomainKey] = React.useState(matchedDomain?.key ?? domains[0].key);
+    useEffect(() => {
+        if (matchedDomain) setLastDomainKey(matchedDomain.key);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [matchedDomain?.key]);
+    const activeDomain = matchedDomain ?? domains.find((d) => d.key === lastDomainKey) ?? domains[0];
 
     const renderNavLink = ({ to, icon: Icon, label, end }: SubItem) => (
         <NavLink
