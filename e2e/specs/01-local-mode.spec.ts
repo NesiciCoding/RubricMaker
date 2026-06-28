@@ -28,6 +28,9 @@ test.describe('Local mode entry', () => {
 
     test('sidebar navigation is visible after local mode entry', async ({ appPage }) => {
         await appPage.goto('/');
-        await expect(appPage.locator('[data-tour="/rubrics"]')).toBeVisible();
+        // The two-tier nav only shows the active domain's sub-items — at `/` that's
+        // Overview (Dashboard), with the Assessments rail icon as the entry point to Rubrics.
+        await expect(appPage.locator('[data-tour="/"]')).toBeVisible();
+        await expect(appPage.locator('[data-tour="rail:assessments"]')).toBeVisible();
     });
 });

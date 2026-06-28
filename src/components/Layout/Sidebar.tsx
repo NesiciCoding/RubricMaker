@@ -163,6 +163,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
                             to={d.items[0].to}
                             className={`nav-rail-item${d.key === activeDomain.key ? ' active' : ''}`}
                             aria-label={d.label}
+                            data-tour={`rail:${d.key}`}
                         >
                             <d.icon size={20} aria-hidden="true" />
                             {d.label}
