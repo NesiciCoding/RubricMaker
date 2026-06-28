@@ -217,7 +217,17 @@ export function seedDemoData(): void {
         const level =
             criterion.levels.find((l) => pct >= l.minPoints && pct <= l.maxPoints) ??
             criterion.levels[criterion.levels.length - 1];
-        return { criterionId: criterion.id, levelId: level.id, checkedSubItems: [], comment };
+        // Simulate a teacher moving the points slider within the band, rather than leaving it
+        // at the band's default minimum (which is 0 for the bottom "Developing" tier) — otherwise
+        // a 50%-ish grade renders as a literal 0, which reads as a scoring bug.
+        const clampedPct = Math.min(Math.max(pct, level.minPoints), level.maxPoints);
+        return {
+            criterionId: criterion.id,
+            levelId: level.id,
+            checkedSubItems: [],
+            comment,
+            selectedPoints: clampedPct,
+        };
     }
 
     // Every student gets 2-3 graded rubrics spread over the last month, scores varying by student index.
