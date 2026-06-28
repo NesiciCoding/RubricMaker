@@ -147,6 +147,23 @@ export default function StudentLearningPathPage() {
                     </div>
                 </div>
 
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 24 }}>
+                    <button
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => navigate(`/students/${student.id}/cefr-overview`)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                    >
+                        <ExternalLink size={14} /> {t('cefrOverview.view_button')}
+                    </button>
+                    <button
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => navigate('/vocabulary')}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                    >
+                        <ExternalLink size={14} /> {t('navigation.vocabulary')}
+                    </button>
+                </div>
+
                 <div className="card" style={{ marginBottom: 24 }}>
                     <h3 style={{ marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
                         <TrendingUp size={18} style={{ color: 'var(--accent)' }} />
