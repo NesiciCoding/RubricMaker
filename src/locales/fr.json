@@ -1550,6 +1550,7 @@
         "cell_achieved": "Atteint",
         "cell_developing": "En progression",
         "cell_not_started": "Non commencé",
+        "table_header_overall": "Global",
         "cell_rubric_score": "{{score}}% ({{count}} rubrique(s))",
         "cell_confidence": "{{confident}}/{{total}} maîtrisé(s)",
         "cell_no_data": "Aucune donnée",

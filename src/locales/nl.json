@@ -1550,6 +1550,7 @@
         "cell_achieved": "Behaald",
         "cell_developing": "In ontwikkeling",
         "cell_not_started": "Nog niet gestart",
+        "table_header_overall": "Algemeen",
         "cell_rubric_score": "{{score}}% ({{count}} rubriek(en))",
         "cell_confidence": "{{confident}}/{{total}} zeker",
         "cell_no_data": "Geen data",

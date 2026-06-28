@@ -1550,6 +1550,7 @@
         "cell_achieved": "Logrado",
         "cell_developing": "En desarrollo",
         "cell_not_started": "No iniciado",
+        "table_header_overall": "General",
         "cell_rubric_score": "{{score}}% ({{count}} rúbrica(s))",
         "cell_confidence": "{{confident}}/{{total}} con confianza",
         "cell_no_data": "Sin datos",

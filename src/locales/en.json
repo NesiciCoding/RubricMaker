@@ -1550,6 +1550,7 @@
         "cell_achieved": "Achieved",
         "cell_developing": "Developing",
         "cell_not_started": "Not started",
+        "table_header_overall": "Overall",
         "cell_rubric_score": "{{score}}% ({{count}} rubric(s))",
         "cell_confidence": "{{confident}}/{{total}} confident",
         "cell_no_data": "No data",
