@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Bell, X, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -13,6 +14,17 @@ export default function NotificationBell() {
     const [open, setOpen] = useState(false);
     const [permissionState, setPermissionState] = useState<NotificationPermission | 'unsupported'>('unsupported');
     const panelRef = useRef<HTMLDivElement>(null);
+    const popoverRef = useRef<HTMLDivElement>(null);
+    const [popoverPos, setPopoverPos] = useState<{ top: number; right: number } | null>(null);
+
+    // .topbar-actions has overflow-x: auto, which clips position:absolute
+    // descendants on both axes — portal the panel out and position it via
+    // the bell's own bounding rect instead.
+    useEffect(() => {
+        if (!open || !panelRef.current) return;
+        const rect = panelRef.current.getBoundingClientRect();
+        setPopoverPos({ top: rect.bottom + 8, right: window.innerWidth - rect.right });
+    }, [open]);
 
     // Sync permission state
     useEffect(() => {
@@ -38,9 +50,10 @@ export default function NotificationBell() {
     useEffect(() => {
         if (!open) return;
         function onPointerDown(e: PointerEvent) {
-            if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-                setOpen(false);
-            }
+            const target = e.target as Node;
+            if (panelRef.current?.contains(target)) return;
+            if (popoverRef.current?.contains(target)) return;
+            setOpen(false);
         }
         document.addEventListener('pointerdown', onPointerDown);
         return () => document.removeEventListener('pointerdown', onPointerDown);
@@ -61,6 +74,163 @@ export default function NotificationBell() {
         if (!open) setDismissedIds(new Set());
         setOpen((v) => !v);
     };
+
+    const notificationPanelContent = (
+        <>
+            {/* Header */}
+            <div
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '12px 16px',
+                    borderBottom: '1px solid var(--border)',
+                }}
+            >
+                <span style={{ fontWeight: 600, fontSize: 14 }}>{t('notifications.panel_title')}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    {visibleCount > 0 && (
+                        <button
+                            className="btn btn-ghost btn-sm"
+                            style={{ fontSize: 12, padding: '2px 8px' }}
+                            onClick={() => setDismissedIds(new Set(overdueStudents.map((s) => s.studentId)))}
+                        >
+                            {t('notifications.clear_all')}
+                        </button>
+                    )}
+                    <button
+                        className="btn btn-ghost btn-icon btn-sm"
+                        aria-label={t('common.close')}
+                        onClick={() => {
+                            setDismissedIds(new Set());
+                            setOpen(false);
+                        }}
+                    >
+                        <X size={14} />
+                    </button>
+                </div>
+            </div>
+
+            {/* Overdue list */}
+            <div style={{ maxHeight: 240, overflowY: 'auto' }}>
+                {count === 0 || visibleCount === 0 ? (
+                    <div
+                        style={{
+                            padding: '20px 16px',
+                            textAlign: 'center',
+                            color: 'var(--text-muted)',
+                            fontSize: 13,
+                        }}
+                    >
+                        <CheckCircle2
+                            size={28}
+                            style={{
+                                color: '#22c55e',
+                                marginBottom: 8,
+                                display: 'block',
+                                margin: '0 auto 8px',
+                            }}
+                        />
+                        {t('notifications.all_up_to_date', { threshold })}
+                    </div>
+                ) : (
+                    <>
+                        <div
+                            style={{
+                                padding: '8px 16px',
+                                fontSize: 12,
+                                color: 'var(--text-muted)',
+                                background: 'color-mix(in srgb, #ef4444 8%, transparent)',
+                                borderBottom: '1px solid var(--border)',
+                            }}
+                        >
+                            <AlertCircle
+                                size={12}
+                                style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }}
+                            />
+                            {t('notifications.overdue_subtitle', { count: visibleCount, threshold })}
+                        </div>
+                        {visible.slice(0, 10).map((s) => (
+                            <button
+                                key={s.studentId}
+                                onClick={() => {
+                                    navigate(`/students/${s.studentId}`);
+                                    setOpen(false);
+                                }}
+                                style={{
+                                    width: '100%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    padding: '10px 16px',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    borderBottom: '1px solid var(--border)',
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    gap: 8,
+                                }}
+                            >
+                                <span style={{ fontSize: 13, color: 'var(--text)', flex: 1 }}>{s.studentName}</span>
+                                <span
+                                    style={{
+                                        fontSize: 11,
+                                        color: '#ef4444',
+                                        background: 'color-mix(in srgb, #ef4444 10%, transparent)',
+                                        borderRadius: 6,
+                                        padding: '2px 7px',
+                                        whiteSpace: 'nowrap',
+                                        fontWeight: 600,
+                                    }}
+                                >
+                                    {t('notifications.days_ago', { count: s.daysSince })}
+                                </span>
+                            </button>
+                        ))}
+                        {visibleCount > 10 && (
+                            <div
+                                style={{
+                                    padding: '8px 16px',
+                                    fontSize: 12,
+                                    color: 'var(--text-muted)',
+                                    textAlign: 'center',
+                                }}
+                            >
+                                {t('notifications.more_overdue', { count: visibleCount - 10 })}
+                            </div>
+                        )}
+                    </>
+                )}
+            </div>
+
+            {/* Browser notification opt-in */}
+            {permissionState !== 'unsupported' && permissionState !== 'granted' && (
+                <div
+                    style={{
+                        padding: '12px 16px',
+                        borderTop: '1px solid var(--border)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                    }}
+                >
+                    <Bell size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                    <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 12, color: 'var(--text)', marginBottom: 4 }}>
+                            {permissionState === 'denied'
+                                ? t('notifications.permission_denied')
+                                : t('notifications.enable_push')}
+                        </div>
+                    </div>
+                    {permissionState !== 'denied' && (
+                        <button className="btn btn-primary btn-sm" onClick={requestPermission}>
+                            {t('notifications.enable_btn')}
+                        </button>
+                    )}
+                </div>
+            )}
+        </>
+    );
 
     return (
         <div style={{ position: 'relative' }} ref={panelRef}>
@@ -96,179 +266,30 @@ export default function NotificationBell() {
                 )}
             </button>
 
-            {open && (
-                <div
-                    role="region"
-                    aria-label={t('notifications.panel_label')}
-                    style={{
-                        position: 'absolute',
-                        top: 'calc(100% + 8px)',
-                        right: 0,
-                        width: 320,
-                        background: 'var(--bg-elevated)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 10,
-                        boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
-                        zIndex: 200,
-                        overflow: 'hidden',
-                    }}
-                >
-                    {/* Header */}
+            {open &&
+                popoverPos &&
+                createPortal(
                     <div
+                        ref={popoverRef}
+                        role="region"
+                        aria-label={t('notifications.panel_label')}
                         style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '12px 16px',
-                            borderBottom: '1px solid var(--border)',
+                            position: 'fixed',
+                            top: popoverPos.top,
+                            right: popoverPos.right,
+                            width: 320,
+                            background: 'var(--bg-elevated)',
+                            border: '1px solid var(--border)',
+                            borderRadius: 10,
+                            boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                            zIndex: 200,
+                            overflow: 'hidden',
                         }}
                     >
-                        <span style={{ fontWeight: 600, fontSize: 14 }}>{t('notifications.panel_title')}</span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                            {visibleCount > 0 && (
-                                <button
-                                    className="btn btn-ghost btn-sm"
-                                    style={{ fontSize: 12, padding: '2px 8px' }}
-                                    onClick={() => setDismissedIds(new Set(overdueStudents.map((s) => s.studentId)))}
-                                >
-                                    {t('notifications.clear_all')}
-                                </button>
-                            )}
-                            <button
-                                className="btn btn-ghost btn-icon btn-sm"
-                                aria-label={t('common.close')}
-                                onClick={() => {
-                                    setDismissedIds(new Set());
-                                    setOpen(false);
-                                }}
-                            >
-                                <X size={14} />
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Overdue list */}
-                    <div style={{ maxHeight: 240, overflowY: 'auto' }}>
-                        {count === 0 || visibleCount === 0 ? (
-                            <div
-                                style={{
-                                    padding: '20px 16px',
-                                    textAlign: 'center',
-                                    color: 'var(--text-muted)',
-                                    fontSize: 13,
-                                }}
-                            >
-                                <CheckCircle2
-                                    size={28}
-                                    style={{
-                                        color: '#22c55e',
-                                        marginBottom: 8,
-                                        display: 'block',
-                                        margin: '0 auto 8px',
-                                    }}
-                                />
-                                {t('notifications.all_up_to_date', { threshold })}
-                            </div>
-                        ) : (
-                            <>
-                                <div
-                                    style={{
-                                        padding: '8px 16px',
-                                        fontSize: 12,
-                                        color: 'var(--text-muted)',
-                                        background: 'color-mix(in srgb, #ef4444 8%, transparent)',
-                                        borderBottom: '1px solid var(--border)',
-                                    }}
-                                >
-                                    <AlertCircle
-                                        size={12}
-                                        style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }}
-                                    />
-                                    {t('notifications.overdue_subtitle', { count: visibleCount, threshold })}
-                                </div>
-                                {visible.slice(0, 10).map((s) => (
-                                    <button
-                                        key={s.studentId}
-                                        onClick={() => {
-                                            navigate(`/students/${s.studentId}`);
-                                            setOpen(false);
-                                        }}
-                                        style={{
-                                            width: '100%',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between',
-                                            padding: '10px 16px',
-                                            background: 'transparent',
-                                            border: 'none',
-                                            borderBottom: '1px solid var(--border)',
-                                            cursor: 'pointer',
-                                            textAlign: 'left',
-                                            gap: 8,
-                                        }}
-                                    >
-                                        <span style={{ fontSize: 13, color: 'var(--text)', flex: 1 }}>
-                                            {s.studentName}
-                                        </span>
-                                        <span
-                                            style={{
-                                                fontSize: 11,
-                                                color: '#ef4444',
-                                                background: 'color-mix(in srgb, #ef4444 10%, transparent)',
-                                                borderRadius: 6,
-                                                padding: '2px 7px',
-                                                whiteSpace: 'nowrap',
-                                                fontWeight: 600,
-                                            }}
-                                        >
-                                            {t('notifications.days_ago', { count: s.daysSince })}
-                                        </span>
-                                    </button>
-                                ))}
-                                {visibleCount > 10 && (
-                                    <div
-                                        style={{
-                                            padding: '8px 16px',
-                                            fontSize: 12,
-                                            color: 'var(--text-muted)',
-                                            textAlign: 'center',
-                                        }}
-                                    >
-                                        {t('notifications.more_overdue', { count: visibleCount - 10 })}
-                                    </div>
-                                )}
-                            </>
-                        )}
-                    </div>
-
-                    {/* Browser notification opt-in */}
-                    {permissionState !== 'unsupported' && permissionState !== 'granted' && (
-                        <div
-                            style={{
-                                padding: '12px 16px',
-                                borderTop: '1px solid var(--border)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 10,
-                            }}
-                        >
-                            <Bell size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-                            <div style={{ flex: 1 }}>
-                                <div style={{ fontSize: 12, color: 'var(--text)', marginBottom: 4 }}>
-                                    {permissionState === 'denied'
-                                        ? t('notifications.permission_denied')
-                                        : t('notifications.enable_push')}
-                                </div>
-                            </div>
-                            {permissionState !== 'denied' && (
-                                <button className="btn btn-primary btn-sm" onClick={requestPermission}>
-                                    {t('notifications.enable_btn')}
-                                </button>
-                            )}
-                        </div>
-                    )}
-                </div>
-            )}
+                        {notificationPanelContent}
+                    </div>,
+                    document.body
+                )}
         </div>
     );
 }
