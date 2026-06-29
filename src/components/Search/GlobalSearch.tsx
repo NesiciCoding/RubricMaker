@@ -16,9 +16,10 @@ const TYPE_ICONS: Record<SearchResultType, React.ComponentType<{ size?: number }
 
 interface Props {
     onClose: () => void;
+    growFrom?: { x: number; y: number };
 }
 
-export default function GlobalSearch({ onClose }: Props) {
+export default function GlobalSearch({ onClose, growFrom }: Props) {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { rubrics, tests, students, classes, essayAssignments } = useApp();
@@ -38,6 +39,7 @@ export default function GlobalSearch({ onClose }: Props) {
         <Modal
             titleId="global-search-title"
             onClose={onClose}
+            growFrom={growFrom}
             maxWidth={560}
             style={{ width: '92vw', maxHeight: '70vh', display: 'flex', flexDirection: 'column', padding: 0 }}
         >

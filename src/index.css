@@ -751,6 +751,7 @@ select.input-error {
     background: rgba(0, 0, 0, 0.7);
     z-index: 1000;
     backdrop-filter: blur(4px);
+    animation: modal-overlay-in 160ms ease-out;
 }
 
 .modal {
@@ -767,6 +768,33 @@ select.input-error {
     max-width: 640px;
     max-height: 90vh;
     overflow-y: auto;
+}
+
+/* Grows out of a trigger button (e.g. the topbar search icon) instead of
+   just appearing centered — Modal.tsx sets transform-origin via JS before
+   this animation runs so the scale visually anchors on that button. */
+.modal-grow {
+    animation: modal-grow-in 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modal-overlay-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes modal-grow-in {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.25);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
 }
 
 .modal-header {
