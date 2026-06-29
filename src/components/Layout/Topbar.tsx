@@ -18,7 +18,7 @@ function isTypingTarget(target: EventTarget | null): boolean {
 }
 
 export default function Topbar({ title, actions }: TopbarProps) {
-    const { settings, updateSettings } = useApp();
+    const { settings, updateSettings, classes = [] } = useApp();
     const { t } = useTranslation();
     const { open: openMobileMenu } = useMobileMenu();
     const [searchOpen, setSearchOpen] = useState(false);
@@ -44,6 +44,21 @@ export default function Topbar({ title, actions }: TopbarProps) {
                 <Menu size={20} aria-hidden="true" />
             </button>
             <span className="topbar-title">{title}</span>
+            {classes.length > 0 && (
+                <select
+                    aria-label={t('search.active_class_label')}
+                    value={settings.activeClassId ?? ''}
+                    onChange={(e) => updateSettings({ activeClassId: e.target.value || undefined })}
+                    style={{ maxWidth: 160 }}
+                >
+                    <option value="">{t('search.all_classes')}</option>
+                    {classes.map((c) => (
+                        <option key={c.id} value={c.id}>
+                            {c.name}
+                        </option>
+                    ))}
+                </select>
+            )}
             <div className="topbar-actions">
                 {actions}
                 <button

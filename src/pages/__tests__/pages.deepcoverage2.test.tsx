@@ -563,7 +563,8 @@ describe('ExportPage deep coverage', () => {
 
     it('rubric select change updates selected rubric', () => {
         renderPage(<ExportPage />);
-        expect(screen.queryAllByRole('combobox')).toHaveLength(0);
+        // 1 combobox = the Topbar's global class selector, present before any section is expanded.
+        expect(screen.queryAllByRole('combobox')).toHaveLength(1);
         fireEvent.click(screen.getByText('exportPage.rubric_section_title'));
         const selects = screen.getAllByRole('combobox');
         if (selects.length > 0) {
@@ -668,7 +669,8 @@ describe('StudentsPage deep coverage', () => {
 
     it('class name renders as active class tab', () => {
         renderPage(<StudentsPage />);
-        expect(screen.getByText('Class A')).toBeInTheDocument();
+        // The Topbar's global class selector also renders an option with this name, so there can be >1 match.
+        expect(screen.getAllByText('Class A').length).toBeGreaterThan(0);
     });
 
     it('sort by email column header is clickable', () => {
@@ -891,7 +893,8 @@ describe('StudentProfilePage deep coverage', () => {
 
     it('renders class name for student', () => {
         renderPage(<StudentProfilePage />, '/students/s1', '/students/:id');
-        expect(screen.getByText('Class A')).toBeInTheDocument();
+        // The Topbar's global class selector also renders an option with this name, so there can be >1 match.
+        expect(screen.getAllByText('Class A').length).toBeGreaterThan(0);
     });
 
     it('renders rubric name in grade history', () => {

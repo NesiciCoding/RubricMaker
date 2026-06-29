@@ -2317,7 +2317,8 @@
         "gs_search_intro_hotkey": "Ctrl/Cmd+K",
         "gs_search_intro_suffix": "vanaf elke pagina (of klik op het zoekicoon in de topbar) om snel te zoeken naar rubrics, toetsen, leerlingen, klassen en essays.",
         "gs_search_item_types": "Doorzoekt rubrics, toetsen, leerlingen, klassen en essays in één keer",
-        "gs_search_item_filters": "Typ type:test of class:5A om resultaten te beperken tot één type of klas"
+        "gs_search_item_filters": "Typ type:test of class:5A om resultaten te beperken tot één type of klas",
+        "gs_search_item_active_class": "De klasselector naast het zoekicoon stelt je actieve klas in voor de hele app — Statistieken en andere pagina's volgen deze automatisch"
     },
     "studentProfile": {
         "tab_overview": "Overzicht",
@@ -2436,6 +2437,8 @@
         "type_test": "Toets",
         "type_student": "Leerling",
         "type_class": "Klas",
-        "type_essay": "Essay"
+        "type_essay": "Essay",
+        "active_class_label": "Actieve klas",
+        "all_classes": "Alle klassen"
     }
 }

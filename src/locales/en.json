@@ -2315,7 +2315,8 @@
         "gs_search_intro_hotkey": "Ctrl/Cmd+K",
         "gs_search_intro_suffix": "from anywhere in the app (or click the search icon in the Topbar) to open a quick search for rubrics, tests, students, classes, and essays.",
         "gs_search_item_types": "Searches rubrics, tests, students, classes, and essays at once",
-        "gs_search_item_filters": "Type type:test or class:5A to narrow results to one type or class"
+        "gs_search_item_filters": "Type type:test or class:5A to narrow results to one type or class",
+        "gs_search_item_active_class": "The class selector next to the search icon sets your active class app-wide — Statistics and other pages follow it automatically"
     },
     "studentProfile": {
         "tab_overview": "Overview",
@@ -2434,6 +2435,8 @@
         "type_test": "Test",
         "type_student": "Student",
         "type_class": "Class",
-        "type_essay": "Essay"
+        "type_essay": "Essay",
+        "active_class_label": "Active class",
+        "all_classes": "All classes"
     }
 }

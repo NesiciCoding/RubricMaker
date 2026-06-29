@@ -104,7 +104,17 @@ export default function StatisticsPage() {
 
     // ── Rubric view state ─────────────────────────────────────────────────────
     const [selectedRubricId, setSelectedRubricId] = useState(rubrics[0]?.id ?? '');
-    const [selectedClassId, setSelectedClassId] = useState<string>('all');
+    const [selectedClassId, setSelectedClassId] = useState<string>(settings.activeClassId ?? 'all');
+
+    // Follow the global Topbar class selector (settings.activeClassId) when it changes elsewhere
+    useEffect(() => {
+        setSelectedClassId(settings.activeClassId ?? 'all');
+    }, [settings.activeClassId]);
+
+    function handleSelectedClassChange(classId: string) {
+        setSelectedClassId(classId);
+        updateSettings({ activeClassId: classId === 'all' ? undefined : classId });
+    }
 
     // Sync selections when track/year filter removes previously selected classes
     useEffect(() => {
@@ -642,7 +652,10 @@ export default function StatisticsPage() {
                             </div>
                             <div className="form-group" style={{ flex: 1, maxWidth: 240, marginBottom: 0 }}>
                                 <label>{t('statistics.label_class_filter')}</label>
-                                <select value={selectedClassId} onChange={(e) => setSelectedClassId(e.target.value)}>
+                                <select
+                                    value={selectedClassId}
+                                    onChange={(e) => handleSelectedClassChange(e.target.value)}
+                                >
                                     <option value="all">{t('statistics.all_classes')}</option>
                                     {filteredClasses.map((c) => (
                                         <option key={c.id} value={c.id}>

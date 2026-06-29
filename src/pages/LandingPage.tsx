@@ -109,7 +109,7 @@ const TEACHER_FEATURES = [
     {
         icon: Search,
         title: 'Quick Search',
-        desc: 'Press Ctrl/Cmd+K from anywhere to instantly find a rubric, test, student, class, or essay.',
+        desc: 'Press Ctrl/Cmd+K from anywhere to instantly find a rubric, test, student, class, or essay, and switch your active class from the same toolbar.',
         color: '#f59e0b',
     },
 ];

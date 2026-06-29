@@ -2317,7 +2317,8 @@
         "gs_search_intro_hotkey": "Ctrl/Cmd+K",
         "gs_search_intro_suffix": "desde cualquier parte de la app (o haz clic en el icono de búsqueda en la barra superior) para buscar rápidamente rúbricas, pruebas, alumnos, clases y ensayos.",
         "gs_search_item_types": "Busca a la vez en rúbricas, pruebas, alumnos, clases y ensayos",
-        "gs_search_item_filters": "Escribe type:test o class:5A para limitar los resultados a un tipo o clase"
+        "gs_search_item_filters": "Escribe type:test o class:5A para limitar los resultados a un tipo o clase",
+        "gs_search_item_active_class": "El selector de clase junto al icono de búsqueda fija tu clase activa en toda la app — Estadísticas y otras páginas la siguen automáticamente"
     },
     "studentProfile": {
         "tab_overview": "Resumen",
@@ -2436,6 +2437,8 @@
         "type_test": "Prueba",
         "type_student": "Alumno",
         "type_class": "Clase",
-        "type_essay": "Ensayo"
+        "type_essay": "Ensayo",
+        "active_class_label": "Clase activa",
+        "all_classes": "Todas las clases"
     }
 }
