@@ -1216,6 +1216,8 @@
         "sign_out": "Abmelden",
         "copy_link": "Portal-Link kopieren",
         "link_copied": "Kopiert!",
+        "teacher_preview_banner": "Vorschau als Schüler:in — so sieht es der Schüler/die Schülerin, ohne die Lehrer-Navigation.",
+        "section_nav_label": "Zu Abschnitt springen",
         "view_portal_btn": "Schüleransicht",
         "stat_rubrics": "Benotete Rubriken",
         "stat_average": "Durchschnitt",

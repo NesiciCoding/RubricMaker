@@ -1216,6 +1216,8 @@
         "sign_out": "Cerrar sesión",
         "copy_link": "Copiar enlace del portal",
         "link_copied": "¡Copiado!",
+        "teacher_preview_banner": "Vista previa como estudiante — esto es lo que ve el estudiante, sin la navegación del profesor.",
+        "section_nav_label": "Ir a la sección",
         "view_portal_btn": "Vista del estudiante",
         "stat_rubrics": "Rúbricas calificadas",
         "stat_average": "Puntuación media",

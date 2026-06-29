@@ -1216,6 +1216,8 @@
         "sign_out": "Uitloggen",
         "copy_link": "Kopieer portaallink",
         "link_copied": "Gekopieerd!",
+        "teacher_preview_banner": "Voorbeeld als leerling — dit is wat de leerling ziet, zonder de docentennavigatie.",
+        "section_nav_label": "Ga naar onderdeel",
         "view_portal_btn": "Leerlingweergave",
         "stat_rubrics": "Beoordeelde rubrieken",
         "stat_average": "Gemiddelde score",

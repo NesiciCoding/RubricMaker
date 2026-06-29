@@ -1216,6 +1216,8 @@
         "sign_out": "Sign out",
         "copy_link": "Copy portal link",
         "link_copied": "Copied!",
+        "teacher_preview_banner": "Previewing as student — this is what the student sees, without the teacher navigation.",
+        "section_nav_label": "Jump to section",
         "view_portal_btn": "Student view",
         "stat_rubrics": "Rubrics graded",
         "stat_average": "Average score",
