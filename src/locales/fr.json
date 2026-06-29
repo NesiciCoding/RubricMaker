@@ -2311,7 +2311,13 @@
         "da_settings_item_scales": "Barèmes — créez des échelles personnalisées (1–10, A–F, etc.) et définissez une valeur par défaut.",
         "da_settings_item_lang": "Langue — anglais, néerlandais, français, allemand, espagnol.",
         "da_settings_item_tour": "Visite guidée — relancer la visite d'intégration.",
-        "da_settings_item_backup": "Sauvegarde / restauration — télécharger ou téléverser le JSON complet de l'ensemble de données."
+        "da_settings_item_backup": "Sauvegarde / restauration — télécharger ou téléverser le JSON complet de l'ensemble de données.",
+        "gs_search_title": "Recherche",
+        "gs_search_intro_prefix": "Appuyez sur",
+        "gs_search_intro_hotkey": "Ctrl/Cmd+K",
+        "gs_search_intro_suffix": "depuis n'importe quelle page (ou cliquez sur l'icône de recherche dans la barre supérieure) pour rechercher rapidement des rubriques, tests, élèves, classes et essais.",
+        "gs_search_item_types": "Recherche simultanément dans les rubriques, tests, élèves, classes et essais",
+        "gs_search_item_filters": "Tapez type:test ou class:5A pour limiter les résultats à un type ou une classe"
     },
     "studentProfile": {
         "tab_overview": "Aperçu",
@@ -2420,5 +2426,16 @@
         "sort_label": "Trier par",
         "sort_newest": "Plus récent",
         "sort_upvotes": "Plus voté"
+    },
+    "search": {
+        "placeholder": "Rechercher rubriques, tests, élèves… (essayez type:test, class:5A)",
+        "hint": "Tapez pour rechercher, ou utilisez les filtres type:/class:",
+        "no_results": "Aucun résultat",
+        "open_search": "Rechercher (Ctrl/Cmd+K)",
+        "type_rubric": "Rubrique",
+        "type_test": "Test",
+        "type_student": "Élève",
+        "type_class": "Classe",
+        "type_essay": "Essai"
     }
 }

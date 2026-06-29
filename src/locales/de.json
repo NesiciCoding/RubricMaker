@@ -2311,7 +2311,13 @@
         "da_settings_item_scales": "Notenskalen — erstelle benutzerdefinierte Skalen (1–10, A–F usw.) und lege eine Standardeinstellung fest.",
         "da_settings_item_lang": "Sprache — Englisch, Niederländisch, Französisch, Deutsch, Spanisch.",
         "da_settings_item_tour": "Geführte Tour — die Einführungstour neu starten.",
-        "da_settings_item_backup": "Sichern / Wiederherstellen — das vollständige Datensatz-JSON herunterladen oder hochladen."
+        "da_settings_item_backup": "Sichern / Wiederherstellen — das vollständige Datensatz-JSON herunterladen oder hochladen.",
+        "gs_search_title": "Suche",
+        "gs_search_intro_prefix": "Drücke",
+        "gs_search_intro_hotkey": "Strg/Cmd+K",
+        "gs_search_intro_suffix": "von überall in der App (oder klicke auf das Suchsymbol in der Topbar), um schnell nach Rubriken, Tests, Schülern, Klassen und Aufsätzen zu suchen.",
+        "gs_search_item_types": "Durchsucht Rubriken, Tests, Schüler, Klassen und Aufsätze gleichzeitig",
+        "gs_search_item_filters": "Gib type:test oder class:5A ein, um Ergebnisse auf einen Typ oder eine Klasse einzuschränken"
     },
     "studentProfile": {
         "tab_overview": "Übersicht",
@@ -2420,5 +2426,16 @@
         "sort_label": "Sortieren nach",
         "sort_newest": "Neueste",
         "sort_upvotes": "Meiste Stimmen"
+    },
+    "search": {
+        "placeholder": "Rubriken, Tests, Schüler suchen… (z. B. type:test, class:5A)",
+        "hint": "Tippen zum Suchen oder type:/class: Filter verwenden",
+        "no_results": "Keine Ergebnisse",
+        "open_search": "Suchen (Strg/Cmd+K)",
+        "type_rubric": "Rubrik",
+        "type_test": "Test",
+        "type_student": "Schüler",
+        "type_class": "Klasse",
+        "type_essay": "Aufsatz"
     }
 }
