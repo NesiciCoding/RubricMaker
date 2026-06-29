@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
 import { getEssayBuilderTourSteps } from '../data/TutorialSteps';
-import { ArrowLeft, Save, UserPlus, Upload, Radio, Copy, Check, X, FileText } from 'lucide-react';
+import { ArrowLeft, Save, UserPlus, Upload, Radio, Copy, Check, X, FileText, ExternalLink } from 'lucide-react';
 import { nanoid } from '../utils/nanoid';
 import Topbar from '../components/Layout/Topbar';
 import Modal from '../components/ui/Modal';
@@ -134,17 +134,25 @@ export default function EssayBuilderPage() {
         [teacherKeyParam, rows, addEssayAssignments, navigate, teacherKeyRef] // eslint-disable-line react-hooks/exhaustive-deps
     );
 
+    const buildEssayLink = useCallback(
+        (studentId: string) => {
+            if (!existing) return null;
+            const code = encodeEssayAssignment({ ...existing, studentId });
+            return `${window.location.origin}${window.location.pathname}#/essay/${code}`;
+        },
+        [existing]
+    );
+
     const handleCopyLink = useCallback(
         (studentId: string) => {
-            if (!existing) return;
-            const code = encodeEssayAssignment({ ...existing, studentId });
-            const url = `${window.location.origin}${window.location.pathname}#/essay/${code}`;
+            const url = buildEssayLink(studentId);
+            if (!url) return;
             navigator.clipboard.writeText(url).then(() => {
                 setCopiedStudentId(studentId);
                 setTimeout(() => setCopiedStudentId(null), 2500);
             });
         },
-        [existing]
+        [buildEssayLink]
     );
 
     const handleImportSubmission = useCallback(() => {
@@ -360,6 +368,18 @@ export default function EssayBuilderPage() {
                                                     <Copy size={14} />
                                                 )}
                                             </button>
+                                            {import.meta.env.DEV && (
+                                                <a
+                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                    title={t('essays.dev_open_as_student')}
+                                                    aria-label={t('essays.dev_open_as_student')}
+                                                    href={buildEssayLink(row.studentId) ?? undefined}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                >
+                                                    <ExternalLink size={14} />
+                                                </a>
+                                            )}
                                         </div>
                                     </div>
                                 );

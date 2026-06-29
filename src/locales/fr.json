@@ -361,6 +361,7 @@
         "no_rubrics": "Aucune rubrique",
         "create_first_instruction": "Créez votre première rubrique pour commencer.",
         "create_rubric": "Créer une rubrique",
+        "dev_open_preview": "Ouvrir l'aperçu en tant qu'élève (dev uniquement)",
         "action_duplicate": "Dupliquer",
         "action_edit": "Modifier",
         "action_delete": "Supprimer",
@@ -460,6 +461,7 @@
         "assignment_links_label": "Liens des élèves",
         "assignment_link_for": "Lien du test pour {{name}}",
         "copy_all_links": "Copier tous les liens ({{count}})",
+        "dev_open_as_student": "Ouvrir en tant qu'élève (dev uniquement)",
         "results": {
             "title": "Résultats du test",
             "not_found": "Cette soumission n'a pas pu être trouvée.",
@@ -1666,6 +1668,7 @@
         "copied": "Copié !",
         "copy_link": "Copier le lien",
         "link_copied": "Lien copié !",
+        "dev_open_as_student": "Ouvrir en tant qu'élève (dev uniquement)",
         "print_slips": "Imprimer les fiches de classe ({{count}} élèves)",
         "download_seb": "Télécharger la config .seb",
         "save_template": "Enregistrer la configuration",

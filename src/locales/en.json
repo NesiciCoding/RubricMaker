@@ -361,6 +361,7 @@
         "no_rubrics": "No rubrics yet",
         "create_first_instruction": "Create your first rubric to get started.",
         "create_rubric": "Create Rubric",
+        "dev_open_preview": "Open preview as student (dev only)",
         "action_duplicate": "Duplicate",
         "action_edit": "Edit",
         "action_delete": "Delete",
@@ -460,6 +461,7 @@
         "assignment_links_label": "Student links",
         "assignment_link_for": "Test link for {{name}}",
         "copy_all_links": "Copy all links ({{count}})",
+        "dev_open_as_student": "Open as student (dev only)",
         "results": {
             "title": "Test results",
             "not_found": "This submission could not be found.",
@@ -1771,6 +1773,7 @@
         "copied": "Copied!",
         "copy_link": "Copy link",
         "link_copied": "Link copied!",
+        "dev_open_as_student": "Open as student (dev only)",
         "print_slips": "Print class slips ({{count}} students)",
         "download_seb": "Download .seb config",
         "save_template": "Save configuration",

@@ -18,6 +18,7 @@ import {
     Users2,
     GripVertical,
     X,
+    ExternalLink,
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import Topbar from '../components/Layout/Topbar';
@@ -471,6 +472,18 @@ export default function RubricList() {
                                                                         <Eye size={14} />
                                                                     )}
                                                                 </button>
+                                                                {import.meta.env.DEV && (
+                                                                    <a
+                                                                        className="btn btn-ghost btn-icon btn-sm"
+                                                                        title={t('rubricList.dev_open_preview')}
+                                                                        href={`${window.location.origin}${window.location.pathname}#/preview/${encodeRubricShareCode(r)}`}
+                                                                        target="_blank"
+                                                                        rel="noreferrer"
+                                                                        onClick={(e) => e.stopPropagation()}
+                                                                    >
+                                                                        <ExternalLink size={14} />
+                                                                    </a>
+                                                                )}
                                                                 <button
                                                                     className="btn btn-ghost btn-icon btn-sm"
                                                                     title={t('voTrack.differentiate_title')}
