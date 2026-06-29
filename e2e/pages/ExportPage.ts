@@ -12,12 +12,12 @@ export class ExportPage extends BasePage {
     }
 
     async selectRubric(rubricName: string): Promise<void> {
-        const select = this.page.locator('select').first();
+        const select = this.page.locator('[data-tour="export-rubric"] select').first();
         await select.selectOption({ label: rubricName });
     }
 
     async selectRubricById(rubricId: string): Promise<void> {
-        const select = this.page.locator('select').first();
+        const select = this.page.locator('[data-tour="export-rubric"] select').first();
         await select.selectOption({ value: rubricId });
     }
 

@@ -631,7 +631,13 @@ function GettingStartedTab() {
                     {t('docs.gs_search_intro_prefix')} <strong>{t('docs.gs_search_intro_hotkey')}</strong>{' '}
                     {t('docs.gs_search_intro_suffix')}
                 </p>
-                <FeatureList items={[t('docs.gs_search_item_types'), t('docs.gs_search_item_filters')]} />
+                <FeatureList
+                    items={[
+                        t('docs.gs_search_item_types'),
+                        t('docs.gs_search_item_filters'),
+                        t('docs.gs_search_item_active_class'),
+                    ]}
+                />
             </FeatureSection>
         </div>
     );

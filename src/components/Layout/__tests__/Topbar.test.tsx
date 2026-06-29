@@ -4,6 +4,10 @@ import { describe, it, expect, vi } from 'vitest';
 import Topbar from '../Topbar';
 
 const mockUpdateSettings = vi.fn();
+const mockClasses = [
+    { id: 'c1', name: '5A' },
+    { id: 'c2', name: '5B' },
+];
 
 vi.mock('../../../context/AppContext', () => ({
     useApp: () => ({
@@ -11,7 +15,7 @@ vi.mock('../../../context/AppContext', () => ({
         updateSettings: mockUpdateSettings,
         students: [],
         studentRubrics: [],
-        classes: [],
+        classes: mockClasses,
         rubrics: [],
         tests: [],
         essayAssignments: [],
@@ -58,6 +62,14 @@ describe('Topbar', () => {
         const { container } = render(<Topbar title="Test" />);
         // Sun icon is rendered when dark theme; just check something renders
         expect(container.querySelector('.topbar')).toBeTruthy();
+    });
+
+    it('renders a class selector bound to settings.activeClassId', () => {
+        render(<Topbar title="Test" />);
+        const select = screen.getByLabelText('search.active_class_label') as HTMLSelectElement;
+        expect(select.value).toBe('');
+        fireEvent.change(select, { target: { value: 'c2' } });
+        expect(mockUpdateSettings).toHaveBeenCalledWith({ activeClassId: 'c2' });
     });
 
     it('opens the global search modal on Ctrl+K', () => {

@@ -2317,7 +2317,8 @@
         "gs_search_intro_hotkey": "Strg/Cmd+K",
         "gs_search_intro_suffix": "von überall in der App (oder klicke auf das Suchsymbol in der Topbar), um schnell nach Rubriken, Tests, Schülern, Klassen und Aufsätzen zu suchen.",
         "gs_search_item_types": "Durchsucht Rubriken, Tests, Schüler, Klassen und Aufsätze gleichzeitig",
-        "gs_search_item_filters": "Gib type:test oder class:5A ein, um Ergebnisse auf einen Typ oder eine Klasse einzuschränken"
+        "gs_search_item_filters": "Gib type:test oder class:5A ein, um Ergebnisse auf einen Typ oder eine Klasse einzuschränken",
+        "gs_search_item_active_class": "Die Klassenauswahl neben dem Suchsymbol legt deine aktive Klasse app-weit fest — Statistik und andere Seiten folgen automatisch"
     },
     "studentProfile": {
         "tab_overview": "Übersicht",
@@ -2436,6 +2437,8 @@
         "type_test": "Test",
         "type_student": "Schüler",
         "type_class": "Klasse",
-        "type_essay": "Aufsatz"
+        "type_essay": "Aufsatz",
+        "active_class_label": "Aktive Klasse",
+        "all_classes": "Alle Klassen"
     }
 }

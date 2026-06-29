@@ -364,7 +364,8 @@ describe('StudentsPage interactions', () => {
 
     it('shows class name', () => {
         renderPage(<StudentsPage />);
-        expect(screen.getByText('Class A')).toBeInTheDocument();
+        // The Topbar's global class selector also renders an option with this name, so there can be >1 match.
+        expect(screen.getAllByText('Class A').length).toBeGreaterThan(0);
     });
 
     it('shows CSV import modal when upload button clicked', () => {

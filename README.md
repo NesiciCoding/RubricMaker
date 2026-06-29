@@ -83,7 +83,7 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 - **WCAG 2.1 AA**: Icon-only buttons carry `aria-label`; tab navigation uses `role="tablist"` / `role="tab"` with `aria-selected`; axe-core audits run in CI on key pages and components.
 - **Dyslexia-friendly reading mode**: Optional Settings toggle increases line-height and letter-spacing app-wide for dyslexic readers.
 - **In-app help**: A Joyride guided tour runs on first login and can be restarted from Settings. Page-specific tours are available on the Rubric Builder, Statistics, and Export pages via the "Tour this page" button.
-- **Global search**: A search icon in the Topbar (or `Ctrl`/`Cmd`+`K` from anywhere) opens a quick search across rubrics, tests, students, classes, and essays, with `type:` and `class:` filter tokens.
+- **Global search**: A search icon in the Topbar (or `Ctrl`/`Cmd`+`K` from anywhere) opens a quick search across rubrics, tests, students, classes, and essays, with `type:` and `class:` filter tokens. The Topbar also has an active-class selector that other pages (e.g. Statistics) read as their default class filter.
 
 ### 8. Installation
 
