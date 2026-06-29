@@ -1376,6 +1376,7 @@
         "assign": "Assign All",
         "all_assigned": "All Assigned ✓",
         "open": "Open",
+        "legend": "Rubrics: Link/Unlink controls whether a class sees the rubric. Tests: Open jumps to the test. Essays: Assign All assigns the essay to every ungraded student in the class.",
         "coverage_title": "Standards Coverage",
         "coverage_empty": "No standards linked to rubrics for this class.",
         "coverage_gap_title": "Not yet assessed",

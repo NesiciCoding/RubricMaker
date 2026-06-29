@@ -1376,6 +1376,7 @@
         "assign": "Allen zuweisen",
         "all_assigned": "Alle zugewiesen ✓",
         "open": "Öffnen",
+        "legend": "Rubrics: Verknüpfen/Trennen legt fest, ob eine Klasse die Rubric sieht. Tests: Öffnen springt zum Test. Aufsätze: Allen zuweisen weist den Aufsatz jedem noch nicht bewerteten Schüler der Klasse zu.",
         "coverage_title": "Standardabdeckung",
         "coverage_empty": "Keine Standards mit Rubriken für diese Klasse verknüpft.",
         "coverage_gap_title": "Noch nicht bewertet",

@@ -1376,6 +1376,7 @@
         "assign": "Assigner à tous",
         "all_assigned": "Tous assignés ✓",
         "open": "Ouvrir",
+        "legend": "Rubriques : Lier/Délier contrôle si une classe voit la rubrique. Tests : Ouvrir accède au test. Rédactions : Assigner à tous attribue la rédaction à chaque élève non noté de la classe.",
         "coverage_title": "Couverture des référentiels",
         "coverage_empty": "Aucun référentiel lié à une grille pour cette classe.",
         "coverage_gap_title": "Pas encore évalué",

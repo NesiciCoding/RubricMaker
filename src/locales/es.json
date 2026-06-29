@@ -1376,6 +1376,7 @@
         "assign": "Asignar a todos",
         "all_assigned": "Todos asignados ✓",
         "open": "Abrir",
+        "legend": "Rúbricas: Vincular/Desvincular controla si una clase ve la rúbrica. Pruebas: Abrir va a la prueba. Ensayos: Asignar a todos asigna el ensayo a cada alumno aún no calificado de la clase.",
         "coverage_title": "Cobertura de estándares",
         "coverage_empty": "No hay estándares vinculados a rúbricas para esta clase.",
         "coverage_gap_title": "Aún no evaluado",
