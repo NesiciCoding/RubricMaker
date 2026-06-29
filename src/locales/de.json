@@ -2315,7 +2315,7 @@
         "gs_search_title": "Suche",
         "gs_search_intro_prefix": "Drücke",
         "gs_search_intro_hotkey": "Strg/Cmd+K",
-        "gs_search_intro_suffix": "von überall in der App, um schnell nach Rubriken, Tests, Schülern, Klassen und Aufsätzen zu suchen.",
+        "gs_search_intro_suffix": "von überall in der App (oder klicke auf das Suchsymbol in der Topbar), um schnell nach Rubriken, Tests, Schülern, Klassen und Aufsätzen zu suchen.",
         "gs_search_item_types": "Durchsucht Rubriken, Tests, Schüler, Klassen und Aufsätze gleichzeitig",
         "gs_search_item_filters": "Gib type:test oder class:5A ein, um Ergebnisse auf einen Typ oder eine Klasse einzuschränken"
     },

@@ -2315,7 +2315,7 @@
         "gs_search_title": "Búsqueda",
         "gs_search_intro_prefix": "Pulsa",
         "gs_search_intro_hotkey": "Ctrl/Cmd+K",
-        "gs_search_intro_suffix": "desde cualquier parte de la app para buscar rápidamente rúbricas, pruebas, alumnos, clases y ensayos.",
+        "gs_search_intro_suffix": "desde cualquier parte de la app (o haz clic en el icono de búsqueda en la barra superior) para buscar rápidamente rúbricas, pruebas, alumnos, clases y ensayos.",
         "gs_search_item_types": "Busca a la vez en rúbricas, pruebas, alumnos, clases y ensayos",
         "gs_search_item_filters": "Escribe type:test o class:5A para limitar los resultados a un tipo o clase"
     },

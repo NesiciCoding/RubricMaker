@@ -76,8 +76,23 @@ describe('searchAll', () => {
     it('filters by class: token, scoped to that class only', () => {
         const otherClass: Class = { id: 'c2', name: '5B' };
         const otherStudent: Student = { id: 's2', name: 'José García', classId: 'c2' };
-        const results = searchAll('class:5A jose', makeData({ students: [student, otherStudent], classes: [cls, otherClass] }));
+        const results = searchAll(
+            'class:5A jose',
+            makeData({ students: [student, otherStudent], classes: [cls, otherClass] })
+        );
         expect(results.map((r) => r.id)).toEqual(['s1']);
+    });
+
+    it('supports a quoted class: value for multi-word class names, with free text still applied', () => {
+        const multiWordClass: Class = { id: 'c3', name: 'English 1' };
+        const otherClass: Class = { id: 'c4', name: 'Math 1' };
+        const inClass: Student = { id: 's3', name: 'Alice', classId: 'c3' };
+        const inOtherClass: Student = { id: 's4', name: 'Alice', classId: 'c4' };
+        const results = searchAll(
+            'class:"English 1" alice',
+            makeData({ students: [inClass, inOtherClass], classes: [multiWordClass, otherClass] })
+        );
+        expect(results.map((r) => r.id)).toEqual(['s3']);
     });
 
     it('groups essay assignments by teacherKey and routes to the group', () => {

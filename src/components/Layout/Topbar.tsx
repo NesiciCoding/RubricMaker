@@ -50,6 +50,7 @@ export default function Topbar({ title, actions }: TopbarProps) {
                     className="btn btn-ghost btn-icon"
                     onClick={() => setSearchOpen(true)}
                     title={t('search.open_search')}
+                    aria-label={t('search.open_search')}
                 >
                     <Search size={18} />
                 </button>

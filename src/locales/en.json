@@ -2313,7 +2313,7 @@
         "gs_search_title": "Search",
         "gs_search_intro_prefix": "Press",
         "gs_search_intro_hotkey": "Ctrl/Cmd+K",
-        "gs_search_intro_suffix": "from anywhere in the app to open a quick search for rubrics, tests, students, classes, and essays.",
+        "gs_search_intro_suffix": "from anywhere in the app (or click the search icon in the Topbar) to open a quick search for rubrics, tests, students, classes, and essays.",
         "gs_search_item_types": "Searches rubrics, tests, students, classes, and essays at once",
         "gs_search_item_filters": "Type type:test or class:5A to narrow results to one type or class"
     },

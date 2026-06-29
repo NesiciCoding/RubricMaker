@@ -32,36 +32,33 @@ const TYPE_ALIASES: Record<string, SearchResultType> = {
 };
 
 function normalize(s: string): string {
-    return s
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[̀-ͯ]/g, '');
+    return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 }
 
-/** Splits a query into `key:value` tokens and a free-text remainder. */
+/**
+ * Splits a query into `type:`/`class:` filter tokens and a free-text remainder.
+ * A filter value is either a single bare word (`class:5A`) or a quoted phrase
+ * for multi-word values (`class:"English 1"`) — quoting avoids ambiguity with
+ * any free text that follows.
+ */
 function parseQuery(query: string): { typeFilter?: SearchResultType; classFilter?: string; text: string } {
-    const tokens = query.trim().split(/\s+/).filter(Boolean);
-    const textParts: string[] = [];
     let typeFilter: SearchResultType | undefined;
     let classFilter: string | undefined;
 
-    for (const token of tokens) {
-        const match = token.match(/^(\w+):(.+)$/);
-        if (match) {
-            const [, key, value] = match;
-            if (key.toLowerCase() === 'type' && TYPE_ALIASES[value.toLowerCase()]) {
-                typeFilter = TYPE_ALIASES[value.toLowerCase()];
-                continue;
-            }
-            if (key.toLowerCase() === 'class') {
-                classFilter = value;
-                continue;
-            }
+    const filterRegex = /\b(type|class):(?:"([^"]*)"|(\S+))/gi;
+    const remaining = query.replace(filterRegex, (match, key: string, quoted?: string, bare?: string) => {
+        const value = quoted ?? bare ?? '';
+        if (key.toLowerCase() === 'type') {
+            const alias = TYPE_ALIASES[value.toLowerCase()];
+            if (!alias) return match;
+            typeFilter = alias;
+        } else {
+            classFilter = value;
         }
-        textParts.push(token);
-    }
+        return ' ';
+    });
 
-    return { typeFilter, classFilter, text: normalize(textParts.join(' ')) };
+    return { typeFilter, classFilter, text: normalize(remaining.trim()) };
 }
 
 export function searchAll(query: string, data: SearchableData): SearchResult[] {
@@ -85,7 +82,13 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
     if (!typeFilter || typeFilter === 'rubric') {
         for (const r of data.rubrics) {
             if (matchesText(r.name, r.subject)) {
-                results.push({ type: 'rubric', id: r.id, label: r.name, sublabel: r.subject, route: `/rubrics/${r.id}` });
+                results.push({
+                    type: 'rubric',
+                    id: r.id,
+                    label: r.name,
+                    sublabel: r.subject,
+                    route: `/rubrics/${r.id}`,
+                });
             }
         }
     }
@@ -93,7 +96,13 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
     if (!typeFilter || typeFilter === 'test') {
         for (const t of data.tests) {
             if (matchesText(t.name, t.description)) {
-                results.push({ type: 'test', id: t.id, label: t.name, sublabel: t.description, route: `/tests/${t.id}` });
+                results.push({
+                    type: 'test',
+                    id: t.id,
+                    label: t.name,
+                    sublabel: t.description,
+                    route: `/tests/${t.id}`,
+                });
             }
         }
     }

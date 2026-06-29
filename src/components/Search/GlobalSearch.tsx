@@ -41,6 +41,9 @@ export default function GlobalSearch({ onClose }: Props) {
             maxWidth={560}
             style={{ width: '92vw', maxHeight: '70vh', display: 'flex', flexDirection: 'column', padding: 0 }}
         >
+            <h2 id="global-search-title" className="sr-only">
+                {t('search.open_search')}
+            </h2>
             <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
                 <div style={{ position: 'relative' }}>
                     <Search
@@ -55,10 +58,10 @@ export default function GlobalSearch({ onClose }: Props) {
                         aria-hidden="true"
                     />
                     <input
-                        id="global-search-title"
                         className="input"
                         style={{ paddingLeft: 36, width: '100%' }}
                         placeholder={t('search.placeholder')}
+                        aria-label={t('search.placeholder')}
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         autoFocus
