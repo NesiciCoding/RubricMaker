@@ -1477,7 +1477,8 @@
         "period_generate_btn": "Generar {{count}} informe(s)",
         "period_report_success": "Generados {{count}} informe(s).",
         "selected": "seleccionados",
-        "report_card_success": "Generados {{count}} boletín(es)."
+        "report_card_success": "Generados {{count}} boletín(es).",
+        "rubric_students_section_title": "Alumnos"
     },
     "reportCard": {
         "title": "Boletín",

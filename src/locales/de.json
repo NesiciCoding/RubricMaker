@@ -1477,7 +1477,8 @@
         "period_generate_btn": "{{count}} Bericht(e) erstellen",
         "period_report_success": "{{count}} Bericht(e) erstellt.",
         "selected": "ausgewählt",
-        "report_card_success": "{{count}} Zeugnis(se) erstellt."
+        "report_card_success": "{{count}} Zeugnis(se) erstellt.",
+        "rubric_students_section_title": "Schüler"
     },
     "reportCard": {
         "title": "Zeugnis",
