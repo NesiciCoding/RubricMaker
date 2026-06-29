@@ -2311,7 +2311,13 @@
         "da_settings_item_scales": "Escalas de notas — crea escalas personalizadas (1–10, A–F, etc.) y establece una predeterminada.",
         "da_settings_item_lang": "Idioma — inglés, neerlandés, francés, alemán, español.",
         "da_settings_item_tour": "Recorrido guiado — reiniciar el recorrido de incorporación.",
-        "da_settings_item_backup": "Copia de seguridad / restauración — descargar o subir el JSON completo del conjunto de datos."
+        "da_settings_item_backup": "Copia de seguridad / restauración — descargar o subir el JSON completo del conjunto de datos.",
+        "gs_search_title": "Búsqueda",
+        "gs_search_intro_prefix": "Pulsa",
+        "gs_search_intro_hotkey": "Ctrl/Cmd+K",
+        "gs_search_intro_suffix": "desde cualquier parte de la app para buscar rápidamente rúbricas, pruebas, alumnos, clases y ensayos.",
+        "gs_search_item_types": "Busca a la vez en rúbricas, pruebas, alumnos, clases y ensayos",
+        "gs_search_item_filters": "Escribe type:test o class:5A para limitar los resultados a un tipo o clase"
     },
     "studentProfile": {
         "tab_overview": "Resumen",
@@ -2420,5 +2426,16 @@
         "sort_label": "Ordenar por",
         "sort_newest": "Más reciente",
         "sort_upvotes": "Más votado"
+    },
+    "search": {
+        "placeholder": "Buscar rúbricas, pruebas, alumnos… (prueba type:test, class:5A)",
+        "hint": "Escribe para buscar, o usa filtros type:/class:",
+        "no_results": "Sin resultados",
+        "open_search": "Buscar (Ctrl/Cmd+K)",
+        "type_rubric": "Rúbrica",
+        "type_test": "Prueba",
+        "type_student": "Alumno",
+        "type_class": "Clase",
+        "type_essay": "Ensayo"
     }
 }

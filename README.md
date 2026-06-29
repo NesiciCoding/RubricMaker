@@ -83,6 +83,7 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 - **WCAG 2.1 AA**: Icon-only buttons carry `aria-label`; tab navigation uses `role="tablist"` / `role="tab"` with `aria-selected`; axe-core audits run in CI on key pages and components.
 - **Dyslexia-friendly reading mode**: Optional Settings toggle increases line-height and letter-spacing app-wide for dyslexic readers.
 - **In-app help**: A Joyride guided tour runs on first login and can be restarted from Settings. Page-specific tours are available on the Rubric Builder, Statistics, and Export pages via the "Tour this page" button.
+- **Global search**: A search icon in the Topbar (or `Ctrl`/`Cmd`+`K` from anywhere) opens a quick search across rubrics, tests, students, classes, and essays, with `type:` and `class:` filter tokens.
 
 ### 8. Installation
 
@@ -202,6 +203,7 @@ npm run db:reset     # Reset and re-apply all migrations
 | `src/utils/learningPathAggregator.ts`   | Rule-based rubric recommendations and intervention flagging                                 |
 | `src/utils/testSummaryAggregator.ts`    | Per-question/per-skill strong-weak test breakdown                                           |
 | `src/utils/reportCardAggregator.ts`     | Composes CEFR, learning-goals, and test-summary data into one report card                   |
+| `src/utils/globalSearch.ts`             | Token-aware search (`type:`/`class:` filters) across rubrics, tests, students, classes, essays |
 | `src/utils/coGradingModerationQueue.ts` | Flags disputed co-graded submissions (delta above threshold) for the Moderation queue       |
 | `src/utils/displayOrder.ts`             | Shared sort/reorder helpers for manually-orderable list views                               |
 | `src/utils/cohortAggregator.ts`         | Derives a cohort's student set from current + past class memberships by year/track          |

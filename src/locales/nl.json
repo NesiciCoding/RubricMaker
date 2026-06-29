@@ -2311,7 +2311,13 @@
         "da_settings_item_scales": "Cijferschalen — maak aangepaste schalen (1–10, A–F, enz.) en stel een standaard in.",
         "da_settings_item_lang": "Taal — Engels, Nederlands, Frans, Duits, Spaans.",
         "da_settings_item_tour": "Geleide rondleiding — start de onboarding-rondleiding opnieuw.",
-        "da_settings_item_backup": "Backup / herstel — download of upload de volledige dataset-JSON."
+        "da_settings_item_backup": "Backup / herstel — download of upload de volledige dataset-JSON.",
+        "gs_search_title": "Zoeken",
+        "gs_search_intro_prefix": "Druk op",
+        "gs_search_intro_hotkey": "Ctrl/Cmd+K",
+        "gs_search_intro_suffix": "vanaf elke pagina om snel te zoeken naar rubrics, toetsen, leerlingen, klassen en essays.",
+        "gs_search_item_types": "Doorzoekt rubrics, toetsen, leerlingen, klassen en essays in één keer",
+        "gs_search_item_filters": "Typ type:test of class:5A om resultaten te beperken tot één type of klas"
     },
     "studentProfile": {
         "tab_overview": "Overzicht",
@@ -2420,5 +2426,16 @@
         "sort_label": "Sorteren op",
         "sort_newest": "Nieuwste",
         "sort_upvotes": "Meeste stemmen"
+    },
+    "search": {
+        "placeholder": "Zoek rubrics, toetsen, leerlingen… (probeer type:test, class:5A)",
+        "hint": "Typ om te zoeken, of gebruik type:/class: filters",
+        "no_results": "Geen resultaten",
+        "open_search": "Zoeken (Ctrl/Cmd+K)",
+        "type_rubric": "Rubric",
+        "type_test": "Toets",
+        "type_student": "Leerling",
+        "type_class": "Klas",
+        "type_essay": "Essay"
     }
 }

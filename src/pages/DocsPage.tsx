@@ -23,6 +23,7 @@ import {
     ClipboardCheck,
     Radio,
     TrendingUp,
+    Search,
 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useTranslation } from 'react-i18next';
@@ -623,6 +624,14 @@ function GettingStartedTab() {
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
                     {t('docs.gs_install_body')}
                 </p>
+            </FeatureSection>
+
+            <FeatureSection icon={Search} title={t('docs.gs_search_title')} color="#f59e0b">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 12 }}>
+                    {t('docs.gs_search_intro_prefix')} <strong>{t('docs.gs_search_intro_hotkey')}</strong>{' '}
+                    {t('docs.gs_search_intro_suffix')}
+                </p>
+                <FeatureList items={[t('docs.gs_search_item_types'), t('docs.gs_search_item_filters')]} />
             </FeatureSection>
         </div>
     );

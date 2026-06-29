@@ -27,6 +27,7 @@ import {
     Store,
     UserCheck,
     Download,
+    Search,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { loadSupabaseConfig } from '../services/database';
@@ -104,6 +105,12 @@ const TEACHER_FEATURES = [
         title: 'Install as an App',
         desc: 'Add RubricMaker to your home screen or desktop for a faster, app-like launch — great for shared classroom devices, and works fully offline.',
         color: '#0ea5e9',
+    },
+    {
+        icon: Search,
+        title: 'Quick Search',
+        desc: 'Press Ctrl/Cmd+K from anywhere to instantly find a rubric, test, student, class, or essay.',
+        color: '#f59e0b',
     },
 ];
 

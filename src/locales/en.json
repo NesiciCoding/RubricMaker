@@ -2309,7 +2309,13 @@
         "da_settings_item_scales": "Grade scales — create custom scales (1–10, A–F, etc.) and set a default.",
         "da_settings_item_lang": "Language — English, Dutch, French, German, Spanish.",
         "da_settings_item_tour": "Guided tour — restart the onboarding walkthrough.",
-        "da_settings_item_backup": "Backup / restore — download or upload the full dataset JSON."
+        "da_settings_item_backup": "Backup / restore — download or upload the full dataset JSON.",
+        "gs_search_title": "Search",
+        "gs_search_intro_prefix": "Press",
+        "gs_search_intro_hotkey": "Ctrl/Cmd+K",
+        "gs_search_intro_suffix": "from anywhere in the app to open a quick search for rubrics, tests, students, classes, and essays.",
+        "gs_search_item_types": "Searches rubrics, tests, students, classes, and essays at once",
+        "gs_search_item_filters": "Type type:test or class:5A to narrow results to one type or class"
     },
     "studentProfile": {
         "tab_overview": "Overview",
@@ -2418,5 +2424,16 @@
         "sort_label": "Sort by",
         "sort_newest": "Newest",
         "sort_upvotes": "Most upvoted"
+    },
+    "search": {
+        "placeholder": "Search rubrics, tests, students… (try type:test, class:5A)",
+        "hint": "Type to search, or use type:/class: filters",
+        "no_results": "No results",
+        "open_search": "Search (Ctrl/Cmd+K)",
+        "type_rubric": "Rubric",
+        "type_test": "Test",
+        "type_student": "Student",
+        "type_class": "Class",
+        "type_essay": "Essay"
     }
 }

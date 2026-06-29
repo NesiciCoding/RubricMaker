@@ -11,6 +11,10 @@ vi.mock('../../../context/AppContext', () => ({
         updateSettings: mockUpdateSettings,
         students: [],
         studentRubrics: [],
+        classes: [],
+        rubrics: [],
+        tests: [],
+        essayAssignments: [],
     }),
 }));
 
@@ -20,6 +24,10 @@ vi.mock('react-i18next', () => ({
 
 vi.mock('../NotificationBell', () => ({
     default: () => <div data-testid="notification-bell" />,
+}));
+
+vi.mock('react-router-dom', () => ({
+    useNavigate: () => vi.fn(),
 }));
 
 describe('Topbar', () => {
@@ -50,5 +58,18 @@ describe('Topbar', () => {
         const { container } = render(<Topbar title="Test" />);
         // Sun icon is rendered when dark theme; just check something renders
         expect(container.querySelector('.topbar')).toBeTruthy();
+    });
+
+    it('opens the global search modal on Ctrl+K', () => {
+        render(<Topbar title="Test" />);
+        expect(screen.queryByPlaceholderText('search.placeholder')).not.toBeInTheDocument();
+        fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
+        expect(screen.getByPlaceholderText('search.placeholder')).toBeInTheDocument();
+    });
+
+    it('opens the global search modal via the search button', () => {
+        render(<Topbar title="Test" />);
+        fireEvent.click(screen.getByTitle('search.open_search'));
+        expect(screen.getByPlaceholderText('search.placeholder')).toBeInTheDocument();
     });
 });
