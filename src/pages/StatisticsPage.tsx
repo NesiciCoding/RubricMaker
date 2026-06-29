@@ -1400,7 +1400,8 @@ export default function StatisticsPage() {
                                     >
                                         {STATS_PRESETS.filter((p) => visiblePresetIds.includes(p.id)).map((preset) => {
                                             const data = presetData[preset.id] ?? [];
-                                            const color = settings.statsPresetColors?.[preset.id] ?? preset.defaultColor;
+                                            const color =
+                                                settings.statsPresetColors?.[preset.id] ?? preset.defaultColor;
                                             return (
                                                 <div key={preset.id}>
                                                     <div
@@ -1472,7 +1473,11 @@ export default function StatisticsPage() {
                                                                     />
                                                                     <YAxis tick={{ fontSize: 11 }} />
                                                                     <Tooltip />
-                                                                    <Bar dataKey="value" fill={color} radius={[4, 4, 0, 0]} />
+                                                                    <Bar
+                                                                        dataKey="value"
+                                                                        fill={color}
+                                                                        radius={[4, 4, 0, 0]}
+                                                                    />
                                                                 </BarChart>
                                                             </ResponsiveContainer>
                                                         </div>
