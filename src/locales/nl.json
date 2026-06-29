@@ -2409,6 +2409,11 @@
         "upvote_title": "Stem",
         "clone_title": "Klonen naar mijn rubrics",
         "clone_button": "Klonen",
-        "clone_done": "Gekloond"
+        "clone_done": "Gekloond",
+        "filter_subject_label": "Vak",
+        "filter_subject_all": "Alle vakken",
+        "sort_label": "Sorteren op",
+        "sort_newest": "Nieuwste",
+        "sort_upvotes": "Meeste stemmen"
     }
 }

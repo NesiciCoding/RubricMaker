@@ -2409,6 +2409,11 @@
         "upvote_title": "Stimme",
         "clone_title": "In meine Rubriken klonen",
         "clone_button": "Klonen",
-        "clone_done": "Geklont"
+        "clone_done": "Geklont",
+        "filter_subject_label": "Fach",
+        "filter_subject_all": "Alle Fächer",
+        "sort_label": "Sortieren nach",
+        "sort_newest": "Neueste",
+        "sort_upvotes": "Meiste Stimmen"
     }
 }

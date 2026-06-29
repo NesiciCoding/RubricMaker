@@ -2407,6 +2407,11 @@
         "upvote_title": "Upvote",
         "clone_title": "Clone into my rubrics",
         "clone_button": "Clone",
-        "clone_done": "Cloned"
+        "clone_done": "Cloned",
+        "filter_subject_label": "Subject",
+        "filter_subject_all": "All subjects",
+        "sort_label": "Sort by",
+        "sort_newest": "Newest",
+        "sort_upvotes": "Most upvoted"
     }
 }
