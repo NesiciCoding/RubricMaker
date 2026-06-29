@@ -519,6 +519,7 @@ describe('ExportPage deep coverage', () => {
         renderPage(<ExportPage />);
         expect(screen.queryAllByRole('checkbox')).toHaveLength(0);
         fireEvent.click(screen.getByText('exportPage.rubric_section_title'));
+        fireEvent.click(screen.getByText('exportPage.rubric_students_section_title'));
         const checkboxes = screen.getAllByRole('checkbox');
         if (checkboxes.length > 0) {
             fireEvent.click(checkboxes[checkboxes.length - 1]);
@@ -531,6 +532,7 @@ describe('ExportPage deep coverage', () => {
         renderPage(<ExportPage />);
         expect(screen.queryAllByRole('checkbox')).toHaveLength(0);
         fireEvent.click(screen.getByText('exportPage.rubric_section_title'));
+        fireEvent.click(screen.getByText('exportPage.rubric_students_section_title'));
         const checkboxes = screen.getAllByRole('checkbox');
         if (checkboxes.length > 0) {
             fireEvent.click(checkboxes[0]);
@@ -543,6 +545,7 @@ describe('ExportPage deep coverage', () => {
         renderPage(<ExportPage />);
         expect(screen.queryAllByRole('checkbox')).toHaveLength(0);
         fireEvent.click(screen.getByText('exportPage.rubric_section_title'));
+        fireEvent.click(screen.getByText('exportPage.rubric_students_section_title'));
         const checkboxes = screen.getAllByRole('checkbox');
         const padCheckbox = checkboxes.find((c) => c.id?.match(/pad|double/i));
         if (padCheckbox) {

@@ -52,7 +52,7 @@ export default function ExportPage() {
     const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());
     const [exporting, setExporting] = useState(false);
     const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
-        new Set(['rubric', 'essays', 'period', 'reportCard'])
+        new Set(['rubric', 'rubricStudents', 'essays', 'period', 'reportCard'])
     );
     const toggleSection = (key: string) =>
         setCollapsedSections((prev) => {
@@ -757,325 +757,372 @@ export default function ExportPage() {
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    {!rubric ? (
-                        <div className="empty-state">
-                            <FileText size={32} />
-                            <p>{t('exportPage.no_rubric')}</p>
-                        </div>
-                    ) : gradedStudents.length === 0 ? (
-                        <div className="empty-state">
-                            <Users size={32} />
-                            <p>{t('exportPage.no_students')}</p>
-                        </div>
-                    ) : (
-                        <>
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    marginBottom: 14,
-                                }}
-                            >
-                                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                                    <button className="btn btn-ghost btn-sm" onClick={toggleAll}>
-                                        {selectedStudentIds.size === gradedStudents.length ? (
-                                            <CheckSquare size={15} />
-                                        ) : (
-                                            <Square size={15} />
-                                        )}
-                                        {selectedStudentIds.size === gradedStudents.length
-                                            ? t('exportPage.deselect_all')
-                                            : t('exportPage.select_all')}
-                                    </button>
-                                    <span className="text-muted text-sm">
-                                        {t('exportPage.selected_count', {
-                                            count: selectedStudentIds.size,
-                                            total: gradedStudents.length,
-                                        })}
-                                    </span>
-                                </div>
-                                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginRight: 10 }}>
-                                        <label
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: 4,
-                                                marginLeft: 6,
-                                                fontSize: '0.85rem',
-                                                cursor: 'pointer',
-                                                color: 'var(--text-muted)',
-                                            }}
-                                            title="Adds to blank page so each student starts on a new physical sheet"
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                checked={padForDoubleSided}
-                                                onChange={(e) => setPadForDoubleSided(e.target.checked)}
-                                            />
-                                            {t('exportPage.pad_double_sided')}
-                                        </label>
-                                        <div
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: 6,
-                                                marginLeft: 12,
-                                                borderLeft: '1px solid var(--border)',
-                                                paddingLeft: 12,
-                                            }}
-                                        >
-                                            <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                                                {t('rubricBuilder.format_orientation')}:
-                                            </label>
-                                            <select
-                                                value={orientation || rubric.format.orientation || 'portrait'}
-                                                onChange={(e) =>
-                                                    setOrientation(e.target.value as 'portrait' | 'landscape')
-                                                }
-                                                style={{ height: 30, fontSize: '0.85rem', padding: '0 8px' }}
-                                            >
-                                                <option value="portrait">{t('rubricBuilder.format_portrait')}</option>
-                                                <option value="landscape">{t('rubricBuilder.format_landscape')}</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <button
-                                        className="btn btn-secondary"
-                                        disabled={selectedStudentIds.size === 0 || exporting}
-                                        onClick={handleBatchDocxExport}
-                                        title="Export graded results as a Word document"
-                                    >
-                                        {exporting ? <Loader size={15} className="spin" /> : <Download size={15} />}
-                                        {t('exportPage.batch_docx_export', { count: selectedStudentIds.size })}
-                                    </button>
-                                    <button
-                                        className="btn btn-primary"
-                                        disabled={selectedStudentIds.size === 0 || exporting}
-                                        onClick={() => handleExport()}
-                                    >
-                                        {exporting ? <Loader size={15} className="spin" /> : <Download size={15} />}
-                                        {exporting
-                                            ? t('exportPage.preparing_print')
-                                            : t('exportPage.print_to_pdf', { count: selectedStudentIds.size })}
-                                    </button>
-                                </div>
+                <div className="card" style={{ marginTop: 20 }} data-tour="export-rubric-students">
+                    <button
+                        type="button"
+                        onClick={() => toggleSection('rubricStudents')}
+                        aria-expanded={!collapsedSections.has('rubricStudents')}
+                        aria-controls="export-section-rubricStudents"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            marginBottom: collapsedSections.has('rubricStudents') ? 0 : 16,
+                            width: '100%',
+                            textAlign: 'left',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: 0,
+                        }}
+                    >
+                        <Users size={16} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                        <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, flex: 1 }}>
+                            {t('exportPage.rubric_students_section_title')}
+                        </h3>
+                        <ChevronDown
+                            size={16}
+                            style={{
+                                color: 'var(--text-muted)',
+                                transform: collapsedSections.has('rubricStudents') ? 'none' : 'rotate(180deg)',
+                                transition: 'transform 0.2s',
+                            }}
+                        />
+                    </button>
+                    <div
+                        id="export-section-rubricStudents"
+                        style={{ display: collapsedSections.has('rubricStudents') ? 'none' : undefined }}
+                    >
+                        {!rubric ? (
+                            <div className="empty-state">
+                                <FileText size={32} />
+                                <p>{t('exportPage.no_rubric')}</p>
                             </div>
-
-                            {selectedStudentIds.size > 0 && (
+                        ) : gradedStudents.length === 0 ? (
+                            <div className="empty-state">
+                                <Users size={32} />
+                                <p>{t('exportPage.no_students')}</p>
+                            </div>
+                        ) : (
+                            <>
                                 <div
                                     style={{
-                                        background: 'var(--bg-elevated)',
-                                        border: '1px solid var(--border)',
-                                        borderRadius: 8,
-                                        padding: '10px 14px',
-                                        marginBottom: 12,
                                         display: 'flex',
-                                        gap: 10,
+                                        justifyContent: 'space-between',
                                         alignItems: 'center',
-                                        flexWrap: 'wrap',
+                                        marginBottom: 14,
                                     }}
                                 >
-                                    <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-                                        {selectedStudentIds.size} selected —
-                                    </span>
-                                    <button className="btn btn-secondary btn-sm" onClick={handleBulkMarkNHI}>
-                                        <XCircle size={13} /> {t('exportPage.bulk_nhi')}
-                                    </button>
-                                    <button
-                                        className="btn btn-secondary btn-sm"
-                                        onClick={() => setShowBulkComment((v) => !v)}
-                                    >
-                                        <MessageSquare size={13} /> {t('exportPage.bulk_add_comment')}
-                                    </button>
-                                    {showBulkComment && (
-                                        <div
-                                            style={{
-                                                display: 'flex',
-                                                gap: 8,
-                                                alignItems: 'center',
-                                                flex: 1,
-                                                minWidth: 260,
-                                            }}
-                                        >
-                                            <input
-                                                type="text"
-                                                value={bulkCommentText}
-                                                onChange={(e) => setBulkCommentText(e.target.value)}
-                                                placeholder={t('exportPage.bulk_comment_placeholder')}
-                                                style={{ flex: 1 }}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter') handleBulkComment();
+                                    <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                                        <button className="btn btn-ghost btn-sm" onClick={toggleAll}>
+                                            {selectedStudentIds.size === gradedStudents.length ? (
+                                                <CheckSquare size={15} />
+                                            ) : (
+                                                <Square size={15} />
+                                            )}
+                                            {selectedStudentIds.size === gradedStudents.length
+                                                ? t('exportPage.deselect_all')
+                                                : t('exportPage.select_all')}
+                                        </button>
+                                        <span className="text-muted text-sm">
+                                            {t('exportPage.selected_count', {
+                                                count: selectedStudentIds.size,
+                                                total: gradedStudents.length,
+                                            })}
+                                        </span>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginRight: 10 }}>
+                                            <label
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 4,
+                                                    marginLeft: 6,
+                                                    fontSize: '0.85rem',
+                                                    cursor: 'pointer',
+                                                    color: 'var(--text-muted)',
                                                 }}
-                                                autoFocus
-                                            />
-                                            <button
-                                                className="btn btn-primary btn-sm"
-                                                onClick={handleBulkComment}
-                                                disabled={!bulkCommentText.trim()}
+                                                title="Adds to blank page so each student starts on a new physical sheet"
                                             >
-                                                {t('exportPage.bulk_comment_confirm')}
-                                            </button>
-                                            <button
-                                                className="btn btn-ghost btn-icon btn-sm"
-                                                aria-label={t('common.close')}
-                                                onClick={() => setShowBulkComment(false)}
+                                                <input
+                                                    type="checkbox"
+                                                    checked={padForDoubleSided}
+                                                    onChange={(e) => setPadForDoubleSided(e.target.checked)}
+                                                />
+                                                {t('exportPage.pad_double_sided')}
+                                            </label>
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 6,
+                                                    marginLeft: 12,
+                                                    borderLeft: '1px solid var(--border)',
+                                                    paddingLeft: 12,
+                                                }}
                                             >
-                                                <X size={13} />
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            <table className="data-table">
-                                <thead>
-                                    <tr>
-                                        <th style={{ width: 40 }}></th>
-                                        <th>{t('exportPage.table_student')}</th>
-                                        <th>{t('exportPage.table_grade')}</th>
-                                        <th>{t('exportPage.table_score')}</th>
-                                        <th>{t('exportPage.table_progress')}</th>
-                                        <th>{t('exportPage.table_actions')}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {gradedStudents.map(({ sr, student, summary }) => {
-                                        if (!student || !summary) return null;
-                                        const isSelected = selectedStudentIds.has(student.id);
-                                        return (
-                                            <tr
-                                                key={student.id}
-                                                onClick={() => toggleStudent(student.id)}
-                                                style={{ cursor: 'pointer' }}
-                                            >
-                                                <td onClick={(e) => e.stopPropagation()}>
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={isSelected}
-                                                        aria-labelledby={`export-student-${student.id}`}
-                                                        onChange={() => toggleStudent(student.id)}
-                                                    />
-                                                </td>
-                                                <td id={`export-student-${student.id}`} style={{ fontWeight: 500 }}>
-                                                    {student.name}
-                                                    {sr.feedbackOnly && (
-                                                        <span
-                                                            style={{
-                                                                marginLeft: 8,
-                                                                fontSize: '0.7rem',
-                                                                background: '#fef3c7',
-                                                                color: '#92400e',
-                                                                border: '1px solid #fcd34d',
-                                                                borderRadius: 4,
-                                                                padding: '1px 6px',
-                                                                fontWeight: 600,
-                                                                verticalAlign: 'middle',
-                                                            }}
-                                                        >
-                                                            {t('exportPage.feedback_only_badge')}
-                                                        </span>
-                                                    )}
-                                                    {sr.isAnchor && (
-                                                        <span
-                                                            style={{
-                                                                marginLeft: 6,
-                                                                fontSize: '0.7rem',
-                                                                background: '#ede9fe',
-                                                                color: '#6d28d9',
-                                                                border: '1px solid #c4b5fd',
-                                                                borderRadius: 4,
-                                                                padding: '1px 6px',
-                                                                fontWeight: 600,
-                                                                verticalAlign: 'middle',
-                                                            }}
-                                                        >
-                                                            {t('exportPage.anchor_badge')}
-                                                        </span>
-                                                    )}
-                                                </td>
-                                                <td>
-                                                    <span
-                                                        className="grade-chip"
-                                                        style={{
-                                                            background: summary.gradeColor + '22',
-                                                            color: summary.gradeColor,
-                                                            border: `1.5px solid ${summary.gradeColor}`,
-                                                            minWidth: 36,
-                                                            height: 36,
-                                                            fontSize: '1rem',
-                                                        }}
-                                                    >
-                                                        {summary.letterGrade}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    {summary.modifiedPercentage.toFixed(1)}% ({summary.rawScore}/
-                                                    {summary.maxRawScore})
-                                                </td>
-                                                <td>
-                                                    <div className="progress-bar" style={{ width: 120 }}>
-                                                        <div
-                                                            className="progress-bar-fill"
-                                                            style={{
-                                                                width: `${(summary.gradedCount / Math.max(summary.totalCriteria, 1)) * 100}%`,
-                                                            }}
-                                                        />
-                                                    </div>
-                                                    <div className="text-xs text-muted">
-                                                        {summary.gradedCount}/{summary.totalCriteria}
-                                                    </div>
-                                                </td>
-                                                <td
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    style={{ display: 'flex', gap: 6, alignItems: 'center' }}
+                                                <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                                    {t('rubricBuilder.format_orientation')}:
+                                                </label>
+                                                <select
+                                                    value={orientation || rubric.format.orientation || 'portrait'}
+                                                    onChange={(e) =>
+                                                        setOrientation(e.target.value as 'portrait' | 'landscape')
+                                                    }
+                                                    style={{ height: 30, fontSize: '0.85rem', padding: '0 8px' }}
                                                 >
-                                                    <button
-                                                        className="btn btn-secondary btn-sm"
-                                                        onClick={() => handleExport(student.id)}
-                                                        disabled={exporting}
-                                                    >
-                                                        <Download size={13} /> PDF
-                                                    </button>
-                                                    <button
-                                                        className="btn btn-ghost btn-sm"
-                                                        title="Copy student feedback link"
-                                                        onClick={() => {
-                                                            if (!rubric) return;
-                                                            const code = encodeFeedbackCode({
-                                                                sr,
-                                                                rubric,
-                                                                student,
-                                                                scale,
-                                                            });
-                                                            const url = `${window.location.origin}${window.location.pathname}#/feedback/${code}`;
-                                                            navigator.clipboard.writeText(url);
-                                                            showToast('Feedback link copied to clipboard', 'success');
-                                                        }}
-                                                    >
-                                                        <Share2 size={13} />
-                                                    </button>
-                                                    {import.meta.env.DEV && rubric && (
-                                                        <a
-                                                            className="btn btn-ghost btn-icon btn-sm"
-                                                            title="Open as student (dev only)"
-                                                            href={`${window.location.origin}${window.location.pathname}#/feedback/${encodeFeedbackCode({ sr, rubric, student, scale })}`}
-                                                            target="_blank"
-                                                            rel="noreferrer"
+                                                    <option value="portrait">
+                                                        {t('rubricBuilder.format_portrait')}
+                                                    </option>
+                                                    <option value="landscape">
+                                                        {t('rubricBuilder.format_landscape')}
+                                                    </option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <button
+                                            className="btn btn-secondary"
+                                            disabled={selectedStudentIds.size === 0 || exporting}
+                                            onClick={handleBatchDocxExport}
+                                            title="Export graded results as a Word document"
+                                        >
+                                            {exporting ? <Loader size={15} className="spin" /> : <Download size={15} />}
+                                            {t('exportPage.batch_docx_export', { count: selectedStudentIds.size })}
+                                        </button>
+                                        <button
+                                            className="btn btn-primary"
+                                            disabled={selectedStudentIds.size === 0 || exporting}
+                                            onClick={() => handleExport()}
+                                        >
+                                            {exporting ? <Loader size={15} className="spin" /> : <Download size={15} />}
+                                            {exporting
+                                                ? t('exportPage.preparing_print')
+                                                : t('exportPage.print_to_pdf', { count: selectedStudentIds.size })}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {selectedStudentIds.size > 0 && (
+                                    <div
+                                        style={{
+                                            background: 'var(--bg-elevated)',
+                                            border: '1px solid var(--border)',
+                                            borderRadius: 8,
+                                            padding: '10px 14px',
+                                            marginBottom: 12,
+                                            display: 'flex',
+                                            gap: 10,
+                                            alignItems: 'center',
+                                            flexWrap: 'wrap',
+                                        }}
+                                    >
+                                        <span
+                                            style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)' }}
+                                        >
+                                            {selectedStudentIds.size} selected —
+                                        </span>
+                                        <button className="btn btn-secondary btn-sm" onClick={handleBulkMarkNHI}>
+                                            <XCircle size={13} /> {t('exportPage.bulk_nhi')}
+                                        </button>
+                                        <button
+                                            className="btn btn-secondary btn-sm"
+                                            onClick={() => setShowBulkComment((v) => !v)}
+                                        >
+                                            <MessageSquare size={13} /> {t('exportPage.bulk_add_comment')}
+                                        </button>
+                                        {showBulkComment && (
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    gap: 8,
+                                                    alignItems: 'center',
+                                                    flex: 1,
+                                                    minWidth: 260,
+                                                }}
+                                            >
+                                                <input
+                                                    type="text"
+                                                    value={bulkCommentText}
+                                                    onChange={(e) => setBulkCommentText(e.target.value)}
+                                                    placeholder={t('exportPage.bulk_comment_placeholder')}
+                                                    style={{ flex: 1 }}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') handleBulkComment();
+                                                    }}
+                                                    autoFocus
+                                                />
+                                                <button
+                                                    className="btn btn-primary btn-sm"
+                                                    onClick={handleBulkComment}
+                                                    disabled={!bulkCommentText.trim()}
+                                                >
+                                                    {t('exportPage.bulk_comment_confirm')}
+                                                </button>
+                                                <button
+                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                    aria-label={t('common.close')}
+                                                    onClick={() => setShowBulkComment(false)}
+                                                >
+                                                    <X size={13} />
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                <table className="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th style={{ width: 40 }}></th>
+                                            <th>{t('exportPage.table_student')}</th>
+                                            <th>{t('exportPage.table_grade')}</th>
+                                            <th>{t('exportPage.table_score')}</th>
+                                            <th>{t('exportPage.table_progress')}</th>
+                                            <th>{t('exportPage.table_actions')}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {gradedStudents.map(({ sr, student, summary }) => {
+                                            if (!student || !summary) return null;
+                                            const isSelected = selectedStudentIds.has(student.id);
+                                            return (
+                                                <tr
+                                                    key={student.id}
+                                                    onClick={() => toggleStudent(student.id)}
+                                                    style={{ cursor: 'pointer' }}
+                                                >
+                                                    <td onClick={(e) => e.stopPropagation()}>
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={isSelected}
+                                                            aria-labelledby={`export-student-${student.id}`}
+                                                            onChange={() => toggleStudent(student.id)}
+                                                        />
+                                                    </td>
+                                                    <td id={`export-student-${student.id}`} style={{ fontWeight: 500 }}>
+                                                        {student.name}
+                                                        {sr.feedbackOnly && (
+                                                            <span
+                                                                style={{
+                                                                    marginLeft: 8,
+                                                                    fontSize: '0.7rem',
+                                                                    background: '#fef3c7',
+                                                                    color: '#92400e',
+                                                                    border: '1px solid #fcd34d',
+                                                                    borderRadius: 4,
+                                                                    padding: '1px 6px',
+                                                                    fontWeight: 600,
+                                                                    verticalAlign: 'middle',
+                                                                }}
+                                                            >
+                                                                {t('exportPage.feedback_only_badge')}
+                                                            </span>
+                                                        )}
+                                                        {sr.isAnchor && (
+                                                            <span
+                                                                style={{
+                                                                    marginLeft: 6,
+                                                                    fontSize: '0.7rem',
+                                                                    background: '#ede9fe',
+                                                                    color: '#6d28d9',
+                                                                    border: '1px solid #c4b5fd',
+                                                                    borderRadius: 4,
+                                                                    padding: '1px 6px',
+                                                                    fontWeight: 600,
+                                                                    verticalAlign: 'middle',
+                                                                }}
+                                                            >
+                                                                {t('exportPage.anchor_badge')}
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                    <td>
+                                                        <span
+                                                            className="grade-chip"
+                                                            style={{
+                                                                background: summary.gradeColor + '22',
+                                                                color: summary.gradeColor,
+                                                                border: `1.5px solid ${summary.gradeColor}`,
+                                                                minWidth: 36,
+                                                                height: 36,
+                                                                fontSize: '1rem',
+                                                            }}
                                                         >
-                                                            <ExternalLink size={13} />
-                                                        </a>
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </>
-                    )}
+                                                            {summary.letterGrade}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        {summary.modifiedPercentage.toFixed(1)}% ({summary.rawScore}/
+                                                        {summary.maxRawScore})
+                                                    </td>
+                                                    <td>
+                                                        <div className="progress-bar" style={{ width: 120 }}>
+                                                            <div
+                                                                className="progress-bar-fill"
+                                                                style={{
+                                                                    width: `${(summary.gradedCount / Math.max(summary.totalCriteria, 1)) * 100}%`,
+                                                                }}
+                                                            />
+                                                        </div>
+                                                        <div className="text-xs text-muted">
+                                                            {summary.gradedCount}/{summary.totalCriteria}
+                                                        </div>
+                                                    </td>
+                                                    <td
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        style={{ display: 'flex', gap: 6, alignItems: 'center' }}
+                                                    >
+                                                        <button
+                                                            className="btn btn-secondary btn-sm"
+                                                            onClick={() => handleExport(student.id)}
+                                                            disabled={exporting}
+                                                        >
+                                                            <Download size={13} /> PDF
+                                                        </button>
+                                                        <button
+                                                            className="btn btn-ghost btn-sm"
+                                                            title="Copy student feedback link"
+                                                            onClick={() => {
+                                                                if (!rubric) return;
+                                                                const code = encodeFeedbackCode({
+                                                                    sr,
+                                                                    rubric,
+                                                                    student,
+                                                                    scale,
+                                                                });
+                                                                const url = `${window.location.origin}${window.location.pathname}#/feedback/${code}`;
+                                                                navigator.clipboard.writeText(url);
+                                                                showToast(
+                                                                    'Feedback link copied to clipboard',
+                                                                    'success'
+                                                                );
+                                                            }}
+                                                        >
+                                                            <Share2 size={13} />
+                                                        </button>
+                                                        {import.meta.env.DEV && rubric && (
+                                                            <a
+                                                                className="btn btn-ghost btn-icon btn-sm"
+                                                                title="Open as student (dev only)"
+                                                                href={`${window.location.origin}${window.location.pathname}#/feedback/${encodeFeedbackCode({ sr, rubric, student, scale })}`}
+                                                                target="_blank"
+                                                                rel="noreferrer"
+                                                            >
+                                                                <ExternalLink size={13} />
+                                                            </a>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </>
+                        )}
+                    </div>
                 </div>
 
                 <div className="card" style={{ marginTop: 24 }} data-tour="export-essays">

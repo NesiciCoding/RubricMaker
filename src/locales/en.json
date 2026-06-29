@@ -1477,7 +1477,8 @@
         "period_generate_btn": "Generate {{count}} report(s)",
         "period_report_success": "Generated {{count}} report(s).",
         "selected": "selected",
-        "report_card_success": "Generated {{count}} report card(s)."
+        "report_card_success": "Generated {{count}} report card(s).",
+        "rubric_students_section_title": "Students"
     },
     "reportCard": {
         "title": "Report Card",
