@@ -32,7 +32,7 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
       - name: Deploy via rsync
-        uses: burnett01/rsync-deployments@8.0.5
+        uses: burnett01/rsync-deployments@9.0.0
         with:
           switches: -avz --delete
           path: dist/
@@ -43,7 +43,7 @@ jobs:
           remote_key: ${{ secrets.VPS_SSH_KEY }}
 
       - name: Upload .htaccess
-        uses: burnett01/rsync-deployments@8.0.5
+        uses: burnett01/rsync-deployments@9.0.0
         with:
           switches: -avz
           path: deploy/.htaccess
