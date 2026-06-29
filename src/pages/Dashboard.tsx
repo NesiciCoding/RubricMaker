@@ -6,6 +6,7 @@ import {
     FileText,
     Plus,
     ArrowRight,
+    ChevronRight,
     TrendingUp,
     CheckCircle,
     AlertTriangle,
@@ -13,11 +14,23 @@ import {
 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useApp } from '../context/AppContext';
 import { QUICK_START_TEMPLATES } from '../data/templates';
 import { calcGradeSummary } from '../utils/gradeCalc';
 import { loadUserTemplates, saveUserTemplates } from '../store/storage';
 import type { UserTemplate } from '../types';
+
+function dayKey(iso: string): string {
+    return new Date(iso).toDateString();
+}
+
+export function dateGroupLabel(iso: string, t: TFunction): string {
+    const key = dayKey(iso);
+    if (key === new Date().toDateString()) return t('dashboard.date_today', 'Today');
+    if (key === new Date(Date.now() - 86_400_000).toDateString()) return t('dashboard.date_yesterday', 'Yesterday');
+    return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
 
 function timeAgo(iso: string): string {
     const diff = (Date.now() - new Date(iso).getTime()) / 1000;
@@ -225,8 +238,9 @@ export default function Dashboard() {
                                 <button
                                     key={student.id}
                                     className="btn btn-secondary btn-sm"
+                                    title={t('dashboard.at_risk_go_to_grading', 'Go to grading')}
                                     onClick={() => navigate(`/rubrics/${rubricId}/grade/${student.id}`)}
-                                    style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}
                                 >
                                     <span style={{ fontWeight: 600 }}>{student.name}</span>
                                     <span style={{ color: 'var(--red)', fontSize: '0.78rem' }}>
@@ -245,6 +259,7 @@ export default function Dashboard() {
                                             />
                                         </span>
                                     )}
+                                    <ChevronRight size={13} style={{ opacity: 0.6 }} />
                                 </button>
                             ))}
                         </div>
@@ -267,84 +282,118 @@ export default function Dashboard() {
                             </div>
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                {recentActivity.map((item, idx) => (
-                                    <div
-                                        key={idx}
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 12,
-                                            padding: '9px 12px',
-                                            background: 'var(--bg-elevated)',
-                                            borderRadius: 8,
-                                            border: '1px solid var(--border)',
-                                        }}
-                                    >
-                                        <div style={{ flexShrink: 0 }}>
-                                            {item.type === 'grading' ? (
-                                                <CheckCircle size={16} style={{ color: 'var(--green)' }} />
-                                            ) : (
-                                                <BookOpen size={16} style={{ color: 'var(--accent)' }} />
-                                            )}
-                                        </div>
-                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                            {item.type === 'grading' ? (
-                                                <div style={{ fontSize: '0.85rem' }}>
-                                                    {t('dashboard.activity_graded_prefix', 'Graded')}{' '}
-                                                    <strong>{item.studentName}</strong>
-                                                    {' — '}
-                                                    {item.rubricName}
-                                                </div>
-                                            ) : (
-                                                <div style={{ fontSize: '0.85rem' }}>
-                                                    {t('dashboard.activity_updated_prefix', 'Updated')}{' '}
-                                                    <strong>{item.rubricName}</strong>
+                                {recentActivity.map((item, idx) => {
+                                    const groupLabel = dateGroupLabel(item.timestamp, t);
+                                    const showGroupHeader =
+                                        idx === 0 ||
+                                        groupLabel !== dateGroupLabel(recentActivity[idx - 1].timestamp, t);
+                                    return (
+                                        <React.Fragment key={idx}>
+                                            {showGroupHeader && (
+                                                <div
+                                                    style={{
+                                                        fontSize: '0.72rem',
+                                                        fontWeight: 600,
+                                                        textTransform: 'uppercase',
+                                                        letterSpacing: '0.04em',
+                                                        color: 'var(--text-muted)',
+                                                        marginTop: idx === 0 ? 0 : 8,
+                                                        padding: '0 2px',
+                                                    }}
+                                                >
+                                                    {groupLabel}
                                                 </div>
                                             )}
-                                        </div>
-                                        <span
-                                            className="text-muted text-xs"
-                                            style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 }}
-                                        >
-                                            {item.type === 'grading' &&
-                                                (() => {
-                                                    const days = feedbackAge.get(item.studentId);
-                                                    if (days === undefined) return null;
-                                                    if (days >= 10)
-                                                        return (
-                                                            <span title={`${days}d ago — feedback may be stale`}>
-                                                                <Clock size={11} style={{ color: 'var(--red)' }} />
-                                                            </span>
-                                                        );
-                                                    if (days >= 7)
-                                                        return (
-                                                            <span title={`${days}d ago`}>
-                                                                <Clock
-                                                                    size={11}
-                                                                    style={{ color: 'var(--yellow, #f59e0b)' }}
-                                                                />
-                                                            </span>
-                                                        );
-                                                    return null;
-                                                })()}
-                                            {timeAgo(item.timestamp)}
-                                        </span>
-                                        <button
-                                            className="btn btn-ghost btn-sm"
-                                            style={{ flexShrink: 0, fontSize: '0.75rem', padding: '3px 8px' }}
-                                            onClick={() =>
-                                                item.type === 'grading'
-                                                    ? navigate(`/rubrics/${item.rubricId}/grade/${item.studentId}`)
-                                                    : navigate(`/rubrics/${item.rubricId}`)
-                                            }
-                                        >
-                                            {item.type === 'grading'
-                                                ? t('dashboard.action_resume')
-                                                : t('dashboard.action_open')}{' '}
-                                            <ArrowRight size={12} />
-                                        </button>
-                                    </div>
-                                ))}
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 12,
+                                                    padding: '9px 12px',
+                                                    background: 'var(--bg-elevated)',
+                                                    borderRadius: 8,
+                                                    border: '1px solid var(--border)',
+                                                }}
+                                            >
+                                                <div style={{ flexShrink: 0 }}>
+                                                    {item.type === 'grading' ? (
+                                                        <CheckCircle size={16} style={{ color: 'var(--green)' }} />
+                                                    ) : (
+                                                        <BookOpen size={16} style={{ color: 'var(--accent)' }} />
+                                                    )}
+                                                </div>
+                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                    {item.type === 'grading' ? (
+                                                        <div style={{ fontSize: '0.85rem' }}>
+                                                            {t('dashboard.activity_graded_prefix', 'Graded')}{' '}
+                                                            <strong>{item.studentName}</strong>
+                                                            {' — '}
+                                                            {item.rubricName}
+                                                        </div>
+                                                    ) : (
+                                                        <div style={{ fontSize: '0.85rem' }}>
+                                                            {t('dashboard.activity_updated_prefix', 'Updated')}{' '}
+                                                            <strong>{item.rubricName}</strong>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <span
+                                                    className="text-muted text-xs"
+                                                    style={{
+                                                        flexShrink: 0,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 4,
+                                                    }}
+                                                >
+                                                    {item.type === 'grading' &&
+                                                        (() => {
+                                                            const days = feedbackAge.get(item.studentId);
+                                                            if (days === undefined) return null;
+                                                            if (days >= 10)
+                                                                return (
+                                                                    <span
+                                                                        title={`${days}d ago — feedback may be stale`}
+                                                                    >
+                                                                        <Clock
+                                                                            size={11}
+                                                                            style={{ color: 'var(--red)' }}
+                                                                        />
+                                                                    </span>
+                                                                );
+                                                            if (days >= 7)
+                                                                return (
+                                                                    <span title={`${days}d ago`}>
+                                                                        <Clock
+                                                                            size={11}
+                                                                            style={{ color: 'var(--yellow, #f59e0b)' }}
+                                                                        />
+                                                                    </span>
+                                                                );
+                                                            return null;
+                                                        })()}
+                                                    {timeAgo(item.timestamp)}
+                                                </span>
+                                                <button
+                                                    className="btn btn-ghost btn-sm"
+                                                    style={{ flexShrink: 0, fontSize: '0.75rem', padding: '3px 8px' }}
+                                                    onClick={() =>
+                                                        item.type === 'grading'
+                                                            ? navigate(
+                                                                  `/rubrics/${item.rubricId}/grade/${item.studentId}`
+                                                              )
+                                                            : navigate(`/rubrics/${item.rubricId}`)
+                                                    }
+                                                >
+                                                    {item.type === 'grading'
+                                                        ? t('dashboard.action_resume')
+                                                        : t('dashboard.action_open')}{' '}
+                                                    <ArrowRight size={12} />
+                                                </button>
+                                            </div>
+                                        </React.Fragment>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
