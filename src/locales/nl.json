@@ -1366,7 +1366,15 @@
         "filters": {
             "year": "Jaar",
             "track": "Afdeling"
-        }
+        },
+        "custom_views_title": "Aangepaste weergaven",
+        "custom_views_subtitle": "Aanbevolen grafieken op basis van je huidige rubric en klasselectie. Kies welke je wilt tonen en pas de kleur aan.",
+        "custom_views_color_label": "Grafiekkleur",
+        "custom_views_no_data": "Nog niet genoeg data voor deze grafiek.",
+        "export_chart": "Grafiek exporteren als PNG",
+        "preset_criterion_averages": "Gemiddelden per criterium",
+        "preset_grade_distribution": "Cijferverdeling",
+        "preset_test_averages": "Toetsgemiddelden"
     },
     "activityDashboard": {
         "title": "Activiteitenoverzicht",
@@ -2319,7 +2327,8 @@
         "gs_search_intro_suffix": "vanaf elke pagina (of klik op het zoekicoon in de topbar) om snel te zoeken naar rubrics, toetsen, leerlingen, klassen en essays.",
         "gs_search_item_types": "Doorzoekt rubrics, toetsen, leerlingen, klassen en essays in één keer",
         "gs_search_item_filters": "Typ type:test of class:5A om resultaten te beperken tot één type of klas",
-        "gs_search_item_active_class": "De klasselector naast het zoekicoon stelt je actieve klas in voor de hele app — Statistieken en andere pagina's volgen deze automatisch"
+        "gs_search_item_active_class": "De klasselector naast het zoekicoon stelt je actieve klas in voor de hele app — Statistieken en andere pagina's volgen deze automatisch",
+        "an_stats_item_custom_views": "Aangepaste weergaven — een galerij met aanbevolen grafieken die je kunt tonen/verbergen en herkleuren, met PNG-export"
     },
     "studentProfile": {
         "tab_overview": "Overzicht",

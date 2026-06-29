@@ -1366,7 +1366,15 @@
         "filters": {
             "year": "Jahrgangsstufe",
             "track": "Schulzweig"
-        }
+        },
+        "custom_views_title": "Eigene Ansichten",
+        "custom_views_subtitle": "Empfohlene Diagramme basierend auf deiner aktuellen Rubrik und Klassenauswahl. Wähle aus, welche angezeigt werden, und passe die Farbe an.",
+        "custom_views_color_label": "Diagrammfarbe",
+        "custom_views_no_data": "Noch nicht genug Daten für dieses Diagramm.",
+        "export_chart": "Diagramm als PNG exportieren",
+        "preset_criterion_averages": "Durchschnitt pro Kriterium",
+        "preset_grade_distribution": "Notenverteilung",
+        "preset_test_averages": "Test-Durchschnitte"
     },
     "activityDashboard": {
         "title": "Aktivitätsdashboard",
@@ -2319,7 +2327,8 @@
         "gs_search_intro_suffix": "von überall in der App (oder klicke auf das Suchsymbol in der Topbar), um schnell nach Rubriken, Tests, Schülern, Klassen und Aufsätzen zu suchen.",
         "gs_search_item_types": "Durchsucht Rubriken, Tests, Schüler, Klassen und Aufsätze gleichzeitig",
         "gs_search_item_filters": "Gib type:test oder class:5A ein, um Ergebnisse auf einen Typ oder eine Klasse einzuschränken",
-        "gs_search_item_active_class": "Die Klassenauswahl neben dem Suchsymbol legt deine aktive Klasse app-weit fest — Statistik und andere Seiten folgen automatisch"
+        "gs_search_item_active_class": "Die Klassenauswahl neben dem Suchsymbol legt deine aktive Klasse app-weit fest — Statistik und andere Seiten folgen automatisch",
+        "an_stats_item_custom_views": "Eigene Ansichten — eine Galerie empfohlener Diagramme, die du ein-/ausblenden und umfärben kannst, mit PNG-Export"
     },
     "studentProfile": {
         "tab_overview": "Übersicht",

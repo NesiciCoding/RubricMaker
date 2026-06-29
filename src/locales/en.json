@@ -1366,7 +1366,15 @@
         "filters": {
             "year": "Year",
             "track": "Track"
-        }
+        },
+        "custom_views_title": "Custom Views",
+        "custom_views_subtitle": "Recommended charts built from your current rubric and class selection. Toggle which to show and recolor each.",
+        "custom_views_color_label": "Chart color",
+        "custom_views_no_data": "Not enough data yet for this chart.",
+        "export_chart": "Export chart as PNG",
+        "preset_criterion_averages": "Criterion averages",
+        "preset_grade_distribution": "Grade distribution",
+        "preset_test_averages": "Test averages"
     },
     "activityDashboard": {
         "title": "Activity Dashboard",
@@ -2317,7 +2325,8 @@
         "gs_search_intro_suffix": "from anywhere in the app (or click the search icon in the Topbar) to open a quick search for rubrics, tests, students, classes, and essays.",
         "gs_search_item_types": "Searches rubrics, tests, students, classes, and essays at once",
         "gs_search_item_filters": "Type type:test or class:5A to narrow results to one type or class",
-        "gs_search_item_active_class": "The class selector next to the search icon sets your active class app-wide — Statistics and other pages follow it automatically"
+        "gs_search_item_active_class": "The class selector next to the search icon sets your active class app-wide — Statistics and other pages follow it automatically",
+        "an_stats_item_custom_views": "Custom Views — a gallery of recommended charts you can show/hide and recolor, with PNG export"
     },
     "studentProfile": {
         "tab_overview": "Overview",

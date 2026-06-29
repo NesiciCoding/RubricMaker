@@ -58,7 +58,7 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 
 ### 5. Analytics & Reporting
 
-- **Statistics dashboard**: Class performance with Average, Median, Highest, and Lowest scores; grade distribution charts; per-criterion performance breakdown. A **Compare** tab lets you select up to 4 classes side-by-side — grouped average bars, per-criterion gap chart, multi-class trend overlay, and a collapsible Insights panel that flags struggling classes, weak criteria, and inter-class divergence.
+- **Statistics dashboard**: Class performance with Average, Median, Highest, and Lowest scores; grade distribution charts; per-criterion performance breakdown. A **Compare** tab lets you select up to 4 classes side-by-side — grouped average bars, per-criterion gap chart, multi-class trend overlay, and a collapsible Insights panel that flags struggling classes, weak criteria, and inter-class divergence. A **Custom Views** gallery offers a curated set of recommended charts you can show/hide and recolor, each exportable as PNG; the Criterion Heat Map follows the page's class filter.
 - **Activity Dashboard**: Grid of every rubric, test, and essay against every class — see submitted/total counts at a glance and take quick actions (link/unlink rubrics, bulk-assign essays, open test builder, assign ungraded students to a colleague, drag-reorder rows). Filter by school year and VO track.
 - **Vocabulary Profile dashboard**: Per-class and per-student CEFR vocabulary distribution (A1–C2), aggregated from document analysis results, with CSV export of vocabulary lists filtered by CEFR band.
 - **Student profiles**: Individual progress view across all rubrics, CEFR levels, and essays. A **Portfolio** tab shows a unified chronological timeline of grades, speaking sessions, and self-assessments.
@@ -188,26 +188,27 @@ npm run db:reset     # Reset and re-apply all migrations
 
 ## Key utility modules
 
-| File                                    | Purpose                                                                                     |
-| --------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `src/utils/gradeCalc.ts`                | Score aggregation and weighted scoring engine                                               |
-| `src/utils/cefrStudentAggregator.ts`    | CEFR level computation across assessments                                                   |
-| `src/utils/learningGoalsAggregator.ts`  | Learning goal progress tracking                                                             |
-| `src/utils/docxExport.ts`               | DOCX generation via `docx` library                                                          |
-| `src/utils/docxTemplateExport.ts`       | Mail-merge DOCX with field substitution                                                     |
-| `src/utils/pdfExport.ts`                | PDF report generation                                                                       |
-| `src/utils/textExtraction.ts`           | OCR (Tesseract) + DOCX parsing (Mammoth)                                                    |
-| `src/utils/essayShareCode.ts`           | Shareable codes for essay access (no auth needed)                                           |
-| `src/utils/pinHash.ts`                  | PIN hashing for student self-assessment locks                                               |
-| `src/utils/clozeParse.ts`               | Parses `{{...}}` cloze gap syntax and `[[...]]` hot-text fragment syntax for test questions |
-| `src/utils/learningPathAggregator.ts`   | Rule-based rubric recommendations and intervention flagging                                 |
-| `src/utils/testSummaryAggregator.ts`    | Per-question/per-skill strong-weak test breakdown                                           |
-| `src/utils/reportCardAggregator.ts`     | Composes CEFR, learning-goals, and test-summary data into one report card                   |
+| File                                    | Purpose                                                                                        |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `src/utils/gradeCalc.ts`                | Score aggregation and weighted scoring engine                                                  |
+| `src/utils/cefrStudentAggregator.ts`    | CEFR level computation across assessments                                                      |
+| `src/utils/learningGoalsAggregator.ts`  | Learning goal progress tracking                                                                |
+| `src/utils/docxExport.ts`               | DOCX generation via `docx` library                                                             |
+| `src/utils/docxTemplateExport.ts`       | Mail-merge DOCX with field substitution                                                        |
+| `src/utils/pdfExport.ts`                | PDF report generation                                                                          |
+| `src/utils/textExtraction.ts`           | OCR (Tesseract) + DOCX parsing (Mammoth)                                                       |
+| `src/utils/essayShareCode.ts`           | Shareable codes for essay access (no auth needed)                                              |
+| `src/utils/pinHash.ts`                  | PIN hashing for student self-assessment locks                                                  |
+| `src/utils/clozeParse.ts`               | Parses `{{...}}` cloze gap syntax and `[[...]]` hot-text fragment syntax for test questions    |
+| `src/utils/learningPathAggregator.ts`   | Rule-based rubric recommendations and intervention flagging                                    |
+| `src/utils/testSummaryAggregator.ts`    | Per-question/per-skill strong-weak test breakdown                                              |
+| `src/utils/reportCardAggregator.ts`     | Composes CEFR, learning-goals, and test-summary data into one report card                      |
 | `src/utils/globalSearch.ts`             | Token-aware search (`type:`/`class:` filters) across rubrics, tests, students, classes, essays |
-| `src/utils/coGradingModerationQueue.ts` | Flags disputed co-graded submissions (delta above threshold) for the Moderation queue       |
-| `src/utils/displayOrder.ts`             | Shared sort/reorder helpers for manually-orderable list views                               |
-| `src/utils/cohortAggregator.ts`         | Derives a cohort's student set from current + past class memberships by year/track          |
-| `src/services/standardsApi.ts`          | Common Standards Project API (CCSS, NGSS)                                                   |
+| `src/utils/statsChartPresets.ts`        | Recommended chart definitions for the Statistics "Custom Views" gallery                        |
+| `src/utils/coGradingModerationQueue.ts` | Flags disputed co-graded submissions (delta above threshold) for the Moderation queue          |
+| `src/utils/displayOrder.ts`             | Shared sort/reorder helpers for manually-orderable list views                                  |
+| `src/utils/cohortAggregator.ts`         | Derives a cohort's student set from current + past class memberships by year/track             |
+| `src/services/standardsApi.ts`          | Common Standards Project API (CCSS, NGSS)                                                      |
 
 ---
 
