@@ -643,12 +643,7 @@ export interface CommentBankItem {
 // ─── Speaking / Oral Assessment Types ────────────────────────────────────────
 
 export type PronunciationErrorType =
-    | 'word_stress'
-    | 'sentence_stress'
-    | 'th_sound'
-    | 'connected_speech'
-    | 'vowel_sound'
-    | 'final_consonant';
+    'word_stress' | 'sentence_stress' | 'th_sound' | 'connected_speech' | 'vowel_sound' | 'final_consonant';
 
 export interface PronunciationMark {
     errorType: PronunciationErrorType;
