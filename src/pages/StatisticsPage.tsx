@@ -24,6 +24,7 @@ import ClassTrendChart from '../components/Statistics/ClassTrendChart';
 import MultiClassTrendChart from '../components/Statistics/MultiClassTrendChart';
 import { compareClasses, buildMultiClassTrend, getInsights } from '../utils/classComparisonAggregator';
 import { ChartSkeleton } from '../components/ui/Skeleton';
+import { STATS_PRESETS, type PresetChartPoint } from '../utils/statsChartPresets';
 
 const STUDENT_COLORS = ['var(--purple)', 'var(--green)', 'var(--yellow)', 'var(--red)'];
 
@@ -333,7 +334,13 @@ export default function StatisticsPage() {
     const tableData = useMemo(() => {
         if (!rubric) return [];
         const data = studentRubrics
-            .filter((sr) => sr.rubricId === rubric.id)
+            .filter((sr) => {
+                if (sr.rubricId !== rubric.id) return false;
+                if (excludeNHI && sr.notHandedIn) return false;
+                if (selectedClassId === 'all') return true;
+                const student = students.find((s) => s.id === sr.studentId);
+                return student?.classId === selectedClassId;
+            })
             .map((sr) => {
                 const student = students.find((s) => s.id === sr.studentId);
                 const r = sr.rubricSnapshot || rubric;
@@ -345,7 +352,7 @@ export default function StatisticsPage() {
             );
 
         return data.sort((a, b) => a.student.name.toLowerCase().localeCompare(b.student.name.toLowerCase()));
-    }, [rubric, studentRubrics, students, scale]);
+    }, [rubric, studentRubrics, students, scale, selectedClassId, excludeNHI]);
 
     const heatmapScores = useMemo(() => {
         if (!rubric) return {};
@@ -432,6 +439,24 @@ export default function StatisticsPage() {
             })
             .filter((d): d is { test: Test; avgPct: number; submittedCount: number } => d !== null);
     }, [viewMode, selectedClassId, tests, studentTests, students]);
+
+    // ── Custom Views (Statistics preset gallery) ──────────────────────────────
+    const presetData = useMemo<Record<string, PresetChartPoint[]>>(
+        () => ({
+            criterionAverages: criterionStats.map((c) => ({ name: c.name, value: c.avg })),
+            gradeDistribution: stats.distribution.map((d) => ({ name: d.label, value: d.count })),
+            testAverages: classTestAverages.map((d) => ({ name: d.test.name, value: d.avgPct })),
+        }),
+        [criterionStats, stats.distribution, classTestAverages]
+    );
+    const visiblePresetIds = settings.statsVisiblePresetIds ?? STATS_PRESETS.map((p) => p.id);
+    const presetContainerRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
+    function toggleVisiblePreset(id: string) {
+        const next = visiblePresetIds.includes(id)
+            ? visiblePresetIds.filter((p) => p !== id)
+            : [...visiblePresetIds, id];
+        updateSettings({ statsVisiblePresetIds: next });
+    }
 
     // Students graded on the selected rubric (for multi-student comparison chips)
     const rubricPeers = useMemo(() => {
@@ -1357,6 +1382,124 @@ export default function StatisticsPage() {
                                         </div>
                                     </div>
                                 )}
+
+                                {/* Custom Views — recommended chart presets, toggleable + recolorable */}
+                                <div className="card" style={{ marginBottom: 20 }}>
+                                    <h3 style={{ marginBottom: 4 }}>{t('statistics.custom_views_title')}</h3>
+                                    <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
+                                        {t('statistics.custom_views_subtitle')}
+                                    </p>
+                                    <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 16 }}>
+                                        {STATS_PRESETS.map((preset) => (
+                                            <label
+                                                key={preset.id}
+                                                style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={visiblePresetIds.includes(preset.id)}
+                                                    onChange={() => toggleVisiblePreset(preset.id)}
+                                                />
+                                                {t(preset.titleKey)}
+                                            </label>
+                                        ))}
+                                    </div>
+                                    <div
+                                        style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                                            gap: 16,
+                                        }}
+                                    >
+                                        {STATS_PRESETS.filter((p) => visiblePresetIds.includes(p.id)).map((preset) => {
+                                            const data = presetData[preset.id] ?? [];
+                                            const color =
+                                                settings.statsPresetColors?.[preset.id] ?? preset.defaultColor;
+                                            return (
+                                                <div key={preset.id}>
+                                                    <div
+                                                        style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'space-between',
+                                                            marginBottom: 6,
+                                                        }}
+                                                    >
+                                                        <span style={{ fontSize: 13, fontWeight: 600 }}>
+                                                            {t(preset.titleKey)}
+                                                        </span>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                            <input
+                                                                type="color"
+                                                                value={color}
+                                                                title={t('statistics.custom_views_color_label')}
+                                                                onChange={(e) =>
+                                                                    updateSettings({
+                                                                        statsPresetColors: {
+                                                                            ...settings.statsPresetColors,
+                                                                            [preset.id]: e.target.value,
+                                                                        },
+                                                                    })
+                                                                }
+                                                                style={{ width: 24, height: 24, padding: 0 }}
+                                                            />
+                                                            <button
+                                                                className="btn btn-ghost btn-icon btn-sm"
+                                                                title={t('statistics.export_chart')}
+                                                                disabled={data.length === 0}
+                                                                onClick={() =>
+                                                                    exportChartAsPng(
+                                                                        {
+                                                                            current:
+                                                                                presetContainerRefs.current.get(
+                                                                                    preset.id
+                                                                                ) ?? null,
+                                                                        },
+                                                                        `${preset.id}.png`
+                                                                    )
+                                                                }
+                                                            >
+                                                                <Download size={13} />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    {data.length === 0 ? (
+                                                        <p className="text-muted text-sm">
+                                                            {t('statistics.custom_views_no_data')}
+                                                        </p>
+                                                    ) : (
+                                                        <div
+                                                            ref={(el) => {
+                                                                presetContainerRefs.current.set(preset.id, el);
+                                                            }}
+                                                            style={{ height: 220 }}
+                                                        >
+                                                            <ResponsiveContainer width="100%" height="100%">
+                                                                <BarChart data={data}>
+                                                                    <XAxis
+                                                                        dataKey="name"
+                                                                        tick={{ fontSize: 11 }}
+                                                                        interval={0}
+                                                                        angle={-20}
+                                                                        textAnchor="end"
+                                                                        height={50}
+                                                                    />
+                                                                    <YAxis tick={{ fontSize: 11 }} />
+                                                                    <Tooltip />
+                                                                    <Bar
+                                                                        dataKey="value"
+                                                                        fill={color}
+                                                                        radius={[4, 4, 0, 0]}
+                                                                    />
+                                                                </BarChart>
+                                                            </ResponsiveContainer>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
 
                                 {/* Criterion heat map — click a student's name to expand score/grade detail */}
                                 {tableData.length > 0 && rubric && (

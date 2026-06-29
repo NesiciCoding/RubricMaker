@@ -1366,7 +1366,15 @@
         "filters": {
             "year": "Année",
             "track": "Filière"
-        }
+        },
+        "custom_views_title": "Vues personnalisées",
+        "custom_views_subtitle": "Graphiques recommandés basés sur votre rubrique et classe actuelles. Choisissez lesquels afficher et personnalisez leur couleur.",
+        "custom_views_color_label": "Couleur du graphique",
+        "custom_views_no_data": "Pas encore assez de données pour ce graphique.",
+        "export_chart": "Exporter le graphique en PNG",
+        "preset_criterion_averages": "Moyennes par critère",
+        "preset_grade_distribution": "Distribution des notes",
+        "preset_test_averages": "Moyennes des tests"
     },
     "activityDashboard": {
         "title": "Tableau des activités",
@@ -2319,7 +2327,8 @@
         "gs_search_intro_suffix": "depuis n'importe quelle page (ou cliquez sur l'icône de recherche dans la barre supérieure) pour rechercher rapidement des rubriques, tests, élèves, classes et essais.",
         "gs_search_item_types": "Recherche simultanément dans les rubriques, tests, élèves, classes et essais",
         "gs_search_item_filters": "Tapez type:test ou class:5A pour limiter les résultats à un type ou une classe",
-        "gs_search_item_active_class": "Le sélecteur de classe près de l'icône de recherche définit votre classe active pour toute l'application — Statistiques et autres pages la suivent automatiquement"
+        "gs_search_item_active_class": "Le sélecteur de classe près de l'icône de recherche définit votre classe active pour toute l'application — Statistiques et autres pages la suivent automatiquement",
+        "an_stats_item_custom_views": "Vues personnalisées — une galerie de graphiques recommandés que vous pouvez afficher/masquer et recolorer, avec export PNG"
     },
     "studentProfile": {
         "tab_overview": "Aperçu",

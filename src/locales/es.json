@@ -1366,7 +1366,15 @@
         "filters": {
             "year": "Año",
             "track": "Modalidad"
-        }
+        },
+        "custom_views_title": "Vistas personalizadas",
+        "custom_views_subtitle": "Gráficos recomendados según tu rúbrica y clase actuales. Elige cuáles mostrar y cambia su color.",
+        "custom_views_color_label": "Color del gráfico",
+        "custom_views_no_data": "Aún no hay suficientes datos para este gráfico.",
+        "export_chart": "Exportar gráfico como PNG",
+        "preset_criterion_averages": "Promedios por criterio",
+        "preset_grade_distribution": "Distribución de notas",
+        "preset_test_averages": "Promedios de pruebas"
     },
     "activityDashboard": {
         "title": "Panel de actividades",
@@ -2319,7 +2327,8 @@
         "gs_search_intro_suffix": "desde cualquier parte de la app (o haz clic en el icono de búsqueda en la barra superior) para buscar rápidamente rúbricas, pruebas, alumnos, clases y ensayos.",
         "gs_search_item_types": "Busca a la vez en rúbricas, pruebas, alumnos, clases y ensayos",
         "gs_search_item_filters": "Escribe type:test o class:5A para limitar los resultados a un tipo o clase",
-        "gs_search_item_active_class": "El selector de clase junto al icono de búsqueda fija tu clase activa en toda la app — Estadísticas y otras páginas la siguen automáticamente"
+        "gs_search_item_active_class": "El selector de clase junto al icono de búsqueda fija tu clase activa en toda la app — Estadísticas y otras páginas la siguen automáticamente",
+        "an_stats_item_custom_views": "Vistas personalizadas — una galería de gráficos recomendados que puedes mostrar/ocultar y recolorear, con exportación a PNG"
     },
     "studentProfile": {
         "tab_overview": "Resumen",

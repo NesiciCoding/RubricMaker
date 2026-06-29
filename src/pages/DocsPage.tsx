@@ -1113,6 +1113,7 @@ function AnalyticsTab() {
                         t('docs.an_stats_item_by_student'),
                         t('docs.an_stats_item_compare'),
                         t('docs.an_stats_item_filters'),
+                        t('docs.an_stats_item_custom_views'),
                     ]}
                 />
             </FeatureSection>

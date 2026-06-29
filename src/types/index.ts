@@ -567,6 +567,10 @@ export interface AppSettings {
     statisticsDistributionMode?: 'letter' | 'percentage';
     /** Whether "Not handed in" students are excluded from class statistics */
     statisticsExcludeNotHandedIn?: boolean;
+    /** Which Statistics "Custom Views" preset charts are shown; undefined means all presets are shown */
+    statsVisiblePresetIds?: string[];
+    /** Per-preset bar color override for the Statistics "Custom Views" charts */
+    statsPresetColors?: Record<string, string>;
     /**
      * Active role — determines which settings sections are visible/editable.
      * Defaults to 'admin' so existing installs are unaffected.
