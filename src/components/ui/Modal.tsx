@@ -22,15 +22,7 @@ interface Props {
  * Consumer API is identical to the previous hand-rolled version — no changes
  * needed in any of the 6+ consuming components.
  */
-export default function Modal({
-    titleId,
-    onClose,
-    children,
-    maxWidth = 640,
-    style,
-    className,
-    growFrom,
-}: Props) {
+export default function Modal({ titleId, onClose, children, maxWidth = 640, style, className, growFrom }: Props) {
     const contentRef = useRef<HTMLDivElement>(null);
 
     // Anchor the scale-in animation's transform-origin to the trigger's screen
