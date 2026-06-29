@@ -1366,7 +1366,15 @@
         "filters": {
             "year": "Year",
             "track": "Track"
-        }
+        },
+        "custom_views_title": "Custom Views",
+        "custom_views_subtitle": "Recommended charts built from your current rubric and class selection. Toggle which to show and recolor each.",
+        "custom_views_color_label": "Chart color",
+        "custom_views_no_data": "Not enough data yet for this chart.",
+        "export_chart": "Export chart as PNG",
+        "preset_criterion_averages": "Criterion averages",
+        "preset_grade_distribution": "Grade distribution",
+        "preset_test_averages": "Test averages"
     },
     "activityDashboard": {
         "title": "Activity Dashboard",
@@ -2309,7 +2317,8 @@
         "da_settings_item_scales": "Grade scales — create custom scales (1–10, A–F, etc.) and set a default.",
         "da_settings_item_lang": "Language — English, Dutch, French, German, Spanish.",
         "da_settings_item_tour": "Guided tour — restart the onboarding walkthrough.",
-        "da_settings_item_backup": "Backup / restore — download or upload the full dataset JSON."
+        "da_settings_item_backup": "Backup / restore — download or upload the full dataset JSON.",
+        "an_stats_item_custom_views": "Custom Views — a gallery of recommended charts you can show/hide and recolor, with PNG export"
     },
     "studentProfile": {
         "tab_overview": "Overview",

@@ -1366,7 +1366,15 @@
         "filters": {
             "year": "Año",
             "track": "Modalidad"
-        }
+        },
+        "custom_views_title": "Vistas personalizadas",
+        "custom_views_subtitle": "Gráficos recomendados según tu rúbrica y clase actuales. Elige cuáles mostrar y cambia su color.",
+        "custom_views_color_label": "Color del gráfico",
+        "custom_views_no_data": "Aún no hay suficientes datos para este gráfico.",
+        "export_chart": "Exportar gráfico como PNG",
+        "preset_criterion_averages": "Promedios por criterio",
+        "preset_grade_distribution": "Distribución de notas",
+        "preset_test_averages": "Promedios de pruebas"
     },
     "activityDashboard": {
         "title": "Panel de actividades",
@@ -2311,7 +2319,8 @@
         "da_settings_item_scales": "Escalas de notas — crea escalas personalizadas (1–10, A–F, etc.) y establece una predeterminada.",
         "da_settings_item_lang": "Idioma — inglés, neerlandés, francés, alemán, español.",
         "da_settings_item_tour": "Recorrido guiado — reiniciar el recorrido de incorporación.",
-        "da_settings_item_backup": "Copia de seguridad / restauración — descargar o subir el JSON completo del conjunto de datos."
+        "da_settings_item_backup": "Copia de seguridad / restauración — descargar o subir el JSON completo del conjunto de datos.",
+        "an_stats_item_custom_views": "Vistas personalizadas — una galería de gráficos recomendados que puedes mostrar/ocultar y recolorear, con exportación a PNG"
     },
     "studentProfile": {
         "tab_overview": "Resumen",

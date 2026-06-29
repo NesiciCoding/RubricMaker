@@ -1366,7 +1366,15 @@
         "filters": {
             "year": "Année",
             "track": "Filière"
-        }
+        },
+        "custom_views_title": "Vues personnalisées",
+        "custom_views_subtitle": "Graphiques recommandés basés sur votre rubrique et classe actuelles. Choisissez lesquels afficher et personnalisez leur couleur.",
+        "custom_views_color_label": "Couleur du graphique",
+        "custom_views_no_data": "Pas encore assez de données pour ce graphique.",
+        "export_chart": "Exporter le graphique en PNG",
+        "preset_criterion_averages": "Moyennes par critère",
+        "preset_grade_distribution": "Distribution des notes",
+        "preset_test_averages": "Moyennes des tests"
     },
     "activityDashboard": {
         "title": "Tableau des activités",
@@ -2311,7 +2319,8 @@
         "da_settings_item_scales": "Barèmes — créez des échelles personnalisées (1–10, A–F, etc.) et définissez une valeur par défaut.",
         "da_settings_item_lang": "Langue — anglais, néerlandais, français, allemand, espagnol.",
         "da_settings_item_tour": "Visite guidée — relancer la visite d'intégration.",
-        "da_settings_item_backup": "Sauvegarde / restauration — télécharger ou téléverser le JSON complet de l'ensemble de données."
+        "da_settings_item_backup": "Sauvegarde / restauration — télécharger ou téléverser le JSON complet de l'ensemble de données.",
+        "an_stats_item_custom_views": "Vues personnalisées — une galerie de graphiques recommandés que vous pouvez afficher/masquer et recolorer, avec export PNG"
     },
     "studentProfile": {
         "tab_overview": "Aperçu",

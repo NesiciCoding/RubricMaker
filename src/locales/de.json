@@ -1366,7 +1366,15 @@
         "filters": {
             "year": "Jahrgangsstufe",
             "track": "Schulzweig"
-        }
+        },
+        "custom_views_title": "Eigene Ansichten",
+        "custom_views_subtitle": "Empfohlene Diagramme basierend auf deiner aktuellen Rubrik und Klassenauswahl. Wähle aus, welche angezeigt werden, und passe die Farbe an.",
+        "custom_views_color_label": "Diagrammfarbe",
+        "custom_views_no_data": "Noch nicht genug Daten für dieses Diagramm.",
+        "export_chart": "Diagramm als PNG exportieren",
+        "preset_criterion_averages": "Durchschnitt pro Kriterium",
+        "preset_grade_distribution": "Notenverteilung",
+        "preset_test_averages": "Test-Durchschnitte"
     },
     "activityDashboard": {
         "title": "Aktivitätsdashboard",
@@ -2311,7 +2319,8 @@
         "da_settings_item_scales": "Notenskalen — erstelle benutzerdefinierte Skalen (1–10, A–F usw.) und lege eine Standardeinstellung fest.",
         "da_settings_item_lang": "Sprache — Englisch, Niederländisch, Französisch, Deutsch, Spanisch.",
         "da_settings_item_tour": "Geführte Tour — die Einführungstour neu starten.",
-        "da_settings_item_backup": "Sichern / Wiederherstellen — das vollständige Datensatz-JSON herunterladen oder hochladen."
+        "da_settings_item_backup": "Sichern / Wiederherstellen — das vollständige Datensatz-JSON herunterladen oder hochladen.",
+        "an_stats_item_custom_views": "Eigene Ansichten — eine Galerie empfohlener Diagramme, die du ein-/ausblenden und umfärben kannst, mit PNG-Export"
     },
     "studentProfile": {
         "tab_overview": "Übersicht",
