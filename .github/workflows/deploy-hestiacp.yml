@@ -31,6 +31,11 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           SUPABASE_PUBLIC_URL: ${{ secrets.SUPABASE_PUBLIC_URL }}
+          # Optional diagnostic event stream to `client_logs` — see README →
+          # "Stress-test logging". Toggle via repo Settings → Secrets and
+          # variables → Actions → Variables (not a secret: it's a feature
+          # flag, not sensitive data).
+          VITE_STRESS_TEST_LOGGING: ${{ vars.VITE_STRESS_TEST_LOGGING }}
 
       - name: Deploy via rsync
         uses: burnett01/rsync-deployments@9.0.0

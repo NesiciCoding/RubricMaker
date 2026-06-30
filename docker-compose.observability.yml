@@ -33,6 +33,14 @@ services:
       # Host log directory for traditional Apache/Nginx + HestiaCP/Virtualmin
       # deployments (set RUBRICMAKER_LOG_DIR to the panel's log path).
       - ${RUBRICMAKER_LOG_DIR:-/var/log}:/var/host-logs:ro
+      # HestiaCP's per-domain web/<domain>/logs/*.log files are symlinks to
+      # the panel's real webserver log dir (e.g. /var/log/apache2/domains) —
+      # mount that dir too, at the *same* path, so the symlinks resolve
+      # inside the container instead of "no such file or directory". Falls
+      # back to /var/log (already guaranteed to exist, unlike an Apache-only
+      # path) so leaving RUBRICMAKER_WEBSERVER_LOG_DIR unset on non-HestiaCP
+      # setups is a harmless no-op rather than creating a bogus empty dir.
+      - ${RUBRICMAKER_WEBSERVER_LOG_DIR:-/var/log}:${RUBRICMAKER_WEBSERVER_LOG_DIR:-/var/log}:ro
       # Optional: only relevant if the combined docker-compose.yml stack also
       # runs on this host — harmless if these paths don't exist.
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
@@ -76,13 +84,21 @@ volumes:
   grafana-data: # persists Grafana dashboards/users
 
 # ── Optional: self-hosted db on the same host ────────────────────────────────
-# If the combined docker-compose.yml stack (db, auth, rest, ...) also runs on
-# this host and you want Grafana to reach its `db` container by name, join its
-# network and set SUPABASE_DB_HOST=db:
+# If a self-hosted Supabase stack also runs on this host and you want Grafana
+# to reach its db container by name, join its Docker network. The network and
+# container names depend on which self-hosted stack this is:
+#   - This repo's combined docker-compose.yml (`name: rubricmaker`):
+#       network rubricmaker_default, SUPABASE_DB_HOST=db:5432
+#   - The official Supabase CLI / self-hosted compose stack:
+#       network supabase_default, SUPABASE_DB_HOST=supabase-db:5432
+#       (connect to the `supabase-db` container directly, not the
+#       `supabase-pooler`/Supavisor container also on 5432/6543)
+# Confirm with `docker network ls` / `docker ps` on the host — names can be
+# customized in either stack's own compose file.
 #
 # networks:
 #   default:
-#     name: rubricmaker_default
+#     name: supabase_default
 #     external: true
 #
 # Otherwise (managed Supabase, or Supabase on another host), leave this

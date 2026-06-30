@@ -102,13 +102,28 @@ Edit `.env.observability`:
 GRAFANA_ADMIN_PASSWORD=<choose a strong password>
 
 # HestiaCP per-domain log layout (see .env.observability.example for the
-# Virtualmin equivalent). Promtail recurses into this path looking for
-# *access*.log / *error*.log files.
-RUBRICMAKER_LOG_DIR=/home/rubricmaker/web/*/log
+# Virtualmin equivalent). This is a Docker bind-mount source, so it must be a
+# real, literal directory — no shell globs (Docker won't expand a `*` in a
+# host path; it just creates an empty dir with that literal name and mounts
+# that). Point at the parent `web` dir; Promtail's own `**` glob in
+# promtail-config.yml recurses into each domain's log/ folder from there.
+RUBRICMAKER_LOG_DIR=/home/rubricmaker/web
 
 # Set in step 7, once the subdomain is live.
 GRAFANA_DOMAIN=observability.rubricmaker.example.com
 GRAFANA_ROOT_URL=https://observability.rubricmaker.example.com/
+
+# HestiaCP's web/<domain>/logs/*.log files are usually symlinks to the
+# panel's real webserver log dir — check with
+# `ls -la /home/rubricmaker/web/<any-domain>/logs/`. Mount that real target
+# dir too (same absolute path) so the symlinks resolve inside the container.
+# This doesn't cause duplicate log ingestion: Promtail's only webserver scrape
+# path is RUBRICMAKER_LOG_DIR (`/var/host-logs/**` in promtail-config.yml) —
+# this second mount isn't separately scraped, it just makes the symlink
+# targets resolvable when Promtail follows them.
+# Apache (most HestiaCP installs):
+RUBRICMAKER_WEBSERVER_LOG_DIR=/var/log/apache2/domains
+# Nginx-only HestiaCP installs would instead use /var/log/nginx/domains.
 
 # Optional — only if you also want client_logs queryable from Grafana
 # (see README → "Stress-test logging").
@@ -118,11 +133,17 @@ GRAFANA_ROOT_URL=https://observability.rubricmaker.example.com/
 # SUPABASE_DB_PASSWORD=
 ```
 
-> **`RUBRICMAKER_LOG_DIR=/home/rubricmaker/web/*/log` vs `/var/log`:**
-> HestiaCP writes per-domain logs to `/home/<user>/web/<domain>/log/` *and*
-> aggregates them under `/var/log/$WEB_SYSTEM/domains/`. Either path works;
-> the `/home/.../web/*/log` glob is narrower if this HestiaCP user hosts
-> multiple unrelated domains and you only want RubricMaker's logs.
+> **`RUBRICMAKER_LOG_DIR=/home/rubricmaker/web` vs `/var/log`:**
+> HestiaCP writes per-domain logs to `/home/<user>/web/<domain>/logs/` *and*
+> aggregates them under `/var/log/$WEB_SYSTEM/domains/`. Either parent path
+> works as `RUBRICMAKER_LOG_DIR`, but the per-domain `logs/` entries are
+> typically symlinks pointing at the latter — see `RUBRICMAKER_WEBSERVER_LOG_DIR`
+> above, which mounts that real target dir so the symlinks don't dangle inside
+> the container. To narrow to a single domain if this HestiaCP user hosts
+> multiple unrelated ones, point `RUBRICMAKER_LOG_DIR` directly at that
+> domain's own `logs/` dir (e.g.
+> `/home/rubricmaker/web/rubricmaker.example.com/logs`) — but it must be a
+> literal, existing path; wildcards don't work in a bind-mount source.
 
 ---
 
