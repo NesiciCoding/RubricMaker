@@ -4,7 +4,7 @@ import { AttachmentSync } from './AttachmentSync';
 import { RecordingSync } from './RecordingSync';
 import type { DatabaseConfig, SyncStatus, SyncResult, DbUser } from './types';
 import type { StoreData } from '../../store/storage';
-import { addToPendingQueue, loadPendingQueue, removePendingWrites } from '../../store/storage';
+import { addToPendingQueue, loadPendingQueue, removePendingWrites, DEFAULT_SETTINGS } from '../../store/storage';
 import { logEvent } from '../logging/clientLogger';
 import type {
     Rubric,
@@ -413,6 +413,7 @@ class StorageSyncService {
             const profileFull = await this.adapter.fetchMyProfileWithSchool();
             let mergedSettings = profile?.role
                 ? {
+                      ...DEFAULT_SETTINGS,
                       ...(settings ?? {}),
                       userRole: profile.role,
                       ...(profile.email ? { userEmail: profile.email } : {}),

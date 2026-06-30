@@ -11,4 +11,8 @@ describe('isRtlLanguage', () => {
     it.each(['en', 'nl', 'fr', 'de', 'es'])('treats %s as LTR', (lang) => {
         expect(isRtlLanguage(lang)).toBe(false);
     });
+
+    it('treats undefined as LTR instead of throwing', () => {
+        expect(isRtlLanguage(undefined)).toBe(false);
+    });
 });
