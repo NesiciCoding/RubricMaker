@@ -135,9 +135,12 @@ describe('ComparativeGrading', () => {
     });
 
     it('shows the rubric-not-found state for a missing rubricId param', () => {
-        const router = createMemoryRouter([{ path: '/grade-comparative/:classId', element: <ComparativeGradingComp /> }], {
-            initialEntries: ['/grade-comparative/c1'],
-        });
+        const router = createMemoryRouter(
+            [{ path: '/grade-comparative/:classId', element: <ComparativeGradingComp /> }],
+            {
+                initialEntries: ['/grade-comparative/c1'],
+            }
+        );
         render(<RouterProvider router={router} />);
         expect(screen.getByText('comparativeGrading.rubric_not_found')).toBeInTheDocument();
     });

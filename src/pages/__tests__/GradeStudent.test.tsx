@@ -154,9 +154,7 @@ describe('GradeStudent', () => {
         fireEvent.click(screen.getAllByText('gradeStudent.action_save')[0]);
         expect(mockSaveStudentRubric).toHaveBeenCalledWith(
             expect.objectContaining({
-                entries: expect.arrayContaining([
-                    expect.objectContaining({ criterionId: 'c1', levelId: 'l1' }),
-                ]),
+                entries: expect.arrayContaining([expect.objectContaining({ criterionId: 'c1', levelId: 'l1' })]),
             })
         );
     });
