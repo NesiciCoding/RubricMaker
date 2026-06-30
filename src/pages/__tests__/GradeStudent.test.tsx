@@ -161,12 +161,22 @@ describe('GradeStudent', () => {
 
     it('toggles feedback-only and anchor checkboxes', () => {
         renderPage();
-        const checkboxes = screen.getAllByRole('checkbox');
-        const feedbackOnlyBox = checkboxes.find((cb) => cb.nextSibling?.textContent?.match(/feedback_only/));
-        // Fall back: toggle the first checkbox (feedback-only) if text match fails.
-        const target = (feedbackOnlyBox ?? checkboxes[0]) as HTMLInputElement;
-        fireEvent.click(target);
-        expect(target.checked).toBe(true);
+        // Both are checkbox inputs inside <label> elements at the bottom of the page.
+        // feedback_only_label has no nested markup; mark_as_anchor has an info <span>,
+        // so getByLabelText with exact match fails for it — find by label text via
+        // getAllByRole and match position relative to the known text nodes instead.
+        const feedbackOnlyBox = screen.getByLabelText('gradeStudent.feedback_only_label') as HTMLInputElement;
+        fireEvent.click(feedbackOnlyBox);
+        expect(feedbackOnlyBox.checked).toBe(true);
+
+        // Anchor label contains a nested info span, so locate via its parent label text.
+        const anchorLabel = Array.from(document.querySelectorAll('label')).find((l) =>
+            l.textContent?.includes('gradeStudent.mark_as_anchor')
+        );
+        const anchorBox = anchorLabel?.querySelector('input[type="checkbox"]') as HTMLInputElement;
+        expect(anchorBox).toBeTruthy();
+        fireEvent.click(anchorBox!);
+        expect(anchorBox.checked).toBe(true);
     });
 
     it('edits the overall comment', () => {

@@ -101,7 +101,9 @@ describe('EssayListPage', () => {
         const { default: EssayListPage } = await import('../EssayListPage');
         renderWithRouter(<EssayListPage />);
         expect(screen.getByText('My Essay')).toBeInTheDocument();
-        fireEvent.click(screen.getByText('essays.action_monitor'));
+        // The edit button calls navigate(); the monitor action is a <Link> and doesn't.
+        fireEvent.click(screen.getAllByText('tests.action_edit')[0]);
+        expect(mockNavigate).toHaveBeenCalledWith('/essays/tk1');
     });
 
     it('navigates to the new essay builder', async () => {
@@ -114,16 +116,17 @@ describe('EssayListPage', () => {
     it('deletes an essay group after confirming', async () => {
         const { default: EssayListPage } = await import('../EssayListPage');
         renderWithRouter(<EssayListPage />);
-        const deleteBtn = screen.getByTitle('tests.action_delete');
+        // handleDelete() awaits confirm() — act flushes the resulting state update.
         await act(async () => {
-            fireEvent.click(deleteBtn);
+            fireEvent.click(screen.getByTitle('tests.action_delete'));
         });
-        const confirmBtn = screen.getAllByRole('button').find((b) => b.className?.match(/btn-danger/i));
-        if (confirmBtn) {
-            await act(async () => {
-                fireEvent.click(confirmBtn);
-            });
-        }
+        // ConfirmDialog uses t('common.delete') as the confirmLabel (our mock returns the key).
+        const confirmBtn = screen.getByText('common.delete');
+        expect(confirmBtn).toBeInTheDocument();
+        // Clicking confirm resolves the useConfirm() Promise; act flushes the continuation.
+        await act(async () => {
+            fireEvent.click(confirmBtn);
+        });
         expect(mockDeleteEssayGroup).toHaveBeenCalledWith('tk1');
     });
 });

@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import ComparativeGradingDefault from '../ComparativeGrading';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
 import type { Class, Rubric, Student, AppSettings } from '../../types';
@@ -85,23 +86,25 @@ vi.mock('react-i18next', () => ({
     }),
 }));
 
-let ComparativeGradingComp: React.ComponentType;
-
 function renderAt(path: string) {
     const router = createMemoryRouter(
-        [{ path: '/grade-comparative/:classId/:rubricId', element: <ComparativeGradingComp /> }],
+        [{ path: '/grade-comparative/:classId/:rubricId', element: <ComparativeGradingDefault /> }],
         { initialEntries: [path] }
     );
     return render(<RouterProvider router={router} />);
 }
 
 describe('ComparativeGrading', () => {
-    beforeEach(async () => {
+    let mathRandomSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
         mockSaveStudentRubric.mockClear();
         mockNavigate.mockClear();
-        vi.spyOn(Math, 'random').mockReturnValue(0);
-        const mod = await import('../ComparativeGrading');
-        ComparativeGradingComp = mod.default;
+        mathRandomSpy = vi.spyOn(Math, 'random').mockReturnValue(0);
+    });
+
+    afterEach(() => {
+        mathRandomSpy.mockRestore();
     });
 
     it('shows the class picker when no class is chosen, then the student picker', () => {
@@ -136,7 +139,7 @@ describe('ComparativeGrading', () => {
 
     it('shows the rubric-not-found state for a missing rubricId param', () => {
         const router = createMemoryRouter(
-            [{ path: '/grade-comparative/:classId', element: <ComparativeGradingComp /> }],
+            [{ path: '/grade-comparative/:classId', element: <ComparativeGradingDefault /> }],
             {
                 initialEntries: ['/grade-comparative/c1'],
             }

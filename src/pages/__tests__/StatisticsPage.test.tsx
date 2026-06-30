@@ -1,7 +1,7 @@
 import React from 'react';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createMemoryRouter, RouterProvider } from 'react-router-dom';
+import { renderWithRouter } from '../../test-utils/renderWithProviders';
 import { DEFAULT_FORMAT } from '../../types';
 import type { Class, GradeScale, Rubric, Student, StudentRubric, AppSettings } from '../../types';
 
@@ -125,10 +125,7 @@ vi.mock('react-i18next', () => ({
 let StatisticsPageComp: React.ComponentType;
 
 function renderPage() {
-    const router = createMemoryRouter([{ path: '/statistics', element: <StatisticsPageComp /> }], {
-        initialEntries: ['/statistics'],
-    });
-    return render(<RouterProvider router={router} />);
+    return renderWithRouter(<StatisticsPageComp />);
 }
 
 async function waitForCharts() {
@@ -187,11 +184,10 @@ describe('StatisticsPage', () => {
         fireEvent.click(checkboxes[0]);
         fireEvent.click(checkboxes[1]);
         await waitForCharts();
-        const insightsToggle = screen.queryByText(/statistics.insights.title/);
-        if (insightsToggle) {
-            fireEvent.click(insightsToggle);
-        }
-        expect(screen.getByText('statistics.title')).toBeInTheDocument();
+        // Insights panel only renders when getInsights() returns non-empty results.
+        // With no graded student rubrics in the mock, the insights button is absent —
+        // we assert the two-class selection succeeded by checking the prompt is gone.
+        expect(screen.queryByText('statistics.compare.prompt')).not.toBeInTheDocument();
     });
 
     it('changes the active class filter, syncing back to settings', async () => {

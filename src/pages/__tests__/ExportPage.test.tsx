@@ -204,9 +204,10 @@ describe('ExportPage', () => {
 
     it('selects a student and exports a CSV', async () => {
         renderPage();
-        // Expand the rubric-students section.
         fireEvent.click(screen.getByText('exportPage.rubric_students_section_title'));
-        fireEvent.click(screen.getAllByText('Alice').find((el) => el.tagName === 'TD')!);
+        const aliceCell = screen.getAllByText('Alice').find((el) => el.tagName === 'TD');
+        expect(aliceCell).toBeInTheDocument();
+        fireEvent.click(aliceCell!);
         await act(async () => {
             fireEvent.click(screen.getByText(/exportPage.csv_export_count/));
         });
@@ -269,7 +270,9 @@ describe('ExportPage', () => {
         renderPage();
         fireEvent.click(screen.getByText('exportPage.period_report_title'));
         fireEvent.change(screen.getByDisplayValue('exportPage.period_select_class'), { target: { value: 'c1' } });
-        fireEvent.click(screen.getAllByText('Alice').find((el) => el.tagName === 'BUTTON')!);
+        const aliceBtn = screen.getAllByText('Alice').find((el) => el.tagName === 'BUTTON');
+        expect(aliceBtn).toBeInTheDocument();
+        fireEvent.click(aliceBtn!);
         await act(async () => {
             fireEvent.click(screen.getByText(/exportPage.period_generate_btn/));
         });
@@ -281,7 +284,9 @@ describe('ExportPage', () => {
         // Report Card reuses the Period Report's class + student selection state.
         fireEvent.click(screen.getByText('exportPage.period_report_title'));
         fireEvent.change(screen.getByDisplayValue('exportPage.period_select_class'), { target: { value: 'c1' } });
-        fireEvent.click(screen.getAllByText('Alice').find((el) => el.tagName === 'BUTTON')!);
+        const aliceBtn2 = screen.getAllByText('Alice').find((el) => el.tagName === 'BUTTON');
+        expect(aliceBtn2).toBeInTheDocument();
+        fireEvent.click(aliceBtn2!);
         fireEvent.click(screen.getByText('reportCard.title'));
         await act(async () => {
             fireEvent.click(screen.getByText(/reportCard.generate_batch_btn/));

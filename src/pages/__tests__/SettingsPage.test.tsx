@@ -1,7 +1,7 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createMemoryRouter, RouterProvider } from 'react-router-dom';
+import { renderWithRouter } from '../../test-utils/renderWithProviders';
 import { DEFAULT_FORMAT } from '../../types';
 import type { AppSettings, GradeScale } from '../../types';
 
@@ -98,10 +98,7 @@ vi.mock('react-i18next', () => ({
 let SettingsPageComp: React.ComponentType;
 
 function renderPage() {
-    const router = createMemoryRouter([{ path: '/settings', element: <SettingsPageComp /> }], {
-        initialEntries: ['/settings'],
-    });
-    return render(<RouterProvider router={router} />);
+    return renderWithRouter(<SettingsPageComp />);
 }
 
 describe('SettingsPage', () => {
@@ -131,7 +128,9 @@ describe('SettingsPage', () => {
         fireEvent.click(screen.getByText('Teaching'));
         expect(screen.getByText('settings.grade_scales')).toBeInTheDocument();
         fireEvent.click(screen.getByText('settings.action_new_scale'));
-        expect(mockAddGradeScale).toHaveBeenCalled();
+        expect(mockAddGradeScale).toHaveBeenCalledWith(
+            expect.objectContaining({ name: expect.any(String), type: expect.any(String), ranges: expect.any(Array) })
+        );
     });
 
     it('opens and closes the comment bank modal from the Teaching tab', () => {
@@ -141,6 +140,15 @@ describe('SettingsPage', () => {
         expect(screen.getByTestId('comment-bank-modal')).toBeInTheDocument();
         fireEvent.click(screen.getByText('Close Modal'));
         expect(screen.queryByTestId('comment-bank-modal')).not.toBeInTheDocument();
+    });
+
+    it('opens and closes the template upload modal from the Teaching tab', () => {
+        renderPage();
+        fireEvent.click(screen.getByText('Teaching'));
+        fireEvent.click(screen.getByText('settings.action_upload_template'));
+        expect(screen.getByTestId('template-upload-modal')).toBeInTheDocument();
+        fireEvent.click(screen.getByText('Close Upload'));
+        expect(screen.queryByTestId('template-upload-modal')).not.toBeInTheDocument();
     });
 
     it('switches to the Administration tab (admin role)', () => {

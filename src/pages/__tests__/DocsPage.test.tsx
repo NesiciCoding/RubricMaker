@@ -4,6 +4,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderWithRouter } from '../../test-utils/renderWithProviders';
 import { DEFAULT_FORMAT } from '../../types';
 import type { AppSettings } from '../../types';
+import DocsPage from '../DocsPage';
 
 const mockSettings: AppSettings = {
     defaultGradeScaleId: 'gs1',
@@ -31,8 +32,7 @@ vi.mock('react-i18next', () => ({
 }));
 
 describe('DocsPage', () => {
-    it('renders the getting-started tab by default', async () => {
-        const { default: DocsPage } = await import('../DocsPage');
+    it('renders the getting-started tab by default', () => {
         renderWithRouter(<DocsPage />);
         expect(screen.getAllByText('navigation.docs').length).toBeGreaterThan(0);
         expect(screen.getAllByText('docs.tab_getting_started').length).toBeGreaterThan(0);
@@ -46,10 +46,12 @@ describe('DocsPage', () => {
         'docs.tab_essays',
         'docs.tab_analytics',
         'docs.tab_data',
-    ])('switches to the %s tab without crashing', async (tabKey) => {
-        const { default: DocsPage } = await import('../DocsPage');
+    ])('switches to the %s tab without crashing', (tabKey) => {
         renderWithRouter(<DocsPage />);
+        // Count before clicking — nav button renders the label regardless of activeTab.
+        // After clicking, the breadcrumb also shows the label, so count increases.
+        const before = screen.getAllByText(tabKey).length;
         fireEvent.click(screen.getByText(tabKey));
-        expect(screen.getAllByText(tabKey).length).toBeGreaterThan(0);
+        expect(screen.getAllByText(tabKey).length).toBeGreaterThan(before);
     });
 });

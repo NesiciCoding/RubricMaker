@@ -166,9 +166,10 @@ vi.mock('@hello-pangea/dnd', () => ({
 vi.mock('../../utils/pdfExport', () => ({ exportRubricGridPdf: mockExportPdf }));
 vi.mock('../../utils/docxExport', () => ({ exportRubricToDocx: mockExportDocx }));
 vi.mock('../../services/database/AuditLogger', () => ({ logAuditEvent: vi.fn() }));
+const mockSaveCriterionClipboard = vi.fn();
 const mockLoadCriterionClipboard = vi.fn((): RubricCriterion | null => null);
 vi.mock('../../store/storage', () => ({
-    saveCriterionClipboard: vi.fn(),
+    saveCriterionClipboard: (...args: unknown[]) => mockSaveCriterionClipboard(...args),
     loadCriterionClipboard: () => mockLoadCriterionClipboard(),
     loadUserTemplates: vi.fn(() => []),
     saveUserTemplates: vi.fn(),
@@ -263,6 +264,7 @@ describe('RubricBuilder', () => {
         mockSyncRubricSnapshot.mockClear();
         mockSaveRubricVersion.mockClear();
         mockRestoreRubricVersion.mockClear();
+        mockSaveCriterionClipboard.mockClear();
         mockLoadCriterionClipboard.mockReset().mockReturnValue(null);
         const mod = await import('../RubricBuilder');
         RubricBuilderLazy = mod.default;
@@ -470,11 +472,17 @@ describe('RubricBuilder', () => {
         renderEditWithVersions();
         const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
         const reloadSpy = vi.fn();
-        Object.defineProperty(window, 'location', { value: { reload: reloadSpy }, writable: true });
+        const originalLocation = window.location;
+        Object.defineProperty(window, 'location', {
+            value: { ...originalLocation, reload: reloadSpy },
+            configurable: true,
+        });
         fireEvent.click(screen.getByText('rubricBuilder.version_history'));
         fireEvent.click(screen.getByText('rubricBuilder.restore_version'));
         expect(mockRestoreRubricVersion).toHaveBeenCalledWith('r1', 0);
+        expect(reloadSpy).toHaveBeenCalled();
         confirmSpy.mockRestore();
+        Object.defineProperty(window, 'location', { value: originalLocation, configurable: true });
     });
 
     // ── Sync dialog (saving an edited rubric with graded submissions) ────────────
@@ -552,7 +560,7 @@ describe('RubricBuilder', () => {
     it('copies a criterion to the clipboard', () => {
         renderEdit();
         fireEvent.click(screen.getByLabelText('rubricBuilder.action_copy_criterion'));
-        expect(screen.getByText('rubricBuilder.edit_rubric')).toBeInTheDocument();
+        expect(mockSaveCriterionClipboard).toHaveBeenCalledWith(expect.objectContaining({ id: 'c1' }));
     });
 
     it('pastes a criterion from the clipboard', () => {
