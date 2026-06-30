@@ -70,6 +70,7 @@ A comprehensive, offline-first rubric creation and grading tool built with React
     - **Period report**: Aggregated CEFR progress report for a class over a date range.
     - **Report cards**: A single consolidated DOCX per student combining rubric grades, standards coverage, learning goals, and CEFR overview, with toggleable sections; export one student or batch-export a whole class.
     - **Calendar (.ics)**: Download every essay assignment's deadline as a single .ics file for import into any calendar app.
+    - **Essay exports**: Markdown, DOCX, and PDF preserve text color, highlights, fonts, alignment, tables, and checklists from the editor, not just bold/italic/links.
 
 ### 6. Student Portal
 

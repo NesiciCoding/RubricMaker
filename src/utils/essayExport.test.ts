@@ -25,9 +25,34 @@ describe('htmlToMarkdown', () => {
         expect(md).toContain('---');
     });
 
-    it('flattens a table to pipe-separated rows', () => {
-        const md = htmlToMarkdown('<table><tr><td>A</td><td>B</td></tr></table>');
-        expect(md).toContain('A | B');
+    it('renders a table as a GFM table with a header separator row', () => {
+        const md = htmlToMarkdown('<table><tr><th>Name</th><th>Score</th></tr><tr><td>A</td><td>B</td></tr></table>');
+        expect(md).toContain('| Name | Score |');
+        expect(md).toContain('| --- | --- |');
+        expect(md).toContain('| A | B |');
+    });
+
+    it('escapes backslashes in table cells before escaping pipes, so a literal backslash cannot unescape a pipe', () => {
+        const md = htmlToMarkdown('<table><tr><td>C:\\path</td><td>a\\|b</td></tr></table>');
+        expect(md).toContain('| C:\\\\path | a\\\\\\|b |');
+    });
+
+    it('renders a task list with GFM checkbox syntax', () => {
+        const html =
+            '<ul data-type="taskList"><li data-checked="true"><div>Done</div></li><li data-checked="false"><div>Todo</div></li></ul>';
+        const md = htmlToMarkdown(html);
+        expect(md).toContain('- [x] Done');
+        expect(md).toContain('- [ ] Todo');
+    });
+
+    it('preserves sup/sub/highlight/color marks as inline HTML', () => {
+        const md = htmlToMarkdown(
+            '<p>H<sub>2</sub>O and x<sup>2</sup> and <mark style="background-color: #fef08a">flagged</mark> and <span style="color: #663399">purple</span></p>'
+        );
+        expect(md).toContain('<sub>2</sub>');
+        expect(md).toContain('<sup>2</sup>');
+        expect(md).toContain('<mark style="background-color: #fef08a">flagged</mark>');
+        expect(md).toContain('<span style="color: #663399">purple</span>');
     });
 });
 
@@ -36,6 +61,25 @@ describe('htmlToDocxChildren', () => {
         const children = htmlToDocxChildren(FIXTURE_HTML);
         // h1, p, 2 list items (ul), 2 list items (ol), blockquote, hr = 8
         expect(children.length).toBe(8);
+    });
+
+    it('produces a real Table node (not flattened paragraphs) for a <table>', () => {
+        const children = htmlToDocxChildren('<table><tr><th>Name</th></tr><tr><td>A</td></tr></table>');
+        expect(children.length).toBe(1);
+        expect(children[0].constructor.name).toBe('Table');
+    });
+
+    it('produces one Paragraph per task list item', () => {
+        const html =
+            '<ul data-type="taskList"><li data-checked="true"><div>Done</div></li><li data-checked="false"><div>Todo</div></li></ul>';
+        const children = htmlToDocxChildren(html);
+        expect(children.length).toBe(2);
+    });
+
+    it('does not throw on color/highlight/font/line-height/text-align marks', () => {
+        const html =
+            '<p style="text-align: center; line-height: 1.5"><span style="color: #663399; font-family: Arial; font-size: 14pt">styled</span> <mark style="background-color: #fef08a">hl</mark> <sup>2</sup></p>';
+        expect(() => htmlToDocxChildren(html)).not.toThrow();
     });
 });
 
