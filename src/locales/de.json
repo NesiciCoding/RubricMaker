@@ -2249,6 +2249,7 @@
         "es_export_item_batch": "Laden Sie ausgewählte Aufsätze als einzelne Dateien herunter oder kombinieren Sie sie in einem Dokument (DOCX-/PDF-Seitenumbruch pro Schüler)",
         "es_export_item_combined": "Fügen Sie optional die Rubrik-Note und die Grammatik-/Vokabelanalyse des Schülers zum Aufsatz hinzu (nur DOCX oder PDF)",
         "es_export_item_ics": "Exportieren Sie die Frist jeder Aufsatzaufgabe als herunterladbare .ics-Kalenderdatei",
+        "es_export_item_styling": "Textfarbe, Hervorhebungen, Schriftarten, Ausrichtung, Tabellen und Checklisten aus dem Editor bleiben in DOCX- und Markdown-Exporten erhalten, nicht nur in PDF",
         "an_portfolio_title": "Schülerportfolio-Ansicht",
         "an_portfolio_body_prefix": "Öffne einen Schüler von der Seite",
         "an_portfolio_students_nav": "Schüler",

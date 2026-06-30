@@ -2249,6 +2249,7 @@
         "es_export_item_batch": "Download geselecteerde essays als losse bestanden, of combineer ze in één document (DOCX-/PDF-paginabreuk per leerling)",
         "es_export_item_combined": "Voeg optioneel het rubriekcijfer en de grammatica-/woordenschatanalyse van de leerling toe aan het essay (alleen DOCX of PDF)",
         "es_export_item_ics": "Exporteer de deadline van elke essayopdracht als een downloadbaar .ics-agendabestand",
+        "es_export_item_styling": "Tekstkleur, markeringen, lettertypen, uitlijning, tabellen en checklists uit de editor blijven behouden in DOCX- en Markdown-exports, niet alleen in PDF",
         "an_portfolio_title": "Leerlingportfolioweergave",
         "an_portfolio_body_prefix": "Open een leerling vanaf de pagina",
         "an_portfolio_students_nav": "Leerlingen",

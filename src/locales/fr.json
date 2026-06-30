@@ -2249,6 +2249,7 @@
         "es_export_item_batch": "Téléchargez les dissertations sélectionnées en fichiers séparés, ou combinez-les en un seul document (saut de page DOCX/PDF par élève)",
         "es_export_item_combined": "Incluez éventuellement la note de la grille et l'analyse grammaticale/lexicale de l'élève avec la dissertation (DOCX ou PDF uniquement)",
         "es_export_item_ics": "Exportez l'échéance de chaque devoir de dissertation sous forme de fichier calendrier .ics téléchargeable",
+        "es_export_item_styling": "La couleur du texte, les surlignages, les polices, l'alignement, les tableaux et les listes de tâches de l'éditeur sont conservés dans les exports DOCX et Markdown, pas seulement en PDF",
         "an_portfolio_title": "Vue du portfolio de l'élève",
         "an_portfolio_body_prefix": "Ouvrez un élève depuis la page",
         "an_portfolio_students_nav": "Élèves",

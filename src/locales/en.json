@@ -2247,6 +2247,7 @@
         "es_export_item_batch": "Download selected essays as separate files, or combine them into one document (DOCX page breaks / PDF page breaks per student)",
         "es_export_item_combined": "Optionally include the student's rubric grade and grammar/vocabulary analysis alongside the essay (DOCX or PDF only)",
         "es_export_item_ics": "Export every essay assignment's deadline as a downloadable .ics calendar file",
+        "es_export_item_styling": "Text color, highlights, fonts, alignment, tables, and checklists from the editor are preserved in DOCX and Markdown exports, not just PDF",
         "an_portfolio_title": "Student portfolio view",
         "an_portfolio_body_prefix": "Open a student from the",
         "an_portfolio_students_nav": "Students",

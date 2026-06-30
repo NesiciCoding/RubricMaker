@@ -1084,6 +1084,7 @@ function EssaysTab() {
                         t('docs.es_export_item_batch'),
                         t('docs.es_export_item_combined'),
                         t('docs.es_export_item_ics'),
+                        t('docs.es_export_item_styling'),
                     ]}
                 />
             </FeatureSection>

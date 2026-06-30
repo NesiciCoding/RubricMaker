@@ -2249,6 +2249,7 @@
         "es_export_item_batch": "Descarga los ensayos seleccionados como archivos separados, o combínalos en un solo documento (salto de página DOCX/PDF por alumno)",
         "es_export_item_combined": "Incluye opcionalmente la calificación de la rúbrica y el análisis de gramática/vocabulario del alumno junto con el ensayo (solo DOCX o PDF)",
         "es_export_item_ics": "Exporta la fecha límite de cada tarea de ensayo como un archivo de calendario .ics descargable",
+        "es_export_item_styling": "El color del texto, los resaltados, las fuentes, la alineación, las tablas y las listas de tareas del editor se conservan en las exportaciones DOCX y Markdown, no solo en PDF",
         "an_portfolio_title": "Vista del portafolio del alumno",
         "an_portfolio_body_prefix": "Abre un alumno desde la página",
         "an_portfolio_students_nav": "Alumnos",
