@@ -1243,17 +1243,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 checkedSubItems: [],
             }));
             const groupId = nanoid();
-            const srs = studentIds.map(
-                (studentId): StudentRubric => ({
-                    id: nanoid(),
-                    rubricId,
-                    studentId,
-                    entries: entries.map((e) => ({ ...e })),
-                    overallComment: '',
-                    isPeerReview: false,
-                    groupId,
-                })
-            );
+            const srs = studentIds.map((studentId): StudentRubric => ({
+                id: nanoid(),
+                rubricId,
+                studentId,
+                entries: entries.map((e) => ({ ...e })),
+                overallComment: '',
+                isPeerReview: false,
+                groupId,
+            }));
             srs.forEach((sr) => dispatch({ type: 'SAVE_STUDENT_RUBRIC', payload: sr }));
             return srs;
         },
