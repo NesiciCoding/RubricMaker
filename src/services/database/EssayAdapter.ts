@@ -78,11 +78,21 @@ export class EssayAdapter {
         // Prefer a verified (email-carrying) session from either client over an anonymous one.
         // This ensures a stale anonymous rm_student_auth token never masks a valid portal login.
         if (isolated?.user.email) return { session: isolated, source: 'isolated' as const };
-        if (portal?.user.email) return { session: portal, source: 'portal' as const };
+        // portalClient has no custom storageKey, so it also picks up a teacher's session from
+        // the main app on the same origin — an email alone doesn't prove it's a student. Confirm
+        // role='student' via profiles before trusting it to auto-bypass the email gate.
+        if (portal?.user.email && (await this.isStudentRole(portal.user.id))) {
+            return { session: portal, source: 'portal' as const };
+        }
         // Anonymous isolated session (set after the email gate) — valid for submission, no email.
         if (isolated) return { session: isolated, source: 'isolated' as const };
 
         return null;
+    }
+
+    private async isStudentRole(userId: string): Promise<boolean> {
+        const { data, error } = await this.portalClient.from('profiles').select('role').eq('id', userId).single();
+        return !error && data?.role === 'student';
     }
 
     // ── Auth ─────────────────────────────────────────────────────────────────

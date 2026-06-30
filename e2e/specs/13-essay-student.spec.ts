@@ -17,6 +17,7 @@ import {
     buildShortCode,
     buildPortalSession,
     mockGetEssayAssignment,
+    mockProfileRole,
 } from '../pages/StudentEssayPage';
 
 // ── Mock Supabase helpers ─────────────────────────────────────────────────────
@@ -337,7 +338,10 @@ test.describe('Essay page — portal session bypass', () => {
         );
 
         const code = buildEssayCode({ supabaseUrl: MOCK_SUPABASE_URL, supabaseAnonKey: MOCK_ANON_KEY });
-        // No need to mock auth — the gate should be bypassed before any auth call
+        // No auth call needed — but the gate now confirms profiles.role === 'student'
+        // (via REST) before bypassing, since the portal session shares its storage key
+        // with the teacher app and an email alone no longer proves it's a student.
+        await mockProfileRole(page, MOCK_SUPABASE_URL, 'student');
         await mockSubmitEssay(page);
 
         const essay = new StudentEssayPage(page);
@@ -357,12 +361,35 @@ test.describe('Essay page — portal session bypass', () => {
         );
 
         const code = buildEssayCode({ supabaseUrl: MOCK_SUPABASE_URL, supabaseAnonKey: MOCK_ANON_KEY });
+        await mockProfileRole(page, MOCK_SUPABASE_URL, 'student');
         await mockSubmitEssay(page);
 
         const essay = new StudentEssayPage(page);
         await essay.goto(code);
 
         await expect(essay.signedInAs('jane.doe@myschool.nl')).toBeVisible({ timeout: 10_000 });
+    });
+
+    test('teacher session on the shared key does not bypass the gate', async ({ page }) => {
+        // A teacher logged into the main app on the same origin shares the same
+        // default storage key as the portal session — this must NOT be mistaken
+        // for a student login (the bug this PR fixes).
+        const teacherSession = buildPortalSession('teacher@school.nl', 'teacher-user-id');
+        await page.addInitScript(
+            ({ key, value }) => localStorage.setItem(key, JSON.stringify(value)),
+            { key: 'sb-mock-auth-token', value: teacherSession }
+        );
+
+        const code = buildEssayCode({ supabaseUrl: MOCK_SUPABASE_URL, supabaseAnonKey: MOCK_ANON_KEY });
+        await mockProfileRole(page, MOCK_SUPABASE_URL, 'teacher');
+        await mockSupabaseAuth(page);
+
+        const essay = new StudentEssayPage(page);
+        await essay.goto(code);
+
+        // The teacher's session must not auto-bypass — the email gate should still show.
+        await expect(essay.emailInput()).toBeVisible({ timeout: 10_000 });
+        await expect(essay.signedInAs('teacher@school.nl')).not.toBeVisible();
     });
 });
 

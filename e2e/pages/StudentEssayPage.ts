@@ -240,6 +240,20 @@ export async function mockGetEssayAssignment(
     });
 }
 
+/**
+ * Route the profiles REST lookup used to confirm a portal session belongs to a
+ * student before EmailGate auto-bypasses (see EssayAdapter.isStudentRole()).
+ */
+export async function mockProfileRole(page: Page, supabaseUrl: string, role: string): Promise<void> {
+    await page.route(`${supabaseUrl}/rest/v1/profiles**`, (route) => {
+        route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ role }),
+        });
+    });
+}
+
 // ── Portal session builder ────────────────────────────────────────────────────
 
 export function buildPortalSession(email: string, userId = 'portal-user-id') {
