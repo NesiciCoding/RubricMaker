@@ -66,9 +66,10 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 - **Export options**:
     - **PDF**: Individual student reports or bulk class export.
     - **Word (.docx)**: Raw export or mail-merge templates with field substitution.
-    - **CSV**: Raw data for Excel or other gradebooks.
+    - **CSV**: Raw data for Excel, or a ready-made column preset for Magister/SOMtoday (Dutch 1-10 grade scale) via the gradebook format dropdown next to the CSV button.
     - **Period report**: Aggregated CEFR progress report for a class over a date range.
     - **Report cards**: A single consolidated DOCX per student combining rubric grades, standards coverage, learning goals, and CEFR overview, with toggleable sections; export one student or batch-export a whole class.
+    - **Calendar (.ics)**: Download every essay assignment's deadline as a single .ics file for import into any calendar app.
 
 ### 6. Student Portal
 
@@ -208,6 +209,8 @@ npm run db:reset     # Reset and re-apply all migrations
 | `src/utils/coGradingModerationQueue.ts` | Flags disputed co-graded submissions (delta above threshold) for the Moderation queue          |
 | `src/utils/displayOrder.ts`             | Shared sort/reorder helpers for manually-orderable list views                                  |
 | `src/utils/cohortAggregator.ts`         | Derives a cohort's student set from current + past class memberships by year/track             |
+| `src/utils/gradebookExportPresets.ts`   | Per-SIS CSV column presets (Magister, SOMtoday) for the gradebook export                       |
+| `src/utils/icsExport.ts`                | Builds a minimal `.ics` calendar file from assignment deadlines                                |
 | `src/services/standardsApi.ts`          | Common Standards Project API (CCSS, NGSS)                                                      |
 
 ---

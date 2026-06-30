@@ -1083,6 +1083,7 @@ function EssaysTab() {
                         t('docs.es_export_item_formats'),
                         t('docs.es_export_item_batch'),
                         t('docs.es_export_item_combined'),
+                        t('docs.es_export_item_ics'),
                     ]}
                 />
             </FeatureSection>
@@ -1148,6 +1149,7 @@ function AnalyticsTab() {
                         t('docs.an_export_item_pdf'),
                         t('docs.an_export_item_docx', { interpolation: { prefix: '⟦', suffix: '⟧' } }),
                         t('docs.an_export_item_csv'),
+                        t('docs.an_export_item_csv_presets'),
                         t('docs.an_export_item_period'),
                         t('docs.an_export_item_report_cards'),
                     ]}

@@ -49,7 +49,7 @@ const TEACHER_FEATURES = [
     {
         icon: BarChart3,
         title: 'Analytics & Export',
-        desc: 'See class progress at a glance, then export grades, report cards, and essays in the format that works for you.',
+        desc: 'See class progress at a glance, then export grades (with ready-made gradebook presets), report cards, essays, and assignment deadlines in the format that works for you.',
         color: '#06b6d4',
     },
     {
