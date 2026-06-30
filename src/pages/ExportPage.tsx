@@ -18,6 +18,7 @@ import {
     ClipboardList,
     ChevronDown,
     ExternalLink,
+    CalendarDays,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
@@ -27,6 +28,7 @@ import { calcGradeSummary } from '../utils/gradeCalc';
 import { getStudentGoalScores } from '../utils/learningGoalsAggregator';
 import { encodeFeedbackCode } from '../utils/shareCode';
 import type { ReportCardConfig, Student } from '../types';
+import { buildGradebookPresetCsv, GRADEBOOK_PRESET_IDS, type GradebookPresetId } from '../utils/gradebookExportPresets';
 
 export default function ExportPage() {
     const { t } = useTranslation();
@@ -64,6 +66,7 @@ export default function ExportPage() {
 
     const rubric = rubrics.find((r) => r.id === selectedRubricId);
 
+    const [gradebookPreset, setGradebookPreset] = useState<GradebookPresetId>('generic');
     const [padForDoubleSided, setPadForDoubleSided] = useState(false);
     const [orientation, setOrientation] = useState<'portrait' | 'landscape' | undefined>(undefined);
     const [showBulkComment, setShowBulkComment] = useState(false);
@@ -244,6 +247,39 @@ export default function ExportPage() {
         }
     }
 
+    async function handleIcsExport() {
+        try {
+            const dedup = new Map<string, { title: string; expiresAt: string }>();
+            for (const a of essayAssignments) {
+                if (a.expiresAt && !dedup.has(a.teacherKey)) {
+                    dedup.set(a.teacherKey, { title: a.title, expiresAt: a.expiresAt });
+                }
+            }
+            if (dedup.size === 0) {
+                showToast(t('exportPage.ics_export_none'), 'error');
+                return;
+            }
+            const { buildIcs } = await import('../utils/icsExport');
+            const ics = buildIcs(
+                Array.from(dedup.entries()).map(([teacherKey, { title, expiresAt }]) => ({
+                    uid: `essay-${teacherKey}@rubricmaker`,
+                    title,
+                    dueDate: expiresAt,
+                }))
+            );
+            const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'essay_deadlines.ics';
+            a.click();
+            URL.revokeObjectURL(url);
+            logAuditEvent('export', 'export_ics', 'essay', 'all', { count: dedup.size });
+        } catch {
+            showToast(t('toast.export_error'), 'error');
+        }
+    }
+
     async function handleExport(single?: string) {
         if (!rubric) return;
         setExporting(true);
@@ -318,6 +354,29 @@ export default function ExportPage() {
         const toExport = gradedStudents.filter((x) => selectedStudentIds.has(x.student!.id));
 
         if (toExport.length === 0) return;
+
+        const presetCsv = buildGradebookPresetCsv(
+            gradebookPreset,
+            toExport.map(({ student, summary }) => ({
+                studentName: student!.name,
+                studentNumber: student!.studentNumber || '',
+                percentage: summary!.modifiedPercentage,
+            }))
+        );
+        if (presetCsv !== null) {
+            const blob = new Blob([presetCsv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${rubric.name.replace(/[^a-z0-9]/gi, '_')}_${gradebookPreset}_grades.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            logAuditEvent('export', 'export_csv', 'rubric', rubric.id, {
+                count: toExport.length,
+                preset: gradebookPreset,
+            });
+            return;
+        }
 
         const data = toExport.map(({ sr, student, summary }) => {
             const row: Record<string, string | number> = {
@@ -744,16 +803,31 @@ export default function ExportPage() {
                                 >
                                     <FileText size={14} /> {t('exportPage.csv_label')}
                                 </div>
-                                <button
-                                    className="btn btn-secondary btn-sm"
-                                    disabled={!rubric || exporting || selectedStudentIds.size === 0}
-                                    onClick={handleCsvExport}
-                                >
-                                    <Download size={13} />
-                                    {selectedStudentIds.size === 0
-                                        ? t('exportPage.csv_select_prompt')
-                                        : t('exportPage.csv_export_count', { count: selectedStudentIds.size })}
-                                </button>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <select
+                                        aria-label={t('exportPage.csv_preset_label')}
+                                        className="form-control"
+                                        style={{ fontSize: '0.8rem', padding: '4px 6px', width: 'auto' }}
+                                        value={gradebookPreset}
+                                        onChange={(e) => setGradebookPreset(e.target.value as GradebookPresetId)}
+                                    >
+                                        {GRADEBOOK_PRESET_IDS.map((id) => (
+                                            <option key={id} value={id}>
+                                                {t(`exportPage.csv_preset_${id}`)}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <button
+                                        className="btn btn-secondary btn-sm"
+                                        disabled={!rubric || exporting || selectedStudentIds.size === 0}
+                                        onClick={handleCsvExport}
+                                    >
+                                        <Download size={13} />
+                                        {selectedStudentIds.size === 0
+                                            ? t('exportPage.csv_select_prompt')
+                                            : t('exportPage.csv_export_count', { count: selectedStudentIds.size })}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1157,6 +1231,17 @@ export default function ExportPage() {
                             }}
                         />
                     </button>
+
+                    {!collapsedSections.has('essays') && (
+                        <button
+                            type="button"
+                            className="btn btn-ghost btn-sm"
+                            style={{ marginBottom: 12 }}
+                            onClick={handleIcsExport}
+                        >
+                            <CalendarDays size={13} /> {t('exportPage.ics_export_button')}
+                        </button>
+                    )}
 
                     <div
                         id="export-section-essays"
