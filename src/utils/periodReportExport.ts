@@ -11,6 +11,7 @@ import {
     HeadingLevel,
     BorderStyle,
     ShadingType,
+    ImageRun,
 } from 'docx';
 import { saveAs } from 'file-saver';
 import type { Student, StudentRubric, Rubric, GradeScale, ReportCardData, ReportCardSection } from '../types';
@@ -34,6 +35,15 @@ export interface PeriodReportInput {
 const BORDER = { style: BorderStyle.SINGLE, size: 1, color: 'D1D5DB' };
 const NO_BORDER = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
 
+// Comment text is free-form and may contain pasted HTML; strip tags so they never show up literally
+// in the exported document (TextRun renders text literally, it doesn't parse markup).
+function stripHtml(text: string): string {
+    return text
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
 function gradeColor(pct: number): string {
     if (pct >= 75) return 'DCFCE7'; // green-100
     if (pct >= 55) return 'FEF9C3'; // yellow-100
@@ -43,6 +53,76 @@ function gradeColor(pct: number): string {
 function normalizePct(value: number): number {
     if (!Number.isFinite(value)) return 0;
     return Math.max(0, Math.min(100, value));
+}
+
+function barColor(pct: number): string {
+    if (pct >= 75) return '22C55E'; // green-500
+    if (pct >= 55) return 'EAB308'; // yellow-500
+    return 'EF4444'; // red-500
+}
+
+interface ChartPng {
+    data: Uint8Array;
+    width: number;
+    height: number;
+}
+
+// ponytail: rasterizes a plain <canvas> bar chart instead of pulling Recharts (a React component
+// tree) into this non-React export utility — no headless-render infra needed. Falls back to the
+// pre-existing colored-cell trend table (handled by the caller) when canvas 2d context isn't
+// available, e.g. under jsdom in tests.
+async function renderGradeTrendChartPng(summaries: RubricGradeSummary[]): Promise<ChartPng | null> {
+    if (typeof document === 'undefined') return null;
+    try {
+        const width = 600;
+        const height = 200;
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return null;
+
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, width, height);
+
+        const padding = { top: 16, right: 12, bottom: 46, left: 12 };
+        const chartW = width - padding.left - padding.right;
+        const chartH = height - padding.top - padding.bottom;
+        const gap = 10;
+        const barW = (chartW - gap * (summaries.length - 1)) / summaries.length;
+
+        ctx.strokeStyle = '#E5E7EB';
+        ctx.beginPath();
+        ctx.moveTo(padding.left, padding.top + chartH);
+        ctx.lineTo(padding.left + chartW, padding.top + chartH);
+        ctx.stroke();
+
+        summaries.forEach((s, i) => {
+            const pct = normalizePct(s.summary.modifiedPercentage);
+            const barH = (pct / 100) * chartH;
+            const x = padding.left + i * (barW + gap);
+            const y = padding.top + chartH - barH;
+
+            ctx.fillStyle = `#${barColor(pct)}`;
+            ctx.fillRect(x, y, barW, barH);
+
+            ctx.fillStyle = '#374151';
+            ctx.font = '11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${pct.toFixed(0)}%`, x + barW / 2, Math.max(y - 4, 10));
+
+            const label = s.rubric.name.length > 12 ? `${s.rubric.name.slice(0, 11)}…` : s.rubric.name;
+            ctx.fillStyle = '#6B7280';
+            ctx.font = '10px sans-serif';
+            ctx.fillText(label, x + barW / 2, padding.top + chartH + 16);
+        });
+
+        const blob: Blob | null = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+        if (!blob) return null;
+        return { data: new Uint8Array(await blob.arrayBuffer()), width, height };
+    } catch {
+        return null;
+    }
 }
 
 function sparkBar(pct: number): string {
@@ -133,7 +213,7 @@ function summarizeRubricEntries(entries: PeriodReportEntry[]): RubricGradeSummar
     }));
 }
 
-function buildRubricGradeSections(summaries: RubricGradeSummary[]): (Paragraph | Table)[] {
+async function buildRubricGradeSections(summaries: RubricGradeSummary[]): Promise<(Paragraph | Table)[]> {
     const blocks: (Paragraph | Table)[] = [];
 
     const avg =
@@ -164,33 +244,50 @@ function buildRubricGradeSections(summaries: RubricGradeSummary[]): (Paragraph |
             })
         );
 
-        const trendCells = summaries.map((s) => {
-            const pct = s.summary.modifiedPercentage;
-            return new TableCell({
-                children: [
-                    new Paragraph({
-                        children: [new TextRun({ text: `${pct.toFixed(0)}%`, size: 16, bold: true })],
-                        alignment: AlignmentType.CENTER,
-                        spacing: { before: 40 },
-                    }),
-                    new Paragraph({
-                        children: [new TextRun({ text: s.rubric.name, size: 14, color: '6B7280' })],
-                        alignment: AlignmentType.CENTER,
-                        spacing: { after: 40 },
-                    }),
-                ],
-                width: { size: Math.round(100 / summaries.length), type: WidthType.PERCENTAGE },
-                borders: { top: BORDER, bottom: BORDER, left: BORDER, right: BORDER },
-                shading: { fill: gradeColor(pct), type: ShadingType.CLEAR, color: 'auto' },
+        const chart = await renderGradeTrendChartPng(summaries);
+        if (chart) {
+            blocks.push(
+                new Paragraph({
+                    children: [
+                        new ImageRun({
+                            type: 'png',
+                            data: chart.data,
+                            transformation: { width: chart.width, height: chart.height },
+                        }),
+                    ],
+                    spacing: { after: 160 },
+                })
+            );
+        } else {
+            // Canvas 2d context unavailable (e.g. jsdom in tests) — fall back to a colored-cell row.
+            const trendCells = summaries.map((s) => {
+                const pct = s.summary.modifiedPercentage;
+                return new TableCell({
+                    children: [
+                        new Paragraph({
+                            children: [new TextRun({ text: `${pct.toFixed(0)}%`, size: 16, bold: true })],
+                            alignment: AlignmentType.CENTER,
+                            spacing: { before: 40 },
+                        }),
+                        new Paragraph({
+                            children: [new TextRun({ text: s.rubric.name, size: 14, color: '6B7280' })],
+                            alignment: AlignmentType.CENTER,
+                            spacing: { after: 40 },
+                        }),
+                    ],
+                    width: { size: Math.round(100 / summaries.length), type: WidthType.PERCENTAGE },
+                    borders: { top: BORDER, bottom: BORDER, left: BORDER, right: BORDER },
+                    shading: { fill: gradeColor(pct), type: ShadingType.CLEAR, color: 'auto' },
+                });
             });
-        });
 
-        blocks.push(
-            new Table({
-                rows: [new TableRow({ children: trendCells })],
-                width: { size: 100, type: WidthType.PERCENTAGE },
-            })
-        );
+            blocks.push(
+                new Table({
+                    rows: [new TableRow({ children: trendCells })],
+                    width: { size: 100, type: WidthType.PERCENTAGE },
+                })
+            );
+        }
     }
 
     blocks.push(
@@ -258,7 +355,7 @@ export async function exportPeriodReport(input: PeriodReportInput): Promise<void
         })
     );
 
-    sections.push(...buildRubricGradeSections(summaries));
+    sections.push(...(await buildRubricGradeSections(summaries)));
 
     if (goals && goals.length > 0) {
         sections.push(
@@ -290,7 +387,7 @@ export async function exportPeriodReport(input: PeriodReportInput): Promise<void
             if (s.sr.overallComment) {
                 sections.push(
                     new Paragraph({
-                        children: [new TextRun({ text: s.sr.overallComment, size: 20, color: '374151' })],
+                        children: [new TextRun({ text: stripHtml(s.sr.overallComment), size: 20, color: '374151' })],
                         spacing: { after: 60 },
                     })
                 );
@@ -305,7 +402,7 @@ export async function exportPeriodReport(input: PeriodReportInput): Promise<void
                     new Paragraph({
                         children: [
                             new TextRun({ text: `${criterion.title}: `, bold: true, size: 20 }),
-                            new TextRun({ text: entry.comment, size: 20, color: '374151' }),
+                            new TextRun({ text: stripHtml(entry.comment ?? ''), size: 20, color: '374151' }),
                         ],
                         spacing: { after: 40 },
                     })
@@ -480,7 +577,7 @@ function buildTestSummarySection(section: Extract<ReportCardSection, { type: 'te
     return blocks;
 }
 
-function buildReportCardSections(data: ReportCardData): (Paragraph | Table)[] {
+async function buildReportCardSections(data: ReportCardData): Promise<(Paragraph | Table)[]> {
     const blocks: (Paragraph | Table)[] = [];
 
     blocks.push(
@@ -522,7 +619,7 @@ function buildReportCardSections(data: ReportCardData): (Paragraph | Table)[] {
                         })
                     );
                 } else {
-                    blocks.push(...buildRubricGradeSections(summaries));
+                    blocks.push(...(await buildRubricGradeSections(summaries)));
                 }
                 break;
             }
@@ -562,7 +659,7 @@ function buildReportCardSections(data: ReportCardData): (Paragraph | Table)[] {
 }
 
 export async function exportReportCard(data: ReportCardData): Promise<void> {
-    const blocks = buildReportCardSections(data);
+    const blocks = await buildReportCardSections(data);
     const doc = new Document({ sections: [{ children: blocks }] });
     const blob = await Packer.toBlob(doc);
     const safeName = data.studentName.replace(/[^a-z0-9]/gi, '_');

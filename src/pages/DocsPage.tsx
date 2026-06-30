@@ -1167,6 +1167,7 @@ function AnalyticsTab() {
                         t('docs.an_report_cards_item_toggle'),
                         t('docs.an_report_cards_item_export'),
                         t('docs.an_report_cards_item_summary'),
+                        t('docs.an_report_cards_item_chart'),
                     ]}
                 />
             </FeatureSection>
