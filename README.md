@@ -31,6 +31,7 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 - **Voice grading**: Dictate comments hands-free using speech recognition.
 - **Overall feedback**: Add general comments and file attachments per graded rubric.
 - **Comparative grading**: Grade two students side-by-side for consistency.
+- **Group grading** (phase 1): Pick two or more students to share one grade from the Rubrics list. Saving any member's grade duplicates its scores and comments to the rest of the group — useful for group projects. Each student keeps their own record; there is no per-criterion individual/collaborative split yet.
 - **Peer review**: Students review each other's work against the same rubric.
 - **Peer review analytics**: Compare peer grades against the teacher baseline (consistency and leniency bias per reviewer), a feedback heatmap of which criteria attract the most peer comments, and round-over-round trends.
 - **Self-assessment**: Students self-assess against CEFR Can-Do statements.

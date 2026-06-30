@@ -865,6 +865,14 @@ function GradingTab() {
                 </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.gr_group_title')}
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
+                    {t('docs.gr_group_body_prefix')} <strong>{t('docs.gr_group_button')}</strong>{' '}
+                    {t('docs.gr_group_body_suffix')}
+                </p>
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.gr_peer_title')}
                 </h3>
                 <FeatureList

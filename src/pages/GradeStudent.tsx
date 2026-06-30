@@ -531,6 +531,17 @@ export default function GradeStudent() {
         updateEntry(entry.criterionId, { subItemScores: { ...currentScores, [subItemId]: score } });
     }
 
+    // Phase 1 group grading: other students sharing this groupId get this grade's scores/comment
+    // copied to them on save (AppContext's SAVE_STUDENT_RUBRIC reducer case does the fan-out).
+    // groupId is set at group-creation time and never edited locally, so existingSR (not the
+    // possibly-unsaved sr state) is the right read here.
+    const groupMemberNames: string[] = existingSR?.groupId
+        ? studentRubrics
+              .filter((other) => other.groupId === existingSR.groupId && other.studentId !== studentId)
+              .map((other) => students.find((s) => s.id === other.studentId)?.name)
+              .filter((name): name is string => Boolean(name))
+        : [];
+
     return (
         <>
             <Joyride
@@ -690,6 +701,20 @@ export default function GradeStudent() {
                         {student.name} &middot; {new Date().toLocaleDateString()}
                     </p>
                 </div>
+
+                {groupMemberNames.length > 0 && (
+                    <div
+                        className="card no-print"
+                        style={{
+                            marginBottom: 16,
+                            fontSize: '0.85rem',
+                            color: 'var(--text-muted)',
+                            background: 'var(--bg-elevated)',
+                        }}
+                    >
+                        {t('gradeStudent.group_grade_banner', { names: groupMemberNames.join(', ') })}
+                    </div>
+                )}
 
                 {/* Modifier + export panel */}
                 <div

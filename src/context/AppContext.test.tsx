@@ -237,6 +237,49 @@ describe('AppContext', () => {
         expect(result.current.studentRubrics[0].entries).toHaveLength(1);
     });
 
+    it('should create group student rubrics sharing one groupId, and propagate scores on save', () => {
+        const { result } = renderHook(() => useApp(), { wrapper });
+        act(() => {
+            result.current.addRubric({
+                name: 'Group Project',
+                subject: '',
+                description: '',
+                criteria: [{ id: 'c1', title: 'C1', description: '', weight: 100, levels: [] }],
+                gradeScaleId: 'default-scale',
+                format: result.current.settings.defaultFormat,
+                attachmentIds: [],
+                totalMaxPoints: 100,
+                scoringMode: 'total-points',
+            });
+        });
+        const rubricId = result.current.rubrics[0].id;
+
+        let group: ReturnType<typeof result.current.createGroupStudentRubrics> = [];
+        act(() => {
+            group = result.current.createGroupStudentRubrics(rubricId, ['s1', 's2', 's3']);
+        });
+
+        expect(group).toHaveLength(3);
+        expect(new Set(group.map((sr) => sr.groupId)).size).toBe(1);
+        expect(result.current.studentRubrics).toHaveLength(3);
+
+        // Grade only the first member; the other two should pick up the same scores/comment.
+        act(() => {
+            result.current.saveStudentRubric({
+                ...group[0],
+                entries: [{ criterionId: 'c1', levelId: 'l1', comment: 'nice', checkedSubItems: [] }],
+                overallComment: 'Great teamwork',
+            });
+        });
+
+        for (const sr of result.current.studentRubrics) {
+            expect(sr.overallComment).toBe('Great teamwork');
+            expect(sr.entries[0].levelId).toBe('l1');
+        }
+        // Each member keeps its own id/studentId — duplication, not a shared record.
+        expect(new Set(result.current.studentRubrics.map((sr) => sr.studentId))).toEqual(new Set(['s1', 's2', 's3']));
+    });
+
     it('should merge classes', () => {
         const { result } = renderHook(() => useApp(), { wrapper });
         let c1 = '',
