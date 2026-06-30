@@ -24,7 +24,8 @@ export function buildGradebookPresetCsv(preset: GradebookPresetId, rows: Gradebo
                 Leerlingnummer: r.studentNumber,
                 Naam: r.studentName,
                 Cijfer: toDutchGrade(r.percentage),
-            }))
+            })),
+            { escapeFormulae: true }
         );
     }
     if (preset === 'somtoday') {
@@ -33,7 +34,8 @@ export function buildGradebookPresetCsv(preset: GradebookPresetId, rows: Gradebo
                 Leerling: r.studentName,
                 Leerlingnummer: r.studentNumber,
                 Resultaat: toDutchGrade(r.percentage),
-            }))
+            })),
+            { escapeFormulae: true }
         );
     }
     return null;

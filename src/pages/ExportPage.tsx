@@ -248,32 +248,36 @@ export default function ExportPage() {
     }
 
     async function handleIcsExport() {
-        const dedup = new Map<string, { title: string; expiresAt: string }>();
-        for (const a of essayAssignments) {
-            if (a.expiresAt && !dedup.has(a.teacherKey)) {
-                dedup.set(a.teacherKey, { title: a.title, expiresAt: a.expiresAt });
+        try {
+            const dedup = new Map<string, { title: string; expiresAt: string }>();
+            for (const a of essayAssignments) {
+                if (a.expiresAt && !dedup.has(a.teacherKey)) {
+                    dedup.set(a.teacherKey, { title: a.title, expiresAt: a.expiresAt });
+                }
             }
+            if (dedup.size === 0) {
+                showToast(t('exportPage.ics_export_none'), 'error');
+                return;
+            }
+            const { buildIcs } = await import('../utils/icsExport');
+            const ics = buildIcs(
+                Array.from(dedup.entries()).map(([teacherKey, { title, expiresAt }]) => ({
+                    uid: `essay-${teacherKey}@rubricmaker`,
+                    title,
+                    dueDate: expiresAt,
+                }))
+            );
+            const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'essay_deadlines.ics';
+            a.click();
+            URL.revokeObjectURL(url);
+            logAuditEvent('export', 'export_ics', 'essay', 'all', { count: dedup.size });
+        } catch {
+            showToast(t('toast.export_error'), 'error');
         }
-        if (dedup.size === 0) {
-            showToast(t('exportPage.ics_export_none'), 'error');
-            return;
-        }
-        const { buildIcs } = await import('../utils/icsExport');
-        const ics = buildIcs(
-            Array.from(dedup.entries()).map(([teacherKey, { title, expiresAt }]) => ({
-                uid: `essay-${teacherKey}@rubricmaker`,
-                title,
-                dueDate: expiresAt,
-            }))
-        );
-        const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'essay_deadlines.ics';
-        a.click();
-        URL.revokeObjectURL(url);
-        logAuditEvent('export', 'export_ics', 'essay', 'all', { count: dedup.size });
     }
 
     async function handleExport(single?: string) {

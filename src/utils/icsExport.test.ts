@@ -19,4 +19,11 @@ describe('buildIcs', () => {
         const ics = buildIcs([{ uid: 'x', title: 'Line1\nLine2', dueDate: '2026-07-01T00:00:00.000Z' }]);
         expect(ics).toContain('SUMMARY:Line1 Line2');
     });
+
+    it('escapes commas, semicolons, and backslashes per RFC 5545', () => {
+        const ics = buildIcs([
+            { uid: 'x', title: 'Essay 1, draft 2; final\\copy', dueDate: '2026-07-01T00:00:00.000Z' },
+        ]);
+        expect(ics).toContain('SUMMARY:Essay 1\\, draft 2\\; final\\\\copy');
+    });
 });

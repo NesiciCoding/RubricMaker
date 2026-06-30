@@ -9,6 +9,14 @@ function toIcsDate(iso: string): string {
     return new Date(iso).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 }
 
+function escapeIcsText(value: string): string {
+    return value
+        .replace(/\\/g, '\\\\')
+        .replace(/;/g, '\\;')
+        .replace(/,/g, '\\,')
+        .replace(/[\r\n]+/g, ' ');
+}
+
 export function buildIcs(events: IcsEvent[]): string {
     const dtstamp = toIcsDate(new Date().toISOString());
     const lines = [
@@ -20,7 +28,7 @@ export function buildIcs(events: IcsEvent[]): string {
             `UID:${e.uid}`,
             `DTSTAMP:${dtstamp}`,
             `DTSTART:${toIcsDate(e.dueDate)}`,
-            `SUMMARY:${e.title.replace(/[\r\n]+/g, ' ')}`,
+            `SUMMARY:${escapeIcsText(e.title)}`,
             'END:VEVENT',
         ]),
         'END:VCALENDAR',
