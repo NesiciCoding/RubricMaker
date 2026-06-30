@@ -65,7 +65,7 @@ export const DEFAULT_GRADE_SCALES: GradeScale[] = [
     },
 ];
 
-const DEFAULT_SETTINGS: AppSettings = {
+export const DEFAULT_SETTINGS: AppSettings = {
     defaultGradeScaleId: 'letter-10',
     theme: 'dark',
     language: 'en',
