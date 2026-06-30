@@ -117,6 +117,10 @@ GRAFANA_ROOT_URL=https://observability.rubricmaker.example.com/
 # panel's real webserver log dir — check with
 # `ls -la /home/rubricmaker/web/<any-domain>/logs/`. Mount that real target
 # dir too (same absolute path) so the symlinks resolve inside the container.
+# This doesn't cause duplicate log ingestion: Promtail's only webserver scrape
+# path is RUBRICMAKER_LOG_DIR (`/var/host-logs/**` in promtail-config.yml) —
+# this second mount isn't separately scraped, it just makes the symlink
+# targets resolvable when Promtail follows them.
 # Apache (most HestiaCP installs):
 RUBRICMAKER_WEBSERVER_LOG_DIR=/var/log/apache2/domains
 # Nginx-only HestiaCP installs would instead use /var/log/nginx/domains.

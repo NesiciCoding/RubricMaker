@@ -36,9 +36,11 @@ services:
       # HestiaCP's per-domain web/<domain>/logs/*.log files are symlinks to
       # the panel's real webserver log dir (e.g. /var/log/apache2/domains) —
       # mount that dir too, at the *same* path, so the symlinks resolve
-      # inside the container instead of "no such file or directory".
-      # Leave RUBRICMAKER_WEBSERVER_LOG_DIR unset on non-HestiaCP setups.
-      - ${RUBRICMAKER_WEBSERVER_LOG_DIR:-/var/log/apache2/domains}:${RUBRICMAKER_WEBSERVER_LOG_DIR:-/var/log/apache2/domains}:ro
+      # inside the container instead of "no such file or directory". Falls
+      # back to /var/log (already guaranteed to exist, unlike an Apache-only
+      # path) so leaving RUBRICMAKER_WEBSERVER_LOG_DIR unset on non-HestiaCP
+      # setups is a harmless no-op rather than creating a bogus empty dir.
+      - ${RUBRICMAKER_WEBSERVER_LOG_DIR:-/var/log}:${RUBRICMAKER_WEBSERVER_LOG_DIR:-/var/log}:ro
       # Optional: only relevant if the combined docker-compose.yml stack also
       # runs on this host — harmless if these paths don't exist.
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
