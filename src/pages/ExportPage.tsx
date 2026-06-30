@@ -367,7 +367,10 @@ export default function ExportPage() {
             a.download = `${rubric.name.replace(/[^a-z0-9]/gi, '_')}_${gradebookPreset}_grades.csv`;
             a.click();
             URL.revokeObjectURL(url);
-            logAuditEvent('export', 'export_csv', 'rubric', rubric.id, { count: toExport.length, preset: gradebookPreset });
+            logAuditEvent('export', 'export_csv', 'rubric', rubric.id, {
+                count: toExport.length,
+                preset: gradebookPreset,
+            });
             return;
         }
 
