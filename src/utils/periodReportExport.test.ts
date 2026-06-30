@@ -167,7 +167,10 @@ describe('periodReportExport', () => {
         });
 
         expect(ImageRun).toHaveBeenCalledWith(
-            expect.objectContaining({ type: 'png', transformation: expect.objectContaining({ width: 600, height: 200 }) })
+            expect.objectContaining({
+                type: 'png',
+                transformation: expect.objectContaining({ width: 600, height: 200 }),
+            })
         );
 
         getContextSpy.mockRestore();
