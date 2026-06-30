@@ -5,9 +5,8 @@ import type { RubricCriterion, ScoreEntry, GradeScale, Modifier } from '../../ty
 
 const finiteFloat = (min = 0, max = 100) => fc.double({ min, max, noNaN: true, noDefaultInfinity: true });
 
-const singleLevelCriterionArb = fc
-    .tuple(finiteFloat(0, 50), finiteFloat(0, 50))
-    .map(([minPts, rangeDelta]): RubricCriterion => ({
+const singleLevelCriterionArb = fc.tuple(finiteFloat(0, 50), finiteFloat(0, 50)).map(
+    ([minPts, rangeDelta]): RubricCriterion => ({
         id: 'c1',
         title: 'Criterion',
         description: '',
@@ -22,15 +21,18 @@ const singleLevelCriterionArb = fc
                 subItems: [],
             },
         ],
-    }));
+    })
+);
 
-const entryForL1Arb = finiteFloat(0, 200).map((selectedPoints): ScoreEntry => ({
-    criterionId: 'c1',
-    levelId: 'l1',
-    checkedSubItems: [],
-    comment: '',
-    selectedPoints,
-}));
+const entryForL1Arb = finiteFloat(0, 200).map(
+    (selectedPoints): ScoreEntry => ({
+        criterionId: 'c1',
+        levelId: 'l1',
+        checkedSubItems: [],
+        comment: '',
+        selectedPoints,
+    })
+);
 
 const modifierArb: fc.Arbitrary<Modifier> = fc.oneof(
     fc.record({ type: fc.constant('percentage' as const), value: finiteFloat(-200, 200), reason: fc.string() }),

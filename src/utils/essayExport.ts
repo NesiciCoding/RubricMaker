@@ -145,7 +145,9 @@ function blockToMarkdown(node: Element, listDepth = 0): string {
             const rows = Array.from(node.querySelectorAll('tr'));
             if (rows.length === 0) return '\n\n';
             const cellsOf = (row: Element) =>
-                Array.from(row.children).map((cell) => (cell.textContent?.trim() ?? '').replace(/\|/g, '\\|'));
+                Array.from(row.children).map((cell) =>
+                    (cell.textContent?.trim() ?? '').replace(/\\/g, '\\\\').replace(/\|/g, '\\|')
+                );
             const header = cellsOf(rows[0]);
             const body = rows.slice(1).map(cellsOf);
             const lines = [
@@ -223,7 +225,8 @@ function inlineDocxRuns(el: ChildNode, style: InlineStyle = PLAIN_STYLE): TextRu
     const color = styleValue(node, 'color');
     const fontFamily = styleValue(node, 'font-family');
     const fontSize = styleValue(node, 'font-size');
-    const highlightBg = tag === 'MARK' ? (styleValue(node, 'background-color') ?? node.getAttribute('data-color')) : undefined;
+    const highlightBg =
+        tag === 'MARK' ? (styleValue(node, 'background-color') ?? node.getAttribute('data-color')) : undefined;
     const next: InlineStyle = {
         bold: style.bold || tag === 'STRONG' || tag === 'B',
         italics: style.italics || tag === 'EM' || tag === 'I',
@@ -254,7 +257,9 @@ function blockAlignment(node: Element): (typeof AlignmentType)[keyof typeof Alig
     }
 }
 
-function blockSpacing(node: Element): { line: number; lineRule: (typeof LineRuleType)[keyof typeof LineRuleType] } | undefined {
+function blockSpacing(
+    node: Element
+): { line: number; lineRule: (typeof LineRuleType)[keyof typeof LineRuleType] } | undefined {
     const lineHeight = styleValue(node as HTMLElement, 'line-height');
     const multiplier = lineHeight ? parseFloat(lineHeight) : undefined;
     return multiplier && Number.isFinite(multiplier)
@@ -333,7 +338,9 @@ export function htmlToDocxChildren(html: string): (Paragraph | Table)[] {
             children.push(
                 new Paragraph({
                     indent: { left: 360 },
-                    children: Array.from(node.childNodes).flatMap((c) => inlineDocxRuns(c, { ...PLAIN_STYLE, italics: true })),
+                    children: Array.from(node.childNodes).flatMap((c) =>
+                        inlineDocxRuns(c, { ...PLAIN_STYLE, italics: true })
+                    ),
                 })
             );
         } else if (tag === 'HR') {
@@ -359,7 +366,11 @@ export function htmlToDocxChildren(html: string): (Paragraph | Table)[] {
             children.push(tableToDocx(node));
         } else {
             children.push(
-                new Paragraph({ alignment, spacing, children: Array.from(node.childNodes).flatMap((c) => inlineDocxRuns(c)) })
+                new Paragraph({
+                    alignment,
+                    spacing,
+                    children: Array.from(node.childNodes).flatMap((c) => inlineDocxRuns(c)),
+                })
             );
         }
     }

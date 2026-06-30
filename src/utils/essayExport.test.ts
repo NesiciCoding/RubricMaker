@@ -32,6 +32,11 @@ describe('htmlToMarkdown', () => {
         expect(md).toContain('| A | B |');
     });
 
+    it('escapes backslashes in table cells before escaping pipes, so a literal backslash cannot unescape a pipe', () => {
+        const md = htmlToMarkdown('<table><tr><td>C:\\path</td><td>a\\|b</td></tr></table>');
+        expect(md).toContain('| C:\\\\path | a\\\\\\|b |');
+    });
+
     it('renders a task list with GFM checkbox syntax', () => {
         const html =
             '<ul data-type="taskList"><li data-checked="true"><div>Done</div></li><li data-checked="false"><div>Todo</div></li></ul>';

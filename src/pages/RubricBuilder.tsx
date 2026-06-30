@@ -147,7 +147,8 @@ export default function RubricBuilder() {
     const [expandedSubItems, setExpandedSubItems] = useState<Set<string>>(new Set());
 
     type StandardTarget =
-        { type: 'criterion'; cid: string } | { type: 'subitem'; cid: string; lid: string; sid: string };
+        | { type: 'criterion'; cid: string }
+        | { type: 'subitem'; cid: string; lid: string; sid: string };
     const [pickingStandardFor, setPickingStandardFor] = useState<StandardTarget | null>(null);
     const [showExportMenu, setShowExportMenu] = useState(false);
     const { t, i18n } = useTranslation();
