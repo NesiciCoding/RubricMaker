@@ -242,10 +242,27 @@ function reducer(state: StoreData, action: Action): StoreData {
         case 'SAVE_STUDENT_RUBRIC': {
             const payload = { ...action.payload, updatedAt: new Date().toISOString() };
             const exists = state.studentRubrics.findIndex((sr) => sr.id === payload.id);
-            const next =
+            let next =
                 exists >= 0
                     ? state.studentRubrics.map((sr) => (sr.id === payload.id ? payload : sr))
                     : [...state.studentRubrics, payload];
+            // Group grading (phase 1, no per-criterion individual/collaborative split): saving any
+            // member of a group duplicates its entries/comment to every sibling sharing groupId.
+            if (payload.groupId) {
+                next = next.map((sr) =>
+                    sr.groupId === payload.groupId && sr.id !== payload.id
+                        ? {
+                              ...sr,
+                              entries: payload.entries,
+                              globalModifier: payload.globalModifier,
+                              overallComment: payload.overallComment,
+                              rubricSnapshot: payload.rubricSnapshot,
+                              gradedAt: payload.gradedAt,
+                              updatedAt: payload.updatedAt,
+                          }
+                        : sr
+                );
+            }
             if (isOffline()) saveStudentRubrics(next);
             return { ...state, studentRubrics: next };
         }
@@ -634,6 +651,7 @@ interface AppContextValue extends StoreData {
     saveStudentRubric: (sr: StudentRubric) => void;
     saveRubricSelfAssessment: (id: string, levels: Record<string, string | null>, reflection: string) => void;
     createStudentRubric: (rubricId: string, studentId: string) => StudentRubric;
+    createGroupStudentRubrics: (rubricId: string, studentIds: string[]) => StudentRubric[];
     deleteStudentRubric: (id: string) => void;
     addAttachment: (a: Omit<Attachment, 'id' | 'addedAt'>) => Attachment;
     deleteAttachment: (id: string) => void;
@@ -1210,6 +1228,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
         [state.rubrics]
     );
 
+    /**
+     * Phase 1 group grading: creates one StudentRubric per student, all sharing a fresh groupId.
+     * Grading any member through the normal single-student flow then duplicates its scores to the
+     * rest of the group via the SAVE_STUDENT_RUBRIC reducer case — no separate group grading UI.
+     */
+    const createGroupStudentRubrics = useCallback(
+        (rubricId: string, studentIds: string[]): StudentRubric[] => {
+            const rubric = state.rubrics.find((r) => r.id === rubricId);
+            const entries: ScoreEntry[] = (rubric?.criteria ?? []).map((c) => ({
+                criterionId: c.id,
+                levelId: null,
+                comment: '',
+                checkedSubItems: [],
+            }));
+            const groupId = nanoid();
+            const srs = studentIds.map(
+                (studentId): StudentRubric => ({
+                    id: nanoid(),
+                    rubricId,
+                    studentId,
+                    entries: entries.map((e) => ({ ...e })),
+                    overallComment: '',
+                    isPeerReview: false,
+                    groupId,
+                })
+            );
+            srs.forEach((sr) => dispatch({ type: 'SAVE_STUDENT_RUBRIC', payload: sr }));
+            return srs;
+        },
+        [state.rubrics]
+    );
+
     const deleteStudentRubric = useCallback((id: string) => dispatch({ type: 'DELETE_STUDENT_RUBRIC', id }), []);
 
     const addAttachment = useCallback((a: Omit<Attachment, 'id' | 'addedAt'>): Attachment => {
@@ -1605,6 +1655,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         saveStudentRubric: saveStudentRubricFn,
         saveRubricSelfAssessment,
         createStudentRubric,
+        createGroupStudentRubrics,
         deleteStudentRubric,
         addAttachment,
         deleteAttachment,

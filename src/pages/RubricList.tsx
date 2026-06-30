@@ -19,6 +19,7 @@ import {
     GripVertical,
     X,
     ExternalLink,
+    UsersRound,
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import Topbar from '../components/Layout/Topbar';
@@ -34,6 +35,7 @@ import { CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import { nanoid } from '../utils/nanoid';
 import ImportRubricModal from '../components/Rubric/ImportRubricModal';
+import Modal from '../components/ui/Modal';
 import type { ParsedRubric } from '../utils/rubricImport';
 import { encodeRubricShareCode, decodeRubricShareCode } from '../utils/rubricImport';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
@@ -45,7 +47,17 @@ import CohortFilter from '../components/CohortFilter';
 export default function RubricList() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { rubrics, students, classes, studentRubrics, addRubric, updateRubric, deleteRubric, settings } = useApp();
+    const {
+        rubrics,
+        students,
+        classes,
+        studentRubrics,
+        addRubric,
+        updateRubric,
+        deleteRubric,
+        settings,
+        createGroupStudentRubrics,
+    } = useApp();
     const [search, setSearch] = useState('');
     const [subjectFilter, setSubjectFilter] = useState<string>('all');
     const [cohortFilter, setCohortFilter] = useState<CohortFilterValue>(ALL_COHORTS);
@@ -61,6 +73,19 @@ export default function RubricList() {
     const [sharedWithMe, setSharedWithMe] = useState<Rubric[]>([]);
     const [schoolShared, setSchoolShared] = useState<Rubric[]>([]);
     const dbStatus = useDbStatus();
+
+    // Group grading (phase 1): pick students to share one grade, then jump into the normal
+    // single-student grading UI — saving any member duplicates scores to the rest of the group.
+    const [groupModalRubric, setGroupModalRubric] = useState<Rubric | null>(null);
+    const [groupStudentIds, setGroupStudentIds] = useState<Set<string>>(new Set());
+
+    function startGroupGrading() {
+        if (!groupModalRubric || groupStudentIds.size < 2) return;
+        const srs = createGroupStudentRubrics(groupModalRubric.id, Array.from(groupStudentIds));
+        setGroupModalRubric(null);
+        setGroupStudentIds(new Set());
+        navigate(`/rubrics/${groupModalRubric.id}/grade/${srs[0].studentId}`);
+    }
 
     // Rubric sharing flow (Supabase mode only)
     const [shareModal, setShareModal] = useState<{ rubricId: string; rubricName: string } | null>(null);
@@ -605,6 +630,17 @@ export default function RubricList() {
                                                                     <GitCompare size={14} />{' '}
                                                                     {t('rubricList.action_compare')}
                                                                 </button>
+                                                                <button
+                                                                    className="btn btn-secondary btn-sm"
+                                                                    style={{ flex: '1 1 auto' }}
+                                                                    onClick={() => {
+                                                                        setGroupModalRubric(r);
+                                                                        setGroupStudentIds(new Set());
+                                                                    }}
+                                                                >
+                                                                    <UsersRound size={14} />{' '}
+                                                                    {t('rubricList.action_group_grade')}
+                                                                </button>
                                                                 {/* Speaking session launcher */}
                                                                 {(() => {
                                                                     const classStudents = settings.activeClassId
@@ -811,6 +847,86 @@ export default function RubricList() {
                 <ConfirmDialog {...confirmDialogProps} />
 
                 {showImport && <ImportRubricModal onClose={() => setShowImport(false)} onImport={handleImport} />}
+
+                {groupModalRubric && (
+                    <Modal titleId="group-grade-title" onClose={() => setGroupModalRubric(null)} maxWidth={480}>
+                        <div style={{ padding: 20 }}>
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    marginBottom: 4,
+                                }}
+                            >
+                                <h2 id="group-grade-title" style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>
+                                    {t('rubricList.group_grade_title')}
+                                </h2>
+                                <button
+                                    className="btn btn-ghost btn-icon btn-sm"
+                                    onClick={() => setGroupModalRubric(null)}
+                                    aria-label={t('common.close')}
+                                >
+                                    <X size={16} />
+                                </button>
+                            </div>
+                            <p style={{ margin: '0 0 12px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                {t('rubricList.group_grade_help')}
+                            </p>
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: 4,
+                                    maxHeight: 320,
+                                    overflowY: 'auto',
+                                }}
+                            >
+                                {(settings.activeClassId
+                                    ? students.filter((s) => s.classId === settings.activeClassId)
+                                    : students
+                                ).map((s) => (
+                                    <label
+                                        key={s.id}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 8,
+                                            padding: '6px 4px',
+                                            fontSize: '0.9rem',
+                                        }}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={groupStudentIds.has(s.id)}
+                                            onChange={() =>
+                                                setGroupStudentIds((prev) => {
+                                                    const next = new Set(prev);
+                                                    if (next.has(s.id)) next.delete(s.id);
+                                                    else next.add(s.id);
+                                                    return next;
+                                                })
+                                            }
+                                        />
+                                        {s.name}
+                                    </label>
+                                ))}
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
+                                <button className="btn btn-secondary btn-sm" onClick={() => setGroupModalRubric(null)}>
+                                    {t('common.cancel')}
+                                </button>
+                                <button
+                                    className="btn btn-primary btn-sm"
+                                    disabled={groupStudentIds.size < 2}
+                                    onClick={startGroupGrading}
+                                >
+                                    {t('rubricList.group_grade_start_btn', { count: groupStudentIds.size })}
+                                </button>
+                            </div>
+                        </div>
+                    </Modal>
+                )}
 
                 {differentiateId && (
                     <div className="modal-overlay" onClick={() => setDifferentiateId(null)}>

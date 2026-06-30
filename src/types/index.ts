@@ -500,6 +500,12 @@ export interface StudentRubric {
     selfAssessedAt?: string;
     /** Snapshot of the rubric at the time of grading to ensure historical grades do not break */
     rubricSnapshot?: Rubric;
+    /**
+     * Links sibling StudentRubric records graded together as one group submission. Saving any
+     * member with the same groupId duplicates its entries/overallComment to the rest of the
+     * group — there is no per-criterion individual/collaborative split yet (phase 1).
+     */
+    groupId?: string;
 }
 
 export interface CommentSnippet {
