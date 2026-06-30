@@ -8,6 +8,7 @@ vi.mock('docx', () => ({
     TableCell: vi.fn(),
     TableRow: vi.fn(),
     TextRun: vi.fn(),
+    ImageRun: vi.fn(),
     WidthType: { PERCENTAGE: 'pct', AUTO: 'auto' },
     AlignmentType: { LEFT: 'left', CENTER: 'center' },
     HeadingLevel: { HEADING_1: 'h1', HEADING_2: 'h2' },
@@ -18,6 +19,7 @@ vi.mock('docx', () => ({
 vi.mock('file-saver', () => ({ saveAs: vi.fn() }));
 
 import { saveAs } from 'file-saver';
+import { TextRun, ImageRun } from 'docx';
 import {
     exportPeriodReport,
     exportPeriodReportsBatch,
@@ -113,6 +115,63 @@ describe('periodReportExport', () => {
             entries: [{ sr: noCommentSr as any, rubric: mockRubric as any, scale: mockScale as any }],
         });
         expect(saveAs).toHaveBeenCalledOnce();
+    });
+
+    it('strips HTML tags out of comment text instead of rendering them literally', async () => {
+        const htmlCommentSr = {
+            ...mockSr,
+            overallComment: '<p>Well <strong>done</strong>!</p>',
+            entries: [{ ...mockSr.entries[0], comment: '<em>Nice</em> work' }],
+        };
+        await exportPeriodReport({
+            ...baseInput,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            entries: [{ sr: htmlCommentSr as any, rubric: mockRubric as any, scale: mockScale as any }],
+        });
+        const texts = vi.mocked(TextRun).mock.calls.map((call) => (call[0] as { text?: string }).text ?? '');
+        expect(texts.some((t) => t.includes('<'))).toBe(false);
+        expect(texts).toContain('Well done !');
+        expect(texts).toContain('Nice work');
+    });
+
+    it('embeds a rasterized grade-trend chart image when a canvas 2d context is available', async () => {
+        const fakeCtx = {
+            fillRect: vi.fn(),
+            beginPath: vi.fn(),
+            moveTo: vi.fn(),
+            lineTo: vi.fn(),
+            stroke: vi.fn(),
+            fillText: vi.fn(),
+            fillStyle: '',
+            strokeStyle: '',
+            font: '',
+            textAlign: 'left',
+        };
+        const getContextSpy = vi
+            .spyOn(HTMLCanvasElement.prototype, 'getContext')
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            .mockReturnValue(fakeCtx as any);
+        const toBlobSpy = vi
+            .spyOn(HTMLCanvasElement.prototype, 'toBlob')
+            .mockImplementation((cb) => cb(new Blob(['png-bytes'], { type: 'image/png' })));
+
+        const secondEntry = {
+            sr: { ...mockSr, id: 'sr2' },
+            rubric: mockRubric,
+            scale: mockScale,
+        };
+        await exportPeriodReport({
+            ...baseInput,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            entries: [baseInput.entries[0], secondEntry as any],
+        });
+
+        expect(ImageRun).toHaveBeenCalledWith(
+            expect.objectContaining({ type: 'png', transformation: expect.objectContaining({ width: 600, height: 200 }) })
+        );
+
+        getContextSpy.mockRestore();
+        toBlobSpy.mockRestore();
     });
 });
 
