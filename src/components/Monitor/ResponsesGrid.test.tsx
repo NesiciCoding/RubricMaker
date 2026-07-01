@@ -142,4 +142,57 @@ describe('ResponsesGrid', () => {
 
         expect(screen.getByText('tests.monitor.grid.no_answer')).toBeInTheDocument();
     });
+
+    it('scores a true-false question correctly', () => {
+        const tfTest: Test = {
+            ...mockTest,
+            questions: [
+                {
+                    id: 'q-tf',
+                    prompt: 'The sky is blue',
+                    type: 'true-false',
+                    points: 1,
+                    expectedAnswer: 'true',
+                },
+            ],
+        };
+        render(
+            <ResponsesGrid
+                test={tfTest}
+                rows={[
+                    { studentId: 's1', displayName: 'Alice', answers: [{ questionId: 'q-tf', response: 'true' }] },
+                    { studentId: 's2', displayName: 'Bob', answers: [{ questionId: 'q-tf', response: 'false' }] },
+                ]}
+            />
+        );
+        expect(screen.getByTitle('tests.monitor.grid.state.correct')).toBeInTheDocument();
+        expect(screen.getByTitle('tests.monitor.grid.state.incorrect')).toBeInTheDocument();
+    });
+
+    it('closes the gallery by clicking the close button', () => {
+        render(
+            <ResponsesGrid
+                test={mockTest}
+                rows={[{ studentId: 's1', displayName: 'Alice', answers: [] }]}
+            />
+        );
+        fireEvent.click(screen.getByText('tests.monitor.grid.question_short 1'));
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        fireEvent.click(screen.getByLabelText('common.close'));
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    it('stops propagation when clicking inside the gallery dialog content', () => {
+        render(
+            <ResponsesGrid
+                test={mockTest}
+                rows={[{ studentId: 's1', displayName: 'Alice', answers: [] }]}
+            />
+        );
+        fireEvent.click(screen.getByText('tests.monitor.grid.question_short 1'));
+        const dialog = screen.getByRole('dialog');
+        // Clicking inside the content area should NOT close the dialog.
+        fireEvent.click(dialog.querySelector('div')!);
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
 });

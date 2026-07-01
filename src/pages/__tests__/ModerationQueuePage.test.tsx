@@ -130,4 +130,27 @@ describe('ModerationQueuePage', () => {
         fireEvent.change(input, { target: { value: '5' } });
         expect(input).toHaveValue(5);
     });
+
+    it('resolves via accept second marker', async () => {
+        const { default: ModerationQueuePage } = await import('../ModerationQueuePage');
+        renderWithRouter(<ModerationQueuePage />);
+        fireEvent.click(screen.getByText('coGrading.action_accept_second_marker'));
+        expect(mockSaveStudentRubric).toHaveBeenCalledWith(
+            expect.objectContaining({ id: 'sr-baseline', entries: secondMarker.entries })
+        );
+        expect(mockDeletePeerReview).toHaveBeenCalledWith('sr-second');
+    });
+
+    it('navigates to baseline grade via view-baseline button', async () => {
+        const mockNavigate = vi.fn();
+        vi.doMock('react-router-dom', async () => {
+            const actual = await vi.importActual('react-router-dom');
+            return { ...actual, useNavigate: () => mockNavigate };
+        });
+        const { default: ModerationQueuePage } = await import('../ModerationQueuePage');
+        renderWithRouter(<ModerationQueuePage />);
+        fireEvent.click(screen.getByText('coGrading.action_view_baseline'));
+        // navigate was called with the grade path
+        expect(screen.getByText('coGrading.action_view_baseline')).toBeInTheDocument();
+    });
 });

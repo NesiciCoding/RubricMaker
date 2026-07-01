@@ -157,4 +157,39 @@ describe('SettingsPage', () => {
         // Smoke check: the tab switch itself exercises the admin-only render branch.
         expect(screen.getByRole('button', { name: 'Administration' })).toHaveAttribute('aria-selected', 'true');
     });
+
+    it('renders role switch buttons on the General tab', () => {
+        renderPage();
+        expect(screen.getAllByText('settings.role_admin_label').length).toBeGreaterThan(0);
+        expect(screen.getByText('settings.role_teacher_label')).toBeInTheDocument();
+        expect(screen.getByText('settings.role_student_label')).toBeInTheDocument();
+    });
+
+    it('renders the theme selector on the General tab', () => {
+        renderPage();
+        const themeSelect = screen.getByLabelText('settings.theme');
+        expect(themeSelect).toBeInTheDocument();
+        fireEvent.change(themeSelect, { target: { value: 'light' } });
+        expect(mockUpdateSettings).toHaveBeenCalledWith({ theme: 'light' });
+    });
+
+    it('switches to teacher role when teacher button clicked', () => {
+        renderPage();
+        const teacherBtn = screen.getByText('settings.role_teacher_label');
+        fireEvent.click(teacherBtn);
+        expect(mockUpdateSettings).toHaveBeenCalledWith({ userRole: 'teacher' });
+    });
+
+    it('renders accent color input on the General tab (admin has isUserPlus)', () => {
+        renderPage();
+        const accentInput = screen.getByLabelText('settings.accent_color_label (picker)');
+        expect(accentInput).toBeInTheDocument();
+        fireEvent.change(accentInput, { target: { value: '#ff0000' } });
+        expect(mockUpdateSettings).toHaveBeenCalledWith({ accentColor: '#ff0000' });
+    });
+
+    it('renders language selector', () => {
+        renderPage();
+        expect(screen.getByLabelText('settings.language_selection')).toBeInTheDocument();
+    });
 });

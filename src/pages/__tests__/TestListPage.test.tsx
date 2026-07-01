@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
-import type { AppSettings, Class, GradeScale, Student, Test as RmTest } from '../../types';
+import type { AppSettings, Class, GradeScale, Student, Test as RmTest, StudentTest } from '../../types';
 
 const mockSettings: AppSettings = {
     defaultGradeScaleId: 'gs1',
@@ -42,6 +42,16 @@ const mockTest: RmTest = {
     requireSEB: false,
     shuffleQuestions: false,
     createdAt: '2024-01-01T00:00:00Z',
+};
+
+const mockStudentTest: StudentTest = {
+    id: 'st1',
+    testId: 't1',
+    studentId: 's1',
+    answers: [],
+    status: 'submitted',
+    startedAt: '2024-01-02T00:00:00Z',
+    submittedAt: '2024-01-02T00:00:00Z',
 };
 
 const mockAddTest = vi.fn((t: Omit<RmTest, 'id' | 'createdAt' | 'updatedAt'>) => ({
@@ -134,5 +144,36 @@ describe('TestListPage', () => {
         const assignBtn = screen.getByTitle('tests.action_assign');
         fireEvent.click(assignBtn);
         expect(screen.getByText(/tests.assignment_modal_title/)).toBeInTheDocument();
+    });
+
+    it('expands and collapses the results panel when results button is clicked', async () => {
+        (mockUseApp as Record<string, unknown>).studentTests = [mockStudentTest];
+        const { default: TestListPage } = await import('../TestListPage');
+        render(
+            <MemoryRouter>
+                <TestListPage />
+            </MemoryRouter>
+        );
+        const resultsBtn = screen.getByTitle('tests.results.action_results');
+        fireEvent.click(resultsBtn);
+        expect(resultsBtn.getAttribute('aria-expanded')).toBe('true');
+        // Results panel shows export section
+        expect(screen.getByText('tests.export.section_title')).toBeInTheDocument();
+        // Collapse
+        fireEvent.click(resultsBtn);
+        expect(resultsBtn.getAttribute('aria-expanded')).toBe('false');
+        (mockUseApp as Record<string, unknown>).studentTests = [];
+    });
+
+    it('renders no-tests message when test list is empty', async () => {
+        (mockUseApp as Record<string, unknown>).tests = [];
+        const { default: TestListPage } = await import('../TestListPage');
+        render(
+            <MemoryRouter>
+                <TestListPage />
+            </MemoryRouter>
+        );
+        expect(screen.getByText('tests.no_tests')).toBeInTheDocument();
+        (mockUseApp as Record<string, unknown>).tests = [mockTest];
     });
 });
