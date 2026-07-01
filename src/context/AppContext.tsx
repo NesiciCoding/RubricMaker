@@ -740,6 +740,7 @@ interface AppContextValue extends StoreData {
     anonymizeStudent: (id: string) => void;
     // Essay assignments (teacher side)
     saveEssayAssignment: (a: EssayAssignment) => Promise<SyncResult>;
+    setStudentPassword: (studentEmail: string, password: string) => Promise<SyncResult>;
     deleteEssayAssignment: (teacherKey: string) => Promise<SyncResult>;
     fetchEssaySubmissions: (
         teacherKey: string
@@ -1503,6 +1504,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const saveEssayAssignment = useCallback((a: EssayAssignment) => storageSync.saveEssayAssignment(a), []);
+    const setStudentPassword = useCallback(
+        (studentEmail: string, password: string) => storageSync.setStudentPassword(studentEmail, password),
+        []
+    );
     const deleteEssayAssignment = useCallback(
         (teacherKey: string) => storageSync.deleteEssayAssignment(teacherKey),
         []
@@ -1718,6 +1723,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         anonymizeStudent,
         getCurrentDatabaseUserId,
         saveEssayAssignment,
+        setStudentPassword,
         deleteEssayAssignment,
         fetchEssaySubmissions,
         fetchEssaySubmissionsForStudent,

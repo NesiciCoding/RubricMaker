@@ -791,7 +791,14 @@
         "action_class_menu": "Class options",
         "action_edit_student": "Edit student",
         "action_delete_student": "Delete student",
-        "link_rubrics": "Link rubrics"
+        "link_rubrics": "Link rubrics",
+        "action_generate_password": "Generate portal login password",
+        "action_generate_class_passwords": "Generate password slips",
+        "password_generating": "Generating…",
+        "password_slip_title": "Login slips — {{count}} students",
+        "password_slip_columns": "columns",
+        "password_slip_item_error": "Could not generate — retry from the Students page.",
+        "password_slip_partial_failure": "Could not generate a password for {{count}} student(s). Retry them from the Students page."
     },
     "gradeStudent": {
         "group_grade_banner": "Group grade — saving will also copy these scores and comments to: {{names}}",
@@ -2317,6 +2324,7 @@
         "da_sync_item_source": "LocalStorage stays the source of truth; Supabase is a sync layer.",
         "da_sync_item_collab": "Multi-teacher collaboration: share rubrics between accounts in the same Supabase project.",
         "da_sync_item_otp": "Email OTP login — optional; requires SMTP configuration in Docker.",
+        "da_sync_item_student_password": "Student password login — from the Students page, generate a password for a student with an email on file, then share it with them directly. They sign in at the student portal with their email and that password, bypassing OTP email entirely (useful when school email filters block or delay Supabase's OTP messages).",
         "da_sync_item_conflict": "Conflict resolution: when local and cloud data differ, the newest change wins. Edits made while offline are protected and never overwritten by older cloud data until they have synced.",
         "da_stress_title": "Stress-test logging",
         "da_stress_body_prefix": "Admins can build with",

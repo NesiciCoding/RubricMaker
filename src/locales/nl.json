@@ -791,7 +791,14 @@
         "action_class_menu": "Klas opties",
         "action_edit_student": "Leerling bewerken",
         "action_delete_student": "Leerling verwijderen",
-        "link_rubrics": "Rubrics koppelen"
+        "link_rubrics": "Rubrics koppelen",
+        "action_generate_password": "Portal-wachtwoord genereren",
+        "action_generate_class_passwords": "Wachtwoordstrookjes genereren",
+        "password_generating": "Bezig met genereren…",
+        "password_slip_title": "Inlogstrookjes — {{count}} leerlingen",
+        "password_slip_columns": "kolommen",
+        "password_slip_item_error": "Genereren mislukt — opnieuw proberen via de Leerlingenpagina.",
+        "password_slip_partial_failure": "Kon geen wachtwoord genereren voor {{count}} leerling(en). Probeer het opnieuw via de Leerlingenpagina."
     },
     "gradeStudent": {
         "group_grade_banner": "Groepscijfer — opslaan kopieert deze scores en opmerkingen ook naar: {{names}}",
@@ -2319,6 +2326,7 @@
         "da_sync_item_source": "LocalStorage blijft de bron van waarheid; Supabase is een synchronisatielaag.",
         "da_sync_item_collab": "Samenwerking tussen docenten: deel rubrieken tussen accounts in hetzelfde Supabase-project.",
         "da_sync_item_otp": "E-mail OTP-login — optioneel; vereist SMTP-configuratie in Docker.",
+        "da_sync_item_student_password": "Wachtwoord-login voor leerlingen — genereer op de Leerlingen-pagina een wachtwoord voor een leerling met een e-mailadres, en deel dit rechtstreeks met de leerling. Ze loggen in op het leerlingenportaal met hun e-mailadres en dat wachtwoord, zonder OTP-e-mail (handig wanneer schoolfilters OTP-berichten van Supabase blokkeren of vertragen).",
         "da_sync_item_conflict": "Conflictoplossing: als lokale en cloudgegevens verschillen, wint de nieuwste wijziging. Offline gemaakte wijzigingen zijn beschermd en worden nooit overschreven door oudere cloudgegevens totdat ze zijn gesynchroniseerd.",
         "da_stress_title": "Stresstest-logging",
         "da_stress_body_prefix": "Admins kunnen bouwen met",

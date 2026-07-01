@@ -1227,6 +1227,7 @@ function DataTab() {
                         t('docs.da_sync_item_source'),
                         t('docs.da_sync_item_collab'),
                         t('docs.da_sync_item_otp'),
+                        t('docs.da_sync_item_student_password'),
                         t('docs.da_sync_item_conflict'),
                     ]}
                 />

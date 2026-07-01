@@ -297,6 +297,11 @@ class StorageSyncService {
         return this.adapter.saveEssayAssignment(a);
     }
 
+    /** Set/reset a student's portal login password — the OTP-email alternative. */
+    async setStudentPassword(studentEmail: string, password: string): Promise<SyncResult> {
+        return this.adapter.setStudentPassword(studentEmail, password);
+    }
+
     async deleteEssayAssignment(teacherKey: string): Promise<SyncResult> {
         return this.adapter.deleteEssayAssignment(teacherKey);
     }

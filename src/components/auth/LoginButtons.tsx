@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, ChevronDown, ChevronUp, Loader2, Check } from 'lucide-react';
+import { Mail, KeyRound, ChevronDown, ChevronUp, Loader2, Check } from 'lucide-react';
 import { storageSync } from '../../services/database';
 
 interface LoginButtonsProps {
@@ -19,6 +19,12 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
     const [busy, setBusy] = useState<string | null>(null); // which button is loading
     const [error, setError] = useState('');
     const [done, setDone] = useState(false);
+
+    // Student login via teacher-issued password — the alternative when OTP email
+    // delivery is unreliable (school spam filters, low default send limits).
+    const [studentLoginOpen, setStudentLoginOpen] = useState(false);
+    const [studentEmail, setStudentEmail] = useState('');
+    const [studentPassword, setStudentPassword] = useState('');
 
     // null = not yet fetched (show all); string[] = loaded from site_config
     const [enabledProviders, setEnabledProviders] = useState<string[] | null>(null);
@@ -78,6 +84,26 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
         setError('');
         setBusy('otp-verify');
         const result = await storageSync.adapter.verifyOtp(email.trim(), otp.trim());
+        setBusy(null);
+        if (result.error) setError(result.error);
+        else {
+            setDone(true);
+            onEmailSuccess?.();
+        }
+    }
+
+    async function handleStudentPasswordLogin() {
+        if (!studentEmail.trim() || !studentPassword) {
+            setError('Enter your email and password.');
+            return;
+        }
+        if (!supabaseReady) {
+            onNeedConfig?.();
+            return;
+        }
+        setError('');
+        setBusy('student-password');
+        const result = await storageSync.adapter.signInWithPassword(studentEmail.trim(), studentPassword);
         setBusy(null);
         if (result.error) setError(result.error);
         else {
@@ -280,6 +306,79 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
                             </div>
                         </>
                     )}
+                </div>
+            )}
+
+            {/* Student login (password) — bypasses OTP email entirely, for schools where
+                Supabase's default email delivery is blocked or delayed. The teacher issues
+                this password from the Students page. */}
+            <button
+                style={{
+                    ...btnBase,
+                    background: 'transparent',
+                    border: 'none',
+                    padding: '6px 4px',
+                    color: '#64748b',
+                    fontSize: '0.85rem',
+                    fontWeight: 500,
+                }}
+                onClick={() => setStudentLoginOpen((o) => !o)}
+            >
+                <KeyRound size={16} />
+                Student login (password)
+                {studentLoginOpen ? (
+                    <ChevronUp size={14} style={{ marginLeft: 'auto' }} />
+                ) : (
+                    <ChevronDown size={14} style={{ marginLeft: 'auto' }} />
+                )}
+            </button>
+
+            {studentLoginOpen && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingLeft: 4 }}>
+                    <input
+                        type="email"
+                        value={studentEmail}
+                        onChange={(e) => {
+                            setStudentEmail(e.target.value);
+                            setError('');
+                        }}
+                        placeholder="your@email.com"
+                        style={{
+                            padding: '9px 12px',
+                            borderRadius: 7,
+                            border: '1px solid #e2e8f0',
+                            fontSize: '0.9rem',
+                        }}
+                    />
+                    <input
+                        type="password"
+                        value={studentPassword}
+                        onChange={(e) => {
+                            setStudentPassword(e.target.value);
+                            setError('');
+                        }}
+                        onKeyDown={(e) => e.key === 'Enter' && handleStudentPasswordLogin()}
+                        placeholder="Password"
+                        style={{
+                            padding: '9px 12px',
+                            borderRadius: 7,
+                            border: '1px solid #e2e8f0',
+                            fontSize: '0.9rem',
+                        }}
+                    />
+                    <button
+                        className="btn btn-primary btn-sm"
+                        disabled={!!busy || !studentEmail.trim() || !studentPassword}
+                        onClick={handleStudentPasswordLogin}
+                    >
+                        {busy === 'student-password' ? (
+                            <>
+                                <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Signing in…
+                            </>
+                        ) : (
+                            'Sign in'
+                        )}
+                    </button>
                 </div>
             )}
 

@@ -73,7 +73,7 @@ describe('loadStore', () => {
         expect(store.classes).toHaveLength(1);
         expect(store.classes[0].name).toBe('Default Class');
         expect(store.gradeScales).toEqual(DEFAULT_GRADE_SCALES);
-        expect(store.settings.theme).toBe('dark');
+        expect(store.settings.theme).toBe('light');
     });
 
     it('loads previously saved rubrics', () => {

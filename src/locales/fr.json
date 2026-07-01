@@ -791,7 +791,14 @@
         "action_class_menu": "Options de classe",
         "action_edit_student": "Modifier l'élève",
         "action_delete_student": "Supprimer l'élève",
-        "link_rubrics": "Lier des grilles"
+        "link_rubrics": "Lier des grilles",
+        "action_generate_password": "Générer un mot de passe du portail",
+        "action_generate_class_passwords": "Générer les fiches de connexion",
+        "password_generating": "Génération…",
+        "password_slip_title": "Fiches de connexion — {{count}} élèves",
+        "password_slip_columns": "colonnes",
+        "password_slip_item_error": "Échec de la génération — réessayez depuis la page Élèves.",
+        "password_slip_partial_failure": "Impossible de générer un mot de passe pour {{count}} élève(s). Réessayez depuis la page Élèves."
     },
     "gradeStudent": {
         "group_grade_banner": "Note de groupe — l'enregistrement copiera aussi ces scores et commentaires vers : {{names}}",
@@ -2319,6 +2326,7 @@
         "da_sync_item_source": "Le localStorage reste la source de vérité ; Supabase est une couche de synchronisation.",
         "da_sync_item_collab": "Collaboration multi-enseignants : partagez des rubriques entre comptes dans le même projet Supabase.",
         "da_sync_item_otp": "Connexion par OTP par e-mail — facultative ; nécessite une configuration SMTP dans Docker.",
+        "da_sync_item_student_password": "Connexion par mot de passe pour les élèves — depuis la page Élèves, générez un mot de passe pour un élève ayant un e-mail enregistré, puis communiquez-le-lui directement. L'élève se connecte au portail élève avec son e-mail et ce mot de passe, sans passer par l'OTP par e-mail (utile lorsque les filtres anti-spam de l'école bloquent ou retardent les messages OTP de Supabase).",
         "da_sync_item_conflict": "Résolution de conflit : lorsque les données locales et cloud diffèrent, le changement le plus récent l'emporte. Les modifications effectuées hors ligne sont protégées et ne sont jamais écrasées par des données cloud plus anciennes jusqu'à ce qu'elles aient été synchronisées.",
         "da_stress_title": "Journalisation de test de charge",
         "da_stress_body_prefix": "Les administrateurs peuvent construire avec",

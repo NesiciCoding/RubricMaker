@@ -28,6 +28,7 @@ import {
     UserCheck,
     Download,
     Search,
+    KeyRound,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { loadSupabaseConfig } from '../services/database';
@@ -144,6 +145,12 @@ const STUDENT_FEATURES = [
         title: 'Take a Test',
         desc: 'Open a test link from your teacher, answer the questions with a countdown timer, and submit — your answers are saved automatically as you go.',
         color: '#3b82f6',
+    },
+    {
+        icon: KeyRound,
+        title: 'Student Portal Login',
+        desc: 'If your school connects a database, you can sign in with your email and a password your teacher gives you — no confirmation email needed.',
+        color: '#0ea5e9',
     },
 ];
 

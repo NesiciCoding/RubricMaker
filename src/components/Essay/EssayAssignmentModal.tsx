@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { X, Copy, Download, Check, FileText, Database, AlertCircle, Radio, Save } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -80,7 +80,10 @@ export default function EssayAssignmentModal({
               ? initialValues.expiresAt.slice(0, 16)
               : ''
     );
-    const [embedDb, setEmbedDb] = useState(dbStatus.isConnected); // on by default when connected
+    // On by default when connected — but only when this modal instance can actually save
+    // the row (onSaveAssignment). Without that, embedding credentials just hands out a
+    // "DB mode" link for a row that never gets persisted (see handleAssignToStudents).
+    const [embedDb, setEmbedDb] = useState(dbStatus.isConnected && !!onSaveAssignment);
     const [copied, setCopied] = useState(false);
     const [saved, setSaved] = useState(false);
     const [saveError, setSaveError] = useState('');
@@ -106,8 +109,9 @@ export default function EssayAssignmentModal({
                 createdAt: new Date().toISOString(),
                 expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
             };
-            // Embed Supabase credentials so the student page can submit directly to the DB
-            if (embedDb && dbStatus.isConnected && config) {
+            // Embed Supabase credentials so the student page can submit directly to the DB —
+            // only when there's a way to actually persist this row (onSaveAssignment).
+            if (embedDb && dbStatus.isConnected && config && onSaveAssignment) {
                 base.supabaseUrl = config.supabaseUrl;
                 base.supabaseAnonKey = config.supabaseAnonKey;
             }
@@ -127,6 +131,7 @@ export default function EssayAssignmentModal({
             embedDb,
             dbStatus.isConnected,
             config,
+            onSaveAssignment,
         ]
     );
 
@@ -158,6 +163,18 @@ export default function EssayAssignmentModal({
         }
     }, [onSaveAssignment, buildAssignment, studentId, t]);
 
+    // Auto-save as soon as a DB-mode link becomes shareable. The link/SEB config/slip
+    // sheet are all generated eagerly from `essayUrl` above (and the raw link is also
+    // shown in a copyable input), so gating the save behind a specific "share" button
+    // click left a window where a teacher could hand out a link before the row existed
+    // — the student would then hit "Assignment not found" on submit.
+    useEffect(() => {
+        if (embedDb && onSaveAssignment && !saved && !saving) {
+            void handleSaveToDb();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [embedDb]);
+
     const handleDownloadSEB = useCallback(() => {
         downloadSebConfig(essayUrl, `essay-${studentName}`);
     }, [essayUrl, studentName]);
@@ -170,6 +187,12 @@ export default function EssayAssignmentModal({
 
     const handleAssignToStudents = useCallback(() => {
         if (!onAssignToStudents) return;
+        // essay_assignments rows are 1:1 with a single teacherKey server-side, but this
+        // fan-out reuses one teacherKey across every student in the class — a "DB mode"
+        // link here would point every student at a row that can only ever belong to one
+        // of them. buildAssignment() never embeds credentials without onSaveAssignment
+        // (which EssayBuilderPage doesn't pass), so these links always use the
+        // always-working offline/local-code flow instead.
         const assignment = buildAssignment(studentId);
         onAssignToStudents(assignment, classStudents);
         onClose();
@@ -376,8 +399,10 @@ export default function EssayAssignmentModal({
                     />
                 </div>
 
-                {/* DB integration toggle */}
-                {dbStatus.isConnected && (
+                {/* DB integration toggle — only meaningful when this modal instance can
+                    persist the row (onSaveAssignment); otherwise the embedded credentials
+                    would just be dead weight (see buildAssignment / handleAssignToStudents). */}
+                {dbStatus.isConnected && !!onSaveAssignment && (
                     <div
                         style={{
                             background: 'color-mix(in srgb, var(--accent) 8%, transparent)',

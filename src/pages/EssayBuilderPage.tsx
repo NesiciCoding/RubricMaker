@@ -404,7 +404,12 @@ export default function EssayBuilderPage() {
                     >
                         <Upload size={15} /> {t('essays.import_submission_code')}
                     </button>
-                    {teacherKeyParam && (
+                    {/* Live monitor reads the essay_assignments row from Supabase by teacherKey, but
+                        assignments from this "whole class" flow never carry DB credentials (see
+                        handleAssignToStudents) — one row can only ever belong to one student, so
+                        there's nothing for the monitor to find. Only show it when a row could
+                        actually exist. */}
+                    {teacherKeyParam && existing?.supabaseUrl && (
                         <Link to={`/essays/${teacherKeyParam}/monitor`} className="btn btn-secondary btn-sm">
                             <Radio size={15} /> {t('essays.action_monitor')}
                         </Link>

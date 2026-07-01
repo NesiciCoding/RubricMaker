@@ -146,10 +146,15 @@ export default function ActivityDashboardPage() {
         const assignedIds = new Set(
             essayAssignments.filter((a) => a.teacherKey === teacherKey).map((a) => a.studentId)
         );
+        // Strip any embedded Supabase credentials: essay_assignments rows are 1:1 with a
+        // single teacherKey server-side, but every new row here shares the template's
+        // teacherKey. A "DB mode" link would point all of these students at a row that
+        // can only ever belong to one of them, so force the offline/local-code flow.
+        const { supabaseUrl: _supabaseUrl, supabaseAnonKey: _supabaseAnonKey, ...templateWithoutDb } = template;
         const newAssignments = students
             .filter((s) => s.classId === classId && !assignedIds.has(s.id))
             .map((s) => ({
-                ...template,
+                ...templateWithoutDb,
                 id: crypto.randomUUID(),
                 studentId: s.id,
                 createdAt: new Date().toISOString(),
