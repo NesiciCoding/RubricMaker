@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { FileText } from 'lucide-react';
 import Modal from '../Modal';
+import HelpPopover from '../HelpPopover';
 import { ConfirmDialog } from '../ConfirmDialog';
 import { EmptyState } from '../EmptyState';
 import { ErrorBoundary } from '../ErrorBoundary';
@@ -321,5 +322,42 @@ describe('SkeletonRow', () => {
     it('renders multiple skeleton elements', () => {
         const { container } = render(<SkeletonRow />);
         expect(container.querySelectorAll('.skeleton').length).toBeGreaterThan(1);
+    });
+});
+
+// ─── Modal (growFrom prop) ────────────────────────────────────────────────────
+
+describe('Modal (growFrom)', () => {
+    it('adds modal-grow class when growFrom is provided', () => {
+        render(
+            <Modal titleId="m1" onClose={vi.fn()} growFrom={{ x: 100, y: 200 }}>
+                <span>content</span>
+            </Modal>
+        );
+        expect(screen.getByRole('dialog').className).toContain('modal-grow');
+    });
+});
+
+// ─── HelpPopover ──────────────────────────────────────────────────────────────
+
+describe('HelpPopover', () => {
+    it('renders the help button with aria-label', () => {
+        render(<HelpPopover title="Help title">Explanation text</HelpPopover>);
+        expect(screen.getByLabelText('Help title')).toBeInTheDocument();
+    });
+
+    it('shows tooltip content when button is clicked', () => {
+        render(<HelpPopover title="Help title">Explanation text</HelpPopover>);
+        fireEvent.click(screen.getByLabelText('Help title'));
+        expect(screen.getByRole('tooltip')).toBeInTheDocument();
+        expect(screen.getByText('Explanation text')).toBeInTheDocument();
+    });
+
+    it('closes the tooltip when clicking outside', () => {
+        render(<HelpPopover title="Help title">Content</HelpPopover>);
+        fireEvent.click(screen.getByLabelText('Help title'));
+        expect(screen.getByRole('tooltip')).toBeInTheDocument();
+        fireEvent.mouseDown(document.body);
+        expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
     });
 });
