@@ -20,21 +20,6 @@ const mockGradeScale: GradeScale = {
     ranges: [{ min: 0, max: 100, label: 'A', color: '#22c55e' }],
 };
 
-const mockRubric: Rubric = {
-    id: 'r1',
-    name: 'Essay Rubric',
-    subject: 'English',
-    description: '',
-    criteria: [],
-    gradeScaleId: 'gs1',
-    format: DEFAULT_FORMAT,
-    attachmentIds: [],
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z',
-    totalMaxPoints: 100,
-    scoringMode: 'weighted-percentage',
-};
-
 const mockClass: Class = { id: 'c1', name: 'Class A' };
 const mockStudent: Student = { id: 's1', name: 'Alice', classId: 'c1' };
 
