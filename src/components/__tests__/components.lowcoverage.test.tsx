@@ -19,11 +19,8 @@ vi.mock('recharts', async (importOriginal) => {
     const mod = await importOriginal<typeof import('recharts')>();
     return {
         ...mod,
-        ResponsiveContainer: ({
-            children,
-        }: {
-            children: React.ReactElement<{ width?: number; height?: number }>;
-        }) => React.cloneElement(children, { width: 600, height: 260 }),
+        ResponsiveContainer: ({ children }: { children: React.ReactElement<{ width?: number; height?: number }> }) =>
+            React.cloneElement(children, { width: 600, height: 260 }),
     };
 });
 
@@ -101,13 +98,7 @@ describe('LiveDraftPanel', () => {
     });
 
     it('shows last activity time when provided', () => {
-        render(
-            <LiveDraftPanel
-                displayName="Carol"
-                presence="active"
-                lastActivityAt="2024-01-15T10:30:00Z"
-            />
-        );
+        render(<LiveDraftPanel displayName="Carol" presence="active" lastActivityAt="2024-01-15T10:30:00Z" />);
         expect(screen.getByText(/tests.monitor.draft.last_activity/)).toBeInTheDocument();
     });
 

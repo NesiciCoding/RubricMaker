@@ -1,9 +1,17 @@
 import React from 'react';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
-import type { AppSettings, Class, GradeScale, Rubric, Student, StudentRubric, StudentEssayAssignmentSummary } from '../../types';
+import type {
+    AppSettings,
+    Class,
+    GradeScale,
+    Rubric,
+    Student,
+    StudentRubric,
+    StudentEssayAssignmentSummary,
+} from '../../types';
 
 const mockGradeScale: GradeScale = {
     id: 'gs1',
@@ -41,7 +49,6 @@ const mockSettings: AppSettings = {
 // Stable refs.
 const mockStudentsArr = [mockStudent];
 const mockClassesArr = [mockClass];
-const mockRubricsArr = [mockRubric];
 const mockGradeScalesArr = [mockGradeScale];
 const emptyArr: never[] = [];
 
@@ -130,11 +137,8 @@ vi.mock('recharts', async (importOriginal) => {
     const mod = await importOriginal<typeof import('recharts')>();
     return {
         ...mod,
-        ResponsiveContainer: ({
-            children,
-        }: {
-            children: React.ReactElement<{ width?: number; height?: number }>;
-        }) => React.cloneElement(children, { width: 600, height: 300 }),
+        ResponsiveContainer: ({ children }: { children: React.ReactElement<{ width?: number; height?: number }> }) =>
+            React.cloneElement(children, { width: 600, height: 300 }),
     };
 });
 
@@ -169,10 +173,9 @@ vi.mock('react-i18next', () => ({
 let StudentPortalPageComp: React.ComponentType;
 
 function renderAt(studentId: string) {
-    const router = createMemoryRouter(
-        [{ path: '/portal/:studentId', element: <StudentPortalPageComp /> }],
-        { initialEntries: [`/portal/${studentId}`] }
-    );
+    const router = createMemoryRouter([{ path: '/portal/:studentId', element: <StudentPortalPageComp /> }], {
+        initialEntries: [`/portal/${studentId}`],
+    });
     return render(<RouterProvider router={router} />);
 }
 

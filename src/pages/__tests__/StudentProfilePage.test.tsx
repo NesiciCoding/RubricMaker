@@ -23,9 +23,7 @@ const mockRubric: Rubric = {
             title: 'Criterion 1',
             description: '',
             weight: 100,
-            levels: [
-                { id: 'l1', label: 'Excellent', minPoints: 90, maxPoints: 100, description: '', subItems: [] },
-            ],
+            levels: [{ id: 'l1', label: 'Excellent', minPoints: 90, maxPoints: 100, description: '', subItems: [] }],
         },
     ],
     gradeScaleId: 'gs1',
@@ -104,11 +102,8 @@ vi.mock('recharts', async (importOriginal) => {
     const mod = await importOriginal<typeof import('recharts')>();
     return {
         ...mod,
-        ResponsiveContainer: ({
-            children,
-        }: {
-            children: React.ReactElement<{ width?: number; height?: number }>;
-        }) => React.cloneElement(children, { width: 600, height: 300 }),
+        ResponsiveContainer: ({ children }: { children: React.ReactElement<{ width?: number; height?: number }> }) =>
+            React.cloneElement(children, { width: 600, height: 300 }),
     };
 });
 
@@ -137,10 +132,9 @@ vi.mock('react-i18next', () => ({
 let StudentProfilePageComp: React.ComponentType;
 
 function renderAt(studentId: string) {
-    const router = createMemoryRouter(
-        [{ path: '/students/:id', element: <StudentProfilePageComp /> }],
-        { initialEntries: [`/students/${studentId}`] }
-    );
+    const router = createMemoryRouter([{ path: '/students/:id', element: <StudentProfilePageComp /> }], {
+        initialEntries: [`/students/${studentId}`],
+    });
     return render(<RouterProvider router={router} />);
 }
 

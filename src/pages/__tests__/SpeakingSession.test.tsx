@@ -101,7 +101,12 @@ vi.mock('../../components/Recordings/RecordingControls', () => ({
                 'button',
                 {
                     onClick: () =>
-                        onSave({ id: 'rec1', url: 'blob://test', durationSeconds: 10, createdAt: new Date().toISOString() }),
+                        onSave({
+                            id: 'rec1',
+                            url: 'blob://test',
+                            durationSeconds: 10,
+                            createdAt: new Date().toISOString(),
+                        }),
                 },
                 'Save Recording'
             )

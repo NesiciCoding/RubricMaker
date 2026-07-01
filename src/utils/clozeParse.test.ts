@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { renderClozeSegments, parseClozeGaps, parseHotTextFragments } from './clozeParse';
+import { renderClozeSegments } from './clozeParse';
 
 describe('renderClozeSegments', () => {
     it('returns a single text segment for plain text', () => {
@@ -18,8 +18,8 @@ describe('renderClozeSegments', () => {
     it('parses multiple gaps with alternatives', () => {
         const result = renderClozeSegments('{{Paris|Lyon}} and {{Berlin|Munich}}');
         expect(result).toHaveLength(3);
-        const gap1 = result[0] as Extract<typeof result[0], { type: 'gap' }>;
-        const gap2 = result[2] as Extract<typeof result[0], { type: 'gap' }>;
+        const gap1 = result[0] as Extract<(typeof result)[0], { type: 'gap' }>;
+        const gap2 = result[2] as Extract<(typeof result)[0], { type: 'gap' }>;
         expect(gap1.gap.alternatives).toEqual(['Paris', 'Lyon']);
         expect(gap2.gap.index).toBe(1);
         expect(gap2.gap.alternatives).toEqual(['Berlin', 'Munich']);

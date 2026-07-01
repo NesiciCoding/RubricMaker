@@ -21,11 +21,15 @@ vi.mock('../../../context/AppContext', () => ({
 vi.mock('../../Standards/StandardsPickerModal', () => ({ default: () => null }));
 vi.mock('../../CEFR/CefrPickerModal', () => ({
     default: ({ onClose }: { onClose: () => void }) =>
-        React.createElement('div', { 'data-testid': 'cefr-picker' },
+        React.createElement(
+            'div',
+            { 'data-testid': 'cefr-picker' },
             React.createElement('button', { onClick: onClose }, 'Close CEFR')
         ),
 }));
-vi.mock('../HelpPopover', () => ({ default: ({ children }: { children: React.ReactNode }) => <span>{children}</span> }));
+vi.mock('../HelpPopover', () => ({
+    default: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+}));
 
 const sections: TestSection[] = [];
 
@@ -254,7 +258,9 @@ describe('QuestionEditor', () => {
                 onRemove={vi.fn()}
             />
         );
-        fireEvent.change(screen.getByDisplayValue('tests.question_type_multiple_choice'), { target: { value: 'true-false' } });
+        fireEvent.change(screen.getByDisplayValue('tests.question_type_multiple_choice'), {
+            target: { value: 'true-false' },
+        });
         expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ type: 'true-false' }));
     });
 
@@ -295,7 +301,13 @@ describe('QuestionEditor', () => {
             <QuestionEditor
                 question={makeQuestion({
                     linkedCefrDescriptors: [
-                        { descriptorId: 'd1', level: 'B1', skill: 'reading', descriptionEn: 'Can read texts', descriptionNl: '' },
+                        {
+                            descriptorId: 'd1',
+                            level: 'B1',
+                            skill: 'reading',
+                            descriptionEn: 'Can read texts',
+                            descriptionNl: '',
+                        },
                     ],
                 })}
                 index={0}
@@ -441,7 +453,15 @@ describe('QuestionEditor', () => {
         render(
             <QuestionEditor
                 question={makeQuestion({
-                    linkedStandards: [{ guid: 'std-1', description: 'Standard one', statementNotation: 'CC.1', standardSetTitle: 'CCSS', jurisdictionTitle: 'US' }],
+                    linkedStandards: [
+                        {
+                            guid: 'std-1',
+                            description: 'Standard one',
+                            statementNotation: 'CC.1',
+                            standardSetTitle: 'CCSS',
+                            jurisdictionTitle: 'US',
+                        },
+                    ],
                 })}
                 index={0}
                 total={1}
@@ -459,7 +479,13 @@ describe('QuestionEditor', () => {
             <QuestionEditor
                 question={makeQuestion({
                     linkedCefrDescriptors: [
-                        { descriptorId: 'd1', level: 'B1', skill: 'reading', descriptionEn: 'Can read texts', descriptionNl: '' },
+                        {
+                            descriptorId: 'd1',
+                            level: 'B1',
+                            skill: 'reading',
+                            descriptionEn: 'Can read texts',
+                            descriptionNl: '',
+                        },
                     ],
                 })}
                 index={0}

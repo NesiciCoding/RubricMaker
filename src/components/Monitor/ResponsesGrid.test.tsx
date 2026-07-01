@@ -170,12 +170,7 @@ describe('ResponsesGrid', () => {
     });
 
     it('closes the gallery by clicking the close button', () => {
-        render(
-            <ResponsesGrid
-                test={mockTest}
-                rows={[{ studentId: 's1', displayName: 'Alice', answers: [] }]}
-            />
-        );
+        render(<ResponsesGrid test={mockTest} rows={[{ studentId: 's1', displayName: 'Alice', answers: [] }]} />);
         fireEvent.click(screen.getByText('tests.monitor.grid.question_short 1'));
         expect(screen.getByRole('dialog')).toBeInTheDocument();
         fireEvent.click(screen.getByLabelText('common.close'));
@@ -183,12 +178,7 @@ describe('ResponsesGrid', () => {
     });
 
     it('stops propagation when clicking inside the gallery dialog content', () => {
-        render(
-            <ResponsesGrid
-                test={mockTest}
-                rows={[{ studentId: 's1', displayName: 'Alice', answers: [] }]}
-            />
-        );
+        render(<ResponsesGrid test={mockTest} rows={[{ studentId: 's1', displayName: 'Alice', answers: [] }]} />);
         fireEvent.click(screen.getByText('tests.monitor.grid.question_short 1'));
         const dialog = screen.getByRole('dialog');
         // Clicking inside the content area should NOT close the dialog.
