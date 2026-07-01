@@ -343,7 +343,12 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
                             setError('');
                         }}
                         placeholder="your@email.com"
-                        style={{ padding: '9px 12px', borderRadius: 7, border: '1px solid #e2e8f0', fontSize: '0.9rem' }}
+                        style={{
+                            padding: '9px 12px',
+                            borderRadius: 7,
+                            border: '1px solid #e2e8f0',
+                            fontSize: '0.9rem',
+                        }}
                     />
                     <input
                         type="password"
@@ -354,7 +359,12 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
                         }}
                         onKeyDown={(e) => e.key === 'Enter' && handleStudentPasswordLogin()}
                         placeholder="Password"
-                        style={{ padding: '9px 12px', borderRadius: 7, border: '1px solid #e2e8f0', fontSize: '0.9rem' }}
+                        style={{
+                            padding: '9px 12px',
+                            borderRadius: 7,
+                            border: '1px solid #e2e8f0',
+                            fontSize: '0.9rem',
+                        }}
                     />
                     <button
                         className="btn btn-primary btn-sm"

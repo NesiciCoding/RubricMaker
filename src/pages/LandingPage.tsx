@@ -149,7 +149,7 @@ const STUDENT_FEATURES = [
     {
         icon: KeyRound,
         title: 'Student Portal Login',
-        desc: "If your school connects a database, you can sign in with your email and a password your teacher gives you — no confirmation email needed.",
+        desc: 'If your school connects a database, you can sign in with your email and a password your teacher gives you — no confirmation email needed.',
         color: '#0ea5e9',
     },
 ];
