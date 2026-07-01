@@ -290,6 +290,7 @@ export default function EssayEditor({
     const highlightInputRef = useRef<HTMLInputElement>(null);
     const [showInvisibles, setShowInvisibles] = useState(false);
     const [pageMode, setPageMode] = useState(defaultPageMode);
+    const lastTableInsertRef = useRef(0);
 
     const editor = useEditor({
         extensions: [
@@ -339,6 +340,12 @@ export default function EssayEditor({
     };
 
     const handleInsertTable = () => {
+        // ponytail: guards against an autoclicker hammering this button — each table
+        // insertion is a full ProseMirror doc re-render, so dozens per second cause
+        // visible flicker. 300ms is well above human click cadence.
+        const now = Date.now();
+        if (now - lastTableInsertRef.current < 300) return;
+        lastTableInsertRef.current = now;
         editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
     };
 
@@ -726,9 +733,14 @@ export default function EssayEditor({
 
             {/* ── Editor area ── */}
             {pageMode ? (
+                // Deliberately hardcoded to a light "paper" look, matching the rest of this
+                // editor's chrome (toolbar, borders) — this component always renders like a
+                // white document regardless of app theme. Previously this used theme vars,
+                // which under the dark theme made the page background near-black while the
+                // text stayed the editor's hardcoded dark colour, i.e. unreadable.
                 <div
                     style={{
-                        background: 'var(--bg-elevated)',
+                        background: '#f1f5f9',
                         padding: '32px 24px',
                         minHeight: 500,
                     }}
@@ -740,7 +752,7 @@ export default function EssayEditor({
                             maxWidth: 794,
                             minHeight: 1123,
                             margin: '0 auto',
-                            background: 'var(--bg-raised)',
+                            background: '#fff',
                             boxShadow: '0 4px 24px rgba(0,0,0,0.14)',
                             borderRadius: 2,
                             padding: '96px 96px 96px',
@@ -830,6 +842,11 @@ export default function EssayEditor({
                 .essay-editor-content hr { border: none; border-top: 1.5px solid #e2e8f0; margin: 1.2em 0; }
                 .essay-editor-content a { color: #6366f1; text-decoration: underline; }
                 .essay-editor-content table { border-collapse: collapse; width: 100%; margin: 0.8em 0; }
+                /* A cell with a large font size (or a long unbroken word) can force the table
+                   wider than its column. Without this, that overflow spills out and is silently
+                   clipped by this component's own rounded-corner container (overflow: hidden on
+                   the outer wrapper) — the content becomes invisible with no way to scroll to it. */
+                .essay-editor-content .tableWrapper { overflow-x: auto; }
                 .essay-editor-content th, .essay-editor-content td { border: 1px solid #e2e8f0; padding: 6px 10px; text-align: left; min-width: 60px; }
                 .essay-editor-content th { background: #f8fafc; font-weight: 700; }
                 .essay-editor-content .selectedCell { background: #e0e7ff; }

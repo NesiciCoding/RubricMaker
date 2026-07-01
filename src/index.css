@@ -48,9 +48,15 @@
 
     /* transitions */
     --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Tells the browser to render native widgets (select popups, scrollbars) in dark
+       colors — without this, <option> text defaults to black regardless of our CSS,
+       producing unreadable black-on-black dropdown menus. */
+    color-scheme: dark;
 }
 
 [data-theme='light'] {
+    color-scheme: light;
     --bg: #f1ebe0;
     --bg-raised: #ffffff;
     --bg-elevated: #f6f1e8;
@@ -607,6 +613,7 @@ textarea {
 
 select option {
     background: var(--bg-card);
+    color: var(--text);
 }
 
 .input.input-error,

@@ -16,6 +16,7 @@ import {
     ClipboardCopy,
     FileText,
     GripVertical,
+    KeyRound,
 } from 'lucide-react';
 import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
@@ -23,13 +24,17 @@ import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-p
 import { getStudentsTourSteps } from '../data/TutorialSteps';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
+import { useDbStatus } from '../hooks/useDbStatus';
+import { useToast } from '../hooks/useToast';
 import Papa from 'papaparse';
 import CsvImportModal from '../components/Students/CsvImportModal';
+import StudentPasswordSlipSheet, { type PasswordSlip } from '../components/Students/StudentPasswordSlipSheet';
 import { useTranslation, Trans } from 'react-i18next';
 import { VO_TRACKS, VO_TRACK_LABELS, VO_TRACK_COLORS } from '../data/voTracks';
 import type { VoTrack, StudentRubric, Rubric, GradeScale } from '../types';
 import { calcGradeSummary, calcEntryPoints, calcLetterGrade, calcGradeColor } from '../utils/gradeCalc';
 import { sortByDisplayOrder, reorderDisplayOrder } from '../utils/displayOrder';
+import { generateStudentPassword } from '../utils/studentPassword';
 
 /** Strip HTML tags from TiptapEditor output for plain-text summary export. */
 function stripHtml(html: string): string {
@@ -152,7 +157,10 @@ export default function StudentsPage() {
         mergeClasses,
         settings,
         updateSettings,
+        setStudentPassword,
     } = useApp();
+    const dbStatus = useDbStatus();
+    const { showToast } = useToast();
 
     // Initialize active class from settings, falling back to the first available class
     const initialClassId = classes.find((c) => c.id === settings.activeClassId)?.id ?? classes[0]?.id ?? '';
@@ -174,6 +182,25 @@ export default function StudentsPage() {
     }, [activeClass, settings.activeClassId, updateSettings]);
     const [showAddModal, setShowAddModal] = useState(false);
     const [editStudent, setEditStudent] = useState<null | { id: string; name: string; email: string }>(null);
+    const [passwordSlips, setPasswordSlips] = useState<PasswordSlip[] | null>(null);
+    const [generatingSlips, setGeneratingSlips] = useState(false);
+
+    async function handleGeneratePasswordSlips(targets: { id: string; name: string; email: string }[]) {
+        setGeneratingSlips(true);
+        const slips = await Promise.all(
+            targets.map(async (s): Promise<PasswordSlip> => {
+                const password = generateStudentPassword();
+                const result = await setStudentPassword(s.email, password);
+                return result.success ? { ...s, password } : { ...s, error: result.error };
+            })
+        );
+        setGeneratingSlips(false);
+        setPasswordSlips(slips);
+        const failedCount = slips.filter((s) => s.error).length;
+        if (failedCount > 0) {
+            showToast(t('studentsPage.password_slip_partial_failure', { count: failedCount }), 'warning');
+        }
+    }
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [editStudentClassId, setEditStudentClassId] = useState('');
@@ -230,6 +257,10 @@ export default function StudentsPage() {
     const linkedRubricIds = activeClassData?.rubricIds;
     const classRubrics =
         linkedRubricIds && linkedRubricIds.length > 0 ? rubrics.filter((r) => linkedRubricIds.includes(r.id)) : rubrics;
+
+    const classStudentsWithEmail = students
+        .filter((s) => s.classId === activeClass && s.email)
+        .map((s) => ({ id: s.id, name: s.name, email: s.email! }));
 
     const filteredStudents = students
         .filter((s) => s.classId === activeClass)
@@ -401,6 +432,19 @@ export default function StudentsPage() {
                                 title={t('studentsPage.action_export_summaries')}
                             >
                                 <FileText size={15} /> {t('studentsPage.action_export_summaries')}
+                            </button>
+                        )}
+                        {dbStatus.isConnected && classStudentsWithEmail.length > 0 && (
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                disabled={generatingSlips}
+                                onClick={() => void handleGeneratePasswordSlips(classStudentsWithEmail)}
+                                title={t('studentsPage.action_generate_class_passwords')}
+                            >
+                                <KeyRound size={15} />
+                                {generatingSlips
+                                    ? t('studentsPage.password_generating')
+                                    : t('studentsPage.action_generate_class_passwords')}
                             </button>
                         )}
                         <button
@@ -857,6 +901,21 @@ export default function StudentsPage() {
                                                         >
                                                             <ClipboardCopy size={14} />
                                                         </button>
+                                                        {dbStatus.isConnected && s.email && (
+                                                            <button
+                                                                className="btn btn-ghost btn-icon btn-sm"
+                                                                aria-label={t('studentsPage.action_generate_password')}
+                                                                title={t('studentsPage.action_generate_password')}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    void handleGeneratePasswordSlips([
+                                                                        { id: s.id, name: s.name, email: s.email! },
+                                                                    ]);
+                                                                }}
+                                                            >
+                                                                <KeyRound size={14} />
+                                                            </button>
+                                                        )}
                                                         <button
                                                             className="btn btn-ghost btn-icon btn-sm"
                                                             aria-label={t('studentsPage.action_edit_student')}
@@ -1364,6 +1423,10 @@ export default function StudentsPage() {
                             </div>
                         </div>
                     </div>
+                )}
+
+                {passwordSlips && (
+                    <StudentPasswordSlipSheet slips={passwordSlips} onClose={() => setPasswordSlips(null)} />
                 )}
 
                 {showLinkRubrics && activeClassData && (

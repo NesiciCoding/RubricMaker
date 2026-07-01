@@ -791,7 +791,14 @@
         "action_class_menu": "Opciones de clase",
         "action_edit_student": "Editar estudiante",
         "action_delete_student": "Eliminar estudiante",
-        "link_rubrics": "Vincular rúbricas"
+        "link_rubrics": "Vincular rúbricas",
+        "action_generate_password": "Generar contraseña del portal",
+        "action_generate_class_passwords": "Generar fichas de acceso",
+        "password_generating": "Generando…",
+        "password_slip_title": "Fichas de acceso — {{count}} estudiantes",
+        "password_slip_columns": "columnas",
+        "password_slip_item_error": "No se pudo generar — reinténtalo desde la página de Estudiantes.",
+        "password_slip_partial_failure": "No se pudo generar una contraseña para {{count}} estudiante(s). Reinténtalo desde la página de Estudiantes."
     },
     "gradeStudent": {
         "group_grade_banner": "Calificación grupal — al guardar también se copiarán estas puntuaciones y comentarios a: {{names}}",
@@ -2319,6 +2326,7 @@
         "da_sync_item_source": "El localStorage sigue siendo la fuente de verdad; Supabase es una capa de sincronización.",
         "da_sync_item_collab": "Colaboración entre varios profesores: comparte rúbricas entre cuentas en el mismo proyecto Supabase.",
         "da_sync_item_otp": "Inicio de sesión por OTP por correo electrónico — opcional; requiere configuración SMTP en Docker.",
+        "da_sync_item_student_password": "Inicio de sesión con contraseña para estudiantes — desde la página de Estudiantes, genera una contraseña para un estudiante con correo registrado y compártela con él directamente. El estudiante inicia sesión en el portal con su correo y esa contraseña, sin pasar por el OTP por correo (útil cuando los filtros de la escuela bloquean o retrasan los mensajes OTP de Supabase).",
         "da_sync_item_conflict": "Resolución de conflictos: cuando los datos locales y en la nube difieren, gana el cambio más reciente. Las ediciones realizadas sin conexión están protegidas y nunca se sobrescriben con datos en la nube más antiguos hasta que se hayan sincronizado.",
         "da_stress_title": "Registro de pruebas de estrés",
         "da_stress_body_prefix": "Los administradores pueden compilar con",

@@ -335,8 +335,13 @@ export default function StudentEssayPage() {
     useEffect(() => {
         if (submitted) return;
         const interval = setInterval(() => {
-            localStorage.setItem(draftKey, html);
-            setDraftSavedAt(new Date());
+            try {
+                localStorage.setItem(draftKey, html);
+                setDraftSavedAt(new Date());
+            } catch {
+                // Quota exceeded (e.g. pasted images bloat the HTML) — the draft is only a
+                // local backup, so skip this save rather than crash the autosave loop.
+            }
         }, 30_000);
         return () => clearInterval(interval);
     }, [html, draftKey, submitted]);
@@ -361,7 +366,11 @@ export default function StudentEssayPage() {
 
     const handleSubmit = useCallback(async () => {
         if (!assignment) return;
-        localStorage.setItem(draftKey, html);
+        try {
+            localStorage.setItem(draftKey, html);
+        } catch {
+            // Quota exceeded — non-fatal, the draft is just a local backup.
+        }
         if (timerRef.current) clearInterval(timerRef.current);
 
         const submissionId = nanoid();

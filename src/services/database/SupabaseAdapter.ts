@@ -165,6 +165,47 @@ export class SupabaseAdapter {
         return error ? { error: error.message } : {};
     }
 
+    /** Password login — the alternative students use when OTP email delivery is unreliable. */
+    async signInWithPassword(email: string, password: string): Promise<{ error?: string }> {
+        if (!this.client) return { error: 'Not connected' };
+        const { error } = await this.client.auth.signInWithPassword({ email, password });
+        return error ? { error: error.message } : {};
+    }
+
+    /**
+     * Set (or reset) the login password for one of this teacher's own students, via the
+     * set-student-password edge function — writing auth.users requires the service-role
+     * key, so this can't happen directly from the client.
+     */
+    async setStudentPassword(studentEmail: string, password: string): Promise<SyncResult> {
+        if (!this.client || !this.activeUrl) return { success: false, error: 'Not connected' };
+        const {
+            data: { session },
+        } = await this.client.auth.getSession();
+        if (!session) return { success: false, error: 'Not authenticated' };
+
+        let response: Response;
+        try {
+            response = await fetch(`${this.activeUrl}/functions/v1/set-student-password`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${session.access_token}`,
+                    apikey: this.activeKey ?? '',
+                },
+                body: JSON.stringify({ studentEmail, password }),
+            });
+        } catch (err) {
+            return { success: false, error: `Network error: ${String(err)}` };
+        }
+
+        if (!response.ok) {
+            const errBody = await response.json().catch(() => ({ error: `Server error ${response.status}` }));
+            return { success: false, error: errBody.error ?? `Server error ${response.status}` };
+        }
+        return { success: true };
+    }
+
     async signInWithGoogle(): Promise<{ error?: string }> {
         if (!this.client) return { error: 'Supabase not initialised' };
         const { error } = await this.client.auth.signInWithOAuth({

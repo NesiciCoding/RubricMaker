@@ -791,7 +791,14 @@
         "action_class_menu": "Klassenoptionen",
         "action_edit_student": "Schüler bearbeiten",
         "action_delete_student": "Schüler löschen",
-        "link_rubrics": "Rubriken verknüpfen"
+        "link_rubrics": "Rubriken verknüpfen",
+        "action_generate_password": "Portal-Passwort generieren",
+        "action_generate_class_passwords": "Passwort-Zettel generieren",
+        "password_generating": "Wird generiert…",
+        "password_slip_title": "Login-Zettel — {{count}} Schüler",
+        "password_slip_columns": "Spalten",
+        "password_slip_item_error": "Generierung fehlgeschlagen — auf der Schüler-Seite erneut versuchen.",
+        "password_slip_partial_failure": "Für {{count}} Schüler konnte kein Passwort generiert werden. Auf der Schüler-Seite erneut versuchen."
     },
     "gradeStudent": {
         "group_grade_banner": "Gruppennote — beim Speichern werden diese Punkte und Kommentare auch kopiert an: {{names}}",
@@ -2319,6 +2326,7 @@
         "da_sync_item_source": "LocalStorage bleibt die maßgebliche Quelle; Supabase ist eine Synchronisierungsebene.",
         "da_sync_item_collab": "Zusammenarbeit mehrerer Lehrer: teile Rubriken zwischen Konten im selben Supabase-Projekt.",
         "da_sync_item_otp": "E-Mail-OTP-Login — optional; erfordert SMTP-Konfiguration in Docker.",
+        "da_sync_item_student_password": "Passwort-Login für Schüler — auf der Schüler-Seite ein Passwort für einen Schüler mit hinterlegter E-Mail generieren und direkt an ihn weitergeben. Anmeldung im Schülerportal erfolgt mit E-Mail und diesem Passwort, ganz ohne OTP-E-Mail (nützlich, wenn Schulfilter Supabase-OTP-Nachrichten blockieren oder verzögern).",
         "da_sync_item_conflict": "Konfliktlösung: Wenn lokale und Cloud-Daten abweichen, gewinnt die neueste Änderung. Offline vorgenommene Änderungen sind geschützt und werden nie von älteren Cloud-Daten überschrieben, bis sie synchronisiert wurden.",
         "da_stress_title": "Stresstest-Protokollierung",
         "da_stress_body_prefix": "Admins können mit",
