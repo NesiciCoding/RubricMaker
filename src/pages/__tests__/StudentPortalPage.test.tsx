@@ -315,6 +315,27 @@ describe('StudentPortalPage', () => {
         expect(screen.getByText('studentPortal.test_open')).toBeInTheDocument();
     });
 
+    it("does not show another student's work — fetchMy*Assignments is session-scoped, not URL-scoped", async () => {
+        // get_my_student_ids() (RLS) matches by the authenticated session's email, which can
+        // resolve to more than one Student record (e.g. siblings sharing a login email) — the
+        // portal must filter to its own studentId rather than trusting the fetch already did.
+        const otherStudentsTest: StudentTestAssignmentSummary = {
+            teacherKey: 'test-9',
+            testId: 't9',
+            studentId: 'other-student',
+            testName: "Someone Else's Test",
+            requireSEB: false,
+            durationMinutes: null,
+            createdAt: '2024-01-01T00:00:00Z',
+            expiresAt: null,
+            submission: null,
+        };
+        mockFetchMyTestAssignments.mockResolvedValueOnce([otherStudentsTest]);
+        renderAt('s1');
+        await screen.findByText('studentPortal.copy_link');
+        expect(screen.queryByText("Someone Else's Test")).not.toBeInTheDocument();
+    });
+
     it('groups an overdue essay separately from a completed test', async () => {
         const overdueEssay: StudentEssayAssignmentSummary = {
             teacherKey: 'essay-3',

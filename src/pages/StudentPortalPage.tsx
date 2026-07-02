@@ -314,9 +314,17 @@ export default function StudentPortalPage() {
         return entry.row.expiresAt ?? null;
     }
 
+    // fetchMy*Assignments() scopes rows by the authenticated session's email, via
+    // get_my_student_ids() — which can return more than one student id if two Student
+    // records share a login email (siblings, a roster data-entry mistake). Filter to this
+    // portal's own student id so that case can't show one student's work on another's page.
     const allWork: WorkEntry[] = [
-        ...essayRows.map((row) => ({ kind: 'essay' as const, key: `essay-${row.teacherKey}`, row })),
-        ...testRows.map((row) => ({ kind: 'test' as const, key: `test-${row.teacherKey}`, row })),
+        ...essayRows
+            .filter((row) => row.studentId === student.id)
+            .map((row) => ({ kind: 'essay' as const, key: `essay-${row.teacherKey}`, row })),
+        ...testRows
+            .filter((row) => row.studentId === student.id)
+            .map((row) => ({ kind: 'test' as const, key: `test-${row.teacherKey}`, row })),
     ];
 
     const now = new Date();
