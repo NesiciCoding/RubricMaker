@@ -253,6 +253,11 @@ class StorageSyncService {
     async configure(config: DatabaseConfig): Promise<boolean> {
         const ok = await this.adapter.connect(config);
         if (ok) {
+            // startRealtimeSync() is a no-op while a channel already exists, so without
+            // this, configure() called twice without an intervening disconnect()/signOut()
+            // (e.g. an owner switch) would leave the realtime subscription scoped to the
+            // previous user's uid.
+            this.stopRealtimeSync();
             this.guardOwnerSwitch();
             this.setStatus('idle');
             this.adapter.setAuthChangeListener((user) => {

@@ -615,8 +615,12 @@ function reducer(state: StoreData, action: Action): StoreData {
             return { ...state, gradingTasks: next };
         }
         case 'SAVE_USER_TEMPLATE': {
+            // No cap here — this array is now the sync source of truth, diffed against
+            // Supabase (see the delta-sync effect below). Evicting an entry would look
+            // like a delete to that diff and get pushed as one, silently deleting the
+            // teacher's oldest saved template from the cloud and every other device.
             const filtered = state.userTemplates.filter((ut) => ut.id !== action.payload.id);
-            const next = [action.payload, ...filtered].slice(0, 20);
+            const next = [action.payload, ...filtered];
             if (isOffline()) saveUserTemplates(next);
             return { ...state, userTemplates: next };
         }

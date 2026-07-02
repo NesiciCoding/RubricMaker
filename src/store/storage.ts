@@ -628,8 +628,8 @@ export function loadPendingQueue(): PendingWrite[] {
 }
 
 // One entry per entity:id (upserts are deduped), so the cap is only reached after
-// ~500 distinct records are touched while pushes keep failing.
-// ponytail: drop-oldest at the cap; per-entity eviction policy if teachers ever hit it.
+// ~500 distinct records are touched while pushes keep failing. Drop-oldest at the
+// cap; consider a per-entity eviction policy if teachers ever hit it.
 const MAX_PENDING_OPS = 500;
 
 export function addToPendingQueue(op: Omit<PendingWrite, 'id' | 'queuedAt'>): void {
@@ -648,6 +648,9 @@ export function addToPendingQueue(op: Omit<PendingWrite, 'id' | 'queuedAt'>): vo
             if (queue.length >= MAX_PENDING_OPS) {
                 console.warn('[storage] pending-sync queue full — dropping oldest entry', queue[0]);
                 queue.shift();
+                // Same handler as a quota error — the dropped entry is unsynced data loss
+                // just like a failed write, and the user has no other way to know.
+                quotaExceededHandler?.();
             }
             queue.push(entry);
         }

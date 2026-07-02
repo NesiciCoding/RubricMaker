@@ -1,6 +1,10 @@
 -- Saved rubric templates ("save as template" on the Rubric Builder), previously
 -- localStorage-only and lost on device change. Same jsonb-document pattern as
 -- essay_templates (036_essay_templates.sql).
+--
+-- The index below is plain (not CONCURRENTLY) intentionally: Supabase migrations run
+-- inside a transaction, where CONCURRENTLY is not allowed. The table is created
+-- immediately above in this same migration, so there's no existing data to lock.
 
 create table if not exists public.user_templates (
   id text primary key,

@@ -11,6 +11,10 @@
 --   for the online student-portal flow.
 --
 -- Same jsonb-document pattern as essay_templates (036_essay_templates.sql).
+--
+-- Indexes below are plain (not CONCURRENTLY) intentionally: Supabase migrations run
+-- inside a transaction, where CONCURRENTLY is not allowed. Both tables are created
+-- immediately above in this same migration, so there's no existing data to lock.
 
 create table if not exists public.essay_batch_assignments (
   id text primary key, -- `${teacherKey}:${studentId}`

@@ -10,6 +10,12 @@
 -- function (supabase/functions/nightly-backup), same auth pattern as
 -- delete-old-attachments: service-role-only, scheduled via Supabase Dashboard Cron Jobs
 -- (Cloud) or pg_cron/an external cron hitting the function URL (self-hosted).
+--
+-- Metadata only: rows like essay_submissions/speaking_sessions store Storage-bucket
+-- paths (essays/recordings buckets), not file contents — this function does not copy
+-- the referenced objects. A restored row's storage_path will be broken if the bucket
+-- itself isn't backed up separately (e.g. Supabase's own project-level backups, or a
+-- storage sync job). Out of scope here to keep this a lightweight per-user DB snapshot.
 
 CREATE OR REPLACE FUNCTION public.export_owner_backup(target_owner uuid)
 RETURNS jsonb
