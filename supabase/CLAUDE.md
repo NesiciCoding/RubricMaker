@@ -101,6 +101,7 @@ Current functions:
 | `comment_snippets` | Reusable comment bank entries |
 | `essay_assignments` | Essay prompts created by teachers |
 | `essay_submissions` | Student essay submissions (anonymous via submission codes) |
+| `test_assignments` | Per-student test assignment records (migration 044), mirrors `essay_assignments` so the student portal can list assigned tests |
 | `peer_reviews` | Peer review entries on essay submissions |
 | `self_assessments` | Student CEFR self-assessment records |
 | `speaking_sessions` | Speaking assessment session records |

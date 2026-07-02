@@ -21,6 +21,8 @@ import type {
     StudentEssayAssignmentSummary,
     Test,
     StudentTest,
+    TestAssignment,
+    StudentTestAssignmentSummary,
     MarketplaceListing,
     CefrLevel,
 } from '../../types';
@@ -1090,6 +1092,78 @@ export class SupabaseAdapter {
     async deleteStudentTest(id: string): Promise<SyncResult> {
         const { error } = await this.db().from('student_tests').delete().eq('id', id).eq('owner_id', this.uid());
         return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    // ── Test assignments (teacher side) ─────────────────────────────────────────
+
+    /** Persist the assignment to the DB so the student portal can list it */
+    async saveTestAssignment(a: TestAssignment): Promise<SyncResult> {
+        const { error } = await this.db()
+            .from('test_assignments')
+            .upsert(
+                {
+                    id: a.teacherKey,
+                    owner_id: this.uid(),
+                    test_id: a.testId,
+                    student_id: a.studentId,
+                    test_name: a.testName,
+                    require_seb: a.requireSEB ?? false,
+                    duration_minutes: a.durationMinutes ?? null,
+                    created_at: a.createdAt,
+                    expires_at: a.expiresAt ?? null,
+                },
+                { onConflict: 'id' }
+            );
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    /**
+     * Fetch test assignments belonging to the currently logged-in student.
+     * Scoped by RLS via get_my_test_assignment_ids() — students only see their own rows.
+     * Submission status is looked up separately since student_tests stores studentId/testId
+     * inside its `data` jsonb column rather than as real columns to join on.
+     */
+    async fetchMyTestAssignments(): Promise<StudentTestAssignmentSummary[]> {
+        const { data, error } = await this.db()
+            .from('test_assignments')
+            .select('id, test_id, student_id, test_name, require_seb, duration_minutes, created_at, expires_at')
+            .order('created_at', { ascending: false });
+        if (error || !data) return [];
+
+        const { data: subRows } = await this.db().from('student_tests').select('data');
+        const submissionByKey = new Map<string, { status: StudentTest['status']; submittedAt: string | null }>();
+        for (const row of subRows ?? []) {
+            const st = row.data as StudentTest;
+            submissionByKey.set(`${st.testId}__${st.studentId}`, {
+                status: st.status,
+                submittedAt: st.submittedAt ?? null,
+            });
+        }
+
+        return data.map((r) => ({
+            teacherKey: r.id,
+            testId: r.test_id,
+            studentId: r.student_id,
+            testName: r.test_name,
+            requireSEB: r.require_seb,
+            durationMinutes: r.duration_minutes ?? null,
+            createdAt: r.created_at,
+            expiresAt: r.expires_at ?? null,
+            submission: submissionByKey.get(`${r.test_id}__${r.student_id}`) ?? null,
+        }));
+    }
+
+    /**
+     * Fetch the full content of a test the current student has an assignment for
+     * (RLS: `tests_student_select`, scoped to test_assignments the student owns), so the
+     * portal can embed it into a self-contained "Open" link — the same offline-content-URL
+     * shape TestAssignmentModal already produces, sidestepping StudentTestPage's separate
+     * disconnected client (which cannot read `tests` at all — see migration 044's notes).
+     */
+    async fetchAssignedTestContent(testId: string): Promise<Test | null> {
+        const { data, error } = await this.db().from('tests').select('data').eq('id', testId).maybeSingle();
+        if (error || !data) return null;
+        return data.data as Test;
     }
 
     // ── Analysis Results ──────────────────────────────────────────────────────

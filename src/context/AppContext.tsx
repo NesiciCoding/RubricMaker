@@ -32,6 +32,7 @@ import type {
     GradingTask,
     Test,
     StudentTest,
+    TestAssignment,
     UserRole,
 } from '../types';
 import {
@@ -756,6 +757,10 @@ interface AppContextValue extends StoreData {
     ) => Promise<Awaited<ReturnType<typeof storageSync.fetchEssayAssignmentByKey>>>;
     deleteEssaySubmission: (submissionId: string, storagePath: string) => Promise<SyncResult>;
     getEssaySignedUrl: (storagePath: string) => Promise<string | null>;
+    // Test assignments (teacher side)
+    saveTestAssignment: (a: TestAssignment) => Promise<SyncResult>;
+    fetchMyTestAssignments: () => Promise<Awaited<ReturnType<typeof storageSync.fetchMyTestAssignments>>>;
+    fetchAssignedTestContent: (testId: string) => Promise<Test | null>;
     // Backup / restore
     importBackup: (json: string) => Promise<boolean>;
     // Landing / auth flow
@@ -1531,6 +1536,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         []
     );
     const getEssaySignedUrl = useCallback((path: string) => storageSync.getEssaySignedUrl(path), []);
+    const saveTestAssignment = useCallback((a: TestAssignment) => storageSync.saveTestAssignment(a), []);
+    const fetchMyTestAssignments = useCallback(() => storageSync.fetchMyTestAssignments(), []);
+    const fetchAssignedTestContent = useCallback((testId: string) => storageSync.fetchAssignedTestContent(testId), []);
 
     // ─── Landing / auth flow ──────────────────────────────────────────
     const enterLocalMode = useCallback(() => {
@@ -1732,6 +1740,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         fetchEssayAssignmentByKey,
         deleteEssaySubmission,
         getEssaySignedUrl,
+        saveTestAssignment,
+        fetchMyTestAssignments,
+        fetchAssignedTestContent,
         importBackup,
         showLanding: landingState === 'show',
         isCheckingSession: landingState === 'checking',
