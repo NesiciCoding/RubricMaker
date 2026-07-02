@@ -29,6 +29,7 @@ import {
     Download,
     Search,
     KeyRound,
+    ListChecks,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { loadSupabaseConfig } from '../services/database';
@@ -151,6 +152,12 @@ const STUDENT_FEATURES = [
         title: 'Student Portal Login',
         desc: 'If your school connects a database, you can sign in with your email and a password your teacher gives you — no confirmation email needed.',
         color: '#0ea5e9',
+    },
+    {
+        icon: ListChecks,
+        title: 'My Work & Progress',
+        desc: 'See every assigned essay and test in one to-do list — overdue, planned, and completed — plus a radar chart of your own scores across rubrics.',
+        color: '#14b8a6',
     },
 ];
 

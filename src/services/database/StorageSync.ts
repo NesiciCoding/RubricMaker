@@ -33,6 +33,7 @@ import type {
     GradingTask,
     Test,
     StudentTest,
+    TestAssignment,
     UserTemplate,
 } from '../../types';
 
@@ -440,6 +441,18 @@ class StorageSyncService {
 
     async fetchMyEssayAssignments() {
         return this.adapter.fetchMyEssayAssignments();
+    }
+
+    async saveTestAssignment(a: TestAssignment): Promise<SyncResult> {
+        return this.adapter.saveTestAssignment(a);
+    }
+
+    async fetchMyTestAssignments() {
+        return this.adapter.fetchMyTestAssignments();
+    }
+
+    async fetchAssignedTestContent(testId: string): Promise<Test | null> {
+        return this.adapter.fetchAssignedTestContent(testId);
     }
 
     async fetchEssayAssignmentByKey(teacherKey: string) {
