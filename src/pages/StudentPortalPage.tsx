@@ -10,22 +10,47 @@ import {
     Star,
     ClipboardCheck,
     FileText,
+    ListChecks,
     Clock,
     AlertTriangle,
     ExternalLink,
+    Loader2,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
 import { useApp } from '../context/AppContext';
-import { calcGradeSummary } from '../utils/gradeCalc';
+import { calcGradeSummary, calcEntryPoints } from '../utils/gradeCalc';
 import CefrProgressChart from '../components/Statistics/CefrProgressChart';
+import CriterionRadarChart from '../components/Statistics/CriterionRadarChart';
+import type { CriterionRadarDataPoint } from '../components/Statistics/CriterionRadarChart';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
 import { getStudentPortalTutorialSteps } from '../data/StudentPortalTutorialSteps';
 import RubricSelfAssessPanel from '../components/Students/RubricSelfAssessPanel';
-import { encodeEssayAssignment } from '../utils/shareCode';
+import { encodeEssayAssignment, encodeTestAssignment } from '../utils/shareCode';
 import { loadSupabaseConfig } from '../services/database';
-import type { CefrLevel, CefrSkill, EssayAssignment, StudentEssayAssignmentSummary } from '../types';
+import type {
+    CefrLevel,
+    CefrSkill,
+    EssayAssignment,
+    StudentEssayAssignmentSummary,
+    StudentTestAssignmentSummary,
+    TestAssignmentPayload,
+    ScoreEntry,
+    RubricCriterion,
+} from '../types';
+
+function criterionPct(
+    h: { sr: { entries: ScoreEntry[] }; rubric: { criteria: RubricCriterion[] } },
+    criterionId: string,
+    levels: { maxPoints: number }[]
+): number {
+    const entry = h.sr.entries.find((e) => e.criterionId === criterionId);
+    const criterion = h.rubric.criteria.find((c) => c.id === criterionId);
+    if (!entry || !criterion) return 0;
+    const max = Math.max(...levels.map((l) => l.maxPoints), 1);
+    return (calcEntryPoints(entry, criterion) / max) * 100;
+}
 
 export default function StudentPortalPage() {
     const { studentId } = useParams<{ studentId: string }>();
@@ -40,6 +65,8 @@ export default function StudentPortalPage() {
         selfAssessments,
         saveRubricSelfAssessment,
         fetchMyEssayAssignments,
+        fetchMyTestAssignments,
+        fetchAssignedTestContent,
     } = useApp();
     const { t } = useTranslation();
     const [linkCopied, setLinkCopied] = useState(false);
@@ -47,11 +74,19 @@ export default function StudentPortalPage() {
 
     const [essayRows, setEssayRows] = useState<StudentEssayAssignmentSummary[]>([]);
     const [essayLoadError, setEssayLoadError] = useState<string | null>(null);
+    const [testRows, setTestRows] = useState<StudentTestAssignmentSummary[]>([]);
+    const [testLoadError, setTestLoadError] = useState<string | null>(null);
+    const [openingTestKey, setOpeningTestKey] = useState<string | null>(null);
+    const [testOpenErrorKey, setTestOpenErrorKey] = useState<string | null>(null);
+    const [radarRubricId, setRadarRubricId] = useState<string>('combined');
 
     useEffect(() => {
         fetchMyEssayAssignments()
             .then(setEssayRows)
             .catch((err: unknown) => setEssayLoadError(err instanceof Error ? err.message : 'Failed to load essays'));
+        fetchMyTestAssignments()
+            .then(setTestRows)
+            .catch((err: unknown) => setTestLoadError(err instanceof Error ? err.message : 'Failed to load tests'));
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     const tourKey = `rm_portal_tour_seen_${studentId}`;
@@ -146,6 +181,44 @@ export default function StudentPortalPage() {
             .sort((a, b) => CEFR_LEVELS.indexOf(a.level) - CEFR_LEVELS.indexOf(b.level));
     }, [student, history]);
 
+    // Per-rubric radars a student can pick between, plus one "combined" view averaging
+    // scores across rubrics wherever a criterion title recurs (e.g. shared skill categories
+    // across rubric templates) — the two views the roadmap calls "combined and separated".
+    const rubricRadarOptions = useMemo(() => {
+        const seen = new Map<string, string>();
+        for (const h of history) {
+            if (h.rubric.criteria.length >= 3 && !seen.has(h.sr.rubricId)) {
+                seen.set(h.sr.rubricId, h.rubric.name);
+            }
+        }
+        return Array.from(seen.entries()).map(([id, name]) => ({ id, name }));
+    }, [history]);
+
+    const combinedRadarData = useMemo((): CriterionRadarDataPoint[] => {
+        const byTitle = new Map<string, { display: string; scores: number[] }>();
+        for (const h of history) {
+            for (const c of h.rubric.criteria) {
+                const key = c.title.trim().toLowerCase();
+                if (!byTitle.has(key)) byTitle.set(key, { display: c.title, scores: [] });
+                byTitle.get(key)!.scores.push(criterionPct(h, c.id, c.levels));
+            }
+        }
+        return Array.from(byTitle.values()).map(({ display, scores }) => ({
+            name: display,
+            avg: parseFloat((scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1)),
+        }));
+    }, [history]);
+
+    const selectedRadarData = useMemo((): CriterionRadarDataPoint[] => {
+        if (radarRubricId === 'combined') return combinedRadarData;
+        const h = history.find((h) => h.sr.rubricId === radarRubricId);
+        if (!h) return [];
+        return h.rubric.criteria.map((c) => ({
+            name: c.title,
+            avg: parseFloat(criterionPct(h, c.id, c.levels).toFixed(1)),
+        }));
+    }, [radarRubricId, history, combinedRadarData]);
+
     const selfAssess = selfAssessments.filter((sa) => sa.studentId === studentId);
 
     if (!student) {
@@ -192,14 +265,62 @@ export default function StudentPortalPage() {
         return `#/essay/${encodeEssayAssignment(assignment)}`;
     }
 
-    const pendingEssays = essayRows.filter(
-        (r) => !r.submission && (!r.expiresAt || new Date(r.expiresAt) > new Date())
-    );
-    const completedEssays = essayRows.filter((r) => !!r.submission);
-    const expiredEssays = essayRows.filter((r) => !r.submission && r.expiresAt && new Date(r.expiresAt) <= new Date());
+    async function handleOpenTest(row: StudentTestAssignmentSummary) {
+        setTestOpenErrorKey(null);
+        setOpeningTestKey(row.teacherKey);
+        const content = await fetchAssignedTestContent(row.testId);
+        setOpeningTestKey(null);
+        if (!content) {
+            setTestOpenErrorKey(row.teacherKey);
+            return;
+        }
+        const payload: TestAssignmentPayload = {
+            testId: row.testId,
+            studentId: row.studentId,
+            teacherKey: row.teacherKey,
+            requireSEB: row.requireSEB,
+            durationMinutes: row.durationMinutes ?? undefined,
+            createdAt: row.createdAt,
+            expiresAt: row.expiresAt ?? undefined,
+            test: content,
+        };
+        window.location.hash = `/test/${encodeTestAssignment(payload)}`;
+    }
+
+    function isDone(entry: WorkEntry): boolean {
+        return entry.kind === 'essay'
+            ? !!entry.row.submission
+            : entry.row.submission?.status === 'submitted' || entry.row.submission?.status === 'graded';
+    }
+    function dueAt(entry: WorkEntry): string | null {
+        return entry.row.expiresAt ?? null;
+    }
+
+    const allWork: WorkEntry[] = [
+        ...essayRows.map((row) => ({ kind: 'essay' as const, key: `essay-${row.teacherKey}`, row })),
+        ...testRows.map((row) => ({ kind: 'test' as const, key: `test-${row.teacherKey}`, row })),
+    ];
+
+    const now = new Date();
+    const byDueDateAsc = (a: WorkEntry, b: WorkEntry) => {
+        const aT = dueAt(a) ? new Date(dueAt(a)!).getTime() : Infinity;
+        const bT = dueAt(b) ? new Date(dueAt(b)!).getTime() : Infinity;
+        return aT - bT;
+    };
+    const overdueWork = allWork
+        .filter((e) => !isDone(e) && dueAt(e) && new Date(dueAt(e)!) <= now)
+        .sort(byDueDateAsc);
+    const plannedWork = allWork
+        .filter((e) => !isDone(e) && (!dueAt(e) || new Date(dueAt(e)!) > now))
+        .sort(byDueDateAsc);
+    const completedWork = allWork.filter(isDone);
     const hasPeerReviews = peerReviews.some((pr) => pr.studentId === studentId && pr.gradedAt);
+    const hasWork = allWork.length > 0;
+    const hasRadar = combinedRadarData.length >= 3 || rubricRadarOptions.length > 0;
 
     const navLinks = [
+        { id: 'portal-section-work', label: t('studentPortal.my_work'), visible: hasWork },
+        { id: 'portal-section-progress', label: t('studentPortal.my_progress'), visible: hasRadar },
         { id: 'portal-section-grades', label: t('studentPortal.grade_history'), visible: history.length > 1 },
         { id: 'portal-section-cefr', label: t('studentPortal.cefr_progress'), visible: cefrProgress.length > 0 },
         {
@@ -408,8 +529,8 @@ export default function StudentPortalPage() {
                     </Section>
                 )}
 
-                {/* ── Essay assignments ────────────────────────────────────── */}
-                {essayLoadError && dbConfig && (
+                {/* ── My Work: combined essay + test to-do list ───────────────────── */}
+                {(essayLoadError || testLoadError) && dbConfig && (
                     <div
                         style={{
                             background: 'var(--bg-raised)',
@@ -424,40 +545,83 @@ export default function StudentPortalPage() {
                         }}
                     >
                         <AlertTriangle size={15} style={{ flexShrink: 0 }} />
-                        {t('studentPortal.essays_load_error')}
+                        {t('studentPortal.work_load_error')}
                     </div>
                 )}
-                {essayRows.length > 0 ? (
-                    <>
-                        {pendingEssays.length > 0 && (
-                            <Section title={t('studentPortal.essays_pending')}>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                    {pendingEssays.map((row) => (
-                                        <EssayCard key={row.teacherKey} row={row} href={buildEssayUrl(row)} t={t} />
+                {hasWork && (
+                    <Section id="portal-section-work" title={t('studentPortal.my_work')}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                            {overdueWork.length > 0 && (
+                                <WorkGroup
+                                    title={t('studentPortal.work_overdue')}
+                                    entries={overdueWork}
+                                    buildEssayUrl={buildEssayUrl}
+                                    onOpenTest={handleOpenTest}
+                                    openingTestKey={openingTestKey}
+                                    testOpenErrorKey={testOpenErrorKey}
+                                    t={t}
+                                />
+                            )}
+                            {plannedWork.length > 0 && (
+                                <WorkGroup
+                                    title={t('studentPortal.work_planned')}
+                                    entries={plannedWork}
+                                    buildEssayUrl={buildEssayUrl}
+                                    onOpenTest={handleOpenTest}
+                                    openingTestKey={openingTestKey}
+                                    testOpenErrorKey={testOpenErrorKey}
+                                    t={t}
+                                />
+                            )}
+                            {completedWork.length > 0 && (
+                                <WorkGroup
+                                    title={t('studentPortal.work_completed')}
+                                    entries={completedWork}
+                                    buildEssayUrl={buildEssayUrl}
+                                    onOpenTest={handleOpenTest}
+                                    openingTestKey={openingTestKey}
+                                    testOpenErrorKey={testOpenErrorKey}
+                                    t={t}
+                                />
+                            )}
+                        </div>
+                    </Section>
+                )}
+
+                {/* My progress: student-scoped radar view(s) */}
+                {hasRadar && (
+                    <Section id="portal-section-progress" title={t('studentPortal.my_progress')}>
+                        {rubricRadarOptions.length > 0 && (
+                            <div className="form-group" style={{ marginBottom: 14 }}>
+                                <label htmlFor="portal-radar-select" style={{ fontSize: '0.8rem' }}>
+                                    {t('studentPortal.progress_view_label')}
+                                </label>
+                                <select
+                                    id="portal-radar-select"
+                                    value={radarRubricId}
+                                    onChange={(e) => setRadarRubricId(e.target.value)}
+                                >
+                                    <option value="combined">{t('studentPortal.progress_view_combined')}</option>
+                                    {rubricRadarOptions.map((o) => (
+                                        <option key={o.id} value={o.id}>
+                                            {o.name}
+                                        </option>
                                     ))}
-                                </div>
-                            </Section>
+                                </select>
+                            </div>
                         )}
-                        {completedEssays.length > 0 && (
-                            <Section title={t('studentPortal.essays_completed')}>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                    {completedEssays.map((row) => (
-                                        <EssayCard key={row.teacherKey} row={row} href={buildEssayUrl(row)} t={t} />
-                                    ))}
-                                </div>
-                            </Section>
-                        )}
-                        {expiredEssays.length > 0 && (
-                            <Section title={t('studentPortal.essay_expired')}>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                    {expiredEssays.map((row) => (
-                                        <EssayCard key={row.teacherKey} row={row} href={buildEssayUrl(row)} t={t} />
-                                    ))}
-                                </div>
-                            </Section>
-                        )}
-                    </>
-                ) : null}
+                        <CriterionRadarChart
+                            data={selectedRadarData}
+                            accentColor="var(--accent)"
+                            classAverageLabel={
+                                radarRubricId === 'combined'
+                                    ? t('studentPortal.progress_view_combined')
+                                    : (rubricRadarOptions.find((o) => o.id === radarRubricId)?.name ?? '')
+                            }
+                            height={340}
+                        />
+                    </Section>
+                )}
 
                 {/* Peer reviews received */}
                 {(() => {
@@ -668,6 +832,191 @@ export default function StudentPortalPage() {
 }
 
 type TFunc = (key: string, opts?: Record<string, string | number>) => string;
+
+type WorkEntry =
+    | { kind: 'essay'; key: string; row: StudentEssayAssignmentSummary }
+    | { kind: 'test'; key: string; row: StudentTestAssignmentSummary };
+
+function WorkGroup({
+    title,
+    entries,
+    buildEssayUrl,
+    onOpenTest,
+    openingTestKey,
+    testOpenErrorKey,
+    t,
+}: {
+    title: string;
+    entries: WorkEntry[];
+    buildEssayUrl: (row: StudentEssayAssignmentSummary) => string;
+    onOpenTest: (row: StudentTestAssignmentSummary) => void;
+    openingTestKey: string | null;
+    testOpenErrorKey: string | null;
+    t: TFunc;
+}) {
+    return (
+        <div>
+            <h4
+                style={{
+                    margin: '0 0 8px',
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    color: 'var(--text-dim)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.03em',
+                }}
+            >
+                {title}
+            </h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {entries.map((entry) =>
+                    entry.kind === 'essay' ? (
+                        <EssayCard key={entry.key} row={entry.row} href={buildEssayUrl(entry.row)} t={t} />
+                    ) : (
+                        <TestCard
+                            key={entry.key}
+                            row={entry.row}
+                            onOpen={onOpenTest}
+                            opening={openingTestKey === entry.row.teacherKey}
+                            openError={testOpenErrorKey === entry.row.teacherKey}
+                            t={t}
+                        />
+                    )
+                )}
+            </div>
+        </div>
+    );
+}
+
+function TestCard({
+    row,
+    onOpen,
+    opening,
+    openError,
+    t,
+}: {
+    row: StudentTestAssignmentSummary;
+    onOpen: (row: StudentTestAssignmentSummary) => void;
+    opening: boolean;
+    openError: boolean;
+    t: TFunc;
+}) {
+    const now = new Date();
+    const expired = !!row.expiresAt && new Date(row.expiresAt) <= now;
+    const dueSoon =
+        !expired && !!row.expiresAt && new Date(row.expiresAt).getTime() - now.getTime() < 24 * 60 * 60 * 1000;
+    const done = row.submission?.status === 'submitted' || row.submission?.status === 'graded';
+
+    const chips: React.ReactNode[] = [];
+    if (row.durationMinutes) {
+        chips.push(
+            <span key="time" style={chipStyle('var(--bg-raised)', 'var(--yellow)')}>
+                <Clock size={11} style={{ verticalAlign: 'middle', marginRight: 3 }} />
+                {t('studentPortal.test_duration', { n: row.durationMinutes })}
+            </span>
+        );
+    }
+    if (row.requireSEB) {
+        chips.push(
+            <span key="seb" style={chipStyle('var(--bg-raised)', 'var(--red)')}>
+                <AlertTriangle size={11} style={{ verticalAlign: 'middle', marginRight: 3 }} />
+                {t('studentPortal.test_seb_required')}
+            </span>
+        );
+    }
+    if (row.submission?.status === 'in_progress') {
+        chips.push(
+            <span key="status" style={chipStyle('var(--bg-raised)', 'var(--yellow)')}>
+                {t('studentPortal.test_in_progress')}
+            </span>
+        );
+    }
+
+    return (
+        <div
+            style={{
+                background: 'var(--bg)',
+                border: '1px solid var(--border)',
+                borderRadius: 10,
+                padding: '14px 16px',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 14,
+            }}
+        >
+            <ListChecks
+                size={18}
+                style={{ color: done ? 'var(--green)' : 'var(--accent)', flexShrink: 0, marginTop: 2 }}
+            />
+            <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: 4 }}>{row.testName}</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: chips.length ? 8 : 0 }}>
+                    {chips}
+                </div>
+                {done ? (
+                    <div style={{ fontSize: '0.8rem', color: 'var(--green)', fontWeight: 500 }}>
+                        {t('studentPortal.test_submitted')}
+                        {row.submission?.submittedAt
+                            ? ` · ${new Date(row.submission.submittedAt).toLocaleDateString()}`
+                            : ''}
+                    </div>
+                ) : (
+                    row.expiresAt && (
+                        <div
+                            style={{
+                                fontSize: '0.8rem',
+                                color: expired ? 'var(--red)' : dueSoon ? 'var(--yellow)' : 'var(--text-muted)',
+                                fontWeight: dueSoon || expired ? 600 : 400,
+                            }}
+                        >
+                            {expired
+                                ? t('studentPortal.test_expired')
+                                : dueSoon
+                                  ? t('studentPortal.test_due_soon')
+                                  : t('studentPortal.test_due', {
+                                        date: new Date(row.expiresAt).toLocaleDateString(),
+                                    })}
+                        </div>
+                    )
+                )}
+                {openError && (
+                    <div style={{ fontSize: '0.78rem', color: 'var(--red)', marginTop: 4 }}>
+                        {t('studentPortal.test_open_error')}
+                    </div>
+                )}
+            </div>
+            {!expired && !done && (
+                <button
+                    className="btn btn-sm"
+                    onClick={() => onOpen(row)}
+                    disabled={opening}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '7px 14px',
+                        borderRadius: 7,
+                        background: 'var(--accent)',
+                        color: 'var(--bg)',
+                        fontWeight: 600,
+                        fontSize: '0.85rem',
+                        border: 'none',
+                        cursor: opening ? 'default' : 'pointer',
+                        flexShrink: 0,
+                        whiteSpace: 'nowrap',
+                    }}
+                >
+                    {opening ? (
+                        <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} />
+                    ) : (
+                        <ExternalLink size={13} />
+                    )}
+                    {opening ? t('studentPortal.test_opening') : t('studentPortal.test_open')}
+                </button>
+            )}
+        </div>
+    );
+}
 
 function EssayCard({ row, href, t }: { row: StudentEssayAssignmentSummary; href: string; t: TFunc }) {
     const now = new Date();

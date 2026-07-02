@@ -11,6 +11,7 @@ import type {
     Student,
     StudentRubric,
     StudentEssayAssignmentSummary,
+    StudentTestAssignmentSummary,
 } from '../../types';
 
 const mockGradeScale: GradeScale = {
@@ -38,6 +39,8 @@ const mockGradeScalesArr = [mockGradeScale];
 const emptyArr: never[] = [];
 
 const mockFetchMyEssayAssignments = vi.fn().mockResolvedValue([]);
+const mockFetchMyTestAssignments = vi.fn().mockResolvedValue([]);
+const mockFetchAssignedTestContent = vi.fn().mockResolvedValue(null);
 
 const mockGradedStudentRubric: StudentRubric = {
     id: 'sr1',
@@ -76,6 +79,20 @@ const mockRubricWithCriteria: Rubric = {
                 { id: 'l2', label: 'Good', minPoints: 70, maxPoints: 89, description: '', subItems: [] },
             ],
         },
+        {
+            id: 'c2',
+            title: 'Structure',
+            description: '',
+            weight: 100,
+            levels: [{ id: 'l3', label: 'Good', minPoints: 70, maxPoints: 89, description: '', subItems: [] }],
+        },
+        {
+            id: 'c3',
+            title: 'Grammar',
+            description: '',
+            weight: 100,
+            levels: [{ id: 'l4', label: 'Good', minPoints: 70, maxPoints: 89, description: '', subItems: [] }],
+        },
     ],
     gradeScaleId: 'gs1',
     format: DEFAULT_FORMAT,
@@ -112,6 +129,8 @@ const mockAppValue: Record<string, unknown> = {
     selfAssessments: emptyArr,
     saveRubricSelfAssessment: mockSaveRubricSelfAssessment,
     fetchMyEssayAssignments: mockFetchMyEssayAssignments,
+    fetchMyTestAssignments: mockFetchMyTestAssignments,
+    fetchAssignedTestContent: mockFetchAssignedTestContent,
 };
 
 vi.mock('../../context/AppContext', () => ({
@@ -139,6 +158,7 @@ vi.mock('../../services/database', () => ({
 
 vi.mock('../../utils/shareCode', () => ({
     encodeEssayAssignment: vi.fn(() => 'test-code'),
+    encodeTestAssignment: vi.fn(() => 'test-code'),
 }));
 
 vi.mock('../../components/Statistics/CefrProgressChart', () => ({ default: () => null }));
@@ -167,6 +187,10 @@ function renderAt(studentId: string) {
 describe('StudentPortalPage', () => {
     beforeEach(async () => {
         mockFetchMyEssayAssignments.mockClear();
+        mockFetchMyEssayAssignments.mockResolvedValue([]);
+        mockFetchMyTestAssignments.mockClear();
+        mockFetchMyTestAssignments.mockResolvedValue([]);
+        mockFetchAssignedTestContent.mockClear();
         const mod = await import('../StudentPortalPage');
         StudentPortalPageComp = mod.default;
     });
@@ -233,7 +257,7 @@ describe('StudentPortalPage', () => {
         };
         mockFetchMyEssayAssignments.mockResolvedValueOnce([pendingEssay]);
         renderAt('s1');
-        expect(await screen.findByText('studentPortal.essays_pending')).toBeInTheDocument();
+        expect(await screen.findByText('studentPortal.work_planned')).toBeInTheDocument();
         expect(screen.getByText('My Essay Title')).toBeInTheDocument();
     });
 
@@ -255,7 +279,72 @@ describe('StudentPortalPage', () => {
         };
         mockFetchMyEssayAssignments.mockResolvedValueOnce([completedEssay]);
         renderAt('s1');
-        expect(await screen.findByText('studentPortal.essays_completed')).toBeInTheDocument();
+        expect(await screen.findByText('studentPortal.work_completed')).toBeInTheDocument();
         expect(screen.getByText('Completed Essay')).toBeInTheDocument();
+    });
+
+    it('renders a planned test card when fetchMyTestAssignments returns data', async () => {
+        const pendingTest: StudentTestAssignmentSummary = {
+            teacherKey: 'test-1',
+            testId: 't1',
+            studentId: 's1',
+            testName: 'Vocabulary Quiz',
+            requireSEB: false,
+            durationMinutes: 20,
+            createdAt: '2024-01-01T00:00:00Z',
+            expiresAt: null,
+            submission: null,
+        };
+        mockFetchMyTestAssignments.mockResolvedValueOnce([pendingTest]);
+        renderAt('s1');
+        expect(await screen.findByText('studentPortal.work_planned')).toBeInTheDocument();
+        expect(screen.getByText('Vocabulary Quiz')).toBeInTheDocument();
+        expect(screen.getByText('studentPortal.test_open')).toBeInTheDocument();
+    });
+
+    it('groups an overdue essay separately from a completed test', async () => {
+        const overdueEssay: StudentEssayAssignmentSummary = {
+            teacherKey: 'essay-3',
+            rubricId: 'r1',
+            studentId: 's1',
+            title: 'Late Essay',
+            prompt: null,
+            minWords: null,
+            maxWords: null,
+            timeLimitMinutes: null,
+            requireSEB: false,
+            readOnlyAfterSubmit: false,
+            createdAt: '2024-01-01T00:00:00Z',
+            expiresAt: '2020-01-01T00:00:00Z',
+            submission: null,
+        };
+        const submittedTest: StudentTestAssignmentSummary = {
+            teacherKey: 'test-2',
+            testId: 't2',
+            studentId: 's1',
+            testName: 'Grammar Test',
+            requireSEB: false,
+            durationMinutes: null,
+            createdAt: '2024-01-01T00:00:00Z',
+            expiresAt: null,
+            submission: { status: 'submitted', submittedAt: '2024-01-10T10:00:00Z' },
+        };
+        mockFetchMyEssayAssignments.mockResolvedValueOnce([overdueEssay]);
+        mockFetchMyTestAssignments.mockResolvedValueOnce([submittedTest]);
+        renderAt('s1');
+        expect(await screen.findByText('studentPortal.work_overdue')).toBeInTheDocument();
+        expect(screen.getByText('Late Essay')).toBeInTheDocument();
+        expect(screen.getByText('studentPortal.work_completed')).toBeInTheDocument();
+        expect(screen.getByText('Grammar Test')).toBeInTheDocument();
+    });
+
+    it('renders the My Progress radar section once 3+ criteria have been graded', async () => {
+        mockAppValue.studentRubrics = mockGradedStudentRubricsArr;
+        renderAt('s1');
+        expect((await screen.findAllByText('studentPortal.my_progress')).length).toBeGreaterThan(0);
+        // Rubric picker offers the graded rubric alongside the combined view
+        expect(screen.getByRole('option', { name: 'Essay Rubric' })).toBeInTheDocument();
+        expect(screen.getByText('studentPortal.progress_view_combined')).toBeInTheDocument();
+        mockAppValue.studentRubrics = emptyArr;
     });
 });

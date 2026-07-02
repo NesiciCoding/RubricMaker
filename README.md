@@ -79,6 +79,8 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 - **View feedback**: Students see their grades, teacher comments, and attached files.
 - **Submit essays**: Anonymous essay submission via submission codes.
 - **Self-assessment**: Students complete CEFR self-assessments from their portal.
+- **My Work**: A combined to-do list of assigned essays and tests, grouped into Overdue/Planned/Completed with per-item status (not started/in progress/submitted). Tests open in one click from the list, backed by a `test_assignments` Supabase table mirroring `essay_assignments`.
+- **My Progress**: A radar chart of the student's own per-criterion scores, combined across every graded rubric (criteria with matching titles averaged together) or filtered to a single rubric.
 
 ### 7. Customisation & Accessibility
 

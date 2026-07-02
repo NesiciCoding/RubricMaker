@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { X, Copy, Check, ClipboardCheck, Database, ExternalLink } from 'lucide-react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { X, Copy, Check, ClipboardCheck, Database, ExternalLink, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Modal from '../ui/Modal';
 import { useApp } from '../../context/AppContext';
@@ -7,7 +7,7 @@ import { useDbStatus } from '../../hooks/useDbStatus';
 import { loadSupabaseConfig } from '../../services/database';
 import { encodeTestAssignment } from '../../utils/shareCode';
 import { nanoid } from '../../utils/nanoid';
-import type { Test, TestAssignmentPayload } from '../../types';
+import type { Test, TestAssignmentPayload, TestAssignment } from '../../types';
 
 interface Props {
     test: Test;
@@ -16,7 +16,7 @@ interface Props {
 
 export default function TestAssignmentModal({ test, onClose }: Props) {
     const { t } = useTranslation();
-    const { students, classes, settings } = useApp();
+    const { students, classes, settings, saveTestAssignment } = useApp();
     const dbStatus = useDbStatus();
     const config = loadSupabaseConfig();
 
@@ -25,20 +25,33 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
     const [embedDb, setEmbedDb] = useState(dbStatus.isConnected);
     const [copiedStudentId, setCopiedStudentId] = useState<string | null>(null);
     const [copiedAll, setCopiedAll] = useState(false);
-
-    const teacherKey = useMemo(() => nanoid(), []);
+    const [savedStudentIds, setSavedStudentIds] = useState<Set<string>>(new Set());
+    const [saving, setSaving] = useState(false);
+    const [saveErrorCount, setSaveErrorCount] = useState(0);
 
     const classStudents = useMemo(
         () => students.filter((s) => (classId ? s.classId === classId : true)),
         [students, classId]
     );
 
+    // One teacherKey per student — test_assignments rows are 1:1 with a single teacherKey
+    // server-side (same constraint essay_assignments has), so a whole-class share batch
+    // needs a distinct row id per student rather than the single shared key used for the
+    // offline/legacy link format.
+    const teacherKeys = useMemo(() => {
+        const map: Record<string, string> = {};
+        classStudents.forEach((s) => {
+            map[s.id] = nanoid();
+        });
+        return map;
+    }, [classStudents]);
+
     const buildAssignment = useCallback(
         (studentId: string): TestAssignmentPayload => {
             const base: TestAssignmentPayload = {
                 testId: test.id,
                 studentId,
-                teacherKey,
+                teacherKey: teacherKeys[studentId] ?? nanoid(),
                 requireSEB: test.requireSEB,
                 durationMinutes: test.durationMinutes,
                 createdAt: new Date().toISOString(),
@@ -52,13 +65,52 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
             }
             return base;
         },
-        [test, teacherKey, expiresAt, embedDb, dbStatus.isConnected, config]
+        [test, teacherKeys, expiresAt, embedDb, dbStatus.isConnected, config]
     );
 
     function buildUrl(studentId: string): string {
         const code = encodeTestAssignment(buildAssignment(studentId));
         return `${window.location.origin}${window.location.pathname}#/test/${code}`;
     }
+
+    const handleSaveAllToDb = useCallback(async () => {
+        setSaving(true);
+        setSaveErrorCount(0);
+        let errors = 0;
+        const nowSaved = new Set(savedStudentIds);
+        for (const s of classStudents) {
+            if (nowSaved.has(s.id)) continue;
+            const assignment: TestAssignment = {
+                testId: test.id,
+                studentId: s.id,
+                teacherKey: teacherKeys[s.id],
+                testName: test.name,
+                requireSEB: test.requireSEB,
+                durationMinutes: test.durationMinutes,
+                createdAt: new Date().toISOString(),
+                expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
+            };
+            const result = await saveTestAssignment(assignment);
+            if (result.success) {
+                nowSaved.add(s.id);
+            } else {
+                errors += 1;
+            }
+        }
+        setSavedStudentIds(nowSaved);
+        setSaveErrorCount(errors);
+        setSaving(false);
+    }, [classStudents, teacherKeys, test, expiresAt, saveTestAssignment, savedStudentIds]);
+
+    // Auto-save as soon as a DB-mode batch of links becomes shareable, same rationale as
+    // EssayAssignmentModal: gating behind a separate button click leaves a window where a
+    // teacher could hand out a link before its row exists server-side.
+    useEffect(() => {
+        if (embedDb && !saving) {
+            void handleSaveAllToDb();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [embedDb, classId]);
 
     async function handleCopyOne(studentId: string) {
         try {
@@ -175,9 +227,54 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
                             {t('essay_assignment.db_embed_label')}
                         </label>
                         {embedDb && (
-                            <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                                {t('essay_assignment.db_embed_help')}
-                            </p>
+                            <>
+                                <p
+                                    style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.5 }}
+                                >
+                                    {t('tests.assignment_db_embed_help')}
+                                </p>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <button
+                                        className="btn btn-secondary btn-sm"
+                                        onClick={handleSaveAllToDb}
+                                        disabled={saving || savedStudentIds.size >= classStudents.length}
+                                    >
+                                        {savedStudentIds.size >= classStudents.length && classStudents.length > 0 ? (
+                                            <>
+                                                <Check size={13} /> {t('essay_assignment.saved_to_db')}
+                                            </>
+                                        ) : saving ? (
+                                            t('essay_assignment.saving')
+                                        ) : (
+                                            <>
+                                                <Database size={13} /> {t('tests.assignment_save_all_to_db')}
+                                            </>
+                                        )}
+                                    </button>
+                                    {classStudents.length > 0 && (
+                                        <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                                            {t('tests.assignment_saved_count', {
+                                                saved: savedStudentIds.size,
+                                                total: classStudents.length,
+                                            })}
+                                        </span>
+                                    )}
+                                    {saveErrorCount > 0 && (
+                                        <span
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 4,
+                                                color: 'var(--red)',
+                                                fontSize: '0.8rem',
+                                            }}
+                                        >
+                                            <AlertCircle size={12} />
+                                            {t('tests.assignment_save_partial_error', { count: saveErrorCount })}
+                                        </span>
+                                    )}
+                                </div>
+                            </>
                         )}
                     </div>
                 )}

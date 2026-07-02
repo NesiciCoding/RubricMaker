@@ -980,6 +980,34 @@ export interface TestAssignmentPayload {
     test?: Test;
 }
 
+/** A teacher-created test assignment persisted to `test_assignments` so the student portal can list it, mirrors EssayAssignment */
+export interface TestAssignment {
+    testId: string;
+    studentId: string;
+    /** Opaque teacher identifier written into submissions so the teacher can filter their own rows; also the row id */
+    teacherKey: string;
+    /** Denormalized from Test.name so the portal never needs read access to the `tests` table */
+    testName: string;
+    requireSEB: boolean;
+    durationMinutes?: number;
+    createdAt: string;
+    /** ISO-8601 datetime after which students can no longer submit */
+    expiresAt?: string;
+}
+
+/** A test assignment as seen by the student portal, including their own submission status */
+export interface StudentTestAssignmentSummary {
+    teacherKey: string;
+    testId: string;
+    studentId: string;
+    testName: string;
+    requireSEB: boolean;
+    durationMinutes: number | null;
+    createdAt: string;
+    expiresAt: string | null;
+    submission: { status: StudentTest['status']; submittedAt: string | null } | null;
+}
+
 /** A student's completed test, encoded into a submission code for the teacher to import */
 export interface TestSubmissionPayload {
     testId: string;

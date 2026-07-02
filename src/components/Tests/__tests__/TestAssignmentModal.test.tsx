@@ -1,10 +1,12 @@
 import React from 'react';
-import { screen } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { screen, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderWithRouter } from '../../../test-utils/renderWithProviders';
 import { DEFAULT_FORMAT } from '../../../types';
 import type { AppSettings, Class, Student, Test as RmTest } from '../../../types';
 import { decodeTestAssignment } from '../../../utils/shareCode';
+
+const mockDbStatus = vi.hoisted(() => ({ isConnected: false }));
 
 const mockSettings: AppSettings = {
     defaultGradeScaleId: 'gs1',
@@ -31,11 +33,14 @@ const mockTest: RmTest = {
     createdAt: '2024-01-01T00:00:00Z',
 };
 
+const mockSaveTestAssignment = vi.fn().mockResolvedValue({ success: true });
+
 vi.mock('../../../context/AppContext', () => ({
     useApp: () => ({
         students: mockStudents,
         classes: [mockClass],
         settings: mockSettings,
+        saveTestAssignment: mockSaveTestAssignment,
     }),
 }));
 
@@ -50,18 +55,30 @@ vi.mock('react-i18next', () => ({
 }));
 
 vi.mock('../../../hooks/useDbStatus', () => ({
-    useDbStatus: () => ({ isConnected: false, status: 'idle', lastSyncAt: null, userId: null, currentUser: null }),
+    useDbStatus: () => ({
+        isConnected: mockDbStatus.isConnected,
+        status: 'idle',
+        lastSyncAt: null,
+        userId: null,
+        currentUser: null,
+    }),
 }));
 
 vi.mock('../../../services/database', () => ({
-    loadSupabaseConfig: vi.fn(() => null),
+    loadSupabaseConfig: vi.fn(() => ({ supabaseUrl: 'https://x.supabase.co', supabaseAnonKey: 'anon-key' })),
 }));
 
 describe('TestAssignmentModal', () => {
-    it('generates per-student share links that decode back to a valid TestAssignmentPayload', async () => {
+    beforeEach(() => {
+        mockDbStatus.isConnected = false;
+        mockSaveTestAssignment.mockClear();
+    });
+
+    it('generates per-student share links that decode back to a valid TestAssignmentPayload with distinct teacherKeys', async () => {
         const { default: TestAssignmentModal } = await import('../TestAssignmentModal');
         renderWithRouter(<TestAssignmentModal test={mockTest} onClose={vi.fn()} />);
 
+        const teacherKeys = new Set<string>();
         for (const student of mockStudents) {
             const input = screen.getByLabelText(
                 `tests.assignment_link_for:{"name":"${student.name}"}`
@@ -78,6 +95,23 @@ describe('TestAssignmentModal', () => {
             expect(decoded?.teacherKey).toBeTruthy();
             expect(decoded?.requireSEB).toBe(true);
             expect(decoded?.durationMinutes).toBe(30);
+            teacherKeys.add(decoded!.teacherKey);
         }
+        // Each student's row must have its own id — a shared key would let one DB row
+        // (test_assignments is 1:1 per teacherKey) silently overwrite another's assignment.
+        expect(teacherKeys.size).toBe(mockStudents.length);
+    });
+
+    it('saves one test_assignments row per student when DB embedding is enabled', async () => {
+        mockDbStatus.isConnected = true;
+        const { default: TestAssignmentModal } = await import('../TestAssignmentModal');
+        renderWithRouter(<TestAssignmentModal test={mockTest} onClose={vi.fn()} />);
+
+        await waitFor(() => expect(mockSaveTestAssignment).toHaveBeenCalledTimes(mockStudents.length));
+
+        const savedStudentIds = mockSaveTestAssignment.mock.calls.map(([a]) => a.studentId).sort();
+        expect(savedStudentIds).toEqual(mockStudents.map((s) => s.id).sort());
+        const savedKeys = new Set(mockSaveTestAssignment.mock.calls.map(([a]) => a.teacherKey));
+        expect(savedKeys.size).toBe(mockStudents.length);
     });
 });
