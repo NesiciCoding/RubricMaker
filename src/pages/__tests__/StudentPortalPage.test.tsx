@@ -171,6 +171,11 @@ vi.mock('../../utils/shareCode', () => ({
 
 vi.mock('../../components/Statistics/CefrProgressChart', () => ({ default: () => null }));
 vi.mock('../../components/Students/RubricSelfAssessPanel', () => ({ default: () => null }));
+vi.mock('../../components/Statistics/CriterionRadarChart', () => ({
+    default: ({ data }: { data: { name: string; avg: number }[] }) => (
+        <div data-testid="radar-data">{JSON.stringify(data)}</div>
+    ),
+}));
 
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
@@ -357,20 +362,21 @@ describe('StudentPortalPage', () => {
     });
 
     it('aggregates every graded attempt of a rubric in the per-rubric radar view, not just the first', async () => {
-        // Two StudentRubric records (sr1, sr2) both grade rubric r1 — the per-rubric radar
-        // must average both attempts' scores per criterion rather than only the first.
+        // Two StudentRubric records (sr1, sr2) both grade rubric r1's "Content" criterion at
+        // different levels (l1: 90pts, l2: 70pts out of a 100-point max) — the per-rubric
+        // radar must average both attempts (→ 80%), not just sr1's alone (→ 90%, the bug).
         mockAppValue.studentRubrics = mockGradedStudentRubricsArr;
         renderAt('s1');
         await screen.findAllByText('studentPortal.my_progress');
 
         fireEvent.change(screen.getByLabelText('studentPortal.progress_view_label'), { target: { value: 'r1' } });
 
-        // Criteria from both attempts' shared rubric all render as radar axis labels —
-        // this would still hold even with the bug, so it's a smoke check that selecting a
-        // specific rubric doesn't crash and renders every one of its criteria.
-        expect(await screen.findByText('Content')).toBeInTheDocument();
-        expect(screen.getByText('Structure')).toBeInTheDocument();
-        expect(screen.getByText('Grammar')).toBeInTheDocument();
+        const radarData = JSON.parse((await screen.findByTestId('radar-data')).textContent!) as {
+            name: string;
+            avg: number;
+        }[];
+        const content = radarData.find((d) => d.name === 'Content');
+        expect(content?.avg).toBe(80);
         mockAppValue.studentRubrics = emptyArr;
     });
 });

@@ -25,9 +25,14 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
     const [embedDb, setEmbedDb] = useState(dbStatus.isConnected);
     const [copiedStudentId, setCopiedStudentId] = useState<string | null>(null);
     const [copiedAll, setCopiedAll] = useState(false);
-    const [savedStudentIds, setSavedStudentIds] = useState<Set<string>>(new Set());
+    // Keyed by `${studentId}::${expiresAt}` rather than bare student id, so changing the
+    // deadline after an initial auto-save is treated as a new payload and re-saved, instead
+    // of silently leaving already-persisted rows stuck on their original (now stale) expiry.
+    const [savedKeys, setSavedKeys] = useState<Set<string>>(new Set());
     const [saving, setSaving] = useState(false);
     const [saveErrorCount, setSaveErrorCount] = useState(0);
+
+    const savedKeyFor = useCallback((studentId: string) => `${studentId}::${expiresAt}`, [expiresAt]);
 
     const classStudents = useMemo(
         () => students.filter((s) => (classId ? s.classId === classId : true)),
@@ -39,9 +44,9 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
     // needs a distinct row id per student rather than the single shared key used for the
     // offline/legacy link format. Keyed off the full `students` list (not the class-filtered
     // one) so switching the class dropdown back and forth doesn't regenerate keys for
-    // students already saved under their original key — savedStudentIds tracks student id,
-    // and a regenerated key for an already-"saved" id would silently un-sync the displayed
-    // link from what's actually persisted.
+    // students already saved under their original key — savedKeys tracks per-student save
+    // state, and a regenerated key for an already-saved student would silently un-sync the
+    // displayed link from what's actually persisted.
     const teacherKeys = useMemo(() => {
         const map: Record<string, string> = {};
         students.forEach((s) => {
@@ -49,6 +54,13 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
         });
         return map;
     }, [students]);
+
+    // Saved-progress display must be scoped to the CURRENT class, not the lifetime total
+    // across every class visited this session — savedKeys accumulates globally so the
+    // save logic can skip already-persisted students on a class revisit, but showing that
+    // raw total against the current (possibly smaller) class's count would read as nonsense
+    // (e.g. "3/1 saved").
+    const classSavedCount = classStudents.filter((s) => savedKeys.has(savedKeyFor(s.id))).length;
 
     const buildAssignment = useCallback(
         (studentId: string): TestAssignmentPayload => {
@@ -80,41 +92,49 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
     const handleSaveAllToDb = useCallback(async () => {
         setSaving(true);
         setSaveErrorCount(0);
-        const nowSaved = new Set(savedStudentIds);
-        const pending = classStudents.filter((s) => !nowSaved.has(s.id));
-        const results = await Promise.all(
-            pending.map((s) =>
-                saveTestAssignment({
-                    testId: test.id,
-                    studentId: s.id,
-                    teacherKey: teacherKeys[s.id],
-                    testName: test.name,
-                    requireSEB: test.requireSEB,
-                    durationMinutes: test.durationMinutes,
-                    createdAt: new Date().toISOString(),
-                    expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
-                } satisfies TestAssignment)
-            )
-        );
-        let errors = 0;
-        results.forEach((result, i) => {
-            if (result.success) nowSaved.add(pending[i].id);
-            else errors += 1;
-        });
-        setSavedStudentIds(nowSaved);
-        setSaveErrorCount(errors);
-        setSaving(false);
-    }, [classStudents, teacherKeys, test, expiresAt, saveTestAssignment, savedStudentIds]);
+        try {
+            const nowSaved = new Set(savedKeys);
+            const pending = classStudents.filter((s) => !nowSaved.has(savedKeyFor(s.id)));
+            const results = await Promise.allSettled(
+                pending.map((s) =>
+                    saveTestAssignment({
+                        testId: test.id,
+                        studentId: s.id,
+                        teacherKey: teacherKeys[s.id],
+                        testName: test.name,
+                        requireSEB: test.requireSEB,
+                        durationMinutes: test.durationMinutes,
+                        createdAt: new Date().toISOString(),
+                        expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
+                    } satisfies TestAssignment)
+                )
+            );
+            let errors = 0;
+            results.forEach((result, i) => {
+                if (result.status === 'fulfilled' && result.value.success) {
+                    nowSaved.add(savedKeyFor(pending[i].id));
+                } else {
+                    errors += 1;
+                }
+            });
+            setSavedKeys(nowSaved);
+            setSaveErrorCount(errors);
+        } finally {
+            setSaving(false);
+        }
+    }, [classStudents, teacherKeys, test, expiresAt, saveTestAssignment, savedKeys, savedKeyFor]);
 
     // Auto-save as soon as a DB-mode batch of links becomes shareable, same rationale as
     // EssayAssignmentModal: gating behind a separate button click leaves a window where a
-    // teacher could hand out a link before its row exists server-side.
+    // teacher could hand out a link before its row exists server-side. Re-runs when
+    // expiresAt changes too — savedKeyFor makes that a "new" payload per student, so
+    // editing the deadline after the first auto-save doesn't leave stale rows behind.
     useEffect(() => {
         if (embedDb && !saving) {
             void handleSaveAllToDb();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [embedDb, classId]);
+    }, [embedDb, classId, expiresAt]);
 
     async function handleCopyOne(studentId: string) {
         try {
@@ -246,9 +266,9 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
                                     <button
                                         className="btn btn-secondary btn-sm"
                                         onClick={handleSaveAllToDb}
-                                        disabled={saving || savedStudentIds.size >= classStudents.length}
+                                        disabled={saving || classSavedCount >= classStudents.length}
                                     >
-                                        {savedStudentIds.size >= classStudents.length && classStudents.length > 0 ? (
+                                        {classSavedCount >= classStudents.length && classStudents.length > 0 ? (
                                             <>
                                                 <Check size={13} /> {t('essay_assignment.saved_to_db')}
                                             </>
@@ -263,7 +283,7 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
                                     {classStudents.length > 0 && (
                                         <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                                             {t('tests.assignment_saved_count', {
-                                                saved: savedStudentIds.size,
+                                                saved: classSavedCount,
                                                 total: classStudents.length,
                                             })}
                                         </span>

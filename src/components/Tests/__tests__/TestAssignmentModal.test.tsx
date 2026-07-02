@@ -132,6 +132,10 @@ describe('TestAssignmentModal', () => {
         fireEvent.change(classSelect, { target: { value: 'c2' } });
         await waitFor(() => expect(mockSaveTestAssignment).toHaveBeenCalledTimes(mockStudents.length));
 
+        // Class B has 1 student. The saved-progress count must read against class B alone
+        // (1/1), not the lifetime total across every class saved so far this session (3/1).
+        expect(screen.getByText('tests.assignment_saved_count:{"saved":1,"total":1}')).toBeInTheDocument();
+
         fireEvent.change(classSelect, { target: { value: 'c1' } });
         await waitFor(() => expect(screen.getByLabelText('tests.assignment_class_label')).toHaveValue('c1'));
 
