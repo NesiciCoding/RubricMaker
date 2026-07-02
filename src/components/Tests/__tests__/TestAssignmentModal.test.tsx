@@ -1,5 +1,5 @@
 import React from 'react';
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderWithRouter } from '../../../test-utils/renderWithProviders';
 import { DEFAULT_FORMAT } from '../../../types';
@@ -18,9 +18,11 @@ const mockSettings: AppSettings = {
 };
 
 const mockClass: Class = { id: 'c1', name: 'Class A' };
+const mockClass2: Class = { id: 'c2', name: 'Class B' };
 const mockStudents: Student[] = [
     { id: 's1', name: 'Alice', classId: 'c1' },
     { id: 's2', name: 'Bob', classId: 'c1' },
+    { id: 's3', name: 'Carla', classId: 'c2' },
 ];
 
 const mockTest: RmTest = {
@@ -33,12 +35,14 @@ const mockTest: RmTest = {
     createdAt: '2024-01-01T00:00:00Z',
 };
 
+const classAStudents = mockStudents.filter((s) => s.classId === 'c1');
+
 const mockSaveTestAssignment = vi.fn().mockResolvedValue({ success: true });
 
 vi.mock('../../../context/AppContext', () => ({
     useApp: () => ({
         students: mockStudents,
-        classes: [mockClass],
+        classes: [mockClass, mockClass2],
         settings: mockSettings,
         saveTestAssignment: mockSaveTestAssignment,
     }),
@@ -79,7 +83,7 @@ describe('TestAssignmentModal', () => {
         renderWithRouter(<TestAssignmentModal test={mockTest} onClose={vi.fn()} />);
 
         const teacherKeys = new Set<string>();
-        for (const student of mockStudents) {
+        for (const student of classAStudents) {
             const input = screen.getByLabelText(
                 `tests.assignment_link_for:{"name":"${student.name}"}`
             ) as HTMLInputElement;
@@ -99,7 +103,7 @@ describe('TestAssignmentModal', () => {
         }
         // Each student's row must have its own id — a shared key would let one DB row
         // (test_assignments is 1:1 per teacherKey) silently overwrite another's assignment.
-        expect(teacherKeys.size).toBe(mockStudents.length);
+        expect(teacherKeys.size).toBe(classAStudents.length);
     });
 
     it('saves one test_assignments row per student when DB embedding is enabled', async () => {
@@ -107,11 +111,36 @@ describe('TestAssignmentModal', () => {
         const { default: TestAssignmentModal } = await import('../TestAssignmentModal');
         renderWithRouter(<TestAssignmentModal test={mockTest} onClose={vi.fn()} />);
 
-        await waitFor(() => expect(mockSaveTestAssignment).toHaveBeenCalledTimes(mockStudents.length));
+        await waitFor(() => expect(mockSaveTestAssignment).toHaveBeenCalledTimes(classAStudents.length));
 
         const savedStudentIds = mockSaveTestAssignment.mock.calls.map(([a]) => a.studentId).sort();
-        expect(savedStudentIds).toEqual(mockStudents.map((s) => s.id).sort());
+        expect(savedStudentIds).toEqual(classAStudents.map((s) => s.id).sort());
         const savedKeys = new Set(mockSaveTestAssignment.mock.calls.map(([a]) => a.teacherKey));
-        expect(savedKeys.size).toBe(mockStudents.length);
+        expect(savedKeys.size).toBe(classAStudents.length);
+    });
+
+    it('keeps a stable teacherKey per student when the class dropdown is switched back and forth', async () => {
+        mockDbStatus.isConnected = true;
+        const { default: TestAssignmentModal } = await import('../TestAssignmentModal');
+        renderWithRouter(<TestAssignmentModal test={mockTest} onClose={vi.fn()} />);
+
+        await waitFor(() => expect(mockSaveTestAssignment).toHaveBeenCalledTimes(classAStudents.length));
+        const firstVisitKey = mockSaveTestAssignment.mock.calls.find(([a]) => a.studentId === 's1')?.[0]?.teacherKey;
+        expect(firstVisitKey).toBeTruthy();
+
+        const classSelect = screen.getByLabelText('tests.assignment_class_label');
+        fireEvent.change(classSelect, { target: { value: 'c2' } });
+        await waitFor(() => expect(mockSaveTestAssignment).toHaveBeenCalledTimes(mockStudents.length));
+
+        fireEvent.change(classSelect, { target: { value: 'c1' } });
+        await waitFor(() => expect(screen.getByLabelText('tests.assignment_class_label')).toHaveValue('c1'));
+
+        // Revisiting class A must not re-save its students (they're already persisted),
+        // and the link shown must still point at the exact row that was saved the first
+        // time — in DB mode the share code IS the bare teacherKey (see shareCode.ts).
+        expect(mockSaveTestAssignment).toHaveBeenCalledTimes(mockStudents.length);
+        const input = screen.getByLabelText('tests.assignment_link_for:{"name":"Alice"}') as HTMLInputElement;
+        const code = input.value.split('#/test/')[1];
+        expect(code).toBe(firstVisitKey);
     });
 });

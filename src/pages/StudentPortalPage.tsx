@@ -211,11 +211,19 @@ export default function StudentPortalPage() {
 
     const selectedRadarData = useMemo((): CriterionRadarDataPoint[] => {
         if (radarRubricId === 'combined') return combinedRadarData;
-        const h = history.find((h) => h.sr.rubricId === radarRubricId);
-        if (!h) return [];
-        return h.rubric.criteria.map((c) => ({
-            name: c.title,
-            avg: parseFloat(criterionPct(h, c.id, c.levels).toFixed(1)),
+        const rows = history.filter((h) => h.sr.rubricId === radarRubricId);
+        if (rows.length === 0) return [];
+        const byTitle = new Map<string, { display: string; scores: number[] }>();
+        for (const h of rows) {
+            for (const c of h.rubric.criteria) {
+                const key = c.title.trim().toLowerCase();
+                if (!byTitle.has(key)) byTitle.set(key, { display: c.title, scores: [] });
+                byTitle.get(key)!.scores.push(criterionPct(h, c.id, c.levels));
+            }
+        }
+        return Array.from(byTitle.values()).map(({ display, scores }) => ({
+            name: display,
+            avg: parseFloat((scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1)),
         }));
     }, [radarRubricId, history, combinedRadarData]);
 
@@ -268,23 +276,33 @@ export default function StudentPortalPage() {
     async function handleOpenTest(row: StudentTestAssignmentSummary) {
         setTestOpenErrorKey(null);
         setOpeningTestKey(row.teacherKey);
-        const content = await fetchAssignedTestContent(row.testId);
-        setOpeningTestKey(null);
-        if (!content) {
+        try {
+            const content = await fetchAssignedTestContent(row.testId);
+            if (!content) {
+                setTestOpenErrorKey(row.teacherKey);
+                return;
+            }
+            const payload: TestAssignmentPayload = {
+                testId: row.testId,
+                studentId: row.studentId,
+                teacherKey: row.teacherKey,
+                requireSEB: row.requireSEB,
+                durationMinutes: row.durationMinutes ?? undefined,
+                createdAt: row.createdAt,
+                expiresAt: row.expiresAt ?? undefined,
+                test: content,
+            };
+            const code = encodeTestAssignment(payload);
+            if (!code) {
+                setTestOpenErrorKey(row.teacherKey);
+                return;
+            }
+            window.location.hash = `/test/${code}`;
+        } catch {
             setTestOpenErrorKey(row.teacherKey);
-            return;
+        } finally {
+            setOpeningTestKey(null);
         }
-        const payload: TestAssignmentPayload = {
-            testId: row.testId,
-            studentId: row.studentId,
-            teacherKey: row.teacherKey,
-            requireSEB: row.requireSEB,
-            durationMinutes: row.durationMinutes ?? undefined,
-            createdAt: row.createdAt,
-            expiresAt: row.expiresAt ?? undefined,
-            test: content,
-        };
-        window.location.hash = `/test/${encodeTestAssignment(payload)}`;
     }
 
     function isDone(entry: WorkEntry): boolean {
@@ -527,7 +545,6 @@ export default function StudentPortalPage() {
                     </Section>
                 )}
 
-                {/* ── My Work: combined essay + test to-do list ───────────────────── */}
                 {(essayLoadError || testLoadError) && dbConfig && (
                     <div
                         style={{
@@ -586,7 +603,6 @@ export default function StudentPortalPage() {
                     </Section>
                 )}
 
-                {/* My progress: student-scoped radar view(s) */}
                 {hasRadar && (
                     <Section id="portal-section-progress" title={t('studentPortal.my_progress')}>
                         {rubricRadarOptions.length > 0 && (
@@ -985,6 +1001,7 @@ function TestCard({
             </div>
             {!expired && !done && (
                 <button
+                    type="button"
                     className="btn btn-sm"
                     onClick={() => onOpen(row)}
                     disabled={opening}

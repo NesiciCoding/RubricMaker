@@ -79,7 +79,20 @@ CREATE POLICY "student_tests_student_select"
 -- test content into a one-click "Open" link (the same self-contained-URL approach
 -- TestAssignmentModal already uses when DB embedding is off), rather than pointing
 -- students at the still-broken disconnected-client DB-mode fetch described above.
+--
+-- test_assignments.owner_id records who created the assignment row, not who owns the
+-- referenced test_id — nothing enforces those match (no FK from test_assignments.test_id
+-- into a per-owner scope). Without the extra `ta.owner_id = tests.owner_id` check below, an
+-- assignment row whose test_id points at a DIFFERENT teacher's test would leak that
+-- teacher's full test content to the assigned student.
 
 CREATE POLICY "tests_student_select"
   ON public.tests FOR SELECT
-  USING (id IN (SELECT test_id FROM public.test_assignments WHERE id IN (SELECT get_my_test_assignment_ids())));
+  USING (
+    id IN (
+      SELECT ta.test_id
+      FROM public.test_assignments ta
+      WHERE ta.id IN (SELECT get_my_test_assignment_ids())
+        AND ta.owner_id = tests.owner_id
+    )
+  );

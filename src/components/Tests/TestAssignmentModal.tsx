@@ -37,14 +37,18 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
     // One teacherKey per student — test_assignments rows are 1:1 with a single teacherKey
     // server-side (same constraint essay_assignments has), so a whole-class share batch
     // needs a distinct row id per student rather than the single shared key used for the
-    // offline/legacy link format.
+    // offline/legacy link format. Keyed off the full `students` list (not the class-filtered
+    // one) so switching the class dropdown back and forth doesn't regenerate keys for
+    // students already saved under their original key — savedStudentIds tracks student id,
+    // and a regenerated key for an already-"saved" id would silently un-sync the displayed
+    // link from what's actually persisted.
     const teacherKeys = useMemo(() => {
         const map: Record<string, string> = {};
-        classStudents.forEach((s) => {
+        students.forEach((s) => {
             map[s.id] = nanoid();
         });
         return map;
-    }, [classStudents]);
+    }, [students]);
 
     const buildAssignment = useCallback(
         (studentId: string): TestAssignmentPayload => {
@@ -76,27 +80,27 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
     const handleSaveAllToDb = useCallback(async () => {
         setSaving(true);
         setSaveErrorCount(0);
-        let errors = 0;
         const nowSaved = new Set(savedStudentIds);
-        for (const s of classStudents) {
-            if (nowSaved.has(s.id)) continue;
-            const assignment: TestAssignment = {
-                testId: test.id,
-                studentId: s.id,
-                teacherKey: teacherKeys[s.id],
-                testName: test.name,
-                requireSEB: test.requireSEB,
-                durationMinutes: test.durationMinutes,
-                createdAt: new Date().toISOString(),
-                expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
-            };
-            const result = await saveTestAssignment(assignment);
-            if (result.success) {
-                nowSaved.add(s.id);
-            } else {
-                errors += 1;
-            }
-        }
+        const pending = classStudents.filter((s) => !nowSaved.has(s.id));
+        const results = await Promise.all(
+            pending.map((s) =>
+                saveTestAssignment({
+                    testId: test.id,
+                    studentId: s.id,
+                    teacherKey: teacherKeys[s.id],
+                    testName: test.name,
+                    requireSEB: test.requireSEB,
+                    durationMinutes: test.durationMinutes,
+                    createdAt: new Date().toISOString(),
+                    expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
+                } satisfies TestAssignment)
+            )
+        );
+        let errors = 0;
+        results.forEach((result, i) => {
+            if (result.success) nowSaved.add(pending[i].id);
+            else errors += 1;
+        });
         setSavedStudentIds(nowSaved);
         setSaveErrorCount(errors);
         setSaving(false);

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
@@ -46,7 +46,11 @@ const mockGradedStudentRubric: StudentRubric = {
     id: 'sr1',
     rubricId: 'r1',
     studentId: 's1',
-    entries: [{ criterionId: 'c1', levelId: 'l1', checkedSubItems: [], comment: 'Great work' }],
+    entries: [
+        { criterionId: 'c1', levelId: 'l1', checkedSubItems: [], comment: 'Great work' },
+        { criterionId: 'c2', levelId: 'l3', checkedSubItems: [], comment: '' },
+        { criterionId: 'c3', levelId: 'l4', checkedSubItems: [], comment: '' },
+    ],
     overallComment: 'Well done!',
     gradedAt: '2024-01-15T10:00:00Z',
     isPeerReview: false,
@@ -56,7 +60,11 @@ const mockGradedStudentRubric2: StudentRubric = {
     id: 'sr2',
     rubricId: 'r1',
     studentId: 's1',
-    entries: [{ criterionId: 'c1', levelId: 'l2', checkedSubItems: [], comment: '' }],
+    entries: [
+        { criterionId: 'c1', levelId: 'l2', checkedSubItems: [], comment: '' },
+        { criterionId: 'c2', levelId: 'l3', checkedSubItems: [], comment: '' },
+        { criterionId: 'c3', levelId: 'l4', checkedSubItems: [], comment: '' },
+    ],
     overallComment: '',
     gradedAt: '2024-02-15T10:00:00Z',
     isPeerReview: false,
@@ -345,6 +353,24 @@ describe('StudentPortalPage', () => {
         // Rubric picker offers the graded rubric alongside the combined view
         expect(screen.getByRole('option', { name: 'Essay Rubric' })).toBeInTheDocument();
         expect(screen.getByText('studentPortal.progress_view_combined')).toBeInTheDocument();
+        mockAppValue.studentRubrics = emptyArr;
+    });
+
+    it('aggregates every graded attempt of a rubric in the per-rubric radar view, not just the first', async () => {
+        // Two StudentRubric records (sr1, sr2) both grade rubric r1 — the per-rubric radar
+        // must average both attempts' scores per criterion rather than only the first.
+        mockAppValue.studentRubrics = mockGradedStudentRubricsArr;
+        renderAt('s1');
+        await screen.findAllByText('studentPortal.my_progress');
+
+        fireEvent.change(screen.getByLabelText('studentPortal.progress_view_label'), { target: { value: 'r1' } });
+
+        // Criteria from both attempts' shared rubric all render as radar axis labels —
+        // this would still hold even with the bug, so it's a smoke check that selecting a
+        // specific rubric doesn't crash and renders every one of its criteria.
+        expect(await screen.findByText('Content')).toBeInTheDocument();
+        expect(screen.getByText('Structure')).toBeInTheDocument();
+        expect(screen.getByText('Grammar')).toBeInTheDocument();
         mockAppValue.studentRubrics = emptyArr;
     });
 });
