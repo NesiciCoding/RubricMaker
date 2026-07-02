@@ -307,9 +307,7 @@ export default function StudentPortalPage() {
         const bT = dueAt(b) ? new Date(dueAt(b)!).getTime() : Infinity;
         return aT - bT;
     };
-    const overdueWork = allWork
-        .filter((e) => !isDone(e) && dueAt(e) && new Date(dueAt(e)!) <= now)
-        .sort(byDueDateAsc);
+    const overdueWork = allWork.filter((e) => !isDone(e) && dueAt(e) && new Date(dueAt(e)!) <= now).sort(byDueDateAsc);
     const plannedWork = allWork
         .filter((e) => !isDone(e) && (!dueAt(e) || new Date(dueAt(e)!) > now))
         .sort(byDueDateAsc);

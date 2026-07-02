@@ -229,7 +229,12 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
                         {embedDb && (
                             <>
                                 <p
-                                    style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.5 }}
+                                    style={{
+                                        margin: 0,
+                                        fontSize: '0.8rem',
+                                        color: 'var(--text-muted)',
+                                        lineHeight: 1.5,
+                                    }}
                                 >
                                     {t('tests.assignment_db_embed_help')}
                                 </p>
