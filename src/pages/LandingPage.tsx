@@ -277,7 +277,7 @@ export default function LandingPage() {
                     {[
                         { icon: CheckCircle, label: 'No student account needed' },
                         { icon: CheckCircle, label: 'CEFR proficiency tracking' },
-                        { icon: CheckCircle, label: 'Offline-first' },
+                        { icon: CheckCircle, label: 'Works offline' },
                     ].map(({ icon: Icon, label }) => (
                         <span
                             key={label}

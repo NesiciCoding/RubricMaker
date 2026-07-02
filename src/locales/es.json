@@ -1084,7 +1084,8 @@
         "sync_queued": "Sin conexión — los cambios se sincronizarán cuando te vuelvas a conectar.",
         "sync_flushed": "De vuelta en línea — todos los cambios sincronizados.",
         "copy_paste_failed": "Error al copiar/pegar. Por favor, inténtalo de nuevo.",
-        "sync_offline_cache": "Estás sin conexión — usando datos almacenados en caché local."
+        "sync_offline_cache": "Estás sin conexión — usando datos almacenados en caché local.",
+        "signout_pending_writes": "Algunos cambios aún no se han sincronizado — tus datos locales se han conservado para no perder nada."
     },
     "pwa": {
         "update_available_confirm": "Hay una nueva versión de RubricMaker disponible. ¿Recargar ahora?"

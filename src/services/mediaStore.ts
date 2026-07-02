@@ -69,6 +69,20 @@ export async function listIds(): Promise<string[]> {
     return keys.map(String);
 }
 
+/**
+ * Deletes any stored blob whose id isn't in `referencedIds`. A recording's blob is
+ * normally deleted alongside its SessionRecording (RecordingSync.deleteRecording), but
+ * a remote hydrate/merge can drop a session's recordings without an app-level delete
+ * ever running (e.g. deleted on another device) — this sweeps those up after each sync.
+ */
+export async function pruneOrphanedBlobs(referencedIds: ReadonlySet<string>): Promise<void> {
+    const ids = await listIds();
+    const orphaned = ids.filter((id) => !referencedIds.has(id));
+    for (const id of orphaned) {
+        await deleteBlob(id);
+    }
+}
+
 export async function estimateUsage(): Promise<StorageEstimate> {
     try {
         if (typeof navigator !== 'undefined' && navigator.storage?.estimate) {

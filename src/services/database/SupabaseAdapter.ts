@@ -16,11 +16,13 @@ import type {
     SessionRecording,
     DocumentAnalysisResult,
     EssayAssignment,
+    EssaySubmission,
     EssayTemplate,
     GradingTask,
     StudentEssayAssignmentSummary,
     Test,
     StudentTest,
+    UserTemplate,
     MarketplaceListing,
     CefrLevel,
 } from '../../types';
@@ -1142,6 +1144,83 @@ export class SupabaseAdapter {
 
     async deleteEssayTemplate(id: string): Promise<SyncResult> {
         const { error } = await this.db().from('essay_templates').delete().eq('id', id).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    // ── Essay batch assignments (class-assignment tracking, distinct from essay_assignments) ──
+
+    async fetchEssayBatchAssignments(): Promise<EssayAssignment[]> {
+        const { data, error } = await this.db().from('essay_batch_assignments').select('data');
+        if (error) {
+            console.error('fetchEssayBatchAssignments', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as EssayAssignment);
+    }
+
+    async upsertEssayBatchAssignment(id: string, a: EssayAssignment): Promise<SyncResult> {
+        const { error } = await this.db()
+            .from('essay_batch_assignments')
+            .upsert({ id, owner_id: this.uid(), data: a }, { onConflict: 'id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteEssayBatchAssignment(id: string): Promise<SyncResult> {
+        const { error } = await this.db()
+            .from('essay_batch_assignments')
+            .delete()
+            .eq('id', id)
+            .eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    // ── Essay offline submissions (share-code import, distinct from essay_submissions) ──
+
+    async fetchEssayOfflineSubmissions(): Promise<EssaySubmission[]> {
+        const { data, error } = await this.db().from('essay_offline_submissions').select('data');
+        if (error) {
+            console.error('fetchEssayOfflineSubmissions', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as EssaySubmission);
+    }
+
+    async upsertEssayOfflineSubmission(s: EssaySubmission): Promise<SyncResult> {
+        const { error } = await this.db()
+            .from('essay_offline_submissions')
+            .upsert({ id: s.id, owner_id: this.uid(), data: s }, { onConflict: 'id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteEssayOfflineSubmission(id: string): Promise<SyncResult> {
+        const { error } = await this.db()
+            .from('essay_offline_submissions')
+            .delete()
+            .eq('id', id)
+            .eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    // ── User templates (saved rubric templates) ──────────────────────────────
+
+    async fetchUserTemplates(): Promise<UserTemplate[]> {
+        const { data, error } = await this.db().from('user_templates').select('data');
+        if (error) {
+            console.error('fetchUserTemplates', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as UserTemplate);
+    }
+
+    async upsertUserTemplate(t: UserTemplate): Promise<SyncResult> {
+        const { error } = await this.db()
+            .from('user_templates')
+            .upsert({ id: t.id, owner_id: this.uid(), data: t }, { onConflict: 'id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteUserTemplate(id: string): Promise<SyncResult> {
+        const { error } = await this.db().from('user_templates').delete().eq('id', id).eq('owner_id', this.uid());
         return error ? { success: false, error: error.message } : { success: true };
     }
 

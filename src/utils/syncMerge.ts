@@ -62,9 +62,12 @@ function pendingIdsFor(queue: PendingWrite[], entity: string): PendingIndex {
     const lastActionById = new Map<string, PendingWrite['action']>();
     for (const op of queue) {
         if (op.entity !== entity) continue;
+        // entityId is authoritative when present (every pushOne call site passes it now,
+        // including upserts) — required for entities like essayBatchAssignment whose
+        // payload has no id/guid field to fall back to.
         const payloadId =
             (op.payload as { id?: string; guid?: string } | null)?.id ?? (op.payload as { guid?: string } | null)?.guid;
-        const id = op.action === 'delete' ? op.entityId : payloadId;
+        const id = op.entityId ?? payloadId;
         if (!id) continue;
         lastActionById.set(id, op.action);
     }
@@ -168,6 +171,15 @@ const COLLECTIONS: CollectionSpec[] = [
         getId: (st: { id: string }) => st.id,
         getUpdatedAt: (st: { updatedAt?: string }) => st.updatedAt,
     },
+    { key: 'essayTemplates', entity: 'essayTemplate', getId: (et: { id: string }) => et.id },
+    { key: 'gradingTasks', entity: 'gradingTask', getId: (gt: { id: string }) => gt.id },
+    {
+        key: 'essayAssignments',
+        entity: 'essayBatchAssignment',
+        getId: (a: { teacherKey: string; studentId: string }) => `${a.teacherKey}:${a.studentId}`,
+    },
+    { key: 'essaySubmissions', entity: 'essayOfflineSubmission', getId: (s: { id: string }) => s.id },
+    { key: 'userTemplates', entity: 'userTemplate', getId: (ut: { id: string }) => ut.id },
 ] as CollectionSpec[];
 
 export function mergeStoreData(local: StoreData, remote: Partial<StoreData>, pendingQueue: PendingWrite[]): StoreData {

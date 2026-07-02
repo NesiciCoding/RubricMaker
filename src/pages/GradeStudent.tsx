@@ -343,7 +343,7 @@ export default function GradeStudent() {
     }, [focusedCriterionIdx]);
 
     // Colleague picker for co-grading needs Supabase + a school; without either it
-    // falls back to the free-text input (see CLAUDE.md offline-first rule).
+    // falls back to the free-text input (see CLAUDE.md storage rule).
     React.useEffect(() => {
         if (!showCoGradeModal || !dbStatus.isConnected || !settings.schoolId) {
             setColleagues([]);

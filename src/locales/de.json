@@ -1084,7 +1084,8 @@
         "sync_queued": "Offline — Änderungen werden bei Wiederverbindung synchronisiert.",
         "sync_flushed": "Wieder online — alle Änderungen synchronisiert.",
         "copy_paste_failed": "Kopieren/Einfügen fehlgeschlagen. Bitte versuchen Sie es erneut.",
-        "sync_offline_cache": "Sie sind offline — es werden lokal zwischengespeicherte Daten verwendet."
+        "sync_offline_cache": "Sie sind offline — es werden lokal zwischengespeicherte Daten verwendet.",
+        "signout_pending_writes": "Einige Änderungen wurden noch nicht synchronisiert — Ihre lokalen Daten wurden beibehalten, damit nichts verloren geht."
     },
     "pwa": {
         "update_available_confirm": "Eine neue Version von RubricMaker ist verfügbar. Jetzt neu laden?"

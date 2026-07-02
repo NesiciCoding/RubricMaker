@@ -1084,7 +1084,8 @@
         "sync_queued": "Offline — wijzigingen worden gesynchroniseerd wanneer je weer verbinding hebt.",
         "sync_flushed": "Weer online — alle wijzigingen gesynchroniseerd.",
         "copy_paste_failed": "Kopiëren/plakken mislukt. Probeer het opnieuw.",
-        "sync_offline_cache": "Je bent offline — lokaal gecachte gegevens worden gebruikt."
+        "sync_offline_cache": "Je bent offline — lokaal gecachte gegevens worden gebruikt.",
+        "signout_pending_writes": "Sommige wijzigingen zijn nog niet gesynchroniseerd — je lokale gegevens zijn bewaard zodat niets verloren gaat."
     },
     "pwa": {
         "update_available_confirm": "Er is een nieuwe versie van RubricMaker beschikbaar. Nu opnieuw laden?"

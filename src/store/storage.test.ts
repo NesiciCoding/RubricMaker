@@ -28,6 +28,7 @@ import {
     saveTestTimer,
     clearTestTimer,
     onStorageQuotaExceeded,
+    clearLocalData,
 } from './storage';
 import type { Rubric, Student, Class, AppSettings, RubricFormat } from '../types';
 import { DEFAULT_FORMAT } from '../types';
@@ -505,6 +506,58 @@ describe('pending sync queue', () => {
         const queue = loadPendingQueue();
         expect(queue).toHaveLength(1);
         expect((queue[0].payload as { theme: string }).theme).toBe('light');
+    });
+
+    it('drops the oldest entry when the queue is at capacity', () => {
+        for (let i = 0; i < 500; i++) {
+            addToPendingQueue({ entity: 'rubric', action: 'upsert', payload: { id: `r${i}` } });
+        }
+        addToPendingQueue({ entity: 'rubric', action: 'upsert', payload: { id: 'overflow' } });
+        const queue = loadPendingQueue();
+        expect(queue).toHaveLength(500);
+        expect(queue.some((q) => (q.payload as { id: string }).id === 'r0')).toBe(false);
+        expect(queue.some((q) => (q.payload as { id: string }).id === 'overflow')).toBe(true);
+    });
+
+    it('fires the quota handler when the queue write hits a full localStorage', () => {
+        const handler = vi.fn();
+        onStorageQuotaExceeded(handler);
+        const original = localStorage.setItem.bind(localStorage);
+        const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation((key, value) => {
+            if (key === 'rm_pending_sync') throw new DOMException('full', 'QuotaExceededError');
+            original(key, value);
+        });
+        try {
+            addToPendingQueue({ entity: 'rubric', action: 'upsert', payload: { id: 'r1' } });
+            expect(handler).toHaveBeenCalledOnce();
+        } finally {
+            spy.mockRestore();
+            onStorageQuotaExceeded(() => {});
+        }
+    });
+});
+
+describe('clearLocalData', () => {
+    it('wipes rm_-prefixed data keys but preserves connection settings', () => {
+        localStorage.setItem('rm_rubrics', '[]');
+        localStorage.setItem('rm_pending_sync', '[]');
+        localStorage.setItem('rm_migration_done', 'true');
+        localStorage.setItem('rm_last_sync_at', '2024-01-01');
+        localStorage.setItem('rm_owner_uid', 'user-a');
+        localStorage.setItem('rm_supabase_config', '{"supabaseUrl":"https://x"}');
+        localStorage.setItem('rm_local_mode', 'true');
+        localStorage.setItem('unrelated_key', 'kept');
+
+        clearLocalData();
+
+        expect(localStorage.getItem('rm_rubrics')).toBeNull();
+        expect(localStorage.getItem('rm_pending_sync')).toBeNull();
+        expect(localStorage.getItem('rm_migration_done')).toBeNull();
+        expect(localStorage.getItem('rm_last_sync_at')).toBeNull();
+        expect(localStorage.getItem('rm_owner_uid')).toBeNull();
+        expect(localStorage.getItem('rm_supabase_config')).toBe('{"supabaseUrl":"https://x"}');
+        expect(localStorage.getItem('rm_local_mode')).toBe('true');
+        expect(localStorage.getItem('unrelated_key')).toBe('kept');
     });
 });
 

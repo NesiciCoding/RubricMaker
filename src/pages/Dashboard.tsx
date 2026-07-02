@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     BookOpen,
@@ -18,8 +18,6 @@ import type { TFunction } from 'i18next';
 import { useApp } from '../context/AppContext';
 import { QUICK_START_TEMPLATES } from '../data/templates';
 import { calcGradeSummary } from '../utils/gradeCalc';
-import { loadUserTemplates, saveUserTemplates } from '../store/storage';
-import type { UserTemplate } from '../types';
 
 function dayKey(iso: string): string {
     return new Date(iso).toDateString();
@@ -43,16 +41,7 @@ function timeAgo(iso: string): string {
 export default function Dashboard() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { rubrics, students, studentRubrics, gradeScales, settings } = useApp();
-
-    const [userTemplates, setUserTemplates] = useState<UserTemplate[]>([]);
-    useEffect(() => {
-        try {
-            setUserTemplates(loadUserTemplates());
-        } catch {
-            /* ignore */
-        }
-    }, []);
+    const { rubrics, students, studentRubrics, gradeScales, settings, userTemplates, deleteUserTemplate } = useApp();
 
     const scale = useMemo(
         () => gradeScales.find((g) => g.id === settings.defaultGradeScaleId) ?? gradeScales[0],
@@ -488,9 +477,7 @@ export default function Dashboard() {
                                                     title={t('dashboard.remove_template')}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        const updated = userTemplates.filter((ut) => ut.id !== tpl.id);
-                                                        saveUserTemplates(updated);
-                                                        setUserTemplates(updated);
+                                                        deleteUserTemplate(tpl.id);
                                                     }}
                                                 >
                                                     ✕
