@@ -1,7 +1,6 @@
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { ToastContext } from '../context/ToastContext';
-import { createClient } from '@supabase/supabase-js';
 import { Clock, CheckCircle, Copy, AlertTriangle, Loader2, Eye, ChevronUp, ChevronDown, Lightbulb } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { decodeTestAssignment } from '../utils/shareCode';
@@ -21,9 +20,10 @@ import { useLiveSessionTelemetry } from '../hooks/useLiveSessionTelemetry';
 import { seededShuffle } from '../utils/seededShuffle';
 import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse';
 import { initClientLogger, logEvent } from '../services/logging/clientLogger';
+import { TestAdapter } from '../services/database/TestAdapter';
 import type {
-    Test,
     TestAnswer,
+    TestAssignmentContent,
     TestAssignmentPayload,
     TestQuestion,
     TestSection,
@@ -78,22 +78,84 @@ function withAnswer(answers: Record<string, string>, key: string, value: string)
     return Object.fromEntries(map);
 }
 
+// Detect a short-code link: bare nanoid (21 URL-safe chars), no base64 JSON.
+// These are generated when the app has Supabase configured (TestAssignmentModal's
+// "Enable direct submission to database" toggle) — the URL carries only the
+// test_assignments row id (= teacherKey); everything else, including the test
+// content itself, is fetched from the get-test-assignment edge function after
+// authenticating. Mirrors StudentEssayPage's isShortCode/short-code handling.
+function isShortCode(code: string): boolean {
+    return /^[A-Za-z0-9_-]{10,40}$/.test(code);
+}
+
 export default function StudentTestPage() {
     const { t } = useTranslation();
     const { code } = useParams<{ code: string }>();
 
     const assignment = useMemo<TestAssignmentPayload | null>(() => {
         if (!code) return null;
-        return decodeTestAssignment(code);
+        const legacy = decodeTestAssignment(code);
+        if (legacy) return legacy;
+        if (!isShortCode(code)) return null;
+
+        let savedConfig: { supabaseUrl?: string; supabaseAnonKey?: string } = {};
+        try {
+            savedConfig = JSON.parse(localStorage.getItem('rm_supabase_config') ?? '{}');
+        } catch {
+            /* ignore malformed config */
+        }
+        const envUrl = (import.meta.env.VITE_SUPABASE_URL as string | undefined) || savedConfig.supabaseUrl;
+        const envKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) || savedConfig.supabaseAnonKey;
+        if (!envUrl || !envKey) return null;
+
+        return {
+            testId: '',
+            studentId: '',
+            teacherKey: code,
+            requireSEB: false,
+            createdAt: new Date().toISOString(),
+            supabaseUrl: envUrl,
+            supabaseAnonKey: envKey,
+        };
     }, [code]);
 
     const hasDb = !!(assignment?.supabaseUrl && assignment?.supabaseAnonKey);
     const draftKey = DRAFT_KEY_PREFIX + (code ?? '');
 
-    const [test, setTest] = useState<Test | null>(assignment?.test ?? null);
-    const [testOwnerId, setTestOwnerId] = useState<string | null>(null);
+    // Isolated client + anonymous auth for the test share-link flow (storageKey:
+    // rm_student_test_auth) — separate from the essay flow's rm_student_auth so the
+    // two can never collide. Stable for the component's lifetime.
+    const adapter = useMemo<TestAdapter | null>(() => {
+        if (!assignment?.supabaseUrl || !assignment?.supabaseAnonKey) return null;
+        const a = new TestAdapter(assignment.supabaseUrl, assignment.supabaseAnonKey);
+        initClientLogger(a.getClient(), { role: 'student' });
+        return a;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // intentionally stable — assignment is decoded from the URL and never changes
+
+    // Content resolved from the edge function after authentication. For legacy
+    // (offline-embedded) links this is filled in immediately from the URL; for
+    // short-code links it's the only way to get testId/studentId/requireSEB/the
+    // test itself. undefined = not yet fetched; null = fetch complete, no data.
+    const [resolvedContent, setResolvedContent] = useState<TestAssignmentContent | null | undefined>(
+        assignment?.test
+            ? {
+                  testId: assignment.testId,
+                  studentId: assignment.studentId,
+                  requireSEB: assignment.requireSEB,
+                  durationMinutes: assignment.durationMinutes ?? null,
+                  expiresAt: assignment.expiresAt ?? null,
+                  test: assignment.test,
+              }
+            : undefined
+    );
+    const contentReady = resolvedContent !== undefined;
+    const test = resolvedContent?.test ?? null;
+    // Tracks an 'expired' result from the edge function so the expiry guard fires
+    // even for short-code links that have no expiresAt embedded in the URL.
+    const [contentExpired, setContentExpired] = useState(false);
     const [loadError, setLoadError] = useState<string | null>(null);
-    const [loading, setLoading] = useState(hasDb && !assignment?.test);
+    const [loading, setLoading] = useState(hasDb && !contentReady);
 
     const [answers, setAnswers] = useState<Map<string, string>>(() => {
         const draft = loadTestDraft(draftKey);
@@ -120,45 +182,50 @@ export default function StudentTestPage() {
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     // ── Fetch test content (DB mode) ─────────────────────────────────────────
+    // Signs in anonymously (silent — no email gate, unlike essays) then fetches
+    // content via the get-test-assignment edge function, which uses a service-role
+    // client server-side to bypass RLS. The direct disconnected-client table read
+    // this replaced always failed RLS (no session, so auth.uid() = NULL never
+    // matches tests_own's owner_id check).
     useEffect(() => {
-        if (!hasDb || !assignment || test) {
+        if (!hasDb || !assignment || !adapter || contentReady) {
             setLoading(false);
             return;
         }
-        const client = createClient(assignment.supabaseUrl!, assignment.supabaseAnonKey!, {
-            auth: { persistSession: false, autoRefreshToken: false },
-        });
-        initClientLogger(client, { role: 'student' });
         let cancelled = false;
         (async () => {
-            try {
-                const { data, error } = await client
-                    .from('tests')
-                    .select('data, owner_id')
-                    .eq('id', assignment.testId)
-                    .maybeSingle();
-                if (cancelled) return;
-                if (error || !data) {
-                    setLoadError(t('tests.taking.load_error'));
-                    logEvent('error', 'test_load_error', { testId: assignment.testId }, 'error');
-                } else {
-                    setTest(data.data as Test);
-                    setTestOwnerId((data.owner_id as string) ?? null);
-                    logEvent('lifecycle', 'test_loaded', { testId: assignment.testId });
-                }
-            } catch {
-                if (!cancelled) {
-                    setLoadError(t('tests.taking.load_error'));
-                    logEvent('error', 'test_load_error', { testId: assignment.testId }, 'error');
-                }
-            } finally {
-                if (!cancelled) setLoading(false);
+            const session = await adapter.ensureSession();
+            if (cancelled) return;
+            if (!session.ok) {
+                setLoadError(t('tests.taking.load_error'));
+                logEvent('error', 'test_load_error', { testId: assignment.testId }, 'error');
+                setLoading(false);
+                return;
             }
+            const result = await adapter.fetchAssignmentContent(assignment.teacherKey);
+            if (cancelled) return;
+            if (result.ok) {
+                setResolvedContent(result.data);
+                if (result.data.durationMinutes && secondsLeft === null) {
+                    const stored = loadTestTimer(draftKey + '_timer');
+                    setSecondsLeft(stored ?? result.data.durationMinutes * 60);
+                }
+                logEvent('lifecycle', 'test_loaded', { testId: result.data.testId });
+            } else {
+                setResolvedContent(null);
+                if (result.reason === 'expired') {
+                    setContentExpired(true);
+                } else {
+                    setLoadError(t('tests.taking.load_error'));
+                }
+                logEvent('error', 'test_load_error', { testId: assignment.testId }, 'error');
+            }
+            setLoading(false);
         })();
         return () => {
             cancelled = true;
         };
-    }, [hasDb, assignment, test, t]);
+    }, [hasDb, assignment, adapter, contentReady, secondsLeft, draftKey, t]);
 
     const orderedQuestions = useMemo<TestQuestion[]>(() => {
         if (!test) return [];
@@ -200,6 +267,9 @@ export default function StudentTestPage() {
         submitInFlightRef.current = true;
         if (timerRef.current) clearInterval(timerRef.current);
 
+        const effectiveTestId = resolvedContent?.testId || assignment.testId;
+        const effectiveStudentId = resolvedContent?.studentId || assignment.studentId;
+
         const submittedAt = new Date().toISOString();
         const testAnswers: TestAnswer[] = test.questions.map((q) => ({
             questionId: q.id,
@@ -207,8 +277,8 @@ export default function StudentTestPage() {
         }));
 
         const submissionPayload: TestSubmissionPayload = {
-            testId: assignment.testId,
-            studentId: assignment.studentId,
+            testId: effectiveTestId,
+            studentId: effectiveStudentId,
             teacherKey: assignment.teacherKey,
             answers: testAnswers,
             startedAt: startedAtRef.current,
@@ -217,43 +287,28 @@ export default function StudentTestPage() {
         };
         const legacyCode = encodeTestSubmission(submissionPayload);
 
-        if (hasDb && assignment.supabaseUrl && assignment.supabaseAnonKey) {
+        if (hasDb && adapter) {
             setSubmitting(true);
             setSubmitError('');
-            try {
-                const client = createClient(assignment.supabaseUrl, assignment.supabaseAnonKey, {
-                    auth: { persistSession: false, autoRefreshToken: false },
-                });
-                initClientLogger(client, { role: 'student' });
-                const studentTestId = nanoid();
-                const { error } = await client.from('student_tests').insert({
-                    id: studentTestId,
-                    owner_id: testOwnerId,
-                    data: {
-                        id: studentTestId,
-                        testId: assignment.testId,
-                        studentId: assignment.studentId,
-                        answers: testAnswers,
-                        status: 'submitted',
-                        startedAt: startedAtRef.current,
-                        submittedAt,
-                        events: submissionPayload.events,
-                    },
-                });
-                if (error) {
-                    setSubmitError(t('tests.taking.submit_error_db'));
-                    logEvent('error', 'test_submit_error', { testId: assignment.testId }, 'error');
-                } else {
-                    logEvent('action', 'test_submitted', {
-                        testId: assignment.testId,
-                        answerCount: testAnswers.length,
-                    });
-                }
-            } catch {
-                setSubmitError(t('tests.taking.submit_error_db'));
-                logEvent('error', 'test_submit_error', { testId: assignment.testId }, 'error');
-            }
+            const studentTestId = nanoid();
+            const result = await adapter.submitTest(
+                assignment.teacherKey,
+                studentTestId,
+                testAnswers,
+                startedAtRef.current,
+                submittedAt,
+                submissionPayload.events
+            );
             setSubmitting(false);
+            if (!result.success) {
+                setSubmitError(t('tests.taking.submit_error_db'));
+                logEvent('error', 'test_submit_error', { testId: effectiveTestId }, 'error');
+            } else {
+                logEvent('action', 'test_submitted', {
+                    testId: effectiveTestId,
+                    answerCount: testAnswers.length,
+                });
+            }
         }
 
         setSubmissionCode(legacyCode);
@@ -261,7 +316,7 @@ export default function StudentTestPage() {
         clearTestTimer(draftKey + '_timer');
         setSubmitted(true);
         submitInFlightRef.current = false;
-    }, [assignment, test, answers, hasDb, testOwnerId, draftKey, telemetry, t, submitted]);
+    }, [assignment, test, resolvedContent, answers, hasDb, adapter, draftKey, telemetry, t, submitted]);
 
     const handleSubmitRef = useRef(handleSubmit);
     useEffect(() => {
@@ -306,13 +361,18 @@ export default function StudentTestPage() {
     }
 
     // ── Guard: expired ─────────────────────────────────────────────────────────
-    if (assignment.expiresAt && new Date(assignment.expiresAt) < new Date()) {
+    // contentExpired is set when the edge function returns 410 for a short-code
+    // link; effectiveExpiresAt also covers legacy links with expiresAt embedded.
+    const effectiveExpiresAt = resolvedContent?.expiresAt ?? assignment.expiresAt ?? null;
+    if (contentExpired || (effectiveExpiresAt && new Date(effectiveExpiresAt) < new Date())) {
         return (
             <CenteredMessage>
                 <div style={{ fontSize: 48, marginBottom: 16 }}>⏰</div>
                 <h2 style={{ marginBottom: 8, color: 'var(--text)' }}>{t('tests.taking.expired_title')}</h2>
                 <p style={{ color: 'var(--text-muted)' }}>
-                    {t('tests.taking.expired_desc', { date: new Date(assignment.expiresAt).toLocaleString() })}
+                    {effectiveExpiresAt
+                        ? t('tests.taking.expired_desc', { date: new Date(effectiveExpiresAt).toLocaleString() })
+                        : t('tests.taking.expired_desc_no_date')}
                 </p>
             </CenteredMessage>
         );
@@ -349,7 +409,7 @@ export default function StudentTestPage() {
     const currentSection = question?.sectionId ? sections.find((s) => s.id === question.sectionId) : null;
 
     return (
-        <SebGate requireSEB={assignment.requireSEB}>
+        <SebGate requireSEB={resolvedContent?.requireSEB ?? assignment.requireSEB}>
             <div
                 style={{
                     minHeight: '100vh',

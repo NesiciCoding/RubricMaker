@@ -542,6 +542,7 @@
             "invalid_link_desc": "Deze toetslink is niet geldig. Vraag je docent om een nieuwe link.",
             "expired_title": "Deadline voor deze toets is verstreken",
             "expired_desc": "De deadline was {{date}}. Neem contact op met je docent.",
+            "expired_desc_no_date": "Deze toets is verlopen. Neem contact op met je docent.",
             "load_error_title": "Deze toets kan niet worden geladen",
             "load_error": "Deze toets kon niet worden geladen. Vraag je docent om een nieuwe link.",
             "seb_blocked_title": "Open deze toets in Safe Exam Browser",

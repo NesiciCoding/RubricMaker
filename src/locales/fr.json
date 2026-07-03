@@ -542,6 +542,7 @@
             "invalid_link_desc": "Ce lien de test n'est pas valide. Demandez un nouveau lien à votre enseignant.",
             "expired_title": "La date limite de ce test est dépassée",
             "expired_desc": "La date limite était {{date}}. Contactez votre enseignant.",
+            "expired_desc_no_date": "Ce test a expiré. Veuillez contacter votre enseignant.",
             "load_error_title": "Impossible de charger ce test",
             "load_error": "Ce test n'a pas pu être chargé. Demandez un nouveau lien à votre enseignant.",
             "seb_blocked_title": "Ouvrez ce test dans Safe Exam Browser",

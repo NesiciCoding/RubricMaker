@@ -542,6 +542,7 @@
             "invalid_link_desc": "Dieser Test-Link ist ungültig. Bitten Sie Ihre Lehrkraft um einen neuen Link.",
             "expired_title": "Die Frist für diesen Test ist abgelaufen",
             "expired_desc": "Die Frist war {{date}}. Bitte wenden Sie sich an Ihre Lehrkraft.",
+            "expired_desc_no_date": "Dieser Test ist abgelaufen. Bitte wenden Sie sich an Ihre Lehrkraft.",
             "load_error_title": "Dieser Test konnte nicht geladen werden",
             "load_error": "Dieser Test konnte nicht geladen werden. Bitten Sie Ihre Lehrkraft um einen neuen Link.",
             "seb_blocked_title": "Öffnen Sie diesen Test im Safe Exam Browser",

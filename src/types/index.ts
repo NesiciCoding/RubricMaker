@@ -980,6 +980,16 @@ export interface TestAssignmentPayload {
     test?: Test;
 }
 
+/** Assignment content resolved from the get-test-assignment edge function for a short-code (DB mode) share link */
+export interface TestAssignmentContent {
+    testId: string;
+    studentId: string;
+    requireSEB: boolean;
+    durationMinutes: number | null;
+    expiresAt: string | null;
+    test: Test;
+}
+
 /** A teacher-created test assignment persisted to `test_assignments` so the student portal can list it, mirrors EssayAssignment */
 export interface TestAssignment {
     testId: string;
