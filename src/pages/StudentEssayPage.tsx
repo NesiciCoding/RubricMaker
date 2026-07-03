@@ -239,7 +239,7 @@ export default function StudentEssayPage() {
     const hasDb = !!(assignment?.supabaseUrl && assignment?.supabaseAnonKey);
     const adapter = useMemo<EssayAdapter | null>(() => {
         if (!assignment?.supabaseUrl || !assignment?.supabaseAnonKey) return null;
-        const a = new EssayAdapter(assignment.supabaseUrl, assignment.supabaseAnonKey);
+        const a = new EssayAdapter(assignment.supabaseUrl, assignment.supabaseAnonKey, assignment.teacherKey);
         initClientLogger(a.getClient(), { role: 'student' });
         return a;
         // eslint-disable-next-line react-hooks/exhaustive-deps
