@@ -725,6 +725,13 @@ export interface EssayAssignment {
     supabaseAnonKey?: string;
     /** Manual sort position in list views (EssayListPage, Activity Dashboard), shared across the teacherKey group; undefined sorts last by createdAt */
     displayOrder?: number;
+    /**
+     * teacherKey of the Essay Builder group this row was individually assigned from
+     * (e.g. via GradeStudent's "Assign Essay" modal), when that origin was unambiguous.
+     * Lets EssayBuilderPage surface the row on that essay's roster without merely
+     * matching on rubricId, which a teacher can reuse across unrelated essays.
+     */
+    sourceTeacherKey?: string;
 }
 
 /** Saved essay configuration not yet assigned to any student — used to prepare assignments in advance */

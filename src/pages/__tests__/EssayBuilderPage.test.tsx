@@ -45,15 +45,42 @@ const mockAssignment: EssayAssignment = {
 };
 
 // Assigned to Bob individually from GradeStudent's modal — a different teacherKey,
-// same rubric, so it should surface on this rubric's Builder page as a merged row.
+// linked back to the canonical group ('tk1') via sourceTeacherKey, so it should
+// surface on this rubric's Builder page as a merged row.
 const mockIndividualAssignment: EssayAssignment = {
     rubricId: 'r1',
     studentId: 's2',
     teacherKey: 'tk-individual',
+    sourceTeacherKey: 'tk1',
     title: 'My Essay (individual)',
     prompt: 'Individual prompt text',
     readOnlyAfterSubmit: true,
     createdAt: '2024-01-03T00:00:00Z',
+};
+
+// Alice also has a second, individually-assigned row for the SAME rubric+student —
+// the collision case where a naive studentId-only lookup would resolve to the wrong row.
+const mockIndividualAssignmentSameStudent: EssayAssignment = {
+    rubricId: 'r1',
+    studentId: 's1',
+    teacherKey: 'tk-individual-alice',
+    sourceTeacherKey: 'tk1',
+    title: 'My Essay (individual, Alice)',
+    prompt: "Alice's individual prompt",
+    readOnlyAfterSubmit: true,
+    createdAt: '2024-01-04T00:00:00Z',
+};
+
+// A totally unrelated essay that happens to reuse the same rubric, under its own
+// teacherKey with no sourceTeacherKey back to 'tk1' — must NOT be merged into tk1's roster.
+const mockUnrelatedAssignmentSameRubric: EssayAssignment = {
+    rubricId: 'r1',
+    studentId: 's2',
+    teacherKey: 'tk-unrelated',
+    title: 'A Completely Different Essay',
+    prompt: 'Unrelated prompt',
+    readOnlyAfterSubmit: true,
+    createdAt: '2024-01-05T00:00:00Z',
 };
 
 const mockSubmission: EssaySubmission = {
@@ -195,6 +222,37 @@ describe('EssayBuilderPage', () => {
             fireEvent.click(confirmButtons[confirmButtons.length - 1]);
             // Both Alice (canonical) and Bob (individual) are already assigned — nothing new to add.
             expect(mockShowToast).toHaveBeenCalledWith('essays.no_new_students', 'info');
+        });
+
+        it('resolves each row copy-link correctly when the same student has both a canonical and an individual row', async () => {
+            appOverrides = { essayAssignments: [mockAssignment, mockIndividualAssignmentSameStudent] };
+            const { default: EssayBuilderPage } = await import('../EssayBuilderPage');
+            renderWithRouter(<EssayBuilderPage />);
+            const copyButtons = screen.getAllByLabelText('essays.copy_link');
+            expect(copyButtons).toHaveLength(2);
+
+            fireEvent.click(copyButtons[0]); // Alice's canonical row
+            const firstUrl = (navigator.clipboard.writeText as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+            const firstDecoded = decodeEssayAssignment(firstUrl.split('#/essay/')[1]);
+            expect(firstDecoded?.teacherKey).toBe('tk1');
+            expect(firstDecoded?.prompt).toBeUndefined();
+
+            fireEvent.click(copyButtons[1]); // Alice's individual row
+            const secondUrl = (navigator.clipboard.writeText as ReturnType<typeof vi.fn>).mock.calls[1][0] as string;
+            const secondDecoded = decodeEssayAssignment(secondUrl.split('#/essay/')[1]);
+            expect(secondDecoded?.teacherKey).toBe('tk-individual-alice');
+            expect(secondDecoded?.prompt).toBe("Alice's individual prompt");
+        });
+
+        it('does not merge in an unrelated essay that happens to reuse the same rubric', async () => {
+            appOverrides = { essayAssignments: [mockAssignment, mockUnrelatedAssignmentSameRubric] };
+            const { default: EssayBuilderPage } = await import('../EssayBuilderPage');
+            renderWithRouter(<EssayBuilderPage />);
+            // Only Alice (the canonical row) should show — the unrelated essay for Bob,
+            // sharing rubricId but with no sourceTeacherKey back to 'tk1', must not appear.
+            expect(screen.getByText('Alice')).toBeInTheDocument();
+            expect(screen.queryByText('Bob')).not.toBeInTheDocument();
+            expect(screen.queryByText('essays.individual_assignment_badge')).not.toBeInTheDocument();
         });
     });
 });

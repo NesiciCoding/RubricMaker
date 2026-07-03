@@ -163,6 +163,16 @@ export class EssayAdapter {
     }
 
     /**
+     * Clears the persisted email after a submission completes. The anonymous session
+     * itself (rm_student_auth) is left alone — it may still be needed to view a locked
+     * submission — but without this, a stale email would auto-bypass the email gate on
+     * a different essay link opened later in the same browser, misattributing it.
+     */
+    clearStoredEmail(): void {
+        localStorage.removeItem(STUDENT_EMAIL_KEY);
+    }
+
+    /**
      * Get the current session. Checks rm_student_auth first, then the portal session.
      * Real (non-anonymous) accounts return their verified email. Anonymous sessions have
      * no email on the JWT, so fall back to the value stored by signInAnonymously — without

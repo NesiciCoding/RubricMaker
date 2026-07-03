@@ -39,15 +39,18 @@ export default function EssayBuilderPage() {
         () => (teacherKeyParam ? essayAssignments.find((a) => a.teacherKey === teacherKeyParam) : undefined),
         [essayAssignments, teacherKeyParam]
     );
-    // Also surface students assigned this same rubric individually from a grading page
-    // (GradeStudent's "Assign Essay" modal, its own teacherKey) — so this page stays the
-    // one place a teacher can see everyone assigned this essay, however it was set up.
+    // Also surface students assigned individually from a grading page (GradeStudent's
+    // "Assign Essay" modal), so this page stays the one place a teacher can see
+    // everyone assigned this essay however it was set up. Matched via sourceTeacherKey
+    // (stamped back to this group at creation time) rather than rubricId alone — a
+    // rubric can be reused across unrelated essays, so rubricId alone would risk
+    // merging in a completely different essay's roster.
     const rows = useMemo(() => {
         if (!teacherKeyParam) return [];
         return essayAssignments.filter(
-            (a) => a.teacherKey === teacherKeyParam || (existing && a.rubricId === existing.rubricId)
+            (a) => a.teacherKey === teacherKeyParam || a.sourceTeacherKey === teacherKeyParam
         );
-    }, [essayAssignments, teacherKeyParam, existing]);
+    }, [essayAssignments, teacherKeyParam]);
     const notFound = !!teacherKeyParam && !existing;
 
     const [title, setTitle] = useState(existing?.title ?? '');
@@ -146,11 +149,11 @@ export default function EssayBuilderPage() {
     );
 
     const buildEssayLink = useCallback(
-        (studentId: string) => {
-            // Individually-assigned rows (a different teacherKey, e.g. from GradeStudent's
-            // modal) carry their own config/credentials — re-encoding under `existing`'s
-            // canonical teacherKey would point the student at the wrong assignment.
-            const row = rows.find((r) => r.studentId === studentId) ?? existing;
+        (teacherKey: string, studentId: string) => {
+            // A student can appear in `rows` twice (once under the canonical teacherKey,
+            // once individually), so look up by the exact (teacherKey, studentId) pair —
+            // not studentId alone — or the wrong row's config/credentials get re-encoded.
+            const row = rows.find((r) => r.teacherKey === teacherKey && r.studentId === studentId) ?? existing;
             if (!row) return null;
             const code = encodeEssayAssignment({ ...row, studentId });
             return `${window.location.origin}${window.location.pathname}#/essay/${code}`;
@@ -159,11 +162,11 @@ export default function EssayBuilderPage() {
     );
 
     const handleCopyLink = useCallback(
-        (studentId: string) => {
-            const url = buildEssayLink(studentId);
+        (teacherKey: string, studentId: string) => {
+            const url = buildEssayLink(teacherKey, studentId);
             if (!url) return;
             navigator.clipboard.writeText(url).then(() => {
-                setCopiedStudentId(studentId);
+                setCopiedStudentId(`${teacherKey}_${studentId}`);
                 setTimeout(() => setCopiedStudentId(null), 2500);
             });
         },
@@ -386,9 +389,9 @@ export default function EssayBuilderPage() {
                                                 className="btn btn-ghost btn-icon btn-sm"
                                                 title={t('essays.copy_link')}
                                                 aria-label={t('essays.copy_link')}
-                                                onClick={() => handleCopyLink(row.studentId)}
+                                                onClick={() => handleCopyLink(row.teacherKey, row.studentId)}
                                             >
-                                                {copiedStudentId === row.studentId ? (
+                                                {copiedStudentId === `${row.teacherKey}_${row.studentId}` ? (
                                                     <Check size={14} />
                                                 ) : (
                                                     <Copy size={14} />
@@ -399,7 +402,7 @@ export default function EssayBuilderPage() {
                                                     className="btn btn-ghost btn-icon btn-sm"
                                                     title={t('essays.dev_open_as_student')}
                                                     aria-label={t('essays.dev_open_as_student')}
-                                                    href={buildEssayLink(row.studentId) ?? undefined}
+                                                    href={buildEssayLink(row.teacherKey, row.studentId) ?? undefined}
                                                     target="_blank"
                                                     rel="noreferrer"
                                                 >

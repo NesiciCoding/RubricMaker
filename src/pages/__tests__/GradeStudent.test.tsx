@@ -1,9 +1,9 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
-import type { AppSettings, Class, GradeScale, Rubric, Student } from '../../types';
+import type { AppSettings, Class, EssayAssignment, GradeScale, Rubric, Student } from '../../types';
 
 const mockGradeScale: GradeScale = {
     id: 'gs1',
@@ -79,7 +79,9 @@ const mockAppValue = {
     saveAnalysisResult: vi.fn(),
     addCommentBankItem: vi.fn(),
     addAttachment: vi.fn(),
-    saveEssayAssignment: vi.fn(),
+    saveEssayAssignment: vi.fn().mockResolvedValue({ success: true }),
+    essayAssignments: [] as EssayAssignment[],
+    addEssayAssignments: vi.fn(),
     essayTemplates: mockEssayTemplatesArr,
     saveEssayTemplate: vi.fn(),
     fetchEssaySubmissionsForStudent: vi.fn().mockResolvedValue([]),
@@ -206,5 +208,46 @@ describe('GradeStudent', () => {
         renderPage();
         fireEvent.keyDown(window, { key: '?' });
         expect(screen.getByText('Keyboard Shortcuts')).toBeInTheDocument();
+    });
+
+    describe('Assign Essay modal prefill', () => {
+        const existingAssignment = {
+            rubricId: 'r1',
+            studentId: 's2', // Bob — a different student than the one being graded here (Alice)
+            teacherKey: 'tk-existing',
+            title: 'Essay Test',
+            prompt: 'Write a short story...',
+            readOnlyAfterSubmit: true,
+            createdAt: '2024-01-01T00:00:00Z',
+        };
+        // Neither row belongs to 's1' (Alice, the student being graded in these tests),
+        // so the "this student's own row" shortcut never applies and the ambiguity
+        // check (distinct teacherKey groups sharing rubricId) is what's exercised.
+        const ambiguousAssignment = {
+            ...existingAssignment,
+            teacherKey: 'tk-another-essay',
+            title: 'A Different Essay',
+            prompt: 'A completely different prompt',
+        };
+
+        afterEach(() => {
+            mockAppValue.essayAssignments = [];
+        });
+
+        it('pre-fills the prompt from an existing assignment for this rubric', () => {
+            mockAppValue.essayAssignments = [existingAssignment];
+            renderPage();
+            fireEvent.click(screen.getByLabelText('gradeStudent.action_essay'));
+            expect(screen.getByLabelText(/prompt_label/)).toHaveValue('Write a short story...');
+        });
+
+        it('does not guess a prompt when the rubric is used by more than one distinct essay', () => {
+            // Two distinct teacherKey groups share rubricId 'r1' — neither is "the" essay
+            // for this rubric, so guessing could prefill the wrong prompt/limits.
+            mockAppValue.essayAssignments = [existingAssignment, ambiguousAssignment];
+            renderPage();
+            fireEvent.click(screen.getByLabelText('gradeStudent.action_essay'));
+            expect(screen.getByLabelText(/prompt_label/)).toHaveValue('');
+        });
     });
 });

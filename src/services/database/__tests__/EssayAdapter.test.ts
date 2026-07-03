@@ -42,4 +42,15 @@ describe('EssayAdapter anonymous session email persistence', () => {
         const adapter = adapterWithClients(anonSession('anon1'));
         expect(await adapter.getSession()).toEqual({ userId: 'anon1', email: null });
     });
+
+    it('clearStoredEmail removes the persisted email so a later remount re-shows the gate', async () => {
+        const adapter = adapterWithClients(anonSession('anon1'));
+        await adapter.signInAnonymously('student@example.com');
+        expect(localStorage.getItem('rm_student_email')).toBe('student@example.com');
+
+        adapter.clearStoredEmail();
+
+        expect(localStorage.getItem('rm_student_email')).toBeNull();
+        expect(await adapter.getSession()).toEqual({ userId: 'anon1', email: null });
+    });
 });

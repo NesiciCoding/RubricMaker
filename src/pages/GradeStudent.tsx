@@ -151,6 +151,7 @@ export default function GradeStudent() {
         addAttachment,
         saveEssayAssignment,
         essayAssignments,
+        addEssayAssignments,
         essayTemplates,
         saveEssayTemplate,
         fetchEssaySubmissionsForStudent,
@@ -167,6 +168,35 @@ export default function GradeStudent() {
     const classStudents = useMemo(
         () => students.filter((s) => s.classId === student?.classId).map((s) => ({ id: s.id, name: s.name })),
         [students, student?.classId]
+    );
+
+    // The essay assignment to pre-fill the "Assign Essay" modal from, and to link a
+    // newly-created individual assignment back to. Prefer this student's own row for
+    // the rubric; otherwise only fall back to another row when there's exactly one
+    // distinct essay (teacherKey group) using this rubric — a rubric can be reused
+    // across unrelated essays, so guessing among several would risk the wrong prompt.
+    const matchedEssayAssignmentForRubric = useMemo(() => {
+        if (!rubricId) return undefined;
+        const ownRow = essayAssignments.find((a) => a.rubricId === rubricId && a.studentId === studentId);
+        if (ownRow) return ownRow;
+        const candidates = essayAssignments.filter((a) => a.rubricId === rubricId);
+        const distinctGroups = new Set(candidates.map((a) => a.teacherKey));
+        return distinctGroups.size === 1 ? candidates[0] : undefined;
+    }, [essayAssignments, rubricId, studentId]);
+
+    // Saves the individually-assigned essay to the DB (for the student's share link)
+    // and also registers it in local state so it syncs and shows up on the Essay
+    // Builder page's roster — without this it only ever exists in essay_assignments
+    // (the direct student-link table), invisible to the teacher's own assignment list.
+    const handleSaveEssayAssignment = useCallback(
+        async (assignment: EssayAssignment) => {
+            const result = await saveEssayAssignment(assignment);
+            if (result.success) {
+                addEssayAssignments([{ ...assignment, sourceTeacherKey: matchedEssayAssignmentForRubric?.teacherKey }]);
+            }
+            return result;
+        },
+        [saveEssayAssignment, addEssayAssignments, matchedEssayAssignmentForRubric]
     );
 
     const scaleId = rubric?.gradeScaleId ?? settings.defaultGradeScaleId;
@@ -1696,15 +1726,15 @@ export default function GradeStudent() {
                     studentName={student.name}
                     classStudents={classStudents}
                     onClose={() => setShowEssayAssignment(false)}
-                    onSaveAssignment={saveEssayAssignment}
+                    onSaveAssignment={handleSaveEssayAssignment}
                     // Reuse the prompt/instructions already authored for this rubric on the Essay
                     // Builder page — without this, the modal here starts blank (only a saved
                     // template pre-fills it), so a teacher assigning from the grading page silently
                     // ships an assignment with no prompt even though one was written elsewhere.
-                    initialValues={
-                        essayAssignments.find((a) => a.rubricId === rubricId && a.studentId === studentId) ??
-                        essayAssignments.find((a) => a.rubricId === rubricId)
-                    }
+                    // Only fall back to "any" match when this student already has their own row —
+                    // a rubric can be reused across unrelated essays, so guessing among several
+                    // distinct groups would risk prefilling the wrong prompt/limits.
+                    initialValues={matchedEssayAssignmentForRubric}
                     savedTemplate={essayTemplates.find((t) => t.rubricId === rubricId)}
                     onSaveTemplate={saveEssayTemplate}
                     onOpenSlipSheet={(assignment, sts) => {

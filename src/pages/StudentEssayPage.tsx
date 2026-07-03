@@ -419,6 +419,7 @@ export default function StudentEssayPage() {
                 logEvent('error', 'essay_submit_error', { teacherKey: assignment.teacherKey }, 'error');
             } else {
                 logEvent('action', 'essay_submitted', { teacherKey: assignment.teacherKey, wordCount });
+                adapter.clearStoredEmail();
             }
         }
 

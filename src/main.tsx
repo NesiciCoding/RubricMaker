@@ -16,7 +16,9 @@ setupPwaUpdatePrompt();
 // the dark :root default in index.css regardless of the saved preference.
 try {
     const raw = localStorage.getItem('rm_settings');
-    const theme = raw ? (JSON.parse(raw).theme ?? 'light') : 'light';
+    const parsed: unknown = raw ? JSON.parse(raw) : null;
+    const theme =
+        parsed && typeof parsed === 'object' && (parsed as { theme?: unknown }).theme === 'dark' ? 'dark' : 'light';
     document.documentElement.setAttribute('data-theme', theme);
 } catch {
     document.documentElement.setAttribute('data-theme', 'light');
