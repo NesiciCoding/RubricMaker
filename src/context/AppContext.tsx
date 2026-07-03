@@ -33,6 +33,7 @@ import type {
     Test,
     StudentTest,
     TestAssignment,
+    UserTemplate,
     UserRole,
 } from '../types';
 import {
@@ -59,9 +60,11 @@ import {
     saveEssaySubmissions,
     saveEssayTemplates,
     saveGradingTasks,
+    saveUserTemplates,
     importFullBackup,
     loadPendingQueue,
     onStorageQuotaExceeded,
+    clearLocalData,
 } from '../store/storage';
 import { mergeStoreData } from '../utils/syncMerge';
 import { useTranslation } from 'react-i18next';
@@ -140,7 +143,9 @@ type Action =
     | { type: 'SAVE_ESSAY_TEMPLATE'; payload: EssayTemplate }
     | { type: 'DELETE_ESSAY_TEMPLATE'; id: string }
     | { type: 'ADD_GRADING_TASKS'; payload: GradingTask[] }
-    | { type: 'DELETE_GRADING_TASK'; id: string };
+    | { type: 'DELETE_GRADING_TASK'; id: string }
+    | { type: 'SAVE_USER_TEMPLATE'; payload: UserTemplate }
+    | { type: 'DELETE_USER_TEMPLATE'; id: string };
 
 // When a Supabase connection is live, the Supabase push is the durable write and the
 // local copy is redundant; only fall back to localStorage while genuinely offline. A
@@ -551,21 +556,23 @@ function reducer(state: StoreData, action: Action): StoreData {
         }
         case 'ADD_ESSAY_ASSIGNMENTS': {
             const next = [...state.essayAssignments, ...action.payload];
-            saveEssayAssignments(next);
+            if (isOffline()) saveEssayAssignments(next);
             return { ...state, essayAssignments: next };
         }
         case 'UPDATE_ESSAY_GROUP': {
             const next = state.essayAssignments.map((a) =>
                 a.teacherKey === action.teacherKey ? { ...a, ...action.patch } : a
             );
-            saveEssayAssignments(next);
+            if (isOffline()) saveEssayAssignments(next);
             return { ...state, essayAssignments: next };
         }
         case 'DELETE_ESSAY_GROUP': {
             const nextAssignments = state.essayAssignments.filter((a) => a.teacherKey !== action.teacherKey);
-            saveEssayAssignments(nextAssignments);
             const nextSubmissions = state.essaySubmissions.filter((s) => s.teacherKey !== action.teacherKey);
-            saveEssaySubmissions(nextSubmissions);
+            if (isOffline()) {
+                saveEssayAssignments(nextAssignments);
+                saveEssaySubmissions(nextSubmissions);
+            }
             return { ...state, essayAssignments: nextAssignments, essaySubmissions: nextSubmissions };
         }
         case 'ADD_ESSAY_SUBMISSION': {
@@ -578,7 +585,7 @@ function reducer(state: StoreData, action: Action): StoreData {
                 exists >= 0
                     ? state.essaySubmissions.map((s, i) => (i === exists ? action.payload : s))
                     : [...state.essaySubmissions, action.payload];
-            saveEssaySubmissions(next);
+            if (isOffline()) saveEssaySubmissions(next);
             return { ...state, essaySubmissions: next };
         }
         case 'SAVE_ESSAY_TEMPLATE': {
@@ -606,6 +613,21 @@ function reducer(state: StoreData, action: Action): StoreData {
             const next = state.gradingTasks.filter((task) => task.id !== action.id);
             if (isOffline()) saveGradingTasks(next);
             return { ...state, gradingTasks: next };
+        }
+        case 'SAVE_USER_TEMPLATE': {
+            // No cap here — this array is now the sync source of truth, diffed against
+            // Supabase (see the delta-sync effect below). Evicting an entry would look
+            // like a delete to that diff and get pushed as one, silently deleting the
+            // teacher's oldest saved template from the cloud and every other device.
+            const filtered = state.userTemplates.filter((ut) => ut.id !== action.payload.id);
+            const next = [action.payload, ...filtered];
+            if (isOffline()) saveUserTemplates(next);
+            return { ...state, userTemplates: next };
+        }
+        case 'DELETE_USER_TEMPLATE': {
+            const next = state.userTemplates.filter((ut) => ut.id !== action.id);
+            if (isOffline()) saveUserTemplates(next);
+            return { ...state, userTemplates: next };
         }
         default:
             return state;
@@ -711,6 +733,9 @@ interface AppContextValue extends StoreData {
     // Grading task assignment (batch-assign ungraded submissions to a teacher)
     addGradingTasks: (tasks: GradingTask[]) => void;
     deleteGradingTask: (id: string) => void;
+    // Saved rubric templates ("save as template")
+    saveUserTemplate: (t: UserTemplate) => void;
+    deleteUserTemplate: (id: string) => void;
     // Database sync
     connectDatabase: (config: DatabaseConfig) => Promise<boolean>;
     disconnectDatabase: () => void;
@@ -809,6 +834,9 @@ async function flushToLocalStorage(merged: StoreData) {
         saveStudentTests,
         saveEssayTemplates,
         saveGradingTasks,
+        saveEssayAssignments,
+        saveEssaySubmissions,
+        saveUserTemplates,
     } = await import('../store/storage');
     saveRubrics(merged.rubrics);
     saveStudents(merged.students);
@@ -829,6 +857,19 @@ async function flushToLocalStorage(merged: StoreData) {
     saveStudentTests(merged.studentTests);
     saveEssayTemplates(merged.essayTemplates);
     saveGradingTasks(merged.gradingTasks);
+    saveEssayAssignments(merged.essayAssignments);
+    saveEssaySubmissions(merged.essaySubmissions);
+    saveUserTemplates(merged.userTemplates);
+
+    // Best-effort: a recording blob whose session was deleted on another device has no
+    // app-level delete call to clean it up locally, so sweep for orphans after every sync.
+    const { pruneOrphanedBlobs } = await import('../services/mediaStore');
+    const referencedRecordingIds = new Set(
+        merged.speakingSessions.flatMap((ss) => ss.recordings?.map((r) => r.id) ?? [])
+    );
+    pruneOrphanedBlobs(referencedRecordingIds).catch(() => {
+        // stray IndexedDB blob costs storage quota, not correctness — not worth surfacing
+    });
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -964,7 +1005,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const { data: fresh, error: hydrateError } = await storageSync.hydrate();
             if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
             if (fresh) {
-                const merged = mergeStoreData(initialStateRef.current, fresh, loadPendingQueue());
+                // After an owner switch the in-memory state still holds the previous
+                // user's data — merge against the freshly wiped store instead.
+                const base = storageSync.didWipeLocalData() ? loadStore() : initialStateRef.current;
+                const merged = mergeStoreData(base, fresh, loadPendingQueue());
                 dispatch({ type: 'SET_ALL', payload: merged });
                 try {
                     await flushToLocalStorage(merged);
@@ -987,7 +1031,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 await configureAndEnter(config);
 
                 // Show migration prompt once if local data exists and hasn't been migrated
-                if (localStorage.getItem(MIGRATION_DONE_KEY) !== 'true') {
+                if (localStorage.getItem(MIGRATION_DONE_KEY) !== 'true' && !storageSync.didWipeLocalData()) {
                     const s = initialStateRef.current;
                     if (s.rubrics.length > 0 || s.students.length > 0 || s.classes.length > 0) {
                         setShowMigrationPrompt(true);
@@ -1072,7 +1116,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 const { data: fresh, error: hydrateError } = await storageSync.hydrate();
                 if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
                 if (fresh) {
-                    const merged = mergeStoreData(initialStateRef.current, fresh, loadPendingQueue());
+                    const base = storageSync.didWipeLocalData() ? loadStore() : initialStateRef.current;
+                    const merged = mergeStoreData(base, fresh, loadPendingQueue());
                     dispatch({ type: 'SET_ALL', payload: merged });
                     try {
                         await flushToLocalStorage(merged);
@@ -1102,7 +1147,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 if (!currMap.has(id)) storageSync.pushOne(entity, 'delete', null, id);
             }
             for (const [id, item] of currMap) {
-                if (prevMap.get(id) !== JSON.stringify(item)) storageSync.pushOne(entity, 'upsert', item);
+                // Always pass id (not just on delete) — entities like essayBatchAssignment
+                // have no `id`/`guid` field on the payload itself (they're keyed by a
+                // composite of other fields), so the pending-queue dedup/protection logic
+                // needs it explicitly rather than deriving it from the payload.
+                if (prevMap.get(id) !== JSON.stringify(item)) storageSync.pushOne(entity, 'upsert', item, id);
             }
         }
 
@@ -1122,6 +1171,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         diff(prev.analysisResults, state.analysisResults, 'analysisResult', (ar) => ar.id);
         diff(prev.tests, state.tests, 'test', (t) => t.id);
         diff(prev.studentTests, state.studentTests, 'studentTest', (st) => st.id);
+        diff(
+            prev.essayAssignments,
+            state.essayAssignments,
+            'essayBatchAssignment',
+            (a) => `${a.teacherKey}:${a.studentId}`
+        );
+        diff(prev.essaySubmissions, state.essaySubmissions, 'essayOfflineSubmission', (s) => s.id);
+        diff(prev.userTemplates, state.userTemplates, 'userTemplate', (ut) => ut.id);
 
         if (JSON.stringify(prev.settings) !== JSON.stringify(state.settings)) {
             storageSync.pushOne('settings', 'upsert', state.settings);
@@ -1442,6 +1499,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         storageSync.pushOne('gradingTask', 'delete', null, id);
     }, []);
 
+    // Pushed to Supabase via the delta-sync diff() effect below, like essayAssignments.
+    const saveUserTemplate = useCallback((t: UserTemplate) => {
+        dispatch({ type: 'SAVE_USER_TEMPLATE', payload: t });
+    }, []);
+    const deleteUserTemplate = useCallback((id: string) => {
+        dispatch({ type: 'DELETE_USER_TEMPLATE', id });
+    }, []);
+
     // ─── Database sync ────────────────────────────────────────────────
     const connectDatabase = useCallback(
         async (config: DatabaseConfig): Promise<boolean> => {
@@ -1455,7 +1520,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 const { data: fresh, error: hydrateError } = await storageSync.hydrate();
                 if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
                 if (fresh) {
-                    const merged = mergeStoreData(state, fresh, loadPendingQueue());
+                    const base = storageSync.didWipeLocalData() ? loadStore() : state;
+                    const merged = mergeStoreData(base, fresh, loadPendingQueue());
                     dispatch({ type: 'SET_ALL', payload: merged });
                     try {
                         await flushToLocalStorage(merged);
@@ -1575,10 +1641,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const signOutFromDatabase = useCallback(async () => {
         await storageSync.signOut();
         clearAuditLogger();
+        // Shared-device hygiene: wipe this account's data from localStorage so the
+        // next person to open the app on this browser doesn't see it. Only safe when
+        // everything has actually reached Supabase — a non-empty pending queue means
+        // wiping would lose edits that exist nowhere else yet.
+        if (loadPendingQueue().length === 0) {
+            clearLocalData();
+            dispatch({ type: 'SET_ALL', payload: loadStore() });
+        } else {
+            showToast(t('toast.signout_pending_writes'), 'warning');
+        }
         if (localStorage.getItem(LOCAL_MODE_KEY) !== 'true') {
             setLandingState('show');
         }
-    }, []);
+    }, [showToast, t]);
 
     // ─── Backup restore ─────────────────────────────────────────────────────────
     const importBackup = useCallback(async (json: string): Promise<boolean> => {
@@ -1714,6 +1790,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         deleteEssayTemplate,
         addGradingTasks,
         deleteGradingTask,
+        saveUserTemplate,
+        deleteUserTemplate,
         connectDatabase,
         disconnectDatabase,
         pushAllToDatabase,

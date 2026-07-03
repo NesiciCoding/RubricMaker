@@ -16,6 +16,7 @@ import type {
     SessionRecording,
     DocumentAnalysisResult,
     EssayAssignment,
+    EssaySubmission,
     EssayTemplate,
     GradingTask,
     StudentEssayAssignmentSummary,
@@ -23,6 +24,7 @@ import type {
     StudentTest,
     TestAssignment,
     StudentTestAssignmentSummary,
+    UserTemplate,
     MarketplaceListing,
     CefrLevel,
 } from '../../types';
@@ -32,6 +34,7 @@ import { nanoid } from '../../utils/nanoid';
 export class SupabaseAdapter {
     private client: SupabaseClient | null = null;
     private userId: string | null = null;
+    private userIsAnonymous = false;
     private onAuthChange: ((user: DbUser | null) => void) | null = null;
     private activeUrl: string | null = null;
     private activeKey: string | null = null;
@@ -120,12 +123,14 @@ export class SupabaseAdapter {
                 } = await this.client.auth.getSession();
                 if (session) {
                     this.userId = session.user.id;
+                    this.userIsAnonymous = session.user.is_anonymous ?? false;
                     return true;
                 }
                 // Session lost; sign in anonymously for backward compat
                 const { data, error } = await this.client.auth.signInAnonymously();
                 if (error || !data.session) return false;
                 this.userId = data.session.user.id;
+                this.userIsAnonymous = true;
                 return true;
             }
 
@@ -142,10 +147,12 @@ export class SupabaseAdapter {
             } = await this.client.auth.getSession();
             if (session) {
                 this.userId = session.user.id;
+                this.userIsAnonymous = session.user.is_anonymous ?? false;
             } else {
                 const { data, error } = await this.client.auth.signInAnonymously();
                 if (error || !data.session) return false;
                 this.userId = data.session.user.id;
+                this.userIsAnonymous = true;
             }
 
             this.registerAuthListener();
@@ -468,6 +475,11 @@ export class SupabaseAdapter {
 
     getCurrentUserId(): string | null {
         return this.userId;
+    }
+
+    /** True when the current session is Supabase's anonymous-sign-in fallback, not a real logged-in user. */
+    isAnonymousSession(): boolean {
+        return this.userIsAnonymous;
     }
 
     getClient(): SupabaseClient | null {
@@ -1216,6 +1228,83 @@ export class SupabaseAdapter {
 
     async deleteEssayTemplate(id: string): Promise<SyncResult> {
         const { error } = await this.db().from('essay_templates').delete().eq('id', id).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    // ── Essay batch assignments (class-assignment tracking, distinct from essay_assignments) ──
+
+    async fetchEssayBatchAssignments(): Promise<EssayAssignment[]> {
+        const { data, error } = await this.db().from('essay_batch_assignments').select('data');
+        if (error) {
+            console.error('fetchEssayBatchAssignments', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as EssayAssignment);
+    }
+
+    async upsertEssayBatchAssignment(id: string, a: EssayAssignment): Promise<SyncResult> {
+        const { error } = await this.db()
+            .from('essay_batch_assignments')
+            .upsert({ id, owner_id: this.uid(), data: a }, { onConflict: 'id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteEssayBatchAssignment(id: string): Promise<SyncResult> {
+        const { error } = await this.db()
+            .from('essay_batch_assignments')
+            .delete()
+            .eq('id', id)
+            .eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    // ── Essay offline submissions (share-code import, distinct from essay_submissions) ──
+
+    async fetchEssayOfflineSubmissions(): Promise<EssaySubmission[]> {
+        const { data, error } = await this.db().from('essay_offline_submissions').select('data');
+        if (error) {
+            console.error('fetchEssayOfflineSubmissions', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as EssaySubmission);
+    }
+
+    async upsertEssayOfflineSubmission(s: EssaySubmission): Promise<SyncResult> {
+        const { error } = await this.db()
+            .from('essay_offline_submissions')
+            .upsert({ id: s.id, owner_id: this.uid(), data: s }, { onConflict: 'id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteEssayOfflineSubmission(id: string): Promise<SyncResult> {
+        const { error } = await this.db()
+            .from('essay_offline_submissions')
+            .delete()
+            .eq('id', id)
+            .eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    // ── User templates (saved rubric templates) ──────────────────────────────
+
+    async fetchUserTemplates(): Promise<UserTemplate[]> {
+        const { data, error } = await this.db().from('user_templates').select('data');
+        if (error) {
+            console.error('fetchUserTemplates', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as UserTemplate);
+    }
+
+    async upsertUserTemplate(t: UserTemplate): Promise<SyncResult> {
+        const { error } = await this.db()
+            .from('user_templates')
+            .upsert({ id: t.id, owner_id: this.uid(), data: t }, { onConflict: 'id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteUserTemplate(id: string): Promise<SyncResult> {
+        const { error } = await this.db().from('user_templates').delete().eq('id', id).eq('owner_id', this.uid());
         return error ? { success: false, error: error.message } : { success: true };
     }
 

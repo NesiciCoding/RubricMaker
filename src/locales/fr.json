@@ -1088,7 +1088,8 @@
         "sync_queued": "Hors ligne — les modifications seront synchronisées à la reconnexion.",
         "sync_flushed": "De retour en ligne — toutes les modifications synchronisées.",
         "copy_paste_failed": "Copier/coller échoué. Veuillez réessayer.",
-        "sync_offline_cache": "Vous êtes hors ligne — utilisation des données en cache local."
+        "sync_offline_cache": "Vous êtes hors ligne — utilisation des données en cache local.",
+        "signout_pending_writes": "Certaines modifications ne sont pas encore synchronisées — vos données locales ont été conservées pour ne rien perdre."
     },
     "pwa": {
         "update_available_confirm": "Une nouvelle version de RubricMaker est disponible. Recharger maintenant ?"

@@ -54,7 +54,7 @@ import type {
     LinkedFrameworkDescriptor,
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
-import { saveCriterionClipboard, loadCriterionClipboard, loadUserTemplates, saveUserTemplates } from '../store/storage';
+import { saveCriterionClipboard, loadCriterionClipboard } from '../store/storage';
 import { nanoid } from '../utils/nanoid';
 import StandardsPickerModal from '../components/Standards/StandardsPickerModal';
 import RubricVersionDiffModal from '../components/Modals/RubricVersionDiffModal';
@@ -118,6 +118,7 @@ export default function RubricBuilder() {
         updateVocabularyItem,
         deleteVocabularyItem,
         deleteVocabularyItems,
+        saveUserTemplate,
     } = useApp();
 
     const existing = id ? rubrics.find((r) => r.id === id) : undefined;
@@ -320,9 +321,7 @@ export default function RubricBuilder() {
             savedAt: new Date().toISOString(),
         };
         try {
-            const existing = loadUserTemplates();
-            const filtered = existing.filter((tpl) => tpl.id !== template.id);
-            saveUserTemplates([template, ...filtered].slice(0, 20));
+            saveUserTemplate(template);
             showToast(t('rubricBuilder.save_as_template_success', `"${rubric.name}" saved as template`), 'success');
         } catch {
             showToast(t('toast.export_error'), 'error');
