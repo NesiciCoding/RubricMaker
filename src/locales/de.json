@@ -291,6 +291,8 @@
         "notify_students_title": "Schülerbenachrichtigungen",
         "notify_on_grade_label": "Schüler bei Bewertung benachrichtigen",
         "notify_on_grade_help": "Sendet eine E-Mail an den Schüler, wenn Sie eine Bewertung speichern. Erfordert eine SMTP-Konfiguration in Ihrem Supabase-Projekt.",
+        "notify_on_message_label": "Schüler bei Nachrichtenantwort benachrichtigen",
+        "notify_on_message_help": "Sendet eine E-Mail an den Schüler, wenn Sie auf einen Nachrichtenverlauf antworten oder einen neuen starten. Erfordert eine SMTP-Konfiguration in Ihrem Supabase-Projekt.",
         "role_admin_label": "Administrator",
         "role_admin_description": "Vollständiger Zugriff auf alle Einstellungen inkl. Datenbank, Integrationen und Backup/Wiederherstellung.",
         "role_teacher_label": "Lehrer",
@@ -315,7 +317,8 @@
         "docs": "Dokumentation",
         "activity_dashboard": "Aktivitätsdashboard",
         "marketplace": "Marktplatz",
-        "moderation": "Moderation"
+        "moderation": "Moderation",
+        "messages": "Nachrichten"
     },
     "dashboard": {
         "title": "Dashboard",
@@ -1282,6 +1285,9 @@
         "work_planned": "Geplant",
         "work_completed": "Abgeschlossen",
         "work_load_error": "Ihre zugewiesenen Aufgaben konnten nicht geladen werden. Bitte aktualisieren Sie die Seite.",
+        "messages_section_title": "Nachrichten",
+        "ask_question_placeholder": "Stellen Sie Ihrer Lehrkraft eine Frage…",
+        "no_messages_yet": "Noch keine Nachrichten. Stellen Sie oben eine Frage an Ihre Lehrkraft.",
         "my_progress": "Mein Fortschritt",
         "progress_view_label": "Ansicht",
         "progress_view_combined": "Kombiniert",
@@ -1439,6 +1445,20 @@
         "teacher_placeholder": "z. B. j.smith@school.org",
         "due_date_label": "Fälligkeitsdatum (optional)",
         "action_assign": "Zuweisen"
+    },
+    "messages": {
+        "page_title": "Nachrichten",
+        "inbox_empty": "Noch keine Nachrichten",
+        "inbox_empty_desc": "Fragen von Schülern zu einer Rubrik, einem Test oder einem Aufsatz erscheinen hier.",
+        "new_thread_button": "Neue Nachricht",
+        "new_thread_title": "Nachricht an einen Schüler",
+        "select_student": "Schüler auswählen",
+        "compose_placeholder": "Nachricht eingeben…",
+        "send_button": "Senden",
+        "context_rubric": "Rubrik",
+        "context_test": "Test",
+        "context_essay": "Aufsatz",
+        "context_general": "Allgemein"
     },
     "attachments": {
         "title": "Anhänge",
@@ -1686,7 +1706,8 @@
         "permission_denied": "Browser-Benachrichtigungen blockiert. Erlauben Sie sie in den Browser-Einstellungen.",
         "browser_title": "RubricMaker — Überfällige Schüler",
         "browser_body": "{{count}} Schüler seit {{threshold}}+ Tagen nicht benotet.",
-        "clear_all": "Alle löschen"
+        "clear_all": "Alle löschen",
+        "unread_messages_subtitle": "{{count}} ungelesene Nachrichtenverlauf/-verläufe"
     },
     "essay_assignment": {
         "modal_title": "Aufsatzaufgabe — {{name}}",
@@ -1993,6 +2014,8 @@
         "route_activity_dashboard_desc": "Übersicht aller Rubriken, Tests und Aufsätze im Vergleich zu Klassen — verknüpfen, zuweisen und die Abdeckung auf einen Blick überwachen. Zeilen können per Drag-and-Drop neu sortiert werden, und unbewertete Zellen können einem bestimmten Lehrer als Bewertungsaufgabe zugewiesen werden.",
         "route_moderation_label": "Moderation",
         "route_moderation_desc": "Warteschlange von mitbewerteten Einreichungen, bei denen sich zwei Lehrer um mehr als einen konfigurierbaren Punkteschwellenwert uneinig sind — Unterschiede pro Kriterium vergleichen und die ursprüngliche Note behalten oder die des zweiten Prüfers akzeptieren.",
+        "route_messages_label": "Nachrichten",
+        "route_messages_desc": "Posteingang mit Schülerfragen zu einer Rubrik, einem Test oder einem Aufsatz — direkt antworten oder selbst einen neuen Nachrichtenverlauf mit einem Schüler beginnen. Nur für Schüler mit Portal-Zugang.",
         "route_export_label": "Export",
         "route_export_desc": "Bewertete Rubriken als PDF, DOCX (mit Serienbrief) oder CSV exportieren.",
         "route_settings_label": "Einstellungen",
@@ -2188,6 +2211,10 @@
         "gr_cograding_reconcile_body_prefix": "Eine dritte Option,",
         "gr_cograding_reconcile_button": "Ausgleichen (Mittelwert)",
         "gr_cograding_reconcile_body_suffix": "führt die beiden Bewertungen zusammen, indem bei jedem abweichenden Kriterium der Mittelwert der Punkte gebildet wird, statt die Bewertung eines Prüfers vollständig zu übernehmen.",
+        "gr_messages_title": "Nachrichten",
+        "gr_messages_body_prefix": "Jede Frage, die ein Schüler über das Portal zu einer Rubrik, einem Test oder einem Aufsatz stellt, landet in Ihrem",
+        "gr_messages_body_suffix": "Posteingang als ungelesene Benachrichtigung. Antworten Sie direkt oder starten Sie selbst einen neuen Nachrichtenverlauf — wählen Sie einen Schüler aus der Liste und schreiben Sie eine Nachricht.",
+        "gr_messages_scope_note": "Nur Schüler, die sich im Schülerportal anmelden, können Ihnen Nachrichten schicken; ein bloßer Freigabecode-Link (Test-/Aufsatzabgabe ohne Portal-Zugang) hat keine Möglichkeit, eine Antwort zu erhalten.",
         "gr_comment_bank_title": "Kommentarbank",
         "gr_comment_bank_body_prefix": "Gehe zu",
         "gr_comment_bank_nav": "Kommentarbank",
@@ -2229,6 +2256,8 @@
         "gr_portal_work_body": "Eine kombinierte Aufgabenliste aus jedem zugewiesenen Aufsatz und Test, gruppiert nach Überfällig, Geplant und Abgeschlossen. Jeder Eintrag zeigt seinen Status (nicht begonnen, in Bearbeitung, eingereicht) und die Frist, sofern die Lehrkraft eine festgelegt hat. Tests öffnen sich mit einem Klick aus der Liste — kein Suchen nach einem Link mit Testcode mehr nötig.",
         "gr_portal_progress_title": "Mein Fortschritt",
         "gr_portal_progress_body": "Ein Radardiagramm der eigenen Punktzahlen des Schülers pro Kriterium, entweder kombiniert über alle bewerteten Rubrics (Kriterien mit demselben Namen werden gemittelt) oder gefiltert auf eine einzelne Rubric — sichtbar, sobald mindestens 3 verschiedene bewertete Kriterien vorliegen.",
+        "gr_portal_messages_title": "Nachrichten",
+        "gr_portal_messages_body": "Ein Schüler kann eine Frage zu einer bestimmten Rubrik-Bewertung, einem Test oder einem Aufsatz stellen — oder eine allgemeine Frage ohne Bezug zu einem davon — direkt aus seinem Portal, und die Antwort der Lehrkraft beim nächsten Besuch sehen.",
         "ce_overview_title": "GER-Übersicht",
         "ce_overview_intro": "Das GER-Modul (Gemeinsamer Europäischer Referenzrahmen) verfolgt Sprachkompetenz in Lesen, Schreiben, Sprechen und Hören — abgestimmt auf niederländische VO-Zielniveaus (VMBO-BB bis VWO).",
         "ce_overview_item_whole_class": "Klassenweite Übersicht (/cefr-overview) — Heatmap aller Schüler über GER-Niveaus pro Fertigkeit.",

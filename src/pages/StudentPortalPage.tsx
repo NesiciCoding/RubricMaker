@@ -15,6 +15,8 @@ import {
     AlertTriangle,
     ExternalLink,
     Loader2,
+    Send,
+    Mail,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Joyride, STATUS } from 'react-joyride';
@@ -29,6 +31,8 @@ import { getStudentPortalTutorialSteps } from '../data/StudentPortalTutorialStep
 import RubricSelfAssessPanel from '../components/Students/RubricSelfAssessPanel';
 import { encodeEssayAssignment, encodeTestAssignment } from '../utils/shareCode';
 import { loadSupabaseConfig } from '../services/database';
+import { groupMessageThreads, MessageThread } from '../utils/messageThreads';
+import { nanoid } from '../utils/nanoid';
 import type {
     CefrLevel,
     CefrSkill,
@@ -38,6 +42,8 @@ import type {
     TestAssignmentPayload,
     ScoreEntry,
     RubricCriterion,
+    Message,
+    MessageContextType,
 } from '../types';
 
 function criterionPct(
@@ -67,6 +73,9 @@ export default function StudentPortalPage() {
         fetchMyEssayAssignments,
         fetchMyTestAssignments,
         fetchAssignedTestContent,
+        fetchMyMessages,
+        sendMessageAsStudent,
+        markMessagesReadByStudent,
     } = useApp();
     const { t } = useTranslation();
     const [linkCopied, setLinkCopied] = useState(false);
@@ -79,6 +88,7 @@ export default function StudentPortalPage() {
     const [openingTestKey, setOpeningTestKey] = useState<string | null>(null);
     const [testOpenErrorKey, setTestOpenErrorKey] = useState<string | null>(null);
     const [radarRubricId, setRadarRubricId] = useState<string>('combined');
+    const [messageRows, setMessageRows] = useState<Message[]>([]);
 
     useEffect(() => {
         fetchMyEssayAssignments()
@@ -87,6 +97,15 @@ export default function StudentPortalPage() {
         fetchMyTestAssignments()
             .then(setTestRows)
             .catch((err: unknown) => setTestLoadError(err instanceof Error ? err.message : 'Failed to load tests'));
+        fetchMyMessages()
+            .then((rows) => {
+                setMessageRows(rows);
+                const unread = rows.filter((m) => m.sender === 'teacher' && !m.readByStudent).map((m) => m.id);
+                if (unread.length > 0) markMessagesReadByStudent(unread);
+            })
+            .catch(() => {
+                /* messaging requires a live Supabase session; silently unavailable otherwise */
+            });
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     const tourKey = `rm_portal_tour_seen_${studentId}`;
@@ -342,8 +361,29 @@ export default function StudentPortalPage() {
     const hasWork = allWork.length > 0;
     const hasRadar = combinedRadarData.length >= 3 || rubricRadarOptions.length > 0;
 
+    // fetchMyMessages() is scoped by the authenticated session the same way as
+    // fetchMy*Assignments() above — filter to this portal's own student id for the same
+    // sibling-shared-email reason.
+    const myMessages = messageRows.filter((m) => m.studentId === student.id);
+    const myThreads = groupMessageThreads(myMessages);
+    const messageContextOptions: { contextType: MessageContextType; contextId: string | null; label: string }[] = [
+        { contextType: 'general', contextId: null, label: t('messages.context_general') },
+        ...history.map((h) => ({
+            contextType: 'rubric' as const,
+            contextId: h.sr.rubricId,
+            label: h.rubric.name,
+        })),
+        ...testRows
+            .filter((row) => row.studentId === student.id)
+            .map((row) => ({ contextType: 'test' as const, contextId: row.testId, label: row.testName })),
+        ...essayRows
+            .filter((row) => row.studentId === student.id)
+            .map((row) => ({ contextType: 'essay' as const, contextId: row.rubricId, label: row.title })),
+    ];
+
     const navLinks = [
         { id: 'portal-section-work', label: t('studentPortal.my_work'), visible: hasWork },
+        { id: 'portal-section-messages', label: t('studentPortal.messages_section_title'), visible: true },
         { id: 'portal-section-progress', label: t('studentPortal.my_progress'), visible: hasRadar },
         { id: 'portal-section-grades', label: t('studentPortal.grade_history'), visible: history.length > 1 },
         { id: 'portal-section-cefr', label: t('studentPortal.cefr_progress'), visible: cefrProgress.length > 0 },
@@ -610,6 +650,33 @@ export default function StudentPortalPage() {
                         </div>
                     </Section>
                 )}
+
+                <Section id="portal-section-messages" title={t('studentPortal.messages_section_title')}>
+                    <PortalMessages
+                        studentId={student.id}
+                        threads={myThreads}
+                        contextOptions={messageContextOptions}
+                        onSend={(contextType, contextId, contextLabel, body) => {
+                            const message: Message = {
+                                id: nanoid(),
+                                studentId: student.id,
+                                contextType,
+                                contextId,
+                                contextLabel,
+                                sender: 'student',
+                                body,
+                                createdAt: new Date().toISOString(),
+                                readByTeacher: false,
+                                readByStudent: true,
+                            };
+                            setMessageRows((prev) => [...prev, message]);
+                            sendMessageAsStudent(message).catch(() => {
+                                /* messaging requires a live Supabase session; silently unavailable otherwise */
+                            });
+                        }}
+                        t={t}
+                    />
+                </Section>
 
                 {hasRadar && (
                     <Section id="portal-section-progress" title={t('studentPortal.my_progress')}>
@@ -906,6 +973,201 @@ function WorkGroup({
                     )
                 )}
             </div>
+        </div>
+    );
+}
+
+function PortalMessages({
+    threads,
+    contextOptions,
+    onSend,
+    t,
+}: {
+    studentId: string;
+    threads: MessageThread[];
+    contextOptions: { contextType: MessageContextType; contextId: string | null; label: string }[];
+    onSend: (contextType: MessageContextType, contextId: string | null, contextLabel: string | null, body: string) => void;
+    t: TFunc;
+}) {
+    const [contextIndex, setContextIndex] = useState(0);
+    const [composeText, setComposeText] = useState('');
+    const [expandedKey, setExpandedKey] = useState<string | null>(null);
+    const [replyText, setReplyText] = useState('');
+
+    function threadKey(thread: Pick<MessageThread, 'studentId' | 'contextType' | 'contextId'>): string {
+        return `${thread.studentId}__${thread.contextType}__${thread.contextId ?? ''}`;
+    }
+
+    function handleAsk() {
+        const body = composeText.trim();
+        if (!body) return;
+        const choice = contextOptions[contextIndex];
+        onSend(choice.contextType, choice.contextId, choice.contextType === 'general' ? null : choice.label, body);
+        setComposeText('');
+    }
+
+    function handleReply(thread: MessageThread) {
+        const body = replyText.trim();
+        if (!body) return;
+        onSend(thread.contextType, thread.contextId, thread.contextLabel, body);
+        setReplyText('');
+    }
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div className="card">
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+                    <select
+                        value={contextIndex}
+                        onChange={(e) => setContextIndex(Number(e.target.value))}
+                        style={{ maxWidth: 220 }}
+                    >
+                        {contextOptions.map((opt, i) => (
+                            <option key={`${opt.contextType}-${opt.contextId ?? 'general'}`} value={i}>
+                                {opt.label}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                    <textarea
+                        rows={2}
+                        style={{ flex: 1 }}
+                        value={composeText}
+                        placeholder={t('studentPortal.ask_question_placeholder')}
+                        onChange={(e) => setComposeText(e.target.value)}
+                    />
+                    <button
+                        type="button"
+                        className="btn btn-primary btn-sm"
+                        disabled={!composeText.trim()}
+                        onClick={handleAsk}
+                    >
+                        <Send size={14} /> {t('messages.send_button')}
+                    </button>
+                </div>
+            </div>
+
+            {threads.length === 0 ? (
+                <div className="empty-state">
+                    <Mail size={32} />
+                    <p className="text-muted text-sm">{t('studentPortal.no_messages_yet')}</p>
+                </div>
+            ) : (
+                threads.map((thread) => {
+                    const key = threadKey(thread);
+                    const expanded = expandedKey === key;
+                    return (
+                        <div key={key} className="card">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setExpandedKey(expanded ? null : key);
+                                    setReplyText('');
+                                }}
+                                style={{
+                                    width: '100%',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    gap: 10,
+                                    background: 'transparent',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    padding: 0,
+                                }}
+                            >
+                                <div style={{ minWidth: 0, flex: 1 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        {thread.unreadByStudent > 0 && (
+                                            <span
+                                                style={{
+                                                    width: 8,
+                                                    height: 8,
+                                                    borderRadius: '50%',
+                                                    background: 'var(--danger, #ef4444)',
+                                                    flexShrink: 0,
+                                                }}
+                                            />
+                                        )}
+                                        <span style={{ fontWeight: 600 }}>
+                                            {thread.contextLabel ?? t(`messages.context_${thread.contextType}`)}
+                                        </span>
+                                    </div>
+                                    <div
+                                        className="text-muted text-xs"
+                                        style={{
+                                            marginTop: 4,
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap',
+                                        }}
+                                    >
+                                        {thread.lastMessage.body}
+                                    </div>
+                                </div>
+                                <span className="text-muted text-xs" style={{ flexShrink: 0 }}>
+                                    {new Date(thread.lastMessage.createdAt).toLocaleString()}
+                                </span>
+                            </button>
+
+                            {expanded && (
+                                <div style={{ marginTop: 14, borderTop: '1px solid var(--border)', paddingTop: 14 }}>
+                                    <div
+                                        style={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: 8,
+                                            marginBottom: 12,
+                                            maxHeight: 260,
+                                            overflowY: 'auto',
+                                        }}
+                                    >
+                                        {thread.messages.map((m) => (
+                                            <div
+                                                key={m.id}
+                                                style={{
+                                                    alignSelf: m.sender === 'student' ? 'flex-end' : 'flex-start',
+                                                    maxWidth: '80%',
+                                                    background:
+                                                        m.sender === 'student' ? 'var(--accent)' : 'var(--bg-elevated)',
+                                                    color: m.sender === 'student' ? '#fff' : 'var(--text)',
+                                                    borderRadius: 10,
+                                                    padding: '8px 12px',
+                                                    fontSize: '0.85rem',
+                                                }}
+                                            >
+                                                {m.body}
+                                                <div style={{ fontSize: '0.7rem', opacity: 0.7, marginTop: 4 }}>
+                                                    {new Date(m.createdAt).toLocaleString()}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div style={{ display: 'flex', gap: 8 }}>
+                                        <textarea
+                                            rows={2}
+                                            style={{ flex: 1 }}
+                                            value={replyText}
+                                            placeholder={t('studentPortal.ask_question_placeholder')}
+                                            onChange={(e) => setReplyText(e.target.value)}
+                                        />
+                                        <button
+                                            type="button"
+                                            className="btn btn-primary btn-sm"
+                                            disabled={!replyText.trim()}
+                                            onClick={() => handleReply(thread)}
+                                        >
+                                            <Send size={14} /> {t('messages.send_button')}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })
+            )}
         </div>
     );
 }

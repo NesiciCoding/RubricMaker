@@ -22,6 +22,7 @@ import {
     UserCheck,
     PenTool,
     Folder,
+    Mail,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
@@ -108,8 +109,11 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
             key: 'grading',
             icon: PenTool,
             label: t('sidebar.domain_grading'),
-            matchPrefixes: ['/moderation'],
-            items: [{ to: '/moderation', icon: UserCheck, label: t('navigation.moderation') }],
+            matchPrefixes: ['/moderation', '/messages'],
+            items: [
+                { to: '/moderation', icon: UserCheck, label: t('navigation.moderation') },
+                { to: '/messages', icon: Mail, label: t('navigation.messages') },
+            ],
         },
         {
             key: 'insights',

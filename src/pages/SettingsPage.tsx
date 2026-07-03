@@ -812,6 +812,34 @@ export default function SettingsPage() {
                                         </div>
                                     </div>
                                 </label>
+                                <label
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 10,
+                                        cursor: 'pointer',
+                                        userSelect: 'none',
+                                        marginTop: 14,
+                                    }}
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={!!settings.notifyStudentsOnMessage}
+                                        onChange={(e) => updateSettings({ notifyStudentsOnMessage: e.target.checked })}
+                                        style={{ accentColor: 'var(--accent)' }}
+                                    />
+                                    <div>
+                                        <div style={{ fontWeight: 500 }}>
+                                            {t('settings.notify_on_message_label', 'Notify students on message reply')}
+                                        </div>
+                                        <div className="text-xs text-muted" style={{ marginTop: 2 }}>
+                                            {t(
+                                                'settings.notify_on_message_help',
+                                                'Sends an email to the student when you reply to or start a message thread. Requires SMTP to be configured in your Supabase project.'
+                                            )}
+                                        </div>
+                                    </div>
+                                </label>
                             </div>
                         )}
 

@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Bell, X, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Bell, X, AlertCircle, CheckCircle2, Mail } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useOverdueStudents } from '../../hooks/useOverdueStudents';
+import { useApp } from '../../context/AppContext';
+import { groupMessageThreads } from '../../utils/messageThreads';
 
 const SESSION_NOTIF_KEY = 'rubricmaker_notif_shown';
 
@@ -11,6 +13,11 @@ export default function NotificationBell() {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { overdueStudents, threshold } = useOverdueStudents();
+    const { messages, students } = useApp();
+    const unreadThreads = useMemo(
+        () => groupMessageThreads(messages ?? []).filter((thread) => thread.unreadByTeacher > 0),
+        [messages]
+    );
     const [open, setOpen] = useState(false);
     const [permissionState, setPermissionState] = useState<NotificationPermission | 'unsupported'>('unsupported');
     const panelRef = useRef<HTMLDivElement>(null);
@@ -66,7 +73,7 @@ export default function NotificationBell() {
     }, []);
 
     const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
-    const count = overdueStudents.length;
+    const count = overdueStudents.length + unreadThreads.length;
     const visible = overdueStudents.filter((s) => !dismissedIds.has(s.studentId));
     const visibleCount = visible.length;
 
@@ -202,6 +209,66 @@ export default function NotificationBell() {
                     </>
                 )}
             </div>
+
+            {/* Unread student messages */}
+            {unreadThreads.length > 0 && (
+                <div style={{ maxHeight: 240, overflowY: 'auto', borderTop: '1px solid var(--border)' }}>
+                    <div
+                        style={{
+                            padding: '8px 16px',
+                            fontSize: 12,
+                            color: 'var(--text-muted)',
+                            background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
+                            borderBottom: '1px solid var(--border)',
+                        }}
+                    >
+                        <Mail size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />
+                        {t('notifications.unread_messages_subtitle', { count: unreadThreads.length })}
+                    </div>
+                    {unreadThreads.map((thread) => {
+                        const student = students.find((s) => s.id === thread.studentId);
+                        return (
+                            <button
+                                key={`${thread.studentId}__${thread.contextType}__${thread.contextId ?? ''}`}
+                                onClick={() => {
+                                    navigate('/messages');
+                                    setOpen(false);
+                                }}
+                                style={{
+                                    width: '100%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    padding: '10px 16px',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    borderBottom: '1px solid var(--border)',
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    gap: 8,
+                                }}
+                            >
+                                <span style={{ fontSize: 13, color: 'var(--text)', flex: 1 }}>
+                                    {student?.name ?? thread.studentId}
+                                </span>
+                                <span
+                                    style={{
+                                        fontSize: 11,
+                                        color: 'var(--accent)',
+                                        background: 'color-mix(in srgb, var(--accent) 10%, transparent)',
+                                        borderRadius: 6,
+                                        padding: '2px 7px',
+                                        whiteSpace: 'nowrap',
+                                        fontWeight: 600,
+                                    }}
+                                >
+                                    {thread.unreadByTeacher}
+                                </span>
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
 
             {/* Browser notification opt-in */}
             {permissionState !== 'unsupported' && permissionState !== 'granted' && (

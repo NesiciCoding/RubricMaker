@@ -30,6 +30,7 @@ import {
     Search,
     KeyRound,
     ListChecks,
+    Mail,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { loadSupabaseConfig } from '../services/database';
@@ -114,6 +115,12 @@ const TEACHER_FEATURES = [
         desc: 'Press Ctrl/Cmd+K from anywhere to instantly find a rubric, test, student, class, or essay, and switch your active class from the same toolbar.',
         color: '#f59e0b',
     },
+    {
+        icon: Mail,
+        title: 'Student Messaging',
+        desc: 'Answer student questions about a rubric, test, or essay right from your Messages inbox — or reach out to a student yourself.',
+        color: '#f59e0b',
+    },
 ];
 
 const STUDENT_FEATURES = [
@@ -158,6 +165,12 @@ const STUDENT_FEATURES = [
         title: 'My Work & Progress',
         desc: 'See every assigned essay and test in one to-do list — overdue, planned, and completed — plus a radar chart of your own scores across rubrics.',
         color: '#14b8a6',
+    },
+    {
+        icon: Mail,
+        title: 'Ask Your Teacher',
+        desc: 'Ask a question about a rubric grade, test, or essay right from your portal, and see the reply on your next visit.',
+        color: '#f59e0b',
     },
 ];
 
