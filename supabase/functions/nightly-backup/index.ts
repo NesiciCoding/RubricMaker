@@ -77,6 +77,7 @@ async function fetchAllOwnerProfiles(admin: ReturnType<typeof createClient>): Pr
             .from('profiles')
             .select('id')
             .in('role', ['admin', 'teacher'])
+            .order('id')
             .range(from, from + PROFILE_PAGE_SIZE - 1);
         if (error) throw new Error(error.message);
         all.push(...(data ?? []));
