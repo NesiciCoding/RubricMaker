@@ -270,7 +270,14 @@ describe('StudentTestPage — DB mode (TestAdapter, short-code link)', () => {
         mockEnsureSession.mockResolvedValue({ ok: true });
         mockFetchAssignmentContent.mockResolvedValue({
             ok: true,
-            data: { testId: 'test1', studentId: 's1', requireSEB: false, durationMinutes: null, expiresAt: null, test: makeTest() },
+            data: {
+                testId: 'test1',
+                studentId: 's1',
+                requireSEB: false,
+                durationMinutes: null,
+                expiresAt: null,
+                test: makeTest(),
+            },
         });
 
         renderDbPage();
@@ -315,7 +322,14 @@ describe('StudentTestPage — DB mode (TestAdapter, short-code link)', () => {
         mockEnsureSession.mockResolvedValue({ ok: true });
         mockFetchAssignmentContent.mockResolvedValue({
             ok: true,
-            data: { testId: 'test1', studentId: 's1', requireSEB: false, durationMinutes: null, expiresAt: null, test: makeTest() },
+            data: {
+                testId: 'test1',
+                studentId: 's1',
+                requireSEB: false,
+                durationMinutes: null,
+                expiresAt: null,
+                test: makeTest(),
+            },
         });
         mockSubmitTest.mockResolvedValue({ success: true });
 
@@ -350,7 +364,14 @@ describe('StudentTestPage — DB mode (TestAdapter, short-code link)', () => {
         mockEnsureSession.mockResolvedValue({ ok: true });
         mockFetchAssignmentContent.mockResolvedValue({
             ok: true,
-            data: { testId: 'test1', studentId: 's1', requireSEB: false, durationMinutes: null, expiresAt: null, test: makeTest() },
+            data: {
+                testId: 'test1',
+                studentId: 's1',
+                requireSEB: false,
+                durationMinutes: null,
+                expiresAt: null,
+                test: makeTest(),
+            },
         });
         mockSubmitTest.mockResolvedValue({ success: false, error: 'Server error 500' });
 

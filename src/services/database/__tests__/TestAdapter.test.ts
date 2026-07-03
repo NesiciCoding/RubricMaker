@@ -102,10 +102,7 @@ describe('TestAdapter', () => {
             [500, 'invalid_response'],
         ] as const)('maps a %d response to reason %s', async (status, reason) => {
             mockAuth.getSession.mockResolvedValue({ data: { session: mockSession } });
-            vi.stubGlobal(
-                'fetch',
-                vi.fn().mockResolvedValue(jsonResponse({ error: 'nope' }, status))
-            );
+            vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ error: 'nope' }, status)));
 
             const adapter = new TestAdapter('https://x.supabase.co', 'anon-key');
             const result = await adapter.fetchAssignmentContent('assignment-1');
@@ -115,10 +112,7 @@ describe('TestAdapter', () => {
 
         it('maps a network failure to reason network', async () => {
             mockAuth.getSession.mockResolvedValue({ data: { session: mockSession } });
-            vi.stubGlobal(
-                'fetch',
-                vi.fn().mockRejectedValue(new Error('offline'))
-            );
+            vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
 
             const adapter = new TestAdapter('https://x.supabase.co', 'anon-key');
             const result = await adapter.fetchAssignmentContent('assignment-1');
