@@ -35,7 +35,7 @@
     Header always set Permissions-Policy "geolocation=(), camera=(), payment=()"
 
     # Content Security Policy
-    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://supabase.rubricmaker.nl https://*.supabase.co https://api.languagetool.org https://api.commonstandardsproject.com; worker-src 'self' blob: https://cdn.jsdelivr.net; frame-src data: blob:;"
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://supabase.rubricmaker.nl wss://supabase.rubricmaker.nl https://*.supabase.co wss://*.supabase.co https://api.languagetool.org https://api.commonstandardsproject.com; worker-src 'self' blob: https://cdn.jsdelivr.net; frame-src data: blob:;"
 </IfModule>
 
 # ─── Caching ──────────────────────────────────────────────────────────────────

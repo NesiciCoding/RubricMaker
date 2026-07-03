@@ -1010,6 +1010,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 const base = storageSync.didWipeLocalData() ? loadStore() : initialStateRef.current;
                 const merged = mergeStoreData(base, fresh, loadPendingQueue());
                 dispatch({ type: 'SET_ALL', payload: merged });
+                // Pre-seed the delta-sync diff baseline so the effect below doesn't treat
+                // this fresh-from-server data as local edits and push it right back — for
+                // a student session that only has SELECT access on most of it, that push
+                // would fail RLS on every row it doesn't own (e.g. classmates' records).
+                prevStateRef.current = merged;
                 try {
                     await flushToLocalStorage(merged);
                 } catch {
@@ -1085,6 +1090,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             if (fresh) {
                 const merged = mergeStoreData(currentStateRef.current, fresh, loadPendingQueue());
                 dispatch({ type: 'SET_ALL', payload: merged });
+                prevStateRef.current = merged;
                 try {
                     await flushToLocalStorage(merged);
                 } catch {
@@ -1119,6 +1125,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     const base = storageSync.didWipeLocalData() ? loadStore() : initialStateRef.current;
                     const merged = mergeStoreData(base, fresh, loadPendingQueue());
                     dispatch({ type: 'SET_ALL', payload: merged });
+                    prevStateRef.current = merged;
                     try {
                         await flushToLocalStorage(merged);
                     } catch {
@@ -1523,6 +1530,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     const base = storageSync.didWipeLocalData() ? loadStore() : state;
                     const merged = mergeStoreData(base, fresh, loadPendingQueue());
                     dispatch({ type: 'SET_ALL', payload: merged });
+                    prevStateRef.current = merged;
                     try {
                         await flushToLocalStorage(merged);
                     } catch {
@@ -1551,6 +1559,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (fresh) {
             const merged = mergeStoreData(state, fresh, loadPendingQueue());
             dispatch({ type: 'SET_ALL', payload: merged });
+            prevStateRef.current = merged;
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [state]);
