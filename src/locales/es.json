@@ -291,6 +291,8 @@
         "notify_students_title": "Notificaciones a estudiantes",
         "notify_on_grade_label": "Notificar a los estudiantes cuando se califica",
         "notify_on_grade_help": "Envía un correo electrónico al estudiante cuando guarda una calificación. Requiere que SMTP esté configurado en su proyecto de Supabase.",
+        "notify_on_message_label": "Notificar a los estudiantes al responder un mensaje",
+        "notify_on_message_help": "Envía un correo electrónico al estudiante cuando respondes o inicias un hilo de mensajes. Requiere que SMTP esté configurado en su proyecto de Supabase.",
         "role_admin_label": "Administrador",
         "role_admin_description": "Acceso completo a todos los ajustes: base de datos, integraciones y copia de seguridad/restauración.",
         "role_teacher_label": "Profesor",
@@ -315,7 +317,8 @@
         "docs": "Documentación",
         "activity_dashboard": "Panel de actividades",
         "marketplace": "Mercado",
-        "moderation": "Moderación"
+        "moderation": "Moderación",
+        "messages": "Mensajes"
     },
     "dashboard": {
         "title": "Panel",
@@ -1282,6 +1285,9 @@
         "work_planned": "Planificado",
         "work_completed": "Completado",
         "work_load_error": "No se pudo cargar tu trabajo asignado. Por favor, intenta actualizar la página.",
+        "messages_section_title": "Mensajes",
+        "ask_question_placeholder": "Hazle una pregunta a tu profesor…",
+        "no_messages_yet": "Aún no hay mensajes. Hazle una pregunta a tu profesor arriba.",
         "my_progress": "Mi progreso",
         "progress_view_label": "Vista",
         "progress_view_combined": "Combinada",
@@ -1439,6 +1445,20 @@
         "teacher_placeholder": "p. ej. j.smith@school.org",
         "due_date_label": "Fecha límite (opcional)",
         "action_assign": "Asignar"
+    },
+    "messages": {
+        "page_title": "Mensajes",
+        "inbox_empty": "Aún no hay mensajes",
+        "inbox_empty_desc": "Las preguntas de los estudiantes sobre una rúbrica, prueba o ensayo aparecerán aquí.",
+        "new_thread_button": "Nuevo mensaje",
+        "new_thread_title": "Enviar mensaje a un estudiante",
+        "select_student": "Seleccionar un estudiante",
+        "compose_placeholder": "Escribe un mensaje…",
+        "send_button": "Enviar",
+        "context_rubric": "Rúbrica",
+        "context_test": "Prueba",
+        "context_essay": "Ensayo",
+        "context_general": "General"
     },
     "attachments": {
         "title": "Archivos adjuntos",
@@ -1686,7 +1706,8 @@
         "permission_denied": "Notificaciones del navegador bloqueadas. Permítelas en la configuración del navegador.",
         "browser_title": "RubricMaker — Estudiantes Pendientes",
         "browser_body": "{{count}} estudiante(s) sin calificar en {{threshold}}+ días.",
-        "clear_all": "Borrar todo"
+        "clear_all": "Borrar todo",
+        "unread_messages_subtitle": "{{count}} hilo(s) de mensajes sin leer"
     },
     "onboarding": {
         "title": "Bienvenido a RubricMaker",
@@ -1993,6 +2014,8 @@
         "route_activity_dashboard_desc": "Cuadrícula de todas las rúbricas, pruebas y redacciones frente a las clases — vincular, asignar y supervisar la cobertura de un vistazo. Las filas se pueden reordenar arrastrando, y las celdas sin calificar se pueden asignar a un profesor específico como tarea de calificación.",
         "route_moderation_label": "Moderación",
         "route_moderation_desc": "Cola de entregas co-calificadas donde dos profesores discrepan por encima de un umbral de puntos configurable — comparar diferencias por criterio y mantener o aceptar la nota del segundo evaluador.",
+        "route_messages_label": "Mensajes",
+        "route_messages_desc": "Bandeja de entrada con preguntas de estudiantes sobre una rúbrica, prueba o ensayo — responde directamente o inicia tú mismo un nuevo hilo con un estudiante. Solo para estudiantes con acceso al portal.",
         "route_export_label": "Exportar",
         "route_export_desc": "Exportar rúbricas calificadas como PDF, DOCX (con combinación de correspondencia) o CSV.",
         "route_settings_label": "Configuración",
@@ -2188,6 +2211,10 @@
         "gr_cograding_reconcile_body_prefix": "Una tercera opción,",
         "gr_cograding_reconcile_button": "Reconciliar (promedio)",
         "gr_cograding_reconcile_body_suffix": "combina las dos calificaciones promediando los puntos en cada criterio divergente, en lugar de elegir por completo la calificación de un evaluador.",
+        "gr_messages_title": "Mensajes",
+        "gr_messages_body_prefix": "Cada pregunta que un estudiante hace desde el portal sobre una rúbrica, prueba o ensayo llega a tu",
+        "gr_messages_body_suffix": "bandeja de entrada como notificación sin leer. Responde directamente o inicia tú mismo un nuevo hilo — elige un estudiante de la lista y escribe un mensaje.",
+        "gr_messages_scope_note": "Solo los estudiantes que inician sesión en el portal pueden enviarte mensajes; un simple enlace de código de acceso (entrega de prueba/ensayo sin cuenta de portal) no tiene forma de recibir una respuesta.",
         "gr_comment_bank_title": "Banco de comentarios",
         "gr_comment_bank_body_prefix": "Ve a",
         "gr_comment_bank_nav": "Banco de comentarios",
@@ -2229,6 +2256,8 @@
         "gr_portal_work_body": "Una lista combinada de tareas de cada ensayo y examen asignado, agrupados en Atrasado, Planificado y Completado. Cada elemento muestra su estado (no iniciado, en curso, enviado) y la fecha límite cuando el profesor la haya definido. Los exámenes se abren con un clic desde la lista — sin necesidad de buscar un enlace con código.",
         "gr_portal_progress_title": "Mi progreso",
         "gr_portal_progress_body": "Un gráfico de radar con las propias puntuaciones del estudiante por criterio, combinado en todas las rúbricas calificadas (los criterios con el mismo nombre se promedian) o filtrado a una sola rúbrica — se muestra en cuanto haya al menos 3 criterios calificados distintos.",
+        "gr_portal_messages_title": "Mensajes",
+        "gr_portal_messages_body": "Un estudiante puede hacer una pregunta sobre una calificación de rúbrica, prueba o ensayo específico — o una pregunta general no vinculada a ninguno de ellos — directamente desde su portal, y ver la respuesta del profesor en su próxima visita.",
         "ce_overview_title": "Resumen del MCER",
         "ce_overview_intro": "El módulo MCER (Marco Común Europeo de Referencia) sigue la competencia lingüística en Lectura, Escritura, Expresión oral y Comprensión oral — alineado con los objetivos neerlandeses VO (de VMBO-BB a VWO).",
         "ce_overview_item_whole_class": "Resumen de toda la clase (/cefr-overview) — mapa de calor de todos los alumnos según los niveles MCER por destreza.",

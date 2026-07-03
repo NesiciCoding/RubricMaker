@@ -291,6 +291,8 @@
         "notify_students_title": "Notifications aux élèves",
         "notify_on_grade_label": "Notifier les élèves lors de la notation",
         "notify_on_grade_help": "Envoie un e-mail à l'élève lorsque vous enregistrez une note. Nécessite une configuration SMTP dans votre projet Supabase.",
+        "notify_on_message_label": "Notifier les élèves lors d'une réponse à un message",
+        "notify_on_message_help": "Envoie un e-mail à l'élève lorsque vous répondez à un fil de discussion ou en démarrez un. Nécessite une configuration SMTP dans votre projet Supabase.",
         "role_admin_label": "Administrateur",
         "role_admin_description": "Accès complet à tous les paramètres : base de données, intégrations et sauvegarde/restauration.",
         "role_teacher_label": "Enseignant",
@@ -315,7 +317,8 @@
         "docs": "Documentation",
         "activity_dashboard": "Tableau des activités",
         "marketplace": "Place de marché",
-        "moderation": "Modération"
+        "moderation": "Modération",
+        "messages": "Messages"
     },
     "dashboard": {
         "title": "Tableau de bord",
@@ -1282,6 +1285,9 @@
         "work_planned": "Prévu",
         "work_completed": "Terminé",
         "work_load_error": "Impossible de charger votre travail assigné. Veuillez actualiser la page.",
+        "messages_section_title": "Messages",
+        "ask_question_placeholder": "Posez une question à votre enseignant…",
+        "no_messages_yet": "Pas encore de messages. Posez une question à votre enseignant ci-dessus.",
         "my_progress": "Ma progression",
         "progress_view_label": "Vue",
         "progress_view_combined": "Combinée",
@@ -1439,6 +1445,20 @@
         "teacher_placeholder": "ex. j.smith@school.org",
         "due_date_label": "Date d'échéance (facultatif)",
         "action_assign": "Attribuer"
+    },
+    "messages": {
+        "page_title": "Messages",
+        "inbox_empty": "Pas encore de messages",
+        "inbox_empty_desc": "Les questions des élèves sur une rubrique, un test ou un essai apparaîtront ici.",
+        "new_thread_button": "Nouveau message",
+        "new_thread_title": "Envoyer un message à un élève",
+        "select_student": "Sélectionner un élève",
+        "compose_placeholder": "Écrire un message…",
+        "send_button": "Envoyer",
+        "context_rubric": "Rubrique",
+        "context_test": "Test",
+        "context_essay": "Essai",
+        "context_general": "Général"
     },
     "attachments": {
         "title": "Pièces jointes",
@@ -1686,7 +1706,8 @@
         "permission_denied": "Notifications du navigateur bloquées. Autorisez-les dans les paramètres du navigateur.",
         "browser_title": "RubricMaker — Élèves en retard",
         "browser_body": "{{count}} élève(s) non noté(s) depuis {{threshold}}+ jours.",
-        "clear_all": "Tout effacer"
+        "clear_all": "Tout effacer",
+        "unread_messages_subtitle": "{{count}} fil(s) de message non lu(s)"
     },
     "essay_assignment": {
         "modal_title": "Devoir de rédaction — {{name}}",
@@ -1993,6 +2014,8 @@
         "route_activity_dashboard_desc": "Grille de toutes les rubriques, tests et rédactions par rapport aux classes — lier, attribuer et surveiller la couverture en un coup d'œil. Les lignes peuvent être réordonnées par glisser-déposer, et les cellules non notées peuvent être attribuées à un enseignant spécifique comme tâche de notation.",
         "route_moderation_label": "Modération",
         "route_moderation_desc": "File d'attente des soumissions co-notées où deux enseignants sont en désaccord au-delà d'un seuil de points configurable — comparer les écarts par critère et conserver ou accepter la note du second correcteur.",
+        "route_messages_label": "Messages",
+        "route_messages_desc": "Boîte de réception des questions des élèves sur une rubrique, un test ou un essai — répondez directement, ou lancez vous-même un nouveau fil vers un élève. Réservé aux élèves connectés au portail.",
         "route_export_label": "Export",
         "route_export_desc": "Exporter les rubriques notées en PDF, DOCX (avec fusion) ou CSV.",
         "route_settings_label": "Paramètres",
@@ -2188,6 +2211,10 @@
         "gr_cograding_reconcile_body_prefix": "Une troisième option,",
         "gr_cograding_reconcile_button": "Concilier (moyenne)",
         "gr_cograding_reconcile_body_suffix": "fusionne les deux notes en calculant la moyenne des points sur chaque critère divergent, plutôt que de choisir entièrement la note d'un correcteur.",
+        "gr_messages_title": "Messages",
+        "gr_messages_body_prefix": "Chaque question posée par un élève depuis le portail à propos d'une rubrique, d'un test ou d'un essai arrive dans votre",
+        "gr_messages_body_suffix": "boîte de réception comme notification non lue. Répondez directement, ou démarrez vous-même un nouveau fil — choisissez un élève dans la liste et écrivez un message.",
+        "gr_messages_scope_note": "Seuls les élèves connectés au portail peuvent vous envoyer un message ; un simple lien à code de partage (remise de test/essai sans compte portail) n'a aucun moyen de recevoir une réponse.",
         "gr_comment_bank_title": "Banque de commentaires",
         "gr_comment_bank_body_prefix": "Allez à",
         "gr_comment_bank_nav": "Banque de commentaires",
@@ -2229,6 +2256,8 @@
         "gr_portal_work_body": "Une liste de tâches combinant chaque essai et test attribués, regroupés en En retard, Prévu et Terminé. Chaque élément affiche son statut (non commencé, en cours, soumis) et sa date limite lorsque l'enseignant en a défini une. Les tests s'ouvrent en un clic depuis la liste — plus besoin de retrouver un lien de code d'accès.",
         "gr_portal_progress_title": "Ma progression",
         "gr_portal_progress_body": "Un graphique radar des propres scores de l'élève par critère, combiné sur tous les référentiels évalués (les critères de même nom sont moyennés) ou filtré sur un seul référentiel — affiché dès qu'au moins 3 critères distincts ont été évalués.",
+        "gr_portal_messages_title": "Messages",
+        "gr_portal_messages_body": "Un élève peut poser une question sur une note de rubrique, un test ou un essai précis — ou une question générale non liée à l'un d'eux — directement depuis son portail, et voir la réponse de l'enseignant lors de sa prochaine visite.",
         "ce_overview_title": "Vue d'ensemble CECRL",
         "ce_overview_intro": "Le module CECRL (Cadre européen commun de référence pour les langues) suit la compétence linguistique en Lecture, Écriture, Expression orale et Compréhension orale — aligné sur les objectifs néerlandais VO (de VMBO-BB à VWO).",
         "ce_overview_item_whole_class": "Vue d'ensemble de la classe (/cefr-overview) — carte de chaleur de tous les élèves selon les niveaux CECRL par compétence.",

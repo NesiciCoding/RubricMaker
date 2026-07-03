@@ -27,6 +27,8 @@ import type {
     UserTemplate,
     MarketplaceListing,
     CefrLevel,
+    Message,
+    MessageContextType,
 } from '../../types';
 import type { DatabaseConfig, DbUser, SyncResult } from './types';
 import { nanoid } from '../../utils/nanoid';
@@ -213,6 +215,38 @@ export class SupabaseAdapter {
             return { success: false, error: errBody.error ?? `Server error ${response.status}` };
         }
         return { success: true };
+    }
+
+    /**
+     * Fire-and-forget email notification when a teacher replies to (or starts) a message
+     * thread — best-effort, mirrors setStudentPassword's session-token auth pattern rather
+     * than GradeStudent's own notify-student-graded call (which sends the anon key as the
+     * bearer token, not a real session, and would fail auth server-side).
+     */
+    async notifyStudentMessage(studentId: string, contextLabel: string | null, bodyPreview: string): Promise<void> {
+        if (!this.client || !this.activeUrl) return;
+        const {
+            data: { session },
+        } = await this.client.auth.getSession();
+        if (!session) return;
+        try {
+            await fetch(`${this.activeUrl}/functions/v1/notify-student-message`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${session.access_token}`,
+                    apikey: this.activeKey ?? '',
+                },
+                body: JSON.stringify({
+                    studentId,
+                    contextLabel,
+                    bodyPreview: bodyPreview.slice(0, 200),
+                    portalUrl: `${window.location.origin}${window.location.pathname}#/portal/${studentId}`,
+                }),
+            });
+        } catch {
+            /* best-effort — silently ignore network errors */
+        }
     }
 
     async signInWithGoogle(): Promise<{ error?: string }> {
@@ -1176,6 +1210,111 @@ export class SupabaseAdapter {
         const { data, error } = await this.db().from('tests').select('data').eq('id', testId).maybeSingle();
         if (error || !data) return null;
         return data.data as Test;
+    }
+
+    // ── Messages (student <-> teacher, portal-authenticated students only) ────
+
+    private static rowToMessage(r: {
+        id: string;
+        student_id: string;
+        context_type: string;
+        context_id: string | null;
+        context_label: string | null;
+        sender: string;
+        body: string;
+        created_at: string;
+        read_by_teacher: boolean;
+        read_by_student: boolean;
+    }): Message {
+        return {
+            id: r.id,
+            studentId: r.student_id,
+            contextType: r.context_type as MessageContextType,
+            contextId: r.context_id,
+            contextLabel: r.context_label,
+            sender: r.sender as 'student' | 'teacher',
+            body: r.body,
+            createdAt: r.created_at,
+            readByTeacher: r.read_by_teacher,
+            readByStudent: r.read_by_student,
+        };
+    }
+
+    /** Teacher's full inbox — every thread across every student, RLS-scoped to owner_id. */
+    async fetchMessages(): Promise<Message[]> {
+        const { data, error } = await this.db()
+            .from('messages')
+            .select(
+                'id, student_id, context_type, context_id, context_label, sender, body, created_at, read_by_teacher, read_by_student'
+            )
+            .order('created_at', { ascending: true });
+        if (error || !data) return [];
+        return data.map(SupabaseAdapter.rowToMessage);
+    }
+
+    /** Teacher sends a reply or starts a new thread. */
+    async upsertMessage(m: Message): Promise<SyncResult> {
+        const { error } = await this.db().from('messages').upsert(
+            {
+                id: m.id,
+                owner_id: this.uid(),
+                student_id: m.studentId,
+                context_type: m.contextType,
+                context_id: m.contextId,
+                context_label: m.contextLabel,
+                sender: m.sender,
+                body: m.body,
+                created_at: m.createdAt,
+                read_by_teacher: m.readByTeacher,
+                read_by_student: m.readByStudent,
+            },
+            { onConflict: 'id' }
+        );
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    /**
+     * Fetch every message thread belonging to the currently logged-in portal student.
+     * Scoped by RLS via messages_student_select (get_my_student_ids()).
+     */
+    async fetchMyMessages(): Promise<Message[]> {
+        const { data, error } = await this.db()
+            .from('messages')
+            .select(
+                'id, student_id, context_type, context_id, context_label, sender, body, created_at, read_by_teacher, read_by_student'
+            )
+            .order('created_at', { ascending: true });
+        if (error || !data) return [];
+        return data.map(SupabaseAdapter.rowToMessage);
+    }
+
+    /**
+     * Student asks a question. owner_id is intentionally omitted — the
+     * set_message_owner_from_student trigger (migration 050) resolves it server-side
+     * from the student's actual roster row, since a portal student's app-level Student
+     * type has no owner_id to send even if it wanted to.
+     */
+    async sendMessageAsStudent(m: Message): Promise<SyncResult> {
+        const { error } = await this.db().from('messages').insert({
+            id: m.id,
+            student_id: m.studentId,
+            context_type: m.contextType,
+            context_id: m.contextId,
+            context_label: m.contextLabel,
+            sender: 'student',
+            body: m.body,
+            created_at: m.createdAt,
+            read_by_teacher: false,
+            read_by_student: true,
+        });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    /** Student marks teacher replies as read on portal load. */
+    async markMessagesReadByStudent(ids: string[]): Promise<SyncResult> {
+        if (ids.length === 0) return { success: true };
+        const { error } = await this.db().from('messages').update({ read_by_student: true }).in('id', ids);
+        return error ? { success: false, error: error.message } : { success: true };
     }
 
     // ── Analysis Results ──────────────────────────────────────────────────────

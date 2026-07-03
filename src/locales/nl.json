@@ -291,6 +291,8 @@
         "notify_students_title": "Leerlingmeldingen",
         "notify_on_grade_label": "Leerlingen informeren bij een beoordeling",
         "notify_on_grade_help": "Stuurt een e-mail naar de leerling wanneer je een beoordeling opslaat. Vereist dat SMTP is geconfigureerd in je Supabase-project.",
+        "notify_on_message_label": "Leerlingen informeren bij een berichtantwoord",
+        "notify_on_message_help": "Stuurt een e-mail naar de leerling wanneer je reageert op of een berichtdraad start. Vereist dat SMTP is geconfigureerd in je Supabase-project.",
         "role_admin_label": "Beheerder",
         "role_admin_description": "Volledige toegang tot alle instellingen, inclusief database, integraties en back-up/herstel.",
         "role_teacher_label": "Leraar",
@@ -315,7 +317,8 @@
         "docs": "Documentatie",
         "activity_dashboard": "Activiteitenoverzicht",
         "marketplace": "Marktplaats",
-        "moderation": "Moderatie"
+        "moderation": "Moderatie",
+        "messages": "Berichten"
     },
     "dashboard": {
         "title": "Dashboard",
@@ -1282,6 +1285,9 @@
         "work_planned": "Gepland",
         "work_completed": "Voltooid",
         "work_load_error": "Je toegewezen werk kon niet worden geladen. Probeer de pagina te vernieuwen.",
+        "messages_section_title": "Berichten",
+        "ask_question_placeholder": "Stel je docent een vraag…",
+        "no_messages_yet": "Nog geen berichten. Stel hierboven een vraag aan je docent.",
         "my_progress": "Mijn voortgang",
         "progress_view_label": "Weergave",
         "progress_view_combined": "Gecombineerd",
@@ -1439,6 +1445,20 @@
         "teacher_placeholder": "bijv. j.smith@school.org",
         "due_date_label": "Deadline (optioneel)",
         "action_assign": "Toewijzen"
+    },
+    "messages": {
+        "page_title": "Berichten",
+        "inbox_empty": "Nog geen berichten",
+        "inbox_empty_desc": "Vragen van leerlingen over een rubriek, toets of essay verschijnen hier.",
+        "new_thread_button": "Nieuw bericht",
+        "new_thread_title": "Bericht naar een leerling",
+        "select_student": "Kies een leerling",
+        "compose_placeholder": "Typ een bericht…",
+        "send_button": "Versturen",
+        "context_rubric": "Rubriek",
+        "context_test": "Toets",
+        "context_essay": "Essay",
+        "context_general": "Algemeen"
     },
     "attachments": {
         "title": "Bijlagen",
@@ -1686,7 +1706,8 @@
         "permission_denied": "Browsernotificaties geblokkeerd. Sta ze toe in de browserinstellingen.",
         "browser_title": "RubricMaker — Achterstallige Leerlingen",
         "browser_body": "{{count}} leerling(en) al {{threshold}}+ dagen niet nagekeken.",
-        "clear_all": "Alles verbergen"
+        "clear_all": "Alles verbergen",
+        "unread_messages_subtitle": "{{count}} ongelezen berichtdraad(en)"
     },
     "onboarding": {
         "title": "Welkom bij RubricMaker",
@@ -1993,6 +2014,8 @@
         "route_activity_dashboard_desc": "Overzicht van alle rubrieken, toetsen en essays versus klassen — koppel, wijs toe en monitor de dekking in één oogopslag. Rijen kunnen versleept worden en niet-beoordeelde cellen kunnen als beoordelingstaak aan een specifieke docent worden toegewezen.",
         "route_moderation_label": "Moderatie",
         "route_moderation_desc": "Wachtrij van mede-beoordeelde inzendingen waar twee docenten meer dan een instelbare puntendrempel van mening verschillen — vergelijk verschillen per criterium en houd het oorspronkelijke cijfer of accepteer dat van de tweede beoordelaar.",
+        "route_messages_label": "Berichten",
+        "route_messages_desc": "Postvak met vragen van leerlingen over een rubriek, toets of essay — reageer direct, of start zelf een nieuw gesprek met een leerling. Alleen voor leerlingen met een portalaccount.",
         "route_export_label": "Exporteren",
         "route_export_desc": "Exporteer beoordeelde rubrieken als PDF, DOCX (met mail-merge) of CSV.",
         "route_settings_label": "Instellingen",
@@ -2188,6 +2211,10 @@
         "gr_cograding_reconcile_body_prefix": "Een derde optie,",
         "gr_cograding_reconcile_button": "Verzoenen (gemiddelde)",
         "gr_cograding_reconcile_body_suffix": "voegt de twee cijfers samen door op elk afwijkend criterium het gemiddelde van de punten te nemen, in plaats van het cijfer van één beoordelaar volledig te kiezen.",
+        "gr_messages_title": "Berichten",
+        "gr_messages_body_prefix": "Elke vraag die een leerling vanuit het portaal stelt over een rubriek, toets of essay komt in je",
+        "gr_messages_body_suffix": "postvak binnen als ongelezen melding. Reageer direct, of start zelf een nieuw gesprek — kies een leerling uit de lijst en schrijf een bericht.",
+        "gr_messages_scope_note": "Alleen leerlingen die inloggen op het leerlingenportaal kunnen je berichten sturen; een kale deelcode-link (toets/essay inleveren zonder portalaccount) heeft geen plek om een antwoord te ontvangen.",
         "gr_comment_bank_title": "Opmerkingenbank",
         "gr_comment_bank_body_prefix": "Ga naar",
         "gr_comment_bank_nav": "Opmerkingenbank",
@@ -2229,6 +2256,8 @@
         "gr_portal_work_body": "Een gecombineerde takenlijst van elk toegewezen essay en elke toets, gegroepeerd in Te laat, Gepland en Voltooid. Elk item toont de status (nog niet begonnen, bezig, ingediend) en de deadline indien de docent die heeft ingesteld. Toetsen openen met één klik vanuit de lijst — geen link met toetscode meer nodig.",
         "gr_portal_progress_title": "Mijn voortgang",
         "gr_portal_progress_body": "Een radargrafiek van de eigen scores per criterium van de leerling, gecombineerd over alle beoordeelde rubrics (criteria met dezelfde naam worden gemiddeld) of gefilterd op één rubric — zichtbaar zodra er minstens 3 verschillende beoordeelde criteria zijn.",
+        "gr_portal_messages_title": "Berichten",
+        "gr_portal_messages_body": "Een leerling kan een vraag stellen over een specifiek rubriekcijfer, toets of essay — of een algemene vraag die nergens aan gekoppeld is — direct vanuit het portaal, en ziet het antwoord van de docent bij het volgende bezoek.",
         "ce_overview_title": "ERK-overzicht",
         "ce_overview_intro": "De ERK-module (Europees Referentiekader) volgt taalvaardigheid op het gebied van Lezen, Schrijven, Spreken en Luisteren — afgestemd op Nederlandse VO-doelen (VMBO-BB tot en met VWO).",
         "ce_overview_item_whole_class": "Klasbreed overzicht (/cefr-overview) — heatmap van alle leerlingen over ERK-niveaus per vaardigheid.",

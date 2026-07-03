@@ -24,6 +24,7 @@ import {
     Radio,
     TrendingUp,
     Search,
+    Mail,
 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useTranslation } from 'react-i18next';
@@ -260,6 +261,12 @@ function getRouteTree(t: TFunction): RouteNode[] {
             path: '/moderation',
             label: t('docs.route_moderation_label'),
             description: t('docs.route_moderation_desc'),
+            color: '#f59e0b',
+        },
+        {
+            path: '/messages',
+            label: t('docs.route_messages_label'),
+            description: t('docs.route_messages_desc'),
             color: '#f59e0b',
         },
         {
@@ -898,6 +905,15 @@ function GradingTab() {
                 </p>
             </FeatureSection>
 
+            <FeatureSection icon={Mail} title={t('docs.gr_messages_title')} color="#f59e0b">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
+                    {t('docs.gr_messages_body_prefix')} <code>/messages</code> {t('docs.gr_messages_body_suffix')}
+                </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    {t('docs.gr_messages_scope_note')}
+                </p>
+            </FeatureSection>
+
             <FeatureSection icon={MessageSquare} title={t('docs.gr_comment_bank_title')} color="#06b6d4">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
                     {t('docs.gr_comment_bank_body_prefix')} <strong>{t('docs.gr_comment_bank_nav')}</strong>{' '}
@@ -963,8 +979,14 @@ function GradingTab() {
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.gr_portal_progress_title')}
                 </h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
                     {t('docs.gr_portal_progress_body')}
+                </p>
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.gr_portal_messages_title')}
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    {t('docs.gr_portal_messages_body')}
                 </p>
             </FeatureSection>
         </div>

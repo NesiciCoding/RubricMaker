@@ -608,6 +608,8 @@ export interface AppSettings {
     colorPreset?: string;
     /** Whether to send an email notification to the student when a grade is saved (Supabase mode only). */
     notifyStudentsOnGrade?: boolean;
+    /** Whether to send an email notification to the student when a teacher replies to/starts a message thread (Supabase mode only). */
+    notifyStudentsOnMessage?: boolean;
     /** Wider letter-spacing and increased line-height app-wide, for dyslexic readers. */
     dyslexiaFriendlyMode?: boolean;
 }
@@ -762,6 +764,26 @@ export interface GradingTask {
     assignedBy?: string;
     assignedAt: string;
     dueDate?: string;
+}
+
+/**
+ * A single message in a student <-> teacher thread. A "thread" is every Message
+ * sharing (studentId, contextType, contextId) — grouped client-side, no separate
+ * threads table/type. Portal-authenticated students only.
+ */
+export type MessageContextType = 'rubric' | 'test' | 'essay' | 'general';
+
+export interface Message {
+    id: string;
+    studentId: string;
+    contextType: MessageContextType;
+    contextId: string | null;
+    contextLabel: string | null;
+    sender: 'student' | 'teacher';
+    body: string;
+    createdAt: string;
+    readByTeacher: boolean;
+    readByStudent: boolean;
 }
 
 export interface StudentEssayAssignmentSummary {

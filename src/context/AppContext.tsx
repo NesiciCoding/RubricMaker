@@ -35,6 +35,7 @@ import type {
     TestAssignment,
     UserTemplate,
     UserRole,
+    Message,
 } from '../types';
 import {
     loadStore,
@@ -60,6 +61,7 @@ import {
     saveEssaySubmissions,
     saveEssayTemplates,
     saveGradingTasks,
+    saveMessages,
     saveUserTemplates,
     importFullBackup,
     loadPendingQueue,
@@ -144,6 +146,8 @@ type Action =
     | { type: 'DELETE_ESSAY_TEMPLATE'; id: string }
     | { type: 'ADD_GRADING_TASKS'; payload: GradingTask[] }
     | { type: 'DELETE_GRADING_TASK'; id: string }
+    | { type: 'SEND_MESSAGE'; payload: Message }
+    | { type: 'MARK_MESSAGE_READ_BY_TEACHER'; id: string }
     | { type: 'SAVE_USER_TEMPLATE'; payload: UserTemplate }
     | { type: 'DELETE_USER_TEMPLATE'; id: string };
 
@@ -614,6 +618,20 @@ function reducer(state: StoreData, action: Action): StoreData {
             if (isOffline()) saveGradingTasks(next);
             return { ...state, gradingTasks: next };
         }
+        case 'SEND_MESSAGE': {
+            const exists = state.messages.findIndex((m) => m.id === action.payload.id);
+            const next =
+                exists >= 0
+                    ? state.messages.map((m) => (m.id === action.payload.id ? action.payload : m))
+                    : [...state.messages, action.payload];
+            if (isOffline()) saveMessages(next);
+            return { ...state, messages: next };
+        }
+        case 'MARK_MESSAGE_READ_BY_TEACHER': {
+            const next = state.messages.map((m) => (m.id === action.id ? { ...m, readByTeacher: true } : m));
+            if (isOffline()) saveMessages(next);
+            return { ...state, messages: next };
+        }
         case 'SAVE_USER_TEMPLATE': {
             // No cap here — this array is now the sync source of truth, diffed against
             // Supabase (see the delta-sync effect below). Evicting an entry would look
@@ -733,6 +751,9 @@ interface AppContextValue extends StoreData {
     // Grading task assignment (batch-assign ungraded submissions to a teacher)
     addGradingTasks: (tasks: GradingTask[]) => void;
     deleteGradingTask: (id: string) => void;
+    // Student <-> teacher messaging (teacher side; see fetchMyMessages etc. below for portal)
+    sendMessage: (m: Message) => void;
+    markMessageReadByTeacher: (id: string) => void;
     // Saved rubric templates ("save as template")
     saveUserTemplate: (t: UserTemplate) => void;
     deleteUserTemplate: (id: string) => void;
@@ -767,6 +788,7 @@ interface AppContextValue extends StoreData {
     // Essay assignments (teacher side)
     saveEssayAssignment: (a: EssayAssignment) => Promise<SyncResult>;
     setStudentPassword: (studentEmail: string, password: string) => Promise<SyncResult>;
+    notifyStudentMessage: (studentId: string, contextLabel: string | null, bodyPreview: string) => Promise<void>;
     deleteEssayAssignment: (teacherKey: string) => Promise<SyncResult>;
     fetchEssaySubmissions: (
         teacherKey: string
@@ -786,6 +808,10 @@ interface AppContextValue extends StoreData {
     saveTestAssignment: (a: TestAssignment) => Promise<SyncResult>;
     fetchMyTestAssignments: () => Promise<Awaited<ReturnType<typeof storageSync.fetchMyTestAssignments>>>;
     fetchAssignedTestContent: (testId: string) => Promise<Test | null>;
+    // Messages (student portal side)
+    fetchMyMessages: () => Promise<Awaited<ReturnType<typeof storageSync.fetchMyMessages>>>;
+    sendMessageAsStudent: (m: Message) => Promise<SyncResult>;
+    markMessagesReadByStudent: (ids: string[]) => Promise<SyncResult>;
     // Backup / restore
     importBackup: (json: string) => Promise<boolean>;
     // Landing / auth flow
@@ -834,6 +860,7 @@ async function flushToLocalStorage(merged: StoreData) {
         saveStudentTests,
         saveEssayTemplates,
         saveGradingTasks,
+        saveMessages,
         saveEssayAssignments,
         saveEssaySubmissions,
         saveUserTemplates,
@@ -857,6 +884,7 @@ async function flushToLocalStorage(merged: StoreData) {
     saveStudentTests(merged.studentTests);
     saveEssayTemplates(merged.essayTemplates);
     saveGradingTasks(merged.gradingTasks);
+    saveMessages(merged.messages);
     saveEssayAssignments(merged.essayAssignments);
     saveEssaySubmissions(merged.essaySubmissions);
     saveUserTemplates(merged.userTemplates);
@@ -1513,6 +1541,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'DELETE_GRADING_TASK', id });
         storageSync.pushOne('gradingTask', 'delete', null, id);
     }, []);
+    const sendMessage = useCallback((m: Message) => {
+        dispatch({ type: 'SEND_MESSAGE', payload: m });
+        storageSync.pushOne('message', 'upsert', m);
+    }, []);
+    const markMessageReadByTeacher = useCallback((id: string) => {
+        dispatch({ type: 'MARK_MESSAGE_READ_BY_TEACHER', id });
+        const msg = currentStateRef.current.messages.find((m) => m.id === id);
+        if (msg) storageSync.pushOne('message', 'upsert', { ...msg, readByTeacher: true });
+    }, []);
 
     // Pushed to Supabase via the delta-sync diff() effect below, like essayAssignments.
     const saveUserTemplate = useCallback((t: UserTemplate) => {
@@ -1598,6 +1635,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         (studentEmail: string, password: string) => storageSync.setStudentPassword(studentEmail, password),
         []
     );
+    const notifyStudentMessage = useCallback(
+        (studentId: string, contextLabel: string | null, bodyPreview: string) =>
+            storageSync.notifyStudentMessage(studentId, contextLabel, bodyPreview),
+        []
+    );
     const deleteEssayAssignment = useCallback(
         (teacherKey: string) => storageSync.deleteEssayAssignment(teacherKey),
         []
@@ -1624,6 +1666,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const saveTestAssignment = useCallback((a: TestAssignment) => storageSync.saveTestAssignment(a), []);
     const fetchMyTestAssignments = useCallback(() => storageSync.fetchMyTestAssignments(), []);
     const fetchAssignedTestContent = useCallback((testId: string) => storageSync.fetchAssignedTestContent(testId), []);
+    const fetchMyMessages = useCallback(() => storageSync.fetchMyMessages(), []);
+    const sendMessageAsStudent = useCallback((m: Message) => storageSync.sendMessageAsStudent(m), []);
+    const markMessagesReadByStudent = useCallback((ids: string[]) => storageSync.markMessagesReadByStudent(ids), []);
 
     // ─── Landing / auth flow ──────────────────────────────────────────
     const enterLocalMode = useCallback(() => {
@@ -1809,6 +1854,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         deleteEssayTemplate,
         addGradingTasks,
         deleteGradingTask,
+        sendMessage,
+        markMessageReadByTeacher,
         saveUserTemplate,
         deleteUserTemplate,
         connectDatabase,
@@ -1829,6 +1876,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         getCurrentDatabaseUserId,
         saveEssayAssignment,
         setStudentPassword,
+        notifyStudentMessage,
         deleteEssayAssignment,
         fetchEssaySubmissions,
         fetchEssaySubmissionsForStudent,
@@ -1840,6 +1888,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         saveTestAssignment,
         fetchMyTestAssignments,
         fetchAssignedTestContent,
+        fetchMyMessages,
+        sendMessageAsStudent,
+        markMessagesReadByStudent,
         importBackup,
         showLanding: landingState === 'show',
         isCheckingSession: landingState === 'checking',

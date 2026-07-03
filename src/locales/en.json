@@ -291,6 +291,8 @@
         "notify_students_title": "Student Notifications",
         "notify_on_grade_label": "Notify students when graded",
         "notify_on_grade_help": "Sends an email to the student when you save a grade. Requires SMTP to be configured in your Supabase project.",
+        "notify_on_message_label": "Notify students on message reply",
+        "notify_on_message_help": "Sends an email to the student when you reply to or start a message thread. Requires SMTP to be configured in your Supabase project.",
         "role_admin_label": "Administrator",
         "role_admin_description": "Full access to all settings including database, integrations, and backup/restore.",
         "role_teacher_label": "Teacher",
@@ -315,7 +317,8 @@
         "docs": "Docs",
         "activity_dashboard": "Activity Dashboard",
         "marketplace": "Marketplace",
-        "moderation": "Moderation"
+        "moderation": "Moderation",
+        "messages": "Messages"
     },
     "dashboard": {
         "title": "Dashboard",
@@ -1282,6 +1285,9 @@
         "work_planned": "Planned",
         "work_completed": "Completed",
         "work_load_error": "Could not load your assigned work. Please try refreshing the page.",
+        "messages_section_title": "Messages",
+        "ask_question_placeholder": "Ask your teacher a question…",
+        "no_messages_yet": "No messages yet. Ask your teacher a question above.",
         "my_progress": "My progress",
         "progress_view_label": "View",
         "progress_view_combined": "Combined",
@@ -1439,6 +1445,20 @@
         "teacher_placeholder": "e.g. j.smith@school.org",
         "due_date_label": "Due date (optional)",
         "action_assign": "Assign"
+    },
+    "messages": {
+        "page_title": "Messages",
+        "inbox_empty": "No messages yet",
+        "inbox_empty_desc": "Questions students ask about a rubric, test, or essay will show up here.",
+        "new_thread_button": "New message",
+        "new_thread_title": "Message a student",
+        "select_student": "Select a student",
+        "compose_placeholder": "Type a message…",
+        "send_button": "Send",
+        "context_rubric": "Rubric",
+        "context_test": "Test",
+        "context_essay": "Essay",
+        "context_general": "General"
     },
     "attachments": {
         "title": "Attachments",
@@ -1686,7 +1706,8 @@
         "permission_denied": "Browser notifications blocked. Allow them in browser settings.",
         "browser_title": "RubricMaker — Overdue Students",
         "browser_body": "{{count}} student(s) not graded in {{threshold}}+ days.",
-        "clear_all": "Clear all"
+        "clear_all": "Clear all",
+        "unread_messages_subtitle": "{{count}} unread message thread(s)"
     },
     "onboarding": {
         "title": "Welcome to RubricMaker",
@@ -1993,6 +2014,8 @@
         "route_activity_dashboard_desc": "Grid of all rubrics, tests, and essays vs classes — link, assign, and monitor coverage at a glance. Rows can be drag-reordered, and ungraded cells can be assigned to a specific teacher as a grading task.",
         "route_moderation_label": "Moderation",
         "route_moderation_desc": "Queue of co-graded submissions where two teachers disagree above a configurable point threshold — compare per-criterion deltas and keep or accept the second marker's grade.",
+        "route_messages_label": "Messages",
+        "route_messages_desc": "Inbox of student questions about a rubric, test, or essay — reply inline, or start a new thread to a student yourself. Portal-authenticated students only.",
         "route_export_label": "Export",
         "route_export_desc": "Export graded rubrics as PDF, DOCX (with mail-merge), or CSV.",
         "route_settings_label": "Settings",
@@ -2186,6 +2209,10 @@
         "gr_cograding_reconcile_body_prefix": "A third option,",
         "gr_cograding_reconcile_button": "Reconcile (average)",
         "gr_cograding_reconcile_body_suffix": "merges the two grades by averaging the points on each diverging criterion, instead of picking one marker's grade outright.",
+        "gr_messages_title": "Messages",
+        "gr_messages_body_prefix": "Every question a student asks from their portal about a rubric, test, or essay lands in your",
+        "gr_messages_body_suffix": "inbox as an unread notification. Reply inline, or start a new thread to a student yourself — pick them from a list and write a note.",
+        "gr_messages_scope_note": "Only students who log into the student portal can message you; a bare share-code link (test/essay hand-in with no portal account) doesn't have a place to receive a reply.",
         "gr_comment_bank_title": "Comment Bank",
         "gr_comment_bank_body_prefix": "Go to",
         "gr_comment_bank_nav": "Comment Bank",
@@ -2227,6 +2254,8 @@
         "gr_portal_work_body": "A combined to-do list of every assigned essay and test, grouped into Overdue, Planned, and Completed. Each item shows its status (not started, in progress, submitted) and due date where the teacher set one. Tests open in one click from the list — no need to hunt down a share-code link.",
         "gr_portal_progress_title": "My Progress",
         "gr_portal_progress_body": "A radar chart of the student's own per-criterion scores, either combined across every rubric they've been graded on (criteria with the same name are averaged together) or filtered to a single rubric — shown once they have at least 3 distinct graded criteria.",
+        "gr_portal_messages_title": "Messages",
+        "gr_portal_messages_body": "A student can ask a question about a specific rubric grade, test, or essay — or a general question not tied to any of them — right from their portal, and see the teacher's reply on their next visit.",
         "ce_overview_title": "CEFR Overview",
         "ce_overview_intro": "The CEFR (Common European Framework of Reference) module tracks language proficiency across Reading, Writing, Speaking, and Listening — aligned to Dutch VO targets (VMBO-BB through VWO).",
         "ce_overview_item_whole_class": "Whole-class overview (/cefr-overview) — heatmap of all students across CEFR levels per skill.",

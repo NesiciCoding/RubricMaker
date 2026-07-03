@@ -37,6 +37,7 @@ A comprehensive rubric creation and grading tool built with React and TypeScript
 - **Self-assessment**: Students self-assess against CEFR Can-Do statements.
 - **Co-grading & moderation**: Send a graded submission to a colleague for an independent second marking (reuses the peer review screen and math, applied teacher-to-teacher). Disputes above a configurable point threshold surface in a Moderation queue with a per-criterion delta breakdown and a keep/accept resolution.
 - **Grading task assignment**: From the Activity Dashboard, batch-assign a class's ungraded submissions for a rubric to a specific colleague; pending tasks list above the grid and clear automatically once graded.
+- **Student messaging**: Portal-authenticated students can ask a question about a rubric grade, test, or essay (or a general question) from their portal; teachers reply from a dedicated Messages inbox, or start a thread themselves. Requires Supabase — a student with no portal login has no way to send or receive a message.
 
 ### 3. CEFR & Language Assessment
 
@@ -184,6 +185,7 @@ npm run db:reset     # Reset and re-apply all migrations
 | `/statistics`                               | Statistics dashboard (by-rubric, by-student, multi-class compare with insights)                                 |
 | `/activity-dashboard`                       | Activity Dashboard — rubric/test/essay × class grid with link/assign/reorder actions, pending grading-task list |
 | `/moderation`                               | Moderation queue — disputed co-graded submissions, per-criterion delta, keep/accept resolution                  |
+| `/messages`                                 | Messages inbox — reply to or start a thread with a portal-authenticated student                                 |
 | `/export`                                   | Export page                                                                                                     |
 | `/settings`                                 | Settings                                                                                                        |
 | `/admin`                                    | Admin panel (admin role only)                                                                                   |
@@ -215,6 +217,7 @@ npm run db:reset     # Reset and re-apply all migrations
 | `src/utils/cohortAggregator.ts`         | Derives a cohort's student set from current + past class memberships by year/track             |
 | `src/utils/gradebookExportPresets.ts`   | Per-SIS CSV column presets (Magister, SOMtoday) for the gradebook export                       |
 | `src/utils/icsExport.ts`                | Builds a minimal `.ics` calendar file from assignment deadlines                                |
+| `src/utils/messageThreads.ts`           | Groups flat student/teacher `Message` rows into threads by student + context                  |
 | `src/services/standardsApi.ts`          | Common Standards Project API (CCSS, NGSS)                                                      |
 
 ---

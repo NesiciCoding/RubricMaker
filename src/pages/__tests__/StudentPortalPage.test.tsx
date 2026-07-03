@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
@@ -12,6 +12,7 @@ import type {
     StudentRubric,
     StudentEssayAssignmentSummary,
     StudentTestAssignmentSummary,
+    Message,
 } from '../../types';
 
 const mockGradeScale: GradeScale = {
@@ -41,6 +42,9 @@ const emptyArr: never[] = [];
 const mockFetchMyEssayAssignments = vi.fn().mockResolvedValue([]);
 const mockFetchMyTestAssignments = vi.fn().mockResolvedValue([]);
 const mockFetchAssignedTestContent = vi.fn().mockResolvedValue(null);
+const mockFetchMyMessages = vi.fn().mockResolvedValue([]);
+const mockSendMessageAsStudent = vi.fn().mockResolvedValue({ success: true });
+const mockMarkMessagesReadByStudent = vi.fn().mockResolvedValue({ success: true });
 
 const mockGradedStudentRubric: StudentRubric = {
     id: 'sr1',
@@ -139,6 +143,9 @@ const mockAppValue: Record<string, unknown> = {
     fetchMyEssayAssignments: mockFetchMyEssayAssignments,
     fetchMyTestAssignments: mockFetchMyTestAssignments,
     fetchAssignedTestContent: mockFetchAssignedTestContent,
+    fetchMyMessages: mockFetchMyMessages,
+    sendMessageAsStudent: mockSendMessageAsStudent,
+    markMessagesReadByStudent: mockMarkMessagesReadByStudent,
 };
 
 vi.mock('../../context/AppContext', () => ({
@@ -204,6 +211,10 @@ describe('StudentPortalPage', () => {
         mockFetchMyTestAssignments.mockClear();
         mockFetchMyTestAssignments.mockResolvedValue([]);
         mockFetchAssignedTestContent.mockClear();
+        mockFetchMyMessages.mockClear();
+        mockFetchMyMessages.mockResolvedValue([]);
+        mockSendMessageAsStudent.mockClear();
+        mockMarkMessagesReadByStudent.mockClear();
         const mod = await import('../StudentPortalPage');
         StudentPortalPageComp = mod.default;
     });
@@ -271,7 +282,8 @@ describe('StudentPortalPage', () => {
         mockFetchMyEssayAssignments.mockResolvedValueOnce([pendingEssay]);
         renderAt('s1');
         expect(await screen.findByText('studentPortal.work_planned')).toBeInTheDocument();
-        expect(screen.getByText('My Essay Title')).toBeInTheDocument();
+        // Also appears as a context option in the "ask a question" composer.
+        expect(screen.getAllByText('My Essay Title').length).toBeGreaterThan(0);
     });
 
     it('renders completed essay cards', async () => {
@@ -293,7 +305,7 @@ describe('StudentPortalPage', () => {
         mockFetchMyEssayAssignments.mockResolvedValueOnce([completedEssay]);
         renderAt('s1');
         expect(await screen.findByText('studentPortal.work_completed')).toBeInTheDocument();
-        expect(screen.getByText('Completed Essay')).toBeInTheDocument();
+        expect(screen.getAllByText('Completed Essay').length).toBeGreaterThan(0);
     });
 
     it('renders a planned test card when fetchMyTestAssignments returns data', async () => {
@@ -311,7 +323,7 @@ describe('StudentPortalPage', () => {
         mockFetchMyTestAssignments.mockResolvedValueOnce([pendingTest]);
         renderAt('s1');
         expect(await screen.findByText('studentPortal.work_planned')).toBeInTheDocument();
-        expect(screen.getByText('Vocabulary Quiz')).toBeInTheDocument();
+        expect(screen.getAllByText('Vocabulary Quiz').length).toBeGreaterThan(0);
         expect(screen.getByText('studentPortal.test_open')).toBeInTheDocument();
     });
 
@@ -367,17 +379,23 @@ describe('StudentPortalPage', () => {
         mockFetchMyTestAssignments.mockResolvedValueOnce([submittedTest]);
         renderAt('s1');
         expect(await screen.findByText('studentPortal.work_overdue')).toBeInTheDocument();
-        expect(screen.getByText('Late Essay')).toBeInTheDocument();
+        expect(screen.getAllByText('Late Essay').length).toBeGreaterThan(0);
         expect(screen.getByText('studentPortal.work_completed')).toBeInTheDocument();
-        expect(screen.getByText('Grammar Test')).toBeInTheDocument();
+        expect(screen.getAllByText('Grammar Test').length).toBeGreaterThan(0);
     });
 
     it('renders the My Progress radar section once 3+ criteria have been graded', async () => {
         mockAppValue.studentRubrics = mockGradedStudentRubricsArr;
         renderAt('s1');
         expect((await screen.findAllByText('studentPortal.my_progress')).length).toBeGreaterThan(0);
-        // Rubric picker offers the graded rubric alongside the combined view
-        expect(screen.getByRole('option', { name: 'Essay Rubric' })).toBeInTheDocument();
+        // Rubric picker offers the graded rubric alongside the combined view. Scoped to the
+        // radar select itself since "Essay Rubric" also appears as a context option in the
+        // "ask a question" composer now.
+        expect(
+            within(screen.getByLabelText('studentPortal.progress_view_label')).getByRole('option', {
+                name: 'Essay Rubric',
+            })
+        ).toBeInTheDocument();
         expect(screen.getByText('studentPortal.progress_view_combined')).toBeInTheDocument();
         mockAppValue.studentRubrics = emptyArr;
     });
@@ -399,5 +417,42 @@ describe('StudentPortalPage', () => {
         const content = radarData.find((d) => d.name === 'Content');
         expect(content?.avg).toBe(80);
         mockAppValue.studentRubrics = emptyArr;
+    });
+
+    it('sends a general question to the teacher via the messages section', async () => {
+        renderAt('s1');
+        await screen.findByText('studentPortal.copy_link');
+        fireEvent.change(screen.getByPlaceholderText('studentPortal.ask_question_placeholder'), {
+            target: { value: 'Can I get an extension?' },
+        });
+        fireEvent.click(screen.getAllByText('messages.send_button')[0]);
+        expect(mockSendMessageAsStudent).toHaveBeenCalledWith(
+            expect.objectContaining({
+                studentId: 's1',
+                contextType: 'general',
+                contextId: null,
+                sender: 'student',
+                body: 'Can I get an extension?',
+            })
+        );
+    });
+
+    it('marks unread teacher replies as read on load', async () => {
+        const teacherReply: Message = {
+            id: 'msg-1',
+            studentId: 's1',
+            contextType: 'general',
+            contextId: null,
+            contextLabel: null,
+            sender: 'teacher',
+            body: 'Sure, take an extra day.',
+            createdAt: '2024-01-01T00:00:00Z',
+            readByTeacher: true,
+            readByStudent: false,
+        };
+        mockFetchMyMessages.mockResolvedValueOnce([teacherReply]);
+        renderAt('s1');
+        await screen.findByText('Sure, take an extra day.');
+        expect(mockMarkMessagesReadByStudent).toHaveBeenCalledWith(['msg-1']);
     });
 });

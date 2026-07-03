@@ -35,6 +35,7 @@ import type {
     StudentTest,
     TestAssignment,
     UserTemplate,
+    Message,
 } from '../../types';
 
 const CONFIG_KEY = 'rm_supabase_config';
@@ -127,6 +128,7 @@ class StorageSyncService {
         { table: 'student_tests', filterColumn: 'owner_id' },
         { table: 'essay_templates', filterColumn: 'owner_id' },
         { table: 'grading_tasks', filterColumn: 'owner_id' },
+        { table: 'messages', filterColumn: 'owner_id' },
         { table: 'essay_batch_assignments', filterColumn: 'owner_id' },
         { table: 'essay_offline_submissions', filterColumn: 'owner_id' },
         { table: 'user_templates', filterColumn: 'owner_id' },
@@ -436,6 +438,10 @@ class StorageSyncService {
         return this.adapter.setStudentPassword(studentEmail, password);
     }
 
+    async notifyStudentMessage(studentId: string, contextLabel: string | null, bodyPreview: string): Promise<void> {
+        return this.adapter.notifyStudentMessage(studentId, contextLabel, bodyPreview);
+    }
+
     async deleteEssayAssignment(teacherKey: string): Promise<SyncResult> {
         return this.adapter.deleteEssayAssignment(teacherKey);
     }
@@ -466,6 +472,18 @@ class StorageSyncService {
 
     async fetchAssignedTestContent(testId: string): Promise<Test | null> {
         return this.adapter.fetchAssignedTestContent(testId);
+    }
+
+    async fetchMyMessages() {
+        return this.adapter.fetchMyMessages();
+    }
+
+    async sendMessageAsStudent(m: Message): Promise<SyncResult> {
+        return this.adapter.sendMessageAsStudent(m);
+    }
+
+    async markMessagesReadByStudent(ids: string[]): Promise<SyncResult> {
+        return this.adapter.markMessagesReadByStudent(ids);
     }
 
     async fetchEssayAssignmentByKey(teacherKey: string) {
@@ -535,6 +553,7 @@ class StorageSyncService {
                 essayAssignments,
                 essaySubmissions,
                 userTemplates,
+                messages,
                 attachments,
                 settings,
                 profile,
@@ -559,6 +578,7 @@ class StorageSyncService {
                 this.adapter.fetchEssayBatchAssignments(),
                 this.adapter.fetchEssayOfflineSubmissions(),
                 this.adapter.fetchUserTemplates(),
+                this.adapter.fetchMessages(),
                 this.attachmentSync.hydrateAttachments(),
                 this.adapter.fetchSettings(),
                 this.adapter.fetchMyProfile(),
@@ -629,6 +649,7 @@ class StorageSyncService {
                 essayAssignments,
                 essaySubmissions,
                 userTemplates,
+                messages,
                 attachments,
                 ...(mergedSettings ? { settings: mergedSettings as StoreData['settings'] } : {}),
             };
@@ -683,6 +704,7 @@ class StorageSyncService {
                 ),
                 ...state.essaySubmissions.map((s) => this.adapter.upsertEssayOfflineSubmission(s)),
                 ...state.userTemplates.map((ut) => this.adapter.upsertUserTemplate(ut)),
+                ...state.messages.map((m) => this.adapter.upsertMessage(m)),
                 this.adapter.saveSettings(state.settings),
             ];
             await Promise.all(ups);
@@ -803,6 +825,9 @@ class StorageSyncService {
                 case 'gradingTask':
                     if (action === 'upsert') result = await this.adapter.upsertGradingTask(payload as GradingTask);
                     else if (id) result = await this.adapter.deleteGradingTask(id);
+                    break;
+                case 'message':
+                    if (action === 'upsert') result = await this.adapter.upsertMessage(payload as Message);
                     break;
                 case 'essayBatchAssignment':
                     if (action === 'upsert') {

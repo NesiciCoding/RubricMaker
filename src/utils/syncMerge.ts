@@ -173,6 +173,7 @@ const COLLECTIONS: CollectionSpec[] = [
     },
     { key: 'essayTemplates', entity: 'essayTemplate', getId: (et: { id: string }) => et.id },
     { key: 'gradingTasks', entity: 'gradingTask', getId: (gt: { id: string }) => gt.id },
+    { key: 'messages', entity: 'message', getId: (m: { id: string }) => m.id },
     {
         key: 'essayAssignments',
         entity: 'essayBatchAssignment',

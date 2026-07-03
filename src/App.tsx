@@ -48,6 +48,7 @@ const DocsPage = lazy(() => import('./pages/DocsPage'));
 const ActivityDashboardPage = lazy(() => import('./pages/ActivityDashboardPage'));
 const MarketplacePage = lazy(() => import('./pages/MarketplacePage'));
 const ModerationQueuePage = lazy(() => import('./pages/ModerationQueuePage'));
+const MessagesPage = lazy(() => import('./pages/MessagesPage'));
 
 // Forces GradeStudent to remount when studentId changes so useState re-initialises.
 function GradeStudentRoute() {
@@ -217,6 +218,7 @@ export default function App() {
                                 <Route path="/statistics" element={<StatisticsPage />} />
                                 <Route path="/activity-dashboard" element={<ActivityDashboardPage />} />
                                 <Route path="/moderation" element={<ModerationQueuePage />} />
+                                <Route path="/messages" element={<MessagesPage />} />
                                 <Route path="/comments" element={<CommentBankPage />} />
                                 <Route path="/marketplace" element={<MarketplacePage />} />
                                 <Route path="/settings" element={<SettingsPage />} />

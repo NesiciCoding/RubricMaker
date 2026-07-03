@@ -22,6 +22,7 @@ import type {
     EssaySubmission,
     EssayTemplate,
     GradingTask,
+    Message,
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 import { nanoid } from '../utils/nanoid';
@@ -226,6 +227,7 @@ const KEYS = {
     essaySubmissions: 'rm_essay_submissions',
     essayTemplates: 'rm_essay_templates',
     gradingTasks: 'rm_grading_tasks',
+    messages: 'rm_messages',
 };
 
 // ─── Generic helpers ───────────────────────────────────────────────────────────
@@ -289,6 +291,7 @@ export interface StoreData {
     essaySubmissions: EssaySubmission[];
     essayTemplates: EssayTemplate[];
     gradingTasks: GradingTask[];
+    messages: Message[];
 }
 
 export function loadStore(): StoreData {
@@ -315,6 +318,7 @@ export function loadStore(): StoreData {
         essaySubmissions: load<EssaySubmission[]>(KEYS.essaySubmissions, []),
         essayTemplates: load<EssayTemplate[]>(KEYS.essayTemplates, []),
         gradingTasks: load<GradingTask[]>(KEYS.gradingTasks, []),
+        messages: load<Message[]>(KEYS.messages, []),
     };
 }
 
@@ -380,6 +384,9 @@ export function saveEssayTemplates(templates: EssayTemplate[]) {
 }
 export function saveGradingTasks(tasks: GradingTask[]) {
     save(KEYS.gradingTasks, tasks);
+}
+export function saveMessages(messages: Message[]) {
+    save(KEYS.messages, messages);
 }
 
 // ─── Local data wipe (user switch / sign-out) ─────────────────────────────────
@@ -561,6 +568,22 @@ export function importFullBackup(json: string): boolean {
             )
                 saveGradingTasks(data.gradingTasks as GradingTask[]);
             else console.warn('[importFullBackup] gradingTasks failed validation — skipped');
+        }
+        if (data.messages !== undefined) {
+            if (
+                Array.isArray(data.messages) &&
+                data.messages.every(
+                    (m) =>
+                        isPlainObject(m) &&
+                        typeof (m as Record<string, unknown>).id === 'string' &&
+                        typeof (m as Record<string, unknown>).studentId === 'string' &&
+                        typeof (m as Record<string, unknown>).contextType === 'string' &&
+                        typeof (m as Record<string, unknown>).sender === 'string' &&
+                        typeof (m as Record<string, unknown>).body === 'string'
+                )
+            )
+                saveMessages(data.messages as Message[]);
+            else console.warn('[importFullBackup] messages failed validation — skipped');
         }
         if (data.userTemplates !== undefined) {
             if (
