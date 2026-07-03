@@ -1728,6 +1728,8 @@
         "no_essays": "Aucun essai pour le moment",
         "create_first_instruction": "Créez votre premier devoir d'essai pour commencer.",
         "assigned_students_title": "Élèves assignés",
+        "individual_assignment_badge": "Individuel",
+        "individual_assignment_hint": "Assigné séparément depuis la page de notation d'un élève, ne fait pas partie de ce groupe",
         "submission_status_submitted": "Soumis",
         "submission_status_pending": "En attente",
         "action_monitor": "Surveiller",

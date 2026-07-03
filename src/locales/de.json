@@ -1728,6 +1728,8 @@
         "no_essays": "Noch keine Aufsätze",
         "create_first_instruction": "Erstellen Sie Ihre erste Aufsatzaufgabe, um zu beginnen.",
         "assigned_students_title": "Zugewiesene Schüler",
+        "individual_assignment_badge": "Individuell",
+        "individual_assignment_hint": "Separat über die Bewertungsseite eines Schülers zugewiesen, nicht Teil dieser Gruppe",
         "submission_status_submitted": "Eingereicht",
         "submission_status_pending": "Ausstehend",
         "action_monitor": "Überwachen",

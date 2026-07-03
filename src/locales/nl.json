@@ -1833,6 +1833,8 @@
         "no_essays": "Nog geen essays",
         "create_first_instruction": "Maak je eerste essayopdracht om te beginnen.",
         "assigned_students_title": "Toegewezen leerlingen",
+        "individual_assignment_badge": "Individueel",
+        "individual_assignment_hint": "Apart toegewezen vanaf een beoordelingspagina, geen deel van deze groep",
         "submission_status_submitted": "Ingeleverd",
         "submission_status_pending": "In behandeling",
         "action_monitor": "Monitor",
