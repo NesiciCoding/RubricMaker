@@ -18,6 +18,11 @@ ALTER TABLE public.student_tests
   ADD COLUMN IF NOT EXISTS student_user_id UUID,
   ADD COLUMN IF NOT EXISTS submitted_at    TIMESTAMPTZ;
 
+-- Indexes below are plain (not CONCURRENTLY) intentionally: Supabase migrations run
+-- inside a transaction, where CONCURRENTLY is not allowed. student_tests holds one
+-- row per graded/imported test attempt (small per-teacher volume, unlike a
+-- high-write table), so the brief exclusive lock during index creation is
+-- acceptable.
 CREATE UNIQUE INDEX IF NOT EXISTS student_tests_assignment_uniq
   ON public.student_tests (assignment_id)
   WHERE assignment_id IS NOT NULL;

@@ -30,6 +30,42 @@ function json(body: unknown, status = 200) {
     });
 }
 
+interface RawOption {
+    isCorrect?: boolean;
+    [key: string]: unknown;
+}
+
+interface RawQuestion {
+    options?: RawOption[];
+    expectedAnswer?: unknown;
+    correctBoolean?: unknown;
+    hotTextCorrectIndices?: unknown;
+    [key: string]: unknown;
+}
+
+// Removes fields that only exist to score an answer, not to render the
+// question — options[].isCorrect, expectedAnswer, correctBoolean and
+// hotTextCorrectIndices are read by testCalc.ts server/teacher-side only, so a
+// student reading this response (e.g. via devtools) must never see them.
+//
+// matchingPairs/orderItems/categorizeItems are NOT stripped here: their
+// correctness is structurally inherent to the same fields StudentTestPage's
+// QuestionCard needs to render the question (paired left/right text, item
+// order, item/category text), and the offline-embedded-test-content link
+// format already ships that same structure today. Untangling that is a
+// data-model change affecting the offline path too — tracked separately, not
+// part of this endpoint's scope.
+function toStudentSafeTest(test: { questions?: RawQuestion[]; [key: string]: unknown }) {
+    if (!test || !Array.isArray(test.questions)) return test;
+    return {
+        ...test,
+        questions: test.questions.map((q) => {
+            const { expectedAnswer: _ea, correctBoolean: _cb, hotTextCorrectIndices: _hci, options, ...rest } = q;
+            return options ? { ...rest, options: options.map(({ isCorrect: _ic, ...opt }) => opt) } : rest;
+        }),
+    };
+}
+
 serve(async (req) => {
     if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
     if (req.method !== 'POST') {
@@ -42,10 +78,7 @@ serve(async (req) => {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) return json({ error: 'Unauthorized' }, 401);
 
-    const admin = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-    );
+    const admin = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '');
 
     const {
         data: { user },
@@ -92,6 +125,6 @@ serve(async (req) => {
         requireSEB: assignment.require_seb,
         durationMinutes: assignment.duration_minutes ?? null,
         expiresAt: assignment.expires_at ?? null,
-        test: test.data,
+        test: toStudentSafeTest(test.data),
     });
 });

@@ -197,6 +197,10 @@ export default function StudentTestPage() {
             const session = await adapter.ensureSession();
             if (cancelled) return;
             if (!session.ok) {
+                // Mark contentReady so this effect doesn't keep retrying ensureSession()
+                // on every unrelated re-render (e.g. the countdown timer ticking for a
+                // legacy link with an embedded durationMinutes).
+                setResolvedContent(null);
                 setLoadError(t('tests.taking.load_error'));
                 logEvent('error', 'test_load_error', { testId: assignment.testId }, 'error');
                 setLoading(false);

@@ -20,6 +20,21 @@ export type FetchTestContentResult =
     | { ok: true; data: TestAssignmentContent }
     | { ok: false; reason: 'unauthenticated' | 'not_found' | 'expired' | 'network' | 'invalid_response' };
 
+const REQUEST_TIMEOUT_MS = 15_000;
+
+/** Narrows an edge-function response body before it's trusted as TestAssignmentContent. */
+function isTestAssignmentContent(data: unknown): data is TestAssignmentContent {
+    if (!data || typeof data !== 'object') return false;
+    const d = data as Record<string, unknown>;
+    return (
+        typeof d.testId === 'string' &&
+        typeof d.studentId === 'string' &&
+        !!d.test &&
+        typeof d.test === 'object' &&
+        Array.isArray((d.test as Record<string, unknown>).questions)
+    );
+}
+
 export class TestAdapter {
     private client: SupabaseClient;
     private supabaseUrl: string;
@@ -31,6 +46,17 @@ export class TestAdapter {
         this.client = createClient(supabaseUrl, supabaseAnonKey, {
             auth: { persistSession: true, autoRefreshToken: true, storageKey: 'rm_student_test_auth' },
         });
+    }
+
+    /** fetch() with a hard timeout — a stalled edge-function connection must not leave the student stuck indefinitely, especially mid-timed-exam. */
+    private async fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+        try {
+            return await fetch(url, { ...init, signal: controller.signal });
+        } finally {
+            clearTimeout(timer);
+        }
     }
 
     /** The client used for auth/queries — for diagnostics (e.g. clientLogger). */
@@ -57,7 +83,7 @@ export class TestAdapter {
 
         let response: Response;
         try {
-            response = await fetch(`${this.supabaseUrl}/functions/v1/get-test-assignment`, {
+            response = await this.fetchWithTimeout(`${this.supabaseUrl}/functions/v1/get-test-assignment`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -75,7 +101,7 @@ export class TestAdapter {
         if (!response.ok) return { ok: false, reason: 'invalid_response' };
 
         const data = await response.json().catch(() => null);
-        return data ? { ok: true, data } : { ok: false, reason: 'invalid_response' };
+        return isTestAssignmentContent(data) ? { ok: true, data } : { ok: false, reason: 'invalid_response' };
     }
 
     /**
@@ -98,7 +124,7 @@ export class TestAdapter {
 
         let response: Response;
         try {
-            response = await fetch(`${this.supabaseUrl}/functions/v1/submit-test`, {
+            response = await this.fetchWithTimeout(`${this.supabaseUrl}/functions/v1/submit-test`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

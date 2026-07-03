@@ -30,10 +30,7 @@ serve(async (req) => {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) return json({ error: 'Unauthorized' }, 401);
 
-    const admin = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-    );
+    const admin = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '');
 
     const {
         data: { user },
@@ -60,13 +57,14 @@ serve(async (req) => {
         !assignmentId ||
         !submissionId ||
         !Array.isArray(answers) ||
-        !answers.every((a) => a && typeof a.questionId === 'string') ||
+        !answers.every((a) => a && typeof a.questionId === 'string' && typeof a.response === 'string') ||
         !startedAt ||
-        !submittedAt
+        !submittedAt ||
+        (events !== undefined && !Array.isArray(events))
     ) {
         return json(
             { error: 'Missing required fields: assignmentId, submissionId, answers, startedAt, submittedAt' },
-            400,
+            400
         );
     }
 
@@ -118,7 +116,8 @@ serve(async (req) => {
         if (insertErr.code === '23505') {
             return json({ error: 'You have already submitted this assignment' }, 409);
         }
-        return json({ error: `Database insert failed: ${insertErr.message}` }, 500);
+        console.error('submit-test insert failed:', insertErr);
+        return json({ error: 'Failed to save submission. Please try again.' }, 500);
     }
 
     return json({ success: true });

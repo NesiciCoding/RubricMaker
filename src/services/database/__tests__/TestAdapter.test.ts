@@ -76,13 +76,21 @@ describe('TestAdapter', () => {
 
         it('posts to get-test-assignment with the bearer token and returns the test content', async () => {
             mockAuth.getSession.mockResolvedValue({ data: { session: mockSession } });
-            const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ test: { id: 't1', name: 'Quiz' } }));
+            const contentBody = {
+                testId: 't1',
+                studentId: 's1',
+                requireSEB: false,
+                durationMinutes: null,
+                expiresAt: null,
+                test: { id: 't1', name: 'Quiz', questions: [] },
+            };
+            const fetchMock = vi.fn().mockResolvedValue(jsonResponse(contentBody));
             vi.stubGlobal('fetch', fetchMock);
 
             const adapter = new TestAdapter('https://x.supabase.co', 'anon-key');
             const result = await adapter.fetchAssignmentContent('assignment-1');
 
-            expect(result).toEqual({ ok: true, data: { test: { id: 't1', name: 'Quiz' } } });
+            expect(result).toEqual({ ok: true, data: contentBody });
             expect(fetchMock).toHaveBeenCalledWith(
                 'https://x.supabase.co/functions/v1/get-test-assignment',
                 expect.objectContaining({
@@ -94,6 +102,16 @@ describe('TestAdapter', () => {
                     body: JSON.stringify({ assignmentId: 'assignment-1' }),
                 })
             );
+        });
+
+        it('returns invalid_response when the edge function body is missing required fields', async () => {
+            mockAuth.getSession.mockResolvedValue({ data: { session: mockSession } });
+            vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ test: { id: 't1', name: 'Quiz' } })));
+
+            const adapter = new TestAdapter('https://x.supabase.co', 'anon-key');
+            const result = await adapter.fetchAssignmentContent('assignment-1');
+
+            expect(result).toEqual({ ok: false, reason: 'invalid_response' });
         });
 
         it.each([
