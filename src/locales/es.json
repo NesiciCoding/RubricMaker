@@ -542,6 +542,7 @@
             "invalid_link_desc": "Este enlace de prueba no es válido. Pide a tu profesor un nuevo enlace.",
             "expired_title": "El plazo de esta prueba ha terminado",
             "expired_desc": "El plazo era {{date}}. Ponte en contacto con tu profesor.",
+            "expired_desc_no_date": "Esta prueba ha caducado. Ponte en contacto con tu profesor.",
             "load_error_title": "No se pudo cargar esta prueba",
             "load_error": "Esta prueba no se pudo cargar. Pide a tu profesor un nuevo enlace.",
             "seb_blocked_title": "Abre esta prueba en Safe Exam Browser",
