@@ -1254,24 +1254,22 @@ export class SupabaseAdapter {
 
     /** Teacher sends a reply or starts a new thread. */
     async upsertMessage(m: Message): Promise<SyncResult> {
-        const { error } = await this.db()
-            .from('messages')
-            .upsert(
-                {
-                    id: m.id,
-                    owner_id: this.uid(),
-                    student_id: m.studentId,
-                    context_type: m.contextType,
-                    context_id: m.contextId,
-                    context_label: m.contextLabel,
-                    sender: m.sender,
-                    body: m.body,
-                    created_at: m.createdAt,
-                    read_by_teacher: m.readByTeacher,
-                    read_by_student: m.readByStudent,
-                },
-                { onConflict: 'id' }
-            );
+        const { error } = await this.db().from('messages').upsert(
+            {
+                id: m.id,
+                owner_id: this.uid(),
+                student_id: m.studentId,
+                context_type: m.contextType,
+                context_id: m.contextId,
+                context_label: m.contextLabel,
+                sender: m.sender,
+                body: m.body,
+                created_at: m.createdAt,
+                read_by_teacher: m.readByTeacher,
+                read_by_student: m.readByStudent,
+            },
+            { onConflict: 'id' }
+        );
         return error ? { success: false, error: error.message } : { success: true };
     }
 

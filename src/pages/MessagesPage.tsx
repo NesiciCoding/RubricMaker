@@ -214,7 +214,13 @@ export default function MessagesPage() {
                                     </button>
 
                                     {expanded && (
-                                        <div style={{ marginTop: 14, borderTop: '1px solid var(--border)', paddingTop: 14 }}>
+                                        <div
+                                            style={{
+                                                marginTop: 14,
+                                                borderTop: '1px solid var(--border)',
+                                                paddingTop: 14,
+                                            }}
+                                        >
                                             <div
                                                 style={{
                                                     display: 'flex',
@@ -229,7 +235,8 @@ export default function MessagesPage() {
                                                     <div
                                                         key={m.id}
                                                         style={{
-                                                            alignSelf: m.sender === 'teacher' ? 'flex-end' : 'flex-start',
+                                                            alignSelf:
+                                                                m.sender === 'teacher' ? 'flex-end' : 'flex-start',
                                                             maxWidth: '80%',
                                                             background:
                                                                 m.sender === 'teacher'

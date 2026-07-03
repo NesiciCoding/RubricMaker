@@ -986,7 +986,12 @@ function PortalMessages({
     studentId: string;
     threads: MessageThread[];
     contextOptions: { contextType: MessageContextType; contextId: string | null; label: string }[];
-    onSend: (contextType: MessageContextType, contextId: string | null, contextLabel: string | null, body: string) => void;
+    onSend: (
+        contextType: MessageContextType,
+        contextId: string | null,
+        contextLabel: string | null,
+        body: string
+    ) => void;
     t: TFunc;
 }) {
     const [contextIndex, setContextIndex] = useState(0);

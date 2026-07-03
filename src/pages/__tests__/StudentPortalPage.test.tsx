@@ -391,9 +391,11 @@ describe('StudentPortalPage', () => {
         // Rubric picker offers the graded rubric alongside the combined view. Scoped to the
         // radar select itself since "Essay Rubric" also appears as a context option in the
         // "ask a question" composer now.
-        expect(within(screen.getByLabelText('studentPortal.progress_view_label')).getByRole('option', {
-            name: 'Essay Rubric',
-        })).toBeInTheDocument();
+        expect(
+            within(screen.getByLabelText('studentPortal.progress_view_label')).getByRole('option', {
+                name: 'Essay Rubric',
+            })
+        ).toBeInTheDocument();
         expect(screen.getByText('studentPortal.progress_view_combined')).toBeInTheDocument();
         mockAppValue.studentRubrics = emptyArr;
     });

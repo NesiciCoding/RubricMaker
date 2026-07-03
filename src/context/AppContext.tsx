@@ -1648,10 +1648,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const fetchMyTestAssignments = useCallback(() => storageSync.fetchMyTestAssignments(), []);
     const fetchAssignedTestContent = useCallback((testId: string) => storageSync.fetchAssignedTestContent(testId), []);
     const fetchMyMessages = useCallback(() => storageSync.fetchMyMessages(), []);
-    const sendMessageAsStudent = useCallback(
-        (m: Message) => storageSync.sendMessageAsStudent(m),
-        []
-    );
+    const sendMessageAsStudent = useCallback((m: Message) => storageSync.sendMessageAsStudent(m), []);
     const markMessagesReadByStudent = useCallback((ids: string[]) => storageSync.markMessagesReadByStudent(ids), []);
 
     // ─── Landing / auth flow ──────────────────────────────────────────
