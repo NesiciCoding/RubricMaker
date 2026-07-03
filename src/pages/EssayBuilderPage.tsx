@@ -370,7 +370,10 @@ export default function EssayBuilderPage() {
                                         <span>{student?.name ?? row.studentId}</span>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                             {isIndividual && (
-                                                <span className="badge badge-blue" title={t('essays.individual_assignment_hint')}>
+                                                <span
+                                                    className="badge badge-blue"
+                                                    title={t('essays.individual_assignment_hint')}
+                                                >
                                                     {t('essays.individual_assignment_badge')}
                                                 </span>
                                             )}

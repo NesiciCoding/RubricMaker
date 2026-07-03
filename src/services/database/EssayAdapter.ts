@@ -172,7 +172,8 @@ export class EssayAdapter {
         const active = await this.getActiveSession();
         if (!active) return { userId: null, email: null };
         const email =
-            active.session.user.email ?? (active.source === 'isolated' ? localStorage.getItem(STUDENT_EMAIL_KEY) : null);
+            active.session.user.email ??
+            (active.source === 'isolated' ? localStorage.getItem(STUDENT_EMAIL_KEY) : null);
         return {
             userId: active.session.user.id,
             email,
