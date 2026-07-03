@@ -1,10 +1,17 @@
 import i18n from 'i18next';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { SupabaseAdapter } from './SupabaseAdapter';
 import { AttachmentSync } from './AttachmentSync';
 import { RecordingSync } from './RecordingSync';
 import type { DatabaseConfig, SyncStatus, SyncResult, DbUser } from './types';
 import type { StoreData } from '../../store/storage';
-import { addToPendingQueue, loadPendingQueue, removePendingWrites, DEFAULT_SETTINGS } from '../../store/storage';
+import {
+    addToPendingQueue,
+    loadPendingQueue,
+    removePendingWrites,
+    clearLocalData,
+    DEFAULT_SETTINGS,
+} from '../../store/storage';
 import { logEvent } from '../logging/clientLogger';
 import type {
     Rubric,
@@ -21,14 +28,18 @@ import type {
     SpeakingSession,
     DocumentAnalysisResult,
     EssayAssignment,
+    EssaySubmission,
     EssayTemplate,
     GradingTask,
     Test,
     StudentTest,
+    TestAssignment,
+    UserTemplate,
 } from '../../types';
 
 const CONFIG_KEY = 'rm_supabase_config';
 const LAST_SYNC_KEY = 'rm_last_sync_at';
+const OWNER_KEY = 'rm_owner_uid';
 
 function normalizeSupabaseUrl(url: string): string {
     let normalized = url.trim();
@@ -91,6 +102,37 @@ class StorageSyncService {
     private reconnectListeners: Set<() => void> = new Set();
     private networkListenerActive = false;
     private flushInProgress = false;
+    private realtimeChannel: ReturnType<SupabaseClient['channel']> | null = null;
+    private realtimeDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+    // Every table backing a StoreData collection, with the RLS-scoping column to filter
+    // change events by so a client only receives events for rows it can already read.
+    // student_rubrics backs both studentRubrics and peerReviews (split by a boolean
+    // column) — one subscription covers both, since a refresh re-fetches the whole table.
+    private static readonly REALTIME_TABLES: Array<{ table: string; filterColumn: string }> = [
+        { table: 'rubrics', filterColumn: 'owner_id' },
+        { table: 'classes', filterColumn: 'owner_id' },
+        { table: 'students', filterColumn: 'owner_id' },
+        { table: 'student_rubrics', filterColumn: 'grader_id' },
+        { table: 'attachments', filterColumn: 'owner_id' },
+        { table: 'grade_scales', filterColumn: 'owner_id' },
+        { table: 'comment_snippets', filterColumn: 'owner_id' },
+        { table: 'comment_bank', filterColumn: 'owner_id' },
+        { table: 'export_templates', filterColumn: 'owner_id' },
+        { table: 'favorite_standards', filterColumn: 'owner_id' },
+        { table: 'self_assessments', filterColumn: 'owner_id' },
+        { table: 'speaking_sessions', filterColumn: 'owner_id' },
+        { table: 'analysis_results', filterColumn: 'owner_id' },
+        { table: 'tests', filterColumn: 'owner_id' },
+        { table: 'student_tests', filterColumn: 'owner_id' },
+        { table: 'essay_templates', filterColumn: 'owner_id' },
+        { table: 'grading_tasks', filterColumn: 'owner_id' },
+        { table: 'essay_batch_assignments', filterColumn: 'owner_id' },
+        { table: 'essay_offline_submissions', filterColumn: 'owner_id' },
+        { table: 'user_templates', filterColumn: 'owner_id' },
+        { table: 'user_settings', filterColumn: 'user_id' },
+    ];
+    private static readonly REALTIME_DEBOUNCE_MS = 800;
 
     // ── Status ────────────────────────────────────────────────────────────────
 
@@ -211,12 +253,19 @@ class StorageSyncService {
     async configure(config: DatabaseConfig): Promise<boolean> {
         const ok = await this.adapter.connect(config);
         if (ok) {
+            // startRealtimeSync() is a no-op while a channel already exists, so without
+            // this, configure() called twice without an intervening disconnect()/signOut()
+            // (e.g. an owner switch) would leave the realtime subscription scoped to the
+            // previous user's uid.
+            this.stopRealtimeSync();
+            this.guardOwnerSwitch();
             this.setStatus('idle');
             this.adapter.setAuthChangeListener((user) => {
                 this.notifyAuthChange(user);
                 this.notifyListeners();
             });
             this.startNetworkListener();
+            this.startRealtimeSync();
             // Flush any writes that failed in a previous session
             this.flushPendingQueue().catch(console.warn);
         } else {
@@ -225,13 +274,98 @@ class StorageSyncService {
         return ok;
     }
 
+    /**
+     * Subscribes to Postgres change events on every synced table (RLS + a per-row
+     * filter scope it to the current user) so edits made on another device show up
+     * without waiting for reconnect or next login. Bursts of changes are debounced
+     * into a single refresh — this is a "something changed, go refetch" signal, not
+     * a delta transport, so it reuses the already-correct hydrate()+mergeStoreData()
+     * pipeline (via the reconnect-listener callback) instead of hand-decoding ~20
+     * different row shapes into app objects a second time.
+     */
+    private startRealtimeSync(): void {
+        const client = this.adapter.getClient();
+        const uid = this.adapter.getCurrentUserId();
+        if (!client || !uid || this.realtimeChannel) return;
+        const channel = client.channel(`sync:${uid}`);
+        for (const { table, filterColumn } of StorageSyncService.REALTIME_TABLES) {
+            channel.on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table, filter: `${filterColumn}=eq.${uid}` },
+                () => this.scheduleRealtimeRefresh()
+            );
+        }
+        channel.subscribe();
+        this.realtimeChannel = channel;
+    }
+
+    private stopRealtimeSync(): void {
+        if (this.realtimeDebounceTimer) {
+            clearTimeout(this.realtimeDebounceTimer);
+            this.realtimeDebounceTimer = null;
+        }
+        if (this.realtimeChannel) {
+            this.adapter.getClient()?.removeChannel(this.realtimeChannel);
+            this.realtimeChannel = null;
+        }
+    }
+
+    private scheduleRealtimeRefresh(): void {
+        if (this.realtimeDebounceTimer) clearTimeout(this.realtimeDebounceTimer);
+        this.realtimeDebounceTimer = setTimeout(() => {
+            this.realtimeDebounceTimer = null;
+            // AppContext's onNetworkReconnect handler already does exactly what a
+            // realtime change needs: hydrate, merge against pending writes, flush
+            // to localStorage.
+            this.notifyReconnect();
+        }, StorageSyncService.REALTIME_DEBOUNCE_MS);
+    }
+
+    private wipedLocalDataOnConfigure = false;
+
+    /** True when the last configure() wiped local data because a different user signed in. */
+    didWipeLocalData(): boolean {
+        return this.wipedLocalDataOnConfigure;
+    }
+
+    // Local data (including the pending-sync queue) always belongs to exactly one
+    // account. If a different user signs in on this browser, wipe it BEFORE the
+    // pending queue is flushed so the previous user's edits are never pushed into
+    // the new user's account.
+    private guardOwnerSwitch(): void {
+        this.wipedLocalDataOnConfigure = false;
+        try {
+            const uid = this.adapter.getCurrentUserId();
+            if (!uid) return;
+            // An anonymous session is a fallback identity (connect() calls
+            // signInAnonymously() whenever it can't read a real session — including
+            // a transient race right after a page reload, before Supabase-js has
+            // finished restoring the persisted session from storage), not a
+            // genuine different user. Never wipe — or overwrite the stored owner —
+            // because of one; a later reconnect with the real session should still
+            // compare against the last known real owner.
+            if (this.adapter.isAnonymousSession()) return;
+            const previousOwner = localStorage.getItem(OWNER_KEY);
+            if (previousOwner && previousOwner !== uid) {
+                clearLocalData();
+                this.lastSyncAt = null;
+                this.wipedLocalDataOnConfigure = true;
+            }
+            localStorage.setItem(OWNER_KEY, uid);
+        } catch {
+            // storage unavailable — skip the guard
+        }
+    }
+
     disconnect() {
+        this.stopRealtimeSync();
         this.adapter.disconnect();
         this.setStatus('offline');
         clearSupabaseConfig();
     }
 
     async signOut(): Promise<void> {
+        this.stopRealtimeSync();
         await this.adapter.signOut();
         this.setStatus('offline');
         clearSupabaseConfig();
@@ -322,6 +456,18 @@ class StorageSyncService {
         return this.adapter.fetchMyEssayAssignments();
     }
 
+    async saveTestAssignment(a: TestAssignment): Promise<SyncResult> {
+        return this.adapter.saveTestAssignment(a);
+    }
+
+    async fetchMyTestAssignments() {
+        return this.adapter.fetchMyTestAssignments();
+    }
+
+    async fetchAssignedTestContent(testId: string): Promise<Test | null> {
+        return this.adapter.fetchAssignedTestContent(testId);
+    }
+
     async fetchEssayAssignmentByKey(teacherKey: string) {
         return this.adapter.fetchEssayAssignmentByKey(teacherKey);
     }
@@ -386,6 +532,9 @@ class StorageSyncService {
                 studentTests,
                 essayTemplates,
                 gradingTasks,
+                essayAssignments,
+                essaySubmissions,
+                userTemplates,
                 attachments,
                 settings,
                 profile,
@@ -407,6 +556,9 @@ class StorageSyncService {
                 this.adapter.fetchStudentTests(),
                 this.adapter.fetchEssayTemplates(),
                 this.adapter.fetchGradingTasks(),
+                this.adapter.fetchEssayBatchAssignments(),
+                this.adapter.fetchEssayOfflineSubmissions(),
+                this.adapter.fetchUserTemplates(),
                 this.attachmentSync.hydrateAttachments(),
                 this.adapter.fetchSettings(),
                 this.adapter.fetchMyProfile(),
@@ -474,6 +626,9 @@ class StorageSyncService {
                 studentTests,
                 essayTemplates,
                 gradingTasks,
+                essayAssignments,
+                essaySubmissions,
+                userTemplates,
                 attachments,
                 ...(mergedSettings ? { settings: mergedSettings as StoreData['settings'] } : {}),
             };
@@ -523,6 +678,11 @@ class StorageSyncService {
                 ...state.studentTests.map((st) => this.adapter.upsertStudentTest(st)),
                 ...state.essayTemplates.map((et) => this.adapter.upsertEssayTemplate(et)),
                 ...state.gradingTasks.map((gt) => this.adapter.upsertGradingTask(gt)),
+                ...state.essayAssignments.map((a) =>
+                    this.adapter.upsertEssayBatchAssignment(`${a.teacherKey}:${a.studentId}`, a)
+                ),
+                ...state.essaySubmissions.map((s) => this.adapter.upsertEssayOfflineSubmission(s)),
+                ...state.userTemplates.map((ut) => this.adapter.upsertUserTemplate(ut)),
                 this.adapter.saveSettings(state.settings),
             ];
             await Promise.all(ups);
@@ -643,6 +803,21 @@ class StorageSyncService {
                 case 'gradingTask':
                     if (action === 'upsert') result = await this.adapter.upsertGradingTask(payload as GradingTask);
                     else if (id) result = await this.adapter.deleteGradingTask(id);
+                    break;
+                case 'essayBatchAssignment':
+                    if (action === 'upsert') {
+                        const a = payload as EssayAssignment;
+                        result = await this.adapter.upsertEssayBatchAssignment(`${a.teacherKey}:${a.studentId}`, a);
+                    } else if (id) result = await this.adapter.deleteEssayBatchAssignment(id);
+                    break;
+                case 'essayOfflineSubmission':
+                    if (action === 'upsert')
+                        result = await this.adapter.upsertEssayOfflineSubmission(payload as EssaySubmission);
+                    else if (id) result = await this.adapter.deleteEssayOfflineSubmission(id);
+                    break;
+                case 'userTemplate':
+                    if (action === 'upsert') result = await this.adapter.upsertUserTemplate(payload as UserTemplate);
+                    else if (id) result = await this.adapter.deleteUserTemplate(id);
                     break;
                 case 'settings':
                     if (action === 'upsert')

@@ -1,6 +1,6 @@
 # Rubric Maker
 
-A comprehensive, offline-first rubric creation and grading tool built with React and TypeScript. Designed for educators who need to design complex rubrics, grade students efficiently, and analyse performance — including language proficiency tracking aligned to the Common European Framework of Reference (CEFR).
+A comprehensive rubric creation and grading tool built with React and TypeScript — self-hostable with full functionality, and offline-capable (with reduced capabilities) when no backend is configured. Designed for educators who need to design complex rubrics, grade students efficiently, and analyse performance — including language proficiency tracking aligned to the Common European Framework of Reference (CEFR).
 
 ## Features
 
@@ -79,6 +79,8 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 - **View feedback**: Students see their grades, teacher comments, and attached files.
 - **Submit essays**: Anonymous essay submission via submission codes.
 - **Self-assessment**: Students complete CEFR self-assessments from their portal.
+- **My Work**: A combined to-do list of assigned essays and tests, grouped into Overdue/Planned/Completed with per-item status (not started/in progress/submitted). Tests open in one click from the list, backed by a `test_assignments` Supabase table mirroring `essay_assignments`.
+- **My Progress**: A radar chart of the student's own per-criterion scores, combined across every graded rubric (criteria with matching titles averaged together) or filtered to a single rubric.
 
 ### 7. Customisation & Accessibility
 
@@ -90,12 +92,12 @@ A comprehensive, offline-first rubric creation and grading tool built with React
 
 ### 8. Installation
 
-- **Installable PWA**: RubricMaker can be installed to a device's home screen or desktop (look for the install icon in the browser address bar) for an app-like, browser-chrome-free launch — useful for shared classroom devices. This only affects installability of the static app shell; it does not change the offline-first localStorage data model, and the service worker never caches Supabase API requests (`/rest/`, `/auth/`, `/realtime/`, `/storage/`, `/functions/` paths are always network-only).
+- **Installable PWA**: RubricMaker can be installed to a device's home screen or desktop (look for the install icon in the browser address bar) for an app-like, browser-chrome-free launch — useful for shared classroom devices. This only affects installability of the static app shell; it does not change the storage model, and the service worker never caches Supabase API requests (`/rest/`, `/auth/`, `/realtime/`, `/storage/`, `/functions/` paths are always network-only).
 
 ### 9. Data Management
 
-- **Offline-first**: All data lives in the browser's `localStorage`. No account required.
-- **Cloud sync** (optional): Supabase backend for multi-device access and multi-teacher collaboration. Sync hydrates `localStorage` from Supabase on load and after reconnect; per-record conflicts resolve last-write-wins (newest `updatedAt` wins), and offline edits queued in the pending-sync queue are protected from being clobbered by stale cloud data until they are pushed (see `src/utils/syncMerge.ts`).
+- **Offline-capable**: Without a configured backend, all data lives in the browser's `localStorage` and no account is required — with reduced capabilities (no collaboration, student portal, or multi-device access).
+- **Cloud sync** (recommended): Supabase backend as the primary store for multi-device access and multi-teacher collaboration. Sync hydrates `localStorage` from Supabase on load, after reconnect, and in near-real-time whenever another device changes data (Postgres change events on every synced table, debounced into a single refresh — see `StorageSync.startRealtimeSync`); per-record conflicts resolve last-write-wins (newest `updatedAt` wins), and offline edits queued in the pending-sync queue are protected from being clobbered by stale cloud data until they are pushed (see `src/utils/syncMerge.ts`).
 - **Backup & restore**: Export the entire dataset to JSON; restore from any prior backup.
 - **Admin panel**: School-level management — user roles, onboarding, student anonymisation, data-retention policies.
 
@@ -297,6 +299,16 @@ Attachment files and their database rows are deleted automatically when they age
 The script uses the Storage HTTP API — it does **not** delete rows directly from `storage.objects` (which Supabase blocks). It calls `public.get_overdue_attachments()` to find eligible rows, removes each file via `DELETE /storage/v1/object/attachments/{path}`, then cleans up the metadata rows. A 404 from storage is treated as success so orphaned DB rows are always removed.
 
 On Supabase Cloud, schedule the `delete-old-attachments` edge function instead (see [Supabase Dashboard → Edge Functions](https://supabase.com/dashboard/project/_/functions)).
+
+**Nightly cloud backup (recommended for Supabase Cloud and the official self-hosted stack):**
+
+`scripts/backup.sh` (see "Backup and restore" above) only works against **this repo's own `docker-compose.yml`** — it calls `docker-compose exec db pg_dump` and archives a hardcoded volume name (`rubricmaker_storage-data`), both specific to that bundled stack. It does nothing for Supabase Cloud or for a Supabase instance you're self-hosting separately (e.g. the [official self-hosted Supabase Docker stack](https://supabase.com/docs/guides/self-hosting/docker)) — different container/volume names, or no server access at all on Cloud.
+
+The `nightly-backup` edge function covers both of those cases instead: for every teacher/admin, it dumps their rows via `public.export_owner_backup()` and uploads a JSON snapshot to the private `backups` Storage bucket at `{userId}/{timestamp}.json`, keeping the 7 most recent per user. Like `set-student-password`, it needs a functions runtime — this repo's bundled `docker-compose.yml` doesn't have one, but the official self-hosted stack does (deploy by copying `index.ts` into that stack's `volumes/functions/nightly-backup/index.ts`, no separate deploy step), and so does Cloud.
+
+Schedule it nightly: on Cloud via [Supabase Dashboard → Edge Functions](https://supabase.com/dashboard/project/_/functions) or Cron Jobs; on the official self-hosted stack via a `pg_cron` + `pg_net` job or an external cron hitting the function URL. It authenticates the same way as `delete-old-attachments` — the scheduler must pass the project's service role key as a bearer token.
+
+This is a disaster-recovery snapshot of raw table rows, not a file you can feed back into the app's own JSON import (Settings → Backup & Restore) — restoring it means re-inserting the rows directly (e.g. via `psql` or the Supabase SQL editor), not through `importFullBackup()`. It's metadata only: rows that reference uploaded files (essay submissions, speaking-session recordings) store a Storage-bucket path, not the file itself, so back up the `essays`/`recordings`/`attachments` buckets separately if you need those files recoverable too. If you're self-hosting Supabase separately from this repo's stack, you may also want your own `pg_dump`-based backup of the whole instance — `export_owner_backup()` only covers the app's own tables, scoped per teacher/admin.
 
 **Stress-test logging (optional):**
 

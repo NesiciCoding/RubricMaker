@@ -556,15 +556,16 @@ describe('mergeStoreData', () => {
         expect(result.favoriteStandards).toEqual([localOnly]);
     });
 
-    it('userTemplates (not part of COLLECTIONS) always stays local, even if remote provides it', () => {
-        const localTemplates = [{ id: 't1', name: 'Local Template' }] as unknown as StoreData['userTemplates'];
-        const local = baseStoreData({ userTemplates: localTemplates });
-        // Even if a caller mistakenly includes userTemplates on remote, mergeStoreData
-        // doesn't iterate it (not in COLLECTIONS) and settings/collections logic doesn't touch it.
-        const remote = { userTemplates: [{ id: 't2', name: 'Remote Template' }] } as unknown as Partial<StoreData>;
+    it('userTemplates: remote-only templates survive the merge and a pending upsert protects a local-only one', () => {
+        const localOnly = { id: 't1', name: 'Local Template' } as unknown as StoreData['userTemplates'][number];
+        const remoteOnly = { id: 't2', name: 'Remote Template' } as unknown as StoreData['userTemplates'][number];
+        const local = baseStoreData({ userTemplates: [localOnly] });
+        const remote: Partial<StoreData> = { userTemplates: [remoteOnly] };
+        const queue: PendingWrite[] = [pendingWrite({ entity: 'userTemplate', action: 'upsert', payload: localOnly })];
 
-        const result = mergeStoreData(local, remote, []);
-        expect(result.userTemplates).toEqual(localTemplates);
+        const result = mergeStoreData(local, remote, queue);
+        expect(result.userTemplates).toEqual(expect.arrayContaining([localOnly, remoteOnly]));
+        expect(result.userTemplates).toHaveLength(2);
     });
 
     it('does not crash on malformed pending queue entries missing entityId and payload', () => {
@@ -595,5 +596,89 @@ describe('mergeStoreData', () => {
 
         const result = mergeStoreData(local, remote, queue);
         expect(result.rubrics).toEqual([localRubric]);
+    });
+
+    it('remote-only essayTemplates survive the merge (cross-device visibility)', () => {
+        const remoteTemplate = {
+            id: 'et1',
+            rubricId: 'r1',
+            title: 'Remote',
+        } as unknown as StoreData['essayTemplates'][number];
+        const local = baseStoreData({ essayTemplates: [] });
+        const remote: Partial<StoreData> = { essayTemplates: [remoteTemplate] };
+
+        const result = mergeStoreData(local, remote, []);
+        expect(result.essayTemplates).toEqual([remoteTemplate]);
+    });
+
+    it('remote-only gradingTasks survive the merge and a pending delete is honored', () => {
+        const kept = { id: 'gt1', rubricId: 'r1', studentId: 's1' } as unknown as StoreData['gradingTasks'][number];
+        const deleted = { id: 'gt2', rubricId: 'r1', studentId: 's2' } as unknown as StoreData['gradingTasks'][number];
+        const local = baseStoreData({ gradingTasks: [] });
+        const remote: Partial<StoreData> = { gradingTasks: [kept, deleted] };
+        const queue: PendingWrite[] = [
+            pendingWrite({ entity: 'gradingTask', action: 'delete', payload: null, entityId: 'gt2' }),
+        ];
+
+        const result = mergeStoreData(local, remote, queue);
+        expect(result.gradingTasks).toEqual([kept]);
+    });
+
+    it('essayAssignments are keyed by teacherKey:studentId — remote-only rows survive, a pending upsert for one student protects only that student', () => {
+        const localOnly = {
+            teacherKey: 'tk1',
+            studentId: 's-local',
+            title: 'Local only',
+        } as unknown as StoreData['essayAssignments'][number];
+        const remoteOnly = {
+            teacherKey: 'tk1',
+            studentId: 's-remote',
+            title: 'Remote only',
+        } as unknown as StoreData['essayAssignments'][number];
+        const local = baseStoreData({ essayAssignments: [localOnly] });
+        const remote: Partial<StoreData> = { essayAssignments: [remoteOnly] };
+        const queue: PendingWrite[] = [
+            pendingWrite({
+                entity: 'essayBatchAssignment',
+                action: 'upsert',
+                payload: localOnly,
+                entityId: 'tk1:s-local',
+            }),
+        ];
+
+        const result = mergeStoreData(local, remote, queue);
+        expect(result.essayAssignments).toEqual(expect.arrayContaining([localOnly, remoteOnly]));
+        expect(result.essayAssignments).toHaveLength(2);
+    });
+
+    it('two essayAssignments sharing a teacherKey but different studentIds do not collide during merge', () => {
+        const a = {
+            teacherKey: 'tk1',
+            studentId: 's1',
+            title: 'A',
+        } as unknown as StoreData['essayAssignments'][number];
+        const b = {
+            teacherKey: 'tk1',
+            studentId: 's2',
+            title: 'B',
+        } as unknown as StoreData['essayAssignments'][number];
+        const local = baseStoreData({ essayAssignments: [] });
+        const remote: Partial<StoreData> = { essayAssignments: [a, b] };
+
+        const result = mergeStoreData(local, remote, []);
+        expect(result.essayAssignments).toEqual([a, b]);
+    });
+
+    it('remote-only essaySubmissions survive the merge and a pending delete is honored', () => {
+        const kept = { id: 'sub1', teacherKey: 'tk1' } as unknown as StoreData['essaySubmissions'][number];
+        const deleted = { id: 'sub2', teacherKey: 'tk1' } as unknown as StoreData['essaySubmissions'][number];
+        const local = baseStoreData({ essaySubmissions: [] });
+        const remote: Partial<StoreData> = { essaySubmissions: [kept, deleted] };
+        const queue: PendingWrite[] = [
+            pendingWrite({ entity: 'essayOfflineSubmission', action: 'delete', payload: null, entityId: 'sub2' }),
+        ];
+
+        const result = mergeStoreData(local, remote, queue);
+        expect(result.essaySubmissions).toEqual([kept]);
     });
 });

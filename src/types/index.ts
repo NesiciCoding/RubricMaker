@@ -725,6 +725,13 @@ export interface EssayAssignment {
     supabaseAnonKey?: string;
     /** Manual sort position in list views (EssayListPage, Activity Dashboard), shared across the teacherKey group; undefined sorts last by createdAt */
     displayOrder?: number;
+    /**
+     * teacherKey of the Essay Builder group this row was individually assigned from
+     * (e.g. via GradeStudent's "Assign Essay" modal), when that origin was unambiguous.
+     * Lets EssayBuilderPage surface the row on that essay's roster without merely
+     * matching on rubricId, which a teacher can reuse across unrelated essays.
+     */
+    sourceTeacherKey?: string;
 }
 
 /** Saved essay configuration not yet assigned to any student — used to prepare assignments in advance */
@@ -978,6 +985,44 @@ export interface TestAssignmentPayload {
     supabaseAnonKey?: string;
     /** Full test content embedded for offline use (no Supabase) — without this, an offline link cannot load its questions */
     test?: Test;
+}
+
+/** Assignment content resolved from the get-test-assignment edge function for a short-code (DB mode) share link */
+export interface TestAssignmentContent {
+    testId: string;
+    studentId: string;
+    requireSEB: boolean;
+    durationMinutes: number | null;
+    expiresAt: string | null;
+    test: Test;
+}
+
+/** A teacher-created test assignment persisted to `test_assignments` so the student portal can list it, mirrors EssayAssignment */
+export interface TestAssignment {
+    testId: string;
+    studentId: string;
+    /** Opaque teacher identifier written into submissions so the teacher can filter their own rows; also the row id */
+    teacherKey: string;
+    /** Denormalized from Test.name so the portal never needs read access to the `tests` table */
+    testName: string;
+    requireSEB: boolean;
+    durationMinutes?: number;
+    createdAt: string;
+    /** ISO-8601 datetime after which students can no longer submit */
+    expiresAt?: string;
+}
+
+/** A test assignment as seen by the student portal, including their own submission status */
+export interface StudentTestAssignmentSummary {
+    teacherKey: string;
+    testId: string;
+    studentId: string;
+    testName: string;
+    requireSEB: boolean;
+    durationMinutes: number | null;
+    createdAt: string;
+    expiresAt: string | null;
+    submission: { status: StudentTest['status']; submittedAt: string | null } | null;
 }
 
 /** A student's completed test, encoded into a submission code for the teacher to import */

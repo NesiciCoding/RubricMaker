@@ -6,9 +6,13 @@
  * One instance per essay page load; not a singleton.
  *
  * Session strategy (checked in order):
- *  1. rm_student_auth  — set by the anonymous/email-gate flow on this page
- *  2. Default key      — set by the student portal login (Option A flow)
+ *  1. rm_student_auth:<assignmentKey>  — set by the anonymous/email-gate flow on this page
+ *  2. Default key                      — set by the student portal login (Option A flow)
  * The first client that has a session with a real email wins.
+ *
+ * The isolated storageKey and the persisted email are both scoped to assignmentKey
+ * (the assignment's teacherKey) so a session/email typed for one essay assignment
+ * never bleeds into a different assignment opened later in the same browser.
  */
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
@@ -30,7 +34,7 @@ export interface EssaySubmissionPayload {
 }
 
 export class EssayAdapter {
-    /** Isolated client used for anonymous/email-gate auth (storageKey: rm_student_auth) */
+    /** Isolated client used for anonymous/email-gate auth (storageKey: rm_student_auth:<assignmentKey>) */
     private client: SupabaseClient;
     /**
      * Second client using the default Supabase storage key.
@@ -40,14 +44,18 @@ export class EssayAdapter {
     private portalClient: SupabaseClient;
     private supabaseUrl: string;
     private supabaseAnonKey: string;
+    private studentEmailKey: string;
 
-    constructor(supabaseUrl: string, supabaseAnonKey: string) {
+    /** @param assignmentKey Scopes the session/email storage to one essay assignment (its teacherKey). */
+    constructor(supabaseUrl: string, supabaseAnonKey: string, assignmentKey: string) {
         this.supabaseUrl = supabaseUrl;
         this.supabaseAnonKey = supabaseAnonKey;
+        this.studentEmailKey = `rm_student_email:${assignmentKey}`;
         this.client = createClient(supabaseUrl, supabaseAnonKey, {
             // Persist session so OAuth callbacks survive the page redirect.
-            // Uses an isolated storageKey to avoid conflicting with the teacher's session.
-            auth: { persistSession: true, autoRefreshToken: true, storageKey: 'rm_student_auth' },
+            // Uses an isolated, per-assignment storageKey to avoid conflicting with the
+            // teacher's session and with sessions from other essay assignments.
+            auth: { persistSession: true, autoRefreshToken: true, storageKey: `rm_student_auth:${assignmentKey}` },
         });
         // No custom storageKey → reads the default Supabase token written by the portal login.
         this.portalClient = createClient(supabaseUrl, supabaseAnonKey, {
@@ -150,22 +158,38 @@ export class EssayAdapter {
      * The student-provided email is not verified — it is stored in the submission row only.
      * Requires "Allow anonymous sign-ins" to be enabled in the Supabase project settings.
      */
-    async signInAnonymously(): Promise<{ userId: string | null; error?: string }> {
+    async signInAnonymously(email: string): Promise<{ userId: string | null; error?: string }> {
         const { data, error } = await this.client.auth.signInAnonymously();
         if (error || !data.session) return { userId: null, error: error?.message ?? 'Anonymous sign-in failed' };
+        localStorage.setItem(this.studentEmailKey, email);
         return { userId: data.session.user.id };
     }
 
     /**
+     * Clears the persisted email after a submission completes. The anonymous session
+     * itself (rm_student_auth) is left alone — it may still be needed to view a locked
+     * submission — but without this, a stale email would auto-bypass the email gate on
+     * a different essay link opened later in the same browser, misattributing it.
+     */
+    clearStoredEmail(): void {
+        localStorage.removeItem(this.studentEmailKey);
+    }
+
+    /**
      * Get the current session. Checks rm_student_auth first, then the portal session.
-     * Returns email only for real (non-anonymous) accounts so the EmailGate can
-     * auto-bypass when the student has already logged in via the portal.
+     * Real (non-anonymous) accounts return their verified email. Anonymous sessions have
+     * no email on the JWT, so fall back to the value stored by signInAnonymously — without
+     * this, a remount would restore the session but not the email, re-showing the gate.
      */
     async getSession(): Promise<{ userId: string | null; email: string | null }> {
         const active = await this.getActiveSession();
+        if (!active) return { userId: null, email: null };
+        const email =
+            active.session.user.email ??
+            (active.source === 'isolated' ? localStorage.getItem(this.studentEmailKey) : null);
         return {
-            userId: active?.session.user.id ?? null,
-            email: active?.session.user.email ?? null,
+            userId: active.session.user.id,
+            email,
         };
     }
 

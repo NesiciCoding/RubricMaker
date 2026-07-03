@@ -382,6 +382,25 @@ export function saveGradingTasks(tasks: GradingTask[]) {
     save(KEYS.gradingTasks, tasks);
 }
 
+// ─── Local data wipe (user switch / sign-out) ─────────────────────────────────
+
+// Connection settings survive a wipe; everything else under the rm_ prefix
+// (entity data, pending queue, migration/tour flags, last-sync marker) goes.
+const WIPE_PRESERVED_KEYS = new Set(['rm_supabase_config', 'rm_local_mode']);
+
+export function clearLocalData(): void {
+    try {
+        const doomed: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('rm_') && !WIPE_PRESERVED_KEYS.has(key)) doomed.push(key);
+        }
+        doomed.forEach((key) => localStorage.removeItem(key));
+    } catch {
+        // storage unavailable — nothing to wipe
+    }
+}
+
 // ─── Full Backup / Restore ─────────────────────────────────────────────────────
 
 export function exportStore(state: StoreData): StoreData {
@@ -592,7 +611,10 @@ export interface PendingWrite {
 }
 
 function pendingKey(op: Pick<PendingWrite, 'entity' | 'action' | 'payload' | 'entityId'>): string {
-    const eid = op.action === 'delete' ? op.entityId : (op.payload as Record<string, unknown> | null)?.id;
+    // entityId is authoritative when present (every call site passes it, including upserts —
+    // required for entities like essayBatchAssignment whose payload has no id/guid field to
+    // fall back to). The payload.id fallback only serves callers that predate that change.
+    const eid = op.entityId ?? (op.payload as Record<string, unknown> | null)?.id;
     return `${op.entity}:${eid ?? 'singleton'}`;
 }
 
@@ -604,6 +626,11 @@ export function loadPendingQueue(): PendingWrite[] {
         return [];
     }
 }
+
+// One entry per entity:id (upserts are deduped), so the cap is only reached after
+// ~500 distinct records are touched while pushes keep failing. Drop-oldest at the
+// cap; consider a per-entity eviction policy if teachers ever hit it.
+const MAX_PENDING_OPS = 500;
 
 export function addToPendingQueue(op: Omit<PendingWrite, 'id' | 'queuedAt'>): void {
     try {
@@ -618,11 +645,20 @@ export function addToPendingQueue(op: Omit<PendingWrite, 'id' | 'queuedAt'>): vo
         if (idx >= 0) {
             queue[idx] = entry;
         } else {
+            if (queue.length >= MAX_PENDING_OPS) {
+                console.warn('[storage] pending-sync queue full — dropping oldest entry', queue[0]);
+                queue.shift();
+                // Same handler as a quota error — the dropped entry is unsynced data loss
+                // just like a failed write, and the user has no other way to know.
+                quotaExceededHandler?.();
+            }
             queue.push(entry);
         }
         localStorage.setItem(PENDING_SYNC_KEY, JSON.stringify(queue));
-    } catch {
-        // quota errors are non-fatal
+    } catch (e) {
+        // The queued edit now exists only in memory — surface it instead of losing it silently.
+        console.error('[storage] pending-sync queue write failed:', e);
+        if (isQuotaExceededError(e)) quotaExceededHandler?.();
     }
 }
 

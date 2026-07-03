@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { putBlob, getBlob, deleteBlob, listIds, estimateUsage } from '../mediaStore';
+import { putBlob, getBlob, deleteBlob, listIds, estimateUsage, pruneOrphanedBlobs } from '../mediaStore';
 
 function makeBlob(content: string, type = 'audio/webm'): Blob {
     return new Blob([content], { type });
@@ -62,6 +62,37 @@ describe('mediaStore', () => {
     });
 
     it('listIds returns an empty array when the store is empty', async () => {
+        expect(await listIds()).toEqual([]);
+    });
+});
+
+describe('pruneOrphanedBlobs', () => {
+    beforeEach(async () => {
+        for (const id of await listIds()) {
+            await deleteBlob(id);
+        }
+    });
+
+    it('deletes blobs not present in the referenced set', async () => {
+        await putBlob('kept', makeBlob('1'), 'audio/webm');
+        await putBlob('orphan', makeBlob('2'), 'audio/webm');
+
+        await pruneOrphanedBlobs(new Set(['kept']));
+
+        expect((await listIds()).sort()).toEqual(['kept']);
+    });
+
+    it('deletes nothing when every blob is referenced', async () => {
+        await putBlob('a', makeBlob('1'), 'audio/webm');
+        await putBlob('b', makeBlob('2'), 'audio/webm');
+
+        await pruneOrphanedBlobs(new Set(['a', 'b']));
+
+        expect((await listIds()).sort()).toEqual(['a', 'b']);
+    });
+
+    it('is a no-op on an empty store', async () => {
+        await expect(pruneOrphanedBlobs(new Set())).resolves.toBeUndefined();
         expect(await listIds()).toEqual([]);
     });
 });

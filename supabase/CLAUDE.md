@@ -47,6 +47,7 @@ The RLS recursion bug (fixed in `013_fix_rls_recursion.sql`) was caused by polic
 - `export-templates` — mail-merge DOCX templates, `003_storage_buckets.sql`
 - `essays` — essay submission files, `008_essay_tables.sql`
 - `recordings` — speaking-assessment audio recordings, `034_recordings_storage.sql`
+- `backups` — nightly per-owner data dumps (JSON), `048_nightly_backup.sql`
 
 Access is controlled via storage policies that match `auth.uid()` to the uploader.
 
@@ -56,10 +57,13 @@ Located in `supabase/functions/`. Written in TypeScript for Deno.
 
 Current functions:
 - `submit-essay` — validates and persists a student essay submission server-side (word-count, expiry, and duplicate-submission checks the client could otherwise bypass)
+- `submit-test` — mirrors `submit-essay` for test submissions: server-side expiry check and duplicate-submission guard (backed by the unique index on `student_tests.assignment_id`)
 - `get-essay-assignment` — returns the student-facing content of an essay assignment; the only way anonymous/portal students can read assignment content, since direct REST access is blocked
+- `get-test-assignment` — mirrors `get-essay-assignment` for test content on a bare share-code link
 - `notify-student-graded` — emails a student when a teacher saves a grade, if the student has an email on file and SMTP is configured
 - `set-student-password` — lets a teacher set/reset a student's login password, as a fallback when school email filters block Supabase's OTP mail
 - `delete-old-attachments` — run nightly via Supabase Cron; deletes storage files and metadata rows for attachments past the owner's school retention period
+- `nightly-backup` — run nightly via Supabase Cron (or a self-hosted scheduler hitting the function URL); dumps each teacher/admin's rows via `export_owner_backup()` into the `backups` bucket. The bundled Docker Compose stack has no functions runtime, so self-hosted deployments use `scripts/backup.sh` instead — see the README's "Nightly cloud backup" section
 
 ### Edge function rules
 
@@ -89,15 +93,19 @@ Current functions:
 | `recording_metadata` | Metadata for `recordings` storage bucket audio files |
 | `analysis_results` | Document analysis (OCR/DOCX parsing) results |
 | `user_settings` | Per-user app settings |
+| `user_templates` | Saved rubric templates ("save as template"), synced across devices |
 | `rubric_shares` | Rubric sharing grants between users |
-| `essay_assignments` | Essay prompts created by teachers |
-| `essay_submissions` | Student essay submissions (anonymous via submission codes) |
+| `essay_assignments` | Essay prompts created by teachers, one row per shareable link |
+| `essay_submissions` | Student essay submissions for the online student-portal flow (Storage-bucket file paths) |
+| `essay_batch_assignments` | Teacher's class-assignment bookkeeping (which student was assigned which essay), used by the Activity Dashboard/EssayListPage; distinct from `essay_assignments` |
+| `essay_offline_submissions` | Essays imported via a manually pasted share code (fully offline path, no student account); embeds full HTML content, distinct from `essay_submissions` |
 | `essay_templates` | Reusable essay assignment templates |
+| `test_assignments` | Per-student test assignment records, mirrors `essay_assignments` so the student portal can list assigned tests |
+| `tests` | Test/quiz definitions (including cloze and hot-text questions) |
+| `student_tests` | Student test attempts and results |
 | `site_config` | Per-user app configuration |
 | `schools` | School/organisation records for multi-user deployments |
 | `school_members` | User–school role mappings (admin / user / student) |
-| `tests` | Test/quiz definitions (including cloze and hot-text questions) |
-| `student_tests` | Student test attempts and results |
 | `client_logs` | Client-side error/diagnostic logs |
 | `audit_logs` | Audit trail of sensitive actions |
 | `grading_tasks` | Async grading job records |
@@ -106,8 +114,10 @@ Current functions:
 
 The full schema is spread across migrations — `001_initial_schema.sql` covers most core tables; see individual `NNN_description.sql` files (named after the feature) for the rest.
 
-## Offline-first rule
+## Storage rule (Supabase-primary, offline-capable)
 
-The Supabase layer is **optional**. If `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` are unset, all sync is skipped and `localStorage` is the sole, permanent store. When a Supabase connection is live, `localStorage` stops being a permanent duplicate and becomes a temporary buffer instead — writes go to Supabase first, with `localStorage` only holding a pending-sync queue for failed pushes and a merged snapshot refreshed on reconnect/login, for offline readiness. See root `CLAUDE.md`'s "Offline-first rule" section for the full mechanics.
+Supabase is the primary store whenever a connection is configured. The app must still start and run without Supabase — `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` are optional, and if absent, all sync is silently skipped and `localStorage` is the sole, permanent store — but this local mode is a reduced-capability fallback, not the primary design target.
+
+When a Supabase connection is live, `localStorage` is no longer a permanent duplicate copy — it's only a temporary buffer: writes go to Supabase first (`isOffline()`-gated in the reducer), a failed push falls back to the pending-sync queue as a per-record retry buffer, and `hydrate()` writes a merged snapshot back to `localStorage` purely as an offline-readiness cache, not a live mirror. See root `CLAUDE.md`'s "Storage rule (Supabase-primary, offline-capable)" section for the full mechanics.
 
 Sync logic lives in `src/services/database/StorageSync.ts`. Do not add Supabase calls directly to components or pages — route them through the service adapters in `src/services/database/`.

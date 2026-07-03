@@ -2,7 +2,7 @@
 
 ## Project overview
 
-RubricMaker is an **offline-first** rubric and grading application for teachers. All data lives in browser `localStorage`; an optional Supabase backend provides cloud sync and multi-device access. The app targets static hosting (no server required in offline mode) and can also be self-hosted with Docker.
+RubricMaker is a rubric and grading application for teachers. It is **self-hostable with full functionality** (Supabase backend for persistence, sync, multi-device and multi-teacher features) and **offline-capable with reduced capabilities**: without a Supabase connection the app still runs from browser `localStorage`, but cloud-dependent features (collaboration, student portal, multi-device access) are unavailable. The app targets static hosting and can also be self-hosted with Docker.
 
 Key domains:
 - **Rubric Builder** — create/edit rubrics with criteria, levels, scoring modes
@@ -38,7 +38,7 @@ npm run db:reset     # Reset and re-apply all migrations
 | Build | Vite 8 |
 | Routing | React Router v7 (lazy-loaded pages) |
 | State | React Context (`AppContext`) + `useReducer` |
-| Persistence | `localStorage` primary; Supabase optional sync |
+| Persistence | Supabase primary when configured; `localStorage` offline-capable fallback |
 | Rich text | TipTap 3 (ProseMirror) |
 | Charts | Recharts |
 | Export | `docx`, `pdfjs-dist`, `file-saver` |
@@ -59,9 +59,9 @@ User action → AppContext dispatch → useReducer → new state (always)
 
 `src/store/storage.ts` is the single write point for persistence. Never write to `localStorage` directly from components or hooks.
 
-### Offline-first rule
+### Storage rule (Supabase-primary, offline-capable)
 
-The app must work completely without Supabase: the `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` env vars are optional, and if absent, all database sync is silently skipped and `localStorage` is the sole, permanent store (unchanged legacy behavior).
+Supabase is the primary store whenever a connection is configured. The app must still start and run without Supabase — the `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` env vars are optional, and if absent, all database sync is silently skipped and `localStorage` is the sole, permanent store — but this local mode is a reduced-capability fallback, not the primary design target.
 
 When a Supabase connection is live, `localStorage` is no longer a permanent duplicate copy — it's only a temporary buffer:
 

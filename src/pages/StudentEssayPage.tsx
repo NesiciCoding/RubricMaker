@@ -96,7 +96,7 @@ function EmailGate({ adapter, onAuthenticated }: EmailGateProps) {
         }
         setBusy(true);
         setError('');
-        const { userId, error: e } = await adapter.signInAnonymously();
+        const { userId, error: e } = await adapter.signInAnonymously(trimmed);
         setBusy(false);
         if (userId) {
             onAuthenticated(userId, trimmed);
@@ -239,7 +239,7 @@ export default function StudentEssayPage() {
     const hasDb = !!(assignment?.supabaseUrl && assignment?.supabaseAnonKey);
     const adapter = useMemo<EssayAdapter | null>(() => {
         if (!assignment?.supabaseUrl || !assignment?.supabaseAnonKey) return null;
-        const a = new EssayAdapter(assignment.supabaseUrl, assignment.supabaseAnonKey);
+        const a = new EssayAdapter(assignment.supabaseUrl, assignment.supabaseAnonKey, assignment.teacherKey);
         initClientLogger(a.getClient(), { role: 'student' });
         return a;
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -419,6 +419,7 @@ export default function StudentEssayPage() {
                 logEvent('error', 'essay_submit_error', { teacherKey: assignment.teacherKey }, 'error');
             } else {
                 logEvent('action', 'essay_submitted', { teacherKey: assignment.teacherKey, wordCount });
+                adapter.clearStoredEmail();
             }
         }
 
