@@ -62,5 +62,6 @@ describe('EssayAdapter anonymous session email persistence', () => {
 
         expect(await adapterB.getSession()).toEqual({ userId: 'anon2', email: null });
         expect(localStorage.getItem('rm_student_email:assignB')).toBeNull();
+        expect(localStorage.getItem('rm_student_email:assignA')).toBe('student@example.com');
     });
 });
