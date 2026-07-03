@@ -54,8 +54,9 @@ serve(async (req) => {
     // Look up the student's email
     const { data: studentRow } = await supabase
         .from('students')
-        .select('email, name')
+        .select("data->>email as email, data->>name as name")
         .eq('id', studentId)
+        .eq('owner_id', user.id)
         .single();
 
     if (!studentRow?.email) {

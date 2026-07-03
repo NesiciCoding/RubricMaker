@@ -904,6 +904,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const [state, dispatch] = useReducer(loggingReducer, null, loadStore);
     const initialStateRef = useRef(state);
     const currentStateRef = useRef(state);
+    // Backs the delta-sync diff effect further below (compares each render's
+    // state to the last one to decide what to push to Supabase).
+    const prevStateRef = useRef(state);
+    // Applies a merged hydrate/reconnect snapshot and, for the paths that read
+    // shared/foreign rows a session may not own (e.g. a student's classmates),
+    // seeds the diff baseline in the same step. Centralized so the seed/no-seed
+    // choice can't drift out of sync between call sites the way it caused this
+    // bug in the first place.
+    const applyHydrated = useCallback((merged: StoreData, seedDiffBaseline: boolean) => {
+        dispatch({ type: 'SET_ALL', payload: merged });
+        if (seedDiffBaseline) {
+            // eslint-disable-next-line react-hooks/immutability -- cross-effect ref hand-off is intentional
+            prevStateRef.current = merged;
+        }
+    }, []);
     const { showToast } = useToast();
     const { t } = useTranslation();
 
@@ -1037,7 +1052,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 // user's data — merge against the freshly wiped store instead.
                 const base = storageSync.didWipeLocalData() ? loadStore() : initialStateRef.current;
                 const merged = mergeStoreData(base, fresh, loadPendingQueue());
-                dispatch({ type: 'SET_ALL', payload: merged });
+                applyHydrated(merged, true);
                 try {
                     await flushToLocalStorage(merged);
                 } catch {
@@ -1112,7 +1127,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const { data: fresh } = await storageSync.hydrate();
             if (fresh) {
                 const merged = mergeStoreData(currentStateRef.current, fresh, loadPendingQueue());
-                dispatch({ type: 'SET_ALL', payload: merged });
+                applyHydrated(merged, true);
                 try {
                     await flushToLocalStorage(merged);
                 } catch {
@@ -1146,7 +1161,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 if (fresh) {
                     const base = storageSync.didWipeLocalData() ? loadStore() : initialStateRef.current;
                     const merged = mergeStoreData(base, fresh, loadPendingQueue());
-                    dispatch({ type: 'SET_ALL', payload: merged });
+                    applyHydrated(merged, true);
                     try {
                         await flushToLocalStorage(merged);
                     } catch {
@@ -1162,9 +1177,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }, []);
 
     // ── Supabase: delta-sync after each mutation ───────────────────────────────
-    const prevStateRef = useRef(state);
     useEffect(() => {
         const prev = prevStateRef.current;
+        // eslint-disable-next-line react-hooks/immutability -- also hand-off-written by applyHydrated above so a fresh server pull isn't re-diffed as a local edit
         prevStateRef.current = state;
         if (!storageSync.isConnected()) return;
 
@@ -1559,7 +1574,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 if (fresh) {
                     const base = storageSync.didWipeLocalData() ? loadStore() : state;
                     const merged = mergeStoreData(base, fresh, loadPendingQueue());
-                    dispatch({ type: 'SET_ALL', payload: merged });
+                    // Not seeded: this is the teacher's own owner-scoped connect flow, so a
+                    // reflexive re-push of pulled data can't fail RLS the way it can for a
+                    // read-only (e.g. student) session — see applyHydrated above.
+                    applyHydrated(merged, false);
                     try {
                         await flushToLocalStorage(merged);
                     } catch {
@@ -1587,7 +1605,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
         if (fresh) {
             const merged = mergeStoreData(state, fresh, loadPendingQueue());
-            dispatch({ type: 'SET_ALL', payload: merged });
+            // Not seeded: same owner-scoped reasoning as connectDatabase above.
+            applyHydrated(merged, false);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [state]);
