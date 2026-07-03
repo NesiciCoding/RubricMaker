@@ -38,7 +38,7 @@ npm run db:reset     # Reset and re-apply all migrations
 | Build | Vite 8 |
 | Routing | React Router v7 (lazy-loaded pages) |
 | State | React Context (`AppContext`) + `useReducer` |
-| Persistence | `localStorage` primary; Supabase optional sync |
+| Persistence | Supabase primary when configured; `localStorage` offline-capable fallback |
 | Rich text | TipTap 3 (ProseMirror) |
 | Charts | Recharts |
 | Export | `docx`, `pdfjs-dist`, `file-saver` |

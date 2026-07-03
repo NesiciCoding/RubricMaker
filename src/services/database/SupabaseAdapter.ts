@@ -34,6 +34,7 @@ import { nanoid } from '../../utils/nanoid';
 export class SupabaseAdapter {
     private client: SupabaseClient | null = null;
     private userId: string | null = null;
+    private userIsAnonymous = false;
     private onAuthChange: ((user: DbUser | null) => void) | null = null;
     private activeUrl: string | null = null;
     private activeKey: string | null = null;
@@ -122,12 +123,14 @@ export class SupabaseAdapter {
                 } = await this.client.auth.getSession();
                 if (session) {
                     this.userId = session.user.id;
+                    this.userIsAnonymous = session.user.is_anonymous ?? false;
                     return true;
                 }
                 // Session lost; sign in anonymously for backward compat
                 const { data, error } = await this.client.auth.signInAnonymously();
                 if (error || !data.session) return false;
                 this.userId = data.session.user.id;
+                this.userIsAnonymous = true;
                 return true;
             }
 
@@ -144,10 +147,12 @@ export class SupabaseAdapter {
             } = await this.client.auth.getSession();
             if (session) {
                 this.userId = session.user.id;
+                this.userIsAnonymous = session.user.is_anonymous ?? false;
             } else {
                 const { data, error } = await this.client.auth.signInAnonymously();
                 if (error || !data.session) return false;
                 this.userId = data.session.user.id;
+                this.userIsAnonymous = true;
             }
 
             this.registerAuthListener();
@@ -470,6 +475,11 @@ export class SupabaseAdapter {
 
     getCurrentUserId(): string | null {
         return this.userId;
+    }
+
+    /** True when the current session is Supabase's anonymous-sign-in fallback, not a real logged-in user. */
+    isAnonymousSession(): boolean {
+        return this.userIsAnonymous;
     }
 
     getClient(): SupabaseClient | null {

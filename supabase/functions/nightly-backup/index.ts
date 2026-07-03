@@ -35,7 +35,8 @@ serve(async (req) => {
     try {
         profiles = await fetchAllOwnerProfiles(admin);
     } catch (e) {
-        return new Response(JSON.stringify({ error: e instanceof Error ? e.message : String(e) }), { status: 500 });
+        console.error('[nightly-backup] failed to list owner profiles', e);
+        return new Response(JSON.stringify({ error: 'Failed to list owner profiles' }), { status: 500 });
     }
 
     let backedUp = 0;

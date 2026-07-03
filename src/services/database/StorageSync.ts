@@ -337,6 +337,14 @@ class StorageSyncService {
         try {
             const uid = this.adapter.getCurrentUserId();
             if (!uid) return;
+            // An anonymous session is a fallback identity (connect() calls
+            // signInAnonymously() whenever it can't read a real session — including
+            // a transient race right after a page reload, before Supabase-js has
+            // finished restoring the persisted session from storage), not a
+            // genuine different user. Never wipe — or overwrite the stored owner —
+            // because of one; a later reconnect with the real session should still
+            // compare against the last known real owner.
+            if (this.adapter.isAnonymousSession()) return;
             const previousOwner = localStorage.getItem(OWNER_KEY);
             if (previousOwner && previousOwner !== uid) {
                 clearLocalData();
