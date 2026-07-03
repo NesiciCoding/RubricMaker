@@ -32,12 +32,23 @@ export default function EssayBuilderPage() {
         addEssaySubmission,
     } = useApp();
 
-    const rows = useMemo(
-        () => (teacherKeyParam ? essayAssignments.filter((a) => a.teacherKey === teacherKeyParam) : []),
+    // The canonical group is every row saved under this exact teacherKey (the bulk
+    // "Assign to Students" fan-out). `existing` is looked up directly rather than via
+    // `rows[0]` so it stays stable once `rows` is broadened below.
+    const existing = useMemo(
+        () => (teacherKeyParam ? essayAssignments.find((a) => a.teacherKey === teacherKeyParam) : undefined),
         [essayAssignments, teacherKeyParam]
     );
-    const notFound = !!teacherKeyParam && rows.length === 0;
-    const existing = rows[0];
+    // Also surface students assigned this same rubric individually from a grading page
+    // (GradeStudent's "Assign Essay" modal, its own teacherKey) — so this page stays the
+    // one place a teacher can see everyone assigned this essay, however it was set up.
+    const rows = useMemo(() => {
+        if (!teacherKeyParam) return [];
+        return essayAssignments.filter(
+            (a) => a.teacherKey === teacherKeyParam || (existing && a.rubricId === existing.rubricId)
+        );
+    }, [essayAssignments, teacherKeyParam, existing]);
+    const notFound = !!teacherKeyParam && !existing;
 
     const [title, setTitle] = useState(existing?.title ?? '');
     const [prompt, setPrompt] = useState(existing?.prompt ?? '');
@@ -136,11 +147,15 @@ export default function EssayBuilderPage() {
 
     const buildEssayLink = useCallback(
         (studentId: string) => {
-            if (!existing) return null;
-            const code = encodeEssayAssignment({ ...existing, studentId });
+            // Individually-assigned rows (a different teacherKey, e.g. from GradeStudent's
+            // modal) carry their own config/credentials — re-encoding under `existing`'s
+            // canonical teacherKey would point the student at the wrong assignment.
+            const row = rows.find((r) => r.studentId === studentId) ?? existing;
+            if (!row) return null;
+            const code = encodeEssayAssignment({ ...row, studentId });
             return `${window.location.origin}${window.location.pathname}#/essay/${code}`;
         },
-        [existing]
+        [rows, existing]
     );
 
     const handleCopyLink = useCallback(
@@ -336,9 +351,12 @@ export default function EssayBuilderPage() {
                                 const submitted = essaySubmissions.some(
                                     (s) => s.teacherKey === row.teacherKey && s.assignmentStudentId === row.studentId
                                 );
+                                // A row can share this rubric without belonging to this page's
+                                // bulk group — e.g. assigned individually from GradeStudent.
+                                const isIndividual = row.teacherKey !== teacherKeyParam;
                                 return (
                                     <div
-                                        key={row.studentId}
+                                        key={`${row.teacherKey}_${row.studentId}`}
                                         style={{
                                             display: 'flex',
                                             alignItems: 'center',
@@ -351,6 +369,11 @@ export default function EssayBuilderPage() {
                                     >
                                         <span>{student?.name ?? row.studentId}</span>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                            {isIndividual && (
+                                                <span className="badge badge-blue" title={t('essays.individual_assignment_hint')}>
+                                                    {t('essays.individual_assignment_badge')}
+                                                </span>
+                                            )}
                                             <span className={`badge ${submitted ? 'badge-green' : 'badge-yellow'}`}>
                                                 {submitted
                                                     ? t('essays.submission_status_submitted')

@@ -96,7 +96,7 @@ function EmailGate({ adapter, onAuthenticated }: EmailGateProps) {
         }
         setBusy(true);
         setError('');
-        const { userId, error: e } = await adapter.signInAnonymously();
+        const { userId, error: e } = await adapter.signInAnonymously(trimmed);
         setBusy(false);
         if (userId) {
             onAuthenticated(userId, trimmed);

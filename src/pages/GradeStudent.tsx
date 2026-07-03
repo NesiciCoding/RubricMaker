@@ -150,6 +150,7 @@ export default function GradeStudent() {
         addCommentBankItem,
         addAttachment,
         saveEssayAssignment,
+        essayAssignments,
         essayTemplates,
         saveEssayTemplate,
         fetchEssaySubmissionsForStudent,
@@ -1696,6 +1697,14 @@ export default function GradeStudent() {
                     classStudents={classStudents}
                     onClose={() => setShowEssayAssignment(false)}
                     onSaveAssignment={saveEssayAssignment}
+                    // Reuse the prompt/instructions already authored for this rubric on the Essay
+                    // Builder page — without this, the modal here starts blank (only a saved
+                    // template pre-fills it), so a teacher assigning from the grading page silently
+                    // ships an assignment with no prompt even though one was written elsewhere.
+                    initialValues={
+                        essayAssignments.find((a) => a.rubricId === rubricId && a.studentId === studentId) ??
+                        essayAssignments.find((a) => a.rubricId === rubricId)
+                    }
                     savedTemplate={essayTemplates.find((t) => t.rubricId === rubricId)}
                     onSaveTemplate={saveEssayTemplate}
                     onOpenSlipSheet={(assignment, sts) => {

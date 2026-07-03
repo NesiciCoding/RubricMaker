@@ -19,6 +19,11 @@ export type FetchContentResult =
     | { ok: true; data: EssayAssignmentContent }
     | { ok: false; reason: 'unauthenticated' | 'not_found' | 'expired' | 'network' | 'invalid_response' };
 
+// Anonymous sessions carry no email on the JWT, so the student-typed email is stored
+// here alongside rm_student_auth — otherwise it's lost (reverts to null) on any remount
+// (page reload, SEB relaunch, PWA update) even though the anonymous session itself persists.
+const STUDENT_EMAIL_KEY = 'rm_student_email';
+
 export interface EssaySubmissionPayload {
     id: string;
     assignmentId: string; // = assignment.teacherKey (the essay_assignments PK)
@@ -150,22 +155,27 @@ export class EssayAdapter {
      * The student-provided email is not verified — it is stored in the submission row only.
      * Requires "Allow anonymous sign-ins" to be enabled in the Supabase project settings.
      */
-    async signInAnonymously(): Promise<{ userId: string | null; error?: string }> {
+    async signInAnonymously(email: string): Promise<{ userId: string | null; error?: string }> {
         const { data, error } = await this.client.auth.signInAnonymously();
         if (error || !data.session) return { userId: null, error: error?.message ?? 'Anonymous sign-in failed' };
+        localStorage.setItem(STUDENT_EMAIL_KEY, email);
         return { userId: data.session.user.id };
     }
 
     /**
      * Get the current session. Checks rm_student_auth first, then the portal session.
-     * Returns email only for real (non-anonymous) accounts so the EmailGate can
-     * auto-bypass when the student has already logged in via the portal.
+     * Real (non-anonymous) accounts return their verified email. Anonymous sessions have
+     * no email on the JWT, so fall back to the value stored by signInAnonymously — without
+     * this, a remount would restore the session but not the email, re-showing the gate.
      */
     async getSession(): Promise<{ userId: string | null; email: string | null }> {
         const active = await this.getActiveSession();
+        if (!active) return { userId: null, email: null };
+        const email =
+            active.session.user.email ?? (active.source === 'isolated' ? localStorage.getItem(STUDENT_EMAIL_KEY) : null);
         return {
-            userId: active?.session.user.id ?? null,
-            email: active?.session.user.email ?? null,
+            userId: active.session.user.id,
+            email,
         };
     }
 

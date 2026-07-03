@@ -2,6 +2,7 @@ import React from 'react';
 import { screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderWithRouter } from '../../test-utils/renderWithProviders';
+import { decodeEssayAssignment } from '../../utils/shareCode';
 import { DEFAULT_FORMAT } from '../../types';
 import type { AppSettings, Class, EssayAssignment, EssaySubmission, Rubric, Student } from '../../types';
 
@@ -41,6 +42,18 @@ const mockAssignment: EssayAssignment = {
     title: 'My Essay',
     readOnlyAfterSubmit: true,
     createdAt: '2024-01-01T00:00:00Z',
+};
+
+// Assigned to Bob individually from GradeStudent's modal — a different teacherKey,
+// same rubric, so it should surface on this rubric's Builder page as a merged row.
+const mockIndividualAssignment: EssayAssignment = {
+    rubricId: 'r1',
+    studentId: 's2',
+    teacherKey: 'tk-individual',
+    title: 'My Essay (individual)',
+    prompt: 'Individual prompt text',
+    readOnlyAfterSubmit: true,
+    createdAt: '2024-01-03T00:00:00Z',
 };
 
 const mockSubmission: EssaySubmission = {
@@ -143,5 +156,45 @@ describe('EssayBuilderPage', () => {
         renderWithRouter(<EssayBuilderPage />);
         fireEvent.click(screen.getByText('essays.import_submission_code'));
         expect(screen.getByText('essays.import_code_label')).toBeInTheDocument();
+    });
+
+    describe('essays assigned individually from GradeStudent', () => {
+        beforeEach(() => {
+            Object.assign(navigator, { clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } });
+            appOverrides = { essayAssignments: [mockAssignment, mockIndividualAssignment] };
+        });
+
+        it('surfaces the row with an "Individual" badge instead of hiding it', async () => {
+            const { default: EssayBuilderPage } = await import('../EssayBuilderPage');
+            renderWithRouter(<EssayBuilderPage />);
+            expect(screen.getByText('Bob')).toBeInTheDocument();
+            expect(screen.getByText('essays.individual_assignment_badge')).toBeInTheDocument();
+        });
+
+        it('copies a link built from the individual row, not the canonical group', async () => {
+            const { default: EssayBuilderPage } = await import('../EssayBuilderPage');
+            renderWithRouter(<EssayBuilderPage />);
+            const copyButtons = screen.getAllByLabelText('essays.copy_link');
+            fireEvent.click(copyButtons[1]); // Bob's row (second, after Alice/mockAssignment)
+
+            const copiedUrl = (navigator.clipboard.writeText as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+            const code = copiedUrl.split('#/essay/')[1];
+            const decoded = decodeEssayAssignment(code);
+            expect(decoded?.teacherKey).toBe('tk-individual');
+            expect(decoded?.prompt).toBe('Individual prompt text');
+            expect(decoded?.studentId).toBe('s2');
+        });
+
+        it('skips already-assigned students (canonical or individual) when bulk-assigning the class', async () => {
+            const { default: EssayBuilderPage } = await import('../EssayBuilderPage');
+            renderWithRouter(<EssayBuilderPage />);
+            fireEvent.click(screen.getByText('essays.assign_to_students'));
+            fireEvent.click(screen.getByRole('button', { name: 'Class A' }));
+            // Confirm inside the now-open modal (its own button shares this same label).
+            const confirmButtons = screen.getAllByText('essays.assign_to_students');
+            fireEvent.click(confirmButtons[confirmButtons.length - 1]);
+            // Both Alice (canonical) and Bob (individual) are already assigned — nothing new to add.
+            expect(mockShowToast).toHaveBeenCalledWith('essays.no_new_students', 'info');
+        });
     });
 });

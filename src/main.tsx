@@ -11,6 +11,17 @@ import { setupPwaUpdatePrompt } from './pwa';
 
 setupPwaUpdatePrompt();
 
+// Student-facing pages below are outside AppProvider, so the theme effect in
+// AppContext never runs for them — set data-theme here so they aren't stuck on
+// the dark :root default in index.css regardless of the saved preference.
+try {
+    const raw = localStorage.getItem('rm_settings');
+    const theme = raw ? (JSON.parse(raw).theme ?? 'light') : 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+} catch {
+    document.documentElement.setAttribute('data-theme', 'light');
+}
+
 // Student-facing pages are outside AppProvider — they work from URL-encoded data only
 const StudentFeedbackPage = lazy(() => import('./pages/StudentFeedbackPage'));
 const RubricPreviewPage = lazy(() => import('./pages/RubricPreviewPage'));

@@ -1832,6 +1832,8 @@
         "no_essays": "No essays yet",
         "create_first_instruction": "Create your first essay assignment to get started.",
         "assigned_students_title": "Assigned students",
+        "individual_assignment_badge": "Individual",
+        "individual_assignment_hint": "Assigned separately from a student's grading page, not part of this group",
         "submission_status_submitted": "Submitted",
         "submission_status_pending": "Pending",
         "action_monitor": "Monitor",
