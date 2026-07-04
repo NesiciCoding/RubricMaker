@@ -8,7 +8,7 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
 
 export default function FlashcardsPage() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     const { flashcardDecks, flashcardAssignments, addFlashcardDeck, deleteFlashcardDeck } = useApp();
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
@@ -69,7 +69,10 @@ export default function FlashcardsPage() {
                                     }}
                                     onClick={() => navigate(`/flashcards/${deck.id}`)}
                                     onKeyDown={(e) => {
-                                        if (e.key === 'Enter' || e.key === ' ') navigate(`/flashcards/${deck.id}`);
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            navigate(`/flashcards/${deck.id}`);
+                                        }
                                     }}
                                     onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
                                     onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
@@ -85,7 +88,7 @@ export default function FlashcardsPage() {
                                         <div>
                                             <h3>{deck.name}</h3>
                                             <div className="text-muted text-xs" style={{ marginTop: 2 }}>
-                                                {new Date(deck.createdAt).toLocaleDateString()}
+                                                {new Date(deck.createdAt).toLocaleDateString(i18n.language)}
                                             </div>
                                         </div>
                                         <div style={{ display: 'flex', gap: 4 }}>
