@@ -576,9 +576,6 @@ class StorageSyncService {
                 essaySubmissions,
                 userTemplates,
                 messages,
-                flashcardDecks,
-                flashcardAssignments,
-                flashcardReviews,
                 attachments,
                 settings,
                 profile,
@@ -604,12 +601,19 @@ class StorageSyncService {
                 this.adapter.fetchEssayOfflineSubmissions(),
                 this.adapter.fetchUserTemplates(),
                 this.adapter.fetchMessages(),
-                this.adapter.fetchFlashcardDecks().catch(() => []),
-                this.adapter.fetchFlashcardAssignments().catch(() => []),
-                this.adapter.fetchFlashcardReviews().catch(() => []),
                 this.attachmentSync.hydrateAttachments(),
                 this.adapter.fetchSettings(),
                 this.adapter.fetchMyProfile(),
+            ]);
+
+            // Fetched as a second, sequential wave rather than joining the burst of ~20
+            // requests above — a fresh feature's tables competing for the same local
+            // connection pool at that exact startup instant was implicated in a
+            // (previously fragile, timing-sensitive) offline-sync-merge E2E failure.
+            const [flashcardDecks, flashcardAssignments, flashcardReviews] = await Promise.all([
+                this.adapter.fetchFlashcardDecks().catch(() => []),
+                this.adapter.fetchFlashcardAssignments().catch(() => []),
+                this.adapter.fetchFlashcardReviews().catch(() => []),
             ]);
 
             // The profile.role is authoritative; always override whatever userRole
