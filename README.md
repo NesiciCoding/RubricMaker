@@ -46,6 +46,7 @@ A comprehensive rubric creation and grading tool built with React and TypeScript
 - **Student self-assessment**: Students rate themselves against Can-Do descriptors; reflection text is stored alongside teacher scores.
 - **Cambridge English exam mapping**: Optional setting shows the Cambridge English Qualification (A2 Key, B1 Preliminary, B2 First, C1 Advanced, C2 Proficiency) alongside CEFR level badges; vocabulary items can be enriched with CEFR level and definition via an optional Cambridge Dictionary API key.
 - **Learning paths & interventions**: Rule-based (no AI) rubric recommendations for CEFR skills where a student trails the class average, plus flags for three or more consecutive low scores on the same criterion or CEFR skill — available from each student's profile.
+- **Vocabulary flashcards**: Anki-style flashcard decks for vocabulary, scheduled with the FSRS spaced-repetition algorithm via `ts-fsrs`. Teachers build decks by hand or import cards from `.csv`, `.xlsx`, `.docx`, or `.txt` files, assign a deck to a class, and see per-student learner insights (progress by learning stage, focus words ranked by lapses/difficulty). Students study in their portal with Again/Hard/Good/Easy ratings; progress syncs across devices when Supabase is connected and persists in `localStorage` in local mode. Legacy `.xls` is not supported (save as `.xlsx`/CSV).
 
 ### 4. Essay Writing
 
@@ -178,7 +179,10 @@ npm run db:reset     # Reset and re-apply all migrations
 | `/students/:id/learning-path`               | Per-student learning path — rule-based rubric recommendations and intervention flags                            |
 | `/cefr-overview`                            | Whole-class CEFR overview                                                                                       |
 | `/vocabulary`                               | Vocabulary Profile dashboard (CEFR vocabulary distribution per class/student, CSV export)                       |
+| `/flashcards`                               | Flashcard deck list                                                                                             |
+| `/flashcards/:id`                           | Flashcard deck editor — cards, CSV/XLSX/DOCX import, class assignment, per-student insights                     |
 | `/portal/:studentId`                        | Student portal (public)                                                                                         |
+| `/portal/:studentId/flashcards/:deckId`     | Student flashcard study session (spaced repetition)                                                             |
 | `/test/:code`                               | Take a test (public, no login — answer questions, optional timer, submit)                                       |
 | `/attachments`                              | Attachment manager                                                                                              |
 | `/comments`                                 | Comment bank                                                                                                    |
@@ -213,6 +217,9 @@ npm run db:reset     # Reset and re-apply all migrations
 | `src/utils/globalSearch.ts`             | Token-aware search (`type:`/`class:` filters) across rubrics, tests, students, classes, essays |
 | `src/utils/statsChartPresets.ts`        | Recommended chart definitions for the Statistics "Custom Views" gallery                        |
 | `src/utils/coGradingModerationQueue.ts` | Flags disputed co-graded submissions (delta above threshold) for the Moderation queue          |
+| `src/utils/flashcardScheduler.ts`       | Thin wrapper around `ts-fsrs` (FSRS spaced repetition): rating, study queue, interval preview  |
+| `src/utils/flashcardImport.ts`          | Flashcard import from CSV (papaparse), XLSX (read-excel-file), DOCX (mammoth), and plain text  |
+| `src/utils/flashcardInsights.ts`        | Learner insights per deck: stage counts, due cards, focus words from FSRS state                |
 | `src/utils/displayOrder.ts`             | Shared sort/reorder helpers for manually-orderable list views                                  |
 | `src/utils/cohortAggregator.ts`         | Derives a cohort's student set from current + past class memberships by year/track             |
 | `src/utils/gradebookExportPresets.ts`   | Per-SIS CSV column presets (Magister, SOMtoday) for the gradebook export                       |

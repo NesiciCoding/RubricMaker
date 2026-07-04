@@ -181,6 +181,23 @@ const COLLECTIONS: CollectionSpec[] = [
     },
     { key: 'essaySubmissions', entity: 'essayOfflineSubmission', getId: (s: { id: string }) => s.id },
     { key: 'userTemplates', entity: 'userTemplate', getId: (ut: { id: string }) => ut.id },
+    {
+        key: 'flashcardDecks',
+        entity: 'flashcardDeck',
+        getId: (d: { id: string }) => d.id,
+        getUpdatedAt: (d: { updatedAt?: string }) => d.updatedAt,
+    },
+    {
+        key: 'flashcardAssignments',
+        entity: 'flashcardAssignment',
+        getId: (a: { deckId: string; studentId: string }) => `${a.deckId}:${a.studentId}`,
+    },
+    {
+        key: 'flashcardReviews',
+        entity: 'flashcardReview',
+        getId: (r: { id: string }) => r.id,
+        getUpdatedAt: (r: { updatedAt?: string }) => r.updatedAt,
+    },
 ] as CollectionSpec[];
 
 export function mergeStoreData(local: StoreData, remote: Partial<StoreData>, pendingQueue: PendingWrite[]): StoreData {

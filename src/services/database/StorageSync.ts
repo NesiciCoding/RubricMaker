@@ -36,6 +36,9 @@ import type {
     TestAssignment,
     UserTemplate,
     Message,
+    FlashcardDeck,
+    FlashcardAssignment,
+    FlashcardReview,
 } from '../../types';
 
 const CONFIG_KEY = 'rm_supabase_config';
@@ -133,6 +136,9 @@ class StorageSyncService {
         { table: 'essay_offline_submissions', filterColumn: 'owner_id' },
         { table: 'user_templates', filterColumn: 'owner_id' },
         { table: 'user_settings', filterColumn: 'user_id' },
+        { table: 'flashcard_decks', filterColumn: 'owner_id' },
+        { table: 'flashcard_assignments', filterColumn: 'owner_id' },
+        { table: 'flashcard_reviews', filterColumn: 'owner_id' },
     ];
     private static readonly REALTIME_DEBOUNCE_MS = 800;
 
@@ -486,6 +492,22 @@ class StorageSyncService {
         return this.adapter.markMessagesReadByStudent(ids);
     }
 
+    async fetchMyFlashcardAssignments(): Promise<FlashcardAssignment[]> {
+        return this.adapter.fetchMyFlashcardAssignments();
+    }
+
+    async fetchAssignedFlashcardDeck(deckId: string): Promise<FlashcardDeck | null> {
+        return this.adapter.fetchAssignedFlashcardDeck(deckId);
+    }
+
+    async fetchMyFlashcardReview(deckId: string, studentId: string): Promise<FlashcardReview | null> {
+        return this.adapter.fetchMyFlashcardReview(deckId, studentId);
+    }
+
+    async saveFlashcardReviewAsStudent(r: FlashcardReview): Promise<SyncResult> {
+        return this.adapter.saveFlashcardReviewAsStudent(r);
+    }
+
     async fetchEssayAssignmentByKey(teacherKey: string) {
         return this.adapter.fetchEssayAssignmentByKey(teacherKey);
     }
@@ -584,6 +606,16 @@ class StorageSyncService {
                 this.adapter.fetchMyProfile(),
             ]);
 
+            // Fetched as a second, sequential wave rather than joining the burst of ~20
+            // requests above — a fresh feature's tables competing for the same local
+            // connection pool at that exact startup instant was implicated in a
+            // (previously fragile, timing-sensitive) offline-sync-merge E2E failure.
+            const [flashcardDecks, flashcardAssignments, flashcardReviews] = await Promise.all([
+                this.adapter.fetchFlashcardDecks().catch(() => []),
+                this.adapter.fetchFlashcardAssignments().catch(() => []),
+                this.adapter.fetchFlashcardReviews().catch(() => []),
+            ]);
+
             // The profile.role is authoritative; always override whatever userRole
             // is stored in user_settings so the DB is the single source of truth.
             // If the profile has no school_id the user needs to complete onboarding.
@@ -650,6 +682,9 @@ class StorageSyncService {
                 essaySubmissions,
                 userTemplates,
                 messages,
+                flashcardDecks,
+                flashcardAssignments,
+                flashcardReviews,
                 attachments,
                 ...(mergedSettings ? { settings: mergedSettings as StoreData['settings'] } : {}),
             };
@@ -705,6 +740,9 @@ class StorageSyncService {
                 ...state.essaySubmissions.map((s) => this.adapter.upsertEssayOfflineSubmission(s)),
                 ...state.userTemplates.map((ut) => this.adapter.upsertUserTemplate(ut)),
                 ...state.messages.map((m) => this.adapter.upsertMessage(m)),
+                ...state.flashcardDecks.map((d) => this.adapter.upsertFlashcardDeck(d)),
+                ...state.flashcardAssignments.map((a) => this.adapter.upsertFlashcardAssignment(a)),
+                ...state.flashcardReviews.map((r) => this.adapter.upsertFlashcardReview(r)),
                 this.adapter.saveSettings(state.settings),
             ];
             await Promise.all(ups);
@@ -843,6 +881,23 @@ class StorageSyncService {
                 case 'userTemplate':
                     if (action === 'upsert') result = await this.adapter.upsertUserTemplate(payload as UserTemplate);
                     else if (id) result = await this.adapter.deleteUserTemplate(id);
+                    break;
+                case 'flashcardDeck':
+                    if (action === 'upsert') result = await this.adapter.upsertFlashcardDeck(payload as FlashcardDeck);
+                    else if (id) result = await this.adapter.deleteFlashcardDeck(id);
+                    break;
+                case 'flashcardAssignment':
+                    if (action === 'upsert')
+                        result = await this.adapter.upsertFlashcardAssignment(payload as FlashcardAssignment);
+                    else if (id) result = await this.adapter.deleteFlashcardAssignment(id);
+                    break;
+                case 'flashcardReview':
+                    // Teacher-session pushes only (local-mode study data, deck-delete
+                    // cascade); the portal student writes through
+                    // saveFlashcardReviewAsStudent instead, never through the diff effect.
+                    if (action === 'upsert')
+                        result = await this.adapter.upsertFlashcardReview(payload as FlashcardReview);
+                    else if (id) result = await this.adapter.deleteFlashcardReview(id);
                     break;
                 case 'settings':
                     if (action === 'upsert')

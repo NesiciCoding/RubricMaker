@@ -36,6 +36,9 @@ import type {
     UserTemplate,
     UserRole,
     Message,
+    FlashcardDeck,
+    FlashcardAssignment,
+    FlashcardReview,
 } from '../types';
 import {
     loadStore,
@@ -62,6 +65,9 @@ import {
     saveEssayTemplates,
     saveGradingTasks,
     saveMessages,
+    saveFlashcardDecks,
+    saveFlashcardAssignments,
+    saveFlashcardReviews,
     saveUserTemplates,
     importFullBackup,
     loadPendingQueue,
@@ -148,6 +154,11 @@ type Action =
     | { type: 'DELETE_GRADING_TASK'; id: string }
     | { type: 'SEND_MESSAGE'; payload: Message }
     | { type: 'MARK_MESSAGE_READ_BY_TEACHER'; id: string }
+    | { type: 'ADD_FLASHCARD_DECK'; payload: FlashcardDeck }
+    | { type: 'UPDATE_FLASHCARD_DECK'; payload: FlashcardDeck }
+    | { type: 'DELETE_FLASHCARD_DECK'; id: string }
+    | { type: 'ADD_FLASHCARD_ASSIGNMENTS'; payload: FlashcardAssignment[] }
+    | { type: 'SAVE_FLASHCARD_REVIEW'; payload: FlashcardReview }
     | { type: 'SAVE_USER_TEMPLATE'; payload: UserTemplate }
     | { type: 'DELETE_USER_TEMPLATE'; id: string };
 
@@ -632,6 +643,49 @@ function reducer(state: StoreData, action: Action): StoreData {
             if (isOffline()) saveMessages(next);
             return { ...state, messages: next };
         }
+        case 'ADD_FLASHCARD_DECK': {
+            const next = [...state.flashcardDecks, action.payload];
+            if (isOffline()) saveFlashcardDecks(next);
+            return { ...state, flashcardDecks: next };
+        }
+        case 'UPDATE_FLASHCARD_DECK': {
+            const payload = { ...action.payload, updatedAt: new Date().toISOString() };
+            const next = state.flashcardDecks.map((d) => (d.id === payload.id ? payload : d));
+            if (isOffline()) saveFlashcardDecks(next);
+            return { ...state, flashcardDecks: next };
+        }
+        case 'DELETE_FLASHCARD_DECK': {
+            const next = state.flashcardDecks.filter((d) => d.id !== action.id);
+            if (isOffline()) saveFlashcardDecks(next);
+            const nextAssignments = state.flashcardAssignments.filter((a) => a.deckId !== action.id);
+            if (isOffline()) saveFlashcardAssignments(nextAssignments);
+            const nextReviews = state.flashcardReviews.filter((r) => r.deckId !== action.id);
+            if (isOffline()) saveFlashcardReviews(nextReviews);
+            return {
+                ...state,
+                flashcardDecks: next,
+                flashcardAssignments: nextAssignments,
+                flashcardReviews: nextReviews,
+            };
+        }
+        case 'ADD_FLASHCARD_ASSIGNMENTS': {
+            const incoming = new Set(action.payload.map((a) => `${a.deckId}:${a.studentId}`));
+            const next = [
+                ...state.flashcardAssignments.filter((a) => !incoming.has(`${a.deckId}:${a.studentId}`)),
+                ...action.payload,
+            ];
+            if (isOffline()) saveFlashcardAssignments(next);
+            return { ...state, flashcardAssignments: next };
+        }
+        case 'SAVE_FLASHCARD_REVIEW': {
+            const exists = state.flashcardReviews.findIndex((r) => r.id === action.payload.id);
+            const next =
+                exists >= 0
+                    ? state.flashcardReviews.map((r) => (r.id === action.payload.id ? action.payload : r))
+                    : [...state.flashcardReviews, action.payload];
+            if (isOffline()) saveFlashcardReviews(next);
+            return { ...state, flashcardReviews: next };
+        }
         case 'SAVE_USER_TEMPLATE': {
             // No cap here — this array is now the sync source of truth, diffed against
             // Supabase (see the delta-sync effect below). Evicting an entry would look
@@ -754,6 +808,12 @@ interface AppContextValue extends StoreData {
     // Student <-> teacher messaging (teacher side; see fetchMyMessages etc. below for portal)
     sendMessage: (m: Message) => void;
     markMessageReadByTeacher: (id: string) => void;
+    // Flashcards (vocabulary spaced repetition)
+    addFlashcardDeck: (d: Omit<FlashcardDeck, 'id' | 'createdAt' | 'updatedAt'>) => FlashcardDeck;
+    updateFlashcardDeck: (d: FlashcardDeck) => void;
+    deleteFlashcardDeck: (id: string) => void;
+    addFlashcardAssignments: (assignments: FlashcardAssignment[]) => void;
+    saveFlashcardReview: (r: FlashcardReview) => void;
     // Saved rubric templates ("save as template")
     saveUserTemplate: (t: UserTemplate) => void;
     deleteUserTemplate: (id: string) => void;
@@ -812,6 +872,11 @@ interface AppContextValue extends StoreData {
     fetchMyMessages: () => Promise<Awaited<ReturnType<typeof storageSync.fetchMyMessages>>>;
     sendMessageAsStudent: (m: Message) => Promise<SyncResult>;
     markMessagesReadByStudent: (ids: string[]) => Promise<SyncResult>;
+    // Flashcards (student portal side)
+    fetchMyFlashcardAssignments: () => Promise<FlashcardAssignment[]>;
+    fetchAssignedFlashcardDeck: (deckId: string) => Promise<FlashcardDeck | null>;
+    fetchMyFlashcardReview: (deckId: string, studentId: string) => Promise<FlashcardReview | null>;
+    saveFlashcardReviewAsStudent: (r: FlashcardReview) => Promise<SyncResult>;
     // Backup / restore
     importBackup: (json: string) => Promise<boolean>;
     // Landing / auth flow
@@ -1222,6 +1287,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         );
         diff(prev.essaySubmissions, state.essaySubmissions, 'essayOfflineSubmission', (s) => s.id);
         diff(prev.userTemplates, state.userTemplates, 'userTemplate', (ut) => ut.id);
+        diff(prev.flashcardDecks, state.flashcardDecks, 'flashcardDeck', (d) => d.id);
+        diff(
+            prev.flashcardAssignments,
+            state.flashcardAssignments,
+            'flashcardAssignment',
+            (a) => `${a.deckId}:${a.studentId}`
+        );
+        diff(prev.flashcardReviews, state.flashcardReviews, 'flashcardReview', (r) => r.id);
 
         if (JSON.stringify(prev.settings) !== JSON.stringify(state.settings)) {
             storageSync.pushOne('settings', 'upsert', state.settings);
@@ -1551,6 +1624,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (msg) storageSync.pushOne('message', 'upsert', { ...msg, readByTeacher: true });
     }, []);
 
+    // All flashcard collections are pushed via the delta-sync diff() effect, like essayAssignments.
+    const addFlashcardDeck = useCallback((d: Omit<FlashcardDeck, 'id' | 'createdAt' | 'updatedAt'>): FlashcardDeck => {
+        const now = new Date().toISOString();
+        const deck: FlashcardDeck = { ...d, id: nanoid(), createdAt: now, updatedAt: now };
+        dispatch({ type: 'ADD_FLASHCARD_DECK', payload: deck });
+        return deck;
+    }, []);
+    const updateFlashcardDeck = useCallback((d: FlashcardDeck) => {
+        dispatch({ type: 'UPDATE_FLASHCARD_DECK', payload: d });
+    }, []);
+    const deleteFlashcardDeck = useCallback((id: string) => {
+        dispatch({ type: 'DELETE_FLASHCARD_DECK', id });
+    }, []);
+    const addFlashcardAssignments = useCallback((assignments: FlashcardAssignment[]) => {
+        dispatch({ type: 'ADD_FLASHCARD_ASSIGNMENTS', payload: assignments });
+    }, []);
+    const saveFlashcardReview = useCallback((r: FlashcardReview) => {
+        dispatch({ type: 'SAVE_FLASHCARD_REVIEW', payload: r });
+    }, []);
+
     // Pushed to Supabase via the delta-sync diff() effect below, like essayAssignments.
     const saveUserTemplate = useCallback((t: UserTemplate) => {
         dispatch({ type: 'SAVE_USER_TEMPLATE', payload: t });
@@ -1669,6 +1762,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const fetchMyMessages = useCallback(() => storageSync.fetchMyMessages(), []);
     const sendMessageAsStudent = useCallback((m: Message) => storageSync.sendMessageAsStudent(m), []);
     const markMessagesReadByStudent = useCallback((ids: string[]) => storageSync.markMessagesReadByStudent(ids), []);
+    const fetchMyFlashcardAssignments = useCallback(() => storageSync.fetchMyFlashcardAssignments(), []);
+    const fetchAssignedFlashcardDeck = useCallback(
+        (deckId: string) => storageSync.fetchAssignedFlashcardDeck(deckId),
+        []
+    );
+    const fetchMyFlashcardReview = useCallback(
+        (deckId: string, studentId: string) => storageSync.fetchMyFlashcardReview(deckId, studentId),
+        []
+    );
+    const saveFlashcardReviewAsStudent = useCallback(
+        (r: FlashcardReview) => storageSync.saveFlashcardReviewAsStudent(r),
+        []
+    );
 
     // ─── Landing / auth flow ──────────────────────────────────────────
     const enterLocalMode = useCallback(() => {
@@ -1856,6 +1962,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         deleteGradingTask,
         sendMessage,
         markMessageReadByTeacher,
+        addFlashcardDeck,
+        updateFlashcardDeck,
+        deleteFlashcardDeck,
+        addFlashcardAssignments,
+        saveFlashcardReview,
         saveUserTemplate,
         deleteUserTemplate,
         connectDatabase,
@@ -1891,6 +2002,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         fetchMyMessages,
         sendMessageAsStudent,
         markMessagesReadByStudent,
+        fetchMyFlashcardAssignments,
+        fetchAssignedFlashcardDeck,
+        fetchMyFlashcardReview,
+        saveFlashcardReviewAsStudent,
         importBackup,
         showLanding: landingState === 'show',
         isCheckingSession: landingState === 'checking',

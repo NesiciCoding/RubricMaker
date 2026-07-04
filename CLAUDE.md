@@ -206,4 +206,7 @@ Keep card descriptions short (one sentence, no jargon) and written from the user
 | `src/utils/essayShareCode.ts` | Shareable codes for essay access (no auth needed) |
 | `src/utils/pinHash.ts` | PIN hashing for student self-assessment locks |
 | `src/utils/clozeParse.ts` | Parses `{{...}}` cloze gap syntax and `[[...]]` hot-text fragment syntax for test questions |
+| `src/utils/flashcardScheduler.ts` | Thin `ts-fsrs` wrapper (FSRS spaced repetition): rating, study queue, interval preview |
+| `src/utils/flashcardImport.ts` | Flashcard import from CSV/XLSX/DOCX/TXT |
+| `src/utils/flashcardInsights.ts` | Per-deck learner insights (stage counts, due cards, focus words) from FSRS state |
 | `src/services/standardsApi.ts` | Common Standards Project API (CCSS, NGSS) |

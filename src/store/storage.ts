@@ -23,6 +23,9 @@ import type {
     EssayTemplate,
     GradingTask,
     Message,
+    FlashcardDeck,
+    FlashcardAssignment,
+    FlashcardReview,
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 import { nanoid } from '../utils/nanoid';
@@ -228,6 +231,9 @@ const KEYS = {
     essayTemplates: 'rm_essay_templates',
     gradingTasks: 'rm_grading_tasks',
     messages: 'rm_messages',
+    flashcardDecks: 'rm_flashcard_decks',
+    flashcardAssignments: 'rm_flashcard_assignments',
+    flashcardReviews: 'rm_flashcard_reviews',
 };
 
 // ─── Generic helpers ───────────────────────────────────────────────────────────
@@ -292,6 +298,9 @@ export interface StoreData {
     essayTemplates: EssayTemplate[];
     gradingTasks: GradingTask[];
     messages: Message[];
+    flashcardDecks: FlashcardDeck[];
+    flashcardAssignments: FlashcardAssignment[];
+    flashcardReviews: FlashcardReview[];
 }
 
 export function loadStore(): StoreData {
@@ -319,6 +328,9 @@ export function loadStore(): StoreData {
         essayTemplates: load<EssayTemplate[]>(KEYS.essayTemplates, []),
         gradingTasks: load<GradingTask[]>(KEYS.gradingTasks, []),
         messages: load<Message[]>(KEYS.messages, []),
+        flashcardDecks: load<FlashcardDeck[]>(KEYS.flashcardDecks, []),
+        flashcardAssignments: load<FlashcardAssignment[]>(KEYS.flashcardAssignments, []),
+        flashcardReviews: load<FlashcardReview[]>(KEYS.flashcardReviews, []),
     };
 }
 
@@ -384,6 +396,15 @@ export function saveEssayTemplates(templates: EssayTemplate[]) {
 }
 export function saveGradingTasks(tasks: GradingTask[]) {
     save(KEYS.gradingTasks, tasks);
+}
+export function saveFlashcardDecks(decks: FlashcardDeck[]) {
+    save(KEYS.flashcardDecks, decks);
+}
+export function saveFlashcardAssignments(assignments: FlashcardAssignment[]) {
+    save(KEYS.flashcardAssignments, assignments);
+}
+export function saveFlashcardReviews(reviews: FlashcardReview[]) {
+    save(KEYS.flashcardReviews, reviews);
 }
 export function saveMessages(messages: Message[]) {
     save(KEYS.messages, messages);
@@ -597,6 +618,40 @@ export function importFullBackup(json: string): boolean {
             )
                 saveUserTemplates(data.userTemplates as UserTemplate[]);
             else console.warn('[importFullBackup] userTemplates failed validation — skipped');
+        }
+        if (data.flashcardDecks !== undefined) {
+            if (
+                isObjectArray(data.flashcardDecks) &&
+                (data.flashcardDecks as unknown[]).every((d) => Array.isArray((d as FlashcardDeck).cards))
+            )
+                saveFlashcardDecks(data.flashcardDecks as FlashcardDeck[]);
+            else console.warn('[importFullBackup] flashcardDecks failed validation — skipped');
+        }
+        if (data.flashcardAssignments !== undefined) {
+            if (
+                Array.isArray(data.flashcardAssignments) &&
+                data.flashcardAssignments.every(
+                    (a) =>
+                        isPlainObject(a) &&
+                        typeof (a as Record<string, unknown>).deckId === 'string' &&
+                        typeof (a as Record<string, unknown>).studentId === 'string'
+                )
+            )
+                saveFlashcardAssignments(data.flashcardAssignments as FlashcardAssignment[]);
+            else console.warn('[importFullBackup] flashcardAssignments failed validation — skipped');
+        }
+        if (data.flashcardReviews !== undefined) {
+            if (
+                Array.isArray(data.flashcardReviews) &&
+                data.flashcardReviews.every(
+                    (r) =>
+                        isPlainObject(r) &&
+                        typeof (r as Record<string, unknown>).id === 'string' &&
+                        isPlainObject((r as Record<string, unknown>).cardStates)
+                )
+            )
+                saveFlashcardReviews(data.flashcardReviews as FlashcardReview[]);
+            else console.warn('[importFullBackup] flashcardReviews failed validation — skipped');
         }
         return true;
     } catch (e) {
