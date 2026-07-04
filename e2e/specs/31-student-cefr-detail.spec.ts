@@ -22,7 +22,12 @@ test.describe('Student CEFR detail', () => {
     test('copy link writes the current URL to the clipboard and shows confirmation', async ({
         appPage,
         seedStorage,
+        browserName,
     }) => {
+        // Clipboard permission grants are Chromium-only in Playwright — Firefox/WebKit
+        // reject grantPermissions(['clipboard-read', ...]) with "Unknown permission".
+        test.skip(browserName !== 'chromium', 'clipboard permissions are only grantable in Chromium');
+
         const cls = buildClass({ id: 'scd-class-2', name: 'SCD Class 2' });
         const student = buildStudent(cls.id, { id: 'scd-student-2', name: 'SCD Student 2' });
         await seedStorage({ rm_classes: [cls], rm_students: [student] });
