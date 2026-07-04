@@ -136,6 +136,9 @@ class StorageSyncService {
         { table: 'essay_offline_submissions', filterColumn: 'owner_id' },
         { table: 'user_templates', filterColumn: 'owner_id' },
         { table: 'user_settings', filterColumn: 'user_id' },
+        { table: 'flashcard_decks', filterColumn: 'owner_id' },
+        { table: 'flashcard_assignments', filterColumn: 'owner_id' },
+        { table: 'flashcard_reviews', filterColumn: 'owner_id' },
     ];
     private static readonly REALTIME_DEBOUNCE_MS = 800;
 

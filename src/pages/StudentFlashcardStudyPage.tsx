@@ -30,7 +30,7 @@ export default function StudentFlashcardStudyPage() {
 
     const [remoteDeck, setRemoteDeck] = useState<FlashcardDeck | null>(null);
     const [remoteReview, setRemoteReview] = useState<FlashcardReview | null>(null);
-    const [loading, setLoading] = useState(isConnected && !localDeck);
+    const [loading, setLoading] = useState(isConnected);
     const [saveFailed, setSaveFailed] = useState(false);
 
     useEffect(() => {

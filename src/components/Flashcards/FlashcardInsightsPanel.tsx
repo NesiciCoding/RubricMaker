@@ -16,7 +16,7 @@ const STAGES = [
 ] as const;
 
 export default function FlashcardInsightsPanel({ insights, compact = false }: Props) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const total = Math.max(insights.totalCards, 1);
 
     return (
@@ -84,7 +84,7 @@ export default function FlashcardInsightsPanel({ insights, compact = false }: Pr
             {!compact && insights.lastStudied && (
                 <div style={{ marginTop: 8, fontSize: '0.7rem', color: 'var(--text-dim)' }}>
                     {t('flashcards.last_studied', {
-                        date: new Date(insights.lastStudied).toLocaleDateString(),
+                        date: new Date(insights.lastStudied).toLocaleDateString(i18n.language),
                     })}
                 </div>
             )}

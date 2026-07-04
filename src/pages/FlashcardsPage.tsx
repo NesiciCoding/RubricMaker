@@ -59,6 +59,8 @@ export default function FlashcardsPage() {
                                 <div
                                     key={deck.id}
                                     className="card"
+                                    role="button"
+                                    tabIndex={0}
                                     style={{
                                         cursor: 'pointer',
                                         transition: 'border-color var(--transition)',
@@ -66,6 +68,9 @@ export default function FlashcardsPage() {
                                         maxWidth: 480,
                                     }}
                                     onClick={() => navigate(`/flashcards/${deck.id}`)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') navigate(`/flashcards/${deck.id}`);
+                                    }}
                                     onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
                                     onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
                                 >

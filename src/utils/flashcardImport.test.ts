@@ -48,6 +48,14 @@ describe('parseLines', () => {
         const cards = parseLines('Vocabulary week 12\napple - appel');
         expect(cards).toEqual([{ front: 'apple', back: 'appel' }]);
     });
+
+    it('preserves a numeric front instead of stripping it as a list marker', () => {
+        const cards = parseLines('100 - honderd\n1. house - huis');
+        expect(cards).toEqual([
+            { front: '100', back: 'honderd' },
+            { front: 'house', back: 'huis' },
+        ]);
+    });
 });
 
 describe('cardsFromRows', () => {

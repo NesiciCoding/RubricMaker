@@ -41,7 +41,6 @@ function reviveCard(state: FlashcardCardState): Card {
     };
 }
 
-/** Apply a rating to a card's (possibly absent) state and return the next serialized state. */
 export function rateCard(
     state: FlashcardCardState | undefined,
     rating: FlashcardRating,

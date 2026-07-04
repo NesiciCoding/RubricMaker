@@ -45,6 +45,7 @@ const mockFetchAssignedTestContent = vi.fn().mockResolvedValue(null);
 const mockFetchMyMessages = vi.fn().mockResolvedValue([]);
 const mockSendMessageAsStudent = vi.fn().mockResolvedValue({ success: true });
 const mockMarkMessagesReadByStudent = vi.fn().mockResolvedValue({ success: true });
+const mockFetchMyFlashcardAssignments = vi.fn().mockResolvedValue([]);
 
 const mockGradedStudentRubric: StudentRubric = {
     id: 'sr1',
@@ -149,7 +150,7 @@ const mockAppValue: Record<string, unknown> = {
     flashcardAssignments: emptyArr,
     flashcardDecks: emptyArr,
     flashcardReviews: emptyArr,
-    fetchMyFlashcardAssignments: vi.fn().mockResolvedValue([]),
+    fetchMyFlashcardAssignments: mockFetchMyFlashcardAssignments,
 };
 
 vi.mock('../../context/AppContext', () => ({
@@ -219,6 +220,8 @@ describe('StudentPortalPage', () => {
         mockFetchMyMessages.mockResolvedValue([]);
         mockSendMessageAsStudent.mockClear();
         mockMarkMessagesReadByStudent.mockClear();
+        mockFetchMyFlashcardAssignments.mockClear();
+        mockFetchMyFlashcardAssignments.mockResolvedValue([]);
         const mod = await import('../StudentPortalPage');
         StudentPortalPageComp = mod.default;
     });

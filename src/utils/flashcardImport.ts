@@ -61,7 +61,7 @@ export function splitLine(line: string): string[] | null {
 export function parseLines(text: string): ParsedFlashcard[] {
     const rows = text
         .split(/\r?\n/)
-        .map((l) => l.replace(/^[-•*\d.)\s]+/, '').trim())
+        .map((l) => l.replace(/^(?:[-•*]|\d+[.)])\s*/, '').trim())
         .filter(Boolean)
         .map((l) => splitLine(l))
         .filter((r): r is string[] => r !== null);
@@ -76,8 +76,8 @@ export async function parseFlashcardFile(file: File): Promise<ParsedFlashcard[]>
         case 'txt':
             return parseLines(await file.text());
         case 'xlsx': {
-            const readXlsxFile = (await import('read-excel-file/browser')).default;
-            const rows = await readXlsxFile(file);
+            const { readSheet } = await import('read-excel-file/browser');
+            const rows = await readSheet(file);
             return cardsFromRows(rows as unknown as Cellish[][]);
         }
         case 'docx': {

@@ -37,8 +37,19 @@ export default function FlashcardDeckPage() {
     const [showPreview, setShowPreview] = useState(false);
     const [assignClassId, setAssignClassId] = useState(classes[0]?.id ?? '');
 
+    useEffect(() => {
+        if (!classes.some((c) => c.id === assignClassId)) {
+            setAssignClassId(classes[0]?.id ?? '');
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [classes]);
+
     // Autosave the draft after a pause in editing; skip the initial mount echo.
     const lastSavedRef = useRef<string | null>(null);
+    const draftRef = useRef(draft);
+    useEffect(() => {
+        draftRef.current = draft;
+    }, [draft]);
     useEffect(() => {
         if (!draft) return;
         const serialized = JSON.stringify(draft);
@@ -53,6 +64,29 @@ export default function FlashcardDeckPage() {
         }, AUTOSAVE_DELAY_MS);
         return () => clearTimeout(timer);
     }, [draft, updateFlashcardDeck]);
+
+    // Flush a pending edit that the debounce above hasn't saved yet if the teacher
+    // navigates away mid-keystroke — a plain clearTimeout would silently drop it.
+    useEffect(() => {
+        return () => {
+            const current = draftRef.current;
+            if (current && lastSavedRef.current !== JSON.stringify(current)) {
+                updateFlashcardDeck(current);
+            }
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Adopt a fresher synced deck only when there's no unsaved local edit in flight —
+    // otherwise a realtime pull from another device could clobber active typing.
+    useEffect(() => {
+        if (!deck) return;
+        if (lastSavedRef.current === JSON.stringify(draft) && draft?.updatedAt !== deck.updatedAt) {
+            setDraft(deck);
+            lastSavedRef.current = JSON.stringify(deck);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [deck?.updatedAt]);
 
     const assignments = useMemo(() => flashcardAssignments.filter((a) => a.deckId === id), [flashcardAssignments, id]);
 
