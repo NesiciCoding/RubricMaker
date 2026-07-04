@@ -2,12 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { RotateCcw, PartyPopper } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { FlashcardCard, FlashcardCardState, FlashcardDeck } from '../../types';
-import {
-    buildStudyQueue,
-    previewIntervals,
-    rateCard,
-    type FlashcardRating,
-} from '../../utils/flashcardScheduler';
+import { buildStudyQueue, previewIntervals, rateCard, type FlashcardRating } from '../../utils/flashcardScheduler';
 
 interface Props {
     deck: FlashcardDeck;
@@ -44,10 +39,7 @@ export default function FlashcardStudySession({ deck, initialStates, onStatesCha
     const [againCount, setAgainCount] = useState(0);
 
     const card = queue[0];
-    const intervals = useMemo(
-        () => (card ? previewIntervals(states[card.id]) : null),
-        [card, states]
-    );
+    const intervals = useMemo(() => (card ? previewIntervals(states[card.id]) : null), [card, states]);
 
     function handleRate(rating: FlashcardRating) {
         if (!card) return;

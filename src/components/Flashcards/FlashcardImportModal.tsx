@@ -2,11 +2,7 @@ import React, { useRef, useState } from 'react';
 import { Upload, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Modal from '../ui/Modal';
-import {
-    parseFlashcardFile,
-    UnsupportedFlashcardFileError,
-    type ParsedFlashcard,
-} from '../../utils/flashcardImport';
+import { parseFlashcardFile, UnsupportedFlashcardFileError, type ParsedFlashcard } from '../../utils/flashcardImport';
 
 interface Props {
     onImport: (cards: ParsedFlashcard[]) => void;
