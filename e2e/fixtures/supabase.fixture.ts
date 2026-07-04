@@ -17,6 +17,7 @@
  *   SUPABASE_TEST_SERVICE_KEY  (default: local-dev service role key)
  */
 import { test as base, type Page } from '@playwright/test';
+import { execFileSync } from 'node:child_process';
 
 // ── Supabase local-dev defaults (produced by `supabase start`) ────────────────
 
@@ -31,6 +32,9 @@ export const SUPABASE_SERVICE_KEY =
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hj04zWl196z2-SBc0';
 
 const APP_URL = 'http://localhost:5173';
+
+/** Local Supabase Postgres connection (from `supabase start`'s default [db] port). */
+const DB_URL = process.env.SUPABASE_TEST_DB_URL ?? 'postgresql://postgres:postgres@localhost:54322/postgres';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -284,6 +288,28 @@ async function signInViaMagicLink(page: Page, actionLink: string): Promise<void>
     await page.waitForLoadState('networkidle', { timeout: 20_000 });
 }
 
+/**
+ * Force a user's role to 'admin' for the Admin Dashboard e2e specs.
+ *
+ * `updateUserRole` (and any REST/PostgREST path) is rejected by the
+ * `enforce_role_protection` trigger unless the CALLER is already an admin
+ * (migration 007_roles_rls.sql) — the service-role key doesn't bypass this,
+ * since the trigger checks `get_my_role()` against `auth.uid()`, not the
+ * Postgres role. The only real admin is whichever profile was created first
+ * in the whole local stack, which isn't reliably this test's user once other
+ * specs have run against the same `db:start` instance. Connecting directly as
+ * the Postgres superuser and disabling the trigger for one UPDATE is the only
+ * deterministic way to promote an arbitrary test user.
+ */
+function promoteToAdmin(email: string): void {
+    const sql = `
+        ALTER TABLE public.profiles DISABLE TRIGGER enforce_role_protection;
+        UPDATE public.profiles SET role = 'admin' WHERE email = '${email.replace(/'/g, "''")}';
+        ALTER TABLE public.profiles ENABLE TRIGGER enforce_role_protection;
+    `;
+    execFileSync('psql', [DB_URL, '-v', 'ON_ERROR_STOP=1', '-c', sql], { stdio: 'pipe' });
+}
+
 /** Delete a test user by email using the service-role admin API. */
 async function deleteTestUser(email: string): Promise<void> {
     try {
@@ -326,6 +352,8 @@ export type SupabaseFixtures = {
      * school as `supabasePage`'s user, for department-sharing/co-grading tests.
      */
     colleaguePage: Page;
+    /** Page signed in as a test user forcibly promoted to the 'admin' role, for Admin Dashboard specs. */
+    adminSupabasePage: Page;
 };
 
 // ── Fixture implementation ────────────────────────────────────────────────────
@@ -379,6 +407,19 @@ export const test = base.extend<SupabaseFixtures>({
         async ({}, run) => {
             const email = makeTestEmail();
             await run(email);
+        },
+        { scope: 'test' },
+    ],
+
+    adminSupabasePage: [
+        async ({ page, testUserEmail }, use) => {
+            const magicLink = await createUserAndGetMagicLink(testUserEmail);
+            promoteToAdmin(testUserEmail);
+            await signInViaMagicLink(page, magicLink);
+
+            await use(page);
+
+            await deleteTestUser(testUserEmail);
         },
         { scope: 'test' },
     ],

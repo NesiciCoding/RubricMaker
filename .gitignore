@@ -48,3 +48,7 @@ pnpm-debug.log*
 # Codegraph daemon runtime files
 .codegraph/
 daemon.pid
+
+# Supabase CLI local runtime artifacts
+supabase/.branches/
+supabase/.temp/
