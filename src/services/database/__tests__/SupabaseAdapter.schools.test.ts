@@ -131,7 +131,13 @@ describe('SupabaseAdapter school methods', () => {
     });
 
     it('createSchool inserts the school, membership, and profile link, returning the mapped school', async () => {
-        const schoolRow = { id: 's1', name: 'Alpha', created_by: 'user1', retention_years: 3, created_at: '2024-01-01' };
+        const schoolRow = {
+            id: 's1',
+            name: 'Alpha',
+            created_by: 'user1',
+            retention_years: 3,
+            created_at: '2024-01-01',
+        };
         const client = makeSequencedClient({
             schools: [{ data: schoolRow, error: null }],
             school_members: [{ data: null, error: null }],
@@ -141,13 +147,28 @@ describe('SupabaseAdapter school methods', () => {
         const result = await adapterWithClient(client).createSchool('Alpha', 3);
 
         expect(client.from).toHaveBeenCalledWith('school_members');
-        expect(result).toEqual({ id: 's1', name: 'Alpha', createdBy: 'user1', retentionYears: 3, createdAt: '2024-01-01' });
+        expect(result).toEqual({
+            id: 's1',
+            name: 'Alpha',
+            createdBy: 'user1',
+            retentionYears: 3,
+            createdAt: '2024-01-01',
+        });
     });
 
     it('createSchool rolls back the school row if the membership insert fails', async () => {
-        const schoolRow = { id: 's1', name: 'Alpha', created_by: 'user1', retention_years: 3, created_at: '2024-01-01' };
+        const schoolRow = {
+            id: 's1',
+            name: 'Alpha',
+            created_by: 'user1',
+            retention_years: 3,
+            created_at: '2024-01-01',
+        };
         const client = makeSequencedClient({
-            schools: [{ data: schoolRow, error: null }, { data: null, error: null }], // insert, then rollback delete
+            schools: [
+                { data: schoolRow, error: null },
+                { data: null, error: null },
+            ], // insert, then rollback delete
             school_members: [{ data: null, error: { message: 'membership boom' } }],
         });
 
@@ -159,10 +180,22 @@ describe('SupabaseAdapter school methods', () => {
     });
 
     it('createSchool rolls back membership and school if the profile link fails', async () => {
-        const schoolRow = { id: 's1', name: 'Alpha', created_by: 'user1', retention_years: 3, created_at: '2024-01-01' };
+        const schoolRow = {
+            id: 's1',
+            name: 'Alpha',
+            created_by: 'user1',
+            retention_years: 3,
+            created_at: '2024-01-01',
+        };
         const client = makeSequencedClient({
-            schools: [{ data: schoolRow, error: null }, { data: null, error: null }],
-            school_members: [{ data: null, error: null }, { data: null, error: null }],
+            schools: [
+                { data: schoolRow, error: null },
+                { data: null, error: null },
+            ],
+            school_members: [
+                { data: null, error: null },
+                { data: null, error: null },
+            ],
             profiles: [{ data: null, error: { message: 'profile boom' } }],
         });
 
