@@ -146,6 +146,10 @@ const mockAppValue: Record<string, unknown> = {
     fetchMyMessages: mockFetchMyMessages,
     sendMessageAsStudent: mockSendMessageAsStudent,
     markMessagesReadByStudent: mockMarkMessagesReadByStudent,
+    flashcardAssignments: emptyArr,
+    flashcardDecks: emptyArr,
+    flashcardReviews: emptyArr,
+    fetchMyFlashcardAssignments: vi.fn().mockResolvedValue([]),
 };
 
 vi.mock('../../context/AppContext', () => ({

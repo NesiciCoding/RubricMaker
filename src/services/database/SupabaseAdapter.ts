@@ -29,6 +29,9 @@ import type {
     CefrLevel,
     Message,
     MessageContextType,
+    FlashcardDeck,
+    FlashcardAssignment,
+    FlashcardReview,
 } from '../../types';
 import type { DatabaseConfig, DbUser, SyncResult } from './types';
 import { nanoid } from '../../utils/nanoid';
@@ -1317,6 +1320,125 @@ export class SupabaseAdapter {
         return error ? { success: false, error: error.message } : { success: true };
     }
 
+    // ── Flashcards (vocabulary spaced repetition) ─────────────────────────────
+
+    async fetchFlashcardDecks(): Promise<FlashcardDeck[]> {
+        const { data, error } = await this.db().from('flashcard_decks').select('data');
+        if (error) {
+            console.error('fetchFlashcardDecks', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as FlashcardDeck);
+    }
+
+    async upsertFlashcardDeck(d: FlashcardDeck): Promise<SyncResult> {
+        const { error } = await this.db()
+            .from('flashcard_decks')
+            .upsert({ id: d.id, owner_id: this.uid(), data: d }, { onConflict: 'id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteFlashcardDeck(id: string): Promise<SyncResult> {
+        const { error } = await this.db().from('flashcard_decks').delete().eq('id', id).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async fetchFlashcardAssignments(): Promise<FlashcardAssignment[]> {
+        const { data, error } = await this.db().from('flashcard_assignments').select('data');
+        if (error) {
+            console.error('fetchFlashcardAssignments', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as FlashcardAssignment);
+    }
+
+    async upsertFlashcardAssignment(a: FlashcardAssignment): Promise<SyncResult> {
+        const { error } = await this.db()
+            .from('flashcard_assignments')
+            .upsert(
+                {
+                    id: `${a.deckId}:${a.studentId}`,
+                    owner_id: this.uid(),
+                    deck_id: a.deckId,
+                    student_id: a.studentId,
+                    data: a,
+                },
+                { onConflict: 'id' }
+            );
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteFlashcardAssignment(id: string): Promise<SyncResult> {
+        const { error } = await this.db()
+            .from('flashcard_assignments')
+            .delete()
+            .eq('id', id)
+            .eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async fetchFlashcardReviews(): Promise<FlashcardReview[]> {
+        const { data, error } = await this.db().from('flashcard_reviews').select('data');
+        if (error) {
+            console.error('fetchFlashcardReviews', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as FlashcardReview);
+    }
+
+    /** Teacher-session upsert (initial pushAll migration of local-mode study data). */
+    async upsertFlashcardReview(r: FlashcardReview): Promise<SyncResult> {
+        const { error } = await this.db()
+            .from('flashcard_reviews')
+            .upsert(
+                { id: r.id, owner_id: this.uid(), deck_id: r.deckId, student_id: r.studentId, data: r },
+                { onConflict: 'id' }
+            );
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteFlashcardReview(id: string): Promise<SyncResult> {
+        const { error } = await this.db().from('flashcard_reviews').delete().eq('id', id).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    /** Assignments for the logged-in portal student (RLS: get_my_flashcard_assignment_ids). */
+    async fetchMyFlashcardAssignments(): Promise<FlashcardAssignment[]> {
+        const { data, error } = await this.db().from('flashcard_assignments').select('data');
+        if (error || !data) return [];
+        return data.map((r) => r.data as FlashcardAssignment);
+    }
+
+    /** Full deck content for a deck assigned to the logged-in student (RLS: flashcard_decks_student_select). */
+    async fetchAssignedFlashcardDeck(deckId: string): Promise<FlashcardDeck | null> {
+        const { data, error } = await this.db().from('flashcard_decks').select('data').eq('id', deckId).maybeSingle();
+        if (error || !data) return null;
+        return data.data as FlashcardDeck;
+    }
+
+    async fetchMyFlashcardReview(deckId: string, studentId: string): Promise<FlashcardReview | null> {
+        const { data, error } = await this.db()
+            .from('flashcard_reviews')
+            .select('data')
+            .eq('id', `${deckId}:${studentId}`)
+            .maybeSingle();
+        if (error || !data) return null;
+        return data.data as FlashcardReview;
+    }
+
+    /**
+     * Student saves their own review state. owner_id is intentionally omitted — the
+     * set_flashcard_review_owner trigger (migration 051) resolves it server-side from
+     * the roster row, same rationale as sendMessageAsStudent. Omitting it from the
+     * payload also keeps the UPDATE branch of the upsert from touching the column.
+     */
+    async saveFlashcardReviewAsStudent(r: FlashcardReview): Promise<SyncResult> {
+        const { error } = await this.db()
+            .from('flashcard_reviews')
+            .upsert({ id: r.id, deck_id: r.deckId, student_id: r.studentId, data: r }, { onConflict: 'id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
     // ── Analysis Results ──────────────────────────────────────────────────────
 
     async fetchAnalysisResults(): Promise<DocumentAnalysisResult[]> {
@@ -1990,6 +2112,9 @@ export class SupabaseAdapter {
             'user_settings',
             'essay_templates',
             'essay_assignments',
+            'flashcard_decks',
+            'flashcard_assignments',
+            'flashcard_reviews',
         ];
         for (const table of tables) {
             const col = table === 'student_rubrics' ? 'grader_id' : table === 'user_settings' ? 'user_id' : 'owner_id';

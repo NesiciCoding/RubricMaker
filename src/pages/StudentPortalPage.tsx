@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import {
     BookOpen,
@@ -17,6 +17,7 @@ import {
     Loader2,
     Send,
     Mail,
+    Layers,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Joyride, STATUS } from 'react-joyride';
@@ -32,6 +33,7 @@ import RubricSelfAssessPanel from '../components/Students/RubricSelfAssessPanel'
 import { encodeEssayAssignment, encodeTestAssignment } from '../utils/shareCode';
 import { loadSupabaseConfig } from '../services/database';
 import { groupMessageThreads, MessageThread } from '../utils/messageThreads';
+import { computeDeckInsights } from '../utils/flashcardInsights';
 import { nanoid } from '../utils/nanoid';
 import type {
     CefrLevel,
@@ -44,6 +46,7 @@ import type {
     RubricCriterion,
     Message,
     MessageContextType,
+    FlashcardAssignment,
 } from '../types';
 
 function criterionPct(
@@ -76,6 +79,10 @@ export default function StudentPortalPage() {
         fetchMyMessages,
         sendMessageAsStudent,
         markMessagesReadByStudent,
+        flashcardAssignments,
+        flashcardDecks,
+        flashcardReviews,
+        fetchMyFlashcardAssignments,
     } = useApp();
     const { t } = useTranslation();
     const [linkCopied, setLinkCopied] = useState(false);
@@ -89,6 +96,7 @@ export default function StudentPortalPage() {
     const [testOpenErrorKey, setTestOpenErrorKey] = useState<string | null>(null);
     const [radarRubricId, setRadarRubricId] = useState<string>('combined');
     const [messageRows, setMessageRows] = useState<Message[]>([]);
+    const [flashcardRows, setFlashcardRows] = useState<FlashcardAssignment[]>([]);
 
     useEffect(() => {
         fetchMyEssayAssignments()
@@ -105,6 +113,11 @@ export default function StudentPortalPage() {
             })
             .catch(() => {
                 /* messaging requires a live Supabase session; silently unavailable otherwise */
+            });
+        fetchMyFlashcardAssignments()
+            .then(setFlashcardRows)
+            .catch(() => {
+                /* local mode: app state (below) already has the assignments */
             });
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -381,8 +394,23 @@ export default function StudentPortalPage() {
             .map((row) => ({ contextType: 'essay' as const, contextId: row.rubricId, label: row.title })),
     ];
 
+    // Same session-scoping caveat as fetchMy*Assignments() above; local mode reads the
+    // app-state copy instead. Merged by deck id, fetched rows winning on freshness.
+    const myFlashcards = (() => {
+        const byDeck = new Map(
+            flashcardAssignments.filter((a) => a.studentId === student.id).map((a) => [a.deckId, a])
+        );
+        for (const a of flashcardRows.filter((r) => r.studentId === student.id)) byDeck.set(a.deckId, a);
+        return [...byDeck.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    })();
+
     const navLinks = [
         { id: 'portal-section-work', label: t('studentPortal.my_work'), visible: hasWork },
+        {
+            id: 'portal-section-flashcards',
+            label: t('studentPortal.flashcards_section_title'),
+            visible: myFlashcards.length > 0,
+        },
         { id: 'portal-section-messages', label: t('studentPortal.messages_section_title'), visible: true },
         { id: 'portal-section-progress', label: t('studentPortal.my_progress'), visible: hasRadar },
         { id: 'portal-section-grades', label: t('studentPortal.grade_history'), visible: history.length > 1 },
@@ -647,6 +675,59 @@ export default function StudentPortalPage() {
                                     t={t}
                                 />
                             )}
+                        </div>
+                    </Section>
+                )}
+
+                {myFlashcards.length > 0 && (
+                    <Section id="portal-section-flashcards" title={t('studentPortal.flashcards_section_title')}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            {myFlashcards.map((a) => {
+                                const deck = flashcardDecks.find((d) => d.id === a.deckId);
+                                const review =
+                                    flashcardReviews.find((r) => r.id === `${a.deckId}:${student.id}`) ?? null;
+                                const insights = deck ? computeDeckInsights(deck, review) : null;
+                                return (
+                                    <div
+                                        key={a.deckId}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            gap: 12,
+                                            flexWrap: 'wrap',
+                                            border: '1px solid var(--border)',
+                                            borderRadius: 10,
+                                            padding: '10px 14px',
+                                        }}
+                                    >
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                            <Layers size={16} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+                                            <div>
+                                                <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>
+                                                    {a.deckName}
+                                                </div>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                    {t('flashcards.card_count', {
+                                                        count: deck?.cards.length ?? a.cardCount,
+                                                    })}
+                                                    {insights && insights.dueCount > 0 && (
+                                                        <span style={{ color: 'var(--red)', marginLeft: 8 }}>
+                                                            {t('flashcards.due_count', { count: insights.dueCount })}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <Link
+                                            to={`/portal/${student.id}/flashcards/${a.deckId}`}
+                                            className="btn btn-primary btn-sm"
+                                        >
+                                            {t('flashcards.study_button')}
+                                        </Link>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </Section>
                 )}

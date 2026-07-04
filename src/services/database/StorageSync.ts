@@ -36,6 +36,9 @@ import type {
     TestAssignment,
     UserTemplate,
     Message,
+    FlashcardDeck,
+    FlashcardAssignment,
+    FlashcardReview,
 } from '../../types';
 
 const CONFIG_KEY = 'rm_supabase_config';
@@ -486,6 +489,22 @@ class StorageSyncService {
         return this.adapter.markMessagesReadByStudent(ids);
     }
 
+    async fetchMyFlashcardAssignments(): Promise<FlashcardAssignment[]> {
+        return this.adapter.fetchMyFlashcardAssignments();
+    }
+
+    async fetchAssignedFlashcardDeck(deckId: string): Promise<FlashcardDeck | null> {
+        return this.adapter.fetchAssignedFlashcardDeck(deckId);
+    }
+
+    async fetchMyFlashcardReview(deckId: string, studentId: string): Promise<FlashcardReview | null> {
+        return this.adapter.fetchMyFlashcardReview(deckId, studentId);
+    }
+
+    async saveFlashcardReviewAsStudent(r: FlashcardReview): Promise<SyncResult> {
+        return this.adapter.saveFlashcardReviewAsStudent(r);
+    }
+
     async fetchEssayAssignmentByKey(teacherKey: string) {
         return this.adapter.fetchEssayAssignmentByKey(teacherKey);
     }
@@ -554,6 +573,9 @@ class StorageSyncService {
                 essaySubmissions,
                 userTemplates,
                 messages,
+                flashcardDecks,
+                flashcardAssignments,
+                flashcardReviews,
                 attachments,
                 settings,
                 profile,
@@ -579,6 +601,9 @@ class StorageSyncService {
                 this.adapter.fetchEssayOfflineSubmissions(),
                 this.adapter.fetchUserTemplates(),
                 this.adapter.fetchMessages(),
+                this.adapter.fetchFlashcardDecks(),
+                this.adapter.fetchFlashcardAssignments(),
+                this.adapter.fetchFlashcardReviews(),
                 this.attachmentSync.hydrateAttachments(),
                 this.adapter.fetchSettings(),
                 this.adapter.fetchMyProfile(),
@@ -650,6 +675,9 @@ class StorageSyncService {
                 essaySubmissions,
                 userTemplates,
                 messages,
+                flashcardDecks,
+                flashcardAssignments,
+                flashcardReviews,
                 attachments,
                 ...(mergedSettings ? { settings: mergedSettings as StoreData['settings'] } : {}),
             };
@@ -705,6 +733,9 @@ class StorageSyncService {
                 ...state.essaySubmissions.map((s) => this.adapter.upsertEssayOfflineSubmission(s)),
                 ...state.userTemplates.map((ut) => this.adapter.upsertUserTemplate(ut)),
                 ...state.messages.map((m) => this.adapter.upsertMessage(m)),
+                ...state.flashcardDecks.map((d) => this.adapter.upsertFlashcardDeck(d)),
+                ...state.flashcardAssignments.map((a) => this.adapter.upsertFlashcardAssignment(a)),
+                ...state.flashcardReviews.map((r) => this.adapter.upsertFlashcardReview(r)),
                 this.adapter.saveSettings(state.settings),
             ];
             await Promise.all(ups);
@@ -843,6 +874,23 @@ class StorageSyncService {
                 case 'userTemplate':
                     if (action === 'upsert') result = await this.adapter.upsertUserTemplate(payload as UserTemplate);
                     else if (id) result = await this.adapter.deleteUserTemplate(id);
+                    break;
+                case 'flashcardDeck':
+                    if (action === 'upsert') result = await this.adapter.upsertFlashcardDeck(payload as FlashcardDeck);
+                    else if (id) result = await this.adapter.deleteFlashcardDeck(id);
+                    break;
+                case 'flashcardAssignment':
+                    if (action === 'upsert')
+                        result = await this.adapter.upsertFlashcardAssignment(payload as FlashcardAssignment);
+                    else if (id) result = await this.adapter.deleteFlashcardAssignment(id);
+                    break;
+                case 'flashcardReview':
+                    // Teacher-session pushes only (local-mode study data, deck-delete
+                    // cascade); the portal student writes through
+                    // saveFlashcardReviewAsStudent instead, never through the diff effect.
+                    if (action === 'upsert')
+                        result = await this.adapter.upsertFlashcardReview(payload as FlashcardReview);
+                    else if (id) result = await this.adapter.deleteFlashcardReview(id);
                     break;
                 case 'settings':
                     if (action === 'upsert')

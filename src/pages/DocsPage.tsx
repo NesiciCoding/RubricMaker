@@ -220,11 +220,34 @@ function getRouteTree(t: TFunction): RouteNode[] {
             color: '#f59e0b',
         },
         {
+            path: '/flashcards',
+            label: t('docs.route_flashcards_label'),
+            description: t('docs.route_flashcards_desc'),
+            color: '#f59e0b',
+            children: [
+                {
+                    path: '/flashcards/:id',
+                    label: t('docs.route_flashcard_deck_label'),
+                    description: t('docs.route_flashcard_deck_desc'),
+                    color: '#f59e0b',
+                },
+            ],
+        },
+        {
             path: '/portal/:studentId',
             label: t('docs.route_student_portal_label'),
             description: t('docs.route_student_portal_desc'),
             color: '#06b6d4',
             badge: 'public',
+            children: [
+                {
+                    path: '/portal/:studentId/flashcards/:deckId',
+                    label: t('docs.route_flashcard_study_label'),
+                    description: t('docs.route_flashcard_study_desc'),
+                    color: '#06b6d4',
+                    badge: 'student',
+                },
+            ],
         },
         {
             path: '/test/:code',
@@ -1046,6 +1069,22 @@ function CefrTab() {
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
                     {t('docs.ce_self_assess_body')}
                 </p>
+            </FeatureSection>
+
+            <FeatureSection icon={Layers} title={t('docs.ce_flashcards_title')} color="#8b5cf6">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    {t('docs.ce_flashcards_intro')}
+                </p>
+                <FeatureList
+                    items={[
+                        t('docs.ce_flashcards_item_create'),
+                        t('docs.ce_flashcards_item_import'),
+                        t('docs.ce_flashcards_item_assign'),
+                        t('docs.ce_flashcards_item_study'),
+                        t('docs.ce_flashcards_item_insights'),
+                    ]}
+                />
+                <InfoBox color="#8b5cf6">{t('docs.ce_flashcards_info')}</InfoBox>
             </FeatureSection>
 
             <FeatureSection icon={Award} title={t('docs.ce_cambridge_title')} color="#f59e0b">

@@ -121,6 +121,12 @@ const TEACHER_FEATURES = [
         desc: 'Answer student questions about a rubric, test, or essay right from your Messages inbox — or reach out to a student yourself.',
         color: '#f59e0b',
     },
+    {
+        icon: Layers,
+        title: 'Vocabulary Flashcards',
+        desc: 'Build flashcard decks by hand or import them from CSV, Excel, or Word, assign them to a class, and see which words each student should focus on.',
+        color: '#8b5cf6',
+    },
 ];
 
 const STUDENT_FEATURES = [
@@ -171,6 +177,12 @@ const STUDENT_FEATURES = [
         title: 'Ask Your Teacher',
         desc: 'Ask a question about a rubric grade, test, or essay right from your portal, and see the reply on your next visit.',
         color: '#f59e0b',
+    },
+    {
+        icon: Layers,
+        title: 'Study Flashcards',
+        desc: 'Practice vocabulary decks from your teacher with smart spaced repetition — hard words come back sooner, and you can see your progress grow.',
+        color: '#8b5cf6',
     },
 ];
 

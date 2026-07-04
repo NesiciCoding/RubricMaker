@@ -1047,6 +1047,59 @@ export interface StudentTestAssignmentSummary {
     submission: { status: StudentTest['status']; submittedAt: string | null } | null;
 }
 
+// ── Flashcards (vocabulary spaced repetition) ────────────────────────────────
+
+export interface FlashcardCard {
+    id: string;
+    front: string;
+    back: string;
+    example?: string;
+    cefrLevel?: CefrLevel;
+}
+
+export interface FlashcardDeck {
+    id: string;
+    name: string;
+    description?: string;
+    cards: FlashcardCard[];
+    createdAt: string;
+    updatedAt?: string;
+}
+
+/** One row per assigned student, keyed `${deckId}:${studentId}` (same composite pattern as EssayAssignment) */
+export interface FlashcardAssignment {
+    deckId: string;
+    studentId: string;
+    /** Denormalized from FlashcardDeck.name so the portal list renders without reading `flashcard_decks` */
+    deckName: string;
+    cardCount: number;
+    createdAt: string;
+}
+
+/** Serialized ts-fsrs Card — dates as ISO strings so the whole record round-trips through JSON/jsonb */
+export interface FlashcardCardState {
+    due: string;
+    stability: number;
+    difficulty: number;
+    elapsed_days: number;
+    scheduled_days: number;
+    learning_steps: number;
+    reps: number;
+    lapses: number;
+    state: number;
+    last_review?: string;
+}
+
+/** A student's spaced-repetition state for one deck: one row per (deck, student) */
+export interface FlashcardReview {
+    /** `${deckId}:${studentId}` */
+    id: string;
+    deckId: string;
+    studentId: string;
+    cardStates: Record<string, FlashcardCardState>;
+    updatedAt: string;
+}
+
 /** A student's completed test, encoded into a submission code for the teacher to import */
 export interface TestSubmissionPayload {
     testId: string;

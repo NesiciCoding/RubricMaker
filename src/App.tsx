@@ -49,6 +49,9 @@ const ActivityDashboardPage = lazy(() => import('./pages/ActivityDashboardPage')
 const MarketplacePage = lazy(() => import('./pages/MarketplacePage'));
 const ModerationQueuePage = lazy(() => import('./pages/ModerationQueuePage'));
 const MessagesPage = lazy(() => import('./pages/MessagesPage'));
+const FlashcardsPage = lazy(() => import('./pages/FlashcardsPage'));
+const FlashcardDeckPage = lazy(() => import('./pages/FlashcardDeckPage'));
+const StudentFlashcardStudyPage = lazy(() => import('./pages/StudentFlashcardStudyPage'));
 
 // Forces GradeStudent to remount when studentId changes so useState re-initialises.
 function GradeStudentRoute() {
@@ -137,6 +140,7 @@ export default function App() {
                 <Suspense fallback={<RouteSkeleton />}>
                     <Routes>
                         <Route path="/portal/:studentId" element={<StudentPortalPage />} />
+                        <Route path="/portal/:studentId/flashcards/:deckId" element={<StudentFlashcardStudyPage />} />
                         <Route path="/privacy" element={<PrivacyPage />} />
                         <Route path="*" element={<Navigate to={`/portal/${linkedStudent.id}`} replace />} />
                     </Routes>
@@ -212,7 +216,13 @@ export default function App() {
                                     path="/essays/:assignmentId/monitor"
                                     element={<LiveMonitorPage kind="essay" />}
                                 />
+                                <Route path="/flashcards" element={<FlashcardsPage />} />
+                                <Route path="/flashcards/:id" element={<FlashcardDeckPage />} />
                                 <Route path="/portal/:studentId" element={<StudentPortalPage />} />
+                                <Route
+                                    path="/portal/:studentId/flashcards/:deckId"
+                                    element={<StudentFlashcardStudyPage />}
+                                />
                                 <Route path="/attachments" element={<AttachmentsPage />} />
                                 <Route path="/export" element={<ExportPage />} />
                                 <Route path="/statistics" element={<StatisticsPage />} />
