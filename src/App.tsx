@@ -1,7 +1,6 @@
 import React, { Suspense, lazy, useMemo, useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom';
 import Sidebar from './components/Layout/Sidebar';
-import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
 import { useApp } from './context/AppContext';
 import { MobileMenuContext } from './context/MobileMenuContext';
@@ -13,6 +12,8 @@ import MigrationPrompt from './components/auth/MigrationPrompt';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import NotFoundPage from './pages/NotFoundPage';
 import RouteSkeleton from './components/ui/RouteSkeleton';
+
+const Joyride = lazy(() => import('react-joyride').then((m) => ({ default: m.Joyride })));
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const RubricList = lazy(() => import('./pages/RubricList'));
@@ -150,7 +151,7 @@ export default function App() {
     }
 
     const handleJoyrideCallback = (data: EventData) => {
-        if (data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED) {
+        if (data.status === 'finished' || data.status === 'skipped') {
             updateSettings({ hasSeenTutorial: true });
         }
     };
@@ -162,26 +163,30 @@ export default function App() {
                 <a href="#main-content" className="skip-nav">
                     {t('a11y.skip_to_content')}
                 </a>
-                <Joyride
-                    steps={steps}
-                    run={!settings.hasSeenTutorial}
-                    continuous
-                    onEvent={handleJoyrideCallback}
-                    options={{
-                        showProgress: true,
-                        buttons: ['back', 'skip', 'primary'],
-                        primaryColor: 'var(--accent)',
-                        backgroundColor: 'var(--bg-elevated)',
-                        textColor: 'var(--text)',
-                        arrowColor: 'var(--bg-elevated)',
-                        overlayColor: 'rgba(0, 0, 0, 0.6)',
-                    }}
-                    styles={{
-                        tooltipContainer: {
-                            textAlign: 'left',
-                        },
-                    }}
-                />
+                {!settings.hasSeenTutorial && (
+                    <Suspense fallback={null}>
+                        <Joyride
+                            steps={steps}
+                            run={!settings.hasSeenTutorial}
+                            continuous
+                            onEvent={handleJoyrideCallback}
+                            options={{
+                                showProgress: true,
+                                buttons: ['back', 'skip', 'primary'],
+                                primaryColor: 'var(--accent)',
+                                backgroundColor: 'var(--bg-elevated)',
+                                textColor: 'var(--text)',
+                                arrowColor: 'var(--bg-elevated)',
+                                overlayColor: 'rgba(0, 0, 0, 0.6)',
+                            }}
+                            styles={{
+                                tooltipContainer: {
+                                    textAlign: 'left',
+                                },
+                            }}
+                        />
+                    </Suspense>
+                )}
                 <RouteAnnouncer />
                 <Sidebar mobileOpen={mobileMenuOpen} onMobileClose={() => setMobileMenuOpen(false)} />
                 <main className="main-area" id="main-content">
