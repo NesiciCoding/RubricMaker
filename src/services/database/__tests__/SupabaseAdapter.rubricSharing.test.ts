@@ -33,6 +33,9 @@ describe('SupabaseAdapter rubric sharing methods', () => {
         const client = makeClient({ data: null, error: null });
         const result = await adapterWithClient(client).unshareRubric('r1', 'u2');
         expect(client.from).toHaveBeenCalledWith('rubric_shares');
+        const builder = client.from.mock.results[0].value;
+        expect(builder.eq).toHaveBeenCalledWith('rubric_id', 'r1');
+        expect(builder.eq).toHaveBeenCalledWith('user_id', 'u2');
         expect(result).toEqual({ success: true });
     });
 
@@ -100,10 +103,12 @@ describe('SupabaseAdapter rubric sharing methods', () => {
         expect(result).toEqual([rubricA]);
     });
 
-    it('fetchSchoolSharedRubrics excludes the current user and returns [] on error', async () => {
+    it('fetchSchoolSharedRubrics returns [] on error', async () => {
         const client = makeClient({ data: null, error: { message: 'boom' } });
         expect(await adapterWithClient(client).fetchSchoolSharedRubrics()).toEqual([]);
+    });
 
+    it('fetchSchoolSharedRubrics excludes the current user and maps rows', async () => {
         const okClient = makeClient({ data: [{ owner_id: 'other', data: { id: 'r2' } }], error: null });
         const connected = adapterWithClient(okClient, 'user1');
         const result = await connected.fetchSchoolSharedRubrics();

@@ -135,6 +135,9 @@ describe('SupabaseAdapter school methods', () => {
         expect(result).toBeNull();
         // Two calls to 'schools': the insert, and the rollback delete.
         expect(client.from).toHaveBeenCalledTimes(3);
+        const rollbackBuilder = client.from.mock.results[2].value;
+        expect(rollbackBuilder.delete).toHaveBeenCalled();
+        expect(rollbackBuilder.eq).toHaveBeenCalledWith('id', 's1');
     });
 
     it('createSchool rolls back membership and school if the profile link fails', async () => {
@@ -161,6 +164,11 @@ describe('SupabaseAdapter school methods', () => {
 
         expect(result).toBeNull();
         expect(client.from).toHaveBeenCalledTimes(5); // insert x3, rollback member delete, rollback school delete
+        const memberRollbackBuilder = client.from.mock.results[3].value;
+        expect(memberRollbackBuilder.eq).toHaveBeenCalledWith('school_id', 's1');
+        expect(memberRollbackBuilder.eq).toHaveBeenCalledWith('profile_id', 'user1');
+        const schoolRollbackBuilder = client.from.mock.results[4].value;
+        expect(schoolRollbackBuilder.eq).toHaveBeenCalledWith('id', 's1');
     });
 
     it('updateSchool only patches the provided fields', async () => {

@@ -36,6 +36,9 @@ describe('SupabaseAdapter class sharing methods', () => {
         const client = makeClient({ data: null, error: null });
         const result = await adapterWithClient(client).removeClassMember('c1', 'u2');
         expect(client.from).toHaveBeenCalledWith('class_members');
+        const builder = client.from.mock.results[0].value;
+        expect(builder.eq).toHaveBeenCalledWith('class_id', 'c1');
+        expect(builder.eq).toHaveBeenCalledWith('user_id', 'u2');
         expect(result).toEqual({ success: true });
     });
 
