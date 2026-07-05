@@ -16,6 +16,7 @@ import RouteSkeleton from './components/ui/RouteSkeleton';
 // react-joyride only runs the onboarding tour inside the dashboard, never on the landing
 // page — lazy so its ~800KB isn't parsed on every load. No default export, so re-wrap it.
 const Joyride = lazy(() => import('react-joyride').then((m) => ({ default: m.Joyride })));
+
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const RubricList = lazy(() => import('./pages/RubricList'));
 const RubricBuilder = lazy(() => import('./pages/RubricBuilder'));
