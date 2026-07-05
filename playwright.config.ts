@@ -32,6 +32,10 @@ export default defineConfig({
                 '**/20-essay-import-db.spec.ts',
                 '**/04b-grading-mobile.spec.ts',
                 '**/24-department-sharing.spec.ts',
+                '**/34-speaking-session.spec.ts',
+                '**/35-admin-dashboard.spec.ts',
+                '**/36-marketplace.spec.ts',
+                '**/37-live-monitor.spec.ts',
             ],
         },
         {
@@ -46,6 +50,10 @@ export default defineConfig({
                 '**/20-essay-import-db.spec.ts',
                 '**/04b-grading-mobile.spec.ts',
                 '**/24-department-sharing.spec.ts',
+                '**/34-speaking-session.spec.ts',
+                '**/35-admin-dashboard.spec.ts',
+                '**/36-marketplace.spec.ts',
+                '**/37-live-monitor.spec.ts',
             ],
         },
         {
@@ -60,7 +68,23 @@ export default defineConfig({
                 '**/20-essay-import-db.spec.ts',
                 '**/04b-grading-mobile.spec.ts',
                 '**/24-department-sharing.spec.ts',
+                '**/34-speaking-session.spec.ts',
+                '**/35-admin-dashboard.spec.ts',
+                '**/36-marketplace.spec.ts',
+                '**/37-live-monitor.spec.ts',
             ],
+        },
+        // Speaking session recording — needs a fake camera/mic so MediaRecorder
+        // has a stream to capture instead of hanging on a permission prompt.
+        {
+            name: 'chromium-fake-media',
+            use: {
+                ...devices['Desktop Chrome'],
+                launchOptions: {
+                    args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'],
+                },
+            },
+            testMatch: ['**/34-speaking-session.spec.ts'],
         },
         {
             name: 'mobile-chrome',
@@ -85,6 +109,9 @@ export default defineConfig({
                 '**/18-multi-device-sync.spec.ts',
                 '**/20-essay-import-db.spec.ts',
                 '**/24-department-sharing.spec.ts',
+                '**/35-admin-dashboard.spec.ts',
+                '**/36-marketplace.spec.ts',
+                '**/37-live-monitor.spec.ts',
             ],
         },
     ],

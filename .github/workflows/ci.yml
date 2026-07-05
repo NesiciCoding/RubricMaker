@@ -75,7 +75,7 @@ jobs:
         run: npx playwright install --with-deps chromium firefox
 
       - name: Run E2E tests
-        run: npm run e2e -- --project=chromium --project=firefox
+        run: npm run e2e -- --project=chromium --project=firefox --project=chromium-fake-media
         env:
           CI: true
 
