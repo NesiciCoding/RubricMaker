@@ -1665,7 +1665,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const markMessageReadByTeacher = useCallback((id: string) => {
         dispatch({ type: 'MARK_MESSAGE_READ_BY_TEACHER', id });
         const msg = currentStateRef.current.messages.find((m) => m.id === id);
-        if (msg) void loadDb().then(({ storageSync }) => storageSync.pushOne('message', 'upsert', { ...msg, readByTeacher: true }));
+        if (msg)
+            void loadDb().then(({ storageSync }) =>
+                storageSync.pushOne('message', 'upsert', { ...msg, readByTeacher: true })
+            );
     }, []);
 
     // All flashcard collections are pushed via the delta-sync diff() effect, like essayAssignments.
@@ -1797,7 +1800,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
             (await loadDb()).storageSync.fetchEssaySubmissionsForStudent(rubricId, studentId),
         []
     );
-    const fetchAllEssaySubmissions = useCallback(async () => (await loadDb()).storageSync.fetchAllEssaySubmissions(), []);
+    const fetchAllEssaySubmissions = useCallback(
+        async () => (await loadDb()).storageSync.fetchAllEssaySubmissions(),
+        []
+    );
     const fetchMyEssayAssignments = useCallback(async () => (await loadDb()).storageSync.fetchMyEssayAssignments(), []);
     const fetchEssayAssignmentByKey = useCallback(
         async (teacherKey: string) => (await loadDb()).storageSync.fetchEssayAssignmentByKey(teacherKey),
@@ -1807,15 +1813,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
         async (id: string, path: string) => (await loadDb()).storageSync.deleteEssaySubmission(id, path),
         []
     );
-    const getEssaySignedUrl = useCallback(async (path: string) => (await loadDb()).storageSync.getEssaySignedUrl(path), []);
-    const saveTestAssignment = useCallback(async (a: TestAssignment) => (await loadDb()).storageSync.saveTestAssignment(a), []);
+    const getEssaySignedUrl = useCallback(
+        async (path: string) => (await loadDb()).storageSync.getEssaySignedUrl(path),
+        []
+    );
+    const saveTestAssignment = useCallback(
+        async (a: TestAssignment) => (await loadDb()).storageSync.saveTestAssignment(a),
+        []
+    );
     const fetchMyTestAssignments = useCallback(async () => (await loadDb()).storageSync.fetchMyTestAssignments(), []);
     const fetchAssignedTestContent = useCallback(
         async (testId: string) => (await loadDb()).storageSync.fetchAssignedTestContent(testId),
         []
     );
     const fetchMyMessages = useCallback(async () => (await loadDb()).storageSync.fetchMyMessages(), []);
-    const sendMessageAsStudent = useCallback(async (m: Message) => (await loadDb()).storageSync.sendMessageAsStudent(m), []);
+    const sendMessageAsStudent = useCallback(
+        async (m: Message) => (await loadDb()).storageSync.sendMessageAsStudent(m),
+        []
+    );
     const markMessagesReadByStudent = useCallback(
         async (ids: string[]) => (await loadDb()).storageSync.markMessagesReadByStudent(ids),
         []
@@ -1829,7 +1844,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         []
     );
     const fetchMyFlashcardReview = useCallback(
-        async (deckId: string, studentId: string) => (await loadDb()).storageSync.fetchMyFlashcardReview(deckId, studentId),
+        async (deckId: string, studentId: string) =>
+            (await loadDb()).storageSync.fetchMyFlashcardReview(deckId, studentId),
         []
     );
     const saveFlashcardReviewAsStudent = useCallback(
@@ -1927,13 +1943,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
             (await loadDb()).storageSync.updateSchool(schoolId, updates),
         []
     );
-    const deleteSchool = useCallback(async (schoolId: string) => (await loadDb()).storageSync.deleteSchool(schoolId), []);
+    const deleteSchool = useCallback(
+        async (schoolId: string) => (await loadDb()).storageSync.deleteSchool(schoolId),
+        []
+    );
     const fetchSchoolMembers = useCallback(
         async (schoolId: string) => (await loadDb()).storageSync.fetchSchoolMembers(schoolId),
         []
     );
     const removeSchoolMember = useCallback(
-        async (schoolId: string, profileId: string) => (await loadDb()).storageSync.removeSchoolMember(schoolId, profileId),
+        async (schoolId: string, profileId: string) =>
+            (await loadDb()).storageSync.removeSchoolMember(schoolId, profileId),
         []
     );
 
