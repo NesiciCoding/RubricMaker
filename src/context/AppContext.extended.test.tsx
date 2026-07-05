@@ -49,6 +49,18 @@ vi.mock('../store/storage', () => ({
     importFullBackup: vi.fn(() => true),
 }));
 
+// AppContext's DB-reconnect/OTP effects always dynamically import this module — mocked so
+// tests don't pull in real @supabase/supabase-js and leave dangling imports past teardown.
+vi.mock('../services/database', () => ({
+    storageSync: {
+        isConnected: () => false,
+        getCurrentUserId: () => null,
+        adapter: { getClient: () => null },
+        onNetworkReconnect: () => () => {},
+        onAuthChange: () => () => {},
+    },
+}));
+
 vi.mock('@azure/msal-react', () => ({
     useMsal: vi.fn(() => ({ instance: {}, accounts: [] })),
     useIsAuthenticated: vi.fn(() => false),

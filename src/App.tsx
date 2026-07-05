@@ -1,7 +1,6 @@
 import React, { Suspense, lazy, useMemo, useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom';
 import Sidebar from './components/Layout/Sidebar';
-import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
 import { useApp } from './context/AppContext';
 import { MobileMenuContext } from './context/MobileMenuContext';
@@ -14,6 +13,9 @@ import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import NotFoundPage from './pages/NotFoundPage';
 import RouteSkeleton from './components/ui/RouteSkeleton';
 
+// react-joyride only runs the onboarding tour inside the dashboard, never on the landing
+// page — lazy so its ~800KB isn't parsed on every load. No default export, so re-wrap it.
+const Joyride = lazy(() => import('react-joyride').then((m) => ({ default: m.Joyride })));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const RubricList = lazy(() => import('./pages/RubricList'));
 const RubricBuilder = lazy(() => import('./pages/RubricBuilder'));
@@ -150,7 +152,9 @@ export default function App() {
     }
 
     const handleJoyrideCallback = (data: EventData) => {
-        if (data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED) {
+        // Matches react-joyride's own STATUS.FINISHED/STATUS.SKIPPED constants — inlined so
+        // this file doesn't need a runtime import of the (lazy-loaded) library just for these.
+        if (data.status === 'finished' || data.status === 'skipped') {
             updateSettings({ hasSeenTutorial: true });
         }
     };
@@ -162,26 +166,30 @@ export default function App() {
                 <a href="#main-content" className="skip-nav">
                     {t('a11y.skip_to_content')}
                 </a>
-                <Joyride
-                    steps={steps}
-                    run={!settings.hasSeenTutorial}
-                    continuous
-                    onEvent={handleJoyrideCallback}
-                    options={{
-                        showProgress: true,
-                        buttons: ['back', 'skip', 'primary'],
-                        primaryColor: 'var(--accent)',
-                        backgroundColor: 'var(--bg-elevated)',
-                        textColor: 'var(--text)',
-                        arrowColor: 'var(--bg-elevated)',
-                        overlayColor: 'rgba(0, 0, 0, 0.6)',
-                    }}
-                    styles={{
-                        tooltipContainer: {
-                            textAlign: 'left',
-                        },
-                    }}
-                />
+                {!settings.hasSeenTutorial && (
+                    <Suspense fallback={null}>
+                        <Joyride
+                            steps={steps}
+                            run={!settings.hasSeenTutorial}
+                            continuous
+                            onEvent={handleJoyrideCallback}
+                            options={{
+                                showProgress: true,
+                                buttons: ['back', 'skip', 'primary'],
+                                primaryColor: 'var(--accent)',
+                                backgroundColor: 'var(--bg-elevated)',
+                                textColor: 'var(--text)',
+                                arrowColor: 'var(--bg-elevated)',
+                                overlayColor: 'rgba(0, 0, 0, 0.6)',
+                            }}
+                            styles={{
+                                tooltipContainer: {
+                                    textAlign: 'left',
+                                },
+                            }}
+                        />
+                    </Suspense>
+                )}
                 <RouteAnnouncer />
                 <Sidebar mobileOpen={mobileMenuOpen} onMobileClose={() => setMobileMenuOpen(false)} />
                 <main className="main-area" id="main-content">

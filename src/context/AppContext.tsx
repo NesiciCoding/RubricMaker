@@ -77,7 +77,8 @@ import {
 import { mergeStoreData } from '../utils/syncMerge';
 import { useTranslation } from 'react-i18next';
 import { nanoid } from '../utils/nanoid';
-import { storageSync, loadSupabaseConfig, saveSupabaseConfig } from '../services/database';
+import { loadSupabaseConfig, saveSupabaseConfig } from '../services/database/supabaseConfig';
+import { loadDb, getDb } from '../services/database/lazyDb';
 import type { DatabaseConfig, DbUser, SyncResult } from '../services/database';
 import { useToast } from '../hooks/useToast';
 import { buildAccentScale, ACCENT_SCALE_STEPS } from '../utils/accentScale';
@@ -162,11 +163,17 @@ type Action =
     | { type: 'SAVE_USER_TEMPLATE'; payload: UserTemplate }
     | { type: 'DELETE_USER_TEMPLATE'; id: string };
 
+// Type-only handle on the lazily-loaded singleton's shape — pure type-level, so it
+// doesn't force the (heavy) module to be imported as a value just to describe it.
+type StorageSyncInstance = Awaited<ReturnType<typeof loadDb>>['storageSync'];
+
 // When a Supabase connection is live, the Supabase push is the durable write and the
 // local copy is redundant; only fall back to localStorage while genuinely offline. A
 // failed push still lands in the pending-sync queue (storage.ts) as a per-record buffer.
+// storageSync itself loads lazily (see services/database/lazyDb.ts): until it resolves,
+// there's by definition no live connection yet, so "not connected" is the correct default.
 function isOffline(): boolean {
-    return !navigator.onLine || !storageSync.isConnected();
+    return !navigator.onLine || !(getDb()?.storageSync.isConnected() ?? false);
 }
 
 function reducer(state: StoreData, action: Action): StoreData {
@@ -827,22 +834,22 @@ interface AppContextValue extends StoreData {
     updateUserRole: (userId: string, role: UserRole) => Promise<SyncResult>;
     updateMyProfile: (updates: { displayName?: string }) => Promise<SyncResult>;
     // Schools (cloud-only — no-op in offline mode)
-    fetchSchools: () => Promise<Awaited<ReturnType<typeof storageSync.fetchSchools>>>;
+    fetchSchools: () => Promise<Awaited<ReturnType<StorageSyncInstance['fetchSchools']>>>;
     createSchool: (
         name: string,
         retentionYears: number
-    ) => Promise<Awaited<ReturnType<typeof storageSync.createSchool>>>;
-    joinSchool: (schoolId: string) => Promise<Awaited<ReturnType<typeof storageSync.joinSchool>>>;
+    ) => Promise<Awaited<ReturnType<StorageSyncInstance['createSchool']>>>;
+    joinSchool: (schoolId: string) => Promise<Awaited<ReturnType<StorageSyncInstance['joinSchool']>>>;
     updateSchool: (
         schoolId: string,
         updates: { name?: string; retentionYears?: number }
-    ) => Promise<Awaited<ReturnType<typeof storageSync.updateSchool>>>;
-    deleteSchool: (schoolId: string) => Promise<Awaited<ReturnType<typeof storageSync.deleteSchool>>>;
-    fetchSchoolMembers: (schoolId: string) => Promise<Awaited<ReturnType<typeof storageSync.fetchSchoolMembers>>>;
+    ) => Promise<Awaited<ReturnType<StorageSyncInstance['updateSchool']>>>;
+    deleteSchool: (schoolId: string) => Promise<Awaited<ReturnType<StorageSyncInstance['deleteSchool']>>>;
+    fetchSchoolMembers: (schoolId: string) => Promise<Awaited<ReturnType<StorageSyncInstance['fetchSchoolMembers']>>>;
     removeSchoolMember: (
         schoolId: string,
         profileId: string
-    ) => Promise<Awaited<ReturnType<typeof storageSync.removeSchoolMember>>>;
+    ) => Promise<Awaited<ReturnType<StorageSyncInstance['removeSchoolMember']>>>;
     // Student anonymization
     anonymizeStudent: (id: string) => void;
     // Essay assignments (teacher side)
@@ -852,24 +859,24 @@ interface AppContextValue extends StoreData {
     deleteEssayAssignment: (teacherKey: string) => Promise<SyncResult>;
     fetchEssaySubmissions: (
         teacherKey: string
-    ) => Promise<Awaited<ReturnType<typeof storageSync.fetchEssaySubmissions>>>;
+    ) => Promise<Awaited<ReturnType<StorageSyncInstance['fetchEssaySubmissions']>>>;
     fetchEssaySubmissionsForStudent: (
         rubricId: string,
         studentId: string
-    ) => Promise<Awaited<ReturnType<typeof storageSync.fetchEssaySubmissionsForStudent>>>;
-    fetchAllEssaySubmissions: () => Promise<Awaited<ReturnType<typeof storageSync.fetchAllEssaySubmissions>>>;
-    fetchMyEssayAssignments: () => Promise<Awaited<ReturnType<typeof storageSync.fetchMyEssayAssignments>>>;
+    ) => Promise<Awaited<ReturnType<StorageSyncInstance['fetchEssaySubmissionsForStudent']>>>;
+    fetchAllEssaySubmissions: () => Promise<Awaited<ReturnType<StorageSyncInstance['fetchAllEssaySubmissions']>>>;
+    fetchMyEssayAssignments: () => Promise<Awaited<ReturnType<StorageSyncInstance['fetchMyEssayAssignments']>>>;
     fetchEssayAssignmentByKey: (
         teacherKey: string
-    ) => Promise<Awaited<ReturnType<typeof storageSync.fetchEssayAssignmentByKey>>>;
+    ) => Promise<Awaited<ReturnType<StorageSyncInstance['fetchEssayAssignmentByKey']>>>;
     deleteEssaySubmission: (submissionId: string, storagePath: string) => Promise<SyncResult>;
     getEssaySignedUrl: (storagePath: string) => Promise<string | null>;
     // Test assignments (teacher side)
     saveTestAssignment: (a: TestAssignment) => Promise<SyncResult>;
-    fetchMyTestAssignments: () => Promise<Awaited<ReturnType<typeof storageSync.fetchMyTestAssignments>>>;
+    fetchMyTestAssignments: () => Promise<Awaited<ReturnType<StorageSyncInstance['fetchMyTestAssignments']>>>;
     fetchAssignedTestContent: (testId: string) => Promise<Test | null>;
     // Messages (student portal side)
-    fetchMyMessages: () => Promise<Awaited<ReturnType<typeof storageSync.fetchMyMessages>>>;
+    fetchMyMessages: () => Promise<Awaited<ReturnType<StorageSyncInstance['fetchMyMessages']>>>;
     sendMessageAsStudent: (m: Message) => Promise<SyncResult>;
     markMessagesReadByStudent: (ids: string[]) => Promise<SyncResult>;
     // Flashcards (student portal side)
@@ -1094,84 +1101,96 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
         // Guard: ensures configure+hydrate runs at most once (startup OR auth-change, not both)
         let sessionHandled = false;
+        let cancelled = false;
+        let unsubAuth: (() => void) | undefined;
 
-        async function configureAndEnter(cfg: DatabaseConfig) {
-            if (sessionHandled) return;
-            sessionHandled = true;
-            saveSupabaseConfig(cfg);
-            const ok = await storageSync.configure(cfg);
-            if (!ok) {
-                setLandingState('show');
-                return;
-            }
-            storageSync.setToastFn(showToast);
-            if (!navigator.onLine) {
-                showToast(t('toast.sync_offline_cache'), 'info');
-                setLandingState('hide');
-                return;
-            }
-            const { data: fresh, error: hydrateError } = await storageSync.hydrate();
-            if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
-            if (fresh) {
-                // After an owner switch the in-memory state still holds the previous
-                // user's data — merge against the freshly wiped store instead.
-                const base = storageSync.didWipeLocalData() ? loadStore() : initialStateRef.current;
-                const merged = mergeStoreData(base, fresh, loadPendingQueue());
-                applyHydrated(merged, true);
-                try {
-                    await flushToLocalStorage(merged);
-                } catch {
-                    showToast(t('toast.storage_full'), 'error');
-                }
-            }
-            setLandingState('hide');
-        }
+        // storageSync only loads once a config is actually present (above) — see
+        // services/database/lazyDb.ts for why this is deferred behind a dynamic import.
+        loadDb().then(({ storageSync }) => {
+            if (cancelled) return;
 
-        storageSync
-            .initAuth(config)
-            .then(async () => {
-                if (!storageSync.hasSession()) {
+            async function configureAndEnter(cfg: DatabaseConfig) {
+                if (sessionHandled) return;
+                sessionHandled = true;
+                saveSupabaseConfig(cfg);
+                const ok = await storageSync.configure(cfg);
+                if (!ok) {
                     setLandingState('show');
                     return;
                 }
-
-                // Session already existed on startup — connect and hydrate immediately
-                await configureAndEnter(config);
-
-                // Show migration prompt once if local data exists and hasn't been migrated
-                if (localStorage.getItem(MIGRATION_DONE_KEY) !== 'true' && !storageSync.didWipeLocalData()) {
-                    const s = initialStateRef.current;
-                    if (s.rubrics.length > 0 || s.students.length > 0 || s.classes.length > 0) {
-                        setShowMigrationPrompt(true);
+                storageSync.setToastFn(showToast);
+                if (!navigator.onLine) {
+                    showToast(t('toast.sync_offline_cache'), 'info');
+                    setLandingState('hide');
+                    return;
+                }
+                const { data: fresh, error: hydrateError } = await storageSync.hydrate();
+                if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
+                if (fresh) {
+                    // After an owner switch the in-memory state still holds the previous
+                    // user's data — merge against the freshly wiped store instead.
+                    const base = storageSync.didWipeLocalData() ? loadStore() : initialStateRef.current;
+                    const merged = mergeStoreData(base, fresh, loadPendingQueue());
+                    applyHydrated(merged, true);
+                    try {
+                        await flushToLocalStorage(merged);
+                    } catch {
+                        showToast(t('toast.storage_full'), 'error');
                     }
                 }
-            })
-            .catch((e) => {
-                console.error('[auth] initAuth failed', e);
-                setLandingState('show');
-            });
-
-        // Listen for sign-in that happens while the landing page is showing (e.g., OTP)
-        const unsubAuth = storageSync.onAuthChange(async (user) => {
-            if (!user) return;
-            const cfg = loadSupabaseConfig();
-            if (!cfg) return;
-            try {
-                await configureAndEnter(cfg);
-            } catch (e) {
-                console.error('[auth] onAuthChange configure failed', e);
-                setLandingState('show');
+                setLandingState('hide');
             }
+
+            storageSync
+                .initAuth(config)
+                .then(async () => {
+                    if (!storageSync.hasSession()) {
+                        setLandingState('show');
+                        return;
+                    }
+
+                    // Session already existed on startup — connect and hydrate immediately
+                    await configureAndEnter(config);
+
+                    // Show migration prompt once if local data exists and hasn't been migrated
+                    if (localStorage.getItem(MIGRATION_DONE_KEY) !== 'true' && !storageSync.didWipeLocalData()) {
+                        const s = initialStateRef.current;
+                        if (s.rubrics.length > 0 || s.students.length > 0 || s.classes.length > 0) {
+                            setShowMigrationPrompt(true);
+                        }
+                    }
+                })
+                .catch((e) => {
+                    console.error('[auth] initAuth failed', e);
+                    setLandingState('show');
+                });
+
+            // Listen for sign-in that happens while the landing page is showing (e.g., OTP)
+            unsubAuth = storageSync.onAuthChange(async (user) => {
+                if (!user) return;
+                const cfg = loadSupabaseConfig();
+                if (!cfg) return;
+                try {
+                    await configureAndEnter(cfg);
+                } catch (e) {
+                    console.error('[auth] onAuthChange configure failed', e);
+                    setLandingState('show');
+                }
+            });
         });
 
-        return () => unsubAuth();
+        return () => {
+            cancelled = true;
+            unsubAuth?.();
+        };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // ── Stress-test logging + audit logger: keep in sync with auth + role ────────
     useEffect(() => {
-        const userId = storageSync.getCurrentUserId();
-        const client = storageSync.adapter.getClient();
+        const db = getDb();
+        const userId = db?.storageSync.getCurrentUserId() ?? null;
+        const client = db?.storageSync.adapter.getClient() ?? null;
         if (client && userId) initAuditLogger(client, userId);
         else clearAuditLogger();
 
@@ -1183,62 +1202,83 @@ export function AppProvider({ children }: { children: ReactNode }) {
         };
         if (client) initClientLogger(client, ctx);
         else setLoggerContext(ctx);
+        // landingState is a dep purely to re-run this once loadDb() has resolved (it only
+        // ever transitions 'checking' -> 'show'/'hide' after the startup effect's loadDb()
+        // call above settles), so getDb() is populated by the time this re-fires.
     }, [state.settings.userRole, state.settings.schoolId, landingState]);
 
     // ── Re-hydrate from Supabase when the network comes back online ──────────────
     useEffect(() => {
-        return storageSync.onNetworkReconnect(async () => {
-            if (!storageSync.isConnected()) return;
-            const { data: fresh } = await storageSync.hydrate();
-            if (fresh) {
-                const merged = mergeStoreData(currentStateRef.current, fresh, loadPendingQueue());
-                applyHydrated(merged, true);
-                try {
-                    await flushToLocalStorage(merged);
-                } catch {
-                    // quota error — non-fatal on reconnect
-                }
-            }
-        });
-    }, []);
-
-    // ── Handle in-page OTP login (no page reload, so startup effect won't re-run) ──
-    useEffect(() => {
-        return storageSync.onAuthChange(async (user) => {
-            // Only run when the landing page is genuinely visible.
-            // During startup landingStateRef.current === 'checking', which prevents
-            // this handler from racing with the startup configureAndEnter flow and
-            // calling setLandingState('checking') mid-interaction (which unmounts
-            // all routes, destroying any mounted component's local state).
-            if (!user || storageSync.isConnected() || landingStateRef.current !== 'show') return;
-            const config = loadSupabaseConfig();
-            if (!config) return;
-            setLandingState('checking');
-            try {
-                const ok = await storageSync.configure(config);
-                if (!ok) {
-                    setLandingState('show');
-                    return;
-                }
-                storageSync.setToastFn(showToast);
-                const { data: fresh, error: hydrateError } = await storageSync.hydrate();
-                if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
+        let cancelled = false;
+        let unsub: (() => void) | undefined;
+        loadDb().then(({ storageSync }) => {
+            if (cancelled) return;
+            unsub = storageSync.onNetworkReconnect(async () => {
+                if (!storageSync.isConnected()) return;
+                const { data: fresh } = await storageSync.hydrate();
                 if (fresh) {
-                    const base = storageSync.didWipeLocalData() ? loadStore() : initialStateRef.current;
-                    const merged = mergeStoreData(base, fresh, loadPendingQueue());
+                    const merged = mergeStoreData(currentStateRef.current, fresh, loadPendingQueue());
                     applyHydrated(merged, true);
                     try {
                         await flushToLocalStorage(merged);
                     } catch {
-                        showToast(t('toast.storage_full'), 'error');
+                        // quota error — non-fatal on reconnect
                     }
                 }
-                setLandingState('hide');
-            } catch (e) {
-                console.error('[auth] OTP login flow failed', e);
-                setLandingState('show');
-            }
+            });
         });
+        return () => {
+            cancelled = true;
+            unsub?.();
+        };
+    }, []);
+
+    // ── Handle in-page OTP login (no page reload, so startup effect won't re-run) ──
+    useEffect(() => {
+        let cancelled = false;
+        let unsub: (() => void) | undefined;
+        loadDb().then(({ storageSync }) => {
+            if (cancelled) return;
+            unsub = storageSync.onAuthChange(async (user) => {
+                // Only run when the landing page is genuinely visible.
+                // During startup landingStateRef.current === 'checking', which prevents
+                // this handler from racing with the startup configureAndEnter flow and
+                // calling setLandingState('checking') mid-interaction (which unmounts
+                // all routes, destroying any mounted component's local state).
+                if (!user || storageSync.isConnected() || landingStateRef.current !== 'show') return;
+                const config = loadSupabaseConfig();
+                if (!config) return;
+                setLandingState('checking');
+                try {
+                    const ok = await storageSync.configure(config);
+                    if (!ok) {
+                        setLandingState('show');
+                        return;
+                    }
+                    storageSync.setToastFn(showToast);
+                    const { data: fresh, error: hydrateError } = await storageSync.hydrate();
+                    if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
+                    if (fresh) {
+                        const base = storageSync.didWipeLocalData() ? loadStore() : initialStateRef.current;
+                        const merged = mergeStoreData(base, fresh, loadPendingQueue());
+                        applyHydrated(merged, true);
+                        try {
+                            await flushToLocalStorage(merged);
+                        } catch {
+                            showToast(t('toast.storage_full'), 'error');
+                        }
+                    }
+                    setLandingState('hide');
+                } catch (e) {
+                    console.error('[auth] OTP login flow failed', e);
+                    setLandingState('show');
+                }
+            });
+        });
+        return () => {
+            cancelled = true;
+            unsub?.();
+        };
     }, []);
 
     // ── Supabase: delta-sync after each mutation ───────────────────────────────
@@ -1246,7 +1286,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const prev = prevStateRef.current;
         // eslint-disable-next-line react-hooks/immutability -- also hand-off-written by applyHydrated above so a fresh server pull isn't re-diffed as a local edit
         prevStateRef.current = state;
-        if (!storageSync.isConnected()) return;
+        const db = getDb();
+        if (!db?.storageSync.isConnected()) return;
+        const { storageSync } = db;
 
         function diff<T>(prevArr: T[], currArr: T[], entity: string, getId: (x: T) => string) {
             const prevMap = new Map(prevArr.map((x) => [getId(x), JSON.stringify(x)]));
@@ -1600,28 +1642,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const saveEssayTemplate = useCallback((t: EssayTemplate) => {
         dispatch({ type: 'SAVE_ESSAY_TEMPLATE', payload: t });
-        storageSync.pushOne('essayTemplate', 'upsert', t);
+        void loadDb().then(({ storageSync }) => storageSync.pushOne('essayTemplate', 'upsert', t));
     }, []);
     const deleteEssayTemplate = useCallback((id: string) => {
         dispatch({ type: 'DELETE_ESSAY_TEMPLATE', id });
-        storageSync.pushOne('essayTemplate', 'delete', null, id);
+        void loadDb().then(({ storageSync }) => storageSync.pushOne('essayTemplate', 'delete', null, id));
     }, []);
     const addGradingTasks = useCallback((tasks: GradingTask[]) => {
         dispatch({ type: 'ADD_GRADING_TASKS', payload: tasks });
-        tasks.forEach((task) => storageSync.pushOne('gradingTask', 'upsert', task));
+        void loadDb().then(({ storageSync }) =>
+            tasks.forEach((task) => storageSync.pushOne('gradingTask', 'upsert', task))
+        );
     }, []);
     const deleteGradingTask = useCallback((id: string) => {
         dispatch({ type: 'DELETE_GRADING_TASK', id });
-        storageSync.pushOne('gradingTask', 'delete', null, id);
+        void loadDb().then(({ storageSync }) => storageSync.pushOne('gradingTask', 'delete', null, id));
     }, []);
     const sendMessage = useCallback((m: Message) => {
         dispatch({ type: 'SEND_MESSAGE', payload: m });
-        storageSync.pushOne('message', 'upsert', m);
+        void loadDb().then(({ storageSync }) => storageSync.pushOne('message', 'upsert', m));
     }, []);
     const markMessageReadByTeacher = useCallback((id: string) => {
         dispatch({ type: 'MARK_MESSAGE_READ_BY_TEACHER', id });
         const msg = currentStateRef.current.messages.find((m) => m.id === id);
-        if (msg) storageSync.pushOne('message', 'upsert', { ...msg, readByTeacher: true });
+        if (msg) void loadDb().then(({ storageSync }) => storageSync.pushOne('message', 'upsert', { ...msg, readByTeacher: true }));
     }, []);
 
     // All flashcard collections are pushed via the delta-sync diff() effect, like essayAssignments.
@@ -1655,6 +1699,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // ─── Database sync ────────────────────────────────────────────────
     const connectDatabase = useCallback(
         async (config: DatabaseConfig): Promise<boolean> => {
+            const { storageSync } = await loadDb();
             const ok = await storageSync.configure(config);
             if (ok) {
                 saveSupabaseConfig(config);
@@ -1686,14 +1731,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const disconnectDatabase = useCallback(() => {
         clearAuditLogger();
-        storageSync.disconnect();
+        getDb()?.storageSync.disconnect();
     }, []);
 
     const pushAllToDatabase = useCallback(async () => {
-        return storageSync.pushAll(state);
+        return (await loadDb()).storageSync.pushAll(state);
     }, [state]);
 
     const pullFromDatabase = useCallback(async () => {
+        const { storageSync } = await loadDb();
         const { data: fresh, error: hydrateError } = await storageSync.hydrate();
         if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
         if (fresh) {
@@ -1704,11 +1750,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [state]);
 
-    const fetchAllUsers = useCallback((): Promise<DbUser[]> => {
-        return storageSync.fetchAllProfiles();
+    const fetchAllUsers = useCallback(async (): Promise<DbUser[]> => {
+        return (await loadDb()).storageSync.fetchAllProfiles();
     }, []);
 
     const updateUserRole = useCallback(async (userId: string, role: UserRole): Promise<SyncResult> => {
+        const { storageSync } = await loadDb();
         const result = await storageSync.updateUserRole(userId, role);
         if (result.success) {
             logAuditEvent('admin', 'role_change', 'user', userId, { role });
@@ -1720,59 +1767,73 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const updateMyProfile = useCallback(async (updates: { displayName?: string }): Promise<SyncResult> => {
-        return storageSync.updateMyProfile(updates);
+        return (await loadDb()).storageSync.updateMyProfile(updates);
     }, []);
 
-    const saveEssayAssignment = useCallback((a: EssayAssignment) => storageSync.saveEssayAssignment(a), []);
+    const saveEssayAssignment = useCallback(
+        async (a: EssayAssignment) => (await loadDb()).storageSync.saveEssayAssignment(a),
+        []
+    );
     const setStudentPassword = useCallback(
-        (studentEmail: string, password: string) => storageSync.setStudentPassword(studentEmail, password),
+        async (studentEmail: string, password: string) =>
+            (await loadDb()).storageSync.setStudentPassword(studentEmail, password),
         []
     );
     const notifyStudentMessage = useCallback(
-        (studentId: string, contextLabel: string | null, bodyPreview: string) =>
-            storageSync.notifyStudentMessage(studentId, contextLabel, bodyPreview),
+        async (studentId: string, contextLabel: string | null, bodyPreview: string) =>
+            (await loadDb()).storageSync.notifyStudentMessage(studentId, contextLabel, bodyPreview),
         []
     );
     const deleteEssayAssignment = useCallback(
-        (teacherKey: string) => storageSync.deleteEssayAssignment(teacherKey),
+        async (teacherKey: string) => (await loadDb()).storageSync.deleteEssayAssignment(teacherKey),
         []
     );
     const fetchEssaySubmissions = useCallback(
-        (teacherKey: string) => storageSync.fetchEssaySubmissions(teacherKey),
+        async (teacherKey: string) => (await loadDb()).storageSync.fetchEssaySubmissions(teacherKey),
         []
     );
     const fetchEssaySubmissionsForStudent = useCallback(
-        (rubricId: string, studentId: string) => storageSync.fetchEssaySubmissionsForStudent(rubricId, studentId),
+        async (rubricId: string, studentId: string) =>
+            (await loadDb()).storageSync.fetchEssaySubmissionsForStudent(rubricId, studentId),
         []
     );
-    const fetchAllEssaySubmissions = useCallback(() => storageSync.fetchAllEssaySubmissions(), []);
-    const fetchMyEssayAssignments = useCallback(() => storageSync.fetchMyEssayAssignments(), []);
+    const fetchAllEssaySubmissions = useCallback(async () => (await loadDb()).storageSync.fetchAllEssaySubmissions(), []);
+    const fetchMyEssayAssignments = useCallback(async () => (await loadDb()).storageSync.fetchMyEssayAssignments(), []);
     const fetchEssayAssignmentByKey = useCallback(
-        (teacherKey: string) => storageSync.fetchEssayAssignmentByKey(teacherKey),
+        async (teacherKey: string) => (await loadDb()).storageSync.fetchEssayAssignmentByKey(teacherKey),
         []
     );
     const deleteEssaySubmission = useCallback(
-        (id: string, path: string) => storageSync.deleteEssaySubmission(id, path),
+        async (id: string, path: string) => (await loadDb()).storageSync.deleteEssaySubmission(id, path),
         []
     );
-    const getEssaySignedUrl = useCallback((path: string) => storageSync.getEssaySignedUrl(path), []);
-    const saveTestAssignment = useCallback((a: TestAssignment) => storageSync.saveTestAssignment(a), []);
-    const fetchMyTestAssignments = useCallback(() => storageSync.fetchMyTestAssignments(), []);
-    const fetchAssignedTestContent = useCallback((testId: string) => storageSync.fetchAssignedTestContent(testId), []);
-    const fetchMyMessages = useCallback(() => storageSync.fetchMyMessages(), []);
-    const sendMessageAsStudent = useCallback((m: Message) => storageSync.sendMessageAsStudent(m), []);
-    const markMessagesReadByStudent = useCallback((ids: string[]) => storageSync.markMessagesReadByStudent(ids), []);
-    const fetchMyFlashcardAssignments = useCallback(() => storageSync.fetchMyFlashcardAssignments(), []);
+    const getEssaySignedUrl = useCallback(async (path: string) => (await loadDb()).storageSync.getEssaySignedUrl(path), []);
+    const saveTestAssignment = useCallback(async (a: TestAssignment) => (await loadDb()).storageSync.saveTestAssignment(a), []);
+    const fetchMyTestAssignments = useCallback(async () => (await loadDb()).storageSync.fetchMyTestAssignments(), []);
+    const fetchAssignedTestContent = useCallback(
+        async (testId: string) => (await loadDb()).storageSync.fetchAssignedTestContent(testId),
+        []
+    );
+    const fetchMyMessages = useCallback(async () => (await loadDb()).storageSync.fetchMyMessages(), []);
+    const sendMessageAsStudent = useCallback(async (m: Message) => (await loadDb()).storageSync.sendMessageAsStudent(m), []);
+    const markMessagesReadByStudent = useCallback(
+        async (ids: string[]) => (await loadDb()).storageSync.markMessagesReadByStudent(ids),
+        []
+    );
+    const fetchMyFlashcardAssignments = useCallback(
+        async () => (await loadDb()).storageSync.fetchMyFlashcardAssignments(),
+        []
+    );
     const fetchAssignedFlashcardDeck = useCallback(
-        (deckId: string) => storageSync.fetchAssignedFlashcardDeck(deckId),
+        async (deckId: string) => (await loadDb()).storageSync.fetchAssignedFlashcardDeck(deckId),
         []
     );
     const fetchMyFlashcardReview = useCallback(
-        (deckId: string, studentId: string) => storageSync.fetchMyFlashcardReview(deckId, studentId),
+        async (deckId: string, studentId: string) => (await loadDb()).storageSync.fetchMyFlashcardReview(deckId, studentId),
         []
     );
     const saveFlashcardReviewAsStudent = useCallback(
-        (r: FlashcardReview) => storageSync.saveFlashcardReviewAsStudent(r),
+        async (r: FlashcardReview) => (await loadDb()).storageSync.saveFlashcardReviewAsStudent(r),
         []
     );
 
@@ -1784,31 +1845,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const connectForOAuth = useCallback(async (config: DatabaseConfig): Promise<boolean> => {
         saveSupabaseConfig(config);
-        return storageSync.initAuth(config);
+        return (await loadDb()).storageSync.initAuth(config);
     }, []);
 
     const dismissMigrationPrompt = useCallback(
         async (upload: boolean) => {
             setShowMigrationPrompt(false);
             localStorage.setItem(MIGRATION_DONE_KEY, 'true');
-            if (upload) await storageSync.pushAll(state);
+            if (upload) await (await loadDb()).storageSync.pushAll(state);
         },
         [state]
     );
 
-    const signInWithGoogle = useCallback((): Promise<{ error?: string }> => {
-        return storageSync.signInWithGoogle();
+    const signInWithGoogle = useCallback(async (): Promise<{ error?: string }> => {
+        return (await loadDb()).storageSync.signInWithGoogle();
     }, []);
 
-    const signInWithMicrosoftPersonal = useCallback((): Promise<{ error?: string }> => {
-        return storageSync.signInWithMicrosoftPersonal();
+    const signInWithMicrosoftPersonal = useCallback(async (): Promise<{ error?: string }> => {
+        return (await loadDb()).storageSync.signInWithMicrosoftPersonal();
     }, []);
 
-    const signInWithAzureAD = useCallback((): Promise<{ error?: string }> => {
-        return storageSync.signInWithAzureAD();
+    const signInWithAzureAD = useCallback(async (): Promise<{ error?: string }> => {
+        return (await loadDb()).storageSync.signInWithAzureAD();
     }, []);
 
     const signOutFromDatabase = useCallback(async () => {
+        const { storageSync } = await loadDb();
         await storageSync.signOut();
         clearAuditLogger();
         // Shared-device hygiene: wipe this account's data from localStorage so the
@@ -1832,11 +1894,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (ok) {
             const newState = loadStore();
             dispatch({ type: 'SET_ALL', payload: newState });
-            if (storageSync.isConnected()) {
+            const db = getDb();
+            if (db?.storageSync.isConnected()) {
                 // pushAll returns SyncResult (never rejects on normal failures).
                 // Log the error but let the caller receive true (restore succeeded).
                 // The pending-queue will retry the cloud push on reconnect.
-                const result = await storageSync.pushAll(newState);
+                const result = await db.storageSync.pushAll(newState);
                 if (!result.success) {
                     console.warn('[importBackup] local restore succeeded; cloud sync failed', result.error);
                 }
@@ -1853,25 +1916,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const restoreFromOneDrive = useCallback(async () => {}, []);
 
     // ─── Schools (cloud-only) ──────────────────────────────────────────────────
-    const fetchSchools = useCallback(() => storageSync.fetchSchools(), []);
+    const fetchSchools = useCallback(async () => (await loadDb()).storageSync.fetchSchools(), []);
     const createSchool = useCallback(
-        (name: string, retentionYears: number) => storageSync.createSchool(name, retentionYears),
+        async (name: string, retentionYears: number) => (await loadDb()).storageSync.createSchool(name, retentionYears),
         []
     );
-    const joinSchool = useCallback((schoolId: string) => storageSync.joinSchool(schoolId), []);
+    const joinSchool = useCallback(async (schoolId: string) => (await loadDb()).storageSync.joinSchool(schoolId), []);
     const updateSchool = useCallback(
-        (schoolId: string, updates: { name?: string; retentionYears?: number }) =>
-            storageSync.updateSchool(schoolId, updates),
+        async (schoolId: string, updates: { name?: string; retentionYears?: number }) =>
+            (await loadDb()).storageSync.updateSchool(schoolId, updates),
         []
     );
-    const deleteSchool = useCallback((schoolId: string) => storageSync.deleteSchool(schoolId), []);
-    const fetchSchoolMembers = useCallback((schoolId: string) => storageSync.fetchSchoolMembers(schoolId), []);
+    const deleteSchool = useCallback(async (schoolId: string) => (await loadDb()).storageSync.deleteSchool(schoolId), []);
+    const fetchSchoolMembers = useCallback(
+        async (schoolId: string) => (await loadDb()).storageSync.fetchSchoolMembers(schoolId),
+        []
+    );
     const removeSchoolMember = useCallback(
-        (schoolId: string, profileId: string) => storageSync.removeSchoolMember(schoolId, profileId),
+        async (schoolId: string, profileId: string) => (await loadDb()).storageSync.removeSchoolMember(schoolId, profileId),
         []
     );
 
-    const getCurrentDatabaseUserId = useCallback(() => storageSync.getCurrentUserId(), []);
+    const getCurrentDatabaseUserId = useCallback(() => getDb()?.storageSync.getCurrentUserId() ?? null, []);
 
     // ─── Student anonymization ─────────────────────────────────────────────────
     const anonymizeStudent = useCallback(
@@ -1887,7 +1953,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     studentNumber: undefined,
                     anonymizedAt: new Date().toISOString(),
                 };
-                storageSync.pushOne('student', 'upsert', anonymized);
+                void loadDb().then(({ storageSync }) => storageSync.pushOne('student', 'upsert', anonymized));
             }
         },
         [state.students]

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, KeyRound, ChevronDown, ChevronUp, Loader2, Check } from 'lucide-react';
-import { storageSync } from '../../services/database';
+import { loadDb } from '../../services/database/lazyDb';
 
 interface LoginButtonsProps {
     /** Called after email OTP is successfully verified (not needed for OAuth — those redirect). */
@@ -31,10 +31,12 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
 
     useEffect(() => {
         if (!supabaseReady) return;
-        storageSync.adapter.fetchAuthProviders().then((p) => {
-            if (p) setEnabledProviders(p);
-            // On null (error / table missing) we leave state as null → show all (fail open)
-        });
+        loadDb().then(({ storageSync }) =>
+            storageSync.adapter.fetchAuthProviders().then((p) => {
+                if (p) setEnabledProviders(p);
+                // On null (error / table missing) we leave state as null → show all (fail open)
+            })
+        );
     }, [supabaseReady]);
 
     // Returns true when a provider key should be shown.
@@ -48,6 +50,7 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
         }
         setError('');
         setBusy(provider);
+        const { storageSync } = await loadDb();
         let result: { error?: string };
         if (provider === 'google') result = await storageSync.signInWithGoogle();
         else if (provider === 'ms-personal') result = await storageSync.signInWithMicrosoftPersonal();
@@ -70,6 +73,7 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
         }
         setError('');
         setBusy('otp-send');
+        const { storageSync } = await loadDb();
         const result = await storageSync.adapter.signInWithEmail(email.trim());
         setBusy(null);
         if (result.error) setError(result.error);
@@ -83,6 +87,7 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
         }
         setError('');
         setBusy('otp-verify');
+        const { storageSync } = await loadDb();
         const result = await storageSync.adapter.verifyOtp(email.trim(), otp.trim());
         setBusy(null);
         if (result.error) setError(result.error);
@@ -103,6 +108,7 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
         }
         setError('');
         setBusy('student-password');
+        const { storageSync } = await loadDb();
         const result = await storageSync.adapter.signInWithPassword(studentEmail.trim(), studentPassword);
         setBusy(null);
         if (result.error) setError(result.error);
