@@ -34,6 +34,9 @@ export class SpeakingSessionPage extends BasePage {
 
     async recordAudio(): Promise<void> {
         await this.page.getByRole('button', { name: /record audio/i }).click();
+        // Wait for the record button to swap to "Stop recording" — the real
+        // signal that MediaRecorder actually started, instead of a fixed sleep.
+        await this.page.getByRole('button', { name: /stop recording/i }).waitFor({ timeout: 10_000 });
     }
 
     async stopRecording(): Promise<void> {
@@ -41,12 +44,15 @@ export class SpeakingSessionPage extends BasePage {
     }
 
     recordingsList() {
-        return this.page.locator('ul li');
+        return this.page.locator('[data-tour="sp-recordings"] li');
     }
 
     async selectLevel(criterionIndex: number, levelLabel: string): Promise<void> {
         const criterionCard = this.page.locator('[data-tour="sp-scoring"] > div > div').nth(criterionIndex);
-        await criterionCard.getByRole('button', { name: new RegExp(levelLabel) }).click();
+        // A plain string match is substring + case-insensitive by default, so this
+        // still matches "Excellent" within a "Excellent(4–4)" button label without
+        // building a RegExp from caller input.
+        await criterionCard.getByRole('button', { name: levelLabel }).click();
     }
 
     async fillOverallComment(text: string): Promise<void> {

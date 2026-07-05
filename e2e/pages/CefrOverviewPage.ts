@@ -15,7 +15,10 @@ export class CefrOverviewPage extends BasePage {
     }
 
     async openStudentDetail(studentName: string): Promise<void> {
-        await this.page.getByRole('button', { name: new RegExp(`open ${studentName}'s cefr detail`, 'i') }).click();
+        // Plain string name matching is substring + case-insensitive by default —
+        // avoids building a RegExp from a seeded student name that could contain
+        // regex metacharacters.
+        await this.page.getByRole('button', { name: `open ${studentName}'s cefr detail` }).click();
     }
 
     heatmap() {

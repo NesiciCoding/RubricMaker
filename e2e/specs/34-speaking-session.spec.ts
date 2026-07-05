@@ -24,7 +24,6 @@ test.describe('Speaking session', () => {
         await page.goto(rubric.id, student.id);
 
         await page.recordAudio();
-        await appPage.waitForTimeout(500);
         await page.stopRecording();
         await expect(page.recordingsList()).toHaveCount(1, { timeout: 10_000 });
 

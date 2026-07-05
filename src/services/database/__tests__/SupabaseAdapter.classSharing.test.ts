@@ -1,31 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { SupabaseAdapter } from '../SupabaseAdapter';
-
-type QueryResult = { data: unknown; error: { message: string } | null };
-
-function makeQueryBuilder(result: QueryResult) {
-    const builder: Record<string, unknown> = {};
-    const chain = () => builder;
-    builder.select = vi.fn(chain);
-    builder.upsert = vi.fn(chain);
-    builder.delete = vi.fn(chain);
-    builder.eq = vi.fn(chain);
-    builder.then = (resolve: (r: QueryResult) => void) => resolve(result);
-    return builder;
-}
-
-function makeClient(result: QueryResult) {
-    return { from: vi.fn(() => makeQueryBuilder(result)) };
-}
-
-function adapterWithClient(client: unknown, userId: string | null = 'user1') {
-    const adapter = new SupabaseAdapter();
-    // Reach into private fields the same way SupabaseAdapter.marketplace.test.ts
-    // constructs adapters with a pre-connected client (no public setter exists).
-    (adapter as unknown as { client: unknown }).client = client;
-    (adapter as unknown as { userId: string | null }).userId = userId;
-    return adapter;
-}
+import { makeClient, adapterWithClient } from './supabaseTestUtils';
 
 describe('SupabaseAdapter class sharing methods', () => {
     let adapter: SupabaseAdapter;

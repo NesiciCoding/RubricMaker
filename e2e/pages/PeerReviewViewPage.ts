@@ -7,16 +7,17 @@ export class PeerReviewViewPage extends BasePage {
     }
 
     async goto(rubricId: string, studentId: string, reviewerId?: string): Promise<void> {
-        const suffix = reviewerId ? `?reviewerId=${reviewerId}` : '';
+        const suffix = reviewerId ? `?reviewerId=${encodeURIComponent(reviewerId)}` : '';
         await this.navigate(`/rubrics/${rubricId}/peer-review/${studentId}${suffix}`);
     }
 
     async selectLevel(criterionIndex: number, levelLabel: string): Promise<void> {
-        await this.page
-            .locator('.card.selectable')
-            .filter({ hasText: levelLabel })
-            .nth(criterionIndex)
-            .click();
+        // Scope to the Nth criterion's own card (identified by its unique `.grid-3`
+        // level grid) before matching a level — otherwise `.card.selectable` matches
+        // level cards across every criterion, and `.nth(criterionIndex)` picks the
+        // wrong one whenever criteria don't all share the same level set/order.
+        const criterionCard = this.page.locator('.card:has(.grid-3)').nth(criterionIndex);
+        await criterionCard.locator('.card.selectable').filter({ hasText: levelLabel }).click();
     }
 
     async fillCriterionComment(criterionIndex: number, text: string): Promise<void> {

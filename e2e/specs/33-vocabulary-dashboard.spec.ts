@@ -31,7 +31,13 @@ test.describe('Vocabulary dashboard', () => {
             id: 'vocab-rubric',
             name: 'Vocab Rubric',
             vocabularyItems: [
-                { id: 'vi-1', phrase: 'ubiquitous', category: 'vocabulary', cefrLevel: 'C1', definition: 'present everywhere' },
+                {
+                    id: 'vi-1',
+                    phrase: 'ubiquitous',
+                    category: 'vocabulary',
+                    cefrLevel: 'C1',
+                    definition: 'present everywhere',
+                },
                 { id: 'vi-2', phrase: 'happy', category: 'vocabulary', cefrLevel: 'A1', definition: 'feeling joy' },
             ],
         });

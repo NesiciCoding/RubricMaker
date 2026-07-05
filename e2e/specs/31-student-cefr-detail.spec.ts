@@ -3,10 +3,7 @@ import { buildClass, buildStudent } from '../fixtures/data.factory';
 import { StudentCefrOverviewPage } from '../pages/StudentCefrOverviewPage';
 
 test.describe('Student CEFR detail', () => {
-    test('shows an empty state for a student with no graded CEFR-linked rubrics', async ({
-        appPage,
-        seedStorage,
-    }) => {
+    test('shows an empty state for a student with no graded CEFR-linked rubrics', async ({ appPage, seedStorage }) => {
         const cls = buildClass({ id: 'scd-class', name: 'SCD Class' });
         const student = buildStudent(cls.id, { id: 'scd-student', name: 'SCD Student' });
 

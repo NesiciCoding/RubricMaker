@@ -3,10 +3,7 @@ import { buildClass, buildRubric, buildStudent } from '../fixtures/data.factory'
 import { PeerReviewViewPage } from '../pages/PeerReviewViewPage';
 
 test.describe('Peer review submission', () => {
-    test('a reviewer scores a peer, saves, and the review persists across reload', async ({
-        appPage,
-        seedStorage,
-    }) => {
+    test('a reviewer scores a peer, saves, and the review persists across reload', async ({ appPage, seedStorage }) => {
         const cls = buildClass({ id: 'pr-class', name: 'PR Class' });
         const rubric = buildRubric({ id: 'pr-rubric', name: 'PR Rubric' });
         const student = buildStudent(cls.id, { id: 'pr-student', name: 'Reviewed Student' });

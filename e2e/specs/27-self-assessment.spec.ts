@@ -26,7 +26,9 @@ test.describe('Self-assessment', () => {
                     title: 'Writing Quality',
                     description: '',
                     weight: 100,
-                    levels: [{ id: 'sa-level', label: 'Good', minPoints: 3, maxPoints: 3, description: '', subItems: [] }],
+                    levels: [
+                        { id: 'sa-level', label: 'Good', minPoints: 3, maxPoints: 3, description: '', subItems: [] },
+                    ],
                     cefrDescriptors: [descriptor],
                 },
             ],
@@ -66,7 +68,9 @@ test.describe('Self-assessment', () => {
                     title: 'Writing Quality',
                     description: '',
                     weight: 100,
-                    levels: [{ id: 'sa-level-2', label: 'Good', minPoints: 3, maxPoints: 3, description: '', subItems: [] }],
+                    levels: [
+                        { id: 'sa-level-2', label: 'Good', minPoints: 3, maxPoints: 3, description: '', subItems: [] },
+                    ],
                     cefrDescriptors: [descriptor],
                 },
             ],
