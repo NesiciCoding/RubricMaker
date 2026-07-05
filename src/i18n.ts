@@ -33,13 +33,17 @@ function loadLocale(lng: string) {
     const base = lng.split('-')[0];
     const loader = lazyLocales[base];
     if (!loader || i18n.hasResourceBundle(base, 'translation')) return;
-    void loader().then(({ default: resources }) => {
-        i18n.addResourceBundle(base, 'translation', resources);
-        // addResourceBundle doesn't itself trigger a re-render — react-i18next's
-        // useTranslation only re-renders on 'languageChanged', so re-emit it once the
-        // freshly-loaded strings are actually in the store.
-        if (i18n.language === lng) i18n.emit('languageChanged', i18n.language);
-    });
+    void loader()
+        .then(({ default: resources }) => {
+            i18n.addResourceBundle(base, 'translation', resources);
+            // addResourceBundle doesn't itself trigger a re-render — react-i18next's
+            // useTranslation only re-renders on 'languageChanged', so re-emit it once the
+            // freshly-loaded strings are actually in the store.
+            if (i18n.language === lng) i18n.emit('languageChanged', i18n.language);
+        })
+        .catch((error) => {
+            console.error(`Failed to load ${base} locale`, error);
+        });
 }
 
 if (i18n.language) loadLocale(i18n.language);

@@ -50,14 +50,17 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
         }
         setError('');
         setBusy(provider);
-        const { storageSync } = await loadDb();
-        let result: { error?: string };
-        if (provider === 'google') result = await storageSync.signInWithGoogle();
-        else if (provider === 'ms-personal') result = await storageSync.signInWithMicrosoftPersonal();
-        else result = await storageSync.signInWithAzureAD();
-        // On success the browser redirects — error only if something went wrong
-        if (result.error) {
-            setError(result.error);
+        try {
+            const { storageSync } = await loadDb();
+            let result: { error?: string };
+            if (provider === 'google') result = await storageSync.signInWithGoogle();
+            else if (provider === 'ms-personal') result = await storageSync.signInWithMicrosoftPersonal();
+            else result = await storageSync.signInWithAzureAD();
+            // On success the browser redirects — error only if something went wrong
+            if (result.error) setError(result.error);
+        } catch {
+            setError('Could not load the sign-in module — please try again.');
+        } finally {
             setBusy(null);
         }
     }
@@ -73,11 +76,16 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
         }
         setError('');
         setBusy('otp-send');
-        const { storageSync } = await loadDb();
-        const result = await storageSync.adapter.signInWithEmail(email.trim());
-        setBusy(null);
-        if (result.error) setError(result.error);
-        else setOtpSent(true);
+        try {
+            const { storageSync } = await loadDb();
+            const result = await storageSync.adapter.signInWithEmail(email.trim());
+            if (result.error) setError(result.error);
+            else setOtpSent(true);
+        } catch {
+            setError('Could not load the sign-in module — please try again.');
+        } finally {
+            setBusy(null);
+        }
     }
 
     async function handleVerifyOtp() {
@@ -87,13 +95,18 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
         }
         setError('');
         setBusy('otp-verify');
-        const { storageSync } = await loadDb();
-        const result = await storageSync.adapter.verifyOtp(email.trim(), otp.trim());
-        setBusy(null);
-        if (result.error) setError(result.error);
-        else {
-            setDone(true);
-            onEmailSuccess?.();
+        try {
+            const { storageSync } = await loadDb();
+            const result = await storageSync.adapter.verifyOtp(email.trim(), otp.trim());
+            if (result.error) setError(result.error);
+            else {
+                setDone(true);
+                onEmailSuccess?.();
+            }
+        } catch {
+            setError('Could not load the sign-in module — please try again.');
+        } finally {
+            setBusy(null);
         }
     }
 
@@ -108,13 +121,18 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
         }
         setError('');
         setBusy('student-password');
-        const { storageSync } = await loadDb();
-        const result = await storageSync.adapter.signInWithPassword(studentEmail.trim(), studentPassword);
-        setBusy(null);
-        if (result.error) setError(result.error);
-        else {
-            setDone(true);
-            onEmailSuccess?.();
+        try {
+            const { storageSync } = await loadDb();
+            const result = await storageSync.adapter.signInWithPassword(studentEmail.trim(), studentPassword);
+            if (result.error) setError(result.error);
+            else {
+                setDone(true);
+                onEmailSuccess?.();
+            }
+        } catch {
+            setError('Could not load the sign-in module — please try again.');
+        } finally {
+            setBusy(null);
         }
     }
 

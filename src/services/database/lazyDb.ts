@@ -8,10 +8,16 @@ let dbModulePromise: Promise<DbModule> | null = null;
 // visitor on a build with no Supabase config configured never downloads it.
 export function loadDb(): Promise<DbModule> {
     if (!dbModulePromise) {
-        dbModulePromise = import('./index').then((m) => {
-            dbModule = m;
-            return m;
-        });
+        dbModulePromise = import('./index')
+            .then((m) => {
+                dbModule = m;
+                return m;
+            })
+            .catch((err) => {
+                // Allow a later call to retry instead of permanently caching the rejection.
+                dbModulePromise = null;
+                throw err;
+            });
     }
     return dbModulePromise;
 }

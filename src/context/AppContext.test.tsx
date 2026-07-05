@@ -64,6 +64,10 @@ vi.mock('../services/database', () => ({
         adapter: { getClient: () => null },
         onNetworkReconnect: () => () => {},
         onAuthChange: () => () => {},
+        configure: () => Promise.resolve(false),
+        setToastFn: () => {},
+        hydrate: () => Promise.resolve({ data: null, error: null }),
+        didWipeLocalData: () => false,
     },
 }));
 

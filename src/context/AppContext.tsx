@@ -1106,78 +1106,84 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
         // storageSync only loads once a config is actually present (above) — see
         // services/database/lazyDb.ts for why this is deferred behind a dynamic import.
-        loadDb().then(({ storageSync }) => {
-            if (cancelled) return;
+        loadDb()
+            .then(({ storageSync }) => {
+                if (cancelled) return;
 
-            async function configureAndEnter(cfg: DatabaseConfig) {
-                if (sessionHandled) return;
-                sessionHandled = true;
-                saveSupabaseConfig(cfg);
-                const ok = await storageSync.configure(cfg);
-                if (!ok) {
-                    setLandingState('show');
-                    return;
-                }
-                storageSync.setToastFn(showToast);
-                if (!navigator.onLine) {
-                    showToast(t('toast.sync_offline_cache'), 'info');
-                    setLandingState('hide');
-                    return;
-                }
-                const { data: fresh, error: hydrateError } = await storageSync.hydrate();
-                if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
-                if (fresh) {
-                    // After an owner switch the in-memory state still holds the previous
-                    // user's data — merge against the freshly wiped store instead.
-                    const base = storageSync.didWipeLocalData() ? loadStore() : initialStateRef.current;
-                    const merged = mergeStoreData(base, fresh, loadPendingQueue());
-                    applyHydrated(merged, true);
-                    try {
-                        await flushToLocalStorage(merged);
-                    } catch {
-                        showToast(t('toast.storage_full'), 'error');
-                    }
-                }
-                setLandingState('hide');
-            }
-
-            storageSync
-                .initAuth(config)
-                .then(async () => {
-                    if (!storageSync.hasSession()) {
+                async function configureAndEnter(cfg: DatabaseConfig) {
+                    if (sessionHandled) return;
+                    sessionHandled = true;
+                    saveSupabaseConfig(cfg);
+                    const ok = await storageSync.configure(cfg);
+                    if (!ok) {
                         setLandingState('show');
                         return;
                     }
-
-                    // Session already existed on startup — connect and hydrate immediately
-                    await configureAndEnter(config);
-
-                    // Show migration prompt once if local data exists and hasn't been migrated
-                    if (localStorage.getItem(MIGRATION_DONE_KEY) !== 'true' && !storageSync.didWipeLocalData()) {
-                        const s = initialStateRef.current;
-                        if (s.rubrics.length > 0 || s.students.length > 0 || s.classes.length > 0) {
-                            setShowMigrationPrompt(true);
+                    storageSync.setToastFn(showToast);
+                    if (!navigator.onLine) {
+                        showToast(t('toast.sync_offline_cache'), 'info');
+                        setLandingState('hide');
+                        return;
+                    }
+                    const { data: fresh, error: hydrateError } = await storageSync.hydrate();
+                    if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
+                    if (fresh) {
+                        // After an owner switch the in-memory state still holds the previous
+                        // user's data — merge against the freshly wiped store instead.
+                        const base = storageSync.didWipeLocalData() ? loadStore() : initialStateRef.current;
+                        const merged = mergeStoreData(base, fresh, loadPendingQueue());
+                        applyHydrated(merged, true);
+                        try {
+                            await flushToLocalStorage(merged);
+                        } catch {
+                            showToast(t('toast.storage_full'), 'error');
                         }
                     }
-                })
-                .catch((e) => {
-                    console.error('[auth] initAuth failed', e);
-                    setLandingState('show');
-                });
-
-            // Listen for sign-in that happens while the landing page is showing (e.g., OTP)
-            unsubAuth = storageSync.onAuthChange(async (user) => {
-                if (!user) return;
-                const cfg = loadSupabaseConfig();
-                if (!cfg) return;
-                try {
-                    await configureAndEnter(cfg);
-                } catch (e) {
-                    console.error('[auth] onAuthChange configure failed', e);
-                    setLandingState('show');
+                    setLandingState('hide');
                 }
+
+                storageSync
+                    .initAuth(config)
+                    .then(async () => {
+                        if (!storageSync.hasSession()) {
+                            setLandingState('show');
+                            return;
+                        }
+
+                        // Session already existed on startup — connect and hydrate immediately
+                        await configureAndEnter(config);
+
+                        // Show migration prompt once if local data exists and hasn't been migrated
+                        if (localStorage.getItem(MIGRATION_DONE_KEY) !== 'true' && !storageSync.didWipeLocalData()) {
+                            const s = initialStateRef.current;
+                            if (s.rubrics.length > 0 || s.students.length > 0 || s.classes.length > 0) {
+                                setShowMigrationPrompt(true);
+                            }
+                        }
+                    })
+                    .catch((e) => {
+                        console.error('[auth] initAuth failed', e);
+                        setLandingState('show');
+                    });
+
+                // Listen for sign-in that happens while the landing page is showing (e.g., OTP)
+                unsubAuth = storageSync.onAuthChange(async (user) => {
+                    if (!user) return;
+                    const cfg = loadSupabaseConfig();
+                    if (!cfg) return;
+                    try {
+                        await configureAndEnter(cfg);
+                    } catch (e) {
+                        console.error('[auth] onAuthChange configure failed', e);
+                        setLandingState('show');
+                    }
+                });
+            })
+            .catch((e) => {
+                if (cancelled) return;
+                console.error('[startup] failed to load database module', e);
+                setLandingState('show');
             });
-        });
 
         return () => {
             cancelled = true;
@@ -1211,22 +1217,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         let cancelled = false;
         let unsub: (() => void) | undefined;
-        loadDb().then(({ storageSync }) => {
-            if (cancelled) return;
-            unsub = storageSync.onNetworkReconnect(async () => {
-                if (!storageSync.isConnected()) return;
-                const { data: fresh } = await storageSync.hydrate();
-                if (fresh) {
-                    const merged = mergeStoreData(currentStateRef.current, fresh, loadPendingQueue());
-                    applyHydrated(merged, true);
-                    try {
-                        await flushToLocalStorage(merged);
-                    } catch {
-                        // quota error — non-fatal on reconnect
+        loadDb()
+            .then(({ storageSync }) => {
+                if (cancelled) return;
+                unsub = storageSync.onNetworkReconnect(async () => {
+                    if (!storageSync.isConnected()) return;
+                    const { data: fresh } = await storageSync.hydrate();
+                    if (fresh) {
+                        const merged = mergeStoreData(currentStateRef.current, fresh, loadPendingQueue());
+                        applyHydrated(merged, true);
+                        try {
+                            await flushToLocalStorage(merged);
+                        } catch {
+                            // quota error — non-fatal on reconnect
+                        }
                     }
-                }
+                });
+            })
+            .catch((e) => {
+                if (!cancelled) console.error('[sync] failed to load database module for reconnect handling', e);
             });
-        });
         return () => {
             cancelled = true;
             unsub?.();
@@ -1237,44 +1247,48 @@ export function AppProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         let cancelled = false;
         let unsub: (() => void) | undefined;
-        loadDb().then(({ storageSync }) => {
-            if (cancelled) return;
-            unsub = storageSync.onAuthChange(async (user) => {
-                // Only run when the landing page is genuinely visible.
-                // During startup landingStateRef.current === 'checking', which prevents
-                // this handler from racing with the startup configureAndEnter flow and
-                // calling setLandingState('checking') mid-interaction (which unmounts
-                // all routes, destroying any mounted component's local state).
-                if (!user || storageSync.isConnected() || landingStateRef.current !== 'show') return;
-                const config = loadSupabaseConfig();
-                if (!config) return;
-                setLandingState('checking');
-                try {
-                    const ok = await storageSync.configure(config);
-                    if (!ok) {
-                        setLandingState('show');
-                        return;
-                    }
-                    storageSync.setToastFn(showToast);
-                    const { data: fresh, error: hydrateError } = await storageSync.hydrate();
-                    if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
-                    if (fresh) {
-                        const base = storageSync.didWipeLocalData() ? loadStore() : initialStateRef.current;
-                        const merged = mergeStoreData(base, fresh, loadPendingQueue());
-                        applyHydrated(merged, true);
-                        try {
-                            await flushToLocalStorage(merged);
-                        } catch {
-                            showToast(t('toast.storage_full'), 'error');
+        loadDb()
+            .then(({ storageSync }) => {
+                if (cancelled) return;
+                unsub = storageSync.onAuthChange(async (user) => {
+                    // Only run when the landing page is genuinely visible.
+                    // During startup landingStateRef.current === 'checking', which prevents
+                    // this handler from racing with the startup configureAndEnter flow and
+                    // calling setLandingState('checking') mid-interaction (which unmounts
+                    // all routes, destroying any mounted component's local state).
+                    if (!user || storageSync.isConnected() || landingStateRef.current !== 'show') return;
+                    const config = loadSupabaseConfig();
+                    if (!config) return;
+                    setLandingState('checking');
+                    try {
+                        const ok = await storageSync.configure(config);
+                        if (!ok) {
+                            setLandingState('show');
+                            return;
                         }
+                        storageSync.setToastFn(showToast);
+                        const { data: fresh, error: hydrateError } = await storageSync.hydrate();
+                        if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
+                        if (fresh) {
+                            const base = storageSync.didWipeLocalData() ? loadStore() : initialStateRef.current;
+                            const merged = mergeStoreData(base, fresh, loadPendingQueue());
+                            applyHydrated(merged, true);
+                            try {
+                                await flushToLocalStorage(merged);
+                            } catch {
+                                showToast(t('toast.storage_full'), 'error');
+                            }
+                        }
+                        setLandingState('hide');
+                    } catch (e) {
+                        console.error('[auth] OTP login flow failed', e);
+                        setLandingState('show');
                     }
-                    setLandingState('hide');
-                } catch (e) {
-                    console.error('[auth] OTP login flow failed', e);
-                    setLandingState('show');
-                }
+                });
+            })
+            .catch((e) => {
+                if (!cancelled) console.error('[auth] failed to load database module for in-page OTP handling', e);
             });
-        });
         return () => {
             cancelled = true;
             unsub?.();

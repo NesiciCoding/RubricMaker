@@ -168,28 +168,30 @@ export default function App() {
                     {t('a11y.skip_to_content')}
                 </a>
                 {!settings.hasSeenTutorial && (
-                    <Suspense fallback={null}>
-                        <Joyride
-                            steps={steps}
-                            run={!settings.hasSeenTutorial}
-                            continuous
-                            onEvent={handleJoyrideCallback}
-                            options={{
-                                showProgress: true,
-                                buttons: ['back', 'skip', 'primary'],
-                                primaryColor: 'var(--accent)',
-                                backgroundColor: 'var(--bg-elevated)',
-                                textColor: 'var(--text)',
-                                arrowColor: 'var(--bg-elevated)',
-                                overlayColor: 'rgba(0, 0, 0, 0.6)',
-                            }}
-                            styles={{
-                                tooltipContainer: {
-                                    textAlign: 'left',
-                                },
-                            }}
-                        />
-                    </Suspense>
+                    <ErrorBoundary fallback={null}>
+                        <Suspense fallback={null}>
+                            <Joyride
+                                steps={steps}
+                                run={!settings.hasSeenTutorial}
+                                continuous
+                                onEvent={handleJoyrideCallback}
+                                options={{
+                                    showProgress: true,
+                                    buttons: ['back', 'skip', 'primary'],
+                                    primaryColor: 'var(--accent)',
+                                    backgroundColor: 'var(--bg-elevated)',
+                                    textColor: 'var(--text)',
+                                    arrowColor: 'var(--bg-elevated)',
+                                    overlayColor: 'rgba(0, 0, 0, 0.6)',
+                                }}
+                                styles={{
+                                    tooltipContainer: {
+                                        textAlign: 'left',
+                                    },
+                                }}
+                            />
+                        </Suspense>
+                    </ErrorBoundary>
                 )}
                 <RouteAnnouncer />
                 <Sidebar mobileOpen={mobileMenuOpen} onMobileClose={() => setMobileMenuOpen(false)} />
