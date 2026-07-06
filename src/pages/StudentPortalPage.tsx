@@ -34,6 +34,8 @@ import { encodeEssayAssignment, encodeTestAssignment } from '../utils/shareCode'
 import { loadSupabaseConfig } from '../services/database';
 import { groupMessageThreads, MessageThread } from '../utils/messageThreads';
 import { computeDeckInsights } from '../utils/flashcardInsights';
+import { searchPortal } from '../utils/portalSearch';
+import PortalSearchBar from '../components/Students/PortalSearchBar';
 import { nanoid } from '../utils/nanoid';
 import type {
     CefrLevel,
@@ -48,6 +50,10 @@ import type {
     MessageContextType,
     FlashcardAssignment,
 } from '../types';
+
+function scrollToSection(id: string) {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 
 function criterionPct(
     h: { sr: { entries: ScoreEntry[] }; rubric: { criteria: RubricCriterion[] } },
@@ -86,6 +92,7 @@ export default function StudentPortalPage() {
     } = useApp();
     const { t } = useTranslation();
     const [linkCopied, setLinkCopied] = useState(false);
+    const [portalQuery, setPortalQuery] = useState('');
     const [openSelfAssessId, setOpenSelfAssessId] = useState<string | null>(null);
 
     const [essayRows, setEssayRows] = useState<StudentEssayAssignmentSummary[]>([]);
@@ -404,6 +411,18 @@ export default function StudentPortalPage() {
         return [...byDeck.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     })();
 
+    // Not a useMemo: this whole render branch (post `if (!student) return`) is already
+    // conditional, so a hook here would violate the rules of hooks — a plain const, matching
+    // the allWork/myFlashcards pattern just above, is the correct shape.
+    const portalSearchResults = searchPortal(portalQuery, {
+        history: history.map((h) => ({ rubricId: h.sr.rubricId, rubricName: h.rubric.name })),
+        work: allWork.map((e) => ({
+            key: e.key,
+            label: e.kind === 'essay' ? e.row.title : e.row.testName,
+        })),
+        flashcards: myFlashcards.map((a) => ({ deckId: a.deckId, deckName: a.deckName })),
+    });
+
     const navLinks = [
         { id: 'portal-section-work', label: t('studentPortal.my_work'), visible: hasWork },
         {
@@ -505,6 +524,19 @@ export default function StudentPortalPage() {
                         {linkCopied ? t('studentPortal.link_copied') : t('studentPortal.copy_link')}
                     </button>
                 </div>
+                {(history.length > 0 || allWork.length > 0 || myFlashcards.length > 0) && (
+                    <div style={{ maxWidth: 820, margin: '12px auto 0' }}>
+                        <PortalSearchBar
+                            query={portalQuery}
+                            onQueryChange={setPortalQuery}
+                            results={portalSearchResults}
+                            onSelect={(result) => {
+                                scrollToSection(result.sectionId);
+                                setPortalQuery('');
+                            }}
+                        />
+                    </div>
+                )}
             </div>
 
             {navLinks.length > 1 && (
@@ -528,9 +560,7 @@ export default function StudentPortalPage() {
                             key={link.id}
                             type="button"
                             className="btn btn-ghost btn-sm"
-                            onClick={() =>
-                                document.getElementById(link.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                            }
+                            onClick={() => scrollToSection(link.id)}
                         >
                             {link.label}
                         </button>
