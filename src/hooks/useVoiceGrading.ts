@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 
 interface VoiceCommand {
     command: string | RegExp;
-    callback: (match: any) => void;
+    callback: (...args: string[]) => void;
     isFuzzyMatch?: boolean;
     fuzzyMatchingThreshold?: number;
     bestMatchOnly?: boolean;
@@ -20,9 +20,9 @@ export const useVoiceGrading = (
         {
             // Match pattern like "Criterium 1 Niveau 4" or "Criterion 1 Level 4"
             command: /(?:Criterium|Criterion|Goal|Doel)\s*(\d+)\s*(?:Niveau|Level|Level|Score|Grade)\s*(\d+)/i,
-            callback: (match: any) => {
-                const critIndex = parseInt(match[1]) - 1;
-                const levelIndex = parseInt(match[2]) - 1;
+            callback: (crit: string, level: string) => {
+                const critIndex = parseInt(crit) - 1;
+                const levelIndex = parseInt(level) - 1;
                 if (!isNaN(critIndex) && !isNaN(levelIndex)) {
                     onGrade(critIndex, levelIndex);
                 }
@@ -31,9 +31,9 @@ export const useVoiceGrading = (
         {
             // Match Dutch specific: "Score [X] voor [Y]"
             command: /Score\s*(\d+)\s*(?:voor|for)\s*(?:Criterium|Criterion|Goal|Doel)\s*(\d+)/i,
-            callback: (match: any) => {
-                const levelIndex = parseInt(match[1]) - 1;
-                const critIndex = parseInt(match[2]) - 1;
+            callback: (level: string, crit: string) => {
+                const levelIndex = parseInt(level) - 1;
+                const critIndex = parseInt(crit) - 1;
                 if (!isNaN(critIndex) && !isNaN(levelIndex)) {
                     onGrade(critIndex, levelIndex);
                 }
@@ -42,9 +42,9 @@ export const useVoiceGrading = (
         {
             // Match command for dictating comments: "Commentaar [text]"
             command: /(?:Commentaar|Comment|Feedback)\s*(.*)/i,
-            callback: (match: any) => {
-                if (match[1]) {
-                    onComment(match[1]);
+            callback: (text: string) => {
+                if (text) {
+                    onComment(text);
                 }
             },
         },
