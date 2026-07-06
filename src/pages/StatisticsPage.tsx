@@ -75,10 +75,7 @@ export default function StatisticsPage() {
     const [filterTrack, setFilterTrack] = useState<VoTrack | 'all'>('all');
     const [filterYear, setFilterYear] = useState<SchoolYear | 'all'>('all');
 
-    const yearOptions = useMemo(
-        () => SCHOOL_YEARS.filter((y) => classes.some((c) => c.year === y)),
-        [classes]
-    );
+    const yearOptions = useMemo(() => SCHOOL_YEARS.filter((y) => classes.some((c) => c.year === y)), [classes]);
 
     const filteredClasses = useMemo(
         () =>

@@ -532,7 +532,8 @@ export default function StudentsPage() {
                                                                             fontWeight: 700,
                                                                             padding: '1px 5px',
                                                                             borderRadius: 3,
-                                                                            background: c.color ?? VO_TRACK_COLORS[c.voTrack],
+                                                                            background:
+                                                                                c.color ?? VO_TRACK_COLORS[c.voTrack],
                                                                             color: '#fff',
                                                                             opacity: 1,
                                                                         }}
@@ -1049,10 +1050,14 @@ export default function StudentsPage() {
                                                 <select
                                                     id="student-track"
                                                     value={editStudentTrack}
-                                                    onChange={(e) => setEditStudentTrack(e.target.value as VoTrack | '')}
+                                                    onChange={(e) =>
+                                                        setEditStudentTrack(e.target.value as VoTrack | '')
+                                                    }
                                                 >
                                                     <option value="">
-                                                        {t('voTrack.same_as_class', { track: VO_TRACK_LABELS[cls.voTrack] })}
+                                                        {t('voTrack.same_as_class', {
+                                                            track: VO_TRACK_LABELS[cls.voTrack],
+                                                        })}
                                                     </option>
                                                     {options.map((track) => (
                                                         <option key={track} value={track}>

@@ -37,9 +37,7 @@ import { SCHOOL_YEARS } from '../data/schoolYears';
  * today) rather than crashing type-narrowed code that assumes a valid enum member.
  */
 export function sanitizeClassYears(classes: Class[]): Class[] {
-    return classes.map((c) =>
-        c.year && !SCHOOL_YEARS.includes(c.year) ? { ...c, year: undefined } : c
-    );
+    return classes.map((c) => (c.year && !SCHOOL_YEARS.includes(c.year) ? { ...c, year: undefined } : c));
 }
 
 // ─── Default Grade Scales ──────────────────────────────────────────────────────
