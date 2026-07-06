@@ -1087,6 +1087,7 @@
         "csv_import_error": "CSV-import mislukt. Controleer de bestandsindeling.",
         "storage_full": "Opslag is vol — je wijzigingen zijn mogelijk niet opgeslagen.",
         "sync_load_failed": "Clouddata kon niet worden geladen. Lokale data wordt weergegeven.",
+        "sign_in_module_load_failed": "Kon de inlogmodule niet laden. Probeer het opnieuw.",
         "sync_push_failed": "Wijzigingen zijn mogelijk niet gesynchroniseerd — controleer je verbinding.",
         "empty_supabase_url": "Supabase-URL mag niet leeg zijn.",
         "invalid_supabase_url_protocol": "Ongeldig protocol: alleen http:// en https:// worden ondersteund.",

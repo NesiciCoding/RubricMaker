@@ -1145,6 +1145,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 storageSync
                     .initAuth(config)
                     .then(async () => {
+                        if (cancelled) return;
                         if (!storageSync.hasSession()) {
                             setLandingState('show');
                             return;
@@ -1162,13 +1163,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
                         }
                     })
                     .catch((e) => {
+                        if (cancelled) return;
                         console.error('[auth] initAuth failed', e);
                         setLandingState('show');
                     });
 
                 // Listen for sign-in that happens while the landing page is showing (e.g., OTP)
                 unsubAuth = storageSync.onAuthChange(async (user) => {
-                    if (!user) return;
+                    if (cancelled || !user) return;
                     const cfg = loadSupabaseConfig();
                     if (!cfg) return;
                     try {
@@ -1656,33 +1658,41 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const saveEssayTemplate = useCallback((t: EssayTemplate) => {
         dispatch({ type: 'SAVE_ESSAY_TEMPLATE', payload: t });
-        void loadDb().then(({ storageSync }) => storageSync.pushOne('essayTemplate', 'upsert', t));
+        void loadDb()
+            .then(({ storageSync }) => storageSync.pushOne('essayTemplate', 'upsert', t))
+            .catch((e) => console.error('[sync] failed to push essayTemplate', e));
     }, []);
     const deleteEssayTemplate = useCallback((id: string) => {
         dispatch({ type: 'DELETE_ESSAY_TEMPLATE', id });
-        void loadDb().then(({ storageSync }) => storageSync.pushOne('essayTemplate', 'delete', null, id));
+        void loadDb()
+            .then(({ storageSync }) => storageSync.pushOne('essayTemplate', 'delete', null, id))
+            .catch((e) => console.error('[sync] failed to push essayTemplate deletion', e));
     }, []);
     const addGradingTasks = useCallback((tasks: GradingTask[]) => {
         dispatch({ type: 'ADD_GRADING_TASKS', payload: tasks });
-        void loadDb().then(({ storageSync }) =>
-            tasks.forEach((task) => storageSync.pushOne('gradingTask', 'upsert', task))
-        );
+        void loadDb()
+            .then(({ storageSync }) => tasks.forEach((task) => storageSync.pushOne('gradingTask', 'upsert', task)))
+            .catch((e) => console.error('[sync] failed to push gradingTasks', e));
     }, []);
     const deleteGradingTask = useCallback((id: string) => {
         dispatch({ type: 'DELETE_GRADING_TASK', id });
-        void loadDb().then(({ storageSync }) => storageSync.pushOne('gradingTask', 'delete', null, id));
+        void loadDb()
+            .then(({ storageSync }) => storageSync.pushOne('gradingTask', 'delete', null, id))
+            .catch((e) => console.error('[sync] failed to push gradingTask deletion', e));
     }, []);
     const sendMessage = useCallback((m: Message) => {
         dispatch({ type: 'SEND_MESSAGE', payload: m });
-        void loadDb().then(({ storageSync }) => storageSync.pushOne('message', 'upsert', m));
+        void loadDb()
+            .then(({ storageSync }) => storageSync.pushOne('message', 'upsert', m))
+            .catch((e) => console.error('[sync] failed to push message', e));
     }, []);
     const markMessageReadByTeacher = useCallback((id: string) => {
         dispatch({ type: 'MARK_MESSAGE_READ_BY_TEACHER', id });
         const msg = currentStateRef.current.messages.find((m) => m.id === id);
         if (msg)
-            void loadDb().then(({ storageSync }) =>
-                storageSync.pushOne('message', 'upsert', { ...msg, readByTeacher: true })
-            );
+            void loadDb()
+                .then(({ storageSync }) => storageSync.pushOne('message', 'upsert', { ...msg, readByTeacher: true }))
+                .catch((e) => console.error('[sync] failed to push message read-receipt', e));
     }, []);
 
     // All flashcard collections are pushed via the delta-sync diff() effect, like essayAssignments.
@@ -1987,7 +1997,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     studentNumber: undefined,
                     anonymizedAt: new Date().toISOString(),
                 };
-                void loadDb().then(({ storageSync }) => storageSync.pushOne('student', 'upsert', anonymized));
+                void loadDb()
+                    .then(({ storageSync }) => storageSync.pushOne('student', 'upsert', anonymized))
+                    .catch((e) => console.error('[sync] failed to push anonymized student', e));
             }
         },
         [state.students]

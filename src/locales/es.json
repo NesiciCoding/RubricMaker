@@ -1087,6 +1087,7 @@
         "csv_import_error": "Error al importar CSV. Por favor, comprueba el formato del archivo.",
         "storage_full": "El almacenamiento está lleno — es posible que tus cambios no se hayan guardado.",
         "sync_load_failed": "No se pudieron cargar los datos en la nube. Se muestran los datos locales.",
+        "sign_in_module_load_failed": "No se pudo cargar el módulo de inicio de sesión. Inténtalo de nuevo.",
         "sync_push_failed": "Es posible que los cambios no se hayan sincronizado — comprueba tu conexión.",
         "empty_supabase_url": "La URL de Supabase no puede estar vacía.",
         "invalid_supabase_url_protocol": "Protocolo no válido: solo se admiten http:// y https://.",

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Mail, KeyRound, ChevronDown, ChevronUp, Loader2, Check } from 'lucide-react';
 import { loadDb } from '../../services/database/lazyDb';
 
@@ -12,6 +13,7 @@ interface LoginButtonsProps {
 }
 
 export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConfig }: LoginButtonsProps) {
+    const { t } = useTranslation();
     const [emailOpen, setEmailOpen] = useState(false);
     const [email, setEmail] = useState('');
     const [otp, setOtp] = useState('');
@@ -31,12 +33,14 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
 
     useEffect(() => {
         if (!supabaseReady) return;
-        loadDb().then(({ storageSync }) =>
-            storageSync.adapter.fetchAuthProviders().then((p) => {
-                if (p) setEnabledProviders(p);
-                // On null (error / table missing) we leave state as null → show all (fail open)
-            })
-        );
+        loadDb()
+            .then(({ storageSync }) =>
+                storageSync.adapter.fetchAuthProviders().then((p) => {
+                    if (p) setEnabledProviders(p);
+                    // On null (error / table missing) we leave state as null → show all (fail open)
+                })
+            )
+            .catch((e) => console.error('[auth] failed to load database module for provider list', e));
     }, [supabaseReady]);
 
     // Returns true when a provider key should be shown.
@@ -59,7 +63,7 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
             // On success the browser redirects — error only if something went wrong
             if (result.error) setError(result.error);
         } catch {
-            setError('Could not load the sign-in module — please try again.');
+            setError(t('toast.sign_in_module_load_failed'));
         } finally {
             setBusy(null);
         }
@@ -82,7 +86,7 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
             if (result.error) setError(result.error);
             else setOtpSent(true);
         } catch {
-            setError('Could not load the sign-in module — please try again.');
+            setError(t('toast.sign_in_module_load_failed'));
         } finally {
             setBusy(null);
         }
@@ -104,7 +108,7 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
                 onEmailSuccess?.();
             }
         } catch {
-            setError('Could not load the sign-in module — please try again.');
+            setError(t('toast.sign_in_module_load_failed'));
         } finally {
             setBusy(null);
         }
@@ -130,7 +134,7 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
                 onEmailSuccess?.();
             }
         } catch {
-            setError('Could not load the sign-in module — please try again.');
+            setError(t('toast.sign_in_module_load_failed'));
         } finally {
             setBusy(null);
         }
