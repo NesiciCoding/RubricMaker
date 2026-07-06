@@ -50,6 +50,7 @@ export default function TestBuilderPage() {
     const [durationMinutes, setDurationMinutes] = useState(
         existing?.durationMinutes ? String(existing.durationMinutes) : ''
     );
+    const [dueDate, setDueDate] = useState(existing?.dueDate ? existing.dueDate.slice(0, 16) : '');
     const [shuffleQuestions, setShuffleQuestions] = useState(existing?.shuffleQuestions ?? false);
     const [requireSEB, setRequireSEB] = useState(existing?.requireSEB ?? false);
     const [gradeScaleId, setGradeScaleId] = useState<string | undefined>(
@@ -66,7 +67,7 @@ export default function TestBuilderPage() {
             return;
         }
         setIsDirty(true);
-    }, [name, description, questions, sections, durationMinutes, shuffleQuestions, requireSEB, gradeScaleId]);
+    }, [name, description, questions, sections, durationMinutes, dueDate, shuffleQuestions, requireSEB, gradeScaleId]);
     const { dialogProps: unsavedDialogProps } = useUnsavedChangesGuard(isDirty);
 
     const validSectionIds = React.useMemo(() => new Set(sections.map((s) => s.id)), [sections]);
@@ -189,6 +190,7 @@ export default function TestBuilderPage() {
             questions,
             sections: sections.length > 0 ? sections : undefined,
             durationMinutes: parsedDuration,
+            dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
             shuffleQuestions,
             requireSEB,
             gradeScaleId,
@@ -332,6 +334,15 @@ export default function TestBuilderPage() {
                                     </option>
                                 ))}
                             </select>
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0, flex: '1 1 200px' }}>
+                            <label htmlFor="test-due-date">{t('tests.due_date_label')}</label>
+                            <input
+                                id="test-due-date"
+                                type="datetime-local"
+                                value={dueDate}
+                                onChange={(e) => setDueDate(e.target.value)}
+                            />
                         </div>
                     </div>
                     <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>

@@ -9,6 +9,7 @@ import CefrProgressChart from '../components/Statistics/CefrProgressChart';
 import StandardsCoveragePanel from '../components/Standards/StandardsCoveragePanel';
 import { useApp } from '../context/AppContext';
 import { getCefrStudentOverview } from '../utils/cefrStudentAggregator';
+import CefrTrackYearBand from '../components/CEFR/CefrTrackYearBand';
 import { VO_TRACK_LABELS, VO_TRACK_COLORS, VO_TRACK_DEFAULT_CEFR } from '../data/voTracks';
 import { CEFR_SKILL_LABELS } from '../data/cefrDescriptors';
 
@@ -30,14 +31,23 @@ export default function StudentCefrOverviewPage() {
 
     const student = students.find((s) => s.id === id);
     const cls = classes.find((c) => c.id === student?.classId);
-    const targetLevel = cls?.voTrack ? VO_TRACK_DEFAULT_CEFR[cls.voTrack] : undefined;
+    const effectiveTrack = student?.voTrack ?? cls?.voTrack;
+    const targetLevel = effectiveTrack ? VO_TRACK_DEFAULT_CEFR[effectiveTrack] : undefined;
 
     const overview = useMemo(
         () =>
             student
-                ? getCefrStudentOverview(student.id, studentRubrics, rubrics, selfAssessments, analysisResults)
+                ? getCefrStudentOverview(
+                      student.id,
+                      studentRubrics,
+                      rubrics,
+                      selfAssessments,
+                      analysisResults,
+                      cls?.year,
+                      effectiveTrack
+                  )
                 : null,
-        [student, studentRubrics, rubrics, selfAssessments, analysisResults]
+        [student, studentRubrics, rubrics, selfAssessments, analysisResults, cls?.year, effectiveTrack]
     );
 
     // Build CefrEntry[] for the radar (only cells with rubric data)
@@ -242,6 +252,16 @@ export default function StudentCefrOverviewPage() {
                 {radarEntries.length >= 3 && (
                     <div className="card" style={{ marginBottom: 24 }}>
                         <CefrProgressChart entries={radarEntries} />
+                    </div>
+                )}
+
+                {overview?.trackYearProgress && (
+                    <div className="card" style={{ marginBottom: 24 }}>
+                        <CefrTrackYearBand
+                            expectedRange={overview.trackYearProgress.expectedRange}
+                            achievedLevel={overview.trackYearProgress.achievedLevel}
+                            status={overview.trackYearProgress.status}
+                        />
                     </div>
                 )}
 

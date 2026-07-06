@@ -226,6 +226,27 @@ export default function TestListPage() {
                                                                         style={{ marginTop: 2 }}
                                                                     >
                                                                         {new Date(test.createdAt).toLocaleDateString()}
+                                                                        {test.dueDate && (
+                                                                            <span
+                                                                                style={{
+                                                                                    marginLeft: 8,
+                                                                                    color:
+                                                                                        new Date(test.dueDate) < new Date()
+                                                                                            ? 'var(--red)'
+                                                                                            : undefined,
+                                                                                    fontWeight:
+                                                                                        new Date(test.dueDate) < new Date()
+                                                                                            ? 700
+                                                                                            : undefined,
+                                                                                }}
+                                                                            >
+                                                                                {t('tests.due_date_badge', {
+                                                                                    date: new Date(
+                                                                                        test.dueDate
+                                                                                    ).toLocaleDateString(),
+                                                                                })}
+                                                                            </span>
+                                                                        )}
                                                                     </div>
                                                                 </div>
                                                             </div>

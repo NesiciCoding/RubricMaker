@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useTranslation } from 'react-i18next';
 import type { LearningGoalAggregate } from '../../utils/learningGoalsAggregator';
+import { PROGRESS_STATUS_COLOR } from '../../utils/cefrOrdinal';
 
 interface Props {
     goals: LearningGoalAggregate[];
@@ -8,6 +10,7 @@ interface Props {
 }
 
 export default function LearningGoalChart({ goals, className }: Props) {
+    const { t } = useTranslation();
     const [selectedGoalId, setSelectedGoalId] = useState<string>(goals[0]?.guid || '');
     const [displayMode, setDisplayMode] = useState<'percentage' | 'cumulative'>('percentage');
 
@@ -105,6 +108,20 @@ export default function LearningGoalChart({ goals, className }: Props) {
                         Average: {activeGoal.averagePercentage.toFixed(1)}% ({activeGoal.totalEarned} /{' '}
                         {activeGoal.totalMax} Points)
                     </p>
+                    {activeGoal.status && (
+                        <p
+                            style={{
+                                margin: '4px 0 0 0',
+                                fontWeight: 700,
+                                fontSize: '0.85rem',
+                                color: PROGRESS_STATUS_COLOR[activeGoal.status],
+                            }}
+                        >
+                            {t(`cefr.progress_status_${activeGoal.status.replace('-', '_')}`)}
+                            {activeGoal.targetPercentage !== undefined &&
+                                ` (${t('settings.mastery_target_percentage_label')}: ${activeGoal.targetPercentage}%)`}
+                        </p>
+                    )}
                 </div>
             )}
 

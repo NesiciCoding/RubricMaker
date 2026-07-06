@@ -64,6 +64,7 @@ export default function StatisticsPage() {
         updateSettings,
         tests = [],
         studentTests = [],
+        standardMasteryTargets,
     } = useApp();
     const { t, i18n } = useTranslation();
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
@@ -237,8 +238,17 @@ export default function StatisticsPage() {
 
     const classGoals = useMemo(() => {
         if (selectedClassId === 'all') return [];
-        return getClassGoalScores(selectedClassId, students, studentRubrics, rubrics);
-    }, [selectedClassId, students, studentRubrics, rubrics]);
+        const cls = classes.find((c) => c.id === selectedClassId);
+        return getClassGoalScores(
+            selectedClassId,
+            students,
+            studentRubrics,
+            rubrics,
+            standardMasteryTargets,
+            cls?.year,
+            cls?.voTrack
+        );
+    }, [selectedClassId, students, studentRubrics, rubrics, classes, standardMasteryTargets]);
 
     const classTrendData = useMemo(() => {
         if (selectedClassId === 'all') return [];

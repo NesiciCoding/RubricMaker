@@ -8,6 +8,35 @@ import type { StandardSetGroup, CefrStudentOverview } from '../utils/cefrStudent
 
 export type CefrLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
 
+/**
+ * Fine-grained scale used only for track/year CEFR expectations and their comparison against
+ * achieved levels — never for tagging what a student has actually achieved (that stays on the
+ * coarser CefrLevel scale, the real precision grading/self-assessment produces).
+ */
+export type CefrSubLevel =
+    | 'pre-a1'
+    | 'a1'
+    | 'a1-plus'
+    | 'a2-minus'
+    | 'a2'
+    | 'a2-plus'
+    | 'b1-minus'
+    | 'b1'
+    | 'b1-plus'
+    | 'b2-minus'
+    | 'b2'
+    | 'b2-plus'
+    | 'c1-minus'
+    | 'c1'
+    | 'c1-plus'
+    | 'c2';
+
+/** A closed [min, max] band on the CefrSubLevel ordinal scale; min === max for a single-value expectation. */
+export interface CefrSubLevelRange {
+    min: CefrSubLevel;
+    max: CefrSubLevel;
+}
+
 export type CefrSkill = 'reading' | 'writing' | 'speaking_production' | 'speaking_interaction' | 'listening';
 
 export interface CefrDescriptor {
@@ -125,6 +154,23 @@ export interface LinkedStandard {
     jurisdictionTitle: string;
     ancestorIds?: string[];
     depth?: number;
+}
+
+/**
+ * Expected mastery % for one linked standard at one (year, track) — configured once globally per
+ * standard, reused everywhere that standard is linked across rubrics (not per rubric criterion).
+ */
+export interface StandardMasteryTarget {
+    id: string;
+    standardGuid: string;
+    /** Denormalized for display without re-resolving the standard from a rubric. */
+    standardDescription: string;
+    standardSetTitle: string;
+    year: SchoolYear;
+    /** Undefined for groep-7/8 (uniform across tracks; see SCHOOL_YEAR_HAS_TRACK). */
+    voTrack?: VoTrack;
+    targetPercentage: number;
+    updatedAt?: string;
 }
 
 export interface RubricCriterion {
@@ -918,6 +964,8 @@ export interface Test {
     shuffleQuestions: boolean;
     gradeScaleId?: string;
     createdAt: string;
+    /** ISO-8601 deadline shown to teachers and defaulted into new assignment share links; not enforced on its own. */
+    dueDate?: string;
     /** ISO timestamp of the last local edit; used for last-write-wins sync conflict resolution */
     updatedAt?: string;
     /** Manual sort position in list views (TestListPage, Activity Dashboard); undefined sorts last by createdAt */

@@ -41,6 +41,7 @@ import type {
     FlashcardDeck,
     FlashcardAssignment,
     FlashcardReview,
+    StandardMasteryTarget,
 } from '../../types';
 
 const LAST_SYNC_KEY = 'rm_last_sync_at';
@@ -92,6 +93,7 @@ class StorageSyncService {
         { table: 'flashcard_decks', filterColumn: 'owner_id' },
         { table: 'flashcard_assignments', filterColumn: 'owner_id' },
         { table: 'flashcard_reviews', filterColumn: 'owner_id' },
+        { table: 'standard_mastery_targets', filterColumn: 'owner_id' },
     ];
     private static readonly REALTIME_DEBOUNCE_MS = 800;
 
@@ -566,11 +568,13 @@ class StorageSyncService {
             // requests above — a fresh feature's tables competing for the same local
             // connection pool at that exact startup instant was implicated in a
             // (previously fragile, timing-sensitive) offline-sync-merge E2E failure.
-            const [flashcardDecks, flashcardAssignments, flashcardReviews] = await Promise.all([
-                this.adapter.fetchFlashcardDecks().catch(() => []),
-                this.adapter.fetchFlashcardAssignments().catch(() => []),
-                this.adapter.fetchFlashcardReviews().catch(() => []),
-            ]);
+            const [flashcardDecks, flashcardAssignments, flashcardReviews, standardMasteryTargets] =
+                await Promise.all([
+                    this.adapter.fetchFlashcardDecks().catch(() => []),
+                    this.adapter.fetchFlashcardAssignments().catch(() => []),
+                    this.adapter.fetchFlashcardReviews().catch(() => []),
+                    this.adapter.fetchStandardMasteryTargets().catch(() => []),
+                ]);
 
             // The profile.role is authoritative; always override whatever userRole
             // is stored in user_settings so the DB is the single source of truth.
@@ -641,6 +645,7 @@ class StorageSyncService {
                 flashcardDecks,
                 flashcardAssignments,
                 flashcardReviews,
+                standardMasteryTargets,
                 attachments,
                 ...(mergedSettings ? { settings: mergedSettings as StoreData['settings'] } : {}),
             };
@@ -699,6 +704,7 @@ class StorageSyncService {
                 ...state.flashcardDecks.map((d) => this.adapter.upsertFlashcardDeck(d)),
                 ...state.flashcardAssignments.map((a) => this.adapter.upsertFlashcardAssignment(a)),
                 ...state.flashcardReviews.map((r) => this.adapter.upsertFlashcardReview(r)),
+                ...state.standardMasteryTargets.map((t) => this.adapter.upsertStandardMasteryTarget(t)),
                 this.adapter.saveSettings(state.settings),
             ];
             await Promise.all(ups);
@@ -854,6 +860,11 @@ class StorageSyncService {
                     if (action === 'upsert')
                         result = await this.adapter.upsertFlashcardReview(payload as FlashcardReview);
                     else if (id) result = await this.adapter.deleteFlashcardReview(id);
+                    break;
+                case 'standardMasteryTarget':
+                    if (action === 'upsert')
+                        result = await this.adapter.upsertStandardMasteryTarget(payload as StandardMasteryTarget);
+                    else if (id) result = await this.adapter.deleteStandardMasteryTarget(id);
                     break;
                 case 'settings':
                     if (action === 'upsert')

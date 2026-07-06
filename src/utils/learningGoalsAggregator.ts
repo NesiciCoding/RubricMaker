@@ -19,14 +19,50 @@ export interface LearningGoalAggregate {
     averagePercentage: number;
     totalEarned: number;
     totalMax: number;
+    /** Present only when masteryTargets/schoolYear were supplied and a matching target exists. */
+    targetPercentage?: number;
+    status?: ProgressStatus;
 }
 
-import { Rubric, StudentRubric, LinkedStandard } from '../types';
+import { Rubric, StudentRubric, LinkedStandard, SchoolYear, VoTrack, StandardMasteryTarget } from '../types';
+import type { ProgressStatus } from './cefrOrdinal';
+
+function findMasteryTarget(
+    masteryTargets: StandardMasteryTarget[] | undefined,
+    guid: string,
+    schoolYear: SchoolYear | undefined,
+    voTrack: VoTrack | undefined
+): StandardMasteryTarget | undefined {
+    if (!masteryTargets || !schoolYear) return undefined;
+    return masteryTargets.find(
+        (t) => t.standardGuid === guid && t.year === schoolYear && (t.voTrack ?? undefined) === (voTrack ?? undefined)
+    );
+}
+
+function applyMasteryTarget(
+    agg: LearningGoalAggregate,
+    masteryTargets: StandardMasteryTarget[] | undefined,
+    schoolYear: SchoolYear | undefined,
+    voTrack: VoTrack | undefined
+): void {
+    const target = findMasteryTarget(masteryTargets, agg.guid, schoolYear, voTrack);
+    if (!target) return;
+    agg.targetPercentage = target.targetPercentage;
+    agg.status =
+        agg.averagePercentage > target.targetPercentage
+            ? 'ahead'
+            : agg.averagePercentage < target.targetPercentage
+              ? 'behind'
+              : 'on-track';
+}
 
 export function getStudentGoalScores(
     studentId: string,
     studentRubrics: StudentRubric[],
-    rubrics: Rubric[]
+    rubrics: Rubric[],
+    masteryTargets?: StandardMasteryTarget[],
+    schoolYear?: SchoolYear,
+    voTrack?: VoTrack
 ): LearningGoalAggregate[] {
     const goalMap = new Map<string, LearningGoalAggregate>();
 
@@ -190,14 +226,19 @@ export function getStudentGoalScores(
         });
     }
 
-    return Array.from(goalMap.values());
+    const aggregates = Array.from(goalMap.values());
+    aggregates.forEach((agg) => applyMasteryTarget(agg, masteryTargets, schoolYear, voTrack));
+    return aggregates;
 }
 
 export function getClassGoalScores(
     classId: string,
     students: { id: string; classId: string }[],
     studentRubrics: StudentRubric[],
-    rubrics: Rubric[]
+    rubrics: Rubric[],
+    masteryTargets?: StandardMasteryTarget[],
+    schoolYear?: SchoolYear,
+    voTrack?: VoTrack
 ): LearningGoalAggregate[] {
     const classStudentIds = new Set(students.filter((s) => s.classId === classId).map((s) => s.id));
     const allAggregates = new Map<string, LearningGoalAggregate>();
@@ -228,5 +269,7 @@ export function getClassGoalScores(
         }
     }
 
-    return Array.from(allAggregates.values());
+    const classAggregates = Array.from(allAggregates.values());
+    classAggregates.forEach((agg) => applyMasteryTarget(agg, masteryTargets, schoolYear, voTrack));
+    return classAggregates;
 }

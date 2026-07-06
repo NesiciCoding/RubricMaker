@@ -8,11 +8,47 @@ import type {
     StudentRubric,
     SelfAssessment,
     LinkedStandard,
+    SchoolYear,
+    VoTrack,
+    CefrSubLevelRange,
 } from '../types';
-import { CEFR_DESCRIPTORS } from '../data/cefrDescriptors';
+import { CEFR_DESCRIPTORS, CEFR_LEVELS, CEFR_SKILLS } from '../data/cefrDescriptors';
+import { getCefrTargetRange } from '../data/cefrTrackYearTargets';
+import { compareToRange, type ProgressStatus } from './cefrOrdinal';
 import { calcGradeSummary } from './gradeCalc';
 import { profileText } from './cefrVocabularyProfiler';
 import { profileGrammar } from './grammarChecker';
+
+/** Highest level with data for one skill, preferring 'achieved' over 'developing' over 'not_started'. */
+export function highestLevelForSkill(cells: CefrCellData[], skill: CefrSkill): CefrLevel | null {
+    const skillCells = cells.filter((c) => c.skill === skill && ((c.rubricCount ?? 0) > 0 || c.totalDescriptors > 0));
+    if (skillCells.length === 0) return null;
+    const achieved = skillCells.filter((c) => c.state === 'achieved');
+    const pool = achieved.length > 0 ? achieved : skillCells;
+    return pool.reduce<CefrLevel>(
+        (best, c) => (CEFR_LEVELS.indexOf(c.level) > CEFR_LEVELS.indexOf(best) ? c.level : best),
+        pool[0].level
+    );
+}
+
+/** Lowest of each skill's highest achieved/developing level — surfaces the weakest skill first. */
+export function overallLevel(cells: CefrCellData[], skills: CefrSkill[] = CEFR_SKILLS): CefrLevel | null {
+    const perSkill = skills.map((sk) => highestLevelForSkill(cells, sk)).filter((l): l is CefrLevel => l !== null);
+    if (perSkill.length === 0) return null;
+    return perSkill.reduce<CefrLevel>(
+        (worst, l) => (CEFR_LEVELS.indexOf(l) < CEFR_LEVELS.indexOf(worst) ? l : worst),
+        perSkill[0]
+    );
+}
+
+export interface CefrTrackYearProgress {
+    year: SchoolYear;
+    voTrack?: VoTrack;
+    expectedRange?: CefrSubLevelRange;
+    /** Weakest-skill-first achieved level across all skills with rubric/self-assessment data. */
+    achievedLevel: CefrLevel | null;
+    status: ProgressStatus;
+}
 
 // Module-level cache so repeated getCefrStudentOverview calls (e.g. on navigation)
 // don't re-run NLP on the same extracted text
@@ -78,6 +114,8 @@ export interface CefrStudentOverview {
     skillsWithRubricData: number;
     overallConfidenceRate: number;
     standardsCovered: number;
+    /** Present only when schoolYear was supplied to getCefrStudentOverview. */
+    trackYearProgress?: CefrTrackYearProgress;
 }
 
 // ─── Internal accumulator shape ───────────────────────────────────────────────
@@ -127,7 +165,9 @@ export function getCefrStudentOverview(
     studentRubrics: StudentRubric[],
     rubrics: Rubric[],
     selfAssessments: SelfAssessment[],
-    analysisResults?: DocumentAnalysisResult[]
+    analysisResults?: DocumentAnalysisResult[],
+    schoolYear?: SchoolYear,
+    voTrack?: VoTrack
 ): CefrStudentOverview {
     const cellAccMap = new Map<string, CellAccumulator>();
     const standardAccMap = new Map<string, StandardAccumulator>();
@@ -424,5 +464,26 @@ export function getCefrStudentOverview(
             ? (allDescriptors.filter((d) => d.confidentInSelfAssess).length / allDescriptors.length) * 100
             : 0;
 
-    return { cells, cellMap, standardSets, skillsWithRubricData, overallConfidenceRate, standardsCovered };
+    let trackYearProgress: CefrTrackYearProgress | undefined;
+    if (schoolYear) {
+        const expectedRange = getCefrTargetRange(schoolYear, voTrack);
+        const achievedLevel = overallLevel(cells);
+        trackYearProgress = {
+            year: schoolYear,
+            voTrack,
+            expectedRange,
+            achievedLevel,
+            status: expectedRange ? compareToRange(achievedLevel ?? undefined, expectedRange) : 'no-data',
+        };
+    }
+
+    return {
+        cells,
+        cellMap,
+        standardSets,
+        skillsWithRubricData,
+        overallConfidenceRate,
+        standardsCovered,
+        trackYearProgress,
+    };
 }

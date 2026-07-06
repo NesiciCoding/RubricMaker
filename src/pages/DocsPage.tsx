@@ -1056,6 +1056,18 @@ function CefrTab() {
                 <InfoBox color="#f59e0b">{t('docs.ce_overview_info')}</InfoBox>
             </FeatureSection>
 
+            <FeatureSection icon={Award} title={t('docs.ce_mastery_targets_title')} color="#10b981">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    {t('docs.ce_mastery_targets_intro')}
+                </p>
+                <FeatureList
+                    items={[
+                        t('docs.ce_mastery_targets_item_config'),
+                        t('docs.ce_mastery_targets_item_status'),
+                    ]}
+                />
+            </FeatureSection>
+
             <FeatureSection icon={TrendingUp} title={t('docs.ce_learning_paths_title')} color="#10b981">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     {t('docs.ce_learning_paths_intro')}

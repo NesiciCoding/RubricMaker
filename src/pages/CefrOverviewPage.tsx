@@ -11,32 +11,16 @@ import CefrOverviewGrid from '../components/CEFR/CefrOverviewGrid';
 import CefrProgressChart from '../components/Statistics/CefrProgressChart';
 import StandardsCoveragePanel from '../components/Standards/StandardsCoveragePanel';
 import { useApp } from '../context/AppContext';
-import { getCefrStudentOverview, type CefrCellData } from '../utils/cefrStudentAggregator';
+import {
+    getCefrStudentOverview,
+    highestLevelForSkill,
+    overallLevel,
+    type CefrCellData,
+} from '../utils/cefrStudentAggregator';
+import { PROGRESS_STATUS_COLOR } from '../utils/cefrOrdinal';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
 import { VO_TRACK_LABELS, VO_TRACK_COLORS, VO_TRACK_DEFAULT_CEFR } from '../data/voTracks';
-import type { CefrSkill, CefrLevel } from '../types';
-
-/** Highest level with data, preferring 'achieved' over 'developing' over 'not_started'. */
-function highestLevelForSkill(cells: CefrCellData[], skill: CefrSkill): CefrLevel | null {
-    const skillCells = cells.filter((c) => c.skill === skill && ((c.rubricCount ?? 0) > 0 || c.totalDescriptors > 0));
-    if (skillCells.length === 0) return null;
-    const achieved = skillCells.filter((c) => c.state === 'achieved');
-    const pool = achieved.length > 0 ? achieved : skillCells;
-    return pool.reduce<CefrLevel>(
-        (best, c) => (CEFR_LEVELS.indexOf(c.level) > CEFR_LEVELS.indexOf(best) ? c.level : best),
-        pool[0].level
-    );
-}
-
-/** Lowest of each skill's highest achieved/developing level — surfaces the weakest skill first. */
-function overallLevel(cells: CefrCellData[], skills: CefrSkill[]): CefrLevel | null {
-    const perSkill = skills.map((sk) => highestLevelForSkill(cells, sk)).filter((l): l is CefrLevel => l !== null);
-    if (perSkill.length === 0) return null;
-    return perSkill.reduce<CefrLevel>(
-        (worst, l) => (CEFR_LEVELS.indexOf(l) < CEFR_LEVELS.indexOf(worst) ? l : worst),
-        perSkill[0]
-    );
-}
+import type { CefrSkill } from '../types';
 
 export default function CefrOverviewPage() {
     const { students, classes, rubrics, studentRubrics, selfAssessments, analysisResults } = useApp();
@@ -76,24 +60,44 @@ export default function CefrOverviewPage() {
 
     const studentOverviews = useMemo(
         () =>
-            filteredStudents.map((s) => ({
-                student: s,
-                overview: getCefrStudentOverview(s.id, studentRubrics, rubrics, selfAssessments, analysisResults),
-                cls: classes.find((c) => c.id === s.classId),
-            })),
+            filteredStudents.map((s) => {
+                const sCls = classes.find((c) => c.id === s.classId);
+                return {
+                    student: s,
+                    overview: getCefrStudentOverview(
+                        s.id,
+                        studentRubrics,
+                        rubrics,
+                        selfAssessments,
+                        analysisResults,
+                        sCls?.year,
+                        s.voTrack ?? sCls?.voTrack
+                    ),
+                    cls: sCls,
+                };
+            }),
         [filteredStudents, studentRubrics, rubrics, selfAssessments, analysisResults, classes]
     );
 
     const student = students.find((s) => s.id === selectedStudentId);
     const cls = classes.find((c) => c.id === student?.classId);
-    const targetLevel = cls?.voTrack ? VO_TRACK_DEFAULT_CEFR[cls.voTrack] : undefined;
+    const effectiveTrack = student?.voTrack ?? cls?.voTrack;
+    const targetLevel = effectiveTrack ? VO_TRACK_DEFAULT_CEFR[effectiveTrack] : undefined;
 
     const overview = useMemo(
         () =>
             student
-                ? getCefrStudentOverview(student.id, studentRubrics, rubrics, selfAssessments, analysisResults)
+                ? getCefrStudentOverview(
+                      student.id,
+                      studentRubrics,
+                      rubrics,
+                      selfAssessments,
+                      analysisResults,
+                      cls?.year,
+                      effectiveTrack
+                  )
                 : null,
-        [student, studentRubrics, rubrics, selfAssessments, analysisResults]
+        [student, studentRubrics, rubrics, selfAssessments, analysisResults, cls?.year, effectiveTrack]
     );
 
     const radarEntries = useMemo(
@@ -240,6 +244,18 @@ export default function CefrOverviewPage() {
                                                 }}
                                             >
                                                 {t('cefrOverview.table_header_overall')}
+                                            </th>
+                                            <th
+                                                style={{
+                                                    padding: '10px 10px',
+                                                    textAlign: 'center',
+                                                    fontWeight: 700,
+                                                    color: 'var(--text-muted)',
+                                                    borderLeft: '2px solid var(--border)',
+                                                    whiteSpace: 'nowrap',
+                                                }}
+                                            >
+                                                {t('cefrOverview.table_header_progress')}
                                             </th>
                                             <th
                                                 style={{
@@ -401,6 +417,34 @@ export default function CefrOverviewPage() {
                                                                 </span>
                                                             );
                                                         })()}
+                                                    </td>
+
+                                                    <td
+                                                        style={{
+                                                            padding: '6px 6px',
+                                                            textAlign: 'center',
+                                                            borderLeft: '2px solid var(--border)',
+                                                        }}
+                                                    >
+                                                        {ov.trackYearProgress ? (
+                                                            <span
+                                                                style={{
+                                                                    fontSize: '0.7rem',
+                                                                    fontWeight: 700,
+                                                                    color: PROGRESS_STATUS_COLOR[
+                                                                        ov.trackYearProgress.status
+                                                                    ],
+                                                                }}
+                                                            >
+                                                                {t(
+                                                                    `cefr.progress_status_${ov.trackYearProgress.status.replace('-', '_')}`
+                                                                )}
+                                                            </span>
+                                                        ) : (
+                                                            <span style={{ color: 'var(--border)', fontSize: '0.7rem' }}>
+                                                                ·
+                                                            </span>
+                                                        )}
                                                     </td>
 
                                                     <td

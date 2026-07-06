@@ -21,7 +21,7 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
     const config = loadSupabaseConfig();
 
     const [classId, setClassId] = useState(settings.activeClassId ?? classes[0]?.id ?? '');
-    const [expiresAt, setExpiresAt] = useState('');
+    const [expiresAt, setExpiresAt] = useState(test.dueDate ? test.dueDate.slice(0, 16) : '');
     const [embedDb, setEmbedDb] = useState(dbStatus.isConnected);
     const [copiedStudentId, setCopiedStudentId] = useState<string | null>(null);
     const [copiedAll, setCopiedAll] = useState(false);

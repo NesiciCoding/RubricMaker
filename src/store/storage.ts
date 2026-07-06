@@ -26,6 +26,7 @@ import type {
     FlashcardDeck,
     FlashcardAssignment,
     FlashcardReview,
+    StandardMasteryTarget,
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 import { nanoid } from '../utils/nanoid';
@@ -246,6 +247,7 @@ const KEYS = {
     flashcardDecks: 'rm_flashcard_decks',
     flashcardAssignments: 'rm_flashcard_assignments',
     flashcardReviews: 'rm_flashcard_reviews',
+    standardMasteryTargets: 'rm_standard_mastery_targets',
 };
 
 // ─── Generic helpers ───────────────────────────────────────────────────────────
@@ -313,6 +315,7 @@ export interface StoreData {
     flashcardDecks: FlashcardDeck[];
     flashcardAssignments: FlashcardAssignment[];
     flashcardReviews: FlashcardReview[];
+    standardMasteryTargets: StandardMasteryTarget[];
 }
 
 export function loadStore(): StoreData {
@@ -343,6 +346,7 @@ export function loadStore(): StoreData {
         flashcardDecks: load<FlashcardDeck[]>(KEYS.flashcardDecks, []),
         flashcardAssignments: load<FlashcardAssignment[]>(KEYS.flashcardAssignments, []),
         flashcardReviews: load<FlashcardReview[]>(KEYS.flashcardReviews, []),
+        standardMasteryTargets: load<StandardMasteryTarget[]>(KEYS.standardMasteryTargets, []),
     };
 }
 
@@ -417,6 +421,9 @@ export function saveFlashcardAssignments(assignments: FlashcardAssignment[]) {
 }
 export function saveFlashcardReviews(reviews: FlashcardReview[]) {
     save(KEYS.flashcardReviews, reviews);
+}
+export function saveStandardMasteryTargets(targets: StandardMasteryTarget[]) {
+    save(KEYS.standardMasteryTargets, targets);
 }
 export function saveMessages(messages: Message[]) {
     save(KEYS.messages, messages);
@@ -664,6 +671,20 @@ export function importFullBackup(json: string): boolean {
             )
                 saveFlashcardReviews(data.flashcardReviews as FlashcardReview[]);
             else console.warn('[importFullBackup] flashcardReviews failed validation — skipped');
+        }
+        if (data.standardMasteryTargets !== undefined) {
+            if (
+                Array.isArray(data.standardMasteryTargets) &&
+                data.standardMasteryTargets.every(
+                    (t) =>
+                        isPlainObject(t) &&
+                        typeof (t as Record<string, unknown>).standardGuid === 'string' &&
+                        typeof (t as Record<string, unknown>).year === 'string' &&
+                        typeof (t as Record<string, unknown>).targetPercentage === 'number'
+                )
+            )
+                saveStandardMasteryTargets(data.standardMasteryTargets as StandardMasteryTarget[]);
+            else console.warn('[importFullBackup] standardMasteryTargets failed validation — skipped');
         }
         return true;
     } catch (e) {

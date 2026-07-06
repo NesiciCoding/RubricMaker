@@ -51,6 +51,10 @@ const mockAppValue = {
     classes: mockClassesArr,
     studentRubrics: mockStudentRubricsArr,
     importBackup: vi.fn(),
+    standardMasteryTargets: [] as never[],
+    addStandardMasteryTarget: vi.fn(),
+    updateStandardMasteryTarget: vi.fn(),
+    deleteStandardMasteryTarget: vi.fn(),
 };
 
 vi.mock('../../context/AppContext', () => ({

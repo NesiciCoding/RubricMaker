@@ -39,6 +39,7 @@ import type {
     FlashcardDeck,
     FlashcardAssignment,
     FlashcardReview,
+    StandardMasteryTarget,
 } from '../types';
 import {
     loadStore,
@@ -68,6 +69,7 @@ import {
     saveFlashcardDecks,
     saveFlashcardAssignments,
     saveFlashcardReviews,
+    saveStandardMasteryTargets,
     saveUserTemplates,
     importFullBackup,
     loadPendingQueue,
@@ -160,6 +162,9 @@ type Action =
     | { type: 'ADD_FLASHCARD_DECK'; payload: FlashcardDeck }
     | { type: 'UPDATE_FLASHCARD_DECK'; payload: FlashcardDeck }
     | { type: 'DELETE_FLASHCARD_DECK'; id: string }
+    | { type: 'ADD_STANDARD_MASTERY_TARGET'; payload: StandardMasteryTarget }
+    | { type: 'UPDATE_STANDARD_MASTERY_TARGET'; payload: StandardMasteryTarget }
+    | { type: 'DELETE_STANDARD_MASTERY_TARGET'; id: string }
     | { type: 'ADD_FLASHCARD_ASSIGNMENTS'; payload: FlashcardAssignment[] }
     | { type: 'SAVE_FLASHCARD_REVIEW'; payload: FlashcardReview }
     | { type: 'SAVE_USER_TEMPLATE'; payload: UserTemplate }
@@ -699,6 +704,22 @@ function reducer(state: StoreData, action: Action): StoreData {
                 flashcardReviews: nextReviews,
             };
         }
+        case 'ADD_STANDARD_MASTERY_TARGET': {
+            const next = [...state.standardMasteryTargets, action.payload];
+            if (isOffline()) saveStandardMasteryTargets(next);
+            return { ...state, standardMasteryTargets: next };
+        }
+        case 'UPDATE_STANDARD_MASTERY_TARGET': {
+            const payload = { ...action.payload, updatedAt: new Date().toISOString() };
+            const next = state.standardMasteryTargets.map((t) => (t.id === payload.id ? payload : t));
+            if (isOffline()) saveStandardMasteryTargets(next);
+            return { ...state, standardMasteryTargets: next };
+        }
+        case 'DELETE_STANDARD_MASTERY_TARGET': {
+            const next = state.standardMasteryTargets.filter((t) => t.id !== action.id);
+            if (isOffline()) saveStandardMasteryTargets(next);
+            return { ...state, standardMasteryTargets: next };
+        }
         case 'ADD_FLASHCARD_ASSIGNMENTS': {
             const incoming = new Set(action.payload.map((a) => `${a.deckId}:${a.studentId}`));
             const next = [
@@ -846,6 +867,9 @@ interface AppContextValue extends StoreData {
     addFlashcardDeck: (d: Omit<FlashcardDeck, 'id' | 'createdAt' | 'updatedAt'>) => FlashcardDeck;
     updateFlashcardDeck: (d: FlashcardDeck) => void;
     deleteFlashcardDeck: (id: string) => void;
+    addStandardMasteryTarget: (t: Omit<StandardMasteryTarget, 'id' | 'updatedAt'>) => StandardMasteryTarget;
+    updateStandardMasteryTarget: (t: StandardMasteryTarget) => void;
+    deleteStandardMasteryTarget: (id: string) => void;
     addFlashcardAssignments: (assignments: FlashcardAssignment[]) => void;
     saveFlashcardReview: (r: FlashcardReview) => void;
     // Saved rubric templates ("save as template")
@@ -1381,6 +1405,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             (a) => `${a.deckId}:${a.studentId}`
         );
         diff(prev.flashcardReviews, state.flashcardReviews, 'flashcardReview', (r) => r.id);
+        diff(prev.standardMasteryTargets, state.standardMasteryTargets, 'standardMasteryTarget', (t) => t.id);
 
         if (JSON.stringify(prev.settings) !== JSON.stringify(state.settings)) {
             storageSync.pushOne('settings', 'upsert', state.settings);
@@ -1743,6 +1768,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }, []);
     const deleteFlashcardDeck = useCallback((id: string) => {
         dispatch({ type: 'DELETE_FLASHCARD_DECK', id });
+    }, []);
+    const addStandardMasteryTarget = useCallback(
+        (t: Omit<StandardMasteryTarget, 'id' | 'updatedAt'>): StandardMasteryTarget => {
+            const target: StandardMasteryTarget = { ...t, id: nanoid(), updatedAt: new Date().toISOString() };
+            dispatch({ type: 'ADD_STANDARD_MASTERY_TARGET', payload: target });
+            return target;
+        },
+        []
+    );
+    const updateStandardMasteryTarget = useCallback((t: StandardMasteryTarget) => {
+        dispatch({ type: 'UPDATE_STANDARD_MASTERY_TARGET', payload: t });
+    }, []);
+    const deleteStandardMasteryTarget = useCallback((id: string) => {
+        dispatch({ type: 'DELETE_STANDARD_MASTERY_TARGET', id });
     }, []);
     const addFlashcardAssignments = useCallback((assignments: FlashcardAssignment[]) => {
         dispatch({ type: 'ADD_FLASHCARD_ASSIGNMENTS', payload: assignments });
@@ -2116,6 +2155,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         addFlashcardDeck,
         updateFlashcardDeck,
         deleteFlashcardDeck,
+        addStandardMasteryTarget,
+        updateStandardMasteryTarget,
+        deleteStandardMasteryTarget,
         addFlashcardAssignments,
         saveFlashcardReview,
         saveUserTemplate,
