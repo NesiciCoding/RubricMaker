@@ -4,9 +4,34 @@
  * using heuristic table detection.
  */
 
-import type { Rubric, RubricCriterion, RubricLevel } from '../types';
+import type { LinkedStandard, Rubric, RubricCriterion, RubricFormat, RubricLevel, ScoringMode } from '../types';
 import { nanoid } from './nanoid';
 import { encodeUrlSafeBase64, decodeUrlSafeBase64 } from './urlSafeBase64';
+
+/** Shape of a rubric JSON export — loosely typed since it's untrusted file input. */
+interface RawRubricJson {
+    name?: string;
+    subject?: string;
+    description?: string;
+    criteria?: Array<{
+        title?: string;
+        description?: string;
+        weight?: number;
+        linkedStandard?: Partial<LinkedStandard>;
+        linkedStandards?: Partial<LinkedStandard>[];
+        levels?: Array<{
+            label?: string;
+            minPoints?: number;
+            maxPoints?: number;
+            description?: string;
+            subItems?: Array<{
+                label?: string;
+                points?: number;
+                linkedStandards?: Partial<LinkedStandard>[];
+            }>;
+        }>;
+    }>;
+}
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -97,9 +122,9 @@ export async function parsePdfToRubric(file: File): Promise<ParsedRubric> {
         const lineMap = new Map<number, string[]>();
         for (const item of content.items) {
             if (!('str' in item)) continue;
-            const y = Math.round((item as any).transform[5]);
+            const y = Math.round(item.transform[5]);
             if (!lineMap.has(y)) lineMap.set(y, []);
-            lineMap.get(y)!.push((item as any).str);
+            lineMap.get(y)!.push(item.str);
         }
 
         // Sort lines top-to-bottom (PDF Y increases upward)
@@ -271,34 +296,34 @@ function emptyResult(warnings: string[]): ParsedRubric {
 export async function parseJsonToRubric(file: File): Promise<ParsedRubric> {
     try {
         const text = await file.text();
-        const data = JSON.parse(text);
+        const data = JSON.parse(text) as RawRubricJson;
 
         if (!data || !Array.isArray(data.criteria)) {
             return emptyResult(['Invalid JSON format: missing criteria array.']);
         }
 
         // Deep clone and regenerate all IDs to prevent collisions when importing into the same workspace
-        const criteria: RubricCriterion[] = data.criteria.map((c: any) => ({
+        const criteria: RubricCriterion[] = data.criteria.map((c) => ({
             id: nanoid(),
             title: c.title || 'Untitled Criterion',
             description: c.description || '',
             weight: typeof c.weight === 'number' ? c.weight : 0,
-            linkedStandard: c.linkedStandard ? { ...c.linkedStandard } : undefined,
+            linkedStandard: c.linkedStandard ? ({ ...c.linkedStandard } as LinkedStandard) : undefined,
             linkedStandards: Array.isArray(c.linkedStandards)
-                ? c.linkedStandards.map((s: any) => ({ ...s }))
+                ? c.linkedStandards.map((s) => ({ ...s }) as LinkedStandard)
                 : undefined,
-            levels: (c.levels || []).map((l: any) => ({
+            levels: (c.levels || []).map((l) => ({
                 id: nanoid(),
                 label: l.label || 'Level',
                 minPoints: typeof l.minPoints === 'number' ? l.minPoints : 0,
                 maxPoints: typeof l.maxPoints === 'number' ? l.maxPoints : 0,
                 description: l.description || '',
-                subItems: (l.subItems || []).map((si: any) => ({
+                subItems: (l.subItems || []).map((si) => ({
                     id: nanoid(),
                     label: si.label || '',
                     points: typeof si.points === 'number' ? si.points : 0,
                     linkedStandards: Array.isArray(si.linkedStandards)
-                        ? si.linkedStandards.map((s: any) => ({ ...s }))
+                        ? si.linkedStandards.map((s) => ({ ...s }) as LinkedStandard)
                         : undefined,
                 })),
             })),
@@ -312,8 +337,9 @@ export async function parseJsonToRubric(file: File): Promise<ParsedRubric> {
             confidence: 'high',
             warnings: [],
         };
-    } catch (err: any) {
-        return emptyResult([`Failed to parse JSON: ${err.message}`]);
+    } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        return emptyResult([`Failed to parse JSON: ${message}`]);
     }
 }
 
@@ -335,9 +361,12 @@ export function encodeRubricShareCode(rubric: Rubric): string {
 }
 
 /** Decodes a share code back into a ParsedRubric (ready for import). */
-export function decodeRubricShareCode(
-    code: string
-): ParsedRubric & { gradeScaleId?: string; scoringMode?: string; totalMaxPoints?: number; format?: unknown } {
+export function decodeRubricShareCode(code: string): ParsedRubric & {
+    gradeScaleId?: string;
+    scoringMode?: ScoringMode;
+    totalMaxPoints?: number;
+    format?: RubricFormat;
+} {
     const json = decodeUrlSafeBase64(code);
     const data = JSON.parse(json);
     if (!Array.isArray(data.criteria)) throw new Error('Invalid share code: missing criteria');

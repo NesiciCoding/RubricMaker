@@ -1,6 +1,12 @@
 import type { CefrGrammarHit, CefrGrammarProfile, CefrLevel, GrammarError } from '../types';
 import nlp from 'compromise';
 
+/** compromise's own .d.ts doesn't propagate the sentence view type through .forEach() — only type what we actually use. */
+interface SentenceView {
+    verbs(): { out(format: string): string[] };
+    text(): string;
+}
+
 const LT_API = 'https://api.languagetool.org/v2/check';
 const TIMEOUT_MS = 8000;
 // LanguageTool public API hard limit: 20 KB per request
@@ -64,10 +70,11 @@ async function checkWithCompromise(text: string): Promise<GrammarError[]> {
     const doc = nlp(text);
 
     // Detect sentences that lack a verb (likely fragments)
-    doc.sentences().forEach((sent: any) => {
-        const verbs = sent.verbs().out('array') as string[];
+    doc.sentences().forEach((sent) => {
+        const view = sent as unknown as SentenceView;
+        const verbs = view.verbs().out('array');
         if (verbs.length === 0) {
-            const sentText: string = sent.text();
+            const sentText: string = view.text();
             const offset = text.indexOf(sentText);
             if (offset >= 0 && sentText.length > 10) {
                 errors.push({

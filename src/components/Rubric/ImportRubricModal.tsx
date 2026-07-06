@@ -44,8 +44,9 @@ export default function ImportRubricModal({ onClose, onImport }: Props) {
             setName(result.name || file.name.replace(/\.[^.]+$/, ''));
             setSubject(result.subject || '');
             setStage('preview');
-        } catch (err: any) {
-            setError(`Failed to parse file: ${err?.message ?? 'Unknown error'}`);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Unknown error';
+            setError(`Failed to parse file: ${message}`);
             setStage('upload');
         }
     }, []);
