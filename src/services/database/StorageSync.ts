@@ -4,6 +4,8 @@ import { SupabaseAdapter } from './SupabaseAdapter';
 import { AttachmentSync } from './AttachmentSync';
 import { RecordingSync } from './RecordingSync';
 import type { DatabaseConfig, SyncStatus, SyncResult, DbUser } from './types';
+export { loadSupabaseConfig, saveSupabaseConfig, clearSupabaseConfig } from './supabaseConfig';
+import { clearSupabaseConfig } from './supabaseConfig';
 import type { StoreData } from '../../store/storage';
 import {
     addToPendingQueue,
@@ -41,57 +43,8 @@ import type {
     FlashcardReview,
 } from '../../types';
 
-const CONFIG_KEY = 'rm_supabase_config';
 const LAST_SYNC_KEY = 'rm_last_sync_at';
 const OWNER_KEY = 'rm_owner_uid';
-
-function normalizeSupabaseUrl(url: string): string {
-    let normalized = url.trim();
-    if (!normalized) {
-        throw new Error(i18n.t('toast.empty_supabase_url'));
-    }
-    if (/^[a-z][a-z\d+\-.]*:\/\//i.test(normalized) && !/^https?:\/\//i.test(normalized)) {
-        throw new Error(i18n.t('toast.invalid_supabase_url_protocol'));
-    }
-    if (!/^https?:\/\//i.test(normalized)) {
-        normalized = 'https://' + normalized;
-    }
-    // Preserve http:// for localhost/127.0.0.1 (local dev); upgrade everything else to https://
-    if (!/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?([/?#]|$)/i.test(normalized)) {
-        normalized = normalized.replace(/^http:\/\//i, 'https://');
-    }
-    return normalized.replace(/\/+$/, '');
-}
-
-export function loadSupabaseConfig(): DatabaseConfig | null {
-    try {
-        const envUrl = import.meta.env.VITE_SUPABASE_URL;
-        const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-        const raw = localStorage.getItem(CONFIG_KEY);
-        if (raw) {
-            const parsed = JSON.parse(raw) as DatabaseConfig;
-            return { ...parsed, supabaseUrl: normalizeSupabaseUrl(parsed.supabaseUrl) };
-        }
-        if (envUrl && envKey) return { supabaseUrl: normalizeSupabaseUrl(envUrl), supabaseAnonKey: envKey };
-        return null;
-    } catch {
-        return null;
-    }
-}
-
-export function saveSupabaseConfig(config: DatabaseConfig) {
-    localStorage.setItem(
-        CONFIG_KEY,
-        JSON.stringify({
-            ...config,
-            supabaseUrl: normalizeSupabaseUrl(config.supabaseUrl),
-        })
-    );
-}
-
-export function clearSupabaseConfig() {
-    localStorage.removeItem(CONFIG_KEY);
-}
 
 class StorageSyncService {
     readonly adapter = new SupabaseAdapter();
@@ -274,8 +227,11 @@ class StorageSyncService {
             });
             this.startNetworkListener();
             this.startRealtimeSync();
-            // Flush any writes that failed in a previous session
-            this.flushPendingQueue().catch(console.warn);
+            // Flush any writes that failed in a previous session. Awaited (not fire-and-forget)
+            // so a subsequent hydrate() can't race a GET against an in-flight queued write and
+            // pull a snapshot that predates it — flushPendingQueue() itself short-circuits
+            // near-instantly when the queue is empty, so this costs nothing in the common case.
+            await this.flushPendingQueue().catch(console.warn);
         } else {
             this.setStatus('error');
         }

@@ -45,6 +45,15 @@ export default defineConfig({
     }),
   ],
   base: './',
+  // @supabase/supabase-js is only reachable via a nested dynamic import now
+  // (AppContext -> services/database/lazyDb.ts -> import('./index')), which the
+  // dev-server's dependency pre-bundler can miss during its initial scan — the
+  // first request that hits it then triggers a "new dependency discovered"
+  // re-optimization + full reload mid-session. Listing it explicitly pre-bundles
+  // it at cold start instead. Dev-only: no effect on the production build/chunking.
+  optimizeDeps: {
+    include: ['@supabase/supabase-js'],
+  },
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/vitest.setup.ts'],

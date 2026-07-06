@@ -33,7 +33,7 @@ import {
     Mail,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { loadSupabaseConfig } from '../services/database';
+import { loadSupabaseConfig } from '../services/database/supabaseConfig';
 import LoginButtons from '../components/auth/LoginButtons';
 
 const TEACHER_FEATURES = [

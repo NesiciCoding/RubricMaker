@@ -456,7 +456,7 @@ describe('LoginButtons', () => {
             .getAllByRole('button')
             .find((b) => /sign in with microsoft/i.test(b.textContent ?? '') && !/school/i.test(b.textContent ?? ''));
         fireEvent.click(personalBtn!);
-        expect(storageSync.signInWithMicrosoftPersonal).toHaveBeenCalled();
+        await waitFor(() => expect(storageSync.signInWithMicrosoftPersonal).toHaveBeenCalled());
     });
 
     it('triggers the Azure AD OAuth handler', async () => {
@@ -464,7 +464,7 @@ describe('LoginButtons', () => {
         await waitFor(() => screen.getByText(/school \/ work/i));
         const azureBtn = screen.getAllByRole('button').find((b) => /school \/ work/i.test(b.textContent ?? ''));
         fireEvent.click(azureBtn!);
-        expect(storageSync.signInWithAzureAD).toHaveBeenCalled();
+        await waitFor(() => expect(storageSync.signInWithAzureAD).toHaveBeenCalled());
     });
 
     it('shows an error when sending the OTP with an empty email via Enter', async () => {

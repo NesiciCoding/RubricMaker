@@ -13,6 +13,8 @@ import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import NotFoundPage from './pages/NotFoundPage';
 import RouteSkeleton from './components/ui/RouteSkeleton';
 
+// react-joyride only runs the onboarding tour inside the dashboard, never on the landing
+// page — lazy so its ~800KB isn't parsed on every load. No default export, so re-wrap it.
 const Joyride = lazy(() => import('react-joyride').then((m) => ({ default: m.Joyride })));
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -151,6 +153,8 @@ export default function App() {
     }
 
     const handleJoyrideCallback = (data: EventData) => {
+        // Matches react-joyride's own STATUS.FINISHED/STATUS.SKIPPED constants — inlined so
+        // this file doesn't need a runtime import of the (lazy-loaded) library just for these.
         if (data.status === 'finished' || data.status === 'skipped') {
             updateSettings({ hasSeenTutorial: true });
         }
@@ -164,28 +168,30 @@ export default function App() {
                     {t('a11y.skip_to_content')}
                 </a>
                 {!settings.hasSeenTutorial && (
-                    <Suspense fallback={null}>
-                        <Joyride
-                            steps={steps}
-                            run={!settings.hasSeenTutorial}
-                            continuous
-                            onEvent={handleJoyrideCallback}
-                            options={{
-                                showProgress: true,
-                                buttons: ['back', 'skip', 'primary'],
-                                primaryColor: 'var(--accent)',
-                                backgroundColor: 'var(--bg-elevated)',
-                                textColor: 'var(--text)',
-                                arrowColor: 'var(--bg-elevated)',
-                                overlayColor: 'rgba(0, 0, 0, 0.6)',
-                            }}
-                            styles={{
-                                tooltipContainer: {
-                                    textAlign: 'left',
-                                },
-                            }}
-                        />
-                    </Suspense>
+                    <ErrorBoundary fallback={null}>
+                        <Suspense fallback={null}>
+                            <Joyride
+                                steps={steps}
+                                run={!settings.hasSeenTutorial}
+                                continuous
+                                onEvent={handleJoyrideCallback}
+                                options={{
+                                    showProgress: true,
+                                    buttons: ['back', 'skip', 'primary'],
+                                    primaryColor: 'var(--accent)',
+                                    backgroundColor: 'var(--bg-elevated)',
+                                    textColor: 'var(--text)',
+                                    arrowColor: 'var(--bg-elevated)',
+                                    overlayColor: 'rgba(0, 0, 0, 0.6)',
+                                }}
+                                styles={{
+                                    tooltipContainer: {
+                                        textAlign: 'left',
+                                    },
+                                }}
+                            />
+                        </Suspense>
+                    </ErrorBoundary>
                 )}
                 <RouteAnnouncer />
                 <Sidebar mobileOpen={mobileMenuOpen} onMobileClose={() => setMobileMenuOpen(false)} />
