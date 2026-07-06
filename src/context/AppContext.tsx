@@ -1480,19 +1480,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 checkedSubItems: [],
             }));
             const groupId = nanoid();
-            const srs = studentIds.map((studentId): StudentRubric => ({
-                id: nanoid(),
-                rubricId,
-                studentId,
-                entries: entries.map((e) => ({ ...e })),
-                overallComment: '',
-                isPeerReview: false,
-                groupId,
-            }));
+            const srs = studentIds.map((studentId): StudentRubric => {
+                const existing = state.studentRubrics.find(
+                    (sr) => sr.rubricId === rubricId && sr.studentId === studentId && !sr.isPeerReview
+                );
+                return {
+                    ...existing,
+                    id: existing?.id ?? nanoid(),
+                    rubricId,
+                    studentId,
+                    entries: entries.map((e) => ({ ...e })),
+                    overallComment: '',
+                    isPeerReview: false,
+                    groupId,
+                };
+            });
             srs.forEach((sr) => dispatch({ type: 'SAVE_STUDENT_RUBRIC', payload: sr }));
             return srs;
         },
-        [state.rubrics]
+        [state.rubrics, state.studentRubrics]
     );
 
     const deleteStudentRubric = useCallback((id: string) => dispatch({ type: 'DELETE_STUDENT_RUBRIC', id }), []);
