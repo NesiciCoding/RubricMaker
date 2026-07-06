@@ -7,7 +7,7 @@ declare module 'react-speech-recognition' {
 
     export interface Command {
         command: string | RegExp;
-        callback: (match: string[]) => void;
+        callback: (...args: string[]) => void;
         isFuzzyMatch?: boolean;
         fuzzyMatchingThreshold?: number;
         bestMatchOnly?: boolean;
