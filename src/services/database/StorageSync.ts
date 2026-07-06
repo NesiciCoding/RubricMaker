@@ -227,8 +227,11 @@ class StorageSyncService {
             });
             this.startNetworkListener();
             this.startRealtimeSync();
-            // Flush any writes that failed in a previous session
-            this.flushPendingQueue().catch(console.warn);
+            // Flush any writes that failed in a previous session. Awaited (not fire-and-forget)
+            // so a subsequent hydrate() can't race a GET against an in-flight queued write and
+            // pull a snapshot that predates it — flushPendingQueue() itself short-circuits
+            // near-instantly when the queue is empty, so this costs nothing in the common case.
+            await this.flushPendingQueue().catch(console.warn);
         } else {
             this.setStatus('error');
         }
