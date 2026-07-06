@@ -37,4 +37,3 @@ jobs:
           configPath: './config/.lighthouserc.json'
           uploadArtifacts: true
           temporaryPublicStorage: true
-        continue-on-error: true
