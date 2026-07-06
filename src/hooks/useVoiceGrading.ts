@@ -1,13 +1,5 @@
-import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
+import SpeechRecognition, { useSpeechRecognition, type Command } from 'react-speech-recognition';
 import { useEffect, useState } from 'react';
-
-interface VoiceCommand {
-    command: string | RegExp;
-    callback: (...args: string[]) => void;
-    isFuzzyMatch?: boolean;
-    fuzzyMatchingThreshold?: number;
-    bestMatchOnly?: boolean;
-}
 
 export const useVoiceGrading = (
     onGrade: (criterionIndex: number, levelIndex: number) => void,
@@ -16,11 +8,11 @@ export const useVoiceGrading = (
 ) => {
     const [isListening, setIsListening] = useState(false);
 
-    const commands: VoiceCommand[] = [
+    const commands: Command[] = [
         {
             // Match pattern like "Criterium 1 Niveau 4" or "Criterion 1 Level 4"
             command: /(?:Criterium|Criterion|Goal|Doel)\s*(\d+)\s*(?:Niveau|Level|Level|Score|Grade)\s*(\d+)/i,
-            callback: (crit: string, level: string) => {
+            callback: (crit, level) => {
                 const critIndex = parseInt(crit) - 1;
                 const levelIndex = parseInt(level) - 1;
                 if (!isNaN(critIndex) && !isNaN(levelIndex)) {
@@ -31,7 +23,7 @@ export const useVoiceGrading = (
         {
             // Match Dutch specific: "Score [X] voor [Y]"
             command: /Score\s*(\d+)\s*(?:voor|for)\s*(?:Criterium|Criterion|Goal|Doel)\s*(\d+)/i,
-            callback: (level: string, crit: string) => {
+            callback: (level, crit) => {
                 const levelIndex = parseInt(level) - 1;
                 const critIndex = parseInt(crit) - 1;
                 if (!isNaN(critIndex) && !isNaN(levelIndex)) {
@@ -42,7 +34,7 @@ export const useVoiceGrading = (
         {
             // Match command for dictating comments: "Commentaar [text]"
             command: /(?:Commentaar|Comment|Feedback)\s*(.*)/i,
-            callback: (text: string) => {
+            callback: (text) => {
                 if (text) {
                     onComment(text);
                 }

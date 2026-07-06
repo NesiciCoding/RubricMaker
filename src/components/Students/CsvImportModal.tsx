@@ -26,7 +26,7 @@ type DetectedFormat = 'generic' | 'clever' | 'oneroster' | null;
 export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
     const { t } = useTranslation();
     const { addStudent, addClass, updateStudent, deleteStudent, classes, students, settings } = useApp();
-    const [parsedData, setParsedData] = useState<any[]>([]);
+    const [parsedData, setParsedData] = useState<Record<string, string>[]>([]);
     const [headers, setHeaders] = useState<string[]>([]);
     const [detectedFormat, setDetectedFormat] = useState<DetectedFormat>(null);
     const [mapping, setMapping] = useState<ColumnMap>({
@@ -44,11 +44,11 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
     );
 
     useEffect(() => {
-        Papa.parse(file, {
+        Papa.parse<Record<string, string>>(file, {
             header: true,
             skipEmptyLines: true,
             complete: (results) => {
-                const data = results.data as any[];
+                const data = results.data;
                 if (data.length === 0) {
                     setError('The CSV file is empty.');
                     return;

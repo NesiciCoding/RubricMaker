@@ -15,6 +15,7 @@ import {
 import Topbar from '../components/Layout/Topbar';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
+import type { Rubric } from '../types';
 import { useApp } from '../context/AppContext';
 import { QUICK_START_TEMPLATES } from '../data/templates';
 import { calcGradeSummary } from '../utils/gradeCalc';
@@ -512,13 +513,12 @@ export default function Dashboard() {
                                             transition: 'all 0.2s',
                                         }}
                                         onClick={() => {
-                                            const newRubric = {
+                                            const newRubric: Partial<Rubric> = {
                                                 ...tpl,
                                                 id: undefined,
                                                 createdAt: undefined,
                                                 updatedAt: undefined,
-                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                            } as any;
+                                            };
                                             navigate('/rubrics/new', { state: { template: newRubric } });
                                         }}
                                         className="hoverable"

@@ -8,6 +8,7 @@ export default defineConfig({
     workers: process.env.CI ? 2 : undefined,
     reporter: [
         ['list'],
+        ['github'],
         ['html', { outputFolder: 'playwright-report', open: 'never' }],
         ['junit', { outputFile: 'playwright-results/results.xml' }],
     ],

@@ -902,7 +902,7 @@ interface AppContextValue extends StoreData {
     logoutMicrosoft: () => Promise<void>;
     syncToOneDrive: () => Promise<void>;
     restoreFromOneDrive: () => Promise<void>;
-    microsoftUser: any | null;
+    microsoftUser: null;
     getCurrentDatabaseUserId: () => string | null;
 }
 
@@ -1949,7 +1949,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }, []);
 
     // ─── Microsoft Sync (disabled — Azure integration not in use) ───
-    const microsoftUser: any | null = null;
+    const microsoftUser: null = null;
     const loginMicrosoft = useCallback(async () => {}, []);
     const logoutMicrosoft = useCallback(async () => {}, []);
     const syncToOneDrive = useCallback(async () => {}, []);
