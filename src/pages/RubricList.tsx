@@ -188,10 +188,10 @@ export default function RubricList() {
                 subject: parsed.subject || '',
                 description: parsed.description || '',
                 criteria: parsed.criteria,
-                gradeScaleId: (parsed as any).gradeScaleId || settings.defaultGradeScaleId,
-                format: (parsed as any).format || DEFAULT_FORMAT,
-                scoringMode: (parsed as any).scoringMode || 'weighted-percentage',
-                totalMaxPoints: (parsed as any).totalMaxPoints ?? 100,
+                gradeScaleId: parsed.gradeScaleId || settings.defaultGradeScaleId,
+                format: parsed.format || DEFAULT_FORMAT,
+                scoringMode: parsed.scoringMode || 'weighted-percentage',
+                totalMaxPoints: parsed.totalMaxPoints ?? 100,
                 attachmentIds: [],
             });
             setShowCodeImport(false);

@@ -2847,26 +2847,38 @@ export default function RubricBuilder() {
                         <div className="card no-print" style={{ height: 'fit-content', position: 'sticky', top: 0 }}>
                             <h3 style={{ marginBottom: 16 }}>{t('rubricBuilder.format_title')}</h3>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                                {[
-                                    {
-                                        label: t('rubricBuilder.format_criterion_width'),
-                                        key: 'criterionColWidth',
-                                        min: 120,
-                                        max: 400,
-                                    },
-                                    {
-                                        label: t('rubricBuilder.format_level_width'),
-                                        key: 'levelColWidth',
-                                        min: 100,
-                                        max: 400,
-                                    },
-                                    { label: t('rubricBuilder.format_font_size'), key: 'fontSize', min: 10, max: 20 },
-                                ].map(({ label, key, min, max }) => (
+                                {(
+                                    [
+                                        {
+                                            label: t('rubricBuilder.format_criterion_width'),
+                                            key: 'criterionColWidth',
+                                            min: 120,
+                                            max: 400,
+                                        },
+                                        {
+                                            label: t('rubricBuilder.format_level_width'),
+                                            key: 'levelColWidth',
+                                            min: 100,
+                                            max: 400,
+                                        },
+                                        {
+                                            label: t('rubricBuilder.format_font_size'),
+                                            key: 'fontSize',
+                                            min: 10,
+                                            max: 20,
+                                        },
+                                    ] as {
+                                        label: string;
+                                        key: 'criterionColWidth' | 'levelColWidth' | 'fontSize';
+                                        min: number;
+                                        max: number;
+                                    }[]
+                                ).map(({ label, key, min, max }) => (
                                     <div className="form-group" key={key}>
                                         <label>{label}</label>
                                         <input
                                             type="number"
-                                            value={(format as any)[key]}
+                                            value={format[key]}
                                             min={min}
                                             max={max}
                                             onChange={(e) =>
@@ -2875,17 +2887,22 @@ export default function RubricBuilder() {
                                         />
                                     </div>
                                 ))}
-                                {[
-                                    { label: t('rubricBuilder.format_header_bg'), key: 'headerColor' },
-                                    { label: t('rubricBuilder.format_header_text'), key: 'headerTextColor' },
-                                    { label: t('rubricBuilder.format_accent_color'), key: 'accentColor' },
-                                ].map(({ label, key }) => (
+                                {(
+                                    [
+                                        { label: t('rubricBuilder.format_header_bg'), key: 'headerColor' },
+                                        { label: t('rubricBuilder.format_header_text'), key: 'headerTextColor' },
+                                        { label: t('rubricBuilder.format_accent_color'), key: 'accentColor' },
+                                    ] as {
+                                        label: string;
+                                        key: 'headerColor' | 'headerTextColor' | 'accentColor';
+                                    }[]
+                                ).map(({ label, key }) => (
                                     <div className="form-group" key={key}>
                                         <label>{label}</label>
                                         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                                             <input
                                                 type="color"
-                                                value={(format as any)[key]}
+                                                value={format[key]}
                                                 onChange={(e) => setFormat((f) => ({ ...f, [key]: e.target.value }))}
                                                 style={{
                                                     width: 40,
@@ -2897,7 +2914,7 @@ export default function RubricBuilder() {
                                             />
                                             <input
                                                 type="text"
-                                                value={(format as any)[key]}
+                                                value={format[key]}
                                                 onChange={(e) => setFormat((f) => ({ ...f, [key]: e.target.value }))}
                                                 style={{ flex: 1 }}
                                             />

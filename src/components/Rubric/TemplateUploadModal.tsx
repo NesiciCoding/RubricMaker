@@ -45,8 +45,9 @@ export default function TemplateUploadModal({ onClose, onSave }: Props) {
 
                 setParsed({ levelHeaders, headerColor, dataUrl, size: file.size, fileName: file.name });
                 if (!name) setName(file.name.replace(/\.[^.]+$/, ''));
-            } catch (err: any) {
-                setError(`Failed to parse template: ${err?.message ?? 'Unknown error'}`);
+            } catch (err) {
+                const message = err instanceof Error ? err.message : 'Unknown error';
+                setError(`Failed to parse template: ${message}`);
             } finally {
                 setParsing(false);
             }
