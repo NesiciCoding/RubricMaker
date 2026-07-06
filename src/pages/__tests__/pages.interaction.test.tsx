@@ -115,6 +115,8 @@ const mockUseApp = {
     saveStudentRubric: noop,
     createStudentRubric: vi.fn(() => mockSr),
     deleteStudentRubric: noop,
+    restoreStudentRubric: noop,
+    deletedStudentRubrics: [],
     addAttachment: vi.fn(),
     deleteAttachment: noop,
     addGradeScale: mockAddGradeScale,

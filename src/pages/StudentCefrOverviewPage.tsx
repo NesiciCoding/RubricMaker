@@ -133,7 +133,7 @@ export default function StudentCefrOverviewPage() {
                                         fontWeight: 700,
                                         padding: '2px 6px',
                                         borderRadius: 4,
-                                        background: VO_TRACK_COLORS[cls.voTrack],
+                                        background: cls.color ?? VO_TRACK_COLORS[cls.voTrack],
                                         color: '#fff',
                                     }}
                                 >

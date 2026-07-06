@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { VO_TRACKS } from '../data/voTracks';
+import { SCHOOL_YEARS, SCHOOL_YEAR_LABELS } from '../data/schoolYears';
 import type { Class, CohortFilter as CohortFilterValue } from '../types';
 
 /** Year/track cohort filter, reused across RubricList, TestListPage, EssayListPage, and the Activity Dashboard (Phase 8.5). */
@@ -13,7 +14,7 @@ export default function CohortFilter({
     onChange: (next: CohortFilterValue) => void;
 }) {
     const { t } = useTranslation();
-    const yearOptions = Array.from(new Set(classes.map((c) => c.year).filter((y): y is string => !!y))).sort();
+    const yearOptions = SCHOOL_YEARS.filter((y) => classes.some((c) => c.year === y));
     const hasTracks = classes.some((c) => c.voTrack);
     if (yearOptions.length === 0 && !hasTracks) return null;
 
@@ -22,14 +23,14 @@ export default function CohortFilter({
             {yearOptions.length > 0 && (
                 <select
                     value={value.year}
-                    onChange={(e) => onChange({ ...value, year: e.target.value })}
+                    onChange={(e) => onChange({ ...value, year: e.target.value as CohortFilterValue['year'] })}
                     aria-label={t('statistics.filters.year')}
                     style={{ minWidth: 110 }}
                 >
                     <option value="all">{t('statistics.filters.year')}</option>
                     {yearOptions.map((y) => (
                         <option key={y} value={y}>
-                            {y}
+                            {SCHOOL_YEAR_LABELS[y]}
                         </option>
                     ))}
                 </select>

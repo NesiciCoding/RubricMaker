@@ -22,6 +22,7 @@ import {
     Minus,
     Plus,
     UserCheck,
+    Trash2,
 } from 'lucide-react';
 import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
@@ -34,6 +35,7 @@ import EssayImportModal from '../components/Essay/EssayImportModal';
 import EssaySlipSheet from '../components/Essay/EssaySlipSheet';
 import HelpPopover from '../components/Tests/HelpPopover';
 import Modal from '../components/ui/Modal';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useApp } from '../context/AppContext';
 import { useTranslation } from 'react-i18next';
 import { useVoiceGrading } from '../hooks/useVoiceGrading';
@@ -158,6 +160,7 @@ export default function GradeStudent() {
         deleteEssaySubmission,
         getEssaySignedUrl,
         fetchSchoolMembers,
+        deleteStudentRubric,
     } = useApp();
     const dbStatus = useDbStatus();
 
@@ -234,6 +237,8 @@ export default function GradeStudent() {
     const [showEssayAssignment, setShowEssayAssignment] = useState(false);
     const [showEssayImport, setShowEssayImport] = useState(false);
     const [showCoGradeModal, setShowCoGradeModal] = useState(false);
+    const [showDeleteGrade, setShowDeleteGrade] = useState(false);
+    const [deleteGradeScope, setDeleteGradeScope] = useState<'student' | 'group'>('student');
     const [coGraderName, setCoGraderName] = useState('');
     const [colleagues, setColleagues] = useState<DbUser[]>([]);
     const [selectedColleagueId, setSelectedColleagueId] = useState('');
@@ -684,6 +689,20 @@ export default function GradeStudent() {
                                 aria-label={t('coGrading.action_co_grade')}
                             >
                                 <UserCheck size={15} />
+                            </button>
+                        )}
+                        {existingSR && (
+                            <button
+                                className="btn btn-ghost btn-icon btn-sm"
+                                style={{ color: 'var(--red)' }}
+                                onClick={() => {
+                                    setDeleteGradeScope(groupMemberNames.length > 0 ? 'group' : 'student');
+                                    setShowDeleteGrade(true);
+                                }}
+                                title={t('gradeStudent.action_delete_grade')}
+                                aria-label={t('gradeStudent.action_delete_grade')}
+                            >
+                                <Trash2 size={15} />
                             </button>
                         )}
                         <button
@@ -1767,6 +1786,69 @@ export default function GradeStudent() {
                     students={slipSheetData.students}
                     onClose={() => setSlipSheetData(null)}
                 />
+            )}
+
+            {showDeleteGrade && existingSR && groupMemberNames.length === 0 && (
+                <ConfirmDialog
+                    open
+                    title={t('gradeStudent.delete_grade_title')}
+                    message={t('gradeStudent.delete_grade_message')}
+                    confirmLabel={t('common.delete')}
+                    onCancel={() => setShowDeleteGrade(false)}
+                    onConfirm={() => {
+                        deleteStudentRubric(existingSR.id, 'student');
+                        setShowDeleteGrade(false);
+                        navigate(-1);
+                    }}
+                />
+            )}
+
+            {showDeleteGrade && existingSR && groupMemberNames.length > 0 && (
+                <Modal titleId="delete-grade-title" onClose={() => setShowDeleteGrade(false)} maxWidth={420}>
+                    <div style={{ padding: 20 }}>
+                        <h3 id="delete-grade-title" style={{ marginTop: 0 }}>
+                            {t('gradeStudent.delete_grade_title')}
+                        </h3>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                            {t('gradeStudent.delete_grade_group_message', { names: groupMemberNames.join(', ') })}
+                        </p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <input
+                                    type="radio"
+                                    name="delete-grade-scope"
+                                    checked={deleteGradeScope === 'student'}
+                                    onChange={() => setDeleteGradeScope('student')}
+                                />
+                                {t('gradeStudent.delete_grade_scope_student')}
+                            </label>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <input
+                                    type="radio"
+                                    name="delete-grade-scope"
+                                    checked={deleteGradeScope === 'group'}
+                                    onChange={() => setDeleteGradeScope('group')}
+                                />
+                                {t('gradeStudent.delete_grade_scope_group', { names: groupMemberNames.join(', ') })}
+                            </label>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
+                            <button className="btn btn-secondary btn-sm" onClick={() => setShowDeleteGrade(false)}>
+                                {t('common.cancel')}
+                            </button>
+                            <button
+                                className="btn btn-danger btn-sm"
+                                onClick={() => {
+                                    deleteStudentRubric(existingSR.id, deleteGradeScope);
+                                    setShowDeleteGrade(false);
+                                    navigate(-1);
+                                }}
+                            >
+                                {t('common.delete')}
+                            </button>
+                        </div>
+                    </div>
+                </Modal>
             )}
 
             {showCoGradeModal && (

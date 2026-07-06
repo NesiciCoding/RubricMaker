@@ -429,19 +429,26 @@ export interface Student {
     archivedAt?: string;
     /** ISO timestamp of the last local edit; used for last-write-wins sync conflict resolution */
     updatedAt?: string;
+    /** Per-student override of the class's default VO track; must be adjacent to the class track (see isAdjacentTrack). */
+    voTrack?: VoTrack;
 }
 
 export type VoTrack = 'vmbo-bb' | 'vmbo-kb' | 'vmbo-tl' | 'havo' | 'vwo';
+
+/** Dutch school year: groep-7/8 are primary school (no VO track), jaar-1..6 are voortgezet onderwijs. */
+export type SchoolYear = 'groep-7' | 'groep-8' | 'jaar-1' | 'jaar-2' | 'jaar-3' | 'jaar-4' | 'jaar-5' | 'jaar-6';
 
 export interface Class {
     id: string;
     name: string;
     subject?: string;
-    year?: string;
+    year?: SchoolYear;
     /** IDs of rubrics linked to this class. If undefined/empty, all rubrics are shown. */
     rubricIds?: string[];
     /** Dutch VO track (VMBO-BB/KB/TL, HAVO, VWO) */
     voTrack?: VoTrack;
+    /** Custom hex color for visual scanning in class lists; falls back to the VO_TRACK_COLORS swatch when unset. */
+    color?: string;
     /** ISO timestamp of the last local edit; used for last-write-wins sync conflict resolution */
     updatedAt?: string;
     /** Manual sort position in the class list (StudentsPage); undefined sorts last by insertion order */
@@ -450,7 +457,7 @@ export interface Class {
 
 export interface CohortFilter {
     voTrack: VoTrack | 'all';
-    year: string | 'all';
+    year: SchoolYear | 'all';
 }
 
 export interface ScoreEntry {
@@ -506,6 +513,8 @@ export interface StudentRubric {
      * group — there is no per-criterion individual/collaborative split yet (phase 1).
      */
     groupId?: string;
+    /** ISO timestamp set when the grade was soft-deleted by a teacher; presence hides it from grading/analytics. */
+    deletedAt?: string;
 }
 
 export interface CommentSnippet {

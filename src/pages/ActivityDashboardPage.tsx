@@ -13,7 +13,8 @@ import { getClassStandardsCoverage } from '../utils/standardsCoverageAggregator'
 import ClassCoverageGapPanel from '../components/Standards/ClassCoverageGapPanel';
 import { reorderDisplayOrder } from '../utils/displayOrder';
 import { VO_TRACKS } from '../data/voTracks';
-import type { VoTrack } from '../types';
+import { SCHOOL_YEARS, SCHOOL_YEAR_LABELS } from '../data/schoolYears';
+import type { VoTrack, SchoolYear } from '../types';
 import { nanoid } from '../utils/nanoid';
 
 const SECTION_LABELS: Record<string, string> = {
@@ -43,7 +44,7 @@ export default function ActivityDashboardPage() {
         deleteGradingTask,
     } = useApp();
 
-    const [filterYear, setFilterYear] = useState<string>('all');
+    const [filterYear, setFilterYear] = useState<SchoolYear | 'all'>('all');
     const [filterTrack, setFilterTrack] = useState<VoTrack | 'all'>('all');
     const [coverageClassId, setCoverageClassId] = useState<string>('');
     const [tourRun, setTourRun] = useState(false);
@@ -96,10 +97,10 @@ export default function ActivityDashboardPage() {
         setAssignTaskCell(null);
     }
 
-    const yearOptions = useMemo(() => {
-        const years = new Set(classes.map((c) => c.year).filter((y): y is string => !!y));
-        return Array.from(years).sort();
-    }, [classes]);
+    const yearOptions = useMemo(
+        () => SCHOOL_YEARS.filter((y) => classes.some((c) => c.year === y)),
+        [classes]
+    );
 
     const visibleClasses = useMemo(
         () =>
@@ -232,11 +233,14 @@ export default function ActivityDashboardPage() {
                         {yearOptions.length > 0 && (
                             <div className="form-group" style={{ marginBottom: 0, maxWidth: 140 }}>
                                 <label>{t('statistics.filters.year')}</label>
-                                <select value={filterYear} onChange={(e) => setFilterYear(e.target.value)}>
+                                <select
+                                    value={filterYear}
+                                    onChange={(e) => setFilterYear(e.target.value as SchoolYear | 'all')}
+                                >
                                     <option value="all">{t('statistics.all_classes')}</option>
                                     {yearOptions.map((y) => (
                                         <option key={y} value={y}>
-                                            {y}
+                                            {SCHOOL_YEAR_LABELS[y]}
                                         </option>
                                     ))}
                                 </select>
@@ -363,7 +367,9 @@ export default function ActivityDashboardPage() {
                                                     opacity: 0.7,
                                                 }}
                                             >
-                                                {[cls.year, cls.voTrack?.toUpperCase()].filter(Boolean).join(' · ')}
+                                                {[cls.year && SCHOOL_YEAR_LABELS[cls.year], cls.voTrack?.toUpperCase()]
+                                                    .filter(Boolean)
+                                                    .join(' · ')}
                                             </div>
                                         )}
                                     </th>

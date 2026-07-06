@@ -29,6 +29,18 @@ import type {
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 import { nanoid } from '../utils/nanoid';
+import { SCHOOL_YEARS } from '../data/schoolYears';
+
+/**
+ * `Class.year` used to be free text; classes carrying a pre-Phase-15.1 value that doesn't match
+ * the new SchoolYear enum have it cleared so the class just shows as "year not set" (same as
+ * today) rather than crashing type-narrowed code that assumes a valid enum member.
+ */
+export function sanitizeClassYears(classes: Class[]): Class[] {
+    return classes.map((c) =>
+        c.year && !SCHOOL_YEARS.includes(c.year) ? { ...c, year: undefined } : c
+    );
+}
 
 // ─── Default Grade Scales ──────────────────────────────────────────────────────
 
@@ -307,7 +319,7 @@ export function loadStore(): StoreData {
     return {
         rubrics: load<Rubric[]>(KEYS.rubrics, []),
         students: load<Student[]>(KEYS.students, []),
-        classes: load<Class[]>(KEYS.classes, [{ id: 'default', name: 'Default Class' }]),
+        classes: sanitizeClassYears(load<Class[]>(KEYS.classes, [{ id: 'default', name: 'Default Class' }])),
         studentRubrics: load<StudentRubric[]>(KEYS.studentRubrics, []),
         attachments: load<Attachment[]>(KEYS.attachments, []),
         gradeScales: load<GradeScale[]>(KEYS.gradeScales, DEFAULT_GRADE_SCALES),

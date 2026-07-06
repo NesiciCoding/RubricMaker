@@ -316,6 +316,7 @@ export default function CefrOverviewPage() {
                                                                                     padding: '0 4px',
                                                                                     borderRadius: 3,
                                                                                     background:
+                                                                                        sc.color ??
                                                                                         VO_TRACK_COLORS[sc.voTrack],
                                                                                     color: '#fff',
                                                                                     fontSize: '0.65rem',
@@ -574,7 +575,7 @@ export default function CefrOverviewPage() {
                                                             fontWeight: 700,
                                                             padding: '2px 6px',
                                                             borderRadius: 4,
-                                                            background: VO_TRACK_COLORS[cls.voTrack],
+                                                            background: cls.color ?? VO_TRACK_COLORS[cls.voTrack],
                                                             color: '#fff',
                                                         }}
                                                     >

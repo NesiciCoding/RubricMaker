@@ -12,8 +12,9 @@ import { saveAs } from 'file-saver';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import { calcGradeSummary, calcClassStats, calcEntryPoints, type GradeSummary } from '../utils/gradeCalc';
-import type { StudentRubric, Student, Rubric, RubricCriterion, VoTrack, StudentTest, Test } from '../types';
+import type { StudentRubric, Student, Rubric, RubricCriterion, VoTrack, SchoolYear, StudentTest, Test } from '../types';
 import { VO_TRACKS } from '../data/voTracks';
+import { SCHOOL_YEARS, SCHOOL_YEAR_LABELS } from '../data/schoolYears';
 import { calcTestMaxPoints, calcStudentTestRawPoints, calcTestPercentage } from '../utils/testCalc';
 import { getClassGoalScores } from '../utils/learningGoalsAggregator';
 import LearningGoalChart from '../components/Statistics/LearningGoalChart';
@@ -72,12 +73,12 @@ export default function StatisticsPage() {
 
     // ── Track / year filters (shared across rubric + compare modes) ───────────
     const [filterTrack, setFilterTrack] = useState<VoTrack | 'all'>('all');
-    const [filterYear, setFilterYear] = useState<string>('all');
+    const [filterYear, setFilterYear] = useState<SchoolYear | 'all'>('all');
 
-    const yearOptions = useMemo(() => {
-        const years = new Set(classes.map((c) => c.year).filter((y): y is string => !!y));
-        return Array.from(years).sort();
-    }, [classes]);
+    const yearOptions = useMemo(
+        () => SCHOOL_YEARS.filter((y) => classes.some((c) => c.year === y)),
+        [classes]
+    );
 
     const filteredClasses = useMemo(
         () =>
@@ -634,11 +635,14 @@ export default function StatisticsPage() {
                             {yearOptions.length > 0 && (
                                 <div className="form-group" style={{ maxWidth: 140, marginBottom: 0 }}>
                                     <label>{t('statistics.filters.year')}</label>
-                                    <select value={filterYear} onChange={(e) => setFilterYear(e.target.value)}>
+                                    <select
+                                        value={filterYear}
+                                        onChange={(e) => setFilterYear(e.target.value as SchoolYear | 'all')}
+                                    >
                                         <option value="all">{t('statistics.all_classes')}</option>
                                         {yearOptions.map((y) => (
                                             <option key={y} value={y}>
-                                                {y}
+                                                {SCHOOL_YEAR_LABELS[y]}
                                             </option>
                                         ))}
                                     </select>

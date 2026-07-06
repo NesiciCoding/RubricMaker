@@ -1726,11 +1726,14 @@ function AuditTab() {
 
 function ArchiveTab() {
     const { t } = useTranslation();
-    const { archivedStudents, restoreStudent, anonymizeStudent, classes } = useApp();
+    const { archivedStudents, restoreStudent, anonymizeStudent, classes, deletedStudentRubrics, restoreStudentRubric, students, rubrics } =
+        useApp();
 
     const classMap = new Map(classes.map((c) => [c.id, c.name]));
+    const studentMap = new Map(students.map((s) => [s.id, s.name]));
+    const rubricMap = new Map(rubrics.map((r) => [r.id, r.name]));
 
-    if (archivedStudents.length === 0) {
+    if (archivedStudents.length === 0 && deletedStudentRubrics.length === 0) {
         return (
             <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
                 {t('admin.archive_empty')}
@@ -1740,6 +1743,46 @@ function ArchiveTab() {
 
     return (
         <div>
+            {deletedStudentRubrics.length > 0 && (
+                <div style={{ marginBottom: 32 }}>
+                    <h3 style={{ fontSize: '1rem', marginBottom: 4 }}>{t('admin.deleted_grades_title')}</h3>
+                    <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: 16 }}>
+                        {t('admin.deleted_grades_desc')}
+                    </p>
+                    <table className="data-table">
+                        <thead>
+                            <tr>
+                                <th>{t('admin.audit_col_time')}</th>
+                                <th>{t('admin.col_name')}</th>
+                                <th>{t('admin.deleted_grades_col_rubric')}</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {deletedStudentRubrics.map((sr) => (
+                                <tr key={sr.id}>
+                                    <td style={{ color: 'var(--text-muted)', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
+                                        {sr.deletedAt ? new Date(sr.deletedAt).toLocaleDateString() : '—'}
+                                    </td>
+                                    <td>{studentMap.get(sr.studentId) ?? '—'}</td>
+                                    <td style={{ color: 'var(--text-muted)' }}>{rubricMap.get(sr.rubricId) ?? '—'}</td>
+                                    <td style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            onClick={() => restoreStudentRubric(sr.id)}
+                                            title={t('admin.btn_restore')}
+                                        >
+                                            <RotateCcw size={14} /> {t('admin.btn_restore')}
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+            {archivedStudents.length > 0 && (
+            <>
             <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: 16 }}>
                 {t('admin.archive_desc')}
             </p>
@@ -1795,6 +1838,8 @@ function ArchiveTab() {
                     ))}
                 </tbody>
             </table>
+            </>
+            )}
         </div>
     );
 }

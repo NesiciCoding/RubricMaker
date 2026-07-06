@@ -375,10 +375,10 @@ describe('stress test — large dataset', () => {
     const CRITERIA = Array.from({ length: 8 }, (_, i) => mkCriterion(`cr${i}`, `Criterion ${i}`, 10));
     const RUBRICS = Array.from({ length: 6 }, (_, i) => mkRubric(`rb${i}`, CRITERIA, `2024-0${i + 1}-15`));
     const CLASSES: Class[] = [
-        { id: 'ca', name: 'Alpha', voTrack: 'havo', year: '3' },
-        { id: 'cb', name: 'Beta', voTrack: 'vwo', year: '3' },
-        { id: 'cc', name: 'Gamma', voTrack: 'vmbo-tl', year: '2' },
-        { id: 'cd', name: 'Delta', voTrack: 'havo', year: '4' },
+        { id: 'ca', name: 'Alpha', voTrack: 'havo', year: 'jaar-3' },
+        { id: 'cb', name: 'Beta', voTrack: 'vwo', year: 'jaar-3' },
+        { id: 'cc', name: 'Gamma', voTrack: 'vmbo-tl', year: 'jaar-2' },
+        { id: 'cd', name: 'Delta', voTrack: 'havo', year: 'jaar-4' },
     ];
     const STUDENTS = CLASSES.flatMap((cls) =>
         Array.from({ length: 40 }, (_, i) => mkStudent(`${cls.id}_s${i}`, cls.id))
