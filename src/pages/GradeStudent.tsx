@@ -696,7 +696,7 @@ export default function GradeStudent() {
                                 className="btn btn-ghost btn-icon btn-sm"
                                 style={{ color: 'var(--red)' }}
                                 onClick={() => {
-                                    setDeleteGradeScope(groupMemberNames.length > 0 ? 'group' : 'student');
+                                    setDeleteGradeScope('student');
                                     setShowDeleteGrade(true);
                                 }}
                                 title={t('gradeStudent.action_delete_grade')}

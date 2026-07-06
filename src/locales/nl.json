@@ -1769,7 +1769,7 @@
         "archive_desc": "Gearchiveerde leerlingen zijn verwijderd uit klassenlijsten, maar hun cijfers blijven bewaard. Anonimiseer om persoonlijke gegevens te wissen.",
         "deleted_grades_title": "Onlangs verwijderde cijfers",
         "deleted_grades_desc": "Cijfers die door een docent zijn verwijderd op de beoordelingspagina. Herstel om ze weer actief te gebruiken.",
-        "deleted_grades_col_rubric": "Rubric",
+        "deleted_grades_col_rubric": "Rubriek",
         "col_class": "Klas",
         "btn_restore": "Herstellen",
         "audit_empty": "Nog geen auditgebeurtenissen geregistreerd.",

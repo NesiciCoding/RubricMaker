@@ -1843,7 +1843,7 @@
         "archive_desc": "Archivierte Schüler werden aus den Klassenlisten entfernt, ihre Noten bleiben jedoch erhalten. Anonymisieren, um personenbezogene Daten zu löschen.",
         "deleted_grades_title": "Kürzlich gelöschte Noten",
         "deleted_grades_desc": "Noten, die von einer Lehrkraft auf der Bewertungsseite gelöscht wurden. Wiederherstellen, um sie wieder aktiv zu nutzen.",
-        "deleted_grades_col_rubric": "Rubric",
+        "deleted_grades_col_rubric": "Rubrik",
         "col_class": "Klasse",
         "btn_restore": "Wiederherstellen",
         "audit_empty": "Noch keine Audit-Ereignisse aufgezeichnet.",

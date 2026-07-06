@@ -30,7 +30,7 @@ import Papa from 'papaparse';
 import CsvImportModal from '../components/Students/CsvImportModal';
 import StudentPasswordSlipSheet, { type PasswordSlip } from '../components/Students/StudentPasswordSlipSheet';
 import { useTranslation, Trans } from 'react-i18next';
-import { VO_TRACKS, VO_TRACK_LABELS, VO_TRACK_COLORS, isAdjacentTrack } from '../data/voTracks';
+import { VO_TRACKS, VO_TRACK_LABELS, VO_TRACK_COLORS, isAdjacentTrack, getTrackBadgeColor } from '../data/voTracks';
 import { SCHOOL_YEARS, SCHOOL_YEAR_LABELS, SCHOOL_YEAR_HAS_TRACK } from '../data/schoolYears';
 import type { VoTrack, SchoolYear, StudentRubric, Rubric, GradeScale } from '../types';
 import { calcGradeSummary, calcEntryPoints, calcLetterGrade, calcGradeColor } from '../utils/gradeCalc';
@@ -532,8 +532,7 @@ export default function StudentsPage() {
                                                                             fontWeight: 700,
                                                                             padding: '1px 5px',
                                                                             borderRadius: 3,
-                                                                            background:
-                                                                                c.color ?? VO_TRACK_COLORS[c.voTrack],
+                                                                            background: getTrackBadgeColor(c),
                                                                             color: '#fff',
                                                                             opacity: 1,
                                                                         }}
