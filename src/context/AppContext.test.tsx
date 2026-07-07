@@ -296,6 +296,40 @@ describe('AppContext', () => {
         expect(new Set(result.current.studentRubrics.map((sr) => sr.studentId))).toEqual(new Set(['s1', 's2', 's3']));
     });
 
+    it('should reuse an existing ungrouped StudentRubric instead of creating a duplicate', () => {
+        const { result } = renderHook(() => useApp(), { wrapper });
+        act(() => {
+            result.current.addRubric({
+                name: 'Group Project',
+                subject: '',
+                description: '',
+                criteria: [{ id: 'c1', title: 'C1', description: '', weight: 100, levels: [] }],
+                gradeScaleId: 'default-scale',
+                format: result.current.settings.defaultFormat,
+                attachmentIds: [],
+                totalMaxPoints: 100,
+                scoringMode: 'total-points',
+            });
+        });
+        const rubricId = result.current.rubrics[0].id;
+
+        act(() => {
+            result.current.createStudentRubric(rubricId, 's1');
+        });
+        const existingId = result.current.studentRubrics[0].id;
+
+        let group: ReturnType<typeof result.current.createGroupStudentRubrics> = [];
+        act(() => {
+            group = result.current.createGroupStudentRubrics(rubricId, ['s1', 's2']);
+        });
+
+        // No duplicate record for s1 — the pre-existing StudentRubric gets the groupId instead.
+        expect(result.current.studentRubrics).toHaveLength(2);
+        const s1Record = group.find((sr) => sr.studentId === 's1');
+        expect(s1Record?.id).toBe(existingId);
+        expect(s1Record?.groupId).toBeDefined();
+    });
+
     it('should merge classes', () => {
         const { result } = renderHook(() => useApp(), { wrapper });
         let c1 = '',
