@@ -90,6 +90,21 @@ describe('loadStore', () => {
         const store = loadStore();
         expect(store.rubrics).toEqual([]);
     });
+
+    it('clears a pre-Phase-15.1 free-text Class.year that no longer matches the SchoolYear enum', () => {
+        // Cast bypasses the SchoolYear type at the boundary to simulate old data on disk.
+        const classes = [{ id: 'c1', name: 'Class A', year: '2024' } as unknown as Class];
+        saveClasses(classes);
+        const store = loadStore();
+        expect(store.classes[0].year).toBeUndefined();
+    });
+
+    it('keeps a valid SchoolYear value on Class.year untouched', () => {
+        const classes: Class[] = [{ id: 'c1', name: 'Class A', year: 'jaar-3' }];
+        saveClasses(classes);
+        const store = loadStore();
+        expect(store.classes[0].year).toBe('jaar-3');
+    });
 });
 
 describe('save functions', () => {

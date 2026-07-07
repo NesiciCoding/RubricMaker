@@ -28,3 +28,13 @@ export const VO_TRACK_DEFAULT_CEFR: Record<VoTrack, CefrLevel> = {
     havo: 'B1',
     vwo: 'B2',
 };
+
+/** True when two tracks are the same or immediate neighbours in VO_TRACKS — used to bound a per-student track override to the class default. */
+export function isAdjacentTrack(a: VoTrack, b: VoTrack): boolean {
+    return Math.abs(VO_TRACKS.indexOf(a) - VO_TRACKS.indexOf(b)) <= 1;
+}
+
+/** Custom color if set, else the track's swatch; undefined when neither is available. */
+export function getTrackBadgeColor(entity: { color?: string; voTrack?: VoTrack }): string | undefined {
+    return entity.color ?? (entity.voTrack ? VO_TRACK_COLORS[entity.voTrack] : undefined);
+}

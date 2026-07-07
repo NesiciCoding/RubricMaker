@@ -3,9 +3,9 @@ import { getCohortStudentIds, isAllCohorts, ALL_COHORTS } from './cohortAggregat
 import type { Class, Student } from '../types';
 
 const classes: Class[] = [
-    { id: 'c1', name: 'Havo 3A', year: '2026', voTrack: 'havo' },
-    { id: 'c2', name: 'Havo 3B', year: '2026', voTrack: 'havo' },
-    { id: 'c3', name: 'Vwo 3A', year: '2026', voTrack: 'vwo' },
+    { id: 'c1', name: 'Havo 3A', year: 'jaar-3', voTrack: 'havo' },
+    { id: 'c2', name: 'Havo 3B', year: 'jaar-3', voTrack: 'havo' },
+    { id: 'c3', name: 'Vwo 3A', year: 'jaar-3', voTrack: 'vwo' },
 ];
 
 const students: Student[] = [
@@ -26,18 +26,18 @@ describe('getCohortStudentIds', () => {
     });
 
     it('includes students currently in a matching class', () => {
-        const ids = getCohortStudentIds(students, classes, { voTrack: 'havo', year: '2026' });
+        const ids = getCohortStudentIds(students, classes, { voTrack: 'havo', year: 'jaar-3' });
         expect(ids.has('s1')).toBe(true);
         expect(ids.has('s3')).toBe(false);
     });
 
     it('includes students who passed through a matching class even after transferring out', () => {
-        const ids = getCohortStudentIds(students, classes, { voTrack: 'havo', year: '2026' });
+        const ids = getCohortStudentIds(students, classes, { voTrack: 'havo', year: 'jaar-3' });
         expect(ids.has('s2')).toBe(true);
     });
 
     it('filters by year alone when track is "all"', () => {
-        const ids = getCohortStudentIds(students, classes, { voTrack: 'all', year: '2026' });
+        const ids = getCohortStudentIds(students, classes, { voTrack: 'all', year: 'jaar-3' });
         expect(ids.size).toBe(3);
     });
 });

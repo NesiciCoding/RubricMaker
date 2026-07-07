@@ -73,6 +73,7 @@ import {
     loadPendingQueue,
     onStorageQuotaExceeded,
     clearLocalData,
+    sanitizeClassYears,
 } from '../store/storage';
 import { mergeStoreData } from '../utils/syncMerge';
 import { useTranslation } from 'react-i18next';
@@ -106,7 +107,8 @@ type Action =
     | { type: 'UPDATE_CLASS'; payload: Class }
     | { type: 'DELETE_CLASS'; id: string }
     | { type: 'SAVE_STUDENT_RUBRIC'; payload: StudentRubric }
-    | { type: 'DELETE_STUDENT_RUBRIC'; id: string }
+    | { type: 'DELETE_STUDENT_RUBRIC'; id: string; scope: 'student' | 'group' }
+    | { type: 'RESTORE_STUDENT_RUBRIC'; id: string }
     | { type: 'SAVE_RUBRIC_SELF_ASSESSMENT'; id: string; levels: Record<string, string | null>; reflection: string }
     | { type: 'ANONYMIZE_STUDENT'; id: string }
     | { type: 'ADD_ATTACHMENT'; payload: Attachment }
@@ -295,7 +297,29 @@ function reducer(state: StoreData, action: Action): StoreData {
             return { ...state, studentRubrics: next };
         }
         case 'DELETE_STUDENT_RUBRIC': {
-            const next = state.studentRubrics.filter((sr) => sr.id !== action.id);
+            const target = state.studentRubrics.find((sr) => sr.id === action.id);
+            const deletedAt = new Date().toISOString();
+            const next = state.studentRubrics.map((sr) => {
+                if (sr.id === action.id) {
+                    return {
+                        ...sr,
+                        deletedAt,
+                        updatedAt: deletedAt,
+                        groupId: action.scope === 'student' ? undefined : sr.groupId,
+                    };
+                }
+                if (action.scope === 'group' && target?.groupId && sr.groupId === target.groupId) {
+                    return { ...sr, deletedAt, updatedAt: deletedAt };
+                }
+                return sr;
+            });
+            if (isOffline()) saveStudentRubrics(next);
+            return { ...state, studentRubrics: next };
+        }
+        case 'RESTORE_STUDENT_RUBRIC': {
+            const next = state.studentRubrics.map((sr) =>
+                sr.id === action.id ? { ...sr, deletedAt: undefined, updatedAt: new Date().toISOString() } : sr
+            );
             if (isOffline()) saveStudentRubrics(next);
             return { ...state, studentRubrics: next };
         }
@@ -754,7 +778,10 @@ interface AppContextValue extends StoreData {
     saveRubricSelfAssessment: (id: string, levels: Record<string, string | null>, reflection: string) => void;
     createStudentRubric: (rubricId: string, studentId: string) => StudentRubric;
     createGroupStudentRubrics: (rubricId: string, studentIds: string[]) => StudentRubric[];
-    deleteStudentRubric: (id: string) => void;
+    deleteStudentRubric: (id: string, scope: 'student' | 'group') => void;
+    restoreStudentRubric: (id: string) => void;
+    /** Soft-deleted grades (Phase 15.3), surfaced for a "recently deleted" restore view; excluded from `studentRubrics`. */
+    deletedStudentRubrics: StudentRubric[];
     addAttachment: (a: Omit<Attachment, 'id' | 'addedAt'>) => Attachment;
     deleteAttachment: (id: string) => void;
     addGradeScale: (gs: Omit<GradeScale, 'id'>) => GradeScale;
@@ -984,7 +1011,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // seeds the diff baseline in the same step. Centralized so the seed/no-seed
     // choice can't drift out of sync between call sites the way it caused this
     // bug in the first place.
-    const applyHydrated = useCallback((merged: StoreData, seedDiffBaseline: boolean) => {
+    const applyHydrated = useCallback((mergedIn: StoreData, seedDiffBaseline: boolean) => {
+        const merged = { ...mergedIn, classes: sanitizeClassYears(mergedIn.classes) };
         dispatch({ type: 'SET_ALL', payload: merged });
         if (seedDiffBaseline) {
             // eslint-disable-next-line react-hooks/immutability -- cross-effect ref hand-off is intentional
@@ -1495,7 +1523,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         [state.rubrics]
     );
 
-    const deleteStudentRubric = useCallback((id: string) => dispatch({ type: 'DELETE_STUDENT_RUBRIC', id }), []);
+    const deleteStudentRubric = useCallback((id: string, scope: 'student' | 'group') => {
+        logAuditEvent('grade', 'student_rubric_delete', 'student_rubric', id, { scope });
+        dispatch({ type: 'DELETE_STUDENT_RUBRIC', id, scope });
+    }, []);
+
+    const restoreStudentRubric = useCallback((id: string) => {
+        logAuditEvent('grade', 'student_rubric_restore', 'student_rubric', id);
+        dispatch({ type: 'RESTORE_STUDENT_RUBRIC', id });
+    }, []);
 
     const addAttachment = useCallback((a: Omit<Attachment, 'id' | 'addedAt'>): Attachment => {
         const att: Attachment = { ...a, id: nanoid(), addedAt: new Date().toISOString() };
@@ -2009,6 +2045,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         ...state,
         students: state.students.filter((s) => !s.archivedAt),
         archivedStudents: state.students.filter((s) => !!s.archivedAt),
+        studentRubrics: state.studentRubrics.filter((sr) => !sr.deletedAt),
+        deletedStudentRubrics: state.studentRubrics.filter((sr) => !!sr.deletedAt),
         dispatch,
         addRubric,
         updateRubric,
@@ -2026,6 +2064,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         createStudentRubric,
         createGroupStudentRubrics,
         deleteStudentRubric,
+        restoreStudentRubric,
         addAttachment,
         deleteAttachment,
         addGradeScale,

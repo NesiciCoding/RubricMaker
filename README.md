@@ -24,7 +24,7 @@ A comprehensive rubric creation and grading tool built with React and TypeScript
 
 ### 2. Grading Interface
 
-- **Student management**: Manage students and organise them into classes, with Dutch VO track (VMBO/HAVO/VWO) support.
+- **Student management**: Manage students and organise them into classes, each with a Dutch school year (groep 7/8, jaar 1–6) and VO track (VMBO-BB/KB/TL, HAVO, VWO) — jaar 1–6 only, groep 7/8 classes have no track. A student's own track can differ from their class default by at most one adjacent level. Classes can also carry a custom color for faster visual scanning, falling back to the track's default color.
 - **Interactive grading**: Click levels, toggle sub-items, or use the slider for point ranges.
 - **Score modifiers**: Apply percentage, point, or level adjustments with a reason.
 - **Comment Bank**: Tag and insert reusable feedback snippets while grading.
@@ -38,6 +38,7 @@ A comprehensive rubric creation and grading tool built with React and TypeScript
 - **Co-grading & moderation**: Send a graded submission to a colleague for an independent second marking (reuses the peer review screen and math, applied teacher-to-teacher). Disputes above a configurable point threshold surface in a Moderation queue with a per-criterion delta breakdown and a keep/accept resolution.
 - **Grading task assignment**: From the Activity Dashboard, batch-assign a class's ungraded submissions for a rubric to a specific colleague; pending tasks list above the grid and clear automatically once graded.
 - **Student messaging**: Portal-authenticated students can ask a question about a rubric grade, test, or essay (or a general question) from their portal; teachers reply from a dedicated Messages inbox, or start a thread themselves. Requires Supabase — a student with no portal login has no way to send or receive a message.
+- **Deleting a grade**: Remove a student's grade from their grading page (with confirmation). Group-graded grades prompt for scope — just that student's copy, or the whole group's shared grade. Deleted grades are soft-deleted and restorable from Admin → Archive → Recently deleted grades.
 
 ### 3. CEFR & Language Assessment
 

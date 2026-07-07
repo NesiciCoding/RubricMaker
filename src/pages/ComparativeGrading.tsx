@@ -18,6 +18,7 @@ import DOMPurify from 'dompurify';
 import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
 import { getComparativeTourSteps } from '../data/TutorialSteps';
+import { SCHOOL_YEAR_LABELS } from '../data/schoolYears';
 import { nanoid } from '../utils/nanoid';
 import { useTranslation } from 'react-i18next';
 import { calcGradeSummary } from '../utils/gradeCalc';
@@ -59,7 +60,7 @@ function ClassPicker({ rubricId }: { rubricId: string }) {
         const cls = isCombined ? null : classes.find((c) => c.id === selectedClassId);
         const scopeLabel = isCombined
             ? t('comparativeGrading.all_classes_scope', { names: offerClasses.map((c) => c.name).join(', ') })
-            : `${cls?.name}${cls?.year ? ` — ${cls.year}` : ''}`;
+            : `${cls?.name}${cls?.year ? ` — ${SCHOOL_YEAR_LABELS[cls.year]}` : ''}`;
 
         return (
             <>
@@ -168,7 +169,7 @@ function ClassPicker({ rubricId }: { rubricId: string }) {
                         {offerClasses.map((c) => (
                             <button key={c.id} className="btn btn-secondary" onClick={() => setSelectedClassId(c.id)}>
                                 {c.name}
-                                {c.year ? ` — ${c.year}` : ''}
+                                {c.year ? ` — ${SCHOOL_YEAR_LABELS[c.year]}` : ''}
                             </button>
                         ))}
                     </div>

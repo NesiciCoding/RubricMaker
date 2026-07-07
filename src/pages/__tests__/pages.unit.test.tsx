@@ -103,6 +103,8 @@ function makeApp(overrides = {}) {
         saveStudentRubric: noop,
         createStudentRubric: vi.fn(() => mockSr),
         deleteStudentRubric: noop,
+        restoreStudentRubric: noop,
+        deletedStudentRubrics: [],
         addAttachment: vi.fn(),
         deleteAttachment: mockDeleteAttachment,
         addGradeScale: vi.fn(() => mockGradeScale),

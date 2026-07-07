@@ -309,6 +309,85 @@ describe('AppContext — extended actions', () => {
         expect(sr.entries.some((e) => e.criterionId === 'c2')).toBe(true);
     });
 
+    // ─── Soft-delete grades (Phase 15.3) ─────────────────────────────────────
+
+    it('deleteStudentRubric soft-deletes a solo grade and restoreStudentRubric brings it back', () => {
+        const { result } = renderHook(() => useApp(), { wrapper });
+        act(() => {
+            result.current.addRubric(makeRubric());
+        });
+        const rubricId = result.current.rubrics[0].id;
+        act(() => {
+            result.current.addStudent({ name: 'Alice', classId: 'c1' });
+        });
+        act(() => {
+            result.current.createStudentRubric(rubricId, result.current.students[0].id);
+        });
+        const srId = result.current.studentRubrics[0].id;
+
+        act(() => {
+            result.current.deleteStudentRubric(srId, 'student');
+        });
+        expect(result.current.studentRubrics).toHaveLength(0);
+        expect(result.current.deletedStudentRubrics).toHaveLength(1);
+        expect(result.current.deletedStudentRubrics[0].deletedAt).toBeDefined();
+
+        act(() => {
+            result.current.restoreStudentRubric(srId);
+        });
+        expect(result.current.studentRubrics).toHaveLength(1);
+        expect(result.current.deletedStudentRubrics).toHaveLength(0);
+    });
+
+    it('deleteStudentRubric with scope "group" soft-deletes every sibling sharing groupId', () => {
+        const { result } = renderHook(() => useApp(), { wrapper });
+        act(() => {
+            result.current.addRubric(makeRubric());
+        });
+        const rubricId = result.current.rubrics[0].id;
+        act(() => {
+            result.current.addStudent({ name: 'Alice', classId: 'c1' });
+            result.current.addStudent({ name: 'Bob', classId: 'c1' });
+        });
+        const studentIds = result.current.students.map((s) => s.id);
+        act(() => {
+            result.current.createGroupStudentRubrics(rubricId, studentIds);
+        });
+        const [srA] = result.current.studentRubrics;
+
+        act(() => {
+            result.current.deleteStudentRubric(srA.id, 'group');
+        });
+        expect(result.current.studentRubrics).toHaveLength(0);
+        expect(result.current.deletedStudentRubrics).toHaveLength(2);
+    });
+
+    it('deleteStudentRubric with scope "student" only removes the target and detaches it from the group', () => {
+        const { result } = renderHook(() => useApp(), { wrapper });
+        act(() => {
+            result.current.addRubric(makeRubric());
+        });
+        const rubricId = result.current.rubrics[0].id;
+        act(() => {
+            result.current.addStudent({ name: 'Alice', classId: 'c1' });
+            result.current.addStudent({ name: 'Bob', classId: 'c1' });
+        });
+        const studentIds = result.current.students.map((s) => s.id);
+        act(() => {
+            result.current.createGroupStudentRubrics(rubricId, studentIds);
+        });
+        const [srA, srB] = result.current.studentRubrics;
+
+        act(() => {
+            result.current.deleteStudentRubric(srA.id, 'student');
+        });
+        expect(result.current.studentRubrics).toHaveLength(1);
+        expect(result.current.studentRubrics[0].id).toBe(srB.id);
+        expect(result.current.studentRubrics[0].groupId).toBe(srB.groupId);
+        expect(result.current.deletedStudentRubrics).toHaveLength(1);
+        expect(result.current.deletedStudentRubrics[0].groupId).toBeUndefined();
+    });
+
     // ─── Vocabulary Items ─────────────────────────────────────────────────────
 
     it('adds, updates, and deletes vocabulary items', () => {
