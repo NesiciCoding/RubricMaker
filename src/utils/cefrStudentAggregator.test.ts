@@ -905,25 +905,25 @@ describe('getCefrStudentOverview — summary statistics', () => {
     });
 });
 
-describe('highestLevelForSkill', () => {
-    function makeCell(overrides: Partial<CefrCellData> = {}): CefrCellData {
-        return {
-            skill: 'reading',
-            level: 'A2',
-            rubricCount: 1,
-            avgScore: 80,
-            threshold: 70,
-            rubricAchieved: true,
-            evidence: [],
-            totalDescriptors: 0,
-            confidentCount: 0,
-            confidenceRate: 0,
-            state: 'achieved',
-            descriptors: [],
-            ...overrides,
-        };
-    }
+function makeCell(overrides: Partial<CefrCellData> = {}): CefrCellData {
+    return {
+        skill: 'reading',
+        level: 'A2',
+        rubricCount: 1,
+        avgScore: 80,
+        threshold: 70,
+        rubricAchieved: true,
+        evidence: [],
+        totalDescriptors: 0,
+        confidentCount: 0,
+        confidenceRate: 0,
+        state: 'achieved',
+        descriptors: [],
+        ...overrides,
+    };
+}
 
+describe('highestLevelForSkill', () => {
     it('ignores cells for other skills and cells with no data', () => {
         const cells = [
             makeCell({ skill: 'writing', level: 'C1' }),
@@ -959,24 +959,6 @@ describe('highestLevelForSkill', () => {
 });
 
 describe('overallLevel', () => {
-    function makeCell(overrides: Partial<CefrCellData> = {}): CefrCellData {
-        return {
-            skill: 'reading',
-            level: 'A2',
-            rubricCount: 1,
-            avgScore: 80,
-            threshold: 70,
-            rubricAchieved: true,
-            evidence: [],
-            totalDescriptors: 0,
-            confidentCount: 0,
-            confidenceRate: 0,
-            state: 'achieved',
-            descriptors: [],
-            ...overrides,
-        };
-    }
-
     it('returns null when no skill has any data', () => {
         expect(overallLevel([], ['reading', 'writing'])).toBeNull();
     });
