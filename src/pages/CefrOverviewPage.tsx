@@ -19,7 +19,7 @@ import {
 } from '../utils/cefrStudentAggregator';
 import { PROGRESS_STATUS_COLOR } from '../utils/cefrOrdinal';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
-import { VO_TRACK_LABELS, VO_TRACK_COLORS, VO_TRACK_DEFAULT_CEFR } from '../data/voTracks';
+import { VO_TRACK_LABELS, VO_TRACK_DEFAULT_CEFR, getTrackBadgeColor } from '../data/voTracks';
 import type { CefrSkill } from '../types';
 
 export default function CefrOverviewPage() {
@@ -331,9 +331,7 @@ export default function CefrOverviewPage() {
                                                                                     marginLeft: 4,
                                                                                     padding: '0 4px',
                                                                                     borderRadius: 3,
-                                                                                    background:
-                                                                                        sc.color ??
-                                                                                        VO_TRACK_COLORS[sc.voTrack],
+                                                                                    background: getTrackBadgeColor(sc),
                                                                                     color: '#fff',
                                                                                     fontSize: '0.65rem',
                                                                                     fontWeight: 700,
@@ -619,7 +617,7 @@ export default function CefrOverviewPage() {
                                                             fontWeight: 700,
                                                             padding: '2px 6px',
                                                             borderRadius: 4,
-                                                            background: cls.color ?? VO_TRACK_COLORS[cls.voTrack],
+                                                            background: getTrackBadgeColor(cls),
                                                             color: '#fff',
                                                         }}
                                                     >

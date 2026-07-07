@@ -97,10 +97,7 @@ export default function ActivityDashboardPage() {
         setAssignTaskCell(null);
     }
 
-    const yearOptions = useMemo(
-        () => SCHOOL_YEARS.filter((y) => classes.some((c) => c.year === y)),
-        [classes]
-    );
+    const yearOptions = useMemo(() => SCHOOL_YEARS.filter((y) => classes.some((c) => c.year === y)), [classes]);
 
     const visibleClasses = useMemo(
         () =>

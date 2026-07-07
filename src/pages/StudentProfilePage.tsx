@@ -34,7 +34,7 @@ import CefrTrackYearBand from '../components/CEFR/CefrTrackYearBand';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import { getCefrStudentOverview } from '../utils/cefrStudentAggregator';
 import { CEFR_LEVELS, CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
-import { VO_TRACK_LABELS, VO_TRACK_COLORS } from '../data/voTracks';
+import { VO_TRACK_LABELS, getTrackBadgeColor } from '../data/voTracks';
 import RecordingPlayer from '../components/Recordings/RecordingPlayer';
 import type { CefrLevel, CefrSkill, SessionRecording } from '../types';
 export default function StudentProfilePage() {
@@ -479,7 +479,7 @@ export default function StudentProfilePage() {
                                             fontWeight: 700,
                                             padding: '2px 6px',
                                             borderRadius: 4,
-                                            background: cls.color ?? VO_TRACK_COLORS[cls.voTrack],
+                                            background: getTrackBadgeColor(cls),
                                             color: '#fff',
                                         }}
                                     >

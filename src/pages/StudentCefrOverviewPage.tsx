@@ -10,7 +10,7 @@ import StandardsCoveragePanel from '../components/Standards/StandardsCoveragePan
 import { useApp } from '../context/AppContext';
 import { getCefrStudentOverview } from '../utils/cefrStudentAggregator';
 import CefrTrackYearBand from '../components/CEFR/CefrTrackYearBand';
-import { VO_TRACK_LABELS, VO_TRACK_COLORS, VO_TRACK_DEFAULT_CEFR } from '../data/voTracks';
+import { VO_TRACK_LABELS, VO_TRACK_DEFAULT_CEFR, getTrackBadgeColor } from '../data/voTracks';
 import { CEFR_SKILL_LABELS } from '../data/cefrDescriptors';
 
 /**
@@ -143,7 +143,7 @@ export default function StudentCefrOverviewPage() {
                                         fontWeight: 700,
                                         padding: '2px 6px',
                                         borderRadius: 4,
-                                        background: cls.color ?? VO_TRACK_COLORS[cls.voTrack],
+                                        background: getTrackBadgeColor(cls),
                                         color: '#fff',
                                     }}
                                 >
