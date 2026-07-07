@@ -676,6 +676,7 @@ export function importFullBackup(json: string): boolean {
                 data.standardMasteryTargets.every(
                     (t) =>
                         isPlainObject(t) &&
+                        typeof (t as Record<string, unknown>).id === 'string' &&
                         typeof (t as Record<string, unknown>).standardGuid === 'string' &&
                         typeof (t as Record<string, unknown>).year === 'string' &&
                         typeof (t as Record<string, unknown>).targetPercentage === 'number'

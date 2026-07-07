@@ -122,6 +122,7 @@
         "students_step_import_content": "Importa alumnos en bloque desde un archivo CSV, incluidas exportaciones de Magister, para configurar una clase entera de una vez."
     },
     "common": {
+        "actions": "Acciones",
         "unsaved_title": "Cambios sin guardar",
         "unsaved_message": "Tienes cambios sin guardar. Si sales ahora, se perderán.",
         "unsaved_leave": "Salir",
@@ -277,6 +278,8 @@
         "mastery_target_choose_standard": "Elegir estándar…",
         "mastery_target_needs_api_key": "Configura una clave API de Common Standards Project arriba para vincular un estándar.",
         "mastery_target_percentage_label": "Dominio objetivo (%)",
+        "mastery_target_delete_title": "¿Eliminar este objetivo de dominio?",
+        "mastery_target_delete_confirm": "¿Seguro que quieres eliminar este objetivo de dominio? Esta acción no se puede deshacer.",
         "scale_name_letter_10": "Calificaciones con letra (10 puntos)",
         "scale_name_pass_fail": "Aprobado/Suspenso",
         "scale_name_dutch_10": "Escala holandesa (1–10)",
@@ -797,6 +800,7 @@
         "rename_class_title": "Renombrar Clase",
         "form_new_name": "Nuevo Nombre",
         "form_school_year": "Año Escolar",
+        "form_school_year_none": "— Sin año escolar —",
         "form_class_color": "Color de la Clase",
         "merge_class_title": "Fusionar Clase",
         "merge_class_description": "Selecciona la clase de destino para mover todos los estudiantes. La clase actual (<strong>{{className}}</strong>) se eliminará.",

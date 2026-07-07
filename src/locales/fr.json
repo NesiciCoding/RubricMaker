@@ -122,6 +122,7 @@
         "students_step_import_content": "Importez les élèves en masse depuis un fichier CSV, y compris les exports Magister, pour configurer toute une classe d'un coup."
     },
     "common": {
+        "actions": "Actions",
         "unsaved_title": "Modifications non enregistrées",
         "unsaved_message": "Vous avez des modifications non enregistrées. Si vous partez maintenant, elles seront perdues.",
         "unsaved_leave": "Quitter",
@@ -269,6 +270,8 @@
         "mastery_target_choose_standard": "Choisir une norme…",
         "mastery_target_needs_api_key": "Définissez une clé API Common Standards Project ci-dessus pour lier une norme.",
         "mastery_target_percentage_label": "Maîtrise cible (%)",
+        "mastery_target_delete_title": "Supprimer cet objectif de maîtrise ?",
+        "mastery_target_delete_confirm": "Voulez-vous vraiment supprimer cet objectif de maîtrise ? Cette action est irréversible.",
         "scale_name_letter_10": "Notes par lettres (sur 10)",
         "scale_name_pass_fail": "Réussi/Échoué",
         "scale_name_dutch_10": "Échelle néerlandaise (1–10)",
@@ -797,6 +800,7 @@
         "rename_class_title": "Renommer la classe",
         "form_new_name": "Nouveau nom",
         "form_school_year": "Année scolaire",
+        "form_school_year_none": "— Aucune année scolaire —",
         "form_class_color": "Couleur de la classe",
         "merge_class_title": "Fusionner la classe",
         "merge_class_description": "Sélectionnez la classe cible pour y déplacer tous les élèves. La classe actuelle (<strong>{{className}}</strong>) sera supprimée.",
@@ -2242,7 +2246,7 @@
         "gr_group_button": "Note de groupe",
         "gr_group_body_suffix": "sur la liste des rubriques pour choisir deux élèves ou plus qui partageront une note — utile pour les travaux de groupe. Vous arrivez sur l'écran de notation normal pour un seul élève ; enregistrer la note d'un membre copie les scores et commentaires vers le reste du groupe, y compris lors de modifications ultérieures. Chaque élève conserve son propre enregistrement (pour que les commentaires puissent le nommer), mais les scores restent synchronisés dans tout le groupe.",
         "gr_delete_title": "Supprimer une note",
-        "gr_delete_body": "L'icône de corbeille sur la page de notation d'un élève supprime cette note (après confirmation). Pour une note de groupe, on vous demande si vous voulez supprimer uniquement la copie de cet élève ou la note partagée de tout le groupe. Les notes supprimées ne sont pas perdues définitivement — un enseignant/administrateur peut les restaurer depuis Admin → Archive → Notes récemment supprimées.",
+        "gr_delete_body": "L'icône de corbeille sur la page de notation d'un élève supprime cette note (après confirmation). Pour une note de groupe, on vous demande si vous voulez supprimer uniquement la copie de cet élève ou la note partagée de tout le groupe. Les notes supprimées ne sont pas perdues définitivement — un enseignant/administrateur peut les restaurer depuis Admin → Archiver → Notes récemment supprimées.",
         "gr_peer_title": "Évaluation par les pairs & autoévaluation",
         "gr_peer_item_peer_review": "Évaluation par les pairs — partagez une URL avec un élève pour évaluer le travail d'un camarade.",
         "gr_peer_item_self_assess": "Autoévaluation — les élèves s'évaluent eux-mêmes selon les énoncés Can-Do du CECRL. Les résultats sont stockés avec les notes de l'enseignant.",

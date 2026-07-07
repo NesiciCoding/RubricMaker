@@ -1142,7 +1142,7 @@ export default function StudentsPage() {
                                         value={renameClassYear}
                                         onChange={(e) => setRenameClassYear(e.target.value as SchoolYear | '')}
                                     >
-                                        <option value="">{t('voTrack.no_track')}</option>
+                                        <option value="">{t('studentsPage.form_school_year_none')}</option>
                                         {SCHOOL_YEARS.map((year) => (
                                             <option key={year} value={year}>
                                                 {SCHOOL_YEAR_LABELS[year]}
@@ -1190,9 +1190,10 @@ export default function StudentsPage() {
                                     </div>
                                 )}
                                 <div className="form-group">
-                                    <label>{t('studentsPage.form_class_color')}</label>
+                                    <label htmlFor="class-rename-color">{t('studentsPage.form_class_color')}</label>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                         <input
+                                            id="class-rename-color"
                                             type="color"
                                             value={renameClassColor || '#94a3b8'}
                                             onChange={(e) => setRenameClassColor(e.target.value)}

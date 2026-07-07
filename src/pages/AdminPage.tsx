@@ -1738,7 +1738,7 @@ function ArchiveTab() {
     } = useApp();
 
     const classMap = new Map(classes.map((c) => [c.id, c.name]));
-    const studentMap = new Map(students.map((s) => [s.id, s.name]));
+    const studentMap = new Map([...students, ...archivedStudents].map((s) => [s.id, s.name]));
     const rubricMap = new Map(rubrics.map((r) => [r.id, r.name]));
 
     if (archivedStudents.length === 0 && deletedStudentRubrics.length === 0) {
@@ -1763,7 +1763,7 @@ function ArchiveTab() {
                                 <th>{t('admin.audit_col_time')}</th>
                                 <th>{t('admin.col_name')}</th>
                                 <th>{t('admin.deleted_grades_col_rubric')}</th>
-                                <th></th>
+                                <th className="sr-only">{t('common.actions')}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1802,7 +1802,7 @@ function ArchiveTab() {
                                 <th>{t('admin.audit_col_time')}</th>
                                 <th>{t('admin.col_name')}</th>
                                 <th>{t('admin.col_class')}</th>
-                                <th></th>
+                                <th className="sr-only">{t('common.actions')}</th>
                             </tr>
                         </thead>
                         <tbody>

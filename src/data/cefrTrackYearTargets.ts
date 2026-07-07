@@ -5,17 +5,24 @@ function allTracks(range: CefrSubLevelRange): Record<VoTrack, CefrSubLevelRange>
     return { 'vmbo-bb': range, 'vmbo-kb': range, 'vmbo-tl': range, havo: range, vwo: range };
 }
 
+/** Track-agnostic expected range for years with no VO track (groep-7/groep-8) — the single source of truth `getCefrTargetRange` reads for those years, instead of assuming any one track key in `CEFR_TRACK_YEAR_TARGETS` stays identical across all tracks. */
+const UNIFORM_YEAR_TARGETS: Partial<Record<SchoolYear, CefrSubLevelRange>> = {
+    'groep-7': { min: 'pre-a1', max: 'pre-a1' },
+    'groep-8': { min: 'a1', max: 'a1' },
+};
+
 /**
  * Expected CEFR range per (year, track), from the school's curriculum benchmark table.
- * groep-7/groep-8 rows apply uniformly across tracks (see SCHOOL_YEAR_HAS_TRACK). A missing
- * track key for a year means that track doesn't run that year at all (VMBO ends jaar-4, HAVO
- * jaar-5, VWO jaar-6). Range cells ("A1 / A2", "A2 to A2/B1") both resolve to the full span from
- * the lowest to the highest CEFR value named in the cell. The source table's "Bonus Level" row
- * (an aspirational ceiling beyond jaar-6) is out of scope and not modeled here.
+ * groep-7/groep-8 rows apply uniformly across tracks (see SCHOOL_YEAR_HAS_TRACK) via
+ * UNIFORM_YEAR_TARGETS. A missing track key for a year means that track doesn't run that
+ * year at all (VMBO ends jaar-4, HAVO jaar-5, VWO jaar-6). Range cells ("A1 / A2", "A2 to
+ * A2/B1") both resolve to the full span from the lowest to the highest CEFR value named in
+ * the cell. The source table's "Bonus Level" row (an aspirational ceiling beyond jaar-6) is
+ * out of scope and not modeled here.
  */
 export const CEFR_TRACK_YEAR_TARGETS: Record<SchoolYear, Partial<Record<VoTrack, CefrSubLevelRange>>> = {
-    'groep-7': allTracks({ min: 'pre-a1', max: 'pre-a1' }),
-    'groep-8': allTracks({ min: 'a1', max: 'a1' }),
+    'groep-7': allTracks(UNIFORM_YEAR_TARGETS['groep-7']!),
+    'groep-8': allTracks(UNIFORM_YEAR_TARGETS['groep-8']!),
     'jaar-1': {
         'vmbo-bb': { min: 'a1', max: 'a1' },
         'vmbo-kb': { min: 'a1', max: 'a2' },
@@ -63,7 +70,7 @@ export function getCefrTargetRange(
     track: VoTrack | undefined
 ): CefrSubLevelRange | undefined {
     if (!year) return undefined;
-    if (!SCHOOL_YEAR_HAS_TRACK[year]) return CEFR_TRACK_YEAR_TARGETS[year].havo;
+    if (!SCHOOL_YEAR_HAS_TRACK[year]) return UNIFORM_YEAR_TARGETS[year];
     if (!track) return undefined;
     return CEFR_TRACK_YEAR_TARGETS[year][track];
 }

@@ -13,6 +13,7 @@ import { useToast } from '../hooks/useToast';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { nanoid } from '../utils/nanoid';
+import { toLocalDatetimeInput } from '../utils/dateInput';
 import QuestionEditor from '../components/Tests/QuestionEditor';
 import type { TestQuestion, TestSection } from '../types';
 
@@ -50,7 +51,7 @@ export default function TestBuilderPage() {
     const [durationMinutes, setDurationMinutes] = useState(
         existing?.durationMinutes ? String(existing.durationMinutes) : ''
     );
-    const [dueDate, setDueDate] = useState(existing?.dueDate ? existing.dueDate.slice(0, 16) : '');
+    const [dueDate, setDueDate] = useState(existing?.dueDate ? toLocalDatetimeInput(existing.dueDate) : '');
     const [shuffleQuestions, setShuffleQuestions] = useState(existing?.shuffleQuestions ?? false);
     const [requireSEB, setRequireSEB] = useState(existing?.requireSEB ?? false);
     const [gradeScaleId, setGradeScaleId] = useState<string | undefined>(

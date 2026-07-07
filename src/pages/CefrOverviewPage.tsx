@@ -17,7 +17,7 @@ import {
     overallLevel,
     type CefrCellData,
 } from '../utils/cefrStudentAggregator';
-import { PROGRESS_STATUS_COLOR } from '../utils/cefrOrdinal';
+import { PROGRESS_STATUS_COLOR, progressStatusLabelKey } from '../utils/cefrOrdinal';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
 import { VO_TRACK_LABELS, VO_TRACK_DEFAULT_CEFR, getTrackBadgeColor } from '../data/voTracks';
 import type { CefrSkill } from '../types';
@@ -434,9 +434,7 @@ export default function CefrOverviewPage() {
                                                                     ],
                                                                 }}
                                                             >
-                                                                {t(
-                                                                    `cefr.progress_status_${ov.trackYearProgress.status.replace('-', '_')}`
-                                                                )}
+                                                                {t(progressStatusLabelKey(ov.trackYearProgress.status))}
                                                             </span>
                                                         ) : (
                                                             <span

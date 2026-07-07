@@ -122,6 +122,7 @@
         "students_step_import_content": "Bulk-import students from a CSV file, including Magister exports, to set up a whole class at once."
     },
     "common": {
+        "actions": "Actions",
         "unsaved_title": "Unsaved changes",
         "unsaved_message": "You have unsaved changes. If you leave now, they will be lost.",
         "unsaved_leave": "Leave",
@@ -277,6 +278,8 @@
         "mastery_target_choose_standard": "Choose standard…",
         "mastery_target_needs_api_key": "Set a Common Standards Project API key above to link a standard.",
         "mastery_target_percentage_label": "Target mastery (%)",
+        "mastery_target_delete_title": "Delete mastery target?",
+        "mastery_target_delete_confirm": "Are you sure you want to delete this mastery target? This cannot be undone.",
         "scale_name_letter_10": "Letter Grades (10-point)",
         "scale_name_pass_fail": "Pass/Fail",
         "scale_name_dutch_10": "Dutch Scale (1–10)",
@@ -797,6 +800,7 @@
         "rename_class_title": "Rename Class",
         "form_new_name": "New Name",
         "form_school_year": "School Year",
+        "form_school_year_none": "— No school year —",
         "form_class_color": "Class Color",
         "merge_class_title": "Merge Class",
         "merge_class_description": "Select the target class to move all students into. The current class (<strong>{{className}}</strong>) will be deleted.",

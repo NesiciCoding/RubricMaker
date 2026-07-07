@@ -122,6 +122,7 @@
         "students_step_import_content": "Importieren Sie Schüler per CSV-Datei in großer Zahl, einschließlich Magister-Exporten, um eine ganze Klasse auf einmal einzurichten."
     },
     "common": {
+        "actions": "Aktionen",
         "unsaved_title": "Nicht gespeicherte Änderungen",
         "unsaved_message": "Sie haben nicht gespeicherte Änderungen. Wenn Sie jetzt gehen, gehen sie verloren.",
         "unsaved_leave": "Verlassen",
@@ -269,6 +270,8 @@
         "mastery_target_choose_standard": "Standard wählen…",
         "mastery_target_needs_api_key": "Lege oben einen Common-Standards-Project-API-Schlüssel fest, um einen Standard zu verknüpfen.",
         "mastery_target_percentage_label": "Zielbeherrschung (%)",
+        "mastery_target_delete_title": "Beherrschungsziel löschen?",
+        "mastery_target_delete_confirm": "Möchten Sie dieses Beherrschungsziel wirklich löschen? Dies kann nicht rückgängig gemacht werden.",
         "scale_name_letter_10": "Buchstabennoten (10 Punkte)",
         "scale_name_pass_fail": "Bestanden/Nicht bestanden",
         "scale_name_dutch_10": "Niederländische Skala (1–10)",
@@ -797,6 +800,7 @@
         "rename_class_title": "Klasse umbenennen",
         "form_new_name": "Neuer Name",
         "form_school_year": "Schuljahr",
+        "form_school_year_none": "— Kein Schuljahr —",
         "form_class_color": "Klassenfarbe",
         "merge_class_title": "Klassen zusammenführen",
         "merge_class_description": "Wählen Sie die Zielklasse, in die alle Schüler verschoben werden. Die aktuelle Klasse (<strong>{{className}}</strong>) wird gelöscht.",

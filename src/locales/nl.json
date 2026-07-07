@@ -122,6 +122,7 @@
         "students_step_import_content": "Importeer leerlingen in bulk vanuit een CSV-bestand, inclusief Magister-exports, om een hele klas in één keer in te stellen."
     },
     "common": {
+        "actions": "Acties",
         "unsaved_title": "Niet-opgeslagen wijzigingen",
         "unsaved_message": "Je hebt niet-opgeslagen wijzigingen. Als je nu weggaat, gaan ze verloren.",
         "unsaved_leave": "Weggaan",
@@ -277,6 +278,8 @@
         "mastery_target_choose_standard": "Standaard kiezen…",
         "mastery_target_needs_api_key": "Stel hierboven een Common Standards Project API-sleutel in om een standaard te koppelen.",
         "mastery_target_percentage_label": "Streefbeheersing (%)",
+        "mastery_target_delete_title": "Beheersingsdoel verwijderen?",
+        "mastery_target_delete_confirm": "Weet je zeker dat je dit beheersingsdoel wilt verwijderen? Dit kan niet ongedaan worden gemaakt.",
         "scale_name_letter_10": "Lettercijfers (10-punt)",
         "scale_name_pass_fail": "Geslaagd/Gezakt",
         "scale_name_dutch_10": "Nederlandse schaal (1–10)",
@@ -797,6 +800,7 @@
         "rename_class_title": "Klas Hernoemen",
         "form_new_name": "Nieuwe Naam",
         "form_school_year": "Leerjaar",
+        "form_school_year_none": "— Geen leerjaar —",
         "form_class_color": "Klaskleur",
         "merge_class_title": "Klas Samenvoegen",
         "merge_class_description": "Selecteer de doelklas om alle leerlingen naar te verplaatsen. De huidige klas (<strong>{{className}}</strong>) zal worden verwijderd.",

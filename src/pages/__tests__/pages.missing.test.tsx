@@ -106,6 +106,7 @@ vi.mock('../../data/voTracks', () => ({
     VO_TRACK_LABELS: {},
     VO_TRACK_COLORS: {},
     VO_TRACK_DEFAULT_CEFR: {},
+    getTrackBadgeColor: vi.fn(() => '#000'),
 }));
 
 vi.mock('../../utils/cefrStudentAggregator', () => ({

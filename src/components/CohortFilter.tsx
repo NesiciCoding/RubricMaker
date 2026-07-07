@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { VO_TRACKS } from '../data/voTracks';
-import { SCHOOL_YEARS, SCHOOL_YEAR_LABELS } from '../data/schoolYears';
+import { SCHOOL_YEAR_LABELS, getAvailableSchoolYears } from '../data/schoolYears';
 import type { Class, CohortFilter as CohortFilterValue } from '../types';
 
 /** Year/track cohort filter, reused across RubricList, TestListPage, EssayListPage, and the Activity Dashboard (Phase 8.5). */
@@ -14,7 +14,7 @@ export default function CohortFilter({
     onChange: (next: CohortFilterValue) => void;
 }) {
     const { t } = useTranslation();
-    const yearOptions = SCHOOL_YEARS.filter((y) => classes.some((c) => c.year === y));
+    const yearOptions = getAvailableSchoolYears(classes);
     const hasTracks = classes.some((c) => c.voTrack);
     if (yearOptions.length === 0 && !hasTracks) return null;
 

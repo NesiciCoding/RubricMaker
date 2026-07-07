@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useTranslation } from 'react-i18next';
 import type { LearningGoalAggregate } from '../../utils/learningGoalsAggregator';
-import { PROGRESS_STATUS_COLOR } from '../../utils/cefrOrdinal';
+import { PROGRESS_STATUS_COLOR, progressStatusLabelKey } from '../../utils/cefrOrdinal';
 
 interface Props {
     goals: LearningGoalAggregate[];
@@ -117,7 +117,7 @@ export default function LearningGoalChart({ goals, className }: Props) {
                                 color: PROGRESS_STATUS_COLOR[activeGoal.status],
                             }}
                         >
-                            {t(`cefr.progress_status_${activeGoal.status.replace('-', '_')}`)}
+                            {t(progressStatusLabelKey(activeGoal.status))}
                             {activeGoal.targetPercentage !== undefined &&
                                 ` (${t('settings.mastery_target_percentage_label')}: ${activeGoal.targetPercentage}%)`}
                         </p>
