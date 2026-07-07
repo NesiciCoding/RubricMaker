@@ -10,7 +10,7 @@ import StandardsCoveragePanel from '../components/Standards/StandardsCoveragePan
 import { useApp } from '../context/AppContext';
 import { getCefrStudentOverview } from '../utils/cefrStudentAggregator';
 import CefrTrackYearBand from '../components/CEFR/CefrTrackYearBand';
-import { VO_TRACK_LABELS, VO_TRACK_DEFAULT_CEFR, getTrackBadgeColor } from '../data/voTracks';
+import { VO_TRACK_LABELS, VO_TRACK_DEFAULT_CEFR, getTrackBadgeColor, getEffectiveVoTrack } from '../data/voTracks';
 import { CEFR_SKILL_LABELS } from '../data/cefrDescriptors';
 
 /**
@@ -31,7 +31,7 @@ export default function StudentCefrOverviewPage() {
 
     const student = students.find((s) => s.id === id);
     const cls = classes.find((c) => c.id === student?.classId);
-    const effectiveTrack = student?.voTrack ?? cls?.voTrack;
+    const effectiveTrack = getEffectiveVoTrack(student, cls);
     const targetLevel = effectiveTrack ? VO_TRACK_DEFAULT_CEFR[effectiveTrack] : undefined;
 
     const overview = useMemo(

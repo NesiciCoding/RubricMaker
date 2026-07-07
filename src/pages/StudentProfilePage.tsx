@@ -34,7 +34,7 @@ import CefrTrackYearBand from '../components/CEFR/CefrTrackYearBand';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import { getCefrStudentOverview } from '../utils/cefrStudentAggregator';
 import { CEFR_LEVELS, CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
-import { VO_TRACK_LABELS, getTrackBadgeColor } from '../data/voTracks';
+import { VO_TRACK_LABELS, getTrackBadgeColor, getEffectiveVoTrack } from '../data/voTracks';
 import RecordingPlayer from '../components/Recordings/RecordingPlayer';
 import type { CefrLevel, CefrSkill, SessionRecording } from '../types';
 export default function StudentProfilePage() {
@@ -62,7 +62,7 @@ export default function StudentProfilePage() {
 
     const student = students.find((s) => s.id === id);
     const cls = classes.find((c) => c.id === student?.classId);
-    const effectiveTrack = student?.voTrack ?? cls?.voTrack;
+    const effectiveTrack = getEffectiveVoTrack(student, cls);
 
     const history = useMemo(() => {
         if (!student) return [];

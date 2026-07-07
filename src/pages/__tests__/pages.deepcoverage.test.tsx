@@ -210,6 +210,7 @@ vi.mock('../../data/voTracks', () => ({
     VO_TRACK_LABELS: { havo: { en: 'HAVO' } },
     VO_TRACK_COLORS: { havo: '#blue' },
     VO_TRACK_DEFAULT_CEFR: { havo: 'B1' },
+    getEffectiveVoTrack: vi.fn((s, c) => s?.voTrack ?? c?.voTrack),
 }));
 
 vi.mock('../../utils/pdfExport', () => ({

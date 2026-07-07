@@ -19,7 +19,7 @@ import {
 } from '../utils/cefrStudentAggregator';
 import { PROGRESS_STATUS_COLOR, progressStatusLabelKey } from '../utils/cefrOrdinal';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
-import { VO_TRACK_LABELS, VO_TRACK_DEFAULT_CEFR, getTrackBadgeColor } from '../data/voTracks';
+import { VO_TRACK_LABELS, VO_TRACK_DEFAULT_CEFR, getTrackBadgeColor, getEffectiveVoTrack } from '../data/voTracks';
 import type { CefrSkill } from '../types';
 
 export default function CefrOverviewPage() {
@@ -71,7 +71,7 @@ export default function CefrOverviewPage() {
                         selfAssessments,
                         analysisResults,
                         sCls?.year,
-                        s.voTrack ?? sCls?.voTrack
+                        getEffectiveVoTrack(s, sCls)
                     ),
                     cls: sCls,
                 };
@@ -81,7 +81,7 @@ export default function CefrOverviewPage() {
 
     const student = students.find((s) => s.id === selectedStudentId);
     const cls = classes.find((c) => c.id === student?.classId);
-    const effectiveTrack = student?.voTrack ?? cls?.voTrack;
+    const effectiveTrack = getEffectiveVoTrack(student, cls);
     const targetLevel = effectiveTrack ? VO_TRACK_DEFAULT_CEFR[effectiveTrack] : undefined;
 
     const overview = useMemo(
@@ -273,7 +273,7 @@ export default function CefrOverviewPage() {
                                     </thead>
                                     <tbody>
                                         {studentOverviews.map(({ student: s, overview: ov, cls: sc }, i) => {
-                                            const rowTrack = s.voTrack ?? sc?.voTrack;
+                                            const rowTrack = getEffectiveVoTrack(s, sc);
                                             const rowTarget = rowTrack ? VO_TRACK_DEFAULT_CEFR[rowTrack] : undefined;
                                             return (
                                                 <tr

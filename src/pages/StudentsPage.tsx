@@ -320,12 +320,13 @@ export default function StudentsPage() {
         if (editStudent) {
             const prev = students.find((s) => s.id === editStudent.id)!;
             const isTransfer = prev.classId !== editStudentClassId;
+            const targetClass = classes.find((c) => c.id === editStudentClassId);
             updateStudent({
                 ...prev,
                 name,
                 email,
                 classId: editStudentClassId,
-                voTrack: editStudentTrack || undefined,
+                voTrack: targetClass?.voTrack ? editStudentTrack || undefined : undefined,
                 pastClassMemberships: isTransfer
                     ? [
                           ...(prev.pastClassMemberships ?? []),
