@@ -165,6 +165,7 @@ export default function TestListPage() {
                                 >
                                     {visibleTests.map((test, idx) => {
                                         const totalPoints = test.questions.reduce((sum, q) => sum + (q.points || 0), 0);
+                                        const isOverdue = !!test.dueDate && new Date(test.dueDate) < new Date();
                                         return (
                                             <Draggable
                                                 key={test.id}
@@ -226,6 +227,25 @@ export default function TestListPage() {
                                                                         style={{ marginTop: 2 }}
                                                                     >
                                                                         {new Date(test.createdAt).toLocaleDateString()}
+                                                                        {test.dueDate && (
+                                                                            <span
+                                                                                style={{
+                                                                                    marginLeft: 8,
+                                                                                    color: isOverdue
+                                                                                        ? 'var(--red)'
+                                                                                        : undefined,
+                                                                                    fontWeight: isOverdue
+                                                                                        ? 700
+                                                                                        : undefined,
+                                                                                }}
+                                                                            >
+                                                                                {t('tests.due_date_badge', {
+                                                                                    date: new Date(
+                                                                                        test.dueDate
+                                                                                    ).toLocaleDateString(),
+                                                                                })}
+                                                                            </span>
+                                                                        )}
                                                                     </div>
                                                                 </div>
                                                             </div>

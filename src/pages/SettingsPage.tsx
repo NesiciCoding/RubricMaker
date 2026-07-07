@@ -25,16 +25,19 @@ import {
 } from 'lucide-react';
 import CommentBankModal from '../components/Comments/CommentBankModal';
 import TemplateUploadModal from '../components/Rubric/TemplateUploadModal';
+import StandardMasteryTargetModal from '../components/Standards/StandardMasteryTargetModal';
 import Modal from '../components/ui/Modal';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { useDbStatus } from '../hooks/useDbStatus';
-import type { GradeScale, GradeRange, UserRole } from '../types';
+import type { GradeScale, GradeRange, UserRole, StandardMasteryTarget } from '../types';
 import { exportFullBackup } from '../store/storage';
 import { seedDemoData } from '../utils/seedDemoData';
 import { hashPin, verifyPin, isHashed } from '../utils/pinHash';
 import { THEME_BUNDLES, ACCENT_PRESETS } from '../data/themes';
+import { SCHOOL_YEAR_LABELS } from '../data/schoolYears';
+import { VO_TRACK_LABELS } from '../data/voTracks';
 
 type Tab = 'general' | 'teaching' | 'administration';
 
@@ -98,6 +101,8 @@ export default function SettingsPage() {
         classes,
         studentRubrics,
         importBackup,
+        standardMasteryTargets,
+        deleteStandardMasteryTarget,
     } = useApp();
     const { showToast } = useToast();
     const dbStatus = useDbStatus();
@@ -142,8 +147,10 @@ export default function SettingsPage() {
     // ─── Existing state ──────────────────────────────────────────────────────────
     const [editingScaleId, setEditingScaleId] = useState<string | null>(null);
     const [deleteScaleId, setDeleteScaleId] = useState<string | null>(null);
+    const [deleteMasteryTargetId, setDeleteMasteryTargetId] = useState<string | null>(null);
     const [showCommentBank, setShowCommentBank] = useState(false);
     const [showTemplateUpload, setShowTemplateUpload] = useState(false);
+    const [editingMasteryTarget, setEditingMasteryTarget] = useState<StandardMasteryTarget | 'new' | null>(null);
     const [accentInput, setAccentInput] = useState(settings.accentColor || '#37b49c');
     const [accentError, setAccentError] = useState(false);
 
@@ -308,6 +315,12 @@ export default function SettingsPage() {
         deleteGradeScale(deleteScaleId);
         setDeleteScaleId(null);
         if (editingScaleId === deleteScaleId) setEditingScaleId(null);
+    }
+
+    function confirmDeleteMasteryTarget() {
+        if (!deleteMasteryTargetId) return;
+        deleteStandardMasteryTarget(deleteMasteryTargetId);
+        setDeleteMasteryTargetId(null);
     }
 
     function updateRange(scaleId: string, idx: number, patch: Partial<GradeRange>) {
@@ -869,6 +882,72 @@ export default function SettingsPage() {
                                     {t('settings.overdue_threshold_help')}
                                 </div>
                             </div>
+                        </div>
+
+                        {/* Standard mastery targets (CEFR/SLO progress by track/year, roadmap 15.2) */}
+                        <div className="card" style={{ marginBottom: 24 }}>
+                            <div
+                                className="card-header"
+                                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}
+                            >
+                                <div>
+                                    <h3 style={{ margin: 0 }}>{t('settings.mastery_targets_title')}</h3>
+                                    <p className="text-muted text-sm" style={{ marginTop: 4, marginBottom: 0 }}>
+                                        {t('settings.mastery_targets_help')}
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary btn-sm"
+                                    onClick={() => setEditingMasteryTarget('new')}
+                                >
+                                    {t('settings.mastery_target_add_title')}
+                                </button>
+                            </div>
+                            {standardMasteryTargets.length === 0 ? (
+                                <p className="text-muted text-sm" style={{ marginTop: 12 }}>
+                                    {t('settings.mastery_targets_empty')}
+                                </p>
+                            ) : (
+                                <table className="data-table" style={{ marginTop: 12 }}>
+                                    <thead>
+                                        <tr>
+                                            <th>{t('settings.mastery_target_standard_label')}</th>
+                                            <th>{t('studentsPage.form_school_year')}</th>
+                                            <th>{t('voTrack.section_label')}</th>
+                                            <th>{t('settings.mastery_target_percentage_label')}</th>
+                                            <th className="sr-only">{t('common.actions')}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {standardMasteryTargets.map((target) => (
+                                            <tr key={target.id}>
+                                                <td>{target.standardDescription}</td>
+                                                <td>{SCHOOL_YEAR_LABELS[target.year]}</td>
+                                                <td>{target.voTrack ? VO_TRACK_LABELS[target.voTrack] : '—'}</td>
+                                                <td>{target.targetPercentage}%</td>
+                                                <td style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-ghost btn-sm"
+                                                        onClick={() => setEditingMasteryTarget(target)}
+                                                    >
+                                                        {t('common.edit')}
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-ghost btn-sm"
+                                                        style={{ color: 'var(--red)' }}
+                                                        onClick={() => setDeleteMasteryTargetId(target.id)}
+                                                    >
+                                                        {t('common.delete')}
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
                         </div>
 
                         {/* Comment Bank */}
@@ -1617,6 +1696,12 @@ export default function SettingsPage() {
             {/* ── Modals & dialogs ─────────────────────────────────────────── */}
 
             {showCommentBank && <CommentBankModal onClose={() => setShowCommentBank(false)} />}
+            {editingMasteryTarget && (
+                <StandardMasteryTargetModal
+                    existing={editingMasteryTarget === 'new' ? undefined : editingMasteryTarget}
+                    onClose={() => setEditingMasteryTarget(null)}
+                />
+            )}
             {showTemplateUpload && (
                 <TemplateUploadModal
                     onClose={() => setShowTemplateUpload(false)}
@@ -1796,6 +1881,46 @@ export default function SettingsPage() {
                                 {t('common.cancel')}
                             </button>
                             <button className="btn btn-danger" onClick={confirmDeleteScale}>
+                                {t('common.delete')}
+                            </button>
+                        </div>
+                    </div>
+                </Modal>
+            )}
+
+            {/* Delete mastery target confirm */}
+            {deleteMasteryTargetId && (
+                <Modal
+                    titleId="delete-mastery-target-title"
+                    onClose={() => setDeleteMasteryTargetId(null)}
+                    maxWidth={420}
+                >
+                    <div className="modal-header">
+                        <h3 id="delete-mastery-target-title" style={{ margin: 0 }}>
+                            {t('settings.mastery_target_delete_title')}
+                        </h3>
+                        <button
+                            type="button"
+                            className="btn btn-ghost btn-icon btn-sm"
+                            onClick={() => setDeleteMasteryTargetId(null)}
+                            aria-label="Close"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                    <div style={{ padding: '20px 24px' }}>
+                        <p className="text-muted" style={{ marginBottom: 20 }}>
+                            {t('settings.mastery_target_delete_confirm')}
+                        </p>
+                        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                            <button
+                                type="button"
+                                className="btn btn-ghost"
+                                onClick={() => setDeleteMasteryTargetId(null)}
+                            >
+                                {t('common.cancel')}
+                            </button>
+                            <button type="button" className="btn btn-danger" onClick={confirmDeleteMasteryTarget}>
                                 {t('common.delete')}
                             </button>
                         </div>

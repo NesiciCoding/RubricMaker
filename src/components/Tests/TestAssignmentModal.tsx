@@ -7,6 +7,7 @@ import { useDbStatus } from '../../hooks/useDbStatus';
 import { loadSupabaseConfig } from '../../services/database';
 import { encodeTestAssignment } from '../../utils/shareCode';
 import { nanoid } from '../../utils/nanoid';
+import { toLocalDatetimeInput } from '../../utils/dateInput';
 import type { Test, TestAssignmentPayload, TestAssignment } from '../../types';
 
 interface Props {
@@ -21,7 +22,7 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
     const config = loadSupabaseConfig();
 
     const [classId, setClassId] = useState(settings.activeClassId ?? classes[0]?.id ?? '');
-    const [expiresAt, setExpiresAt] = useState('');
+    const [expiresAt, setExpiresAt] = useState(test.dueDate ? toLocalDatetimeInput(test.dueDate) : '');
     const [embedDb, setEmbedDb] = useState(dbStatus.isConnected);
     const [copiedStudentId, setCopiedStudentId] = useState<string | null>(null);
     const [copiedAll, setCopiedAll] = useState(false);

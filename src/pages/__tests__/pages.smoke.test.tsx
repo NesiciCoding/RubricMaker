@@ -102,6 +102,10 @@ const mockUseApp = {
     deleteStudentRubric: noop,
     restoreStudentRubric: noop,
     deletedStudentRubrics: [],
+    standardMasteryTargets: [],
+    addStandardMasteryTarget: vi.fn(),
+    updateStandardMasteryTarget: noop,
+    deleteStandardMasteryTarget: noop,
     addAttachment: vi.fn(),
     deleteAttachment: noop,
     addGradeScale: vi.fn(() => mockGradeScale),
@@ -210,6 +214,7 @@ vi.mock('../../data/voTracks', () => ({
     VO_TRACK_LABELS: {},
     VO_TRACK_COLORS: {},
     VO_TRACK_DEFAULT_CEFR: {},
+    getEffectiveVoTrack: vi.fn((s, c) => s?.voTrack ?? c?.voTrack),
 }));
 
 // ─── Helper ────────────────────────────────────────────────────────────────────

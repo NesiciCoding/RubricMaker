@@ -140,6 +140,8 @@ vi.mock('../../data/voTracks', () => ({
     VO_TRACK_LABELS: {},
     VO_TRACK_COLORS: {},
     VO_TRACK_DEFAULT_CEFR: {},
+    getTrackBadgeColor: vi.fn(() => '#000'),
+    getEffectiveVoTrack: vi.fn((s, c) => s?.voTrack ?? c?.voTrack),
 }));
 
 vi.mock('../../utils/cefrStudentAggregator', () => ({
@@ -150,6 +152,8 @@ vi.mock('../../utils/cefrStudentAggregator', () => ({
         overallConfidenceRate: 0,
         standardsCovered: 0,
     })),
+    highestLevelForSkill: vi.fn(() => null),
+    overallLevel: vi.fn(() => null),
 }));
 
 // ─── Helper ────────────────────────────────────────────────────────────────────

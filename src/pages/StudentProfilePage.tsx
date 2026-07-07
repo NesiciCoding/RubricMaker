@@ -31,16 +31,27 @@ import { logAuditEvent } from '../services/database/AuditLogger';
 import { getStudentGoalScores } from '../utils/learningGoalsAggregator';
 import LearningGoalChart from '../components/Statistics/LearningGoalChart';
 import CefrProgressChart from '../components/Statistics/CefrProgressChart';
+import CefrTrackYearBand from '../components/CEFR/CefrTrackYearBand';
 import CefrBadge from '../components/CEFR/CefrBadge';
+import { getCefrStudentOverview } from '../utils/cefrStudentAggregator';
 import { CEFR_LEVELS, CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
-import { VO_TRACK_LABELS, getTrackBadgeColor } from '../data/voTracks';
+import { VO_TRACK_LABELS, getTrackBadgeColor, getEffectiveVoTrack } from '../data/voTracks';
 import RecordingPlayer from '../components/Recordings/RecordingPlayer';
 import type { CefrLevel, CefrSkill, GradeScale, Rubric, SessionRecording, StudentRubric } from '../types';
 export default function StudentProfilePage() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { students, classes, rubrics, studentRubrics, gradeScales, settings, selfAssessments, speakingSessions } =
-        useApp();
+    const {
+        students,
+        classes,
+        rubrics,
+        studentRubrics,
+        gradeScales,
+        settings,
+        selfAssessments,
+        speakingSessions,
+        standardMasteryTargets,
+    } = useApp();
     const [exportingId, setExportingId] = useState<string | null>(null);
     const [copiedSALink, setCopiedSALink] = useState<string | null>(null);
     const [showSpeakingPicker, setShowSpeakingPicker] = useState(false);
@@ -52,6 +63,7 @@ export default function StudentProfilePage() {
 
     const student = students.find((s) => s.id === id);
     const cls = classes.find((c) => c.id === student?.classId);
+    const effectiveTrack = getEffectiveVoTrack(student, cls);
 
     const history = useMemo(() => {
         if (!student) return [];
@@ -93,8 +105,31 @@ export default function StudentProfilePage() {
 
     const goals = useMemo(() => {
         if (!student) return [];
-        return getStudentGoalScores(student.id, studentRubrics, rubrics);
-    }, [student, studentRubrics, rubrics]);
+        return getStudentGoalScores(
+            student.id,
+            studentRubrics,
+            rubrics,
+            standardMasteryTargets,
+            cls?.year,
+            effectiveTrack
+        );
+    }, [student, studentRubrics, rubrics, standardMasteryTargets, cls?.year, effectiveTrack]);
+
+    const trackYearProgress = useMemo(
+        () =>
+            student
+                ? getCefrStudentOverview(
+                      student.id,
+                      studentRubrics,
+                      rubrics,
+                      selfAssessments,
+                      undefined,
+                      cls?.year,
+                      effectiveTrack
+                  ).trackYearProgress
+                : undefined,
+        [student, studentRubrics, rubrics, selfAssessments, cls?.year, effectiveTrack]
+    );
 
     // ── CEFR progress ──────────────────────────────────────────────────────────
     // A student "achieves" a CEFR level when their average score meets the per-rubric threshold (default 70%).
@@ -852,6 +887,15 @@ export default function StudentProfilePage() {
                                     </h3>
 
                                     {cefrProgress.length >= 3 && <CefrProgressChart entries={cefrProgress} />}
+                                    {trackYearProgress && (
+                                        <div style={{ marginTop: 16 }}>
+                                            <CefrTrackYearBand
+                                                expectedRange={trackYearProgress.expectedRange}
+                                                achievedLevel={trackYearProgress.achievedLevel}
+                                                status={trackYearProgress.status}
+                                            />
+                                        </div>
+                                    )}
                                     <div
                                         style={{
                                             display: 'flex',

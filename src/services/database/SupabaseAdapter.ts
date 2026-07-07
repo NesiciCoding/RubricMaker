@@ -32,6 +32,7 @@ import type {
     FlashcardDeck,
     FlashcardAssignment,
     FlashcardReview,
+    StandardMasteryTarget,
 } from '../../types';
 import type { DatabaseConfig, DbUser, SyncResult } from './types';
 import { nanoid } from '../../utils/nanoid';
@@ -1340,6 +1341,33 @@ export class SupabaseAdapter {
 
     async deleteFlashcardDeck(id: string): Promise<SyncResult> {
         const { error } = await this.db().from('flashcard_decks').delete().eq('id', id).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    // ── Standard mastery targets (CEFR/SLO progress by track/year) ───────────
+
+    async fetchStandardMasteryTargets(): Promise<StandardMasteryTarget[]> {
+        const { data, error } = await this.db().from('standard_mastery_targets').select('data');
+        if (error) {
+            console.error('fetchStandardMasteryTargets', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as StandardMasteryTarget);
+    }
+
+    async upsertStandardMasteryTarget(t: StandardMasteryTarget): Promise<SyncResult> {
+        const { error } = await this.db()
+            .from('standard_mastery_targets')
+            .upsert({ id: t.id, owner_id: this.uid(), data: t }, { onConflict: 'id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteStandardMasteryTarget(id: string): Promise<SyncResult> {
+        const { error } = await this.db()
+            .from('standard_mastery_targets')
+            .delete()
+            .eq('id', id)
+            .eq('owner_id', this.uid());
         return error ? { success: false, error: error.message } : { success: true };
     }
 

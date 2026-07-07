@@ -38,3 +38,8 @@ export function isAdjacentTrack(a: VoTrack, b: VoTrack): boolean {
 export function getTrackBadgeColor(entity: { color?: string; voTrack?: VoTrack }): string | undefined {
     return entity.color ?? (entity.voTrack ? VO_TRACK_COLORS[entity.voTrack] : undefined);
 }
+
+/** A student's own track override, falling back to their class's default track. */
+export function getEffectiveVoTrack(student?: { voTrack?: VoTrack }, cls?: { voTrack?: VoTrack }): VoTrack | undefined {
+    return student?.voTrack ?? cls?.voTrack;
+}

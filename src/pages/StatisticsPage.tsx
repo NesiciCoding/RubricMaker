@@ -14,7 +14,7 @@ import { useApp } from '../context/AppContext';
 import { calcGradeSummary, calcClassStats, calcEntryPoints, type GradeSummary } from '../utils/gradeCalc';
 import type { StudentRubric, Student, Rubric, RubricCriterion, VoTrack, SchoolYear, StudentTest, Test } from '../types';
 import { VO_TRACKS } from '../data/voTracks';
-import { SCHOOL_YEARS, SCHOOL_YEAR_LABELS } from '../data/schoolYears';
+import { SCHOOL_YEAR_LABELS, getAvailableSchoolYears } from '../data/schoolYears';
 import { calcTestMaxPoints, calcStudentTestRawPoints, calcTestPercentage } from '../utils/testCalc';
 import { getClassGoalScores } from '../utils/learningGoalsAggregator';
 import LearningGoalChart from '../components/Statistics/LearningGoalChart';
@@ -64,6 +64,7 @@ export default function StatisticsPage() {
         updateSettings,
         tests = [],
         studentTests = [],
+        standardMasteryTargets,
     } = useApp();
     const { t, i18n } = useTranslation();
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
@@ -75,7 +76,7 @@ export default function StatisticsPage() {
     const [filterTrack, setFilterTrack] = useState<VoTrack | 'all'>('all');
     const [filterYear, setFilterYear] = useState<SchoolYear | 'all'>('all');
 
-    const yearOptions = useMemo(() => SCHOOL_YEARS.filter((y) => classes.some((c) => c.year === y)), [classes]);
+    const yearOptions = useMemo(() => getAvailableSchoolYears(classes), [classes]);
 
     const filteredClasses = useMemo(
         () =>
@@ -234,8 +235,17 @@ export default function StatisticsPage() {
 
     const classGoals = useMemo(() => {
         if (selectedClassId === 'all') return [];
-        return getClassGoalScores(selectedClassId, students, studentRubrics, rubrics);
-    }, [selectedClassId, students, studentRubrics, rubrics]);
+        const cls = classes.find((c) => c.id === selectedClassId);
+        return getClassGoalScores(
+            selectedClassId,
+            students,
+            studentRubrics,
+            rubrics,
+            standardMasteryTargets,
+            cls?.year,
+            cls?.voTrack
+        );
+    }, [selectedClassId, students, studentRubrics, rubrics, classes, standardMasteryTargets]);
 
     const classTrendData = useMemo(() => {
         if (selectedClassId === 'all') return [];

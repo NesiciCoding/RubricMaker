@@ -34,3 +34,8 @@ export const SCHOOL_YEAR_HAS_TRACK: Record<SchoolYear, boolean> = {
     'jaar-5': true,
     'jaar-6': true,
 };
+
+/** School years actually in use, in SCHOOL_YEARS order — for filter dropdowns. */
+export function getAvailableSchoolYears(classes: { year?: SchoolYear }[]): SchoolYear[] {
+    return SCHOOL_YEARS.filter((y) => classes.some((c) => c.year === y));
+}

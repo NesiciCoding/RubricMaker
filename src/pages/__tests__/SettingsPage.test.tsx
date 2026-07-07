@@ -1,9 +1,9 @@
 import React from 'react';
-import { screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderWithRouter } from '../../test-utils/renderWithProviders';
 import { DEFAULT_FORMAT } from '../../types';
-import type { AppSettings, GradeScale } from '../../types';
+import type { AppSettings, GradeScale, StandardMasteryTarget } from '../../types';
 
 const mockGradeScale: GradeScale = {
     id: 'gs1',
@@ -34,6 +34,7 @@ const mockRubricsArr: never[] = [];
 const mockStudentsArr: never[] = [];
 const mockClassesArr: never[] = [];
 const mockStudentRubricsArr: never[] = [];
+const mockTargetsArr: StandardMasteryTarget[] = [];
 
 const mockAppValue = {
     settings: mockSettings,
@@ -51,6 +52,10 @@ const mockAppValue = {
     classes: mockClassesArr,
     studentRubrics: mockStudentRubricsArr,
     importBackup: vi.fn(),
+    standardMasteryTargets: mockTargetsArr,
+    addStandardMasteryTarget: vi.fn(),
+    updateStandardMasteryTarget: vi.fn(),
+    deleteStandardMasteryTarget: vi.fn(),
 };
 
 vi.mock('../../context/AppContext', () => ({
@@ -83,6 +88,15 @@ vi.mock('../../components/Rubric/TemplateUploadModal', () => ({
         ),
 }));
 
+vi.mock('../../components/Standards/StandardMasteryTargetModal', () => ({
+    default: ({ onClose }: { onClose: () => void }) =>
+        React.createElement(
+            'div',
+            { 'data-testid': 'mastery-target-modal' },
+            React.createElement('button', { onClick: onClose }, 'Close Mastery Modal')
+        ),
+}));
+
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
         t: (key: string, opts?: string | Record<string, unknown>) => {
@@ -106,6 +120,8 @@ describe('SettingsPage', () => {
         mockUpdateSettings.mockClear();
         mockAddGradeScale.mockClear();
         mockShowToast.mockClear();
+        mockAppValue.deleteStandardMasteryTarget.mockClear();
+        mockTargetsArr.length = 0;
         const mod = await import('../SettingsPage');
         SettingsPageComp = mod.default;
     });
@@ -149,6 +165,58 @@ describe('SettingsPage', () => {
         expect(screen.getByTestId('template-upload-modal')).toBeInTheDocument();
         fireEvent.click(screen.getByText('Close Upload'));
         expect(screen.queryByTestId('template-upload-modal')).not.toBeInTheDocument();
+    });
+
+    it('shows the empty state for mastery targets on the Teaching tab', () => {
+        renderPage();
+        fireEvent.click(screen.getByText('Teaching'));
+        expect(screen.getByText('settings.mastery_targets_empty')).toBeInTheDocument();
+    });
+
+    it('opens the mastery target modal from the add button', () => {
+        renderPage();
+        fireEvent.click(screen.getByText('Teaching'));
+        fireEvent.click(screen.getByText('settings.mastery_target_add_title'));
+        expect(screen.getByTestId('mastery-target-modal')).toBeInTheDocument();
+        fireEvent.click(screen.getByText('Close Mastery Modal'));
+        expect(screen.queryByTestId('mastery-target-modal')).not.toBeInTheDocument();
+    });
+
+    it('opens the mastery target modal to edit an existing target', () => {
+        mockTargetsArr.push({
+            id: 'mt1',
+            standardGuid: 'guid1',
+            standardDescription: 'Reads and interprets literary texts',
+            standardSetTitle: 'CCSS',
+            year: 'jaar-3',
+            voTrack: 'havo',
+            targetPercentage: 80,
+        });
+        renderPage();
+        fireEvent.click(screen.getByText('Teaching'));
+        expect(screen.getByText('Reads and interprets literary texts')).toBeInTheDocument();
+        fireEvent.click(screen.getByText('common.edit'));
+        expect(screen.getByTestId('mastery-target-modal')).toBeInTheDocument();
+    });
+
+    it('deletes a mastery target after confirming', () => {
+        mockTargetsArr.push({
+            id: 'mt1',
+            standardGuid: 'guid1',
+            standardDescription: 'Reads and interprets literary texts',
+            standardSetTitle: 'CCSS',
+            year: 'jaar-3',
+            voTrack: 'havo',
+            targetPercentage: 80,
+        });
+        renderPage();
+        fireEvent.click(screen.getByText('Teaching'));
+        fireEvent.click(screen.getByText('common.delete'));
+        const dialog = screen.getByRole('dialog');
+        expect(within(dialog).getByText('settings.mastery_target_delete_confirm')).toBeInTheDocument();
+        expect(mockAppValue.deleteStandardMasteryTarget).not.toHaveBeenCalled();
+        fireEvent.click(within(dialog).getByText('common.delete'));
+        expect(mockAppValue.deleteStandardMasteryTarget).toHaveBeenCalledWith('mt1');
     });
 
     it('switches to the Administration tab (admin role)', () => {
