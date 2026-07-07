@@ -74,3 +74,7 @@ export function compareToRange(achieved: CefrLevel | undefined, range: CefrSubLe
     if (a < lo) return 'behind';
     return 'on-track';
 }
+
+export function progressStatusLabelKey(status: ProgressStatus): string {
+    return `cefr.progress_status_${status.replace('-', '_')}`;
+}

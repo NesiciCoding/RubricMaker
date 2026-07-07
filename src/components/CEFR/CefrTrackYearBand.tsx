@@ -6,6 +6,7 @@ import {
     PROGRESS_STATUS_COLOR,
     cefrLevelOrdinal,
     cefrSubLevelOrdinal,
+    progressStatusLabelKey,
 } from '../../utils/cefrOrdinal';
 import type { CefrLevel, CefrSubLevelRange } from '../../types';
 import type { ProgressStatus } from '../../utils/cefrOrdinal';
@@ -46,7 +47,7 @@ export default function CefrTrackYearBand({ expectedRange, achievedLevel, status
                     {t('cefr.track_year_band_title')}
                 </span>
                 <span style={{ fontSize: '0.8rem', fontWeight: 700, color: PROGRESS_STATUS_COLOR[status] }}>
-                    {t(`cefr.progress_status_${status.replace('-', '_')}`)}
+                    {t(progressStatusLabelKey(status))}
                 </span>
             </div>
             <div

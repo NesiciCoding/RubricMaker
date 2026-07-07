@@ -89,7 +89,7 @@ describe('useVoiceGrading', () => {
         renderHook(() => useVoiceGrading(onGrade, vi.fn()));
         const { commands } = mockUseSpeechRecognition.mock.calls[0][0];
         // First command: "Criterium 1 Niveau 4"
-        commands[0].callback(['full match', '1', '4']);
+        commands[0].callback('1', '4');
         expect(onGrade).toHaveBeenCalledWith(0, 3); // 1-indexed → 0-indexed
     });
 
@@ -98,7 +98,7 @@ describe('useVoiceGrading', () => {
         renderHook(() => useVoiceGrading(onGrade, vi.fn()));
         const { commands } = mockUseSpeechRecognition.mock.calls[0][0];
         // Second command: "Score 3 voor Criterium 2"
-        commands[1].callback(['full match', '3', '2']);
+        commands[1].callback('3', '2');
         expect(onGrade).toHaveBeenCalledWith(1, 2); // criterionIndex=2-1=1, levelIndex=3-1=2
     });
 
@@ -107,7 +107,7 @@ describe('useVoiceGrading', () => {
         renderHook(() => useVoiceGrading(vi.fn(), onComment));
         const { commands } = mockUseSpeechRecognition.mock.calls[0][0];
         // Third command: "Commentaar Great work!"
-        commands[2].callback(['full match', 'Great work!']);
+        commands[2].callback('Great work!');
         expect(onComment).toHaveBeenCalledWith('Great work!');
     });
 
@@ -115,7 +115,7 @@ describe('useVoiceGrading', () => {
         const onGrade = vi.fn();
         renderHook(() => useVoiceGrading(onGrade, vi.fn()));
         const { commands } = mockUseSpeechRecognition.mock.calls[0][0];
-        commands[0].callback(['full match', 'abc', 'def']);
+        commands[0].callback('abc', 'def');
         expect(onGrade).not.toHaveBeenCalled();
     });
 
@@ -123,7 +123,28 @@ describe('useVoiceGrading', () => {
         const onComment = vi.fn();
         renderHook(() => useVoiceGrading(vi.fn(), onComment));
         const { commands } = mockUseSpeechRecognition.mock.calls[0][0];
-        commands[2].callback(['full match', '']);
+        commands[2].callback('');
         expect(onComment).not.toHaveBeenCalled();
+    });
+
+    // Mirrors react-speech-recognition's real matchCommands/testMatch, which spreads
+    // pattern.exec(input).slice(1) as separate args, not a single match array.
+    it('callbacks work when invoked the way the real library invokes them', () => {
+        const onGrade = vi.fn();
+        const onComment = vi.fn();
+        renderHook(() => useVoiceGrading(onGrade, onComment));
+        const { commands } = mockUseSpeechRecognition.mock.calls[0][0];
+
+        const gradeMatch = (commands[0].command as RegExp).exec('Criterium 1 Niveau 4')!;
+        commands[0].callback(...gradeMatch.slice(1));
+        expect(onGrade).toHaveBeenCalledWith(0, 3);
+
+        const scoreMatch = (commands[1].command as RegExp).exec('Score 3 voor Criterium 2')!;
+        commands[1].callback(...scoreMatch.slice(1));
+        expect(onGrade).toHaveBeenCalledWith(1, 2);
+
+        const commentMatch = (commands[2].command as RegExp).exec('Commentaar Great work!')!;
+        commands[2].callback(...commentMatch.slice(1));
+        expect(onComment).toHaveBeenCalledWith('Great work!');
     });
 });

@@ -120,6 +120,7 @@ vi.mock('../../data/voTracks', () => ({
     VO_TRACK_LABELS: {},
     VO_TRACK_COLORS: {},
     VO_TRACK_DEFAULT_CEFR: {},
+    getEffectiveVoTrack: vi.fn((s, c) => s?.voTrack ?? c?.voTrack),
 }));
 
 vi.mock('../../hooks/useDbStatus', () => ({

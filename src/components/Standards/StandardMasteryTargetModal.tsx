@@ -29,9 +29,7 @@ export default function StandardMasteryTargetModal({ existing, onClose }: Props)
     const [showPicker, setShowPicker] = useState(false);
     const [year, setYear] = useState<SchoolYear | ''>(existing?.year ?? '');
     const [voTrack, setVoTrack] = useState<VoTrack | ''>(existing?.voTrack ?? '');
-    const [targetPercentage, setTargetPercentage] = useState(
-        existing ? String(existing.targetPercentage) : ''
-    );
+    const [targetPercentage, setTargetPercentage] = useState(existing ? String(existing.targetPercentage) : '');
 
     const yearHasTrack = year ? SCHOOL_YEAR_HAS_TRACK[year] : true;
     const pct = Number(targetPercentage);
@@ -45,7 +43,7 @@ export default function StandardMasteryTargetModal({ existing, onClose }: Props)
             standardDescription: standard.description,
             standardSetTitle: standard.standardSetTitle,
             year,
-            voTrack: yearHasTrack ? (voTrack || undefined) : undefined,
+            voTrack: yearHasTrack ? voTrack || undefined : undefined,
             targetPercentage: pct,
         };
         if (existing) {
@@ -61,11 +59,14 @@ export default function StandardMasteryTargetModal({ existing, onClose }: Props)
             <Modal titleId="mastery-target-title" onClose={onClose} maxWidth={480}>
                 <div className="modal-header">
                     <h3 id="mastery-target-title">
-                        {existing
-                            ? t('settings.mastery_target_edit_title')
-                            : t('settings.mastery_target_add_title')}
+                        {existing ? t('settings.mastery_target_edit_title') : t('settings.mastery_target_add_title')}
                     </h3>
-                    <button className="btn btn-ghost btn-icon" onClick={onClose} aria-label={t('common.close')}>
+                    <button
+                        type="button"
+                        className="btn btn-ghost btn-icon"
+                        onClick={onClose}
+                        aria-label={t('common.close')}
+                    >
                         ✕
                     </button>
                 </div>
@@ -124,7 +125,7 @@ export default function StandardMasteryTargetModal({ existing, onClose }: Props)
                                 setVoTrack('');
                             }}
                         >
-                            <option value="">{t('voTrack.no_track')}</option>
+                            <option value="">{t('studentsPage.form_school_year_none')}</option>
                             {SCHOOL_YEARS.map((y) => (
                                 <option key={y} value={y}>
                                     {SCHOOL_YEAR_LABELS[y]}
@@ -166,10 +167,10 @@ export default function StandardMasteryTargetModal({ existing, onClose }: Props)
                     </div>
                 </div>
                 <div className="modal-footer">
-                    <button className="btn btn-secondary" onClick={onClose}>
+                    <button type="button" className="btn btn-secondary" onClick={onClose}>
                         {t('common.cancel')}
                     </button>
-                    <button className="btn btn-primary" disabled={!canSave} onClick={handleSave}>
+                    <button type="button" className="btn btn-primary" disabled={!canSave} onClick={handleSave}>
                         {t('common.save')}
                     </button>
                 </div>

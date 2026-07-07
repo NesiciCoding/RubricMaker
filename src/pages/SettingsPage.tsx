@@ -102,8 +102,6 @@ export default function SettingsPage() {
         studentRubrics,
         importBackup,
         standardMasteryTargets,
-        addStandardMasteryTarget,
-        updateStandardMasteryTarget,
         deleteStandardMasteryTarget,
     } = useApp();
     const { showToast } = useToast();
@@ -149,6 +147,7 @@ export default function SettingsPage() {
     // ─── Existing state ──────────────────────────────────────────────────────────
     const [editingScaleId, setEditingScaleId] = useState<string | null>(null);
     const [deleteScaleId, setDeleteScaleId] = useState<string | null>(null);
+    const [deleteMasteryTargetId, setDeleteMasteryTargetId] = useState<string | null>(null);
     const [showCommentBank, setShowCommentBank] = useState(false);
     const [showTemplateUpload, setShowTemplateUpload] = useState(false);
     const [editingMasteryTarget, setEditingMasteryTarget] = useState<StandardMasteryTarget | 'new' | null>(null);
@@ -316,6 +315,12 @@ export default function SettingsPage() {
         deleteGradeScale(deleteScaleId);
         setDeleteScaleId(null);
         if (editingScaleId === deleteScaleId) setEditingScaleId(null);
+    }
+
+    function confirmDeleteMasteryTarget() {
+        if (!deleteMasteryTargetId) return;
+        deleteStandardMasteryTarget(deleteMasteryTargetId);
+        setDeleteMasteryTargetId(null);
     }
 
     function updateRange(scaleId: string, idx: number, patch: Partial<GradeRange>) {
@@ -892,6 +897,7 @@ export default function SettingsPage() {
                                     </p>
                                 </div>
                                 <button
+                                    type="button"
                                     className="btn btn-secondary btn-sm"
                                     onClick={() => setEditingMasteryTarget('new')}
                                 >
@@ -910,7 +916,7 @@ export default function SettingsPage() {
                                             <th>{t('studentsPage.form_school_year')}</th>
                                             <th>{t('voTrack.section_label')}</th>
                                             <th>{t('settings.mastery_target_percentage_label')}</th>
-                                            <th></th>
+                                            <th className="sr-only">{t('common.actions')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -922,15 +928,17 @@ export default function SettingsPage() {
                                                 <td>{target.targetPercentage}%</td>
                                                 <td style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
                                                     <button
+                                                        type="button"
                                                         className="btn btn-ghost btn-sm"
                                                         onClick={() => setEditingMasteryTarget(target)}
                                                     >
                                                         {t('common.edit')}
                                                     </button>
                                                     <button
+                                                        type="button"
                                                         className="btn btn-ghost btn-sm"
                                                         style={{ color: 'var(--red)' }}
-                                                        onClick={() => deleteStandardMasteryTarget(target.id)}
+                                                        onClick={() => setDeleteMasteryTargetId(target.id)}
                                                     >
                                                         {t('common.delete')}
                                                     </button>
@@ -1873,6 +1881,46 @@ export default function SettingsPage() {
                                 {t('common.cancel')}
                             </button>
                             <button className="btn btn-danger" onClick={confirmDeleteScale}>
+                                {t('common.delete')}
+                            </button>
+                        </div>
+                    </div>
+                </Modal>
+            )}
+
+            {/* Delete mastery target confirm */}
+            {deleteMasteryTargetId && (
+                <Modal
+                    titleId="delete-mastery-target-title"
+                    onClose={() => setDeleteMasteryTargetId(null)}
+                    maxWidth={420}
+                >
+                    <div className="modal-header">
+                        <h3 id="delete-mastery-target-title" style={{ margin: 0 }}>
+                            {t('settings.mastery_target_delete_title')}
+                        </h3>
+                        <button
+                            type="button"
+                            className="btn btn-ghost btn-icon btn-sm"
+                            onClick={() => setDeleteMasteryTargetId(null)}
+                            aria-label="Close"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                    <div style={{ padding: '20px 24px' }}>
+                        <p className="text-muted" style={{ marginBottom: 20 }}>
+                            {t('settings.mastery_target_delete_confirm')}
+                        </p>
+                        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                            <button
+                                type="button"
+                                className="btn btn-ghost"
+                                onClick={() => setDeleteMasteryTargetId(null)}
+                            >
+                                {t('common.cancel')}
+                            </button>
+                            <button type="button" className="btn btn-danger" onClick={confirmDeleteMasteryTarget}>
                                 {t('common.delete')}
                             </button>
                         </div>

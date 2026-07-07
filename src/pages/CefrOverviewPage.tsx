@@ -17,9 +17,9 @@ import {
     overallLevel,
     type CefrCellData,
 } from '../utils/cefrStudentAggregator';
-import { PROGRESS_STATUS_COLOR } from '../utils/cefrOrdinal';
+import { PROGRESS_STATUS_COLOR, progressStatusLabelKey } from '../utils/cefrOrdinal';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
-import { VO_TRACK_LABELS, VO_TRACK_COLORS, VO_TRACK_DEFAULT_CEFR } from '../data/voTracks';
+import { VO_TRACK_LABELS, VO_TRACK_DEFAULT_CEFR, getTrackBadgeColor, getEffectiveVoTrack } from '../data/voTracks';
 import type { CefrSkill } from '../types';
 
 export default function CefrOverviewPage() {
@@ -71,7 +71,7 @@ export default function CefrOverviewPage() {
                         selfAssessments,
                         analysisResults,
                         sCls?.year,
-                        s.voTrack ?? sCls?.voTrack
+                        getEffectiveVoTrack(s, sCls)
                     ),
                     cls: sCls,
                 };
@@ -81,7 +81,7 @@ export default function CefrOverviewPage() {
 
     const student = students.find((s) => s.id === selectedStudentId);
     const cls = classes.find((c) => c.id === student?.classId);
-    const effectiveTrack = student?.voTrack ?? cls?.voTrack;
+    const effectiveTrack = getEffectiveVoTrack(student, cls);
     const targetLevel = effectiveTrack ? VO_TRACK_DEFAULT_CEFR[effectiveTrack] : undefined;
 
     const overview = useMemo(
@@ -273,9 +273,8 @@ export default function CefrOverviewPage() {
                                     </thead>
                                     <tbody>
                                         {studentOverviews.map(({ student: s, overview: ov, cls: sc }, i) => {
-                                            const rowTarget = sc?.voTrack
-                                                ? VO_TRACK_DEFAULT_CEFR[sc.voTrack]
-                                                : undefined;
+                                            const rowTrack = getEffectiveVoTrack(s, sc);
+                                            const rowTarget = rowTrack ? VO_TRACK_DEFAULT_CEFR[rowTrack] : undefined;
                                             return (
                                                 <tr
                                                     key={s.id}
@@ -331,9 +330,7 @@ export default function CefrOverviewPage() {
                                                                                     marginLeft: 4,
                                                                                     padding: '0 4px',
                                                                                     borderRadius: 3,
-                                                                                    background:
-                                                                                        sc.color ??
-                                                                                        VO_TRACK_COLORS[sc.voTrack],
+                                                                                    background: getTrackBadgeColor(sc),
                                                                                     color: '#fff',
                                                                                     fontSize: '0.65rem',
                                                                                     fontWeight: 700,
@@ -436,12 +433,12 @@ export default function CefrOverviewPage() {
                                                                     ],
                                                                 }}
                                                             >
-                                                                {t(
-                                                                    `cefr.progress_status_${ov.trackYearProgress.status.replace('-', '_')}`
-                                                                )}
+                                                                {t(progressStatusLabelKey(ov.trackYearProgress.status))}
                                                             </span>
                                                         ) : (
-                                                            <span style={{ color: 'var(--border)', fontSize: '0.7rem' }}>
+                                                            <span
+                                                                style={{ color: 'var(--border)', fontSize: '0.7rem' }}
+                                                            >
                                                                 ·
                                                             </span>
                                                         )}
@@ -619,7 +616,7 @@ export default function CefrOverviewPage() {
                                                             fontWeight: 700,
                                                             padding: '2px 6px',
                                                             borderRadius: 4,
-                                                            background: cls.color ?? VO_TRACK_COLORS[cls.voTrack],
+                                                            background: getTrackBadgeColor(cls),
                                                             color: '#fff',
                                                         }}
                                                     >

@@ -2,6 +2,7 @@
   "ci": {
     "collect": {
       "staticDistDir": "./dist",
+      "url": ["/"],
       "numberOfRuns": 3,
       "settings": {
         "chromeFlags": "--no-sandbox --disable-dev-shm-usage",
@@ -14,7 +15,12 @@
         "categories:accessibility": ["warn", { "minScore": 0.9 }],
         "categories:best-practices": ["warn", { "minScore": 0.85 }],
         "categories:seo": ["warn", { "minScore": 0.8 }],
-        "categories:performance": "off"
+        "categories:performance": "off",
+        "font-size": "warn",
+        "forced-reflow-insight": "warn",
+        "network-dependency-tree-insight": "warn",
+        "unused-javascript": "warn",
+        "valid-source-maps": "warn"
       }
     },
     "upload": {

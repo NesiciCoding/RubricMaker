@@ -568,13 +568,12 @@ class StorageSyncService {
             // requests above — a fresh feature's tables competing for the same local
             // connection pool at that exact startup instant was implicated in a
             // (previously fragile, timing-sensitive) offline-sync-merge E2E failure.
-            const [flashcardDecks, flashcardAssignments, flashcardReviews, standardMasteryTargets] =
-                await Promise.all([
-                    this.adapter.fetchFlashcardDecks().catch(() => []),
-                    this.adapter.fetchFlashcardAssignments().catch(() => []),
-                    this.adapter.fetchFlashcardReviews().catch(() => []),
-                    this.adapter.fetchStandardMasteryTargets().catch(() => []),
-                ]);
+            const [flashcardDecks, flashcardAssignments, flashcardReviews, standardMasteryTargets] = await Promise.all([
+                this.adapter.fetchFlashcardDecks().catch(() => []),
+                this.adapter.fetchFlashcardAssignments().catch(() => []),
+                this.adapter.fetchFlashcardReviews().catch(() => []),
+                this.adapter.fetchStandardMasteryTargets().catch(() => []),
+            ]);
 
             // The profile.role is authoritative; always override whatever userRole
             // is stored in user_settings so the DB is the single source of truth.

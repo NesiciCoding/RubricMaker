@@ -13,7 +13,7 @@ import { getClassStandardsCoverage } from '../utils/standardsCoverageAggregator'
 import ClassCoverageGapPanel from '../components/Standards/ClassCoverageGapPanel';
 import { reorderDisplayOrder } from '../utils/displayOrder';
 import { VO_TRACKS } from '../data/voTracks';
-import { SCHOOL_YEARS, SCHOOL_YEAR_LABELS } from '../data/schoolYears';
+import { SCHOOL_YEAR_LABELS, getAvailableSchoolYears } from '../data/schoolYears';
 import type { VoTrack, SchoolYear } from '../types';
 import { nanoid } from '../utils/nanoid';
 
@@ -97,10 +97,7 @@ export default function ActivityDashboardPage() {
         setAssignTaskCell(null);
     }
 
-    const yearOptions = useMemo(
-        () => SCHOOL_YEARS.filter((y) => classes.some((c) => c.year === y)),
-        [classes]
-    );
+    const yearOptions = useMemo(() => getAvailableSchoolYears(classes), [classes]);
 
     const visibleClasses = useMemo(
         () =>

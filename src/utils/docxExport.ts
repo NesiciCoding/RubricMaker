@@ -11,6 +11,7 @@ import {
     HeadingLevel,
     PageOrientation,
     PageBreak,
+    type IRunOptions,
 } from 'docx';
 import { saveAs } from 'file-saver';
 import type {
@@ -58,7 +59,7 @@ export async function exportRubricToDocx(rubric: Rubric) {
     const headerLevels = rubric.criteria[0] ? getLevels(rubric.criteria[0]) : [];
 
     // Helper to parse basic markdown to TextRuns
-    const parseMd = (text: string, baseStyle?: any): TextRun[] => {
+    const parseMd = (text: string, baseStyle?: Omit<IRunOptions, 'text'>): TextRun[] => {
         if (!text) return [new TextRun({ text: '', ...baseStyle })];
 
         // Handle newlines

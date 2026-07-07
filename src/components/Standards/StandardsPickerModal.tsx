@@ -67,8 +67,8 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
         try {
             const sets = await fetchStandardSets(apiKey, j.id);
             setStandardSets(sets);
-        } catch (e: any) {
-            setError(e.message);
+        } catch (e) {
+            setError(e instanceof Error ? e.message : 'Unknown error');
         }
         setLoading(false);
     }
@@ -82,8 +82,8 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
         try {
             const detail = await fetchStandardSetDetail(apiKey, s.id);
             setStandards(flattenStandards(detail.standards));
-        } catch (e: any) {
-            setError(e.message);
+        } catch (e) {
+            setError(e instanceof Error ? e.message : 'Unknown error');
         }
         setLoading(false);
     }
@@ -349,7 +349,7 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
                 </div>
                 <select
                     value={sortOrder}
-                    onChange={(e) => setSortOrder(e.target.value as any)}
+                    onChange={(e) => setSortOrder(e.target.value as 'default' | 'alpha-asc' | 'alpha-desc')}
                     className="btn btn-ghost"
                     style={{
                         padding: '6px 12px',

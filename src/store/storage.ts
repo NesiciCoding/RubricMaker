@@ -38,9 +38,7 @@ import { SCHOOL_YEARS } from '../data/schoolYears';
  * today) rather than crashing type-narrowed code that assumes a valid enum member.
  */
 export function sanitizeClassYears(classes: Class[]): Class[] {
-    return classes.map((c) =>
-        c.year && !SCHOOL_YEARS.includes(c.year) ? { ...c, year: undefined } : c
-    );
+    return classes.map((c) => (c.year && !SCHOOL_YEARS.includes(c.year) ? { ...c, year: undefined } : c));
 }
 
 // ─── Default Grade Scales ──────────────────────────────────────────────────────
@@ -678,6 +676,7 @@ export function importFullBackup(json: string): boolean {
                 data.standardMasteryTargets.every(
                     (t) =>
                         isPlainObject(t) &&
+                        typeof (t as Record<string, unknown>).id === 'string' &&
                         typeof (t as Record<string, unknown>).standardGuid === 'string' &&
                         typeof (t as Record<string, unknown>).year === 'string' &&
                         typeof (t as Record<string, unknown>).targetPercentage === 'number'

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { getCefrStudentOverview } from './cefrStudentAggregator';
+import { getCefrStudentOverview, highestLevelForSkill, overallLevel } from './cefrStudentAggregator';
+import type { CefrCellData } from './cefrStudentAggregator';
 import type { Rubric, StudentRubric, SelfAssessment, DocumentAnalysisResult } from '../types';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -901,5 +902,111 @@ describe('getCefrStudentOverview — summary statistics', () => {
         expect(cell).toBeDefined();
         expect(cell!.state).toBe('not-started');
         expect(cell!.rubricCount).toBe(0);
+    });
+});
+
+function makeCell(overrides: Partial<CefrCellData> = {}): CefrCellData {
+    return {
+        skill: 'reading',
+        level: 'A2',
+        rubricCount: 1,
+        avgScore: 80,
+        threshold: 70,
+        rubricAchieved: true,
+        evidence: [],
+        totalDescriptors: 0,
+        confidentCount: 0,
+        confidenceRate: 0,
+        state: 'achieved',
+        descriptors: [],
+        ...overrides,
+    };
+}
+
+describe('highestLevelForSkill', () => {
+    it('ignores cells for other skills and cells with no data', () => {
+        const cells = [
+            makeCell({ skill: 'writing', level: 'C1' }),
+            makeCell({ skill: 'reading', level: 'A1', rubricCount: 0, totalDescriptors: 0 }),
+        ];
+        expect(highestLevelForSkill(cells, 'reading')).toBeNull();
+    });
+
+    it('prefers achieved cells over developing cells for the same skill', () => {
+        const cells = [
+            makeCell({ skill: 'reading', level: 'B2', state: 'developing' }),
+            makeCell({ skill: 'reading', level: 'A2', state: 'achieved' }),
+        ];
+        // A2 is achieved (weaker but confirmed); B2 is only developing (unconfirmed) — achieved wins.
+        expect(highestLevelForSkill(cells, 'reading')).toBe('A2');
+    });
+
+    it('picks the highest level among achieved cells when several are achieved', () => {
+        const cells = [
+            makeCell({ skill: 'reading', level: 'A1', state: 'achieved' }),
+            makeCell({ skill: 'reading', level: 'B1', state: 'achieved' }),
+        ];
+        expect(highestLevelForSkill(cells, 'reading')).toBe('B1');
+    });
+
+    it('falls back to the highest developing cell when nothing is achieved', () => {
+        const cells = [
+            makeCell({ skill: 'reading', level: 'A2', state: 'developing' }),
+            makeCell({ skill: 'reading', level: 'B1', state: 'developing' }),
+        ];
+        expect(highestLevelForSkill(cells, 'reading')).toBe('B1');
+    });
+});
+
+describe('overallLevel', () => {
+    it('returns null when no skill has any data', () => {
+        expect(overallLevel([], ['reading', 'writing'])).toBeNull();
+    });
+
+    it('reduces to the weakest per-skill level, not the average or strongest', () => {
+        const cells = [
+            makeCell({ skill: 'reading', level: 'C1', state: 'achieved' }),
+            makeCell({ skill: 'writing', level: 'A2', state: 'achieved' }),
+        ];
+        expect(overallLevel(cells, ['reading', 'writing'])).toBe('A2');
+    });
+
+    it('ignores skills with no data rather than treating them as zero', () => {
+        const cells = [makeCell({ skill: 'reading', level: 'B1', state: 'achieved' })];
+        // 'listening' has no cells at all — should not drag the result down.
+        expect(overallLevel(cells, ['reading', 'listening'])).toBe('B1');
+    });
+});
+
+describe('getCefrStudentOverview — trackYearProgress', () => {
+    it('is omitted entirely when no schoolYear is passed', () => {
+        const result = getCefrStudentOverview('s1', [], [], []);
+        expect(result.trackYearProgress).toBeUndefined();
+    });
+
+    it('reports no-data status when the year has no achieved level yet', () => {
+        const result = getCefrStudentOverview('s1', [], [], [], undefined, 'jaar-3', 'havo');
+        expect(result.trackYearProgress).toEqual({
+            year: 'jaar-3',
+            voTrack: 'havo',
+            expectedRange: { min: 'b1', max: 'b1' },
+            achievedLevel: null,
+            status: 'no-data',
+        });
+    });
+
+    it('reports behind when the achieved level falls under the expected range', () => {
+        const rubric = makeRubric({ cefrTargetLevel: 'A2', cefrSkill: 'reading', cefrAchieveThreshold: 70 });
+        const sr = makeSr(); // selectedPoints: 85 → 85% ≥ 70 → achieved at A2
+        // jaar-3/havo expects B1 (see CEFR_TRACK_YEAR_TARGETS) — A2 achieved is behind that.
+        const result = getCefrStudentOverview('s1', [sr], [rubric], [], undefined, 'jaar-3', 'havo');
+        expect(result.trackYearProgress?.expectedRange).toEqual({ min: 'b1', max: 'b1' });
+        expect(result.trackYearProgress?.achievedLevel).toBe('A2');
+        expect(result.trackYearProgress?.status).toBe('behind');
+    });
+
+    it('uses the uniform track-agnostic range for years without a VO track', () => {
+        const result = getCefrStudentOverview('s1', [], [], [], undefined, 'groep-8', undefined);
+        expect(result.trackYearProgress?.expectedRange).toEqual({ min: 'a1', max: 'a1' });
     });
 });

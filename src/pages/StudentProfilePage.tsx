@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import type { TooltipPayloadEntry } from 'recharts';
 import {
     ArrowLeft,
     User,
@@ -24,7 +25,7 @@ import type { EventData } from 'react-joyride';
 import { getStudentProfileTourSteps } from '../data/TutorialSteps';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
-import { calcGradeSummary } from '../utils/gradeCalc';
+import { calcGradeSummary, type GradeSummary } from '../utils/gradeCalc';
 import { exportSinglePdf } from '../utils/pdfExport';
 import { logAuditEvent } from '../services/database/AuditLogger';
 import { getStudentGoalScores } from '../utils/learningGoalsAggregator';
@@ -34,9 +35,9 @@ import CefrTrackYearBand from '../components/CEFR/CefrTrackYearBand';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import { getCefrStudentOverview } from '../utils/cefrStudentAggregator';
 import { CEFR_LEVELS, CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
-import { VO_TRACK_LABELS, VO_TRACK_COLORS } from '../data/voTracks';
+import { VO_TRACK_LABELS, getTrackBadgeColor, getEffectiveVoTrack } from '../data/voTracks';
 import RecordingPlayer from '../components/Recordings/RecordingPlayer';
-import type { CefrLevel, CefrSkill, SessionRecording } from '../types';
+import type { CefrLevel, CefrSkill, GradeScale, Rubric, SessionRecording, StudentRubric } from '../types';
 export default function StudentProfilePage() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -50,8 +51,7 @@ export default function StudentProfilePage() {
         selfAssessments,
         speakingSessions,
         standardMasteryTargets,
-    } =
-        useApp();
+    } = useApp();
     const [exportingId, setExportingId] = useState<string | null>(null);
     const [copiedSALink, setCopiedSALink] = useState<string | null>(null);
     const [showSpeakingPicker, setShowSpeakingPicker] = useState(false);
@@ -63,7 +63,7 @@ export default function StudentProfilePage() {
 
     const student = students.find((s) => s.id === id);
     const cls = classes.find((c) => c.id === student?.classId);
-    const effectiveTrack = student?.voTrack ?? cls?.voTrack;
+    const effectiveTrack = getEffectiveVoTrack(student, cls);
 
     const history = useMemo(() => {
         if (!student) return [];
@@ -93,7 +93,14 @@ export default function StudentProfilePage() {
                     score: parseFloat(summary.modifiedPercentage.toFixed(1)),
                 };
             })
-            .filter(Boolean) as { sr: any; rubric: any; scale: any; summary: any; dateStr: string; score: number }[];
+            .filter(Boolean) as {
+            sr: StudentRubric;
+            rubric: Rubric;
+            scale: GradeScale;
+            summary: GradeSummary;
+            dateStr: string;
+            score: number;
+        }[];
     }, [student, studentRubrics, rubrics, gradeScales, settings]);
 
     const goals = useMemo(() => {
@@ -316,7 +323,7 @@ export default function StudentProfilePage() {
         setTimeout(() => setCopiedSALink(null), 2000);
     }
 
-    const handleExport = async (h: any) => {
+    const handleExport = async (h: (typeof history)[number]) => {
         setExportingId(h.sr.id);
         try {
             await exportSinglePdf(h.sr, h.rubric, student, h.scale, {
@@ -479,7 +486,7 @@ export default function StudentProfilePage() {
                                             fontWeight: 700,
                                             padding: '2px 6px',
                                             borderRadius: 4,
-                                            background: cls.color ?? VO_TRACK_COLORS[cls.voTrack],
+                                            background: getTrackBadgeColor(cls),
                                             color: '#fff',
                                         }}
                                     >
@@ -832,9 +839,13 @@ export default function StudentProfilePage() {
                                                 }}
                                                 labelStyle={{ color: 'var(--text)', fontWeight: 600, marginBottom: 4 }}
                                                 itemStyle={{ color: 'var(--accent)', fontWeight: 600 }}
-                                                formatter={(val: unknown, _name: unknown, props: any) => [
+                                                formatter={(
+                                                    val: unknown,
+                                                    _name: unknown,
+                                                    props: TooltipPayloadEntry
+                                                ) => [
                                                     `${typeof val === 'number' ? val : 0}%`,
-                                                    props.payload.rubric.name,
+                                                    (props.payload as (typeof history)[number]).rubric.name,
                                                 ]}
                                             />
                                             <Line
@@ -1276,7 +1287,7 @@ export default function StudentProfilePage() {
                                                         </button>
                                                         {(h.rubric.cefrTargetLevel ||
                                                             h.rubric.criteria?.some(
-                                                                (c: any) => c.cefrDescriptors?.length > 0
+                                                                (c) => c.cefrDescriptors && c.cefrDescriptors.length > 0
                                                             )) && (
                                                             <button
                                                                 className="btn btn-ghost btn-icon btn-sm"

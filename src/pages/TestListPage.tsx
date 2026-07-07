@@ -165,6 +165,7 @@ export default function TestListPage() {
                                 >
                                     {visibleTests.map((test, idx) => {
                                         const totalPoints = test.questions.reduce((sum, q) => sum + (q.points || 0), 0);
+                                        const isOverdue = !!test.dueDate && new Date(test.dueDate) < new Date();
                                         return (
                                             <Draggable
                                                 key={test.id}
@@ -230,14 +231,12 @@ export default function TestListPage() {
                                                                             <span
                                                                                 style={{
                                                                                     marginLeft: 8,
-                                                                                    color:
-                                                                                        new Date(test.dueDate) < new Date()
-                                                                                            ? 'var(--red)'
-                                                                                            : undefined,
-                                                                                    fontWeight:
-                                                                                        new Date(test.dueDate) < new Date()
-                                                                                            ? 700
-                                                                                            : undefined,
+                                                                                    color: isOverdue
+                                                                                        ? 'var(--red)'
+                                                                                        : undefined,
+                                                                                    fontWeight: isOverdue
+                                                                                        ? 700
+                                                                                        : undefined,
                                                                                 }}
                                                                             >
                                                                                 {t('tests.due_date_badge', {

@@ -122,6 +122,7 @@
         "students_step_import_content": "Importa alumnos en bloque desde un archivo CSV, incluidas exportaciones de Magister, para configurar una clase entera de una vez."
     },
     "common": {
+        "actions": "Acciones",
         "unsaved_title": "Cambios sin guardar",
         "unsaved_message": "Tienes cambios sin guardar. Si sales ahora, se perderán.",
         "unsaved_leave": "Salir",
@@ -277,6 +278,8 @@
         "mastery_target_choose_standard": "Elegir estándar…",
         "mastery_target_needs_api_key": "Configura una clave API de Common Standards Project arriba para vincular un estándar.",
         "mastery_target_percentage_label": "Dominio objetivo (%)",
+        "mastery_target_delete_title": "¿Eliminar este objetivo de dominio?",
+        "mastery_target_delete_confirm": "¿Seguro que quieres eliminar este objetivo de dominio? Esta acción no se puede deshacer.",
         "scale_name_letter_10": "Calificaciones con letra (10 puntos)",
         "scale_name_pass_fail": "Aprobado/Suspenso",
         "scale_name_dutch_10": "Escala holandesa (1–10)",
@@ -797,6 +800,7 @@
         "rename_class_title": "Renombrar Clase",
         "form_new_name": "Nuevo Nombre",
         "form_school_year": "Año Escolar",
+        "form_school_year_none": "— Sin año escolar —",
         "form_class_color": "Color de la Clase",
         "merge_class_title": "Fusionar Clase",
         "merge_class_description": "Selecciona la clase de destino para mover todos los estudiantes. La clase actual (<strong>{{className}}</strong>) se eliminará.",
@@ -2201,6 +2205,7 @@
         "rb_tests_hottext_body2": "— el botón «Insertar fragmento seleccionable» envuelve tu selección de texto actual por ti. Debajo del pasaje, usa las marcas de verificación para indicar qué fragmentos deben seleccionar los alumnos. Los alumnos hacen clic en los fragmentos resaltados para activarlos o desactivarlos.",
         "rb_tests_hottext_body3": "Permitir crédito parcial",
         "rb_tests_hottext_body4": "otorga puntos por fragmento en lugar de todo o nada.",
+        "rb_tests_due_date_body": "Establece una fecha límite en el creador de pruebas para mostrar una insignia de \"vencida\" en la lista de pruebas una vez pasada la fecha, y para usarla como fecha de expiración predeterminada al generar enlaces para compartir con los alumnos.",
         "rb_tests_student_view_title": "Lo que ven los alumnos",
         "rb_tests_student_view_item_seb": "Si la prueba requiere Safe Exam Browser, los alumnos ven una pantalla de bloqueo hasta que abren el enlace dentro de SEB.",
         "rb_tests_student_view_item_timer": "Un temporizador de cuenta atrás (si se establece) muestra el tiempo restante y entrega automáticamente la prueba cuando llega a cero.",
