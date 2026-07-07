@@ -103,7 +103,10 @@ describe('searchAll', () => {
 
     describe('compound student+rubric grade shortcut', () => {
         it('promotes a combined grade result to the top when both names co-occur, without suppressing the originals', () => {
-            const results = searchAll('José García Persuasive Essay', makeData({ students: [student], rubrics: [rubric], classes: [cls] }));
+            const results = searchAll(
+                'José García Persuasive Essay',
+                makeData({ students: [student], rubrics: [rubric], classes: [cls] })
+            );
             expect(results[0]).toEqual({
                 type: 'grade',
                 id: 's1:r1',
@@ -122,7 +125,10 @@ describe('searchAll', () => {
 
         it('ignores names shorter than 3 characters to avoid initials-based noise', () => {
             const shortNameStudent: Student = { id: 's5', name: 'Jo', classId: 'c1' };
-            const results = searchAll('Jo Persuasive Essay', makeData({ students: [shortNameStudent], rubrics: [rubric] }));
+            const results = searchAll(
+                'Jo Persuasive Essay',
+                makeData({ students: [shortNameStudent], rubrics: [rubric] })
+            );
             expect(results.some((r) => r.type === 'grade')).toBe(false);
         });
 
@@ -177,10 +183,7 @@ describe('searchAll', () => {
 
         it("a student's own voTrack override wins over the class default for track: filtering", () => {
             const overriddenStudent: Student = { ...havoStudent, id: 'so', voTrack: 'vwo' };
-            const results = searchAll(
-                'track:vwo',
-                makeData({ students: [overriddenStudent], classes: [havoClass] })
-            );
+            const results = searchAll('track:vwo', makeData({ students: [overriddenStudent], classes: [havoClass] }));
             expect(results.map((r) => r.id)).toEqual(['so']);
         });
 
