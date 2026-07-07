@@ -2202,6 +2202,7 @@
         "rb_tests_hottext_body2": "— the \"Insert selectable fragment\" button wraps your current text selection for you. Below the passage, use the checkmarks to mark which fragments students should select. Students click highlighted fragments to toggle them on or off.",
         "rb_tests_hottext_body3": "Allow partial credit",
         "rb_tests_hottext_body4": "awards points per fragment instead of all-or-nothing.",
+        "rb_tests_due_date_body": "Set a due date in the test builder to show an overdue badge in the test list once it passes, and to default the expiry date when generating student share links.",
         "rb_tests_student_view_title": "What students see",
         "rb_tests_student_view_item_seb": "If the test requires Safe Exam Browser, students see a blocking screen until they open the link inside SEB.",
         "rb_tests_student_view_item_timer": "A countdown timer (when set) shows time remaining and auto-submits the test when it reaches zero.",

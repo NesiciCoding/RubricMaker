@@ -273,9 +273,8 @@ export default function CefrOverviewPage() {
                                     </thead>
                                     <tbody>
                                         {studentOverviews.map(({ student: s, overview: ov, cls: sc }, i) => {
-                                            const rowTarget = sc?.voTrack
-                                                ? VO_TRACK_DEFAULT_CEFR[sc.voTrack]
-                                                : undefined;
+                                            const rowTrack = s.voTrack ?? sc?.voTrack;
+                                            const rowTarget = rowTrack ? VO_TRACK_DEFAULT_CEFR[rowTrack] : undefined;
                                             return (
                                                 <tr
                                                     key={s.id}

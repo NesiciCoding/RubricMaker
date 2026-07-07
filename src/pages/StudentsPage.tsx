@@ -222,6 +222,20 @@ export default function StudentsPage() {
     const [renameClassYear, setRenameClassYear] = useState<SchoolYear | ''>('');
     const [renameClassColor, setRenameClassColor] = useState('');
 
+    function saveClassRename() {
+        const c = classes.find((cl) => cl.id === renameClassId);
+        if (!c || !renameClassVal.trim()) return;
+        updateClass({
+            ...c,
+            name: renameClassVal.trim(),
+            voTrack:
+                renameClassYear && !SCHOOL_YEAR_HAS_TRACK[renameClassYear] ? undefined : renameClassTrack || undefined,
+            year: renameClassYear || undefined,
+            color: renameClassColor || undefined,
+        });
+        setRenameClassId(null);
+    }
+
     const [mergeClassId, setMergeClassId] = useState<string | null>(null);
     const [mergeTargetId, setMergeTargetId] = useState('');
     const [mergeConfirming, setMergeConfirming] = useState(false);
@@ -525,7 +539,7 @@ export default function StudentsPage() {
                                                                     gap: 4,
                                                                 }}
                                                             >
-                                                                {c.voTrack && (
+                                                                {c.voTrack ? (
                                                                     <span
                                                                         style={{
                                                                             fontSize: 9,
@@ -539,6 +553,19 @@ export default function StudentsPage() {
                                                                     >
                                                                         {VO_TRACK_LABELS[c.voTrack]}
                                                                     </span>
+                                                                ) : (
+                                                                    c.color && (
+                                                                        <span
+                                                                            aria-hidden="true"
+                                                                            style={{
+                                                                                width: 9,
+                                                                                height: 9,
+                                                                                borderRadius: '50%',
+                                                                                background: c.color,
+                                                                                display: 'inline-block',
+                                                                            }}
+                                                                        />
+                                                                    )
                                                                 )}
                                                                 {c.rubricIds && c.rubricIds.length > 0 && (
                                                                     <span
@@ -1118,27 +1145,14 @@ export default function StudentsPage() {
                                         onChange={(e) => setRenameClassVal(e.target.value)}
                                         autoFocus
                                         onKeyDown={(e) => {
-                                            if (e.key === 'Enter' && renameClassVal.trim()) {
-                                                const c = classes.find((cl) => cl.id === renameClassId);
-                                                if (c)
-                                                    updateClass({
-                                                        ...c,
-                                                        name: renameClassVal.trim(),
-                                                        voTrack:
-                                                            renameClassYear && !SCHOOL_YEAR_HAS_TRACK[renameClassYear]
-                                                                ? undefined
-                                                                : renameClassTrack || undefined,
-                                                        year: renameClassYear || undefined,
-                                                        color: renameClassColor || undefined,
-                                                    });
-                                                setRenameClassId(null);
-                                            }
+                                            if (e.key === 'Enter' && renameClassVal.trim()) saveClassRename();
                                         }}
                                     />
                                 </div>
                                 <div className="form-group" style={{ marginBottom: 14 }}>
-                                    <label>{t('studentsPage.form_school_year')}</label>
+                                    <label htmlFor="class-rename-year">{t('studentsPage.form_school_year')}</label>
                                     <select
+                                        id="class-rename-year"
                                         value={renameClassYear}
                                         onChange={(e) => setRenameClassYear(e.target.value as SchoolYear | '')}
                                     >
@@ -1152,8 +1166,9 @@ export default function StudentsPage() {
                                 </div>
                                 {(!renameClassYear || SCHOOL_YEAR_HAS_TRACK[renameClassYear]) && (
                                     <div className="form-group" style={{ marginBottom: 14 }}>
-                                        <label>{t('voTrack.section_label')}</label>
+                                        <label htmlFor="class-rename-track">{t('voTrack.section_label')}</label>
                                         <select
+                                            id="class-rename-track"
                                             value={renameClassTrack}
                                             onChange={(e) => setRenameClassTrack(e.target.value as VoTrack | '')}
                                         >
@@ -1218,21 +1233,7 @@ export default function StudentsPage() {
                                 <button
                                     className="btn btn-primary"
                                     disabled={!renameClassVal.trim()}
-                                    onClick={() => {
-                                        const c = classes.find((cl) => cl.id === renameClassId);
-                                        if (c)
-                                            updateClass({
-                                                ...c,
-                                                name: renameClassVal.trim(),
-                                                voTrack:
-                                                    renameClassYear && !SCHOOL_YEAR_HAS_TRACK[renameClassYear]
-                                                        ? undefined
-                                                        : renameClassTrack || undefined,
-                                                year: renameClassYear || undefined,
-                                                color: renameClassColor || undefined,
-                                            });
-                                        setRenameClassId(null);
-                                    }}
+                                    onClick={saveClassRename}
                                 >
                                     {t('common.save')}
                                 </button>

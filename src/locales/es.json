@@ -2204,6 +2204,7 @@
         "rb_tests_hottext_body2": "— el botón «Insertar fragmento seleccionable» envuelve tu selección de texto actual por ti. Debajo del pasaje, usa las marcas de verificación para indicar qué fragmentos deben seleccionar los alumnos. Los alumnos hacen clic en los fragmentos resaltados para activarlos o desactivarlos.",
         "rb_tests_hottext_body3": "Permitir crédito parcial",
         "rb_tests_hottext_body4": "otorga puntos por fragmento en lugar de todo o nada.",
+        "rb_tests_due_date_body": "Establece una fecha límite en el creador de pruebas para mostrar una insignia de \"vencida\" en la lista de pruebas una vez pasada la fecha, y para usarla como fecha de expiración predeterminada al generar enlaces para compartir con los alumnos.",
         "rb_tests_student_view_title": "Lo que ven los alumnos",
         "rb_tests_student_view_item_seb": "Si la prueba requiere Safe Exam Browser, los alumnos ven una pantalla de bloqueo hasta que abren el enlace dentro de SEB.",
         "rb_tests_student_view_item_timer": "Un temporizador de cuenta atrás (si se establece) muestra el tiempo restante y entrega automáticamente la prueba cuando llega a cero.",

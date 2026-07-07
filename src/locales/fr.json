@@ -2204,6 +2204,7 @@
         "rb_tests_hottext_body2": "— le bouton « Insérer un fragment sélectionnable » enveloppe votre sélection de texte actuelle pour vous. Sous le passage, utilisez les coches pour marquer quels fragments les élèves doivent sélectionner. Les élèves cliquent sur les fragments surlignés pour les activer ou les désactiver.",
         "rb_tests_hottext_body3": "Autoriser le crédit partiel",
         "rb_tests_hottext_body4": "attribue des points par fragment au lieu de tout ou rien.",
+        "rb_tests_due_date_body": "Définissez une date limite dans le générateur de tests pour afficher un badge « en retard » dans la liste des tests une fois la date dépassée, et pour préremplir la date d'expiration lors de la génération des liens de partage pour les élèves.",
         "rb_tests_student_view_title": "Ce que voient les élèves",
         "rb_tests_student_view_item_seb": "Si le test exige Safe Exam Browser, les élèves voient un écran de blocage jusqu'à ce qu'ils ouvrent le lien dans SEB.",
         "rb_tests_student_view_item_timer": "Un minuteur (s'il est défini) affiche le temps restant et soumet automatiquement le test lorsqu'il atteint zéro.",
