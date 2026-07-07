@@ -1493,6 +1493,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     overallComment: '',
                     isPeerReview: false,
                     groupId,
+                    gradedBy: undefined,
+                    gradedAt: undefined,
+                    submittedAt: undefined,
+                    notHandedIn: undefined,
+                    round: undefined,
                 };
             });
             srs.forEach((sr) => dispatch({ type: 'SAVE_STUDENT_RUBRIC', payload: sr }));
