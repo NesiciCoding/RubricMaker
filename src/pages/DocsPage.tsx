@@ -1061,10 +1061,7 @@ function CefrTab() {
                     {t('docs.ce_mastery_targets_intro')}
                 </p>
                 <FeatureList
-                    items={[
-                        t('docs.ce_mastery_targets_item_config'),
-                        t('docs.ce_mastery_targets_item_status'),
-                    ]}
+                    items={[t('docs.ce_mastery_targets_item_config'), t('docs.ce_mastery_targets_item_status')]}
                 />
             </FeatureSection>
 

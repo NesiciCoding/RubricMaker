@@ -50,8 +50,7 @@ export default function StudentProfilePage() {
         selfAssessments,
         speakingSessions,
         standardMasteryTargets,
-    } =
-        useApp();
+    } = useApp();
     const [exportingId, setExportingId] = useState<string | null>(null);
     const [copiedSALink, setCopiedSALink] = useState<string | null>(null);
     const [showSpeakingPicker, setShowSpeakingPicker] = useState(false);

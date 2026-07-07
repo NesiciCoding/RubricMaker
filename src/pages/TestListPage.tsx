@@ -231,11 +231,13 @@ export default function TestListPage() {
                                                                                 style={{
                                                                                     marginLeft: 8,
                                                                                     color:
-                                                                                        new Date(test.dueDate) < new Date()
+                                                                                        new Date(test.dueDate) <
+                                                                                        new Date()
                                                                                             ? 'var(--red)'
                                                                                             : undefined,
                                                                                     fontWeight:
-                                                                                        new Date(test.dueDate) < new Date()
+                                                                                        new Date(test.dueDate) <
+                                                                                        new Date()
                                                                                             ? 700
                                                                                             : undefined,
                                                                                 }}

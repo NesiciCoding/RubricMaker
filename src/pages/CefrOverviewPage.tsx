@@ -439,7 +439,9 @@ export default function CefrOverviewPage() {
                                                                 )}
                                                             </span>
                                                         ) : (
-                                                            <span style={{ color: 'var(--border)', fontSize: '0.7rem' }}>
+                                                            <span
+                                                                style={{ color: 'var(--border)', fontSize: '0.7rem' }}
+                                                            >
                                                                 ·
                                                             </span>
                                                         )}
