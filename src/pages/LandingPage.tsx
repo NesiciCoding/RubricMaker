@@ -112,7 +112,7 @@ const TEACHER_FEATURES = [
     {
         icon: Search,
         title: 'Quick Search',
-        desc: 'Press Ctrl/Cmd+K from anywhere to instantly find a rubric, test, student, class, or essay, and switch your active class from the same toolbar.',
+        desc: "Press Ctrl/Cmd+K from anywhere to instantly find a rubric, test, student, class, or essay — filter by school year or VO track, or type a student's name with a rubric's name to jump straight to grading.",
         color: '#f59e0b',
     },
     {
@@ -169,7 +169,7 @@ const STUDENT_FEATURES = [
     {
         icon: ListChecks,
         title: 'My Work & Progress',
-        desc: 'See every assigned essay and test in one to-do list — overdue, planned, and completed — plus a radar chart of your own scores across rubrics.',
+        desc: 'See every assigned essay and test in one to-do list — overdue, planned, and completed — plus a radar chart of your own scores across rubrics. Search your own work, grades, and flashcards right from the portal.',
         color: '#14b8a6',
     },
     {

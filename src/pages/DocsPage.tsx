@@ -679,7 +679,10 @@ function GettingStartedTab() {
                     items={[
                         t('docs.gs_search_item_types'),
                         t('docs.gs_search_item_filters'),
+                        t('docs.gs_search_item_year_track'),
+                        t('docs.gs_search_item_grade_shortcut'),
                         t('docs.gs_search_item_active_class'),
+                        t('docs.gs_search_item_portal'),
                     ]}
                 />
             </FeatureSection>

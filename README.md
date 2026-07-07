@@ -85,6 +85,7 @@ A comprehensive rubric creation and grading tool built with React and TypeScript
 - **Self-assessment**: Students complete CEFR self-assessments from their portal.
 - **My Work**: A combined to-do list of assigned essays and tests, grouped into Overdue/Planned/Completed with per-item status (not started/in progress/submitted). Tests open in one click from the list, backed by a `test_assignments` Supabase table mirroring `essay_assignments`.
 - **My Progress**: A radar chart of the student's own per-criterion scores, combined across every graded rubric (criteria with matching titles averaged together) or filtered to a single rubric.
+- **Portal search**: A search box in the portal header, scoped to that student's own graded rubrics, assigned tests/essays, and flashcard decks — selecting a result scrolls to its section on the page.
 
 ### 7. Customisation & Accessibility
 
@@ -92,7 +93,7 @@ A comprehensive rubric creation and grading tool built with React and TypeScript
 - **WCAG 2.1 AA**: Icon-only buttons carry `aria-label`; tab navigation uses `role="tablist"` / `role="tab"` with `aria-selected`; axe-core audits run in CI on key pages and components.
 - **Dyslexia-friendly reading mode**: Optional Settings toggle increases line-height and letter-spacing app-wide for dyslexic readers.
 - **In-app help**: A Joyride guided tour runs on first login and can be restarted from Settings. Page-specific tours are available on the Rubric Builder, Statistics, and Export pages via the "Tour this page" button.
-- **Global search**: A search icon in the Topbar (or `Ctrl`/`Cmd`+`K` from anywhere) opens a quick search across rubrics, tests, students, classes, and essays, with `type:` and `class:` filter tokens. The Topbar also has an active-class selector that other pages (e.g. Statistics) read as their default class filter.
+- **Global search**: A search icon in the Topbar (or `Ctrl`/`Cmd`+`K` from anywhere) opens a quick search across rubrics, tests, students, classes, and essays, with `type:`, `class:`, `year:`, and `track:` filter tokens (school year/VO track also match as free text, as does a rubric's CEFR level). Typing a student's name together with a rubric's name (e.g. "Anna vocabulary quiz") surfaces a shortcut straight to that student's grading page for that rubric, alongside the normal separate results. The Topbar also has an active-class selector that other pages (e.g. Statistics) read as their default class filter.
 
 ### 8. Installation
 
@@ -216,7 +217,8 @@ npm run db:reset     # Reset and re-apply all migrations
 | `src/utils/learningPathAggregator.ts`   | Rule-based rubric recommendations and intervention flagging                                    |
 | `src/utils/testSummaryAggregator.ts`    | Per-question/per-skill strong-weak test breakdown                                              |
 | `src/utils/reportCardAggregator.ts`     | Composes CEFR, learning-goals, and test-summary data into one report card                      |
-| `src/utils/globalSearch.ts`             | Token-aware search (`type:`/`class:` filters) across rubrics, tests, students, classes, essays |
+| `src/utils/globalSearch.ts`             | Token-aware search (`type:`/`class:`/`year:`/`track:` filters, student+rubric grading shortcut) across rubrics, tests, students, classes, essays |
+| `src/utils/portalSearch.ts`             | Student-portal search over a student's own graded rubrics, work (tests/essays), and flashcard decks |
 | `src/utils/statsChartPresets.ts`        | Recommended chart definitions for the Statistics "Custom Views" gallery                        |
 | `src/utils/coGradingModerationQueue.ts` | Flags disputed co-graded submissions (delta above threshold) for the Moderation queue          |
 | `src/utils/flashcardScheduler.ts`       | Thin wrapper around `ts-fsrs` (FSRS spaced repetition): rating, study queue, interval preview  |

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Search, FileText, ClipboardList, User, Users, BookOpen } from 'lucide-react';
+import { Search, FileText, ClipboardList, User, Users, BookOpen, GraduationCap } from 'lucide-react';
 import Modal from '../ui/Modal';
 import { useApp } from '../../context/AppContext';
 import { searchAll, type SearchResult, type SearchResultType } from '../../utils/globalSearch';
@@ -12,6 +12,7 @@ const TYPE_ICONS: Record<SearchResultType, React.ComponentType<{ size?: number }
     student: User,
     class: Users,
     essay: BookOpen,
+    grade: GraduationCap,
 };
 
 interface Props {

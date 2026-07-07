@@ -100,4 +100,97 @@ describe('searchAll', () => {
         const results = searchAll('summer', makeData({ essayAssignments: [essay, dup] }));
         expect(results).toEqual([{ type: 'essay', id: 'tk1', label: 'My Summer', route: '/essays/tk1' }]);
     });
+
+    describe('compound student+rubric grade shortcut', () => {
+        it('promotes a combined grade result to the top when both names co-occur, without suppressing the originals', () => {
+            const results = searchAll(
+                'José García Persuasive Essay',
+                makeData({ students: [student], rubrics: [rubric], classes: [cls] })
+            );
+            expect(results[0]).toEqual({
+                type: 'grade',
+                id: 's1:r1',
+                label: 'José García — Persuasive Essay',
+                sublabel: '5A',
+                route: '/rubrics/r1/grade/s1',
+            });
+            expect(results.some((r) => r.type === 'student' && r.id === 's1')).toBe(true);
+            expect(results.some((r) => r.type === 'rubric' && r.id === 'r1')).toBe(true);
+        });
+
+        it('does not synthesize a grade result when only one name is present', () => {
+            const results = searchAll('José García', makeData({ students: [student], rubrics: [rubric] }));
+            expect(results.some((r) => r.type === 'grade')).toBe(false);
+        });
+
+        it('ignores names shorter than 3 characters to avoid initials-based noise', () => {
+            const shortNameStudent: Student = { id: 's5', name: 'Jo', classId: 'c1' };
+            const results = searchAll(
+                'Jo Persuasive Essay',
+                makeData({ students: [shortNameStudent], rubrics: [rubric] })
+            );
+            expect(results.some((r) => r.type === 'grade')).toBe(false);
+        });
+
+        it('suppresses the grade shortcut under an unrelated type: filter', () => {
+            const results = searchAll(
+                'type:essay José García Persuasive Essay',
+                makeData({ students: [student], rubrics: [rubric] })
+            );
+            expect(results.some((r) => r.type === 'grade')).toBe(false);
+        });
+
+        it('keeps the grade shortcut under type:student and type:rubric filters', () => {
+            const asStudent = searchAll(
+                'type:student José García Persuasive Essay',
+                makeData({ students: [student], rubrics: [rubric] })
+            );
+            const asRubric = searchAll(
+                'type:rubric José García Persuasive Essay',
+                makeData({ students: [student], rubrics: [rubric] })
+            );
+            expect(asStudent.some((r) => r.type === 'grade')).toBe(true);
+            expect(asRubric.some((r) => r.type === 'grade')).toBe(true);
+        });
+    });
+
+    describe('year:/track: filter tokens and metadata free text', () => {
+        const havoClass: Class = { id: 'ch', name: 'HAVO 4A', year: 'jaar-4', voTrack: 'havo' };
+        const vwoClass: Class = { id: 'cv', name: 'VWO 3B', voTrack: 'vwo' };
+        const havoStudent: Student = { id: 'sh', name: 'Emma', classId: 'ch' };
+        const vwoStudent: Student = { id: 'sv', name: 'Liam', classId: 'cv' };
+
+        it('filters students by track:', () => {
+            const results = searchAll(
+                'type:student track:havo',
+                makeData({ students: [havoStudent, vwoStudent], classes: [havoClass, vwoClass] })
+            );
+            expect(results.map((r) => r.id)).toEqual(['sh']);
+        });
+
+        it('filters students by year:', () => {
+            const results = searchAll(
+                'type:student year:jaar-4',
+                makeData({ students: [havoStudent, vwoStudent], classes: [havoClass, vwoClass] })
+            );
+            expect(results.map((r) => r.id)).toEqual(['sh']);
+        });
+
+        it('matches a class by its track label as free text, without a track: prefix', () => {
+            const results = searchAll('havo', makeData({ classes: [havoClass, vwoClass] }));
+            expect(results.map((r) => r.id)).toEqual(['ch']);
+        });
+
+        it("a student's own voTrack override wins over the class default for track: filtering", () => {
+            const overriddenStudent: Student = { ...havoStudent, id: 'so', voTrack: 'vwo' };
+            const results = searchAll('track:vwo', makeData({ students: [overriddenStudent], classes: [havoClass] }));
+            expect(results.map((r) => r.id)).toEqual(['so']);
+        });
+
+        it('matches a rubric by cefrTargetLevel as free text', () => {
+            const b1Rubric: Rubric = { ...rubric, id: 'r2', cefrTargetLevel: 'B1' };
+            const results = searchAll('b1', makeData({ rubrics: [rubric, b1Rubric] }));
+            expect(results.map((r) => r.id)).toEqual(['r2']);
+        });
+    });
 });

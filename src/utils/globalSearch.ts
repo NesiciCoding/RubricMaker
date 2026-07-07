@@ -1,6 +1,8 @@
-import type { Class, EssayAssignment, Rubric, Student, Test } from '../types';
+import type { Class, EssayAssignment, Rubric, Student, Test, VoTrack } from '../types';
+import { SCHOOL_YEAR_LABELS } from '../data/schoolYears';
+import { VO_TRACK_LABELS } from '../data/voTracks';
 
-export type SearchResultType = 'rubric' | 'test' | 'student' | 'class' | 'essay';
+export type SearchResultType = 'rubric' | 'test' | 'student' | 'class' | 'essay' | 'grade';
 
 export interface SearchResult {
     type: SearchResultType;
@@ -31,42 +33,58 @@ const TYPE_ALIASES: Record<string, SearchResultType> = {
     essays: 'essay',
 };
 
-function normalize(s: string): string {
+export function normalize(s: string): string {
     return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 }
 
 /**
- * Splits a query into `type:`/`class:` filter tokens and a free-text remainder.
- * A filter value is either a single bare word (`class:5A`) or a quoted phrase
- * for multi-word values (`class:"English 1"`) — quoting avoids ambiguity with
- * any free text that follows.
+ * Splits a query into `type:`/`class:`/`year:`/`track:` filter tokens and a free-text
+ * remainder. A filter value is either a single bare word (`class:5A`) or a quoted phrase
+ * for multi-word values (`class:"English 1"`) — quoting avoids ambiguity with any free
+ * text that follows. `year:`/`track:` take the raw enum value (`jaar-3`, `havo`), not the
+ * display label.
  */
-function parseQuery(query: string): { typeFilter?: SearchResultType; classFilter?: string; text: string } {
+function parseQuery(query: string): {
+    typeFilter?: SearchResultType;
+    classFilter?: string;
+    yearFilter?: string;
+    trackFilter?: string;
+    text: string;
+} {
     let typeFilter: SearchResultType | undefined;
     let classFilter: string | undefined;
+    let yearFilter: string | undefined;
+    let trackFilter: string | undefined;
 
-    const filterRegex = /\b(type|class):(?:"([^"]*)"|(\S+))/gi;
+    const filterRegex = /\b(type|class|year|track):(?:"([^"]*)"|(\S+))/gi;
     const remaining = query.replace(filterRegex, (match, key: string, quoted?: string, bare?: string) => {
         const value = quoted ?? bare ?? '';
-        if (key.toLowerCase() === 'type') {
+        const lowerKey = key.toLowerCase();
+        if (lowerKey === 'type') {
             const alias = TYPE_ALIASES[value.toLowerCase()];
             if (!alias) return match;
             typeFilter = alias;
-        } else {
+        } else if (lowerKey === 'class') {
             classFilter = value;
+        } else if (lowerKey === 'year') {
+            yearFilter = value;
+        } else {
+            trackFilter = value;
         }
         return ' ';
     });
 
-    return { typeFilter, classFilter, text: normalize(remaining.trim()) };
+    return { typeFilter, classFilter, yearFilter, trackFilter, text: normalize(remaining.trim()) };
 }
 
 export function searchAll(query: string, data: SearchableData): SearchResult[] {
-    const { typeFilter, classFilter, text } = parseQuery(query);
-    if (!text && !classFilter && !typeFilter) return [];
+    const { typeFilter, classFilter, yearFilter, trackFilter, text } = parseQuery(query);
+    if (!text && !classFilter && !typeFilter && !yearFilter && !trackFilter) return [];
 
     const classById = new Map(data.classes.map((c) => [c.id, c]));
     const normalizedClassFilter = classFilter ? normalize(classFilter) : undefined;
+    const normalizedYearFilter = yearFilter ? normalize(yearFilter) : undefined;
+    const normalizedTrackFilter = trackFilter ? normalize(trackFilter) : undefined;
 
     const matchesText = (...fields: (string | undefined)[]) =>
         !text || fields.some((f) => f && normalize(f).includes(text));
@@ -77,12 +95,64 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
         return !!className && normalize(className).includes(normalizedClassFilter);
     };
 
+    const matchesYear = (classId: string | undefined) => {
+        if (!normalizedYearFilter) return true;
+        const year = classId ? classById.get(classId)?.year : undefined;
+        return !!year && normalize(year).includes(normalizedYearFilter);
+    };
+
+    const matchesTrack = (classId: string | undefined, studentVoTrack?: VoTrack) => {
+        if (!normalizedTrackFilter) return true;
+        const effective = studentVoTrack ?? (classId ? classById.get(classId)?.voTrack : undefined);
+        return !!effective && normalize(effective).includes(normalizedTrackFilter);
+    };
+
     const results: SearchResult[] = [];
+    const seen = new Set<string>();
+    const addResult = (result: SearchResult) => {
+        const key = `${result.type}-${result.id}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        results.push(result);
+    };
+
+    // Compound student+rubric shortcut — resolved first so it's promoted to the top of the
+    // results list. A long compound query (containing both full names) generally won't also
+    // satisfy the individual student/rubric blocks' own matchesText check below (that check
+    // requires the *field* to contain the *whole query*, the opposite direction from here), so
+    // the matched student/rubric are added directly alongside the shortcut — "not suppressed"
+    // means explicitly re-added, not merely left for the later blocks to (likely never) find.
+    if (text && (!typeFilter || typeFilter === 'grade' || typeFilter === 'student' || typeFilter === 'rubric')) {
+        for (const s of data.students) {
+            if (s.anonymizedAt) continue;
+            const normName = normalize(s.name);
+            if (normName.length < 3 || !text.includes(normName)) continue;
+            for (const r of data.rubrics) {
+                const normRubric = normalize(r.name);
+                if (normRubric.length < 3 || !text.includes(normRubric)) continue;
+                addResult({
+                    type: 'grade',
+                    id: `${s.id}:${r.id}`,
+                    label: `${s.name} — ${r.name}`,
+                    sublabel: classById.get(s.classId)?.name,
+                    route: `/rubrics/${r.id}/grade/${s.id}`,
+                });
+                addResult({
+                    type: 'student',
+                    id: s.id,
+                    label: s.name,
+                    sublabel: classById.get(s.classId)?.name,
+                    route: `/students/${s.id}`,
+                });
+                addResult({ type: 'rubric', id: r.id, label: r.name, sublabel: r.subject, route: `/rubrics/${r.id}` });
+            }
+        }
+    }
 
     if (!typeFilter || typeFilter === 'rubric') {
         for (const r of data.rubrics) {
-            if (matchesText(r.name, r.subject)) {
-                results.push({
+            if (matchesText(r.name, r.subject, r.cefrTargetLevel)) {
+                addResult({
                     type: 'rubric',
                     id: r.id,
                     label: r.name,
@@ -96,7 +166,7 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
     if (!typeFilter || typeFilter === 'test') {
         for (const t of data.tests) {
             if (matchesText(t.name, t.description)) {
-                results.push({
+                addResult({
                     type: 'test',
                     id: t.id,
                     label: t.name,
@@ -110,12 +180,24 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
     if (!typeFilter || typeFilter === 'student') {
         for (const s of data.students) {
             if (s.anonymizedAt) continue;
-            if (matchesText(s.name, s.studentNumber) && matchesClass(s.classId)) {
-                results.push({
+            const cls = classById.get(s.classId);
+            const effectiveTrack = s.voTrack ?? cls?.voTrack;
+            if (
+                matchesText(
+                    s.name,
+                    s.studentNumber,
+                    cls?.year ? SCHOOL_YEAR_LABELS[cls.year] : undefined,
+                    effectiveTrack ? VO_TRACK_LABELS[effectiveTrack] : undefined
+                ) &&
+                matchesClass(s.classId) &&
+                matchesYear(s.classId) &&
+                matchesTrack(s.classId, s.voTrack)
+            ) {
+                addResult({
                     type: 'student',
                     id: s.id,
                     label: s.name,
-                    sublabel: classById.get(s.classId)?.name,
+                    sublabel: cls?.name,
                     route: `/students/${s.id}`,
                 });
             }
@@ -124,8 +206,17 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
 
     if (!typeFilter || typeFilter === 'class') {
         for (const c of data.classes) {
-            if (matchesText(c.name) && matchesClass(c.id)) {
-                results.push({ type: 'class', id: c.id, label: c.name, sublabel: c.subject, route: '/students' });
+            if (
+                matchesText(
+                    c.name,
+                    c.year ? SCHOOL_YEAR_LABELS[c.year] : undefined,
+                    c.voTrack ? VO_TRACK_LABELS[c.voTrack] : undefined
+                ) &&
+                matchesClass(c.id) &&
+                matchesYear(c.id) &&
+                matchesTrack(c.id)
+            ) {
+                addResult({ type: 'class', id: c.id, label: c.name, sublabel: c.subject, route: '/students' });
             }
         }
     }
@@ -136,7 +227,7 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
             if (seenGroups.has(a.teacherKey)) continue;
             if (matchesText(a.title, a.prompt)) {
                 seenGroups.add(a.teacherKey);
-                results.push({ type: 'essay', id: a.teacherKey, label: a.title, route: `/essays/${a.teacherKey}` });
+                addResult({ type: 'essay', id: a.teacherKey, label: a.title, route: `/essays/${a.teacherKey}` });
             }
         }
     }
