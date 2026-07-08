@@ -76,7 +76,7 @@ const TEACHER_FEATURES = [
     {
         icon: ClipboardCheck,
         title: 'Tests & Quizzes',
-        desc: 'Build multiple-choice, multiple-response, true/false, short-answer, open, fill-the-gap, matching, ordering, categorize, and hot text tests, assign them with a share link or Safe Exam Browser, then auto-grade, fine-tune the class average, and export a strong/weak point summary per student or class.',
+        desc: 'Build multiple-choice, multiple-response, true/false, short-answer, open, fill-the-gap, matching, ordering, categorize, and hot text tests, assign them with a share link or Safe Exam Browser, then auto-grade, fine-tune the class average, and export a strong/weak point summary per student or class. Add an ungraded, retakeable Practice mode with audio questions for listening comprehension.',
         color: '#3b82f6',
     },
     {
@@ -157,7 +157,7 @@ const STUDENT_FEATURES = [
     {
         icon: ClipboardCheck,
         title: 'Take a Test',
-        desc: 'Open a test link from your teacher, answer the questions with a countdown timer, and submit — your answers are saved automatically as you go.',
+        desc: 'Open a test link from your teacher, answer the questions with a countdown timer, and submit — your answers are saved automatically as you go. Practice tests can be retaken and never affect your graded results.',
         color: '#3b82f6',
     },
     {

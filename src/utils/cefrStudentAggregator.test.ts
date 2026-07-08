@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { getCefrStudentOverview, highestLevelForSkill, overallLevel } from './cefrStudentAggregator';
 import type { CefrCellData } from './cefrStudentAggregator';
-import type { Rubric, StudentRubric, SelfAssessment, DocumentAnalysisResult } from '../types';
+import type { Rubric, StudentRubric, SelfAssessment, DocumentAnalysisResult, Test, StudentTest } from '../types';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -1008,5 +1008,172 @@ describe('getCefrStudentOverview — trackYearProgress', () => {
     it('uses the uniform track-agnostic range for years without a VO track', () => {
         const result = getCefrStudentOverview('s1', [], [], [], undefined, 'groep-8', undefined);
         expect(result.trackYearProgress?.expectedRange).toEqual({ min: 'a1', max: 'a1' });
+    });
+});
+
+// ─── Test-score aggregation (Step 1b: assessment vs. practice tests) ──────────
+
+function makeTest(overrides: Partial<Test> = {}): Test {
+    return {
+        id: 't1',
+        name: 'Listening check',
+        // calcTestMaxPoints sums question points; a test with no points is skipped entirely
+        // by the aggregator (maxPoints <= 0 guard), so every test needs a non-zero baseline
+        // unless a case is specifically about that guard.
+        questions: [{ id: 'q0', prompt: 'Baseline question', type: 'open', points: 10 }],
+        requireSEB: false,
+        shuffleQuestions: false,
+        createdAt: '2026-01-01T00:00:00.000Z',
+        cefrTargetLevel: 'B1',
+        cefrSkill: 'listening',
+        mode: 'assessment',
+        ...overrides,
+    };
+}
+
+function makeStudentTest(overrides: Partial<StudentTest> = {}): StudentTest {
+    return {
+        id: 'st1',
+        testId: 't1',
+        studentId: 's1',
+        answers: [],
+        status: 'submitted',
+        startedAt: '2026-01-10T09:00:00.000Z',
+        submittedAt: '2026-01-10T09:10:00.000Z',
+        rawTotalPoints: 8,
+        ...overrides,
+    };
+}
+
+describe('getCefrStudentOverview — assessment-mode test scores', () => {
+    it('feeds the graded CEFR cell using the test’s cefrTargetLevel/cefrSkill', () => {
+        const test = makeTest({ questions: [{ id: 'q1', prompt: 'Q', type: 'open', points: 10 }] });
+        const st = makeStudentTest({ rawTotalPoints: 8 });
+        const result = getCefrStudentOverview('s1', [], [], [], undefined, undefined, undefined, [test], [st]);
+        const cell = result.cellMap.get('listening__B1');
+        expect(cell).toBeDefined();
+        expect(cell?.rubricCount).toBe(1);
+        expect(cell?.avgScore).toBe(80);
+        expect(cell?.state).toBe('achieved'); // 80% >= default 70% threshold
+    });
+
+    it('ignores tests with no cefrTargetLevel/cefrSkill set', () => {
+        const test = makeTest({ cefrTargetLevel: undefined, cefrSkill: undefined });
+        const st = makeStudentTest();
+        const result = getCefrStudentOverview('s1', [], [], [], undefined, undefined, undefined, [test], [st]);
+        expect(result.cells).toHaveLength(0);
+        expect(result.practiceCefrProgress).toHaveLength(0);
+    });
+
+    it('directly achieves a linked descriptor’s own cell when the question is answered fully correct', () => {
+        const test = makeTest({
+            questions: [
+                {
+                    id: 'q1',
+                    prompt: 'Q',
+                    type: 'short-answer',
+                    points: 5,
+                    expectedAnswer: 'Paris',
+                    linkedCefrDescriptors: [
+                        { descriptorId: 'd1', level: 'A2', skill: 'reading', descriptionEn: '', descriptionNl: '' },
+                    ],
+                },
+            ],
+        });
+        const st = makeStudentTest({
+            rawTotalPoints: 5,
+            answers: [{ questionId: 'q1', response: 'Paris' }],
+        });
+        const result = getCefrStudentOverview('s1', [], [], [], undefined, undefined, undefined, [test], [st]);
+        expect(result.cellMap.get('reading__A2')?.state).toBe('achieved');
+    });
+
+    it('does not directly achieve a linked descriptor for a zero-point question, even with an answer on record', () => {
+        const test = makeTest({
+            questions: [
+                // Non-zero filler so calcTestMaxPoints > 0 and the test isn't skipped entirely —
+                // the zero-point question below is the one under test.
+                { id: 'q0', prompt: 'Filler', type: 'open', points: 10 },
+                {
+                    id: 'q1',
+                    prompt: 'Ungraded warm-up',
+                    type: 'short-answer',
+                    points: 0,
+                    linkedCefrDescriptors: [
+                        { descriptorId: 'd1', level: 'A2', skill: 'reading', descriptionEn: '', descriptionNl: '' },
+                    ],
+                },
+            ],
+        });
+        const st = makeStudentTest({
+            rawTotalPoints: 0,
+            answers: [{ questionId: 'q1', response: 'anything' }],
+        });
+        const result = getCefrStudentOverview('s1', [], [], [], undefined, undefined, undefined, [test], [st]);
+        expect(result.cellMap.get('reading__A2')).toBeUndefined();
+    });
+});
+
+describe('getCefrStudentOverview — practice-mode test scores', () => {
+    it('feeds practiceCefrProgress instead of the graded cells', () => {
+        const test = makeTest({ mode: 'practice' });
+        const st = makeStudentTest({ rawTotalPoints: 8 });
+        const result = getCefrStudentOverview('s1', [], [], [], undefined, undefined, undefined, [test], [st]);
+        expect(result.cells).toHaveLength(0);
+        expect(result.practiceCefrProgress).toEqual([
+            {
+                skill: 'listening',
+                level: 'B1',
+                attemptCount: 1,
+                avgScore: 80,
+                bestScore: 80,
+                lastAttemptAt: st.submittedAt,
+            },
+        ]);
+    });
+
+    it('averages multiple attempts and tracks the best score independently', () => {
+        const test = makeTest({ mode: 'practice' });
+        const attempt1 = makeStudentTest({ id: 'st1', rawTotalPoints: 5, submittedAt: '2026-01-10T09:00:00.000Z' });
+        const attempt2 = makeStudentTest({ id: 'st2', rawTotalPoints: 9, submittedAt: '2026-01-11T09:00:00.000Z' });
+        const result = getCefrStudentOverview(
+            's1',
+            [],
+            [],
+            [],
+            undefined,
+            undefined,
+            undefined,
+            [test],
+            [attempt1, attempt2]
+        );
+        const progress = result.practiceCefrProgress[0];
+        expect(progress.attemptCount).toBe(2);
+        expect(progress.avgScore).toBe(70); // (50 + 90) / 2
+        expect(progress.bestScore).toBe(90);
+        expect(progress.lastAttemptAt).toBe('2026-01-11T09:00:00.000Z');
+    });
+
+    it('never blends into the graded cells even when an assessment-mode test targets the same skill/level', () => {
+        const assessmentTest = makeTest({ id: 't-assess', mode: 'assessment' });
+        const practiceTest = makeTest({ id: 't-practice', mode: 'practice' });
+        const assessmentAttempt = makeStudentTest({ id: 'st-assess', testId: 't-assess', rawTotalPoints: 10 });
+        const practiceAttempt = makeStudentTest({ id: 'st-practice', testId: 't-practice', rawTotalPoints: 2 });
+        const result = getCefrStudentOverview(
+            's1',
+            [],
+            [],
+            [],
+            undefined,
+            undefined,
+            undefined,
+            [assessmentTest, practiceTest],
+            [assessmentAttempt, practiceAttempt]
+        );
+        // Graded cell reflects only the assessment attempt's score, unaffected by the low practice score.
+        expect(result.cellMap.get('listening__B1')?.avgScore).toBe(100);
+        expect(result.practiceCefrProgress).toEqual([
+            expect.objectContaining({ skill: 'listening', level: 'B1', avgScore: 20 }),
+        ]);
     });
 });

@@ -1161,6 +1161,7 @@ export class SupabaseAdapter {
                     duration_minutes: a.durationMinutes ?? null,
                     created_at: a.createdAt,
                     expires_at: a.expiresAt ?? null,
+                    mode: a.testMode ?? null,
                 },
                 { onConflict: 'id' }
             );
@@ -1176,7 +1177,7 @@ export class SupabaseAdapter {
     async fetchMyTestAssignments(): Promise<StudentTestAssignmentSummary[]> {
         const { data, error } = await this.db()
             .from('test_assignments')
-            .select('id, test_id, student_id, test_name, require_seb, duration_minutes, created_at, expires_at')
+            .select('id, test_id, student_id, test_name, require_seb, duration_minutes, created_at, expires_at, mode')
             .order('created_at', { ascending: false });
         if (error || !data) return [];
 
@@ -1199,6 +1200,7 @@ export class SupabaseAdapter {
             durationMinutes: r.duration_minutes ?? null,
             createdAt: r.created_at,
             expiresAt: r.expires_at ?? null,
+            testMode: (r.mode as Test['mode']) ?? undefined,
             submission: submissionByKey.get(`${r.test_id}__${r.student_id}`) ?? null,
         }));
     }

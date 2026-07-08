@@ -450,6 +450,12 @@
         "shuffle_questions_label": "Aleatorizar el orden de las preguntas para cada estudiante",
         "require_seb_label": "Requerir Safe Exam Browser",
         "require_seb_help": "Los estudiantes solo podrán abrir esta prueba en Safe Exam Browser, que bloquea su dispositivo durante la prueba.",
+        "mode_label": "Modo",
+        "mode_assessment": "Evaluación (calificada)",
+        "mode_practice": "Práctica (sin calificar)",
+        "mode_assessment_help": "Calificada, con fecha límite, un intento. Alimenta el gráfico de progreso CEFR del estudiante.",
+        "mode_practice_help": "Sin calificar y formativa. Se muestra por separado como progreso de práctica, nunca afecta al gráfico CEFR calificado.",
+        "allow_multiple_attempts_label": "Permitir que los estudiantes repitan esta prueba",
         "questions_title": "Preguntas",
         "questions_summary": "({{count}} preguntas, {{points}} puntos)",
         "add_question": "Añadir pregunta",
@@ -542,7 +548,8 @@
             "import_btn": "Importar entrega",
             "import_success": "¡Entrega importada correctamente!",
             "import_error_invalid": "Código de entrega no válido. Asegúrate de haber copiado el código completo del estudiante.",
-            "import_error_wrong_test": "Este código de entrega corresponde a otra prueba."
+            "import_error_wrong_test": "Este código de entrega corresponde a otra prueba.",
+            "attempt_label": "(Intento {{n}})"
         },
         "export": {
             "section_title": "Exportar resumen",
@@ -592,6 +599,7 @@
             "drag_to_order": "Arrastra los elementos de abajo al orden correcto.",
             "word_count": "{{count}} palabras",
             "question_image_alt": "Imagen de la pregunta",
+            "question_audio_alt": "Audio de la pregunta",
             "hint_show": "Mostrar pista",
             "hint_hide": "Ocultar pista",
             "cloze_gap_placeholder": "Tu respuesta…",
@@ -600,7 +608,8 @@
             "matching_select_placeholder": "Seleccionar una correspondencia…",
             "categorize_select_placeholder": "Seleccionar una categoría…",
             "move_item_up": "Subir",
-            "move_item_down": "Bajar"
+            "move_item_down": "Bajar",
+            "retake": "Repetir"
         },
         "monitor": {
             "title": "Monitor en vivo",
@@ -680,6 +689,9 @@
         "question_image_label": "Imagen de la pregunta",
         "question_image_placeholder": "Pega una URL de imagen…",
         "question_image_preview_alt": "Vista previa de la imagen",
+        "question_audio_preview_alt": "Vista previa de audio",
+        "question_audio_label": "Audio de la pregunta",
+        "question_audio_placeholder": "Pega una URL de audio…",
         "question_hint_label": "Pista",
         "question_hint_placeholder": "Pista opcional para los estudiantes…",
         "question_type_multiple_response": "Respuesta múltiple",
@@ -1664,6 +1676,9 @@
         "view_button": "Ver Resumen MCER",
         "grid_title": "Cuadrícula MCER Puedo",
         "grid_subtitle": "Haz clic en cualquier celda para expandir las afirmaciones Puedo de esa habilidad y nivel.",
+        "practice_title": "Progreso de práctica",
+        "practice_subtitle": "Resultados de pruebas de práctica formativas. Se muestran por separado — nunca cuentan para la cuadrícula de nivel alcanzado de arriba.",
+        "practice_stats": "prom. {{avg}}%, mejor {{best}}% · {{count}} intento(s)",
         "cell_achieved": "Logrado",
         "cell_developing": "En desarrollo",
         "cell_not_started": "No iniciado",
@@ -2281,6 +2296,12 @@
         "gr_test_results_item_grade": "El total de puntos, el porcentaje y una nota en letra/escala (de la escala de notas de la prueba) se muestran en la parte superior de la página.",
         "gr_test_results_item_standards": "Los desgloses por estándares y MCER agregan los puntos obtenidos por estándar o descriptor Can-Do vinculado, similar a la vista de Objetivos de aprendizaje.",
         "gr_test_results_item_integrity": "Un panel de «Integridad de la sesión» resume los eventos de supervisión (cambios de pestaña, copiar/pegar, batería, estado SEB) capturados mientras el alumno realizaba la prueba.",
+        "gr_test_mode_title": "Pruebas de práctica frente a evaluación",
+        "gr_test_mode_body": "En el panel de ajustes de la prueba, cambia el Modo a Práctica para que la prueba no se califique y sea formativa, o déjalo en Evaluación para el flujo normal calificado con fecha límite.",
+        "gr_test_mode_item_practice": "Los resultados en modo práctica nunca afectan al gráfico de progreso CEFR calificado de un alumno — aparecen por separado como progreso de práctica.",
+        "gr_test_mode_item_cefr": "Etiqueta una prueba con un nivel y una destreza CEFR objetivo (como ya permiten las rúbricas) para que sus resultados alimenten el resumen CEFR del alumno.",
+        "gr_test_mode_item_audio": "Añade una URL de audio a cualquier pregunta para comprensión auditiva — los alumnos verán un reproductor de audio sobre el área de respuesta, igual que ya funcionan las imágenes de pregunta.",
+        "gr_test_mode_item_retake": "Activa «Permitir que los estudiantes repitan esta prueba» en una prueba de práctica para que los alumnos puedan intentarla más de una vez.",
         "gr_class_avg_title": "Ajuste de la media de la clase",
         "gr_class_avg_body_prefix": "Abre",
         "gr_class_avg_body_results": "Resultados",
@@ -2608,7 +2629,8 @@
         "type_essay": "Ensayo",
         "type_grade": "Ir a calificar",
         "active_class_label": "Clase activa",
-        "all_classes": "Todas las clases"
+        "all_classes": "Todas las clases",
+        "practice_badge": "Práctica"
     },
     "flashcards": {
         "list_title": "Tarjetas de memoria",

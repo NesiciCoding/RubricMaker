@@ -11,6 +11,8 @@ import type {
     SchoolYear,
     VoTrack,
     CefrSubLevelRange,
+    Test,
+    StudentTest,
 } from '../types';
 import { CEFR_DESCRIPTORS, CEFR_LEVELS, CEFR_SKILLS } from '../data/cefrDescriptors';
 import { getCefrTargetRange } from '../data/cefrTrackYearTargets';
@@ -18,6 +20,7 @@ import { compareToRange, type ProgressStatus } from './cefrOrdinal';
 import { calcGradeSummary } from './gradeCalc';
 import { profileText } from './cefrVocabularyProfiler';
 import { profileGrammar } from './grammarChecker';
+import { autoScoreResponse, calcStudentTestRawPoints, calcTestMaxPoints, calcTestPercentage } from './testCalc';
 
 /** Highest level with data for one skill, preferring 'achieved' over 'developing' over 'not_started'. */
 export function highestLevelForSkill(cells: CefrCellData[], skill: CefrSkill): CefrLevel | null {
@@ -64,11 +67,26 @@ export interface CefrCellDescriptor {
 }
 
 export interface CefrCellEvidence {
-    rubricId: string;
-    rubricName: string;
+    sourceType: 'rubric' | 'test';
+    sourceId: string;
+    sourceName: string;
     gradedAt: string;
     score: number;
     threshold: number;
+}
+
+/**
+ * Practice-mode test progress for one CEFR skill/level, kept entirely separate from
+ * `CefrCellData` — practice attempts are formative and must never blend into or overwrite
+ * the graded achieved-level chart (rubrics + assessment-mode tests only).
+ */
+export interface PracticeCefrCell {
+    skill: CefrSkill;
+    level: CefrLevel;
+    attemptCount: number;
+    avgScore: number;
+    bestScore: number;
+    lastAttemptAt: string;
 }
 
 export interface CefrCellData {
@@ -116,6 +134,8 @@ export interface CefrStudentOverview {
     standardsCovered: number;
     /** Present only when schoolYear was supplied to getCefrStudentOverview. */
     trackYearProgress?: CefrTrackYearProgress;
+    /** Practice-mode test progress, kept separate from `cells` — see PracticeCefrCell. */
+    practiceCefrProgress: PracticeCefrCell[];
 }
 
 // ─── Internal accumulator shape ───────────────────────────────────────────────
@@ -167,10 +187,16 @@ export function getCefrStudentOverview(
     selfAssessments: SelfAssessment[],
     analysisResults?: DocumentAnalysisResult[],
     schoolYear?: SchoolYear,
-    voTrack?: VoTrack
+    voTrack?: VoTrack,
+    tests: Test[] = [],
+    studentTests: StudentTest[] = []
 ): CefrStudentOverview {
     const cellAccMap = new Map<string, CellAccumulator>();
     const standardAccMap = new Map<string, StandardAccumulator>();
+    const practiceAccMap = new Map<
+        string,
+        { skill: CefrSkill; level: CefrLevel; scores: number[]; lastAttemptAt: string }
+    >();
 
     // ── Step 1: rubric scores ──────────────────────────────────────────────────
 
@@ -203,8 +229,9 @@ export function getCefrStudentOverview(
             acc.scores.push(summary.modifiedPercentage);
             acc.thresholds.push(threshold);
             acc.evidence.push({
-                rubricId: sr.rubricId,
-                rubricName: rubric.name,
+                sourceType: 'rubric',
+                sourceId: sr.rubricId,
+                sourceName: rubric.name,
                 gradedAt: sr.gradedAt!,
                 score: summary.modifiedPercentage,
                 threshold,
@@ -316,6 +343,98 @@ export function getCefrStudentOverview(
             acc.totalMax += max;
             acc.rubricIds.add(sr.rubricId);
         });
+    }
+
+    // ── Step 1b: test scores ───────────────────────────────────────────────────
+    // Mirrors Step 1's rubric handling: mode === 'assessment' tests feed the same graded
+    // cellAccMap (same precedence as rubrics — a cefrTargetLevel/cefrSkill pair is required,
+    // no guessed default skill since a test's skill isn't implied the way 'writing' is for an
+    // ungraded rubric). mode === 'practice' tests are accumulated entirely separately into
+    // practiceAccMap and never touch cellAccMap — see the module doc on PracticeCefrCell.
+
+    const studentTestsForStudent = studentTests.filter(
+        (st) => st.studentId === studentId && (st.status === 'submitted' || st.status === 'graded')
+    );
+
+    for (const st of studentTestsForStudent) {
+        const test = tests.find((tst) => tst.id === st.testId);
+        if (!test || !test.cefrTargetLevel || !test.cefrSkill) continue;
+
+        const maxPoints = calcTestMaxPoints(test);
+        if (maxPoints <= 0) continue;
+        const rawPoints = st.rawTotalPoints ?? calcStudentTestRawPoints(test, st.answers);
+        const scorePct = calcTestPercentage(rawPoints, maxPoints);
+
+        if (test.mode === 'practice') {
+            const key = `${test.cefrSkill}__${test.cefrTargetLevel}`;
+            if (!practiceAccMap.has(key)) {
+                practiceAccMap.set(key, {
+                    skill: test.cefrSkill,
+                    level: test.cefrTargetLevel,
+                    scores: [],
+                    lastAttemptAt: st.submittedAt ?? st.startedAt,
+                });
+            }
+            const pAcc = practiceAccMap.get(key)!;
+            pAcc.scores.push(scorePct);
+            const attemptAt = st.submittedAt ?? st.startedAt;
+            if (attemptAt > pAcc.lastAttemptAt) pAcc.lastAttemptAt = attemptAt;
+            continue;
+        }
+
+        // Assessment mode: same graded pipeline rubrics use.
+        const skill = test.cefrSkill;
+        const level = test.cefrTargetLevel;
+        const key = `${skill}__${level}`;
+        if (!cellAccMap.has(key)) {
+            cellAccMap.set(key, {
+                skill,
+                level,
+                scores: [],
+                thresholds: [],
+                directlyAchieved: false,
+                confidenceByDescriptor: new Map(),
+                evidence: [],
+            });
+        }
+        const acc = cellAccMap.get(key)!;
+        const threshold = 70;
+        acc.scores.push(scorePct);
+        acc.thresholds.push(threshold);
+        acc.evidence.push({
+            sourceType: 'test',
+            sourceId: st.testId,
+            sourceName: test.name,
+            gradedAt: st.submittedAt ?? st.startedAt,
+            score: scorePct,
+            threshold,
+        });
+
+        // Per-question direct achievement — mirrors Step 1's per-criterion cefrLevel tag:
+        // a fully-correct answer on a question tagged with a CEFR descriptor unconditionally
+        // achieves that descriptor's own skill/level cell, regardless of the test's overall score.
+        for (const q of test.questions) {
+            if (!q.linkedCefrDescriptors?.length) continue;
+            const answer = st.answers.find((a) => a.questionId === q.id);
+            if (!answer) continue;
+            const earned = answer.pointsEarned ?? autoScoreResponse(q, answer.response);
+            if (q.points <= 0 || earned < q.points) continue;
+            for (const desc of q.linkedCefrDescriptors) {
+                const qKey = `${desc.skill}__${desc.level}`;
+                if (!cellAccMap.has(qKey)) {
+                    cellAccMap.set(qKey, {
+                        skill: desc.skill,
+                        level: desc.level,
+                        scores: [],
+                        thresholds: [],
+                        directlyAchieved: false,
+                        confidenceByDescriptor: new Map(),
+                        evidence: [],
+                    });
+                }
+                cellAccMap.get(qKey)!.directlyAchieved = true;
+            }
+        }
     }
 
     // ── Step 2: self-assessment confidence ────────────────────────────────────
@@ -477,12 +596,22 @@ export function getCefrStudentOverview(
         };
     }
 
+    const practiceCefrProgress: PracticeCefrCell[] = Array.from(practiceAccMap.values()).map((acc) => ({
+        skill: acc.skill,
+        level: acc.level,
+        attemptCount: acc.scores.length,
+        avgScore: acc.scores.reduce((a, b) => a + b, 0) / acc.scores.length,
+        bestScore: Math.max(...acc.scores),
+        lastAttemptAt: acc.lastAttemptAt,
+    }));
+
     return {
         cells,
         cellMap,
         standardSets,
         skillsWithRubricData,
         overallConfidenceRate,
+        practiceCefrProgress,
         standardsCovered,
         trackYearProgress,
     };

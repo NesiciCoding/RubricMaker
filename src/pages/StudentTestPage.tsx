@@ -72,6 +72,12 @@ function safeImgSrc(url: string | undefined): string | undefined {
     return undefined;
 }
 
+/** Returns the URL only when it's a well-formed absolute http(s) URL — blocks javascript: and other dangerous schemes. */
+const SAFE_AUDIO_URL_RE = /^https?:\/\/[^\s"'<>]+$/i;
+function safeAudioSrc(url: string | undefined): string | undefined {
+    return url && SAFE_AUDIO_URL_RE.test(url) ? url : undefined;
+}
+
 function withAnswer(answers: Record<string, string>, key: string, value: string): Record<string, string> {
     const map = new Map(Object.entries(answers));
     if (!UNSAFE_KEYS.has(key)) map.set(key, value);
@@ -347,6 +353,19 @@ export default function StudentTestPage() {
         };
     }, [secondsLeft === null, submitted, draftKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
+    const handleRetake = useCallback(() => {
+        clearTestDraft(draftKey);
+        clearTestTimer(draftKey + '_timer');
+        startedAtRef.current = new Date().toISOString();
+        setAnswers(new Map());
+        setCurrentIndex(0);
+        setSubmitted(false);
+        setSubmissionCode('');
+        setSubmitError('');
+        setDraftRestored(false);
+        if (assignment?.durationMinutes) setSecondsLeft(assignment.durationMinutes * 60);
+    }, [assignment, draftKey]);
+
     const handleCopy = useCallback(() => {
         copyText(submissionCode);
         setCopied(true);
@@ -617,6 +636,16 @@ export default function StudentTestPage() {
                                         {copied ? t('tests.taking.copied') : t('tests.taking.copy')}
                                     </button>
                                 </div>
+                            )}
+                            {test?.allowMultipleAttempts && (
+                                <button
+                                    type="button"
+                                    onClick={handleRetake}
+                                    className="btn btn-secondary"
+                                    style={{ marginTop: 12 }}
+                                >
+                                    {t('tests.taking.retake')}
+                                </button>
                             )}
                         </div>
                     ) : (
@@ -922,6 +951,16 @@ function QuestionCard({ question, index, total, value, onChange, code }: Questio
                         border: '1px solid var(--border)',
                         marginBottom: 16,
                     }}
+                />
+            )}
+
+            {/* Audio stimulus */}
+            {safeAudioSrc(question.audioUrl) && (
+                <audio
+                    controls
+                    src={safeAudioSrc(question.audioUrl)}
+                    aria-label={t('tests.taking.question_audio_alt')}
+                    style={{ display: 'block', width: '100%', marginBottom: 16 }}
                 />
             )}
 

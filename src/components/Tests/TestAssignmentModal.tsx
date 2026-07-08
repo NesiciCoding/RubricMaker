@@ -107,6 +107,7 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
                         durationMinutes: test.durationMinutes,
                         createdAt: new Date().toISOString(),
                         expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
+                        testMode: test.mode,
                     } satisfies TestAssignment)
                 )
             );

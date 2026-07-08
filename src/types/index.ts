@@ -947,6 +947,8 @@ export interface TestQuestion {
     sectionId?: string;
     /** Image shown above the answer area — either a public URL or a data URI */
     imageUrl?: string;
+    /** Audio shown above the answer area — either a public URL or a data URI; for listening practice/tests */
+    audioUrl?: string;
     /** Optional hint shown on student request */
     hint?: string;
 }
@@ -970,6 +972,14 @@ export interface Test {
     updatedAt?: string;
     /** Manual sort position in list views (TestListPage, Activity Dashboard); undefined sorts last by createdAt */
     displayOrder?: number;
+    /** 'assessment' (default when unset, for back-compat with existing tests) is graded/due-dated as today; 'practice' is ungraded, retakeable, and feeds a separate practice-progress view instead of the graded CEFR chart */
+    mode?: 'practice' | 'assessment';
+    /** When true, students may submit more than one StudentTest attempt (only meaningful for mode: 'practice') */
+    allowMultipleAttempts?: boolean;
+    /** Target CEFR level for this test/practice set (e.g. 'B1' for a listening comprehension set) */
+    cefrTargetLevel?: CefrLevel;
+    /** Which language skill this test primarily assesses; question-level linkedCefrDescriptors refine this, same precedence as RubricCriterion.cefrSkill overriding Rubric.cefrSkill */
+    cefrSkill?: CefrSkill;
 }
 
 export type ProctorEventType = 'tab_switch' | 'copy' | 'paste' | 'cut' | 'battery' | 'heartbeat' | 'seb_status';
@@ -1013,6 +1023,8 @@ export interface StudentTest {
     events?: ProctorEvent[];
     /** ISO timestamp of the last local edit; used for last-write-wins sync conflict resolution */
     updatedAt?: string;
+    /** 1-based attempt count, for practice tests with allowMultipleAttempts; omitted/1 for single-attempt tests */
+    attemptNumber?: number;
 }
 
 export type TestStrengthBucket = 'strong' | 'developing' | 'weak';
@@ -1089,6 +1101,8 @@ export interface TestAssignment {
     createdAt: string;
     /** ISO-8601 datetime after which students can no longer submit */
     expiresAt?: string;
+    /** Denormalized from Test.mode so the portal to-do list can badge practice vs. assessment without reading `tests` */
+    testMode?: Test['mode'];
 }
 
 /** A test assignment as seen by the student portal, including their own submission status */
@@ -1102,6 +1116,7 @@ export interface StudentTestAssignmentSummary {
     createdAt: string;
     expiresAt: string | null;
     submission: { status: StudentTest['status']; submittedAt: string | null } | null;
+    testMode?: Test['mode'];
 }
 
 // ── Flashcards (vocabulary spaced repetition) ────────────────────────────────

@@ -271,6 +271,7 @@ describe('exportReportCard', () => {
                     skillsWithRubricData: 0,
                     overallConfidenceRate: 0,
                     standardsCovered: 0,
+                    practiceCefrProgress: [],
                 },
             },
             { type: 'testSummary', overview: { studentId: 's2', questions: [], skills: [] } },

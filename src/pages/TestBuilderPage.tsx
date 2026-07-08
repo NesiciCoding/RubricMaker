@@ -15,7 +15,8 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { nanoid } from '../utils/nanoid';
 import { toLocalDatetimeInput } from '../utils/dateInput';
 import QuestionEditor from '../components/Tests/QuestionEditor';
-import type { TestQuestion, TestSection } from '../types';
+import type { TestQuestion, TestSection, CefrLevel, CefrSkill } from '../types';
+import { CEFR_LEVELS, CEFR_SKILLS, CEFR_SKILL_LABELS } from '../data/cefrDescriptors';
 
 function newQuestion(sectionId?: string): TestQuestion {
     return {
@@ -34,7 +35,7 @@ function newQuestion(sectionId?: string): TestQuestion {
 export default function TestBuilderPage() {
     const navigate = useNavigate();
     const { id } = useParams();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { showToast } = useToast();
     const { tests, addTest, updateTest, gradeScales, settings } = useApp();
 
@@ -57,6 +58,10 @@ export default function TestBuilderPage() {
     const [gradeScaleId, setGradeScaleId] = useState<string | undefined>(
         existing?.gradeScaleId ?? settings.defaultGradeScaleId
     );
+    const [mode, setMode] = useState<'practice' | 'assessment'>(existing?.mode ?? 'assessment');
+    const [allowMultipleAttempts, setAllowMultipleAttempts] = useState(existing?.allowMultipleAttempts ?? false);
+    const [cefrTargetLevel, setCefrTargetLevel] = useState<CefrLevel | ''>(existing?.cefrTargetLevel ?? '');
+    const [cefrSkill, setCefrSkill] = useState<CefrSkill | ''>(existing?.cefrSkill ?? '');
     const [tourRun, setTourRun] = useState(false);
     const testTourSteps = React.useMemo(() => getTestBuilderTourSteps(t), [t]);
 
@@ -68,7 +73,21 @@ export default function TestBuilderPage() {
             return;
         }
         setIsDirty(true);
-    }, [name, description, questions, sections, durationMinutes, dueDate, shuffleQuestions, requireSEB, gradeScaleId]);
+    }, [
+        name,
+        description,
+        questions,
+        sections,
+        durationMinutes,
+        dueDate,
+        shuffleQuestions,
+        requireSEB,
+        gradeScaleId,
+        mode,
+        allowMultipleAttempts,
+        cefrTargetLevel,
+        cefrSkill,
+    ]);
     const { dialogProps: unsavedDialogProps } = useUnsavedChangesGuard(isDirty);
 
     const validSectionIds = React.useMemo(() => new Set(sections.map((s) => s.id)), [sections]);
@@ -195,6 +214,10 @@ export default function TestBuilderPage() {
             shuffleQuestions,
             requireSEB,
             gradeScaleId,
+            mode,
+            allowMultipleAttempts: mode === 'practice' ? allowMultipleAttempts : undefined,
+            cefrTargetLevel: cefrTargetLevel || undefined,
+            cefrSkill: cefrSkill || undefined,
         };
 
         if (existing) {
@@ -310,6 +333,20 @@ export default function TestBuilderPage() {
                 <div className="card" data-tour="tb-settings" style={{ marginBottom: 20 }}>
                     <h3 style={{ marginTop: 0, marginBottom: 14, fontSize: '0.95rem' }}>{t('tests.settings_title')}</h3>
                     <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
+                        <div className="form-group" style={{ marginBottom: 0, flex: '1 1 200px' }}>
+                            <label htmlFor="test-mode">{t('tests.mode_label')}</label>
+                            <select
+                                id="test-mode"
+                                value={mode}
+                                onChange={(e) => setMode(e.target.value as 'practice' | 'assessment')}
+                            >
+                                <option value="assessment">{t('tests.mode_assessment')}</option>
+                                <option value="practice">{t('tests.mode_practice')}</option>
+                            </select>
+                            <p className="text-muted text-xs" style={{ marginTop: 4, marginBottom: 0 }}>
+                                {mode === 'practice' ? t('tests.mode_practice_help') : t('tests.mode_assessment_help')}
+                            </p>
+                        </div>
                         <div className="form-group" style={{ marginBottom: 0, flex: '1 1 160px' }}>
                             <label htmlFor="test-duration">{t('tests.duration_label')}</label>
                             <input
@@ -385,6 +422,57 @@ export default function TestBuilderPage() {
                             <p className="text-muted text-xs" style={{ marginTop: 4, marginBottom: 0 }}>
                                 {t('tests.require_seb_help')}
                             </p>
+                        </div>
+                        {mode === 'practice' && (
+                            <label
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 8,
+                                    cursor: 'pointer',
+                                    fontSize: '0.875rem',
+                                }}
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={allowMultipleAttempts}
+                                    onChange={(e) => setAllowMultipleAttempts(e.target.checked)}
+                                    style={{ accentColor: 'var(--accent)' }}
+                                />
+                                {t('tests.allow_multiple_attempts_label')}
+                            </label>
+                        )}
+                    </div>
+                    <div className="grid-2" style={{ gap: 12, marginTop: 14 }}>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                            <label htmlFor="test-cefr-level">{t('cefr.target_level_label')}</label>
+                            <select
+                                id="test-cefr-level"
+                                value={cefrTargetLevel}
+                                onChange={(e) => setCefrTargetLevel(e.target.value as CefrLevel | '')}
+                            >
+                                <option value="">{t('cefr.no_level')}</option>
+                                {CEFR_LEVELS.map((lvl) => (
+                                    <option key={lvl} value={lvl}>
+                                        {lvl} – {t(`cefr.level_${lvl}`)}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                            <label htmlFor="test-cefr-skill">{t('cefr.skill_label')}</label>
+                            <select
+                                id="test-cefr-skill"
+                                value={cefrSkill}
+                                onChange={(e) => setCefrSkill(e.target.value as CefrSkill | '')}
+                            >
+                                <option value="">{t('cefr.no_skill')}</option>
+                                {CEFR_SKILLS.map((skill) => (
+                                    <option key={skill} value={skill}>
+                                        {CEFR_SKILL_LABELS[skill][i18n.language.startsWith('nl') ? 'nl' : 'en']}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                     </div>
                 </div>
