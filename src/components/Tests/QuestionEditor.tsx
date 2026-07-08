@@ -497,7 +497,12 @@ export default function QuestionEditor({
                     placeholder={t('tests.question_audio_placeholder')}
                 />
                 {question.audioUrl && (
-                    <audio controls src={question.audioUrl} style={{ marginTop: 8, width: '100%' }} />
+                    <audio
+                        controls
+                        src={question.audioUrl}
+                        aria-label={t('tests.question_audio_preview_alt')}
+                        style={{ marginTop: 8, width: '100%' }}
+                    />
                 )}
             </div>
 

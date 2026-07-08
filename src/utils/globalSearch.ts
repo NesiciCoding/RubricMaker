@@ -129,7 +129,11 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
     // requires the *field* to contain the *whole query*, the opposite direction from here), so
     // the matched student/rubric are added directly alongside the shortcut — "not suppressed"
     // means explicitly re-added, not merely left for the later blocks to (likely never) find.
-    if (text && (!typeFilter || typeFilter === 'grade' || typeFilter === 'student' || typeFilter === 'rubric')) {
+    if (
+        !modeFilter &&
+        text &&
+        (!typeFilter || typeFilter === 'grade' || typeFilter === 'student' || typeFilter === 'rubric')
+    ) {
         for (const s of data.students) {
             if (s.anonymizedAt) continue;
             const normName = normalize(s.name);
@@ -156,7 +160,7 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
         }
     }
 
-    if (!typeFilter || typeFilter === 'rubric') {
+    if (!modeFilter && (!typeFilter || typeFilter === 'rubric')) {
         for (const r of data.rubrics) {
             if (matchesText(r.name, r.subject, r.cefrTargetLevel)) {
                 addResult({
@@ -187,7 +191,7 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
         }
     }
 
-    if (!typeFilter || typeFilter === 'student') {
+    if (!modeFilter && (!typeFilter || typeFilter === 'student')) {
         for (const s of data.students) {
             if (s.anonymizedAt) continue;
             const cls = classById.get(s.classId);
@@ -214,7 +218,7 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
         }
     }
 
-    if (!typeFilter || typeFilter === 'class') {
+    if (!modeFilter && (!typeFilter || typeFilter === 'class')) {
         for (const c of data.classes) {
             if (
                 matchesText(
@@ -231,7 +235,7 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
         }
     }
 
-    if (!typeFilter || typeFilter === 'essay') {
+    if (!modeFilter && (!typeFilter || typeFilter === 'essay')) {
         const seenGroups = new Set<string>();
         for (const a of data.essayAssignments) {
             if (seenGroups.has(a.teacherKey)) continue;

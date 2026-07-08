@@ -638,7 +638,12 @@ export default function StudentTestPage() {
                                 </div>
                             )}
                             {test?.allowMultipleAttempts && (
-                                <button onClick={handleRetake} className="btn btn-secondary" style={{ marginTop: 12 }}>
+                                <button
+                                    type="button"
+                                    onClick={handleRetake}
+                                    className="btn btn-secondary"
+                                    style={{ marginTop: 12 }}
+                                >
                                     {t('tests.taking.retake')}
                                 </button>
                             )}
@@ -954,6 +959,7 @@ function QuestionCard({ question, index, total, value, onChange, code }: Questio
                 <audio
                     controls
                     src={safeAudioSrc(question.audioUrl)}
+                    aria-label={t('tests.taking.question_audio_alt')}
                     style={{ display: 'block', width: '100%', marginBottom: 16 }}
                 />
             )}

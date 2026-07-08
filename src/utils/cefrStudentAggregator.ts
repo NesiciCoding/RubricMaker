@@ -418,7 +418,7 @@ export function getCefrStudentOverview(
             const answer = st.answers.find((a) => a.questionId === q.id);
             if (!answer) continue;
             const earned = answer.pointsEarned ?? autoScoreResponse(q, answer.response);
-            if (earned < q.points) continue;
+            if (q.points <= 0 || earned < q.points) continue;
             for (const desc of q.linkedCefrDescriptors) {
                 const qKey = `${desc.skill}__${desc.level}`;
                 if (!cellAccMap.has(qKey)) {

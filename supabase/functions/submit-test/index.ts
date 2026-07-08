@@ -100,42 +100,54 @@ serve(async (req) => {
     // it doesn't collide with student_tests_assignment_attempt_uniq. Assessment-mode (or
     // legacy rows with no mode recorded) always inserts attempt 1, preserving the original
     // one-submission-per-assignment guard.
-    let attemptNumber = 1;
-    if (assignment.mode === 'practice') {
-        const { count } = await admin
-            .from('student_tests')
-            .select('id', { count: 'exact', head: true })
-            .eq('assignment_id', assignmentId);
-        attemptNumber = (count ?? 0) + 1;
-    }
+    //
+    // Count-then-insert is a race for concurrent practice retakes (two tabs submitting at once
+    // could both count the same prior total and collide on attempt_number). Retry a bounded
+    // number of times on a 23505 conflict, re-counting each time, rather than failing a valid
+    // retake outright — but only for practice mode; assessment-mode conflicts are always a
+    // genuine duplicate submission and should fail immediately, as before.
+    const isPractice = assignment.mode === 'practice';
+    const maxAttempts = isPractice ? 5 : 1;
 
-    const { error: insertErr } = await admin.from('student_tests').insert({
-        id: submissionId,
-        owner_id: assignment.owner_id,
-        assignment_id: assignmentId,
-        student_user_id: user.id,
-        submitted_at: submittedAt,
-        attempt_number: attemptNumber,
-        data: {
+    for (let retry = 0; retry < maxAttempts; retry++) {
+        let attemptNumber = 1;
+        if (isPractice) {
+            const { count } = await admin
+                .from('student_tests')
+                .select('id', { count: 'exact', head: true })
+                .eq('assignment_id', assignmentId);
+            attemptNumber = (count ?? 0) + 1;
+        }
+
+        const { error: insertErr } = await admin.from('student_tests').insert({
             id: submissionId,
-            testId: assignment.test_id,
-            studentId: assignment.student_id,
-            answers,
-            status: 'submitted',
-            startedAt,
-            submittedAt,
-            events: events ?? [],
-            attemptNumber,
-        },
-    });
+            owner_id: assignment.owner_id,
+            assignment_id: assignmentId,
+            student_user_id: user.id,
+            submitted_at: submittedAt,
+            attempt_number: attemptNumber,
+            data: {
+                id: submissionId,
+                testId: assignment.test_id,
+                studentId: assignment.student_id,
+                answers,
+                status: 'submitted',
+                startedAt,
+                submittedAt,
+                events: events ?? [],
+                attemptNumber,
+            },
+        });
 
-    if (insertErr) {
+        if (!insertErr) return json({ success: true });
+
         if (insertErr.code === '23505') {
+            if (isPractice && retry < maxAttempts - 1) continue;
             return json({ error: 'You have already submitted this assignment' }, 409);
         }
         console.error('submit-test insert failed:', insertErr);
         return json({ error: 'Failed to save submission. Please try again.' }, 500);
     }
 
-    return json({ success: true });
+    return json({ error: 'You have already submitted this assignment' }, 409);
 });
