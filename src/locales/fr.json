@@ -450,6 +450,12 @@
         "shuffle_questions_label": "Mélanger l'ordre des questions pour chaque élève",
         "require_seb_label": "Exiger Safe Exam Browser",
         "require_seb_help": "Les élèves ne peuvent ouvrir ce test que dans Safe Exam Browser, qui verrouille leur appareil pendant le test.",
+        "mode_label": "Mode",
+        "mode_assessment": "Évaluation (notée)",
+        "mode_practice": "Entraînement (non noté)",
+        "mode_assessment_help": "Noté, avec échéance, une tentative. Alimente le graphique de progression CECR de l'élève.",
+        "mode_practice_help": "Non noté et formatif. Affiché séparément comme progression d'entraînement, n'affecte jamais le graphique CECR noté.",
+        "allow_multiple_attempts_label": "Autoriser les élèves à repasser ce test",
         "questions_title": "Questions",
         "questions_summary": "({{count}} questions, {{points}} points)",
         "add_question": "Ajouter une question",
@@ -542,7 +548,8 @@
             "import_btn": "Importer la soumission",
             "import_success": "Soumission importée avec succès !",
             "import_error_invalid": "Code de soumission invalide. Vérifiez que vous avez copié le code complet envoyé par l'élève.",
-            "import_error_wrong_test": "Ce code de soumission correspond à un autre test."
+            "import_error_wrong_test": "Ce code de soumission correspond à un autre test.",
+            "attempt_label": "(Tentative {{n}})"
         },
         "export": {
             "section_title": "Exporter le résumé",
@@ -600,7 +607,8 @@
             "matching_select_placeholder": "Sélectionner une correspondance…",
             "categorize_select_placeholder": "Sélectionner une catégorie…",
             "move_item_up": "Monter",
-            "move_item_down": "Descendre"
+            "move_item_down": "Descendre",
+            "retake": "Recommencer"
         },
         "monitor": {
             "title": "Suivi en direct",
@@ -680,6 +688,8 @@
         "question_image_label": "Image de la question",
         "question_image_placeholder": "Collez une URL d'image…",
         "question_image_preview_alt": "Aperçu de l'image",
+        "question_audio_label": "Audio de la question",
+        "question_audio_placeholder": "Collez une URL audio…",
         "question_hint_label": "Indice",
         "question_hint_placeholder": "Indice optionnel pour les élèves…",
         "question_type_multiple_response": "Réponses multiples",
@@ -1664,6 +1674,9 @@
         "view_button": "Voir l'aperçu CECR",
         "grid_title": "Grille Can-Do CECR",
         "grid_subtitle": "Cliquez sur une cellule pour afficher les énoncés Can-Do pour cette compétence et ce niveau.",
+        "practice_title": "Progression d'entraînement",
+        "practice_subtitle": "Résultats des tests d'entraînement formatifs. Affichés séparément — ils ne comptent jamais dans la grille de niveau atteint ci-dessus.",
+        "practice_stats": "moy. {{avg}}%, meilleur {{best}}% · {{count}} tentative(s)",
         "cell_achieved": "Atteint",
         "cell_developing": "En progression",
         "cell_not_started": "Non commencé",
@@ -2281,6 +2294,12 @@
         "gr_test_results_item_grade": "Le total des points, le pourcentage et une note en lettres/échelle (issue du barème du test) sont affichés en haut de la page.",
         "gr_test_results_item_standards": "Les répartitions par référentiel et CECRL agrègent les points obtenus par référentiel ou descripteur Can-Do lié, à l'image de la vue Objectifs d'apprentissage.",
         "gr_test_results_item_integrity": "Un panneau « Intégrité de la session » résume les événements de surveillance (changements d'onglet, copier/coller, batterie, statut SEB) capturés pendant que l'élève passait le test.",
+        "gr_test_mode_title": "Tests d'entraînement vs. tests d'évaluation",
+        "gr_test_mode_body": "Dans le panneau des paramètres du test, réglez le Mode sur Entraînement pour rendre un test non noté et formatif, ou laissez-le sur Évaluation pour le déroulement normal noté avec échéance.",
+        "gr_test_mode_item_practice": "Les résultats en mode entraînement n'affectent jamais le graphique de progression CECR noté d'un élève — ils apparaissent séparément comme progression d'entraînement.",
+        "gr_test_mode_item_cefr": "Associez un test à un niveau et une compétence CECR cibles (comme le permettent déjà les rubriques) pour que ses résultats alimentent l'aperçu CECR de l'élève.",
+        "gr_test_mode_item_audio": "Ajoutez une URL audio à n'importe quelle question pour la compréhension orale — les élèves voient un lecteur audio au-dessus de la zone de réponse, comme les images de question déjà présentes.",
+        "gr_test_mode_item_retake": "Activez « Autoriser les élèves à repasser ce test » sur un test en mode entraînement pour permettre plusieurs tentatives.",
         "gr_class_avg_title": "Ajustement de la moyenne de classe",
         "gr_class_avg_body_prefix": "Ouvrez",
         "gr_class_avg_body_results": "Résultats",
@@ -2608,7 +2627,8 @@
         "type_essay": "Essai",
         "type_grade": "Aller à la notation",
         "active_class_label": "Classe active",
-        "all_classes": "Toutes les classes"
+        "all_classes": "Toutes les classes",
+        "practice_badge": "Entraînement"
     },
     "flashcards": {
         "list_title": "Cartes mémoire",

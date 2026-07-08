@@ -10,6 +10,8 @@ export interface SearchResult {
     label: string;
     sublabel?: string;
     route: string;
+    /** Only set for type: 'test' results — lets the UI badge practice vs. assessment tests. */
+    testMode?: 'practice' | 'assessment';
 }
 
 export interface SearchableData {
@@ -38,25 +40,27 @@ export function normalize(s: string): string {
 }
 
 /**
- * Splits a query into `type:`/`class:`/`year:`/`track:` filter tokens and a free-text
- * remainder. A filter value is either a single bare word (`class:5A`) or a quoted phrase
- * for multi-word values (`class:"English 1"`) — quoting avoids ambiguity with any free
- * text that follows. `year:`/`track:` take the raw enum value (`jaar-3`, `havo`), not the
- * display label.
+ * Splits a query into `type:`/`class:`/`year:`/`track:`/`mode:` filter tokens and a
+ * free-text remainder. A filter value is either a single bare word (`class:5A`) or a
+ * quoted phrase for multi-word values (`class:"English 1"`) — quoting avoids ambiguity
+ * with any free text that follows. `year:`/`track:` take the raw enum value (`jaar-3`,
+ * `havo`), not the display label. `mode:` only narrows test/practice results.
  */
 function parseQuery(query: string): {
     typeFilter?: SearchResultType;
     classFilter?: string;
     yearFilter?: string;
     trackFilter?: string;
+    modeFilter?: 'practice' | 'assessment';
     text: string;
 } {
     let typeFilter: SearchResultType | undefined;
     let classFilter: string | undefined;
     let yearFilter: string | undefined;
     let trackFilter: string | undefined;
+    let modeFilter: 'practice' | 'assessment' | undefined;
 
-    const filterRegex = /\b(type|class|year|track):(?:"([^"]*)"|(\S+))/gi;
+    const filterRegex = /\b(type|class|year|track|mode):(?:"([^"]*)"|(\S+))/gi;
     const remaining = query.replace(filterRegex, (match, key: string, quoted?: string, bare?: string) => {
         const value = quoted ?? bare ?? '';
         const lowerKey = key.toLowerCase();
@@ -68,18 +72,21 @@ function parseQuery(query: string): {
             classFilter = value;
         } else if (lowerKey === 'year') {
             yearFilter = value;
-        } else {
+        } else if (lowerKey === 'track') {
             trackFilter = value;
+        } else {
+            if (value.toLowerCase() !== 'practice' && value.toLowerCase() !== 'assessment') return match;
+            modeFilter = value.toLowerCase() as 'practice' | 'assessment';
         }
         return ' ';
     });
 
-    return { typeFilter, classFilter, yearFilter, trackFilter, text: normalize(remaining.trim()) };
+    return { typeFilter, classFilter, yearFilter, trackFilter, modeFilter, text: normalize(remaining.trim()) };
 }
 
 export function searchAll(query: string, data: SearchableData): SearchResult[] {
-    const { typeFilter, classFilter, yearFilter, trackFilter, text } = parseQuery(query);
-    if (!text && !classFilter && !typeFilter && !yearFilter && !trackFilter) return [];
+    const { typeFilter, classFilter, yearFilter, trackFilter, modeFilter, text } = parseQuery(query);
+    if (!text && !classFilter && !typeFilter && !yearFilter && !trackFilter && !modeFilter) return [];
 
     const classById = new Map(data.classes.map((c) => [c.id, c]));
     const normalizedClassFilter = classFilter ? normalize(classFilter) : undefined;
@@ -165,6 +172,8 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
 
     if (!typeFilter || typeFilter === 'test') {
         for (const t of data.tests) {
+            const effectiveMode = t.mode ?? 'assessment';
+            if (modeFilter && modeFilter !== effectiveMode) continue;
             if (matchesText(t.name, t.description)) {
                 addResult({
                     type: 'test',
@@ -172,6 +181,7 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
                     label: t.name,
                     sublabel: t.description,
                     route: `/tests/${t.id}`,
+                    testMode: effectiveMode,
                 });
             }
         }

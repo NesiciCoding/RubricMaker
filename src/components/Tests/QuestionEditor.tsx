@@ -10,6 +10,7 @@ import {
     AlertCircle,
     GripVertical,
     Image,
+    Music,
     Lightbulb,
     ChevronUp,
     ChevronDown,
@@ -474,6 +475,29 @@ export default function QuestionEditor({
                             (e.target as HTMLImageElement).style.display = '';
                         }}
                     />
+                )}
+            </div>
+
+            {/* Audio */}
+            <div className="form-group" style={{ marginBottom: 0 }}>
+                <label
+                    htmlFor={`question-audio-${question.id}`}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                >
+                    <Music size={14} /> {t('tests.question_audio_label')}{' '}
+                    <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
+                        ({t('essay_assignment.optional')})
+                    </span>
+                </label>
+                <input
+                    id={`question-audio-${question.id}`}
+                    type="url"
+                    value={question.audioUrl ?? ''}
+                    onChange={(e) => update({ audioUrl: e.target.value || undefined })}
+                    placeholder={t('tests.question_audio_placeholder')}
+                />
+                {question.audioUrl && (
+                    <audio controls src={question.audioUrl} style={{ marginTop: 8, width: '100%' }} />
                 )}
             </div>
 

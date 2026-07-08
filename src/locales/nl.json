@@ -450,6 +450,12 @@
         "shuffle_questions_label": "Volgorde van vragen schudden per leerling",
         "require_seb_label": "Safe Exam Browser vereisen",
         "require_seb_help": "Leerlingen kunnen deze toets alleen openen in Safe Exam Browser, dat hun toestel tijdens de toets vergrendelt.",
+        "mode_label": "Modus",
+        "mode_assessment": "Toets (beoordeeld)",
+        "mode_practice": "Oefening (niet beoordeeld)",
+        "mode_assessment_help": "Beoordeeld, met deadline, één poging. Telt mee in de CEFR-voortgangsgrafiek van de leerling.",
+        "mode_practice_help": "Niet beoordeeld en formatief. Wordt apart getoond als oefenvoortgang, telt nooit mee in de beoordeelde CEFR-grafiek.",
+        "allow_multiple_attempts_label": "Leerlingen mogen deze toets opnieuw maken",
         "questions_title": "Vragen",
         "questions_summary": "({{count}} vragen, {{points}} punten)",
         "add_question": "Vraag toevoegen",
@@ -542,7 +548,8 @@
             "import_btn": "Inzending importeren",
             "import_success": "Inzending succesvol geïmporteerd!",
             "import_error_invalid": "Ongeldige inzendingscode. Controleer of je de volledige code van de leerling hebt gekopieerd.",
-            "import_error_wrong_test": "Deze inzendingscode is voor een andere toets."
+            "import_error_wrong_test": "Deze inzendingscode is voor een andere toets.",
+            "attempt_label": "(Poging {{n}})"
         },
         "export": {
             "section_title": "Samenvatting exporteren",
@@ -600,7 +607,8 @@
             "matching_select_placeholder": "Selecteer een match…",
             "categorize_select_placeholder": "Selecteer een categorie…",
             "move_item_up": "Omhoog",
-            "move_item_down": "Omlaag"
+            "move_item_down": "Omlaag",
+            "retake": "Opnieuw maken"
         },
         "monitor": {
             "title": "Live-monitor",
@@ -680,6 +688,8 @@
         "question_image_label": "Afbeelding bij vraag",
         "question_image_placeholder": "Plak een afbeeldings-URL…",
         "question_image_preview_alt": "Voorvertoning afbeelding",
+        "question_audio_label": "Audio bij vraag",
+        "question_audio_placeholder": "Plak een audio-URL…",
         "question_hint_label": "Hint",
         "question_hint_placeholder": "Optionele hint voor leerlingen…",
         "question_type_multiple_response": "Meerdere antwoorden",
@@ -1664,6 +1674,9 @@
         "view_button": "ERK Overzicht Bekijken",
         "grid_title": "ERK Kan-ik Raster",
         "grid_subtitle": "Klik op een cel om de kan-ik uitspraken voor die vaardigheid en dat niveau te bekijken.",
+        "practice_title": "Oefenvoortgang",
+        "practice_subtitle": "Resultaten van formatieve oefentoetsen. Apart getoond — deze tellen nooit mee in het beoordeelde niveau-overzicht hierboven.",
+        "practice_stats": "gem. {{avg}}%, beste {{best}}% · {{count}} poging(en)",
         "cell_achieved": "Behaald",
         "cell_developing": "In ontwikkeling",
         "cell_not_started": "Nog niet gestart",
@@ -2281,6 +2294,12 @@
         "gr_test_results_item_grade": "Totaalpunten, percentage en een letter/schaalcijfer (van de cijferschaal van de toets) staan boven aan de pagina.",
         "gr_test_results_item_standards": "Standaarden- en ERK-overzichten tellen behaalde punten op per gekoppelde standaard of Can-Do-descriptor, vergelijkbaar met de Leerdoelenweergave.",
         "gr_test_results_item_integrity": "Een paneel \"Sessie-integriteit\" vat surveillancegebeurtenissen samen (tabwissels, kopiëren/plakken, batterij, SEB-status) die zijn vastgelegd terwijl de leerling de toets maakte.",
+        "gr_test_mode_title": "Oefen- versus beoordelingstoetsen",
+        "gr_test_mode_body": "Zet in het toetsinstellingenpaneel Modus op Oefening om een toets niet-beoordeeld en formatief te maken, of laat het op Beoordeling staan voor de normale beoordeelde flow met deadline.",
+        "gr_test_mode_item_practice": "Resultaten van oefenmodus tellen nooit mee in de beoordeelde CEFR-voortgangsgrafiek van een leerling — ze verschijnen apart als oefenvoortgang.",
+        "gr_test_mode_item_cefr": "Koppel een toets aan een streef-CEFR-niveau en -vaardigheid (zoals rubrics al ondersteunen), zodat de resultaten kunnen meetellen in het CEFR-overzicht van de leerling.",
+        "gr_test_mode_item_audio": "Voeg een audio-URL toe aan elke vraag voor luistervaardigheid — leerlingen zien een audiospeler boven het antwoordveld, net zoals afbeeldingen bij vragen al werken.",
+        "gr_test_mode_item_retake": "Zet \"Leerlingen mogen deze toets opnieuw maken\" aan bij een oefentoets zodat leerlingen deze meerdere keren kunnen proberen.",
         "gr_class_avg_title": "Klasgemiddelde-aanpassing",
         "gr_class_avg_body_prefix": "Open",
         "gr_class_avg_body_results": "Resultaten",
@@ -2608,7 +2627,8 @@
         "type_essay": "Essay",
         "type_grade": "Ga naar beoordelen",
         "active_class_label": "Actieve klas",
-        "all_classes": "Alle klassen"
+        "all_classes": "Alle klassen",
+        "practice_badge": "Oefening"
     },
     "flashcards": {
         "list_title": "Flashcards",

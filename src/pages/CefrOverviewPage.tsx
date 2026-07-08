@@ -8,6 +8,7 @@ import { getCefrOverviewTourSteps } from '../data/TutorialSteps';
 import Topbar from '../components/Layout/Topbar';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import CefrOverviewGrid from '../components/CEFR/CefrOverviewGrid';
+import PracticeCefrProgressPanel from '../components/CEFR/PracticeCefrProgressPanel';
 import CefrProgressChart from '../components/Statistics/CefrProgressChart';
 import StandardsCoveragePanel from '../components/Standards/StandardsCoveragePanel';
 import { useApp } from '../context/AppContext';
@@ -23,7 +24,8 @@ import { VO_TRACK_LABELS, VO_TRACK_DEFAULT_CEFR, getTrackBadgeColor, getEffectiv
 import type { CefrSkill } from '../types';
 
 export default function CefrOverviewPage() {
-    const { students, classes, rubrics, studentRubrics, selfAssessments, analysisResults } = useApp();
+    const { students, classes, rubrics, studentRubrics, selfAssessments, analysisResults, tests, studentTests } =
+        useApp();
     const { t, i18n } = useTranslation();
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
     const navigate = useNavigate();
@@ -71,12 +73,14 @@ export default function CefrOverviewPage() {
                         selfAssessments,
                         analysisResults,
                         sCls?.year,
-                        getEffectiveVoTrack(s, sCls)
+                        getEffectiveVoTrack(s, sCls),
+                        tests,
+                        studentTests
                     ),
                     cls: sCls,
                 };
             }),
-        [filteredStudents, studentRubrics, rubrics, selfAssessments, analysisResults, classes]
+        [filteredStudents, studentRubrics, rubrics, selfAssessments, analysisResults, classes, tests, studentTests]
     );
 
     const student = students.find((s) => s.id === selectedStudentId);
@@ -94,10 +98,22 @@ export default function CefrOverviewPage() {
                       selfAssessments,
                       analysisResults,
                       cls?.year,
-                      effectiveTrack
+                      effectiveTrack,
+                      tests,
+                      studentTests
                   )
                 : null,
-        [student, studentRubrics, rubrics, selfAssessments, analysisResults, cls?.year, effectiveTrack]
+        [
+            student,
+            studentRubrics,
+            rubrics,
+            selfAssessments,
+            analysisResults,
+            cls?.year,
+            effectiveTrack,
+            tests,
+            studentTests,
+        ]
     );
 
     const radarEntries = useMemo(
@@ -722,6 +738,10 @@ export default function CefrOverviewPage() {
                                             />
                                         )}
                                     </div>
+                                )}
+
+                                {overview && (
+                                    <PracticeCefrProgressPanel cells={overview.practiceCefrProgress} lang={lang} />
                                 )}
 
                                 {overview && overview.standardSets.length > 0 && (

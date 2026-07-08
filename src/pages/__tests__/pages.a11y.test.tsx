@@ -151,6 +151,7 @@ vi.mock('../../utils/cefrStudentAggregator', () => ({
         skillsWithRubricData: 0,
         overallConfidenceRate: 0,
         standardsCovered: 0,
+        practiceCefrProgress: [],
     })),
     highestLevelForSkill: vi.fn(() => null),
     overallLevel: vi.fn(() => null),

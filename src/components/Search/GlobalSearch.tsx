@@ -101,7 +101,23 @@ export default function GlobalSearch({ onClose, growFrom }: Props) {
                             >
                                 <Icon size={16} />
                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{ fontSize: 13.5, color: 'var(--text)' }}>{result.label}</div>
+                                    <div style={{ fontSize: 13.5, color: 'var(--text)' }}>
+                                        {result.label}
+                                        {result.testMode === 'practice' && (
+                                            <span
+                                                style={{
+                                                    marginLeft: 6,
+                                                    fontSize: 10,
+                                                    color: 'var(--accent)',
+                                                    border: '1px solid var(--accent)',
+                                                    borderRadius: 8,
+                                                    padding: '0 6px',
+                                                }}
+                                            >
+                                                {t('search.practice_badge')}
+                                            </span>
+                                        )}
+                                    </div>
                                     {result.sublabel && (
                                         <div style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
                                             {result.sublabel}

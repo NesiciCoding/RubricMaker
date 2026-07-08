@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import CefrOverviewGrid from '../components/CEFR/CefrOverviewGrid';
+import PracticeCefrProgressPanel from '../components/CEFR/PracticeCefrProgressPanel';
 import CefrProgressChart from '../components/Statistics/CefrProgressChart';
 import StandardsCoveragePanel from '../components/Standards/StandardsCoveragePanel';
 import { useApp } from '../context/AppContext';
@@ -24,7 +25,17 @@ import { CEFR_SKILL_LABELS } from '../data/cefrDescriptors';
 export default function StudentCefrOverviewPage() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { students, classes, rubrics, studentRubrics, selfAssessments, analysisResults, settings } = useApp();
+    const {
+        students,
+        classes,
+        rubrics,
+        studentRubrics,
+        selfAssessments,
+        analysisResults,
+        settings,
+        tests,
+        studentTests,
+    } = useApp();
     const { t, i18n } = useTranslation();
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
     const [copiedLink, setCopiedLink] = useState(false);
@@ -44,10 +55,22 @@ export default function StudentCefrOverviewPage() {
                       selfAssessments,
                       analysisResults,
                       cls?.year,
-                      effectiveTrack
+                      effectiveTrack,
+                      tests,
+                      studentTests
                   )
                 : null,
-        [student, studentRubrics, rubrics, selfAssessments, analysisResults, cls?.year, effectiveTrack]
+        [
+            student,
+            studentRubrics,
+            rubrics,
+            selfAssessments,
+            analysisResults,
+            cls?.year,
+            effectiveTrack,
+            tests,
+            studentTests,
+        ]
     );
 
     // Build CefrEntry[] for the radar (only cells with rubric data)
@@ -294,6 +317,8 @@ export default function StudentCefrOverviewPage() {
                     </div>
                 )}
 
+                {overview && <PracticeCefrProgressPanel cells={overview.practiceCefrProgress} lang={lang} />}
+
                 {/* Skill evidence & rationale */}
                 {overview && overview.cells.some((c) => c.rubricCount > 0) && (
                     <div className="card" style={{ marginBottom: 24 }}>
@@ -358,7 +383,7 @@ export default function StudentCefrOverviewPage() {
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                                 {cell.evidence.map((ev, i) => (
                                                     <div
-                                                        key={`${ev.rubricId}__${i}`}
+                                                        key={`${ev.sourceId}__${i}`}
                                                         style={{
                                                             display: 'flex',
                                                             justifyContent: 'space-between',
@@ -367,7 +392,7 @@ export default function StudentCefrOverviewPage() {
                                                             color: 'var(--text-muted)',
                                                         }}
                                                     >
-                                                        <span>{ev.rubricName}</span>
+                                                        <span>{ev.sourceName}</span>
                                                         <span style={{ flexShrink: 0 }}>
                                                             {new Date(ev.gradedAt).toLocaleDateString(undefined, {
                                                                 month: 'short',

@@ -450,6 +450,12 @@
         "shuffle_questions_label": "Shuffle question order for each student",
         "require_seb_label": "Require Safe Exam Browser",
         "require_seb_help": "Students can only open this test inside Safe Exam Browser, which locks down their device during the test.",
+        "mode_label": "Mode",
+        "mode_assessment": "Assessment (graded)",
+        "mode_practice": "Practice (ungraded)",
+        "mode_assessment_help": "Graded, due-dated, one attempt. Feeds the student's CEFR progress chart.",
+        "mode_practice_help": "Ungraded and formative. Shows as separate practice progress, never affects the graded CEFR chart.",
+        "allow_multiple_attempts_label": "Allow students to retake this test",
         "questions_title": "Questions",
         "questions_summary": "({{count}} questions, {{points}} points)",
         "add_question": "Add question",
@@ -542,7 +548,8 @@
             "import_btn": "Import submission",
             "import_success": "Submission imported successfully!",
             "import_error_invalid": "Invalid submission code. Make sure you copied the full code from the student.",
-            "import_error_wrong_test": "This submission code is for a different test."
+            "import_error_wrong_test": "This submission code is for a different test.",
+            "attempt_label": "(Attempt {{n}})"
         },
         "export": {
             "section_title": "Export summary",
@@ -600,7 +607,8 @@
             "matching_select_placeholder": "Select a match…",
             "categorize_select_placeholder": "Select a category…",
             "move_item_up": "Move up",
-            "move_item_down": "Move down"
+            "move_item_down": "Move down",
+            "retake": "Take again"
         },
         "monitor": {
             "title": "Live monitor",
@@ -679,6 +687,8 @@
         "order_item_placeholder": "Item text…",
         "question_image_label": "Question image",
         "question_image_placeholder": "Paste an image URL…",
+        "question_audio_label": "Question audio",
+        "question_audio_placeholder": "Paste an audio URL…",
         "question_image_preview_alt": "Question image preview",
         "question_hint_label": "Hint",
         "question_hint_placeholder": "Optional hint for students…",
@@ -1664,6 +1674,9 @@
         "view_button": "View CEFR Overview",
         "grid_title": "CEFR Can-Do Grid",
         "grid_subtitle": "Click any cell to expand the Can-Do statements for that skill and level.",
+        "practice_title": "Practice progress",
+        "practice_subtitle": "Formative practice-test results. Shown separately — these never count toward the achieved-level grid above.",
+        "practice_stats": "avg {{avg}}%, best {{best}}% · {{count}} attempt(s)",
         "cell_achieved": "Achieved",
         "cell_developing": "Developing",
         "cell_not_started": "Not started",
@@ -2279,6 +2292,12 @@
         "gr_test_results_item_grade": "Total points, percentage, and a letter/scale grade (from the test's grade scale) are shown at the top of the page.",
         "gr_test_results_item_standards": "Standards and CEFR breakdowns roll up points earned per linked standard or Can-Do descriptor, mirroring the Learning Goals view.",
         "gr_test_results_item_integrity": "A \"Session integrity\" panel summarises proctoring events (tab switches, copy/paste, battery, SEB status) captured while the student took the test.",
+        "gr_test_mode_title": "Practice vs. assessment tests",
+        "gr_test_mode_body": "In the test settings panel, set Mode to Practice to make a test ungraded and formative, or leave it as Assessment for the normal graded, due-dated flow.",
+        "gr_test_mode_item_practice": "Practice-mode results never affect a student's graded CEFR progress chart — they show separately as practice progress instead.",
+        "gr_test_mode_item_cefr": "Tag a test with a target CEFR level and skill (like rubrics already support) so its results can feed the student's CEFR overview.",
+        "gr_test_mode_item_audio": "Add an audio URL to any question for listening comprehension — students see an audio player above the answer area, the same way question images already work.",
+        "gr_test_mode_item_retake": "Enable \"Allow students to retake this test\" on a practice-mode test so students can attempt it more than once.",
         "gr_class_avg_title": "Class average adjustment",
         "gr_class_avg_body_prefix": "Open",
         "gr_class_avg_body_results": "Results",
@@ -2606,7 +2625,8 @@
         "type_essay": "Essay",
         "type_grade": "Go to grading",
         "active_class_label": "Active class",
-        "all_classes": "All classes"
+        "all_classes": "All classes",
+        "practice_badge": "Practice"
     },
     "flashcards": {
         "list_title": "Flashcards",

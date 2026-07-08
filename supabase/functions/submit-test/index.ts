@@ -1,7 +1,9 @@
 // Edge Function: submit-test
 // Validates and persists a student test submission server-side, so a client-side
 // patch cannot bypass the expiry check or the duplicate-submission guard (the
-// unique index on student_tests.assignment_id is the final backstop).
+// unique index on student_tests(assignment_id, attempt_number) is the final backstop —
+// see migration 056 for why attempt_number exists: practice-mode assignments allow
+// more than one submission per assignment_id, assessment-mode ones don't).
 //
 // No auto-scoring here: the teacher-side view already computes rawTotalPoints on
 // read (studentTest.rawTotalPoints ?? calcStudentTestRawPoints(...)) — the same
@@ -84,7 +86,7 @@ serve(async (req) => {
 
     const { data: assignment, error: assignErr } = await admin
         .from('test_assignments')
-        .select('owner_id, test_id, student_id, expires_at')
+        .select('owner_id, test_id, student_id, expires_at, mode')
         .eq('id', assignmentId)
         .single();
 
@@ -94,12 +96,26 @@ serve(async (req) => {
         return json({ error: 'Assignment deadline has passed' }, 403);
     }
 
+    // Practice-mode assignments allow retakes: each attempt gets the next attempt_number so
+    // it doesn't collide with student_tests_assignment_attempt_uniq. Assessment-mode (or
+    // legacy rows with no mode recorded) always inserts attempt 1, preserving the original
+    // one-submission-per-assignment guard.
+    let attemptNumber = 1;
+    if (assignment.mode === 'practice') {
+        const { count } = await admin
+            .from('student_tests')
+            .select('id', { count: 'exact', head: true })
+            .eq('assignment_id', assignmentId);
+        attemptNumber = (count ?? 0) + 1;
+    }
+
     const { error: insertErr } = await admin.from('student_tests').insert({
         id: submissionId,
         owner_id: assignment.owner_id,
         assignment_id: assignmentId,
         student_user_id: user.id,
         submitted_at: submittedAt,
+        attempt_number: attemptNumber,
         data: {
             id: submissionId,
             testId: assignment.test_id,
@@ -109,6 +125,7 @@ serve(async (req) => {
             startedAt,
             submittedAt,
             events: events ?? [],
+            attemptNumber,
         },
     });
 

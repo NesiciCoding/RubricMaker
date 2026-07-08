@@ -988,6 +988,21 @@ function GradingTab() {
                 />
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.gr_test_mode_title')}
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
+                    {t('docs.gr_test_mode_body')}
+                </p>
+                <FeatureList
+                    items={[
+                        t('docs.gr_test_mode_item_practice'),
+                        t('docs.gr_test_mode_item_cefr'),
+                        t('docs.gr_test_mode_item_audio'),
+                        t('docs.gr_test_mode_item_retake'),
+                    ]}
+                />
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.gr_class_avg_title')}
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>

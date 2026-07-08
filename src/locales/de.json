@@ -450,6 +450,12 @@
         "shuffle_questions_label": "Reihenfolge der Fragen für jeden Schüler mischen",
         "require_seb_label": "Safe Exam Browser erforderlich",
         "require_seb_help": "Schüler können diesen Test nur in Safe Exam Browser öffnen, der ihr Gerät während des Tests sperrt.",
+        "mode_label": "Modus",
+        "mode_assessment": "Bewertung (benotet)",
+        "mode_practice": "Übung (unbenotet)",
+        "mode_assessment_help": "Benotet, mit Frist, ein Versuch. Fließt in das CEFR-Fortschrittsdiagramm des Schülers ein.",
+        "mode_practice_help": "Unbenotet und formativ. Wird separat als Übungsfortschritt angezeigt, beeinflusst nie das benotete CEFR-Diagramm.",
+        "allow_multiple_attempts_label": "Schülern erlauben, diesen Test zu wiederholen",
         "questions_title": "Fragen",
         "questions_summary": "({{count}} Fragen, {{points}} Punkte)",
         "add_question": "Frage hinzufügen",
@@ -542,7 +548,8 @@
             "import_btn": "Abgabe importieren",
             "import_success": "Abgabe erfolgreich importiert!",
             "import_error_invalid": "Ungültiger Abgabecode. Stellen Sie sicher, dass Sie den vollständigen Code kopiert haben.",
-            "import_error_wrong_test": "Dieser Abgabecode gehört zu einem anderen Test."
+            "import_error_wrong_test": "Dieser Abgabecode gehört zu einem anderen Test.",
+            "attempt_label": "(Versuch {{n}})"
         },
         "export": {
             "section_title": "Zusammenfassung exportieren",
@@ -600,7 +607,8 @@
             "matching_select_placeholder": "Übereinstimmung wählen…",
             "categorize_select_placeholder": "Kategorie wählen…",
             "move_item_up": "Nach oben",
-            "move_item_down": "Nach unten"
+            "move_item_down": "Nach unten",
+            "retake": "Erneut versuchen"
         },
         "monitor": {
             "title": "Live-Überwachung",
@@ -680,6 +688,8 @@
         "question_image_label": "Bild zur Frage",
         "question_image_placeholder": "Bild-URL einfügen…",
         "question_image_preview_alt": "Bildvorschau",
+        "question_audio_label": "Audio zur Frage",
+        "question_audio_placeholder": "Audio-URL einfügen…",
         "question_hint_label": "Hinweis",
         "question_hint_placeholder": "Optionaler Hinweis für Schüler…",
         "question_type_multiple_response": "Mehrere Antworten",
@@ -1664,6 +1674,9 @@
         "view_button": "GER-Übersicht anzeigen",
         "grid_title": "GER Kann-Beschreibungs-Raster",
         "grid_subtitle": "Klicken Sie auf eine Zelle, um die Kann-Beschreibungen für diese Kompetenz und dieses Niveau anzuzeigen.",
+        "practice_title": "Übungsfortschritt",
+        "practice_subtitle": "Ergebnisse formativer Übungstests. Separat angezeigt — diese zählen nie zum benoteten Niveau-Raster oben.",
+        "practice_stats": "Ø {{avg}}%, beste {{best}}% · {{count}} Versuch(e)",
         "cell_achieved": "Erreicht",
         "cell_developing": "In Entwicklung",
         "cell_not_started": "Nicht begonnen",
@@ -2281,6 +2294,12 @@
         "gr_test_results_item_grade": "Gesamtpunkte, Prozentsatz und eine Buchstaben-/Skalennote (aus der Notenskala des Tests) werden oben auf der Seite angezeigt.",
         "gr_test_results_item_standards": "Standards- und GER-Aufschlüsselungen summieren erreichte Punkte pro verknüpftem Standard oder Can-Do-Deskriptor, ähnlich der Lernziele-Ansicht.",
         "gr_test_results_item_integrity": "Ein Panel „Sitzungsintegrität“ fasst Aufsichtsereignisse (Tabwechsel, Kopieren/Einfügen, Akku, SEB-Status) zusammen, die während der Testbearbeitung erfasst wurden.",
+        "gr_test_mode_title": "Übungs- vs. Bewertungstests",
+        "gr_test_mode_body": "Stellen Sie im Testeinstellungen-Panel den Modus auf Übung, um einen Test unbenotet und formativ zu machen, oder belassen Sie ihn bei Bewertung für den normalen benoteten Ablauf mit Frist.",
+        "gr_test_mode_item_practice": "Ergebnisse im Übungsmodus wirken sich nie auf das benotete CEFR-Fortschrittsdiagramm eines Schülers aus — sie erscheinen stattdessen separat als Übungsfortschritt.",
+        "gr_test_mode_item_cefr": "Markieren Sie einen Test mit einem Ziel-CEFR-Niveau und einer Fertigkeit (wie es Bewertungsraster bereits unterstützen), damit die Ergebnisse in die CEFR-Übersicht des Schülers einfließen können.",
+        "gr_test_mode_item_audio": "Fügen Sie jeder Frage eine Audio-URL für Hörverständnis hinzu — Schüler sehen einen Audio-Player über dem Antwortbereich, genau wie bei Fragebildern.",
+        "gr_test_mode_item_retake": "Aktivieren Sie „Schülern erlauben, diesen Test zu wiederholen“ bei einem Übungstest, damit Schüler ihn mehrmals versuchen können.",
         "gr_class_avg_title": "Klassendurchschnitt-Anpassung",
         "gr_class_avg_body_prefix": "Öffne",
         "gr_class_avg_body_results": "Ergebnisse",
@@ -2608,7 +2627,8 @@
         "type_essay": "Aufsatz",
         "type_grade": "Zur Bewertung",
         "active_class_label": "Aktive Klasse",
-        "all_classes": "Alle Klassen"
+        "all_classes": "Alle Klassen",
+        "practice_badge": "Übung"
     },
     "flashcards": {
         "list_title": "Karteikarten",
