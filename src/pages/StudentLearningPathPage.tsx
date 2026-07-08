@@ -284,7 +284,7 @@ export default function StudentLearningPathPage() {
                                     : rec.grammarItemId;
                                 return (
                                     <div
-                                        key={rec.grammarItemId}
+                                        key={`${rec.grammarItemId}__${rec.triggeredAt}`}
                                         style={{
                                             display: 'flex',
                                             flexDirection: 'column',

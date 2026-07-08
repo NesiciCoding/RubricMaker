@@ -98,16 +98,27 @@ export default function QuestionEditor({
     }
 
     function changeType(type: TestQuestionType) {
+        // The grammar picker only shows for these types (see the linkedGrammarItemId form-group
+        // below) — clear a stale link when switching to any other type, since
+        // getGrammarRecommendations() matches on this field with no type check of its own.
+        const linkedGrammarItemId = (
+            ['cloze', 'cloze-dropdown', 'hot-text', 'matching'] as TestQuestionType[]
+        ).includes(type)
+            ? question.linkedGrammarItemId
+            : undefined;
+
         if (type === 'multiple-choice' || type === 'multiple-response') {
             update({
                 type,
+                linkedGrammarItemId,
                 options: question.options && question.options.length > 0 ? question.options : defaultOptions(),
             });
         } else if (type === 'true-false') {
-            update({ type, correctBoolean: question.correctBoolean ?? true });
+            update({ type, correctBoolean: question.correctBoolean ?? true, linkedGrammarItemId });
         } else if (type === 'matching') {
             update({
                 type,
+                linkedGrammarItemId,
                 matchingPairs:
                     question.matchingPairs && question.matchingPairs.length > 0
                         ? question.matchingPairs
@@ -116,6 +127,7 @@ export default function QuestionEditor({
         } else if (type === 'ordering') {
             update({
                 type,
+                linkedGrammarItemId,
                 orderItems:
                     question.orderItems && question.orderItems.length > 0 ? question.orderItems : defaultOrderItems(),
             });
@@ -124,6 +136,7 @@ export default function QuestionEditor({
                 question.categories && question.categories.length > 0 ? question.categories : defaultCategories();
             update({
                 type,
+                linkedGrammarItemId,
                 categories,
                 categorizeItems:
                     question.categorizeItems && question.categorizeItems.length > 0
@@ -133,11 +146,12 @@ export default function QuestionEditor({
         } else if (type === 'hot-text') {
             update({
                 type,
+                linkedGrammarItemId,
                 hotTextPassage: question.hotTextPassage ?? '',
                 hotTextCorrectIndices: question.hotTextCorrectIndices ?? [],
             });
         } else {
-            update({ type });
+            update({ type, linkedGrammarItemId });
         }
     }
 

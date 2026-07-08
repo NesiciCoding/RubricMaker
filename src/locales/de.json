@@ -2352,7 +2352,7 @@
         "ce_learning_paths_item_recs": "Rubrikempfehlungen — für jede GER-Fertigkeit/-Niveau, in der der Schüler deutlich unter dem Klassendurchschnitt liegt, werden nicht ausprobierte Rubriken mit dieser Fertigkeit und diesem Niveau vorgeschlagen.",
         "ce_learning_paths_item_flags": "Interventionssignale — drei oder mehr aufeinanderfolgende niedrige Bewertungen beim gleichen Rubrikkriterium oder der gleichen GER-Fertigkeit lösen ein Signal aus, damit Schüler, die zusätzliche Unterstützung benötigen, leicht erkennbar sind.",
         "ce_learning_paths_item_computed": "Alles wird live aus bestehenden Bewertungen berechnet; es wird nichts Neues gespeichert.",
-        "ce_learning_paths_item_grammar": "Ein separater Abschnitt Grammatikübung schlägt ein passendes Karteikarten-Set und eine Übung vor, wenn ein Schüler wiederholt niedrig bei einem grammatikverknüpften Kriterium oder einer Frage abschneidet.",
+        "ce_learning_paths_item_grammar": "Ein separater Abschnitt Grammatikübung schlägt einen passenden Karteikartenstapel und eine Übung vor, wenn ein Schüler wiederholt niedrig bei einem grammatikverknüpften Kriterium oder einer Frage abschneidet.",
         "ce_speaking_title": "Sprechsitzungen",
         "ce_speaking_intro": "Starte eine Sprechsitzung über einen von zwei Einstiegspunkten:",
         "ce_speaking_item_profile": "Schülerprofil → Schaltfläche „Sprechsitzung“ in der oberen Leiste. Mit einer Rubrik navigiert es direkt; bei mehreren Rubriken lässt dich ein Dropdown wählen.",
@@ -2514,7 +2514,7 @@
         "ce_flashcards_item_assign": "Weise einen Stapel einer Klasse zu; jeder Schüler darin sieht den Stapel in seinem Portal.",
         "ce_flashcards_item_study": "Schüler lernen im Portal: Antwort aufdecken und die Karte mit Nochmal / Schwer / Gut / Einfach bewerten. Die Bewertung bestimmt den nächsten Wiederholungstermin.",
         "ce_flashcards_item_insights": "Einblicke für beide Seiten: Schüler sehen ihren Fortschritt und Übungswörter auf der Lernseite; Lehrkräfte sehen den Fortschritt pro Schüler auf der Stapelseite.",
-        "ce_flashcards_item_grammar": "Stellen Sie den Set-Typ auf Grammatik und verknüpfen Sie jede Karte mit einem bestimmten Grammatikelement, um Wiederholungsübungen zu erstellen, die in die Grammatikübungsempfehlungen eines Schülers einfließen.",
+        "ce_flashcards_item_grammar": "Stellen Sie den Stapel-Typ auf Grammatik und verknüpfen Sie jede Karte mit einem bestimmten Grammatikelement, um Wiederholungsübungen zu erstellen, die in die Grammatikübungsempfehlungen eines Schülers einfließen.",
         "ce_flashcards_info": "Der Lernfortschritt wird bei Verbindung über die Datenbank synchronisiert, sodass Schüler auf jedem Gerät lernen können. Im lokalen Modus wird er in diesem Browser gespeichert."
     },
     "studentProfile": {
@@ -2635,7 +2635,7 @@
         "type_student": "Schüler",
         "type_class": "Klasse",
         "type_essay": "Aufsatz",
-        "type_flashcardDeck": "Set",
+        "type_flashcardDeck": "Stapel",
         "type_grade": "Zur Bewertung",
         "active_class_label": "Aktive Klasse",
         "all_classes": "Alle Klassen",
@@ -2659,7 +2659,7 @@
         "deck_name_label": "Name des Stapels",
         "deck_description_label": "Beschreibung",
         "deck_description_placeholder": "z. B. Vokabeln Kapitel 4",
-        "deck_kind_label": "Set-Typ",
+        "deck_kind_label": "Stapel-Typ",
         "deck_kind_vocabulary": "Wortschatz",
         "deck_kind_grammar": "Grammatik",
         "cards_heading": "Karten ({{count}})",
@@ -2723,7 +2723,7 @@
         "recommendations_title": "Grammatikübung",
         "recommendations_subtitle": "Vorgeschlagene Übung basierend auf wiederholt niedrigen Ergebnissen bei grammatikverknüpften Kriterien und Fragen.",
         "recommend_streak": "{{count}} niedrige Ergebnisse in Folge bei {{label}}",
-        "suggested_decks": "Karteikarten-Sets zum Üben",
+        "suggested_decks": "Karteikartenstapel zum Üben",
         "suggested_tests": "Übungen zum Ausprobieren",
         "no_recommendations": "Derzeit keine Empfehlungen für Grammatikübungen."
     }

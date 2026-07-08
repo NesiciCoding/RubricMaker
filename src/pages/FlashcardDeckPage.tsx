@@ -146,6 +146,8 @@ export default function FlashcardDeckPage() {
     }
 
     const validCardCount = draft.cards.filter((c) => c.front.trim() && c.back.trim()).length;
+    const frontLabel = t(draft.deckKind === 'grammar' ? 'flashcards.card_front_grammar' : 'flashcards.card_front');
+    const backLabel = t(draft.deckKind === 'grammar' ? 'flashcards.card_back_grammar' : 'flashcards.card_back');
 
     return (
         <>
@@ -248,32 +250,16 @@ export default function FlashcardDeckPage() {
                                     <input
                                         className="input"
                                         value={card.front}
-                                        placeholder={t(
-                                            draft.deckKind === 'grammar'
-                                                ? 'flashcards.card_front_grammar'
-                                                : 'flashcards.card_front'
-                                        )}
-                                        aria-label={t(
-                                            draft.deckKind === 'grammar'
-                                                ? 'flashcards.card_front_grammar'
-                                                : 'flashcards.card_front'
-                                        )}
+                                        placeholder={frontLabel}
+                                        aria-label={frontLabel}
                                         onChange={(e) => patchCard(card.id, { front: e.target.value })}
                                         style={{ flex: 1 }}
                                     />
                                     <input
                                         className="input"
                                         value={card.back}
-                                        placeholder={t(
-                                            draft.deckKind === 'grammar'
-                                                ? 'flashcards.card_back_grammar'
-                                                : 'flashcards.card_back'
-                                        )}
-                                        aria-label={t(
-                                            draft.deckKind === 'grammar'
-                                                ? 'flashcards.card_back_grammar'
-                                                : 'flashcards.card_back'
-                                        )}
+                                        placeholder={backLabel}
+                                        aria-label={backLabel}
                                         onChange={(e) => patchCard(card.id, { back: e.target.value })}
                                         style={{ flex: 1 }}
                                     />
