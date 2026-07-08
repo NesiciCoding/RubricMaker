@@ -193,7 +193,10 @@ export function getCefrStudentOverview(
 ): CefrStudentOverview {
     const cellAccMap = new Map<string, CellAccumulator>();
     const standardAccMap = new Map<string, StandardAccumulator>();
-    const practiceAccMap = new Map<string, { skill: CefrSkill; level: CefrLevel; scores: number[]; lastAttemptAt: string }>();
+    const practiceAccMap = new Map<
+        string,
+        { skill: CefrSkill; level: CefrLevel; scores: number[]; lastAttemptAt: string }
+    >();
 
     // ── Step 1: rubric scores ──────────────────────────────────────────────────
 

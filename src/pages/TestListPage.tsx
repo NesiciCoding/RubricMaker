@@ -437,14 +437,15 @@ export default function TestListPage() {
                                                                                             <span
                                                                                                 style={{
                                                                                                     marginLeft: 6,
-                                                                                                    fontSize:
-                                                                                                        '0.75rem',
+                                                                                                    fontSize: '0.75rem',
                                                                                                     color: 'var(--text-muted)',
                                                                                                 }}
                                                                                             >
                                                                                                 {t(
                                                                                                     'tests.results.attempt_label',
-                                                                                                    { n: st.attemptNumber }
+                                                                                                    {
+                                                                                                        n: st.attemptNumber,
+                                                                                                    }
                                                                                                 )}
                                                                                             </span>
                                                                                         )}

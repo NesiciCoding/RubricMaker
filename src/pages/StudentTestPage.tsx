@@ -72,16 +72,10 @@ function safeImgSrc(url: string | undefined): string | undefined {
     return undefined;
 }
 
-/** Returns the URL only when protocol is http(s) or a data: URI with an audio MIME type. */
+/** Returns the URL only when it's a well-formed absolute http(s) URL — blocks javascript: and other dangerous schemes. */
+const SAFE_AUDIO_URL_RE = /^https?:\/\/[^\s"'<>]+$/i;
 function safeAudioSrc(url: string | undefined): string | undefined {
-    if (!url) return undefined;
-    try {
-        const u = new URL(url);
-        if (u.protocol === 'https:' || u.protocol === 'http:') return u.href;
-    } catch {
-        if (/^data:audio\//i.test(url)) return url;
-    }
-    return undefined;
+    return url && SAFE_AUDIO_URL_RE.test(url) ? url : undefined;
 }
 
 function withAnswer(answers: Record<string, string>, key: string, value: string): Record<string, string> {
@@ -644,11 +638,7 @@ export default function StudentTestPage() {
                                 </div>
                             )}
                             {test?.allowMultipleAttempts && (
-                                <button
-                                    onClick={handleRetake}
-                                    className="btn btn-secondary"
-                                    style={{ marginTop: 12 }}
-                                >
+                                <button onClick={handleRetake} className="btn btn-secondary" style={{ marginTop: 12 }}>
                                     {t('tests.taking.retake')}
                                 </button>
                             )}
