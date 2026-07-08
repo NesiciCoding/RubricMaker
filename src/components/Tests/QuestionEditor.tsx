@@ -20,6 +20,7 @@ import { useApp } from '../../context/AppContext';
 import { nanoid } from '../../utils/nanoid';
 import StandardsPickerModal from '../Standards/StandardsPickerModal';
 import CefrPickerModal from '../CEFR/CefrPickerModal';
+import GrammarItemSelect from '../CEFR/GrammarItemSelect';
 import HelpPopover from './HelpPopover';
 import { parseClozeGaps, parseHotTextFragments, type HotTextFragmentSegment } from '../../utils/clozeParse';
 import type {
@@ -525,6 +526,25 @@ export default function QuestionEditor({
                     placeholder={t('tests.question_hint_placeholder')}
                 />
             </div>
+
+            {(question.type === 'cloze' ||
+                question.type === 'cloze-dropdown' ||
+                question.type === 'hot-text' ||
+                question.type === 'matching') && (
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label htmlFor={`question-grammar-${question.id}`}>
+                        {t('grammar.item_select_label')}{' '}
+                        <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
+                            ({t('essay_assignment.optional')})
+                        </span>
+                    </label>
+                    <GrammarItemSelect
+                        id={`question-grammar-${question.id}`}
+                        value={question.linkedGrammarItemId}
+                        onChange={(linkedGrammarItemId) => update({ linkedGrammarItemId })}
+                    />
+                </div>
+            )}
 
             {(question.type === 'multiple-choice' || question.type === 'multiple-response') && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

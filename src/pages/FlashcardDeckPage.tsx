@@ -10,6 +10,7 @@ import { nanoid } from '../utils/nanoid';
 import FlashcardImportModal from '../components/Flashcards/FlashcardImportModal';
 import FlashcardStudySession from '../components/Flashcards/FlashcardStudySession';
 import FlashcardInsightsPanel from '../components/Flashcards/FlashcardInsightsPanel';
+import GrammarItemSelect from '../components/CEFR/GrammarItemSelect';
 import { computeDeckInsights } from '../utils/flashcardInsights';
 import type { FlashcardCard, FlashcardDeck } from '../types';
 import type { ParsedFlashcard } from '../utils/flashcardImport';
@@ -201,6 +202,21 @@ export default function FlashcardDeckPage() {
                                 style={{ width: '100%', marginTop: 4 }}
                             />
                         </div>
+                        <div>
+                            <label className="text-sm" htmlFor="deck-kind" style={{ fontWeight: 600 }}>
+                                {t('flashcards.deck_kind_label')}
+                            </label>
+                            <select
+                                id="deck-kind"
+                                className="input"
+                                value={draft.deckKind ?? 'vocabulary'}
+                                onChange={(e) => patchDraft({ deckKind: e.target.value as 'vocabulary' | 'grammar' })}
+                                style={{ width: '100%', marginTop: 4 }}
+                            >
+                                <option value="vocabulary">{t('flashcards.deck_kind_vocabulary')}</option>
+                                <option value="grammar">{t('flashcards.deck_kind_grammar')}</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -232,16 +248,32 @@ export default function FlashcardDeckPage() {
                                     <input
                                         className="input"
                                         value={card.front}
-                                        placeholder={t('flashcards.card_front')}
-                                        aria-label={t('flashcards.card_front')}
+                                        placeholder={t(
+                                            draft.deckKind === 'grammar'
+                                                ? 'flashcards.card_front_grammar'
+                                                : 'flashcards.card_front'
+                                        )}
+                                        aria-label={t(
+                                            draft.deckKind === 'grammar'
+                                                ? 'flashcards.card_front_grammar'
+                                                : 'flashcards.card_front'
+                                        )}
                                         onChange={(e) => patchCard(card.id, { front: e.target.value })}
                                         style={{ flex: 1 }}
                                     />
                                     <input
                                         className="input"
                                         value={card.back}
-                                        placeholder={t('flashcards.card_back')}
-                                        aria-label={t('flashcards.card_back')}
+                                        placeholder={t(
+                                            draft.deckKind === 'grammar'
+                                                ? 'flashcards.card_back_grammar'
+                                                : 'flashcards.card_back'
+                                        )}
+                                        aria-label={t(
+                                            draft.deckKind === 'grammar'
+                                                ? 'flashcards.card_back_grammar'
+                                                : 'flashcards.card_back'
+                                        )}
                                         onChange={(e) => patchCard(card.id, { back: e.target.value })}
                                         style={{ flex: 1 }}
                                     />
@@ -253,6 +285,15 @@ export default function FlashcardDeckPage() {
                                         onChange={(e) => patchCard(card.id, { example: e.target.value })}
                                         style={{ flex: 1 }}
                                     />
+                                    {draft.deckKind === 'grammar' && (
+                                        <GrammarItemSelect
+                                            value={card.linkedGrammarItemId}
+                                            onChange={(linkedGrammarItemId) =>
+                                                patchCard(card.id, { linkedGrammarItemId })
+                                            }
+                                            aria-label={t('flashcards.card_grammar_item_label')}
+                                        />
+                                    )}
                                     <button
                                         className="btn btn-ghost btn-icon btn-sm"
                                         title={t('flashcards.remove_card')}
@@ -318,7 +359,7 @@ export default function FlashcardDeckPage() {
                                             <div style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: 6 }}>
                                                 {student.name}
                                             </div>
-                                            <FlashcardInsightsPanel insights={insights} />
+                                            <FlashcardInsightsPanel insights={insights} deckKind={draft.deckKind} />
                                         </div>
                                     );
                                 })}

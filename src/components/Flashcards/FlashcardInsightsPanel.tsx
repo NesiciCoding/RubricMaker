@@ -6,6 +6,8 @@ interface Props {
     insights: DeckInsights;
     /** Hide the focus-word list (e.g. in compact teacher table rows). */
     compact?: boolean;
+    /** Swaps "Words to focus on" for a kind-neutral label when the deck isn't vocabulary. */
+    deckKind?: 'vocabulary' | 'grammar';
 }
 
 const STAGES = [
@@ -15,7 +17,7 @@ const STAGES = [
     { key: 'masteredCount', color: 'var(--green)', labelKey: 'flashcards.stage_mastered' },
 ] as const;
 
-export default function FlashcardInsightsPanel({ insights, compact = false }: Props) {
+export default function FlashcardInsightsPanel({ insights, compact = false, deckKind = 'vocabulary' }: Props) {
     const { t, i18n } = useTranslation();
     const total = Math.max(insights.totalCards, 1);
 
@@ -70,7 +72,7 @@ export default function FlashcardInsightsPanel({ insights, compact = false }: Pr
             {!compact && insights.focusCards.length > 0 && (
                 <div style={{ marginTop: 10 }}>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 6 }}>
-                        {t('flashcards.focus_words')}
+                        {t(deckKind === 'grammar' ? 'flashcards.focus_items' : 'flashcards.focus_words')}
                     </div>
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                         {insights.focusCards.map((c) => (

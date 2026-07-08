@@ -33,6 +33,9 @@ vi.mock('../../context/AppContext', () => ({
         selfAssessments: [],
         analysisResults: [],
         settings: mockSettings,
+        tests: [],
+        studentTests: [],
+        flashcardDecks: [],
     }),
 }));
 

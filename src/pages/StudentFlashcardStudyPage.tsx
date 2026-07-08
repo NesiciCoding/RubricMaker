@@ -163,7 +163,7 @@ export default function StudentFlashcardStudyPage() {
                                 <h3 style={{ margin: '0 0 12px', fontSize: '0.9rem' }}>
                                     {t('flashcards.my_progress_heading')}
                                 </h3>
-                                <FlashcardInsightsPanel insights={insights} />
+                                <FlashcardInsightsPanel insights={insights} deckKind={deck?.deckKind} />
                             </div>
                         )}
                         <FlashcardStudySession
