@@ -36,6 +36,7 @@ import { groupMessageThreads, MessageThread } from '../utils/messageThreads';
 import { computeDeckInsights } from '../utils/flashcardInsights';
 import { searchPortal } from '../utils/portalSearch';
 import PortalSearchBar from '../components/Students/PortalSearchBar';
+import NewsFlashTimeline from '../components/Students/NewsFlashTimeline';
 import { nanoid } from '../utils/nanoid';
 import type {
     CefrLevel,
@@ -49,6 +50,8 @@ import type {
     Message,
     MessageContextType,
     FlashcardAssignment,
+    NewsFlash,
+    NewsFlashRead,
 } from '../types';
 
 function scrollToSection(id: string) {
@@ -89,6 +92,11 @@ export default function StudentPortalPage() {
         flashcardDecks,
         flashcardReviews,
         fetchMyFlashcardAssignments,
+        newsFlashes,
+        newsFlashReads,
+        fetchMyNewsFlashes,
+        markNewsFlashRead,
+        markNewsFlashReadAsStudent,
     } = useApp();
     const { t } = useTranslation();
     const [linkCopied, setLinkCopied] = useState(false);
@@ -104,6 +112,7 @@ export default function StudentPortalPage() {
     const [radarRubricId, setRadarRubricId] = useState<string>('combined');
     const [messageRows, setMessageRows] = useState<Message[]>([]);
     const [flashcardRows, setFlashcardRows] = useState<FlashcardAssignment[]>([]);
+    const [newsFlashRows, setNewsFlashRows] = useState<NewsFlash[]>([]);
 
     useEffect(() => {
         fetchMyEssayAssignments()
@@ -125,6 +134,11 @@ export default function StudentPortalPage() {
             .then(setFlashcardRows)
             .catch(() => {
                 /* local mode: app state (below) already has the assignments */
+            });
+        fetchMyNewsFlashes()
+            .then(setNewsFlashRows)
+            .catch(() => {
+                /* local mode: app state (below) already has the flashes */
             });
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -411,6 +425,31 @@ export default function StudentPortalPage() {
         return [...byDeck.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     })();
 
+    // News flashes are broadcast (RLS-scoped by teacher, not per-student assignment rows),
+    // so no studentId filter here — same merge-by-id/fetched-wins pattern as myFlashcards.
+    const myNewsFlashes = (() => {
+        const byId = new Map(newsFlashes.map((f) => [f.id, f]));
+        for (const f of newsFlashRows) byId.set(f.id, f);
+        return [...byId.values()];
+    })();
+    const readNewsFlashIds = new Set(newsFlashReads.filter((r) => r.studentId === student.id).map((r) => r.flashId));
+    const unreadNewsFlashCount = myNewsFlashes.filter((f) => !readNewsFlashIds.has(f.id)).length;
+
+    const studentIdForReads = student.id;
+    function handleOpenNewsFlash(flash: NewsFlash) {
+        if (readNewsFlashIds.has(flash.id)) return;
+        const read: NewsFlashRead = {
+            id: `${flash.id}:${studentIdForReads}`,
+            flashId: flash.id,
+            studentId: studentIdForReads,
+            readAt: new Date().toISOString(),
+        };
+        markNewsFlashRead(read);
+        markNewsFlashReadAsStudent(read).catch(() => {
+            /* news flashes require a live Supabase session; silently unavailable otherwise */
+        });
+    }
+
     // Not a useMemo: this whole render branch (post `if (!student) return`) is already
     // conditional, so a hook here would violate the rules of hooks — a plain const, matching
     // the allWork/myFlashcards pattern just above, is the correct shape.
@@ -429,6 +468,14 @@ export default function StudentPortalPage() {
             id: 'portal-section-flashcards',
             label: t('studentPortal.flashcards_section_title'),
             visible: myFlashcards.length > 0,
+        },
+        {
+            id: 'portal-section-news-flashes',
+            label:
+                unreadNewsFlashCount > 0
+                    ? t('newsFlashes.section_title_unread', { count: unreadNewsFlashCount })
+                    : t('newsFlashes.section_title'),
+            visible: myNewsFlashes.length > 0,
         },
         { id: 'portal-section-messages', label: t('studentPortal.messages_section_title'), visible: true },
         { id: 'portal-section-progress', label: t('studentPortal.my_progress'), visible: hasRadar },
@@ -759,6 +806,25 @@ export default function StudentPortalPage() {
                                 );
                             })}
                         </div>
+                    </Section>
+                )}
+
+                {myNewsFlashes.length > 0 && (
+                    <Section
+                        id="portal-section-news-flashes"
+                        title={
+                            unreadNewsFlashCount > 0
+                                ? t('newsFlashes.section_title_unread', { count: unreadNewsFlashCount })
+                                : t('newsFlashes.section_title')
+                        }
+                    >
+                        <NewsFlashTimeline
+                            studentId={student.id}
+                            flashes={myNewsFlashes}
+                            readFlashIds={readNewsFlashIds}
+                            onOpen={handleOpenNewsFlash}
+                            onScrollToSection={scrollToSection}
+                        />
                     </Section>
                 )}
 

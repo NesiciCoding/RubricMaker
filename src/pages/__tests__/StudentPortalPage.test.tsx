@@ -46,6 +46,9 @@ const mockFetchMyMessages = vi.fn().mockResolvedValue([]);
 const mockSendMessageAsStudent = vi.fn().mockResolvedValue({ success: true });
 const mockMarkMessagesReadByStudent = vi.fn().mockResolvedValue({ success: true });
 const mockFetchMyFlashcardAssignments = vi.fn().mockResolvedValue([]);
+const mockFetchMyNewsFlashes = vi.fn().mockResolvedValue([]);
+const mockMarkNewsFlashRead = vi.fn();
+const mockMarkNewsFlashReadAsStudent = vi.fn().mockResolvedValue({ success: true });
 
 const mockGradedStudentRubric: StudentRubric = {
     id: 'sr1',
@@ -151,6 +154,11 @@ const mockAppValue: Record<string, unknown> = {
     flashcardDecks: emptyArr,
     flashcardReviews: emptyArr,
     fetchMyFlashcardAssignments: mockFetchMyFlashcardAssignments,
+    newsFlashes: emptyArr,
+    newsFlashReads: emptyArr,
+    fetchMyNewsFlashes: mockFetchMyNewsFlashes,
+    markNewsFlashRead: mockMarkNewsFlashRead,
+    markNewsFlashReadAsStudent: mockMarkNewsFlashReadAsStudent,
 };
 
 vi.mock('../../context/AppContext', () => ({

@@ -1,8 +1,16 @@
-import type { Class, EssayAssignment, FlashcardDeck, Rubric, Student, Test, VoTrack } from '../types';
+import type { Class, EssayAssignment, FlashcardDeck, NewsFlash, Rubric, Student, Test, VoTrack } from '../types';
 import { SCHOOL_YEAR_LABELS } from '../data/schoolYears';
 import { VO_TRACK_LABELS } from '../data/voTracks';
 
-export type SearchResultType = 'rubric' | 'test' | 'student' | 'class' | 'essay' | 'grade' | 'flashcardDeck';
+export type SearchResultType =
+    | 'rubric'
+    | 'test'
+    | 'student'
+    | 'class'
+    | 'essay'
+    | 'grade'
+    | 'flashcardDeck'
+    | 'newsFlash';
 
 export interface SearchResult {
     type: SearchResultType;
@@ -21,6 +29,7 @@ export interface SearchableData {
     classes: Class[];
     essayAssignments: EssayAssignment[];
     flashcardDecks: FlashcardDeck[];
+    newsFlashes: NewsFlash[];
 }
 
 const TYPE_ALIASES: Record<string, SearchResultType> = {
@@ -38,6 +47,8 @@ const TYPE_ALIASES: Record<string, SearchResultType> = {
     decks: 'flashcardDeck',
     flashcard: 'flashcardDeck',
     flashcards: 'flashcardDeck',
+    newsflash: 'newsFlash',
+    newsflashes: 'newsFlash',
 };
 
 export function normalize(s: string): string {
@@ -282,6 +293,14 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
                     sublabel: d.description,
                     route: `/flashcards/${d.id}`,
                 });
+            }
+        }
+    }
+
+    if (!modeFilter && !areaFilter && (!typeFilter || typeFilter === 'newsFlash')) {
+        for (const f of data.newsFlashes) {
+            if (matchesText(f.title, f.summary, ...f.tags)) {
+                addResult({ type: 'newsFlash', id: f.id, label: f.title, sublabel: f.summary, route: '/news-flashes' });
             }
         }
     }

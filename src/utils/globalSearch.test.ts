@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { searchAll, type SearchableData } from './globalSearch';
-import type { Class, EssayAssignment, FlashcardDeck, Rubric, Student, Test } from '../types';
+import type { Class, EssayAssignment, FlashcardDeck, NewsFlash, Rubric, Student, Test } from '../types';
 
 function makeData(overrides: Partial<SearchableData> = {}): SearchableData {
     return {
@@ -10,6 +10,7 @@ function makeData(overrides: Partial<SearchableData> = {}): SearchableData {
         classes: [],
         essayAssignments: [],
         flashcardDecks: [],
+        newsFlashes: [],
         ...overrides,
     };
 }
@@ -48,6 +49,15 @@ const essay: EssayAssignment = {
     teacherKey: 'tk1',
     title: 'My Summer',
     readOnlyAfterSubmit: false,
+    createdAt: '2026-01-01',
+};
+
+const newsFlash: NewsFlash = {
+    id: 'nf1',
+    title: 'Grammar tips for irregular verbs',
+    summary: 'A short article on common irregular verb mistakes.',
+    kind: 'article',
+    tags: ['grammar'],
     createdAt: '2026-01-01',
 };
 
@@ -100,6 +110,25 @@ describe('searchAll', () => {
         const dup: EssayAssignment = { ...essay, studentId: 's2' };
         const results = searchAll('summer', makeData({ essayAssignments: [essay, dup] }));
         expect(results).toEqual([{ type: 'essay', id: 'tk1', label: 'My Summer', route: '/essays/tk1' }]);
+    });
+
+    it('matches a news flash by title, summary, or tag', () => {
+        expect(searchAll('irregular verbs', makeData({ newsFlashes: [newsFlash] })).map((r) => r.id)).toEqual(['nf1']);
+        expect(searchAll('common irregular', makeData({ newsFlashes: [newsFlash] })).map((r) => r.id)).toEqual(['nf1']);
+        expect(searchAll('grammar', makeData({ newsFlashes: [newsFlash] })).map((r) => r.id)).toEqual(['nf1']);
+    });
+
+    it('filters to news flashes only under type:newsflash', () => {
+        const results = searchAll('type:newsflash grammar', makeData({ rubrics: [rubric], newsFlashes: [newsFlash] }));
+        expect(results).toEqual([
+            {
+                type: 'newsFlash',
+                id: 'nf1',
+                label: 'Grammar tips for irregular verbs',
+                sublabel: 'A short article on common irregular verb mistakes.',
+                route: '/news-flashes',
+            },
+        ]);
     });
 
     describe('compound student+rubric grade shortcut', () => {

@@ -33,6 +33,8 @@ import type {
     FlashcardAssignment,
     FlashcardReview,
     StandardMasteryTarget,
+    NewsFlash,
+    NewsFlashRead,
 } from '../../types';
 import type { DatabaseConfig, DbUser, SyncResult } from './types';
 import { nanoid } from '../../utils/nanoid';
@@ -1469,6 +1471,68 @@ export class SupabaseAdapter {
         return error ? { success: false, error: error.message } : { success: true };
     }
 
+    // ── News flashes (curated links/resources) ────────────────────────────────
+
+    async fetchNewsFlashReads(): Promise<NewsFlashRead[]> {
+        const { data, error } = await this.db().from('news_flash_reads').select('data');
+        if (error) {
+            console.error('fetchNewsFlashReads', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as NewsFlashRead);
+    }
+
+    async fetchNewsFlashes(): Promise<NewsFlash[]> {
+        const { data, error } = await this.db().from('news_flashes').select('data');
+        if (error) {
+            console.error('fetchNewsFlashes', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as NewsFlash);
+    }
+
+    async upsertNewsFlash(f: NewsFlash): Promise<SyncResult> {
+        const { error } = await this.db()
+            .from('news_flashes')
+            .upsert({ id: f.id, owner_id: this.uid(), data: f }, { onConflict: 'id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteNewsFlash(id: string): Promise<SyncResult> {
+        const { error } = await this.db().from('news_flashes').delete().eq('id', id).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    /** Teacher-session upsert of a read receipt (rare — student writes via markNewsFlashReadAsStudent). */
+    async upsertNewsFlashRead(r: NewsFlashRead): Promise<SyncResult> {
+        const { error } = await this.db()
+            .from('news_flash_reads')
+            .upsert(
+                { id: r.id, owner_id: this.uid(), flash_id: r.flashId, student_id: r.studentId, data: r },
+                { onConflict: 'id' }
+            );
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    /** Flashes visible to the logged-in portal student (RLS: get_my_news_flash_ids). */
+    async fetchMyNewsFlashes(): Promise<NewsFlash[]> {
+        const { data, error } = await this.db().from('news_flashes').select('data');
+        if (error || !data) return [];
+        return data.map((r) => r.data as NewsFlash);
+    }
+
+    /**
+     * Student marks a flash read. owner_id is intentionally omitted — the
+     * set_news_flash_read_owner trigger (migration 057) resolves it server-side from
+     * the roster row, same rationale as saveFlashcardReviewAsStudent.
+     */
+    async markNewsFlashReadAsStudent(r: NewsFlashRead): Promise<SyncResult> {
+        const { error } = await this.db()
+            .from('news_flash_reads')
+            .upsert({ id: r.id, flash_id: r.flashId, student_id: r.studentId, data: r }, { onConflict: 'id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
     // ── Analysis Results ──────────────────────────────────────────────────────
 
     async fetchAnalysisResults(): Promise<DocumentAnalysisResult[]> {
@@ -2145,6 +2209,8 @@ export class SupabaseAdapter {
             'flashcard_decks',
             'flashcard_assignments',
             'flashcard_reviews',
+            'news_flashes',
+            'news_flash_reads',
         ];
         for (const table of tables) {
             const col = table === 'student_rubrics' ? 'grader_id' : table === 'user_settings' ? 'user_id' : 'owner_id';

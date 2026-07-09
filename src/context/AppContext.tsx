@@ -40,6 +40,8 @@ import type {
     FlashcardAssignment,
     FlashcardReview,
     StandardMasteryTarget,
+    NewsFlash,
+    NewsFlashRead,
 } from '../types';
 import {
     loadStore,
@@ -70,6 +72,8 @@ import {
     saveFlashcardAssignments,
     saveFlashcardReviews,
     saveStandardMasteryTargets,
+    saveNewsFlashes,
+    saveNewsFlashReads,
     saveUserTemplates,
     importFullBackup,
     loadPendingQueue,
@@ -167,6 +171,10 @@ type Action =
     | { type: 'DELETE_STANDARD_MASTERY_TARGET'; id: string }
     | { type: 'ADD_FLASHCARD_ASSIGNMENTS'; payload: FlashcardAssignment[] }
     | { type: 'SAVE_FLASHCARD_REVIEW'; payload: FlashcardReview }
+    | { type: 'ADD_NEWS_FLASH'; payload: NewsFlash }
+    | { type: 'UPDATE_NEWS_FLASH'; payload: NewsFlash }
+    | { type: 'DELETE_NEWS_FLASH'; id: string }
+    | { type: 'SAVE_NEWS_FLASH_READ'; payload: NewsFlashRead }
     | { type: 'SAVE_USER_TEMPLATE'; payload: UserTemplate }
     | { type: 'DELETE_USER_TEMPLATE'; id: string };
 
@@ -738,6 +746,32 @@ function reducer(state: StoreData, action: Action): StoreData {
             if (isOffline()) saveFlashcardReviews(next);
             return { ...state, flashcardReviews: next };
         }
+        case 'ADD_NEWS_FLASH': {
+            const next = [...state.newsFlashes, action.payload];
+            if (isOffline()) saveNewsFlashes(next);
+            return { ...state, newsFlashes: next };
+        }
+        case 'UPDATE_NEWS_FLASH': {
+            const next = state.newsFlashes.map((f) => (f.id === action.payload.id ? action.payload : f));
+            if (isOffline()) saveNewsFlashes(next);
+            return { ...state, newsFlashes: next };
+        }
+        case 'DELETE_NEWS_FLASH': {
+            const next = state.newsFlashes.filter((f) => f.id !== action.id);
+            if (isOffline()) saveNewsFlashes(next);
+            const nextReads = state.newsFlashReads.filter((r) => r.flashId !== action.id);
+            if (isOffline()) saveNewsFlashReads(nextReads);
+            return { ...state, newsFlashes: next, newsFlashReads: nextReads };
+        }
+        case 'SAVE_NEWS_FLASH_READ': {
+            const exists = state.newsFlashReads.findIndex((r) => r.id === action.payload.id);
+            const next =
+                exists >= 0
+                    ? state.newsFlashReads.map((r) => (r.id === action.payload.id ? action.payload : r))
+                    : [...state.newsFlashReads, action.payload];
+            if (isOffline()) saveNewsFlashReads(next);
+            return { ...state, newsFlashReads: next };
+        }
         case 'SAVE_USER_TEMPLATE': {
             // No cap here — this array is now the sync source of truth, diffed against
             // Supabase (see the delta-sync effect below). Evicting an entry would look
@@ -872,6 +906,11 @@ interface AppContextValue extends StoreData {
     deleteStandardMasteryTarget: (id: string) => void;
     addFlashcardAssignments: (assignments: FlashcardAssignment[]) => void;
     saveFlashcardReview: (r: FlashcardReview) => void;
+    // News flashes (curated links/resources, teacher side)
+    addNewsFlash: (f: Omit<NewsFlash, 'id' | 'createdAt'>) => NewsFlash;
+    updateNewsFlash: (f: NewsFlash) => void;
+    deleteNewsFlash: (id: string) => void;
+    markNewsFlashRead: (r: NewsFlashRead) => void;
     // Saved rubric templates ("save as template")
     saveUserTemplate: (t: UserTemplate) => void;
     deleteUserTemplate: (id: string) => void;
@@ -935,6 +974,9 @@ interface AppContextValue extends StoreData {
     fetchAssignedFlashcardDeck: (deckId: string) => Promise<FlashcardDeck | null>;
     fetchMyFlashcardReview: (deckId: string, studentId: string) => Promise<FlashcardReview | null>;
     saveFlashcardReviewAsStudent: (r: FlashcardReview) => Promise<SyncResult>;
+    // News flashes (student portal side)
+    fetchMyNewsFlashes: () => Promise<NewsFlash[]>;
+    markNewsFlashReadAsStudent: (r: NewsFlashRead) => Promise<SyncResult>;
     // Backup / restore
     importBackup: (json: string) => Promise<boolean>;
     // Landing / auth flow
@@ -1407,6 +1449,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         );
         diff(prev.flashcardReviews, state.flashcardReviews, 'flashcardReview', (r) => r.id);
         diff(prev.standardMasteryTargets, state.standardMasteryTargets, 'standardMasteryTarget', (t) => t.id);
+        diff(prev.newsFlashes, state.newsFlashes, 'newsFlash', (f) => f.id);
+        diff(prev.newsFlashReads, state.newsFlashReads, 'newsFlashRead', (r) => r.id);
 
         if (JSON.stringify(prev.settings) !== JSON.stringify(state.settings)) {
             storageSync.pushOne('settings', 'upsert', state.settings);
@@ -1802,6 +1846,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'SAVE_FLASHCARD_REVIEW', payload: r });
     }, []);
 
+    // Pushed to Supabase via the delta-sync diff() effect below, like flashcard decks.
+    const addNewsFlash = useCallback((f: Omit<NewsFlash, 'id' | 'createdAt'>): NewsFlash => {
+        const flash: NewsFlash = { ...f, id: nanoid(), createdAt: new Date().toISOString() };
+        dispatch({ type: 'ADD_NEWS_FLASH', payload: flash });
+        return flash;
+    }, []);
+    const updateNewsFlash = useCallback((f: NewsFlash) => {
+        dispatch({ type: 'UPDATE_NEWS_FLASH', payload: f });
+    }, []);
+    const deleteNewsFlash = useCallback((id: string) => {
+        dispatch({ type: 'DELETE_NEWS_FLASH', id });
+    }, []);
+    const markNewsFlashRead = useCallback((r: NewsFlashRead) => {
+        dispatch({ type: 'SAVE_NEWS_FLASH_READ', payload: r });
+    }, []);
+
     // Pushed to Supabase via the delta-sync diff() effect below, like essayAssignments.
     const saveUserTemplate = useCallback((t: UserTemplate) => {
         dispatch({ type: 'SAVE_USER_TEMPLATE', payload: t });
@@ -1961,6 +2021,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     );
     const saveFlashcardReviewAsStudent = useCallback(
         async (r: FlashcardReview) => (await loadDb()).storageSync.saveFlashcardReviewAsStudent(r),
+        []
+    );
+    const fetchMyNewsFlashes = useCallback(async () => (await loadDb()).storageSync.fetchMyNewsFlashes(), []);
+    const markNewsFlashReadAsStudent = useCallback(
+        async (r: NewsFlashRead) => (await loadDb()).storageSync.markNewsFlashReadAsStudent(r),
         []
     );
 
@@ -2172,6 +2237,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         deleteStandardMasteryTarget,
         addFlashcardAssignments,
         saveFlashcardReview,
+        addNewsFlash,
+        updateNewsFlash,
+        deleteNewsFlash,
+        markNewsFlashRead,
         saveUserTemplate,
         deleteUserTemplate,
         connectDatabase,
@@ -2211,6 +2280,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         fetchAssignedFlashcardDeck,
         fetchMyFlashcardReview,
         saveFlashcardReviewAsStudent,
+        fetchMyNewsFlashes,
+        markNewsFlashReadAsStudent,
         importBackup,
         showLanding: landingState === 'show',
         isCheckingSession: landingState === 'checking',

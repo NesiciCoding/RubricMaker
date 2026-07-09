@@ -333,7 +333,8 @@
         "marketplace": "Place de marché",
         "moderation": "Modération",
         "messages": "Messages",
-        "flashcards": "Cartes mémoire"
+        "flashcards": "Cartes mémoire",
+        "news_flashes": "Actualités"
     },
     "dashboard": {
         "title": "Tableau de bord",
@@ -2515,7 +2516,15 @@
         "ce_flashcards_item_study": "Les élèves étudient dans le portail : affichez la réponse puis notez la carte À revoir / Difficile / Correct / Facile. Les notes déterminent la prochaine date de révision.",
         "ce_flashcards_item_insights": "Des indicateurs pour les deux côtés : les élèves voient leur progression et les mots à travailler sur la page d’étude ; les enseignants voient la progression par élève sur la page du paquet.",
         "ce_flashcards_item_grammar": "Réglez le type de paquet sur Grammaire et associez chaque carte à un point de grammaire précis pour créer des exercices de rappel qui alimentent les recommandations d'entraînement grammatical de l'élève.",
-        "ce_flashcards_info": "La progression se synchronise via la base de données quand vous êtes connecté, pour étudier sur n’importe quel appareil. En mode local, elle est stockée dans ce navigateur."
+        "ce_flashcards_info": "La progression se synchronise via la base de données quand vous êtes connecté, pour étudier sur n’importe quel appareil. En mode local, elle est stockée dans ce navigateur.",
+        "route_news_flashes_label": "Actualités",
+        "route_news_flashes_desc": "Sélectionnez des articles, livres et vidéos à partager avec vos élèves.",
+        "ce_news_flashes_title": "Actualités",
+        "ce_news_flashes_intro": "Sélectionnez un contenu court à lire, écouter ou regarder — un article, une recommandation de livre, une vidéo — et partagez-le avec les élèves sous forme d’élément de fil chronologique léger.",
+        "ce_news_flashes_item_create": "Créez une actualité sous Évaluations → Actualités avec un titre, un résumé, un lien facultatif, un niveau CECR et des étiquettes.",
+        "ce_news_flashes_item_link": "Liez éventuellement une actualité à un paquet de cartes, un test ou une grille existants pour que les élèves puissent y accéder directement.",
+        "ce_news_flashes_item_timeline": "Les élèves voient les nouvelles actualités dans un fil chronologique sur leur page de portail, avec un badge non lu qui disparaît dès qu’ils en ouvrent une.",
+        "ce_news_flashes_info": "Les actualités sont diffusées à tous les élèves de l’enseignant qui les a créées — il n’y a pas d’attribution par élève, et aucun e-mail n’est envoyé."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",
@@ -2637,6 +2646,7 @@
         "type_essay": "Essai",
         "type_flashcardDeck": "Paquet",
         "type_grade": "Aller à la notation",
+        "type_newsFlash": "Actualité",
         "active_class_label": "Classe active",
         "all_classes": "Toutes les classes",
         "practice_badge": "Entraînement"
@@ -2726,5 +2736,36 @@
         "suggested_decks": "Paquets de cartes à réviser",
         "suggested_tests": "Exercices à essayer",
         "no_recommendations": "Aucune recommandation d'entraînement grammatical pour le moment."
+    },
+    "newsFlashes": {
+        "page_title": "Actualités",
+        "new_flash": "Nouvelle actualité",
+        "no_flashes": "Aucune actualité pour l’instant",
+        "create_first_instruction": "Sélectionnez un article, un livre ou une vidéo et partagez-le avec vos élèves.",
+        "action_edit": "Modifier l’actualité",
+        "action_delete": "Supprimer l’actualité",
+        "delete_title": "Supprimer l’actualité",
+        "delete_warning": "Supprimer « {{title}} » ? Les élèves ne la verront plus dans leur fil.",
+        "edit_title": "Modifier l’actualité",
+        "field_title": "Titre",
+        "field_summary": "Résumé",
+        "field_url": "Lien (facultatif)",
+        "field_kind": "Type",
+        "kind_article": "Article",
+        "kind_book": "Livre",
+        "kind_video": "Vidéo",
+        "field_tags": "Étiquettes",
+        "field_tags_placeholder": "ex. grammaire, culture, préparation à l’examen",
+        "field_linked_resource": "Lier à une ressource (facultatif)",
+        "linked_none": "Aucune",
+        "field_linked_item": "Ressource",
+        "linked_item_placeholder": "Choisir…",
+        "linked_flashcardDeck": "Paquet de cartes",
+        "linked_test": "Test",
+        "linked_rubric": "Rubrique",
+        "open_link": "Ouvrir le lien",
+        "unread_label": "Non lu",
+        "section_title": "Actualités",
+        "section_title_unread": "Actualités ({{count}} nouvelles)"
     }
 }

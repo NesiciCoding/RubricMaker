@@ -333,7 +333,8 @@
         "marketplace": "Marktplatz",
         "moderation": "Moderation",
         "messages": "Nachrichten",
-        "flashcards": "Karteikarten"
+        "flashcards": "Karteikarten",
+        "news_flashes": "Neuigkeiten"
     },
     "dashboard": {
         "title": "Dashboard",
@@ -2515,7 +2516,15 @@
         "ce_flashcards_item_study": "Schüler lernen im Portal: Antwort aufdecken und die Karte mit Nochmal / Schwer / Gut / Einfach bewerten. Die Bewertung bestimmt den nächsten Wiederholungstermin.",
         "ce_flashcards_item_insights": "Einblicke für beide Seiten: Schüler sehen ihren Fortschritt und Übungswörter auf der Lernseite; Lehrkräfte sehen den Fortschritt pro Schüler auf der Stapelseite.",
         "ce_flashcards_item_grammar": "Stellen Sie den Stapel-Typ auf Grammatik und verknüpfen Sie jede Karte mit einem bestimmten Grammatikelement, um Wiederholungsübungen zu erstellen, die in die Grammatikübungsempfehlungen eines Schülers einfließen.",
-        "ce_flashcards_info": "Der Lernfortschritt wird bei Verbindung über die Datenbank synchronisiert, sodass Schüler auf jedem Gerät lernen können. Im lokalen Modus wird er in diesem Browser gespeichert."
+        "ce_flashcards_info": "Der Lernfortschritt wird bei Verbindung über die Datenbank synchronisiert, sodass Schüler auf jedem Gerät lernen können. Im lokalen Modus wird er in diesem Browser gespeichert.",
+        "route_news_flashes_label": "Neuigkeiten",
+        "route_news_flashes_desc": "Wähle Artikel, Bücher und Videos aus, um sie mit deinen Schülern zu teilen.",
+        "ce_news_flashes_title": "Neuigkeiten",
+        "ce_news_flashes_intro": "Wähle kurze Lese-, Hör- oder Sehinhalte aus — einen Artikel, eine Buchempfehlung, ein Video — und teile sie mit Schülern als leichtgewichtigen Zeitleisteneintrag.",
+        "ce_news_flashes_item_create": "Erstelle eine Neuigkeit unter Bewertungen → Neuigkeiten mit Titel, Zusammenfassung, optionalem Link, CEFR-Niveau und Tags.",
+        "ce_news_flashes_item_link": "Verknüpfe eine Neuigkeit optional mit einem bestehenden Karteikartenstapel, Test oder einer Rubrik, damit Schüler direkt dorthin springen können.",
+        "ce_news_flashes_item_timeline": "Schüler sehen neue Neuigkeiten in einer chronologischen Zeitleiste auf ihrer Portalseite, mit einem Ungelesen-Badge, das sich beim Öffnen löscht.",
+        "ce_news_flashes_info": "Neuigkeiten werden an alle Schüler der erstellenden Lehrkraft gesendet — es gibt keine Zuweisung pro Schüler und keine E-Mail-Benachrichtigung."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",
@@ -2637,6 +2646,7 @@
         "type_essay": "Aufsatz",
         "type_flashcardDeck": "Stapel",
         "type_grade": "Zur Bewertung",
+        "type_newsFlash": "Neuigkeit",
         "active_class_label": "Aktive Klasse",
         "all_classes": "Alle Klassen",
         "practice_badge": "Übung"
@@ -2726,5 +2736,36 @@
         "suggested_decks": "Karteikartenstapel zum Üben",
         "suggested_tests": "Übungen zum Ausprobieren",
         "no_recommendations": "Derzeit keine Empfehlungen für Grammatikübungen."
+    },
+    "newsFlashes": {
+        "page_title": "Neuigkeiten",
+        "new_flash": "Neue Neuigkeit",
+        "no_flashes": "Noch keine Neuigkeiten",
+        "create_first_instruction": "Wähle einen Artikel, ein Buch oder ein Video aus und teile es mit deinen Schülern.",
+        "action_edit": "Neuigkeit bearbeiten",
+        "action_delete": "Neuigkeit löschen",
+        "delete_title": "Neuigkeit löschen",
+        "delete_warning": "„{{title}}“ löschen? Schüler sehen sie dann nicht mehr in ihrer Zeitleiste.",
+        "edit_title": "Neuigkeit bearbeiten",
+        "field_title": "Titel",
+        "field_summary": "Zusammenfassung",
+        "field_url": "Link (optional)",
+        "field_kind": "Typ",
+        "kind_article": "Artikel",
+        "kind_book": "Buch",
+        "kind_video": "Video",
+        "field_tags": "Tags",
+        "field_tags_placeholder": "z. B. Grammatik, Kultur, Prüfungsvorbereitung",
+        "field_linked_resource": "Mit einer Ressource verknüpfen (optional)",
+        "linked_none": "Keine",
+        "field_linked_item": "Ressource",
+        "linked_item_placeholder": "Auswählen…",
+        "linked_flashcardDeck": "Karteikartenstapel",
+        "linked_test": "Test",
+        "linked_rubric": "Rubrik",
+        "open_link": "Link öffnen",
+        "unread_label": "Ungelesen",
+        "section_title": "Neuigkeiten",
+        "section_title_unread": "Neuigkeiten ({{count}} neu)"
     }
 }
