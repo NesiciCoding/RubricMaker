@@ -18,7 +18,10 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
 import { useApp } from '../context/AppContext';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
+import TiptapEditor from '../components/Editor/TiptapEditor';
 import type { CefrLevel, NewsFlash, NewsFlashKind, NewsFlashLinkedResourceType } from '../types';
+
+const EMPTY_CONTENT_HTML = '<p></p>';
 
 const KIND_ICONS: Record<NewsFlashKind, React.ReactNode> = {
     article: <FileText size={14} />,
@@ -30,6 +33,7 @@ interface DraftState {
     id: string | null;
     title: string;
     summary: string;
+    content: string;
     url: string;
     kind: NewsFlashKind;
     tags: string;
@@ -43,6 +47,7 @@ function emptyDraft(): DraftState {
         id: null,
         title: '',
         summary: '',
+        content: EMPTY_CONTENT_HTML,
         url: '',
         kind: 'article',
         tags: '',
@@ -69,6 +74,7 @@ export default function NewsFlashesPage() {
             id: flash.id,
             title: flash.title,
             summary: flash.summary,
+            content: flash.content ?? EMPTY_CONTENT_HTML,
             url: flash.url ?? '',
             kind: flash.kind,
             tags: flash.tags.join(', '),
@@ -80,9 +86,11 @@ export default function NewsFlashesPage() {
 
     function handleSave() {
         if (!draft || !draft.title.trim()) return;
+        const trimmedContent = draft.content.trim();
         const payload = {
             title: draft.title.trim(),
             summary: draft.summary.trim(),
+            content: trimmedContent && trimmedContent !== EMPTY_CONTENT_HTML ? draft.content : undefined,
             url: draft.url.trim() || undefined,
             kind: draft.kind,
             tags: draft.tags
@@ -181,6 +189,9 @@ export default function NewsFlashesPage() {
                                                     {t('newsFlashes.linked_rubric')}
                                                 </span>
                                             )}
+                                            {flash.content && (
+                                                <span className="badge">{t('newsFlashes.has_full_article')}</span>
+                                            )}
                                         </div>
                                         <div className="text-muted text-xs" style={{ marginTop: 8 }}>
                                             {new Date(flash.createdAt).toLocaleDateString(i18n.language)}
@@ -227,7 +238,12 @@ export default function NewsFlashesPage() {
             </div>
 
             {draft && (
-                <Modal titleId="news-flash-modal-title" onClose={() => setDraft(null)} maxWidth={560}>
+                <Modal
+                    titleId="news-flash-modal-title"
+                    onClose={() => setDraft(null)}
+                    maxWidth={640}
+                    style={{ maxHeight: '88vh', overflowY: 'auto' }}
+                >
                     <h2 id="news-flash-modal-title" style={{ marginTop: 0 }}>
                         {draft.id ? t('newsFlashes.edit_title') : t('newsFlashes.new_flash')}
                     </h2>
@@ -245,9 +261,20 @@ export default function NewsFlashesPage() {
                         <label htmlFor="nf-summary">{t('newsFlashes.field_summary')}</label>
                         <textarea
                             id="nf-summary"
-                            rows={3}
+                            rows={2}
                             value={draft.summary}
                             onChange={(e) => setDraft({ ...draft, summary: e.target.value })}
+                        />
+                        <p className="text-muted text-xs" style={{ marginTop: 4 }}>
+                            {t('newsFlashes.field_summary_hint')}
+                        </p>
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="nf-content">{t('newsFlashes.field_content')}</label>
+                        <TiptapEditor
+                            content={draft.content}
+                            onChange={(content) => setDraft({ ...draft, content })}
+                            placeholder={t('newsFlashes.field_content_placeholder')}
                         />
                     </div>
                     <div className="form-group">

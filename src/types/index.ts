@@ -1188,7 +1188,10 @@ export type NewsFlashLinkedResourceType = 'flashcardDeck' | 'test' | 'rubric';
 export interface NewsFlash {
     id: string;
     title: string;
+    /** Short teaser shown in list/timeline rows and search results */
     summary: string;
+    /** Full rich-text article body (TipTap HTML), shown when a reader opens the flash */
+    content?: string;
     url?: string;
     kind: NewsFlashKind;
     tags: string[];

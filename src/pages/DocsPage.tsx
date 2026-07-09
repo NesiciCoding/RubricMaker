@@ -1155,6 +1155,7 @@ function CefrTab() {
                 <FeatureList
                     items={[
                         t('docs.ce_news_flashes_item_create'),
+                        t('docs.ce_news_flashes_item_content'),
                         t('docs.ce_news_flashes_item_link'),
                         t('docs.ce_news_flashes_item_timeline'),
                     ]}

@@ -2519,7 +2519,8 @@
         "route_news_flashes_desc": "Curate articles, books, and videos to share with your students.",
         "ce_news_flashes_title": "News flashes",
         "ce_news_flashes_intro": "Curate short-form reading, listening, or viewing material — an article, a book recommendation, a video — and share it with students as a lightweight timeline item.",
-        "ce_news_flashes_item_create": "Create a flash under Assessments → News Flashes with a title, summary, optional link, CEFR level, and tags.",
+        "ce_news_flashes_item_create": "Create a flash under Assessments → News Flashes with a title, short summary, optional link, CEFR level, and tags.",
+        "ce_news_flashes_item_content": "Write the full article in a rich-text editor (bold, italics, bullet and numbered lists) — it renders with the same styling for students as it did while you wrote it.",
         "ce_news_flashes_item_link": "Optionally link a flash to an existing flashcard deck, test, or rubric so students can jump straight to it.",
         "ce_news_flashes_item_timeline": "Students see new flashes in a chronological timeline on their portal page, with an unread badge that clears once they open one.",
         "ce_news_flashes_info": "News flashes are broadcast to every student of the teacher who created them — there is no per-student assignment step, and no email notification is sent."
@@ -2747,6 +2748,9 @@
         "edit_title": "Edit news flash",
         "field_title": "Title",
         "field_summary": "Summary",
+        "field_summary_hint": "A short teaser shown in lists and search results.",
+        "field_content": "Article",
+        "field_content_placeholder": "Write the full article here…",
         "field_url": "Link (optional)",
         "field_kind": "Type",
         "kind_article": "Article",
@@ -2764,6 +2768,9 @@
         "open_link": "Open link",
         "unread_label": "Unread",
         "section_title": "News Flashes",
-        "section_title_unread": "News Flashes ({{count}} new)"
+        "section_title_unread": "News Flashes ({{count}} new)",
+        "has_full_article": "Full article",
+        "read_article": "Read article",
+        "collapse_article": "Collapse"
     }
 }

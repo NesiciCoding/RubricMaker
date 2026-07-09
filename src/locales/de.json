@@ -2521,7 +2521,8 @@
         "route_news_flashes_desc": "Wähle Artikel, Bücher und Videos aus, um sie mit deinen Schülern zu teilen.",
         "ce_news_flashes_title": "Neuigkeiten",
         "ce_news_flashes_intro": "Wähle kurze Lese-, Hör- oder Sehinhalte aus — einen Artikel, eine Buchempfehlung, ein Video — und teile sie mit Schülern als leichtgewichtigen Zeitleisteneintrag.",
-        "ce_news_flashes_item_create": "Erstelle eine Neuigkeit unter Bewertungen → Neuigkeiten mit Titel, Zusammenfassung, optionalem Link, CEFR-Niveau und Tags.",
+        "ce_news_flashes_item_create": "Erstelle eine Neuigkeit unter Bewertungen → Neuigkeiten mit Titel, kurzer Zusammenfassung, optionalem Link, CEFR-Niveau und Tags.",
+        "ce_news_flashes_item_content": "Schreibe den vollständigen Artikel in einem Rich-Text-Editor (fett, kursiv, Aufzählungs- und nummerierte Listen) — er wird Schülern genau so dargestellt, wie du ihn geschrieben hast.",
         "ce_news_flashes_item_link": "Verknüpfe eine Neuigkeit optional mit einem bestehenden Karteikartenstapel, Test oder einer Rubrik, damit Schüler direkt dorthin springen können.",
         "ce_news_flashes_item_timeline": "Schüler sehen neue Neuigkeiten in einer chronologischen Zeitleiste auf ihrer Portalseite, mit einem Ungelesen-Badge, das sich beim Öffnen löscht.",
         "ce_news_flashes_info": "Neuigkeiten werden an alle Schüler der erstellenden Lehrkraft gesendet — es gibt keine Zuweisung pro Schüler und keine E-Mail-Benachrichtigung."
@@ -2749,6 +2750,9 @@
         "edit_title": "Neuigkeit bearbeiten",
         "field_title": "Titel",
         "field_summary": "Zusammenfassung",
+        "field_summary_hint": "Ein kurzer Teaser, der in Listen und Suchergebnissen angezeigt wird.",
+        "field_content": "Artikel",
+        "field_content_placeholder": "Schreibe hier den vollständigen Artikel…",
         "field_url": "Link (optional)",
         "field_kind": "Typ",
         "kind_article": "Artikel",
@@ -2766,6 +2770,9 @@
         "open_link": "Link öffnen",
         "unread_label": "Ungelesen",
         "section_title": "Neuigkeiten",
-        "section_title_unread": "Neuigkeiten ({{count}} neu)"
+        "section_title_unread": "Neuigkeiten ({{count}} neu)",
+        "has_full_article": "Vollständiger Artikel",
+        "read_article": "Artikel lesen",
+        "collapse_article": "Einklappen"
     }
 }

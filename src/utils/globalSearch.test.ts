@@ -118,6 +118,14 @@ describe('searchAll', () => {
         expect(searchAll('grammar', makeData({ newsFlashes: [newsFlash] })).map((r) => r.id)).toEqual(['nf1']);
     });
 
+    it('matches a news flash by its full article content, stripped of HTML tags', () => {
+        const withContent: NewsFlash = {
+            ...newsFlash,
+            content: '<p>This week we also cover <strong>phrasal verbs</strong> and common idioms.</p>',
+        };
+        expect(searchAll('phrasal verbs', makeData({ newsFlashes: [withContent] })).map((r) => r.id)).toEqual(['nf1']);
+    });
+
     it('filters to news flashes only under type:newsflash', () => {
         const results = searchAll('type:newsflash grammar', makeData({ rubrics: [rubric], newsFlashes: [newsFlash] }));
         expect(results).toEqual([

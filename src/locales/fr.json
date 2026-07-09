@@ -2521,7 +2521,8 @@
         "route_news_flashes_desc": "Sélectionnez des articles, livres et vidéos à partager avec vos élèves.",
         "ce_news_flashes_title": "Actualités",
         "ce_news_flashes_intro": "Sélectionnez un contenu court à lire, écouter ou regarder — un article, une recommandation de livre, une vidéo — et partagez-le avec les élèves sous forme d’élément de fil chronologique léger.",
-        "ce_news_flashes_item_create": "Créez une actualité sous Évaluations → Actualités avec un titre, un résumé, un lien facultatif, un niveau CECR et des étiquettes.",
+        "ce_news_flashes_item_create": "Créez une actualité sous Évaluations → Actualités avec un titre, un court résumé, un lien facultatif, un niveau CECR et des étiquettes.",
+        "ce_news_flashes_item_content": "Rédigez l’article complet dans un éditeur de texte enrichi (gras, italique, listes à puces et numérotées) — il s’affiche pour les élèves avec la même mise en forme que lors de la rédaction.",
         "ce_news_flashes_item_link": "Liez éventuellement une actualité à un paquet de cartes, un test ou une grille existants pour que les élèves puissent y accéder directement.",
         "ce_news_flashes_item_timeline": "Les élèves voient les nouvelles actualités dans un fil chronologique sur leur page de portail, avec un badge non lu qui disparaît dès qu’ils en ouvrent une.",
         "ce_news_flashes_info": "Les actualités sont diffusées à tous les élèves de l’enseignant qui les a créées — il n’y a pas d’attribution par élève, et aucun e-mail n’est envoyé."
@@ -2749,6 +2750,9 @@
         "edit_title": "Modifier l’actualité",
         "field_title": "Titre",
         "field_summary": "Résumé",
+        "field_summary_hint": "Un court aperçu affiché dans les listes et les résultats de recherche.",
+        "field_content": "Article",
+        "field_content_placeholder": "Rédigez l’article complet ici…",
         "field_url": "Lien (facultatif)",
         "field_kind": "Type",
         "kind_article": "Article",
@@ -2766,6 +2770,9 @@
         "open_link": "Ouvrir le lien",
         "unread_label": "Non lu",
         "section_title": "Actualités",
-        "section_title_unread": "Actualités ({{count}} nouvelles)"
+        "section_title_unread": "Actualités ({{count}} nouvelles)",
+        "has_full_article": "Article complet",
+        "read_article": "Lire l’article",
+        "collapse_article": "Réduire"
     }
 }

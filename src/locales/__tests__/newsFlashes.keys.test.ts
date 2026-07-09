@@ -43,6 +43,7 @@ describe('16.4 news flash keys added outside the newsFlashes namespace', () => {
         ['docs', 'ce_news_flashes_title'],
         ['docs', 'ce_news_flashes_intro'],
         ['docs', 'ce_news_flashes_item_create'],
+        ['docs', 'ce_news_flashes_item_content'],
         ['docs', 'ce_news_flashes_item_link'],
         ['docs', 'ce_news_flashes_item_timeline'],
         ['docs', 'ce_news_flashes_info'],

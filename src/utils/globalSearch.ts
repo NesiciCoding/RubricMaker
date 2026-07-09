@@ -1,6 +1,7 @@
 import type { Class, EssayAssignment, FlashcardDeck, NewsFlash, Rubric, Student, Test, VoTrack } from '../types';
 import { SCHOOL_YEAR_LABELS } from '../data/schoolYears';
 import { VO_TRACK_LABELS } from '../data/voTracks';
+import { htmlToPlainText } from '../hooks/useTTS';
 
 export type SearchResultType =
     | 'rubric'
@@ -299,7 +300,8 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
 
     if (!modeFilter && !areaFilter && (!typeFilter || typeFilter === 'newsFlash')) {
         for (const f of data.newsFlashes) {
-            if (matchesText(f.title, f.summary, ...f.tags)) {
+            const contentText = f.content ? htmlToPlainText(f.content) : undefined;
+            if (matchesText(f.title, f.summary, contentText, ...f.tags)) {
                 addResult({ type: 'newsFlash', id: f.id, label: f.title, sublabel: f.summary, route: '/news-flashes' });
             }
         }

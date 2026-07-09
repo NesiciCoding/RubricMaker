@@ -2521,7 +2521,8 @@
         "route_news_flashes_desc": "Selecteer artikelen, boeken en video's om met je leerlingen te delen.",
         "ce_news_flashes_title": "Nieuwsflitsen",
         "ce_news_flashes_intro": "Selecteer kort lees-, luister- of kijkmateriaal — een artikel, een boekentip, een video — en deel het met leerlingen als een lichtgewicht tijdlijnitem.",
-        "ce_news_flashes_item_create": "Maak een flits onder Toetsing → Nieuwsflitsen met een titel, samenvatting, optionele link, CEFR-niveau en labels.",
+        "ce_news_flashes_item_create": "Maak een flits onder Toetsing → Nieuwsflitsen met een titel, korte samenvatting, optionele link, CEFR-niveau en labels.",
+        "ce_news_flashes_item_content": "Schrijf het volledige artikel in een rich-text-editor (vet, cursief, opsommingen en genummerde lijsten) — het wordt bij leerlingen precies zo weergegeven als toen je het schreef.",
         "ce_news_flashes_item_link": "Koppel een flits eventueel aan een bestaande flashcardset, toets of rubric, zodat leerlingen er direct naartoe kunnen.",
         "ce_news_flashes_item_timeline": "Leerlingen zien nieuwe flitsen in een chronologische tijdlijn op hun portaalpagina, met een ongelezen-badge die verdwijnt zodra ze er een openen.",
         "ce_news_flashes_info": "Nieuwsflitsen worden verstuurd naar alle leerlingen van de docent die ze heeft aangemaakt — er is geen toewijzing per leerling en er wordt geen e-mail verstuurd."
@@ -2749,6 +2750,9 @@
         "edit_title": "Nieuwsflits bewerken",
         "field_title": "Titel",
         "field_summary": "Samenvatting",
+        "field_summary_hint": "Een korte teaser die wordt getoond in lijsten en zoekresultaten.",
+        "field_content": "Artikel",
+        "field_content_placeholder": "Schrijf hier het volledige artikel…",
         "field_url": "Link (optioneel)",
         "field_kind": "Type",
         "kind_article": "Artikel",
@@ -2766,6 +2770,9 @@
         "open_link": "Link openen",
         "unread_label": "Ongelezen",
         "section_title": "Nieuwsflitsen",
-        "section_title_unread": "Nieuwsflitsen ({{count}} nieuw)"
+        "section_title_unread": "Nieuwsflitsen ({{count}} nieuw)",
+        "has_full_article": "Volledig artikel",
+        "read_article": "Artikel lezen",
+        "collapse_article": "Inklappen"
     }
 }

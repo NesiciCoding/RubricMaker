@@ -2521,7 +2521,8 @@
         "route_news_flashes_desc": "Selecciona artículos, libros y vídeos para compartir con tus alumnos.",
         "ce_news_flashes_title": "Novedades",
         "ce_news_flashes_intro": "Selecciona contenido breve para leer, escuchar o ver — un artículo, una recomendación de libro, un vídeo — y compártelo con los alumnos como un elemento ligero de cronología.",
-        "ce_news_flashes_item_create": "Crea una novedad en Evaluaciones → Novedades con un título, resumen, enlace opcional, nivel CEFR y etiquetas.",
+        "ce_news_flashes_item_create": "Crea una novedad en Evaluaciones → Novedades con un título, un breve resumen, enlace opcional, nivel CEFR y etiquetas.",
+        "ce_news_flashes_item_content": "Escribe el artículo completo en un editor de texto enriquecido (negrita, cursiva, listas con viñetas y numeradas) — se muestra a los alumnos con el mismo formato con el que lo escribiste.",
         "ce_news_flashes_item_link": "Enlaza opcionalmente una novedad con un mazo de tarjetas, prueba o rúbrica existente para que los alumnos puedan acceder directamente.",
         "ce_news_flashes_item_timeline": "Los alumnos ven las novedades nuevas en una cronología en su página de portal, con una insignia de no leído que desaparece al abrirla.",
         "ce_news_flashes_info": "Las novedades se envían a todos los alumnos del profesor que las creó — no hay asignación por alumno ni se envía ningún correo."
@@ -2749,6 +2750,9 @@
         "edit_title": "Editar novedad",
         "field_title": "Título",
         "field_summary": "Resumen",
+        "field_summary_hint": "Un breve avance que se muestra en las listas y los resultados de búsqueda.",
+        "field_content": "Artículo",
+        "field_content_placeholder": "Escribe aquí el artículo completo…",
         "field_url": "Enlace (opcional)",
         "field_kind": "Tipo",
         "kind_article": "Artículo",
@@ -2766,6 +2770,9 @@
         "open_link": "Abrir enlace",
         "unread_label": "Sin leer",
         "section_title": "Novedades",
-        "section_title_unread": "Novedades ({{count}} nuevas)"
+        "section_title_unread": "Novedades ({{count}} nuevas)",
+        "has_full_article": "Artículo completo",
+        "read_article": "Leer artículo",
+        "collapse_article": "Contraer"
     }
 }
