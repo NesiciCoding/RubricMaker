@@ -901,15 +901,19 @@ select.input-error {
     font-size: 1.15rem;
     font-weight: 700;
     padding: 0 10px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
-/* ─── Sticky grade footer ────────────────────────────────────────────────────── */
+/* ─── Grade footer ────────────────────────────────────────────────────────────
+   In-flow flex item (not position: fixed) — .main-area is already exactly
+   viewport-height with overflow:hidden and only .page-content scrolls inside
+   it, so this naturally pins to the bottom without tracking the viewport.
+   Chrome on iPadOS has had bugs positioning `fixed` elements against the
+   visual viewport as its toolbar shows/hides (issue #272); flex layout
+   sidesteps that entire class of bug instead of chasing it in CSS. */
 .grade-footer {
-    position: fixed;
-    bottom: 0;
-    inset-inline-start: var(--sidebar-w);
-    inset-inline-end: 0;
-    z-index: 200;
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     gap: 16px;
@@ -1239,9 +1243,8 @@ select.input-error {
         padding: 16px;
     }
 
-    /* Grade footer spans full width when sidebar is an overlay */
+    /* Room for the home-indicator safe area on notched phones */
     .grade-footer {
-        inset-inline-start: 0;
         padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
     }
 }
