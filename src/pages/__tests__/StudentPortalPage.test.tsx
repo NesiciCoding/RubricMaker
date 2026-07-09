@@ -230,6 +230,11 @@ describe('StudentPortalPage', () => {
         mockMarkMessagesReadByStudent.mockClear();
         mockFetchMyFlashcardAssignments.mockClear();
         mockFetchMyFlashcardAssignments.mockResolvedValue([]);
+        mockFetchMyNewsFlashes.mockClear();
+        mockFetchMyNewsFlashes.mockResolvedValue([]);
+        mockMarkNewsFlashRead.mockClear();
+        mockMarkNewsFlashReadAsStudent.mockClear();
+        mockMarkNewsFlashReadAsStudent.mockResolvedValue({ success: true });
         const mod = await import('../StudentPortalPage');
         StudentPortalPageComp = mod.default;
     });

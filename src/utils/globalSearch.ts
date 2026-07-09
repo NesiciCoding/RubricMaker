@@ -3,6 +3,20 @@ import { SCHOOL_YEAR_LABELS } from '../data/schoolYears';
 import { VO_TRACK_LABELS } from '../data/voTracks';
 import { htmlToPlainText } from '../hooks/useTTS';
 
+// Keyed by object reference (not content string) so a stale cache never outlives its
+// flash — edits always produce a new NewsFlash object in this codebase's immutable
+// update pattern, and unreferenced entries are garbage-collected automatically.
+const newsFlashPlainTextCache = new WeakMap<NewsFlash, string>();
+function getNewsFlashPlainText(f: NewsFlash): string | undefined {
+    if (!f.content) return undefined;
+    let cached = newsFlashPlainTextCache.get(f);
+    if (cached === undefined) {
+        cached = htmlToPlainText(f.content);
+        newsFlashPlainTextCache.set(f, cached);
+    }
+    return cached;
+}
+
 export type SearchResultType =
     'rubric' | 'test' | 'student' | 'class' | 'essay' | 'grade' | 'flashcardDeck' | 'newsFlash';
 
@@ -293,8 +307,7 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
 
     if (!modeFilter && !areaFilter && (!typeFilter || typeFilter === 'newsFlash')) {
         for (const f of data.newsFlashes) {
-            const contentText = f.content ? htmlToPlainText(f.content) : undefined;
-            if (matchesText(f.title, f.summary, contentText, ...f.tags)) {
+            if (matchesText(f.title, f.summary, getNewsFlashPlainText(f), ...f.tags)) {
                 addResult({ type: 'newsFlash', id: f.id, label: f.title, sublabel: f.summary, route: '/news-flashes' });
             }
         }

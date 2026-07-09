@@ -198,7 +198,12 @@ const COLLECTIONS: CollectionSpec[] = [
         getId: (r: { id: string }) => r.id,
         getUpdatedAt: (r: { updatedAt?: string }) => r.updatedAt,
     },
-    { key: 'newsFlashes', entity: 'newsFlash', getId: (f: { id: string }) => f.id },
+    {
+        key: 'newsFlashes',
+        entity: 'newsFlash',
+        getId: (f: { id: string }) => f.id,
+        getUpdatedAt: (f: { updatedAt?: string }) => f.updatedAt,
+    },
     { key: 'newsFlashReads', entity: 'newsFlashRead', getId: (r: { id: string }) => r.id },
     {
         key: 'standardMasteryTargets',

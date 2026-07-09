@@ -34,7 +34,7 @@ describe('newsFlashes namespace locale parity', () => {
     }
 });
 
-describe('16.4 news flash keys added outside the newsFlashes namespace', () => {
+describe('news flash keys added outside the newsFlashes namespace', () => {
     const scatteredKeys: Array<[string, string]> = [
         ['navigation', 'news_flashes'],
         ['search', 'type_newsFlash'],

@@ -49,8 +49,10 @@ export default function NewsFlashTimeline({ studentId, flashes, readFlashIds, on
                         <div
                             role="button"
                             tabIndex={0}
+                            aria-expanded={hasContent ? expanded : undefined}
                             onClick={toggle}
                             onKeyDown={(e) => {
+                                if (e.target !== e.currentTarget) return;
                                 if (e.key === 'Enter' || e.key === ' ') {
                                     e.preventDefault();
                                     toggle();

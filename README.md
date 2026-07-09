@@ -220,7 +220,7 @@ npm run db:reset     # Reset and re-apply all migrations
 | `src/utils/learningPathAggregator.ts`   | Rule-based rubric recommendations, intervention flagging, and grammar practice recommendations                                                  |
 | `src/utils/testSummaryAggregator.ts`    | Per-question/per-skill strong-weak test breakdown                                                                                                |
 | `src/utils/reportCardAggregator.ts`     | Composes CEFR, learning-goals, and test-summary data into one report card                                                                        |
-| `src/utils/globalSearch.ts`             | Token-aware search (`type:`/`class:`/`year:`/`track:` filters, student+rubric grading shortcut) across rubrics, tests, students, classes, essays |
+| `src/utils/globalSearch.ts`             | Token-aware search (`type:`/`class:`/`year:`/`track:` filters, student+rubric grading shortcut) across rubrics, tests, students, classes, essays, flashcard decks, and news flashes |
 | `src/utils/portalSearch.ts`             | Student-portal search over a student's own graded rubrics, work (tests/essays), and flashcard decks                                              |
 | `src/utils/statsChartPresets.ts`        | Recommended chart definitions for the Statistics "Custom Views" gallery                                                                          |
 | `src/utils/coGradingModerationQueue.ts` | Flags disputed co-graded submissions (delta above threshold) for the Moderation queue                                                            |

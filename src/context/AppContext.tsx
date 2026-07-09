@@ -752,7 +752,8 @@ function reducer(state: StoreData, action: Action): StoreData {
             return { ...state, newsFlashes: next };
         }
         case 'UPDATE_NEWS_FLASH': {
-            const next = state.newsFlashes.map((f) => (f.id === action.payload.id ? action.payload : f));
+            const payload = { ...action.payload, updatedAt: new Date().toISOString() };
+            const next = state.newsFlashes.map((f) => (f.id === payload.id ? payload : f));
             if (isOffline()) saveNewsFlashes(next);
             return { ...state, newsFlashes: next };
         }

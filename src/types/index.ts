@@ -1199,6 +1199,7 @@ export interface NewsFlash {
     linkedResourceType?: NewsFlashLinkedResourceType;
     linkedResourceId?: string;
     createdAt: string;
+    updatedAt?: string;
 }
 
 /** One row per (flash, student) read event, id = '<flashId>:<studentId>' (same composite pattern as FlashcardReview) */

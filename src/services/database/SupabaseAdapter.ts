@@ -1514,11 +1514,9 @@ export class SupabaseAdapter {
         return error ? { success: false, error: error.message } : { success: true };
     }
 
-    /** Flashes visible to the logged-in portal student (RLS: get_my_news_flash_ids). */
+    /** Flashes visible to the logged-in portal student (RLS: get_my_news_flash_ids) — same query as fetchNewsFlashes(), the teacher/student split is entirely RLS-driven. */
     async fetchMyNewsFlashes(): Promise<NewsFlash[]> {
-        const { data, error } = await this.db().from('news_flashes').select('data');
-        if (error || !data) return [];
-        return data.map((r) => r.data as NewsFlash);
+        return this.fetchNewsFlashes();
     }
 
     /**

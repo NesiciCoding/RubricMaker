@@ -86,11 +86,11 @@ export default function NewsFlashesPage() {
 
     function handleSave() {
         if (!draft || !draft.title.trim()) return;
-        const trimmedContent = draft.content.trim();
+        const isContentEmpty = draft.content.replace(/<[^>]*>/g, '').trim().length === 0;
         const payload = {
             title: draft.title.trim(),
             summary: draft.summary.trim(),
-            content: trimmedContent && trimmedContent !== EMPTY_CONTENT_HTML ? draft.content : undefined,
+            content: isContentEmpty ? undefined : draft.content,
             url: draft.url.trim() || undefined,
             kind: draft.kind,
             tags: draft.tags
