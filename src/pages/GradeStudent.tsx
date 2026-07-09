@@ -738,12 +738,7 @@ export default function GradeStudent() {
                     </>
                 }
             />
-            <div
-                className="page-content fade-in"
-                style={summary ? { paddingBottom: 80 } : undefined}
-                onTouchStart={handleTouchStart}
-                onTouchEnd={handleTouchEnd}
-            >
+            <div className="page-content fade-in" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
                 {/* Print-only header */}
                 <div className="print-only" style={{ marginBottom: 16 }}>
                     <h2 style={{ margin: 0 }}>{rubric.name}</h2>

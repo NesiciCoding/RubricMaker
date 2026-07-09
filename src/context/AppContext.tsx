@@ -1030,6 +1030,10 @@ async function flushToLocalStorage(merged: StoreData) {
         saveEssayAssignments,
         saveEssaySubmissions,
         saveUserTemplates,
+        saveFlashcardDecks,
+        saveFlashcardAssignments,
+        saveFlashcardReviews,
+        saveStandardMasteryTargets,
     } = await import('../store/storage');
     saveRubrics(merged.rubrics);
     saveStudents(merged.students);
@@ -1054,6 +1058,10 @@ async function flushToLocalStorage(merged: StoreData) {
     saveEssayAssignments(merged.essayAssignments);
     saveEssaySubmissions(merged.essaySubmissions);
     saveUserTemplates(merged.userTemplates);
+    saveFlashcardDecks(merged.flashcardDecks);
+    saveFlashcardAssignments(merged.flashcardAssignments);
+    saveFlashcardReviews(merged.flashcardReviews);
+    saveStandardMasteryTargets(merged.standardMasteryTargets);
 
     // Best-effort: a recording blob whose session was deleted on another device has no
     // app-level delete call to clean it up locally, so sweep for orphans after every sync.
