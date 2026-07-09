@@ -55,6 +55,7 @@ const MessagesPage = lazy(() => import('./pages/MessagesPage'));
 const FlashcardsPage = lazy(() => import('./pages/FlashcardsPage'));
 const FlashcardDeckPage = lazy(() => import('./pages/FlashcardDeckPage'));
 const StudentFlashcardStudyPage = lazy(() => import('./pages/StudentFlashcardStudyPage'));
+const NewsFlashesPage = lazy(() => import('./pages/NewsFlashesPage'));
 
 // Forces GradeStudent to remount when studentId changes so useState re-initialises.
 function GradeStudentRoute() {
@@ -229,6 +230,7 @@ export default function App() {
                                 />
                                 <Route path="/flashcards" element={<FlashcardsPage />} />
                                 <Route path="/flashcards/:id" element={<FlashcardDeckPage />} />
+                                <Route path="/news-flashes" element={<NewsFlashesPage />} />
                                 <Route path="/portal/:studentId" element={<StudentPortalPage />} />
                                 <Route
                                     path="/portal/:studentId/flashcards/:deckId"

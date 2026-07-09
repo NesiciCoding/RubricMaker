@@ -31,6 +31,7 @@ import {
     KeyRound,
     ListChecks,
     Mail,
+    Newspaper,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { loadSupabaseConfig } from '../services/database/supabaseConfig';
@@ -127,6 +128,12 @@ const TEACHER_FEATURES = [
         desc: 'Build vocabulary or grammar flashcard decks by hand or import them from CSV, Excel, or Word, assign them to a class, and see which items each student should focus on.',
         color: '#8b5cf6',
     },
+    {
+        icon: Newspaper,
+        title: 'News Flashes',
+        desc: 'Curate an article, book, or video and share it with every student — with an optional link to a flashcard deck, test, or rubric.',
+        color: '#8b5cf6',
+    },
 ];
 
 const STUDENT_FEATURES = [
@@ -182,6 +189,12 @@ const STUDENT_FEATURES = [
         icon: Layers,
         title: 'Study Flashcards',
         desc: 'Practice vocabulary decks from your teacher with smart spaced repetition — hard words come back sooner, and you can see your progress grow.',
+        color: '#8b5cf6',
+    },
+    {
+        icon: Newspaper,
+        title: 'News Flashes',
+        desc: 'See a chronological timeline of articles, books, and videos your teacher shares — with an unread badge that clears once you open one.',
         color: '#8b5cf6',
     },
 ];

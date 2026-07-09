@@ -333,7 +333,8 @@
         "marketplace": "Marketplace",
         "moderation": "Moderation",
         "messages": "Messages",
-        "flashcards": "Flashcards"
+        "flashcards": "Flashcards",
+        "news_flashes": "News Flashes"
     },
     "dashboard": {
         "title": "Dashboard",
@@ -2513,7 +2514,16 @@
         "ce_flashcards_item_study": "Students study in the portal: reveal the answer, then rate the card Again / Hard / Good / Easy. Ratings drive the next review date.",
         "ce_flashcards_item_insights": "Learner insights for both sides: students see their progress and focus words on the study page; teachers see per-student progress on the deck page.",
         "ce_flashcards_item_grammar": "Set a deck's type to Grammar and tag each card with a specific grammar item to build recall-style drills that feed a student's grammar practice recommendations.",
-        "ce_flashcards_info": "Study progress syncs through the database when connected, so students can study on any device. In local mode, progress is stored in this browser."
+        "ce_flashcards_info": "Study progress syncs through the database when connected, so students can study on any device. In local mode, progress is stored in this browser.",
+        "route_news_flashes_label": "News Flashes",
+        "route_news_flashes_desc": "Curate articles, books, and videos to share with your students.",
+        "ce_news_flashes_title": "News flashes",
+        "ce_news_flashes_intro": "Curate short-form reading, listening, or viewing material — an article, a book recommendation, a video — and share it with students as a lightweight timeline item.",
+        "ce_news_flashes_item_create": "Create a flash under Assessments → News Flashes with a title, short summary, optional link, CEFR level, and tags.",
+        "ce_news_flashes_item_content": "Write the full article in a rich-text editor (bold, italics, bullet and numbered lists) — it renders with the same styling for students as it did while you wrote it.",
+        "ce_news_flashes_item_link": "Optionally link a flash to an existing flashcard deck, test, or rubric so students can jump straight to it.",
+        "ce_news_flashes_item_timeline": "Students see new flashes in a chronological timeline on their portal page, with an unread badge that clears once they open one.",
+        "ce_news_flashes_info": "News flashes are broadcast to every student of the teacher who created them — there is no per-student assignment step, and no email notification is sent."
     },
     "studentProfile": {
         "tab_overview": "Overview",
@@ -2635,6 +2645,7 @@
         "type_essay": "Essay",
         "type_flashcardDeck": "Deck",
         "type_grade": "Go to grading",
+        "type_newsFlash": "News flash",
         "active_class_label": "Active class",
         "all_classes": "All classes",
         "practice_badge": "Practice"
@@ -2724,5 +2735,42 @@
         "suggested_decks": "Flashcard decks to drill",
         "suggested_tests": "Practice exercises to try",
         "no_recommendations": "No grammar practice recommendations right now."
+    },
+    "newsFlashes": {
+        "page_title": "News Flashes",
+        "new_flash": "New flash",
+        "no_flashes": "No news flashes yet",
+        "create_first_instruction": "Curate an article, book, or video and share it with your students.",
+        "action_edit": "Edit flash",
+        "action_delete": "Delete flash",
+        "delete_title": "Delete flash",
+        "delete_warning": "Delete “{{title}}”? Students will no longer see it in their timeline.",
+        "edit_title": "Edit news flash",
+        "field_title": "Title",
+        "field_summary": "Summary",
+        "field_summary_hint": "A short teaser shown in lists and search results.",
+        "field_content": "Article",
+        "field_content_placeholder": "Write the full article here…",
+        "field_url": "Link (optional)",
+        "field_kind": "Type",
+        "kind_article": "Article",
+        "kind_book": "Book",
+        "kind_video": "Video",
+        "field_tags": "Tags",
+        "field_tags_placeholder": "e.g. grammar, culture, exam-prep",
+        "field_linked_resource": "Link to a resource (optional)",
+        "linked_none": "None",
+        "field_linked_item": "Resource",
+        "linked_item_placeholder": "Choose…",
+        "linked_flashcardDeck": "Flashcard deck",
+        "linked_test": "Test",
+        "linked_rubric": "Rubric",
+        "open_link": "Open link",
+        "unread_label": "Unread",
+        "section_title": "News Flashes",
+        "section_title_unread": "News Flashes ({{count}} new)",
+        "has_full_article": "Full article",
+        "read_article": "Read article",
+        "collapse_article": "Collapse"
     }
 }

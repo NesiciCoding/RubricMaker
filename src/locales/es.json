@@ -333,7 +333,8 @@
         "marketplace": "Mercado",
         "moderation": "Moderación",
         "messages": "Mensajes",
-        "flashcards": "Tarjetas"
+        "flashcards": "Tarjetas",
+        "news_flashes": "Novedades"
     },
     "dashboard": {
         "title": "Panel",
@@ -2515,7 +2516,16 @@
         "ce_flashcards_item_study": "Los alumnos estudian en el portal: muestran la respuesta y valoran la tarjeta con Otra vez / Difícil / Bien / Fácil. La valoración determina la próxima fecha de repaso.",
         "ce_flashcards_item_insights": "Información para ambos lados: los alumnos ven su progreso y las palabras a trabajar en la página de estudio; los profesores ven el progreso por alumno en la página del mazo.",
         "ce_flashcards_item_grammar": "Establece el tipo de mazo en Gramática y vincula cada tarjeta a un elemento gramatical concreto para crear ejercicios de repaso que alimenten las recomendaciones de práctica de gramática del alumno.",
-        "ce_flashcards_info": "El progreso se sincroniza a través de la base de datos cuando hay conexión, para estudiar en cualquier dispositivo. En modo local, se guarda en este navegador."
+        "ce_flashcards_info": "El progreso se sincroniza a través de la base de datos cuando hay conexión, para estudiar en cualquier dispositivo. En modo local, se guarda en este navegador.",
+        "route_news_flashes_label": "Novedades",
+        "route_news_flashes_desc": "Selecciona artículos, libros y vídeos para compartir con tus alumnos.",
+        "ce_news_flashes_title": "Novedades",
+        "ce_news_flashes_intro": "Selecciona contenido breve para leer, escuchar o ver — un artículo, una recomendación de libro, un vídeo — y compártelo con los alumnos como un elemento ligero de cronología.",
+        "ce_news_flashes_item_create": "Crea una novedad en Evaluaciones → Novedades con un título, un breve resumen, enlace opcional, nivel CEFR y etiquetas.",
+        "ce_news_flashes_item_content": "Escribe el artículo completo en un editor de texto enriquecido (negrita, cursiva, listas con viñetas y numeradas) — se muestra a los alumnos con el mismo formato con el que lo escribiste.",
+        "ce_news_flashes_item_link": "Enlaza opcionalmente una novedad con un mazo de tarjetas, prueba o rúbrica existente para que los alumnos puedan acceder directamente.",
+        "ce_news_flashes_item_timeline": "Los alumnos ven las novedades nuevas en una cronología en su página de portal, con una insignia de no leído que desaparece al abrirla.",
+        "ce_news_flashes_info": "Las novedades se envían a todos los alumnos del profesor que las creó — no hay asignación por alumno ni se envía ningún correo."
     },
     "studentProfile": {
         "tab_overview": "Resumen",
@@ -2637,6 +2647,7 @@
         "type_essay": "Ensayo",
         "type_flashcardDeck": "Mazo",
         "type_grade": "Ir a calificar",
+        "type_newsFlash": "Novedad",
         "active_class_label": "Clase activa",
         "all_classes": "Todas las clases",
         "practice_badge": "Práctica"
@@ -2726,5 +2737,42 @@
         "suggested_decks": "Mazos de tarjetas para repasar",
         "suggested_tests": "Ejercicios para probar",
         "no_recommendations": "No hay recomendaciones de práctica de gramática por ahora."
+    },
+    "newsFlashes": {
+        "page_title": "Novedades",
+        "new_flash": "Nueva novedad",
+        "no_flashes": "Todavía no hay novedades",
+        "create_first_instruction": "Selecciona un artículo, libro o vídeo y compártelo con tus alumnos.",
+        "action_edit": "Editar novedad",
+        "action_delete": "Eliminar novedad",
+        "delete_title": "Eliminar novedad",
+        "delete_warning": "¿Eliminar «{{title}}»? Los alumnos ya no la verán en su cronología.",
+        "edit_title": "Editar novedad",
+        "field_title": "Título",
+        "field_summary": "Resumen",
+        "field_summary_hint": "Un breve avance que se muestra en las listas y los resultados de búsqueda.",
+        "field_content": "Artículo",
+        "field_content_placeholder": "Escribe aquí el artículo completo…",
+        "field_url": "Enlace (opcional)",
+        "field_kind": "Tipo",
+        "kind_article": "Artículo",
+        "kind_book": "Libro",
+        "kind_video": "Vídeo",
+        "field_tags": "Etiquetas",
+        "field_tags_placeholder": "p. ej. gramática, cultura, preparación de examen",
+        "field_linked_resource": "Enlazar con un recurso (opcional)",
+        "linked_none": "Ninguno",
+        "field_linked_item": "Recurso",
+        "linked_item_placeholder": "Elegir…",
+        "linked_flashcardDeck": "Mazo de tarjetas",
+        "linked_test": "Prueba",
+        "linked_rubric": "Rúbrica",
+        "open_link": "Abrir enlace",
+        "unread_label": "Sin leer",
+        "section_title": "Novedades",
+        "section_title_unread": "Novedades ({{count}} nuevas)",
+        "has_full_article": "Artículo completo",
+        "read_article": "Leer artículo",
+        "collapse_article": "Contraer"
     }
 }

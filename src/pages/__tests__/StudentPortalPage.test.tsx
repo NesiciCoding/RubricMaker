@@ -46,6 +46,9 @@ const mockFetchMyMessages = vi.fn().mockResolvedValue([]);
 const mockSendMessageAsStudent = vi.fn().mockResolvedValue({ success: true });
 const mockMarkMessagesReadByStudent = vi.fn().mockResolvedValue({ success: true });
 const mockFetchMyFlashcardAssignments = vi.fn().mockResolvedValue([]);
+const mockFetchMyNewsFlashes = vi.fn().mockResolvedValue([]);
+const mockMarkNewsFlashRead = vi.fn();
+const mockMarkNewsFlashReadAsStudent = vi.fn().mockResolvedValue({ success: true });
 
 const mockGradedStudentRubric: StudentRubric = {
     id: 'sr1',
@@ -151,6 +154,11 @@ const mockAppValue: Record<string, unknown> = {
     flashcardDecks: emptyArr,
     flashcardReviews: emptyArr,
     fetchMyFlashcardAssignments: mockFetchMyFlashcardAssignments,
+    newsFlashes: emptyArr,
+    newsFlashReads: emptyArr,
+    fetchMyNewsFlashes: mockFetchMyNewsFlashes,
+    markNewsFlashRead: mockMarkNewsFlashRead,
+    markNewsFlashReadAsStudent: mockMarkNewsFlashReadAsStudent,
 };
 
 vi.mock('../../context/AppContext', () => ({
@@ -222,6 +230,11 @@ describe('StudentPortalPage', () => {
         mockMarkMessagesReadByStudent.mockClear();
         mockFetchMyFlashcardAssignments.mockClear();
         mockFetchMyFlashcardAssignments.mockResolvedValue([]);
+        mockFetchMyNewsFlashes.mockClear();
+        mockFetchMyNewsFlashes.mockResolvedValue([]);
+        mockMarkNewsFlashRead.mockClear();
+        mockMarkNewsFlashReadAsStudent.mockClear();
+        mockMarkNewsFlashReadAsStudent.mockResolvedValue({ success: true });
         const mod = await import('../StudentPortalPage');
         StudentPortalPageComp = mod.default;
     });
@@ -263,6 +276,22 @@ describe('StudentPortalPage', () => {
         renderAt('s1');
         expect(screen.getByText('Nice peer review')).toBeInTheDocument();
         mockAppValue.peerReviews = emptyArr;
+    });
+
+    it('renders news flash section when newsFlashes exist', () => {
+        mockAppValue.newsFlashes = [
+            {
+                id: 'nf1',
+                title: 'Read this article',
+                summary: 'A great read',
+                kind: 'article',
+                tags: ['vocabulary'],
+                createdAt: '2024-01-01T00:00:00Z',
+            },
+        ];
+        renderAt('s1');
+        expect(screen.getAllByText('Read this article').length).toBeGreaterThan(0);
+        mockAppValue.newsFlashes = emptyArr;
     });
 
     it('renders copy link button', () => {

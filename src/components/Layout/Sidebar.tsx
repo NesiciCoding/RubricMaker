@@ -23,6 +23,7 @@ import {
     PenTool,
     Folder,
     Mail,
+    Newspaper,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
@@ -83,6 +84,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
                 '/tests',
                 '/essays',
                 '/flashcards',
+                '/news-flashes',
                 '/marketplace',
                 '/peer-analytics',
                 '/grade-comparative',
@@ -93,6 +95,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
                 { to: '/tests', icon: ClipboardCheck, label: t('navigation.tests') },
                 { to: '/essays', icon: PenLine, label: t('navigation.essays') },
                 { to: '/flashcards', icon: Layers, label: t('navigation.flashcards') },
+                { to: '/news-flashes', icon: Newspaper, label: t('navigation.news_flashes') },
                 { to: '/marketplace', icon: Store, label: t('navigation.marketplace') },
             ],
         },

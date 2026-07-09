@@ -27,6 +27,8 @@ import type {
     FlashcardAssignment,
     FlashcardReview,
     StandardMasteryTarget,
+    NewsFlash,
+    NewsFlashRead,
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 import { nanoid } from '../utils/nanoid';
@@ -246,6 +248,8 @@ const KEYS = {
     flashcardAssignments: 'rm_flashcard_assignments',
     flashcardReviews: 'rm_flashcard_reviews',
     standardMasteryTargets: 'rm_standard_mastery_targets',
+    newsFlashes: 'rm_news_flashes',
+    newsFlashReads: 'rm_news_flash_reads',
 };
 
 // ─── Generic helpers ───────────────────────────────────────────────────────────
@@ -314,6 +318,8 @@ export interface StoreData {
     flashcardAssignments: FlashcardAssignment[];
     flashcardReviews: FlashcardReview[];
     standardMasteryTargets: StandardMasteryTarget[];
+    newsFlashes: NewsFlash[];
+    newsFlashReads: NewsFlashRead[];
 }
 
 export function loadStore(): StoreData {
@@ -345,6 +351,8 @@ export function loadStore(): StoreData {
         flashcardAssignments: load<FlashcardAssignment[]>(KEYS.flashcardAssignments, []),
         flashcardReviews: load<FlashcardReview[]>(KEYS.flashcardReviews, []),
         standardMasteryTargets: load<StandardMasteryTarget[]>(KEYS.standardMasteryTargets, []),
+        newsFlashes: load<NewsFlash[]>(KEYS.newsFlashes, []),
+        newsFlashReads: load<NewsFlashRead[]>(KEYS.newsFlashReads, []),
     };
 }
 
@@ -440,6 +448,12 @@ export function saveStandardMasteryTargets(targets: StandardMasteryTarget[]) {
 }
 export function saveMessages(messages: Message[]) {
     save(KEYS.messages, messages);
+}
+export function saveNewsFlashes(flashes: NewsFlash[]) {
+    save(KEYS.newsFlashes, flashes);
+}
+export function saveNewsFlashReads(reads: NewsFlashRead[]) {
+    save(KEYS.newsFlashReads, reads);
 }
 
 // ─── Local data wipe (user switch / sign-out) ─────────────────────────────────
@@ -699,6 +713,34 @@ export function importFullBackup(json: string): boolean {
             )
                 saveStandardMasteryTargets(data.standardMasteryTargets as StandardMasteryTarget[]);
             else console.warn('[importFullBackup] standardMasteryTargets failed validation — skipped');
+        }
+        if (data.newsFlashes !== undefined) {
+            if (
+                Array.isArray(data.newsFlashes) &&
+                data.newsFlashes.every(
+                    (f) =>
+                        isPlainObject(f) &&
+                        typeof (f as Record<string, unknown>).id === 'string' &&
+                        typeof (f as Record<string, unknown>).title === 'string' &&
+                        typeof (f as Record<string, unknown>).kind === 'string'
+                )
+            )
+                saveNewsFlashes(data.newsFlashes as NewsFlash[]);
+            else console.warn('[importFullBackup] newsFlashes failed validation — skipped');
+        }
+        if (data.newsFlashReads !== undefined) {
+            if (
+                Array.isArray(data.newsFlashReads) &&
+                data.newsFlashReads.every(
+                    (r) =>
+                        isPlainObject(r) &&
+                        typeof (r as Record<string, unknown>).id === 'string' &&
+                        typeof (r as Record<string, unknown>).flashId === 'string' &&
+                        typeof (r as Record<string, unknown>).studentId === 'string'
+                )
+            )
+                saveNewsFlashReads(data.newsFlashReads as NewsFlashRead[]);
+            else console.warn('[importFullBackup] newsFlashReads failed validation — skipped');
         }
         return true;
     } catch (e) {

@@ -42,6 +42,8 @@ import type {
     FlashcardAssignment,
     FlashcardReview,
     StandardMasteryTarget,
+    NewsFlash,
+    NewsFlashRead,
 } from '../../types';
 
 const LAST_SYNC_KEY = 'rm_last_sync_at';
@@ -94,6 +96,8 @@ class StorageSyncService {
         { table: 'flashcard_assignments', filterColumn: 'owner_id' },
         { table: 'flashcard_reviews', filterColumn: 'owner_id' },
         { table: 'standard_mastery_targets', filterColumn: 'owner_id' },
+        { table: 'news_flashes', filterColumn: 'owner_id' },
+        { table: 'news_flash_reads', filterColumn: 'owner_id' },
     ];
     private static readonly REALTIME_DEBOUNCE_MS = 800;
 
@@ -466,6 +470,14 @@ class StorageSyncService {
         return this.adapter.saveFlashcardReviewAsStudent(r);
     }
 
+    async fetchMyNewsFlashes(): Promise<NewsFlash[]> {
+        return this.adapter.fetchMyNewsFlashes();
+    }
+
+    async markNewsFlashReadAsStudent(r: NewsFlashRead): Promise<SyncResult> {
+        return this.adapter.markNewsFlashReadAsStudent(r);
+    }
+
     async fetchEssayAssignmentByKey(teacherKey: string) {
         return this.adapter.fetchEssayAssignmentByKey(teacherKey);
     }
@@ -568,11 +580,20 @@ class StorageSyncService {
             // requests above — a fresh feature's tables competing for the same local
             // connection pool at that exact startup instant was implicated in a
             // (previously fragile, timing-sensitive) offline-sync-merge E2E failure.
-            const [flashcardDecks, flashcardAssignments, flashcardReviews, standardMasteryTargets] = await Promise.all([
+            const [
+                flashcardDecks,
+                flashcardAssignments,
+                flashcardReviews,
+                standardMasteryTargets,
+                newsFlashes,
+                newsFlashReads,
+            ] = await Promise.all([
                 this.adapter.fetchFlashcardDecks().catch(() => []),
                 this.adapter.fetchFlashcardAssignments().catch(() => []),
                 this.adapter.fetchFlashcardReviews().catch(() => []),
                 this.adapter.fetchStandardMasteryTargets().catch(() => []),
+                this.adapter.fetchNewsFlashes().catch(() => []),
+                this.adapter.fetchNewsFlashReads().catch(() => []),
             ]);
 
             // The profile.role is authoritative; always override whatever userRole
@@ -645,6 +666,8 @@ class StorageSyncService {
                 flashcardAssignments,
                 flashcardReviews,
                 standardMasteryTargets,
+                newsFlashes,
+                newsFlashReads,
                 attachments,
                 ...(mergedSettings ? { settings: mergedSettings as StoreData['settings'] } : {}),
             };
@@ -704,6 +727,8 @@ class StorageSyncService {
                 ...state.flashcardAssignments.map((a) => this.adapter.upsertFlashcardAssignment(a)),
                 ...state.flashcardReviews.map((r) => this.adapter.upsertFlashcardReview(r)),
                 ...state.standardMasteryTargets.map((t) => this.adapter.upsertStandardMasteryTarget(t)),
+                ...state.newsFlashes.map((f) => this.adapter.upsertNewsFlash(f)),
+                ...state.newsFlashReads.map((r) => this.adapter.upsertNewsFlashRead(r)),
                 this.adapter.saveSettings(state.settings),
             ];
             await Promise.all(ups);
@@ -864,6 +889,15 @@ class StorageSyncService {
                     if (action === 'upsert')
                         result = await this.adapter.upsertStandardMasteryTarget(payload as StandardMasteryTarget);
                     else if (id) result = await this.adapter.deleteStandardMasteryTarget(id);
+                    break;
+                case 'newsFlash':
+                    if (action === 'upsert') result = await this.adapter.upsertNewsFlash(payload as NewsFlash);
+                    else if (id) result = await this.adapter.deleteNewsFlash(id);
+                    break;
+                case 'newsFlashRead':
+                    // Teacher-session pushes only, mirroring flashcardReview; the portal
+                    // student writes through markNewsFlashReadAsStudent instead.
+                    if (action === 'upsert') result = await this.adapter.upsertNewsFlashRead(payload as NewsFlashRead);
                     break;
                 case 'settings':
                     if (action === 'upsert')

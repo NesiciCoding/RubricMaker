@@ -25,6 +25,7 @@ import {
     TrendingUp,
     Search,
     Mail,
+    Newspaper,
 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useTranslation } from 'react-i18next';
@@ -232,6 +233,12 @@ function getRouteTree(t: TFunction): RouteNode[] {
                     color: '#f59e0b',
                 },
             ],
+        },
+        {
+            path: '/news-flashes',
+            label: t('docs.route_news_flashes_label'),
+            description: t('docs.route_news_flashes_desc'),
+            color: '#f59e0b',
         },
         {
             path: '/portal/:studentId',
@@ -1139,6 +1146,21 @@ function CefrTab() {
                     ]}
                 />
                 <InfoBox color="#8b5cf6">{t('docs.ce_flashcards_info')}</InfoBox>
+            </FeatureSection>
+
+            <FeatureSection icon={Newspaper} title={t('docs.ce_news_flashes_title')} color="#8b5cf6">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    {t('docs.ce_news_flashes_intro')}
+                </p>
+                <FeatureList
+                    items={[
+                        t('docs.ce_news_flashes_item_create'),
+                        t('docs.ce_news_flashes_item_content'),
+                        t('docs.ce_news_flashes_item_link'),
+                        t('docs.ce_news_flashes_item_timeline'),
+                    ]}
+                />
+                <InfoBox color="#8b5cf6">{t('docs.ce_news_flashes_info')}</InfoBox>
             </FeatureSection>
 
             <FeatureSection icon={Award} title={t('docs.ce_cambridge_title')} color="#f59e0b">

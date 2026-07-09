@@ -1180,6 +1180,36 @@ export interface FlashcardReview {
     updatedAt: string;
 }
 
+// ── News Flashes (curated links/resources, 16.4) ─────────────────────────────
+
+export type NewsFlashKind = 'article' | 'book' | 'video';
+export type NewsFlashLinkedResourceType = 'flashcardDeck' | 'test' | 'rubric';
+
+export interface NewsFlash {
+    id: string;
+    title: string;
+    /** Short teaser shown in list/timeline rows and search results */
+    summary: string;
+    /** Full rich-text article body (TipTap HTML), shown when a reader opens the flash */
+    content?: string;
+    url?: string;
+    kind: NewsFlashKind;
+    tags: string[];
+    cefrLevel?: CefrLevel;
+    linkedResourceType?: NewsFlashLinkedResourceType;
+    linkedResourceId?: string;
+    createdAt: string;
+    updatedAt?: string;
+}
+
+/** One row per (flash, student) read event, id = '<flashId>:<studentId>' (same composite pattern as FlashcardReview) */
+export interface NewsFlashRead {
+    id: string;
+    flashId: string;
+    studentId: string;
+    readAt: string;
+}
+
 /** A student's completed test, encoded into a submission code for the teacher to import */
 export interface TestSubmissionPayload {
     testId: string;

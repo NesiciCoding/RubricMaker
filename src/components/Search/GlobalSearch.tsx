@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Search, FileText, ClipboardList, User, Users, BookOpen, GraduationCap, Layers } from 'lucide-react';
+import { Search, FileText, ClipboardList, User, Users, BookOpen, GraduationCap, Layers, Newspaper } from 'lucide-react';
 import Modal from '../ui/Modal';
 import { useApp } from '../../context/AppContext';
 import { searchAll, type SearchResult, type SearchResultType } from '../../utils/globalSearch';
@@ -14,6 +14,7 @@ const TYPE_ICONS: Record<SearchResultType, React.ComponentType<{ size?: number }
     essay: BookOpen,
     grade: GraduationCap,
     flashcardDeck: Layers,
+    newsFlash: Newspaper,
 };
 
 interface Props {
@@ -24,12 +25,12 @@ interface Props {
 export default function GlobalSearch({ onClose, growFrom }: Props) {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { rubrics, tests, students, classes, essayAssignments, flashcardDecks } = useApp();
+    const { rubrics, tests, students, classes, essayAssignments, flashcardDecks, newsFlashes } = useApp();
     const [query, setQuery] = useState('');
 
     const results = useMemo(
-        () => searchAll(query, { rubrics, tests, students, classes, essayAssignments, flashcardDecks }),
-        [query, rubrics, tests, students, classes, essayAssignments, flashcardDecks]
+        () => searchAll(query, { rubrics, tests, students, classes, essayAssignments, flashcardDecks, newsFlashes }),
+        [query, rubrics, tests, students, classes, essayAssignments, flashcardDecks, newsFlashes]
     );
 
     function go(result: SearchResult) {
