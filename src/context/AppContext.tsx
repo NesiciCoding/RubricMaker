@@ -50,6 +50,7 @@ import {
     saveStudents,
     saveClasses,
     saveStudentRubrics,
+    stripAudioForOfflineCache,
     saveAttachments,
     saveGradeScales,
     saveCommentSnippets,
@@ -1006,38 +1007,6 @@ const LOCAL_MODE_KEY = 'rm_local_mode';
 const MIGRATION_DONE_KEY = 'rm_migration_done';
 
 async function flushToLocalStorage(merged: StoreData) {
-    const {
-        saveRubrics,
-        saveStudents,
-        saveClasses,
-        saveStudentRubrics,
-        stripAudioForOfflineCache,
-        saveAttachments,
-        saveGradeScales,
-        saveCommentSnippets,
-        saveSettings,
-        saveFavoriteStandards,
-        saveCommentBank,
-        saveExportTemplates,
-        savePeerReviews,
-        saveSelfAssessments,
-        saveSpeakingSessions,
-        saveAnalysisResults,
-        saveTests,
-        saveStudentTests,
-        saveEssayTemplates,
-        saveGradingTasks,
-        saveMessages,
-        saveEssayAssignments,
-        saveEssaySubmissions,
-        saveUserTemplates,
-        saveFlashcardDecks,
-        saveFlashcardAssignments,
-        saveFlashcardReviews,
-        saveStandardMasteryTargets,
-        saveNewsFlashes,
-        saveNewsFlashReads,
-    } = await import('../store/storage');
     saveRubrics(merged.rubrics);
     saveStudents(merged.students);
     saveClasses(merged.classes);
