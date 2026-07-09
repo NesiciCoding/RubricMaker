@@ -19,6 +19,7 @@ import { useConfirm } from '../hooks/useConfirm';
 import { useApp } from '../context/AppContext';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
 import TiptapEditor from '../components/Editor/TiptapEditor';
+import { htmlToPlainText } from '../hooks/useTTS';
 import type { CefrLevel, NewsFlash, NewsFlashKind, NewsFlashLinkedResourceType } from '../types';
 
 const EMPTY_CONTENT_HTML = '<p></p>';
@@ -86,7 +87,7 @@ export default function NewsFlashesPage() {
 
     function handleSave() {
         if (!draft || !draft.title.trim()) return;
-        const isContentEmpty = draft.content.replace(/<[^>]*>/g, '').trim().length === 0;
+        const isContentEmpty = htmlToPlainText(draft.content).length === 0;
         const payload = {
             title: draft.title.trim(),
             summary: draft.summary.trim(),
