@@ -100,11 +100,19 @@ CREATE POLICY "news_flash_reads_student_insert"
   );
 
 -- markNewsFlashReadAsStudent() upserts on onConflict: 'id', so a repeat write for the
--- same (flash, student) pair takes this UPDATE path, not the INSERT path above.
+-- same (flash, student) pair takes this UPDATE path, not the INSERT path above — mirrors
+-- that policy's flash_id scope too, so a student can't repoint an existing read row at a
+-- flash outside their visibility.
 CREATE POLICY "news_flash_reads_student_update"
   ON public.news_flash_reads FOR UPDATE
-  USING      (student_id IN (SELECT get_my_student_ids()))
-  WITH CHECK (student_id IN (SELECT get_my_student_ids()));
+  USING (
+    student_id IN (SELECT get_my_student_ids())
+    AND flash_id IN (SELECT get_my_news_flash_ids())
+  )
+  WITH CHECK (
+    student_id IN (SELECT get_my_student_ids())
+    AND flash_id IN (SELECT get_my_news_flash_ids())
+  );
 
 -- ── 5. Include the new tables in the nightly owner backup ──────────────────────
 -- Full replacement of export_owner_backup (056 was the last to touch it, via

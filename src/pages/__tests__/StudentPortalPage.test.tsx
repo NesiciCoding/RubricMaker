@@ -278,6 +278,22 @@ describe('StudentPortalPage', () => {
         mockAppValue.peerReviews = emptyArr;
     });
 
+    it('renders news flash section when newsFlashes exist', () => {
+        mockAppValue.newsFlashes = [
+            {
+                id: 'nf1',
+                title: 'Read this article',
+                summary: 'A great read',
+                kind: 'article',
+                tags: ['vocabulary'],
+                createdAt: '2024-01-01T00:00:00Z',
+            },
+        ];
+        renderAt('s1');
+        expect(screen.getAllByText('Read this article').length).toBeGreaterThan(0);
+        mockAppValue.newsFlashes = emptyArr;
+    });
+
     it('renders copy link button', () => {
         renderAt('s1');
         expect(screen.getByText('studentPortal.copy_link')).toBeInTheDocument();
