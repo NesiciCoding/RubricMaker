@@ -681,4 +681,17 @@ describe('mergeStoreData', () => {
         const result = mergeStoreData(local, remote, queue);
         expect(result.essaySubmissions).toEqual([kept]);
     });
+
+    it('remote-only standardMasteryTargets survive the merge (cross-device visibility)', () => {
+        const remoteTarget = {
+            id: 'smt1',
+            standardGuid: 'guid-1',
+            updatedAt: '2024-01-01T00:00:00.000Z',
+        } as unknown as StoreData['standardMasteryTargets'][number];
+        const local = baseStoreData({ standardMasteryTargets: [] });
+        const remote: Partial<StoreData> = { standardMasteryTargets: [remoteTarget] };
+
+        const result = mergeStoreData(local, remote, []);
+        expect(result.standardMasteryTargets).toEqual([remoteTarget]);
+    });
 });
