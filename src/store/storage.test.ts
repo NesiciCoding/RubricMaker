@@ -5,6 +5,7 @@ import {
     saveStudents,
     saveClasses,
     saveStudentRubrics,
+    stripAudioForOfflineCache,
     saveAttachments,
     saveGradeScales,
     saveCommentSnippets,
@@ -30,7 +31,7 @@ import {
     onStorageQuotaExceeded,
     clearLocalData,
 } from './storage';
-import type { Rubric, Student, Class, AppSettings, RubricFormat } from '../types';
+import type { Rubric, Student, Class, AppSettings, RubricFormat, StudentRubric } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 
 const makeRubric = (id = 'r1'): Rubric => ({
@@ -137,6 +138,36 @@ describe('save functions', () => {
             },
         ]);
         expect(loadStore().studentRubrics[0].id).toBe('sr1');
+    });
+
+    it('stripAudioForOfflineCache removes embedded audio but leaves everything else, and skips entries without it', () => {
+        const srs: StudentRubric[] = [
+            {
+                id: 'sr1',
+                rubricId: 'r1',
+                studentId: 's1',
+                entries: [
+                    {
+                        criterionId: 'c1',
+                        levelId: 'l1',
+                        checkedSubItems: [],
+                        comment: 'nice work',
+                        audioDataUrl: 'data:audio/webm;base64,AAAA',
+                    },
+                    { criterionId: 'c2', levelId: 'l2', checkedSubItems: [], comment: '' },
+                ],
+                overallComment: 'good',
+                isPeerReview: false,
+            },
+        ];
+
+        const stripped = stripAudioForOfflineCache(srs);
+
+        expect(stripped[0].entries[0].audioDataUrl).toBeUndefined();
+        expect(stripped[0].entries[0].comment).toBe('nice work');
+        expect(stripped[0].entries[1]).toEqual(srs[0].entries[1]);
+        expect(stripped[0].overallComment).toBe('good');
+        expect(srs[0].entries[0].audioDataUrl).toBe('data:audio/webm;base64,AAAA'); // input untouched
     });
 
     it('drops the write and notifies the registered handler when localStorage quota is exceeded', () => {

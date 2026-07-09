@@ -968,6 +968,7 @@ async function flushToLocalStorage(merged: StoreData) {
         saveStudents,
         saveClasses,
         saveStudentRubrics,
+        stripAudioForOfflineCache,
         saveAttachments,
         saveGradeScales,
         saveCommentSnippets,
@@ -991,7 +992,7 @@ async function flushToLocalStorage(merged: StoreData) {
     saveRubrics(merged.rubrics);
     saveStudents(merged.students);
     saveClasses(merged.classes);
-    saveStudentRubrics(merged.studentRubrics);
+    saveStudentRubrics(stripAudioForOfflineCache(merged.studentRubrics));
     saveAttachments(merged.attachments);
     saveGradeScales(merged.gradeScales);
     saveCommentSnippets(merged.commentSnippets);
