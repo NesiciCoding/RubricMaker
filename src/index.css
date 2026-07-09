@@ -896,13 +896,12 @@ select.input-error {
     align-items: center;
     justify-content: center;
     min-width: 44px;
-    height: 44px;
+    min-height: 44px;
     border-radius: var(--radius);
     font-size: 1.15rem;
     font-weight: 700;
-    padding: 0 10px;
-    white-space: nowrap;
-    flex-shrink: 0;
+    padding: 6px 10px;
+    text-align: center;
 }
 
 /* ─── Grade footer ────────────────────────────────────────────────────────────
@@ -915,6 +914,7 @@ select.input-error {
 .grade-footer {
     flex-shrink: 0;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 16px;
     padding: 10px 28px;
@@ -1297,7 +1297,6 @@ select.input-error {
     }
 
     .grade-footer {
-        flex-wrap: wrap;
         gap: 10px;
     }
 
@@ -1314,7 +1313,6 @@ select.input-error {
     }
 
     .grade-footer {
-        flex-wrap: wrap;
         gap: 10px;
     }
 
