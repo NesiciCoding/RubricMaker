@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { searchAll, type SearchableData } from './globalSearch';
-import type { Class, EssayAssignment, Rubric, Student, Test } from '../types';
+import type { Class, EssayAssignment, FlashcardDeck, Rubric, Student, Test } from '../types';
 
 function makeData(overrides: Partial<SearchableData> = {}): SearchableData {
     return {
@@ -9,6 +9,7 @@ function makeData(overrides: Partial<SearchableData> = {}): SearchableData {
         students: [],
         classes: [],
         essayAssignments: [],
+        flashcardDecks: [],
         ...overrides,
     };
 }
@@ -191,6 +192,44 @@ describe('searchAll', () => {
             const b1Rubric: Rubric = { ...rubric, id: 'r2', cefrTargetLevel: 'B1' };
             const results = searchAll('b1', makeData({ rubrics: [rubric, b1Rubric] }));
             expect(results.map((r) => r.id)).toEqual(['r2']);
+        });
+    });
+
+    describe('flashcard decks and area: filter', () => {
+        const grammarDeck: FlashcardDeck = {
+            id: 'd1',
+            name: 'Past Simple Drills',
+            cards: [],
+            createdAt: '2026-01-01',
+            deckKind: 'grammar',
+        };
+
+        it('matches a flashcard deck by name', () => {
+            const results = searchAll('past simple', makeData({ flashcardDecks: [grammarDeck] }));
+            expect(results).toEqual([
+                {
+                    type: 'flashcardDeck',
+                    id: 'd1',
+                    label: 'Past Simple Drills',
+                    sublabel: undefined,
+                    route: '/flashcards/d1',
+                },
+            ]);
+        });
+
+        it('type:deck resolves to the flashcardDeck alias', () => {
+            const results = searchAll('type:deck past', makeData({ flashcardDecks: [grammarDeck], rubrics: [rubric] }));
+            expect(results.map((r) => r.id)).toEqual(['d1']);
+        });
+
+        it('area:grammar narrows to tests with a matching contentArea, excluding other types', () => {
+            const grammarTest: Test = { ...test, id: 't2', mode: 'practice', contentArea: 'grammar' };
+            const listeningTest: Test = { ...test, id: 't3', mode: 'practice', contentArea: 'listening' };
+            const results = searchAll(
+                'area:grammar',
+                makeData({ tests: [grammarTest, listeningTest], rubrics: [rubric], flashcardDecks: [grammarDeck] })
+            );
+            expect(results.map((r) => r.id)).toEqual(['t2']);
         });
     });
 });

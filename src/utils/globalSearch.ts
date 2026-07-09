@@ -1,8 +1,8 @@
-import type { Class, EssayAssignment, Rubric, Student, Test, VoTrack } from '../types';
+import type { Class, EssayAssignment, FlashcardDeck, Rubric, Student, Test, VoTrack } from '../types';
 import { SCHOOL_YEAR_LABELS } from '../data/schoolYears';
 import { VO_TRACK_LABELS } from '../data/voTracks';
 
-export type SearchResultType = 'rubric' | 'test' | 'student' | 'class' | 'essay' | 'grade';
+export type SearchResultType = 'rubric' | 'test' | 'student' | 'class' | 'essay' | 'grade' | 'flashcardDeck';
 
 export interface SearchResult {
     type: SearchResultType;
@@ -20,6 +20,7 @@ export interface SearchableData {
     students: Student[];
     classes: Class[];
     essayAssignments: EssayAssignment[];
+    flashcardDecks: FlashcardDeck[];
 }
 
 const TYPE_ALIASES: Record<string, SearchResultType> = {
@@ -33,6 +34,10 @@ const TYPE_ALIASES: Record<string, SearchResultType> = {
     classes: 'class',
     essay: 'essay',
     essays: 'essay',
+    deck: 'flashcardDeck',
+    decks: 'flashcardDeck',
+    flashcard: 'flashcardDeck',
+    flashcards: 'flashcardDeck',
 };
 
 export function normalize(s: string): string {
@@ -40,11 +45,12 @@ export function normalize(s: string): string {
 }
 
 /**
- * Splits a query into `type:`/`class:`/`year:`/`track:`/`mode:` filter tokens and a
+ * Splits a query into `type:`/`class:`/`year:`/`track:`/`mode:`/`area:` filter tokens and a
  * free-text remainder. A filter value is either a single bare word (`class:5A`) or a
  * quoted phrase for multi-word values (`class:"English 1"`) — quoting avoids ambiguity
  * with any free text that follows. `year:`/`track:` take the raw enum value (`jaar-3`,
- * `havo`), not the display label. `mode:` only narrows test/practice results.
+ * `havo`), not the display label. `mode:`/`area:` only narrow test/practice results
+ * (`area:` matches `Test.contentArea`: listening/reading/grammar).
  */
 function parseQuery(query: string): {
     typeFilter?: SearchResultType;
@@ -52,6 +58,7 @@ function parseQuery(query: string): {
     yearFilter?: string;
     trackFilter?: string;
     modeFilter?: 'practice' | 'assessment';
+    areaFilter?: 'listening' | 'reading' | 'grammar';
     text: string;
 } {
     let typeFilter: SearchResultType | undefined;
@@ -59,8 +66,9 @@ function parseQuery(query: string): {
     let yearFilter: string | undefined;
     let trackFilter: string | undefined;
     let modeFilter: 'practice' | 'assessment' | undefined;
+    let areaFilter: 'listening' | 'reading' | 'grammar' | undefined;
 
-    const filterRegex = /\b(type|class|year|track|mode):(?:"([^"]*)"|(\S+))/gi;
+    const filterRegex = /\b(type|class|year|track|mode|area):(?:"([^"]*)"|(\S+))/gi;
     const remaining = query.replace(filterRegex, (match, key: string, quoted?: string, bare?: string) => {
         const value = quoted ?? bare ?? '';
         const lowerKey = key.toLowerCase();
@@ -74,19 +82,35 @@ function parseQuery(query: string): {
             yearFilter = value;
         } else if (lowerKey === 'track') {
             trackFilter = value;
-        } else {
+        } else if (lowerKey === 'mode') {
             if (value.toLowerCase() !== 'practice' && value.toLowerCase() !== 'assessment') return match;
             modeFilter = value.toLowerCase() as 'practice' | 'assessment';
+        } else {
+            if (
+                value.toLowerCase() !== 'listening' &&
+                value.toLowerCase() !== 'reading' &&
+                value.toLowerCase() !== 'grammar'
+            )
+                return match;
+            areaFilter = value.toLowerCase() as 'listening' | 'reading' | 'grammar';
         }
         return ' ';
     });
 
-    return { typeFilter, classFilter, yearFilter, trackFilter, modeFilter, text: normalize(remaining.trim()) };
+    return {
+        typeFilter,
+        classFilter,
+        yearFilter,
+        trackFilter,
+        modeFilter,
+        areaFilter,
+        text: normalize(remaining.trim()),
+    };
 }
 
 export function searchAll(query: string, data: SearchableData): SearchResult[] {
-    const { typeFilter, classFilter, yearFilter, trackFilter, modeFilter, text } = parseQuery(query);
-    if (!text && !classFilter && !typeFilter && !yearFilter && !trackFilter && !modeFilter) return [];
+    const { typeFilter, classFilter, yearFilter, trackFilter, modeFilter, areaFilter, text } = parseQuery(query);
+    if (!text && !classFilter && !typeFilter && !yearFilter && !trackFilter && !modeFilter && !areaFilter) return [];
 
     const classById = new Map(data.classes.map((c) => [c.id, c]));
     const normalizedClassFilter = classFilter ? normalize(classFilter) : undefined;
@@ -131,6 +155,7 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
     // means explicitly re-added, not merely left for the later blocks to (likely never) find.
     if (
         !modeFilter &&
+        !areaFilter &&
         text &&
         (!typeFilter || typeFilter === 'grade' || typeFilter === 'student' || typeFilter === 'rubric')
     ) {
@@ -160,7 +185,7 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
         }
     }
 
-    if (!modeFilter && (!typeFilter || typeFilter === 'rubric')) {
+    if (!modeFilter && !areaFilter && (!typeFilter || typeFilter === 'rubric')) {
         for (const r of data.rubrics) {
             if (matchesText(r.name, r.subject, r.cefrTargetLevel)) {
                 addResult({
@@ -178,6 +203,7 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
         for (const t of data.tests) {
             const effectiveMode = t.mode ?? 'assessment';
             if (modeFilter && modeFilter !== effectiveMode) continue;
+            if (areaFilter && t.contentArea !== areaFilter) continue;
             if (matchesText(t.name, t.description)) {
                 addResult({
                     type: 'test',
@@ -191,7 +217,7 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
         }
     }
 
-    if (!modeFilter && (!typeFilter || typeFilter === 'student')) {
+    if (!modeFilter && !areaFilter && (!typeFilter || typeFilter === 'student')) {
         for (const s of data.students) {
             if (s.anonymizedAt) continue;
             const cls = classById.get(s.classId);
@@ -218,7 +244,7 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
         }
     }
 
-    if (!modeFilter && (!typeFilter || typeFilter === 'class')) {
+    if (!modeFilter && !areaFilter && (!typeFilter || typeFilter === 'class')) {
         for (const c of data.classes) {
             if (
                 matchesText(
@@ -235,13 +261,27 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
         }
     }
 
-    if (!modeFilter && (!typeFilter || typeFilter === 'essay')) {
+    if (!modeFilter && !areaFilter && (!typeFilter || typeFilter === 'essay')) {
         const seenGroups = new Set<string>();
         for (const a of data.essayAssignments) {
             if (seenGroups.has(a.teacherKey)) continue;
             if (matchesText(a.title, a.prompt)) {
                 seenGroups.add(a.teacherKey);
                 addResult({ type: 'essay', id: a.teacherKey, label: a.title, route: `/essays/${a.teacherKey}` });
+            }
+        }
+    }
+
+    if (!modeFilter && !areaFilter && (!typeFilter || typeFilter === 'flashcardDeck')) {
+        for (const d of data.flashcardDecks) {
+            if (matchesText(d.name, d.description)) {
+                addResult({
+                    type: 'flashcardDeck',
+                    id: d.id,
+                    label: d.name,
+                    sublabel: d.description,
+                    route: `/flashcards/${d.id}`,
+                });
             }
         }
     }

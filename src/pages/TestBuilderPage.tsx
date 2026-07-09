@@ -62,6 +62,9 @@ export default function TestBuilderPage() {
     const [allowMultipleAttempts, setAllowMultipleAttempts] = useState(existing?.allowMultipleAttempts ?? false);
     const [cefrTargetLevel, setCefrTargetLevel] = useState<CefrLevel | ''>(existing?.cefrTargetLevel ?? '');
     const [cefrSkill, setCefrSkill] = useState<CefrSkill | ''>(existing?.cefrSkill ?? '');
+    const [contentArea, setContentArea] = useState<'listening' | 'reading' | 'grammar' | ''>(
+        existing?.contentArea ?? ''
+    );
     const [tourRun, setTourRun] = useState(false);
     const testTourSteps = React.useMemo(() => getTestBuilderTourSteps(t), [t]);
 
@@ -87,6 +90,7 @@ export default function TestBuilderPage() {
         allowMultipleAttempts,
         cefrTargetLevel,
         cefrSkill,
+        contentArea,
     ]);
     const { dialogProps: unsavedDialogProps } = useUnsavedChangesGuard(isDirty);
 
@@ -218,6 +222,7 @@ export default function TestBuilderPage() {
             allowMultipleAttempts: mode === 'practice' ? allowMultipleAttempts : undefined,
             cefrTargetLevel: cefrTargetLevel || undefined,
             cefrSkill: cefrSkill || undefined,
+            contentArea: mode === 'practice' ? contentArea || undefined : undefined,
         };
 
         if (existing) {
@@ -347,6 +352,23 @@ export default function TestBuilderPage() {
                                 {mode === 'practice' ? t('tests.mode_practice_help') : t('tests.mode_assessment_help')}
                             </p>
                         </div>
+                        {mode === 'practice' && (
+                            <div className="form-group" style={{ marginBottom: 0, flex: '1 1 200px' }}>
+                                <label htmlFor="test-content-area">{t('tests.content_area_label')}</label>
+                                <select
+                                    id="test-content-area"
+                                    value={contentArea}
+                                    onChange={(e) =>
+                                        setContentArea(e.target.value as 'listening' | 'reading' | 'grammar' | '')
+                                    }
+                                >
+                                    <option value="">{t('tests.content_area_none')}</option>
+                                    <option value="listening">{t('tests.content_area_listening')}</option>
+                                    <option value="reading">{t('tests.content_area_reading')}</option>
+                                    <option value="grammar">{t('tests.content_area_grammar')}</option>
+                                </select>
+                            </div>
+                        )}
                         <div className="form-group" style={{ marginBottom: 0, flex: '1 1 160px' }}>
                             <label htmlFor="test-duration">{t('tests.duration_label')}</label>
                             <input

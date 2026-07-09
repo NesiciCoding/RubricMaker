@@ -4,10 +4,19 @@ import {
     buildCohortAverages,
     getCriterionInterventionFlags,
     getCefrSkillInterventionFlags,
+    getGrammarRecommendations,
     DEFAULT_LEARNING_PATH_CONFIG,
 } from './learningPathAggregator';
 import type { CefrCellData } from './cefrStudentAggregator';
-import type { Rubric, RubricCriterion, StudentRubric, LearningPathConfig } from '../types';
+import type {
+    Rubric,
+    RubricCriterion,
+    StudentRubric,
+    LearningPathConfig,
+    Test,
+    StudentTest,
+    FlashcardDeck,
+} from '../types';
 
 // ─── Builders ─────────────────────────────────────────────────────────────────
 
@@ -356,5 +365,175 @@ describe('stress test — large dataset', () => {
         }
         expect(() => getCriterionInterventionFlags('s0', srs, [rubric])).not.toThrow();
         expect(() => getCefrSkillInterventionFlags('s0', srs, [rubric])).not.toThrow();
+    });
+});
+
+// ─── getGrammarRecommendations ─────────────────────────────────────────────────
+
+function mkGrammarCriterion(id: string, grammarItemId: string, maxPts = 10): RubricCriterion {
+    return {
+        ...mkCriterion(id, maxPts),
+        frameworkDescriptors: [
+            {
+                descriptorId: grammarItemId,
+                framework: 'grammar',
+                categoryId: 'cat',
+                categoryLabelEn: 'Category',
+                categoryLabelNl: 'Categorie',
+                categoryColor: '#000',
+                descriptionEn: '',
+                descriptionNl: '',
+            },
+        ],
+    };
+}
+
+function mkQuestion(id: string, points: number, linkedGrammarItemId?: string): Test['questions'][number] {
+    return { id, prompt: `Question ${id}`, type: 'short-answer', points, expectedAnswer: 'x', linkedGrammarItemId };
+}
+
+function mkTest(id: string, questions: Test['questions'], extra?: Partial<Test>): Test {
+    return {
+        id,
+        name: `Test ${id}`,
+        questions,
+        requireSEB: false,
+        shuffleQuestions: false,
+        createdAt: '2024-01-01',
+        ...extra,
+    };
+}
+
+function mkStudentTest(
+    id: string,
+    testId: string,
+    studentId: string,
+    answers: { questionId: string; response: string; pointsEarned?: number }[],
+    submittedAt: string
+): StudentTest {
+    return { id, testId, studentId, answers, status: 'submitted', startedAt: submittedAt, submittedAt };
+}
+
+function mkDeck(id: string, deckKind: 'vocabulary' | 'grammar', linkedGrammarItemIds: string[] = []): FlashcardDeck {
+    return {
+        id,
+        name: `Deck ${id}`,
+        cards: linkedGrammarItemIds.map((gid, i) => ({
+            id: `${id}_c${i}`,
+            front: 'f',
+            back: 'b',
+            linkedGrammarItemId: gid,
+        })),
+        createdAt: '2024-01-01',
+        deckKind,
+    };
+}
+
+describe('getGrammarRecommendations', () => {
+    it('returns no recommendations with no data', () => {
+        expect(() => getGrammarRecommendations('s1', [], [], [], [], [])).not.toThrow();
+        expect(getGrammarRecommendations('s1', [], [], [], [], [])).toHaveLength(0);
+    });
+
+    it('flags 3 consecutive low scores on a grammar-linked rubric criterion', () => {
+        const c1 = mkGrammarCriterion('c1', 'gr-past-simple-irregular', 10);
+        const rubric = mkRubric('r1', [c1]);
+        const srs = [
+            mkSR('a', 'r1', 's1', { c1: 2 }, '2024-01-01'),
+            mkSR('b', 'r1', 's1', { c1: 2 }, '2024-01-02'),
+            mkSR('c', 'r1', 's1', { c1: 2 }, '2024-01-03'),
+        ];
+        const recs = getGrammarRecommendations('s1', srs, [rubric], [], [], []);
+        expect(recs).toHaveLength(1);
+        expect(recs[0].grammarItemId).toBe('gr-past-simple-irregular');
+        expect(recs[0].streakLength).toBe(3);
+    });
+
+    it('does not flag a rubric criterion with no grammar framework descriptor', () => {
+        const c1 = mkCriterion('c1', 10);
+        const rubric = mkRubric('r1', [c1]);
+        const srs = [
+            mkSR('a', 'r1', 's1', { c1: 2 }, '2024-01-01'),
+            mkSR('b', 'r1', 's1', { c1: 2 }, '2024-01-02'),
+            mkSR('c', 'r1', 's1', { c1: 2 }, '2024-01-03'),
+        ];
+        expect(getGrammarRecommendations('s1', srs, [rubric], [], [], [])).toHaveLength(0);
+    });
+
+    it('flags 3 consecutive low scores on a grammar-linked test question', () => {
+        const q1 = mkQuestion('q1', 10, 'gr-past-simple-irregular');
+        const test = mkTest('t1', [q1]);
+        const sts = [
+            mkStudentTest('st1', 't1', 's1', [{ questionId: 'q1', response: 'wrong', pointsEarned: 0 }], '2024-01-01'),
+            mkStudentTest('st2', 't1', 's1', [{ questionId: 'q1', response: 'wrong', pointsEarned: 0 }], '2024-01-02'),
+            mkStudentTest('st3', 't1', 's1', [{ questionId: 'q1', response: 'wrong', pointsEarned: 0 }], '2024-01-03'),
+        ];
+        const recs = getGrammarRecommendations('s1', [], [], sts, [test], []);
+        expect(recs).toHaveLength(1);
+        expect(recs[0].grammarItemId).toBe('gr-past-simple-irregular');
+    });
+
+    it('ignores a zero-point grammar-linked question', () => {
+        const q1 = mkQuestion('q1', 0, 'gr-past-simple-irregular');
+        const test = mkTest('t1', [q1]);
+        const sts = [
+            mkStudentTest('st1', 't1', 's1', [{ questionId: 'q1', response: 'x', pointsEarned: 0 }], '2024-01-01'),
+            mkStudentTest('st2', 't1', 's1', [{ questionId: 'q1', response: 'x', pointsEarned: 0 }], '2024-01-02'),
+            mkStudentTest('st3', 't1', 's1', [{ questionId: 'q1', response: 'x', pointsEarned: 0 }], '2024-01-03'),
+        ];
+        expect(getGrammarRecommendations('s1', [], [], sts, [test], [])).toHaveLength(0);
+    });
+
+    it('suggests only matching grammar decks (by linked item), not vocabulary decks or unrelated grammar decks', () => {
+        const c1 = mkGrammarCriterion('c1', 'gr-past-simple-irregular', 10);
+        const rubric = mkRubric('r1', [c1]);
+        const srs = [
+            mkSR('a', 'r1', 's1', { c1: 2 }, '2024-01-01'),
+            mkSR('b', 'r1', 's1', { c1: 2 }, '2024-01-02'),
+            mkSR('c', 'r1', 's1', { c1: 2 }, '2024-01-03'),
+        ];
+        const matchingDeck = mkDeck('d1', 'grammar', ['gr-past-simple-irregular']);
+        const vocabDeck = mkDeck('d2', 'vocabulary', ['gr-past-simple-irregular']);
+        const unrelatedGrammarDeck = mkDeck('d3', 'grammar', ['gr-present-simple-affirmative']);
+        const recs = getGrammarRecommendations(
+            's1',
+            srs,
+            [rubric],
+            [],
+            [],
+            [matchingDeck, vocabDeck, unrelatedGrammarDeck]
+        );
+        expect(recs[0].suggestedGrammarDeckIds).toEqual(['d1']);
+    });
+
+    it('suggests only matching practice-mode, grammar-contentArea tests, not assessment-mode or other-area tests', () => {
+        const c1 = mkGrammarCriterion('c1', 'gr-past-simple-irregular', 10);
+        const rubric = mkRubric('r1', [c1]);
+        const srs = [
+            mkSR('a', 'r1', 's1', { c1: 2 }, '2024-01-01'),
+            mkSR('b', 'r1', 's1', { c1: 2 }, '2024-01-02'),
+            mkSR('c', 'r1', 's1', { c1: 2 }, '2024-01-03'),
+        ];
+        const matchingTest = mkTest('t1', [mkQuestion('q1', 5, 'gr-past-simple-irregular')], {
+            mode: 'practice',
+            contentArea: 'grammar',
+        });
+        const assessmentTest = mkTest('t2', [mkQuestion('q2', 5, 'gr-past-simple-irregular')], {
+            mode: 'assessment',
+            contentArea: 'grammar',
+        });
+        const listeningTest = mkTest('t3', [mkQuestion('q3', 5, 'gr-past-simple-irregular')], {
+            mode: 'practice',
+            contentArea: 'listening',
+        });
+        const recs = getGrammarRecommendations(
+            's1',
+            srs,
+            [rubric],
+            [],
+            [matchingTest, assessmentTest, listeningTest],
+            []
+        );
+        expect(recs[0].suggestedGrammarTestIds).toEqual(['t1']);
     });
 });

@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, TrendingUp, AlertTriangle, Users, ExternalLink, BookOpen } from 'lucide-react';
+import { ArrowLeft, TrendingUp, AlertTriangle, Users, ExternalLink, BookOpen, PenSquare } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import CefrBadge from '../components/CEFR/CefrBadge';
@@ -11,14 +11,27 @@ import {
     buildCohortAverages,
     getCriterionInterventionFlags,
     getCefrSkillInterventionFlags,
+    getGrammarRecommendations,
 } from '../utils/learningPathAggregator';
 import { CEFR_SKILL_LABELS } from '../data/cefrDescriptors';
+import { getGrammarItemById } from '../data/grammarStandards';
 import type { InterventionFlag } from '../types';
 
 export default function StudentLearningPathPage() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { students, classes, rubrics, studentRubrics, selfAssessments, analysisResults, settings } = useApp();
+    const {
+        students,
+        classes,
+        rubrics,
+        studentRubrics,
+        selfAssessments,
+        analysisResults,
+        settings,
+        tests,
+        studentTests,
+        flashcardDecks,
+    } = useApp();
     const { t, i18n } = useTranslation();
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
 
@@ -73,6 +86,14 @@ export default function StudentLearningPathPage() {
     const allFlags = useMemo(
         () => [...criterionFlags, ...cefrSkillFlags].sort((a, b) => b.triggeredAt.localeCompare(a.triggeredAt)),
         [criterionFlags, cefrSkillFlags]
+    );
+
+    const grammarRecommendations = useMemo(
+        () =>
+            student
+                ? getGrammarRecommendations(student.id, studentRubrics, rubrics, studentTests, tests, flashcardDecks)
+                : [],
+        [student, studentRubrics, rubrics, studentTests, tests, flashcardDecks]
     );
 
     function flagLabel(flag: InterventionFlag): string {
@@ -231,6 +252,115 @@ export default function StudentLearningPathPage() {
                                                 })
                                             )}
                                         </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+
+                <div className="card" style={{ marginBottom: 24 }}>
+                    <h3 style={{ marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <PenSquare size={18} style={{ color: 'var(--accent)' }} />
+                        {t('grammar.recommendations_title')}
+                    </h3>
+                    <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
+                        {t('grammar.recommendations_subtitle')}
+                    </p>
+
+                    {grammarRecommendations.length === 0 ? (
+                        <div className="empty-state" style={{ padding: '32px 20px' }}>
+                            <PenSquare size={28} style={{ opacity: 0.4 }} />
+                            <p>{t('grammar.no_recommendations')}</p>
+                        </div>
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                            {grammarRecommendations.map((rec) => {
+                                const item = getGrammarItemById(rec.grammarItemId);
+                                const itemLabel = item
+                                    ? lang === 'nl'
+                                        ? item.labelNl
+                                        : item.labelEn
+                                    : rec.grammarItemId;
+                                return (
+                                    <div
+                                        key={`${rec.grammarItemId}__${rec.triggeredAt}`}
+                                        style={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: 8,
+                                            padding: '12px 14px',
+                                            borderRadius: 10,
+                                            border: '1px solid var(--border)',
+                                            background: 'var(--bg-elevated)',
+                                        }}
+                                    >
+                                        <div
+                                            style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10 }}
+                                        >
+                                            {item && <CefrBadge level={item.level} size="sm" />}
+                                            <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{itemLabel}</span>
+                                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                                {t('grammar.recommend_streak', {
+                                                    count: rec.streakLength,
+                                                    label: itemLabel,
+                                                })}
+                                            </span>
+                                        </div>
+                                        {rec.suggestedGrammarDeckIds.length > 0 && (
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    flexWrap: 'wrap',
+                                                    alignItems: 'center',
+                                                    gap: 6,
+                                                }}
+                                            >
+                                                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                                                    {t('grammar.suggested_decks')}:
+                                                </span>
+                                                {rec.suggestedGrammarDeckIds.map((deckId) => {
+                                                    const deck = flashcardDecks.find((d) => d.id === deckId);
+                                                    if (!deck) return null;
+                                                    return (
+                                                        <button
+                                                            key={deckId}
+                                                            className="btn btn-secondary btn-sm"
+                                                            onClick={() => navigate(`/flashcards/${deckId}`)}
+                                                        >
+                                                            <ExternalLink size={12} /> {deck.name}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                        {rec.suggestedGrammarTestIds.length > 0 && (
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    flexWrap: 'wrap',
+                                                    alignItems: 'center',
+                                                    gap: 6,
+                                                }}
+                                            >
+                                                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                                                    {t('grammar.suggested_tests')}:
+                                                </span>
+                                                {rec.suggestedGrammarTestIds.map((testId) => {
+                                                    const test = tests.find((tst) => tst.id === testId);
+                                                    if (!test) return null;
+                                                    return (
+                                                        <button
+                                                            key={testId}
+                                                            className="btn btn-secondary btn-sm"
+                                                            onClick={() => navigate(`/tests/${testId}`)}
+                                                        >
+                                                            <ExternalLink size={12} /> {test.name}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
                                     </div>
                                 );
                             })}

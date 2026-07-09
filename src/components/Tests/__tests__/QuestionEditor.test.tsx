@@ -264,6 +264,46 @@ describe('QuestionEditor', () => {
         expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ type: 'true-false' }));
     });
 
+    it('clears a stale linkedGrammarItemId when switching to a type without the grammar picker', () => {
+        const onChange = vi.fn();
+        render(
+            <QuestionEditor
+                question={makeQuestion({ type: 'matching', linkedGrammarItemId: 'gr-past-simple-irregular' })}
+                index={0}
+                total={1}
+                sections={sections}
+                onChange={onChange}
+                onRemove={vi.fn()}
+            />
+        );
+        fireEvent.change(screen.getByDisplayValue('tests.question_type_matching'), {
+            target: { value: 'true-false' },
+        });
+        expect(onChange).toHaveBeenCalledWith(
+            expect.objectContaining({ type: 'true-false', linkedGrammarItemId: undefined })
+        );
+    });
+
+    it('preserves linkedGrammarItemId when switching between two grammar-picker-supported types', () => {
+        const onChange = vi.fn();
+        render(
+            <QuestionEditor
+                question={makeQuestion({ type: 'matching', linkedGrammarItemId: 'gr-past-simple-irregular' })}
+                index={0}
+                total={1}
+                sections={sections}
+                onChange={onChange}
+                onRemove={vi.fn()}
+            />
+        );
+        fireEvent.change(screen.getByDisplayValue('tests.question_type_matching'), {
+            target: { value: 'hot-text' },
+        });
+        expect(onChange).toHaveBeenCalledWith(
+            expect.objectContaining({ type: 'hot-text', linkedGrammarItemId: 'gr-past-simple-irregular' })
+        );
+    });
+
     it('opens CEFR picker modal when link-cefr button clicked', () => {
         render(
             <QuestionEditor

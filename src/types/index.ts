@@ -951,6 +951,8 @@ export interface TestQuestion {
     audioUrl?: string;
     /** Optional hint shown on student request */
     hint?: string;
+    /** References GrammarItem.id (src/data/grammarStandards.ts) — tags which grammar point this question drills, for the grammar recommendation engine. */
+    linkedGrammarItemId?: string;
 }
 
 export interface Test {
@@ -980,6 +982,8 @@ export interface Test {
     cefrTargetLevel?: CefrLevel;
     /** Which language skill this test primarily assesses; question-level linkedCefrDescriptors refine this, same precedence as RubricCriterion.cefrSkill overriding Rubric.cefrSkill */
     cefrSkill?: CefrSkill;
+    /** Which Phase 16 practice category a practice-mode test belongs to — grammar isn't itself a CefrSkill, so this is separate from cefrSkill above. */
+    contentArea?: 'listening' | 'reading' | 'grammar';
 }
 
 export type ProctorEventType = 'tab_switch' | 'copy' | 'paste' | 'cut' | 'battery' | 'heartbeat' | 'seb_status';
@@ -1127,6 +1131,8 @@ export interface FlashcardCard {
     back: string;
     example?: string;
     cefrLevel?: CefrLevel;
+    /** References GrammarItem.id (src/data/grammarStandards.ts) — set only on cards in a 'grammar' deck. */
+    linkedGrammarItemId?: string;
 }
 
 export interface FlashcardDeck {
@@ -1136,6 +1142,8 @@ export interface FlashcardDeck {
     cards: FlashcardCard[];
     createdAt: string;
     updatedAt?: string;
+    /** 'vocabulary' (default when unset, for back-compat) or 'grammar' — controls copy framing and grammar-recommendation matching. */
+    deckKind?: 'vocabulary' | 'grammar';
 }
 
 /** One row per assigned student, keyed `${deckId}:${studentId}` (same composite pattern as EssayAssignment) */

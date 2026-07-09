@@ -999,6 +999,7 @@ function GradingTab() {
                         t('docs.gr_test_mode_item_cefr'),
                         t('docs.gr_test_mode_item_audio'),
                         t('docs.gr_test_mode_item_retake'),
+                        t('docs.gr_test_mode_item_grammar'),
                     ]}
                 />
 
@@ -1095,6 +1096,7 @@ function CefrTab() {
                         t('docs.ce_learning_paths_item_recs'),
                         t('docs.ce_learning_paths_item_flags'),
                         t('docs.ce_learning_paths_item_computed'),
+                        t('docs.ce_learning_paths_item_grammar'),
                     ]}
                 />
             </FeatureSection>
@@ -1133,6 +1135,7 @@ function CefrTab() {
                         t('docs.ce_flashcards_item_assign'),
                         t('docs.ce_flashcards_item_study'),
                         t('docs.ce_flashcards_item_insights'),
+                        t('docs.ce_flashcards_item_grammar'),
                     ]}
                 />
                 <InfoBox color="#8b5cf6">{t('docs.ce_flashcards_info')}</InfoBox>

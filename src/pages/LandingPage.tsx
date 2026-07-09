@@ -88,7 +88,7 @@ const TEACHER_FEATURES = [
     {
         icon: TrendingUp,
         title: 'Learning Paths',
-        desc: 'See which students need extra support, with rubric suggestions based on their CEFR progress compared to the class average.',
+        desc: 'See which students need extra support, with rubric suggestions based on their CEFR progress compared to the class average, plus grammar practice suggestions for repeated low scores on grammar-linked criteria and questions.',
         color: '#10b981',
     },
     {
@@ -123,8 +123,8 @@ const TEACHER_FEATURES = [
     },
     {
         icon: Layers,
-        title: 'Vocabulary Flashcards',
-        desc: 'Build flashcard decks by hand or import them from CSV, Excel, or Word, assign them to a class, and see which words each student should focus on.',
+        title: 'Vocabulary & Grammar Flashcards',
+        desc: 'Build vocabulary or grammar flashcard decks by hand or import them from CSV, Excel, or Word, assign them to a class, and see which items each student should focus on.',
         color: '#8b5cf6',
     },
 ];
