@@ -360,6 +360,21 @@ export function saveClasses(classes: Class[]) {
 export function saveStudentRubrics(srs: StudentRubric[]) {
     save(KEYS.studentRubrics, srs);
 }
+
+/**
+ * Strips embedded base64 voice-feedback audio before writing the post-hydrate offline-readiness
+ * cache to localStorage — those recordings already live safely in Supabase at that point, and
+ * a handful of them is enough to blow the ~5-10MB localStorage quota (issue #275). Only used for
+ * the connected-session cache write; never for the genuinely-offline save path, where the
+ * recording has no other copy yet.
+ */
+export function stripAudioForOfflineCache(srs: StudentRubric[]): StudentRubric[] {
+    return srs.map((sr) =>
+        sr.entries.some((e) => e.audioDataUrl)
+            ? { ...sr, entries: sr.entries.map((e) => (e.audioDataUrl ? { ...e, audioDataUrl: undefined } : e)) }
+            : sr
+    );
+}
 export function saveAttachments(atts: Attachment[]) {
     save(KEYS.attachments, atts);
 }
