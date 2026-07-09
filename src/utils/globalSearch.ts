@@ -4,14 +4,7 @@ import { VO_TRACK_LABELS } from '../data/voTracks';
 import { htmlToPlainText } from '../hooks/useTTS';
 
 export type SearchResultType =
-    | 'rubric'
-    | 'test'
-    | 'student'
-    | 'class'
-    | 'essay'
-    | 'grade'
-    | 'flashcardDeck'
-    | 'newsFlash';
+    'rubric' | 'test' | 'student' | 'class' | 'essay' | 'grade' | 'flashcardDeck' | 'newsFlash';
 
 export interface SearchResult {
     type: SearchResultType;
