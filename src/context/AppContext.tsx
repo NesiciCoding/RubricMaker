@@ -1075,9 +1075,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const { showToast } = useToast();
     const { t } = useTranslation();
 
-    // storage.ts swallows quota errors internally (the write is dropped, not
-    // retried) so a reducer case never throws mid-update; this surfaces that
-    // failure to the user only while genuinely offline/disconnected, where
+    // storage.ts swallows quota errors internally (saveStudentRubrics retries
+    // once without audio first) so a reducer case never throws mid-update; this
+    // surfaces that failure to the user only while genuinely offline/disconnected, where
     // localStorage is the only copy of the edit. While connected, this same
     // write is just the disposable next-boot offline-readiness cache (see the
     // "Storage rule" in CLAUDE.md) — Supabase already has the real data, so a
