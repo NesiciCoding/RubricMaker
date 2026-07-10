@@ -204,7 +204,12 @@ function isOffline(): boolean {
 // the network push is fire-and-forget — pushOne never throws, it falls back to
 // the pending-sync retry queue on failure.
 function recordAutoVersion(rubric: Rubric): void {
-    const version: RubricVersion = { id: nanoid(), savedAt: new Date().toISOString(), label: 'auto:', snapshot: rubric };
+    const version: RubricVersion = {
+        id: nanoid(),
+        savedAt: new Date().toISOString(),
+        label: 'auto:',
+        snapshot: rubric,
+    };
     upsertRubricVersion(rubric.id, version);
     if (!isOffline()) {
         void getDb()?.storageSync.pushOne('rubricVersion', 'upsert', { ...version, rubricId: rubric.id }, version.id);
