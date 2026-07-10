@@ -7,11 +7,19 @@ import { VitePWA } from 'vite-plugin-pwa'
 export default defineConfig({
   plugins: [
     react(),
-    visualizer({
-      filename: 'dist/stats.html',
-      gzipSize: true,
-      brotliSize: true,
-    }),
+    // Only emit the bundle-analysis page when explicitly requested (npm run build:analyze) —
+    // it's ~1.4MB and was otherwise being precached onto every user's device by the PWA
+    // service worker below (~20% of the precache manifest for a report nobody but a
+    // developer ever opens).
+    ...(process.env.ANALYZE
+      ? [
+          visualizer({
+            filename: 'dist/stats.html',
+            gzipSize: true,
+            brotliSize: true,
+          }),
+        ]
+      : []),
     VitePWA({
       registerType: 'prompt',
       includeAssets: ['rubric-icon.svg', 'pwa-192.png', 'pwa-512.png'],
@@ -31,6 +39,16 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // Belt-and-braces: stats.html is no longer emitted by default (see the ANALYZE
+        // gate above), but exclude it by name too in case a local `ANALYZE=1` build is
+        // ever accidentally deployed.
+        //
+        // Non-EN locale chunks are excluded from precache too — i18n.ts already lazy-loads
+        // them on demand, but precaching still pulled all four onto every device regardless
+        // of which language (if any) the visitor picks. The runtimeCaching CacheFirst route
+        // below caches whichever ones actually get requested, so offline use of a language
+        // still works once it's been opened at least once.
+        globIgnores: ['**/stats.html', '**/assets/{nl,fr,de,es}-*.js'],
         // Never let the service worker cache Supabase requests — a cached
         // response could make a failed sync request look like it succeeded.
         // Path-only (no host) so this matches both hosted (*.supabase.co)
@@ -39,6 +57,14 @@ export default defineConfig({
           {
             urlPattern: /\/(rest|auth|realtime|storage|functions)\/v\d+\//,
             handler: 'NetworkOnly',
+          },
+          {
+            urlPattern: /\/assets\/(nl|fr|de|es)-[^/]+\.js$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'rm-locale-chunks',
+              expiration: { maxEntries: 8, maxAgeSeconds: 60 * 60 * 24 * 365 },
+            },
           },
         ],
       },

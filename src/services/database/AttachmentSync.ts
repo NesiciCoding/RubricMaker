@@ -102,28 +102,22 @@ export class AttachmentSync {
     /** Hydrate attachments: fetch metadata + resolve signed URLs. Returns Attachment[] with dataUrl set. */
     async hydrateAttachments(): Promise<Attachment[]> {
         const rows = await this.adapter.fetchAttachments();
-        const result: Attachment[] = [];
-        for (const row of rows) {
-            let dataUrl = '';
-            if (row.storagePath) {
-                dataUrl = await this.resolveAttachmentUrl(row.id, row.storagePath);
-            }
-            result.push({ ...(row as Omit<Attachment, 'dataUrl'>), dataUrl });
-        }
-        return result;
+        return Promise.all(
+            rows.map(async (row) => {
+                const dataUrl = row.storagePath ? await this.resolveAttachmentUrl(row.id, row.storagePath) : '';
+                return { ...(row as Omit<Attachment, 'dataUrl'>), dataUrl };
+            })
+        );
     }
 
     /** Hydrate export templates: fetch metadata + resolve signed URLs. */
     async hydrateExportTemplates(): Promise<ExportTemplate[]> {
         const rows = await this.adapter.fetchExportTemplates();
-        const result: ExportTemplate[] = [];
-        for (const row of rows) {
-            let dataUrl = '';
-            if (row.storagePath) {
-                dataUrl = await this.resolveExportTemplateUrl(row.id, row.storagePath);
-            }
-            result.push({ ...(row as Omit<ExportTemplate, 'dataUrl'>), dataUrl });
-        }
-        return result;
+        return Promise.all(
+            rows.map(async (row) => {
+                const dataUrl = row.storagePath ? await this.resolveExportTemplateUrl(row.id, row.storagePath) : '';
+                return { ...(row as Omit<ExportTemplate, 'dataUrl'>), dataUrl };
+            })
+        );
     }
 }
