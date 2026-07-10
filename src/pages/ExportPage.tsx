@@ -100,10 +100,13 @@ export default function ExportPage() {
     const [includeRubricAnalysis, setIncludeRubricAnalysis] = useState(false);
     const [exportingEssays, setExportingEssays] = useState(false);
 
+    const tableTemplates = exportTemplates.filter((t) => t.kind !== 'style');
+    const styleTemplates = exportTemplates.filter((t) => t.kind === 'style');
+
     const activeTemplateId = settings.exportTemplateId ?? '';
-    const activeTemplate = exportTemplates.find((t) => t.id === activeTemplateId) ?? null;
+    const activeTemplate = tableTemplates.find((t) => t.id === activeTemplateId) ?? null;
     const activeStyleTemplateId = settings.styleTemplateId ?? '';
-    const activeStyleTemplate = exportTemplates.find((t) => t.id === activeStyleTemplateId) ?? undefined;
+    const activeStyleTemplate = styleTemplates.find((t) => t.id === activeStyleTemplateId) ?? undefined;
 
     const resolvedScaleId = rubric?.gradeScaleId ?? settings.defaultGradeScaleId;
     const scale =
@@ -706,7 +709,7 @@ export default function ExportPage() {
                                     onChange={(e) => updateSettings({ exportTemplateId: e.target.value || undefined })}
                                 >
                                     <option value="">{t('exportPage.template_default_option')}</option>
-                                    {exportTemplates.map((t) => (
+                                    {tableTemplates.map((t) => (
                                         <option key={t.id} value={t.id}>
                                             {t.name} ({t.levelHeaders.length} levels)
                                         </option>

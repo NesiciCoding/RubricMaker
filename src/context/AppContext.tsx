@@ -321,7 +321,6 @@ function reducer(state: StoreData, action: Action): StoreData {
                 const collaborativeIds = new Set(
                     (rubric?.criteria ?? []).filter((c) => c.collaborative !== false).map((c) => c.id)
                 );
-                const hasCollaborative = collaborativeIds.size > 0;
                 next = next.map((sr) => {
                     if (sr.groupId !== payload.groupId || sr.id === payload.id) return sr;
                     const mergedEntries = payload.entries.map((entry) =>
@@ -332,8 +331,8 @@ function reducer(state: StoreData, action: Action): StoreData {
                     return {
                         ...sr,
                         entries: mergedEntries,
-                        globalModifier: hasCollaborative ? payload.globalModifier : sr.globalModifier,
-                        overallComment: hasCollaborative ? payload.overallComment : sr.overallComment,
+                        globalModifier: payload.globalModifier,
+                        overallComment: payload.overallComment,
                         rubricSnapshot: payload.rubricSnapshot,
                         gradedAt: payload.gradedAt,
                         updatedAt: payload.updatedAt,

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation, Trans } from 'react-i18next';
 import { Upload, FileText, AlertTriangle, CheckCircle, X, Loader } from 'lucide-react';
 import { parseTemplateHeaders } from '../../utils/docxTemplateExport';
 import { parseStyleTemplate } from '../../utils/docxStyleTemplate';
@@ -135,12 +135,14 @@ export default function TemplateUploadModal({ onClose, onSave }: Props) {
                 {!parsed && !parsing && (
                     <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
                         <button
+                            type="button"
                             className={`btn btn-sm ${kind === 'table' ? 'btn-primary' : 'btn-ghost'}`}
                             onClick={() => setKind('table')}
                         >
                             {t('settings.template_kind_table')}
                         </button>
                         <button
+                            type="button"
                             className={`btn btn-sm ${kind === 'style' ? 'btn-primary' : 'btn-ghost'}`}
                             onClick={() => setKind('style')}
                         >
@@ -160,11 +162,11 @@ export default function TemplateUploadModal({ onClose, onSave }: Props) {
                     }}
                 >
                     {kind === 'table' ? (
-                        <>
+                        <Trans i18nKey="settings.template_intro_table">
                             Upload a blank <strong>.docx</strong> rubric — the app will read its{' '}
                             <strong>column headers</strong> (level names) and <strong>header colour</strong>, then use
                             those when exporting rubrics to Word.
-                        </>
+                        </Trans>
                     ) : (
                         t('settings.template_intro_style')
                     )}
@@ -275,16 +277,18 @@ export default function TemplateUploadModal({ onClose, onSave }: Props) {
                         </div>
 
                         <div className="form-group" style={{ marginBottom: 8 }}>
-                            <label>Template Name</label>
+                            <label htmlFor="style-template-name">{t('settings.template_name_label')}</label>
                             <input
+                                id="style-template-name"
                                 type="text"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
-                                placeholder="e.g. School Report Style"
+                                placeholder={t('settings.template_name_style_placeholder')}
                             />
                         </div>
 
                         <button
+                            type="button"
                             className="btn btn-ghost btn-sm"
                             style={{ marginTop: 4 }}
                             onClick={() => {
@@ -292,7 +296,7 @@ export default function TemplateUploadModal({ onClose, onSave }: Props) {
                                 setName('');
                             }}
                         >
-                            ← Use a different file
+                            {t('settings.template_use_different_file')}
                         </button>
                     </>
                 )}

@@ -37,7 +37,7 @@ export async function parseStyleTemplate(file: File): Promise<StyleTemplateResul
     const doc = new DOMParser().parseFromString(xml, 'application/xml');
     if (doc.getElementsByTagName('parsererror').length > 0) return {};
 
-    const styles = Array.from(doc.documentElement.getElementsByTagNameNS(W_NS, 'style'));
+    const styles = [...doc.documentElement.getElementsByTagNameNS(W_NS, 'style')];
     const headingRPr = findStyleById(styles, 'Heading1')?.getElementsByTagNameNS(W_NS, 'rPr')[0];
     const normalRPr = findStyleById(styles, 'Normal')?.getElementsByTagNameNS(W_NS, 'rPr')[0];
     const docDefaultRPr = doc.documentElement

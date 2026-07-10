@@ -1297,6 +1297,7 @@ export default function SettingsPage() {
                                                 </div>
                                                 <div style={{ display: 'flex', gap: 6 }}>
                                                     <button
+                                                        type="button"
                                                         className={`btn btn-sm ${isActive ? 'btn-primary' : 'btn-ghost'}`}
                                                         onClick={() =>
                                                             updateSettings(
@@ -1320,6 +1321,7 @@ export default function SettingsPage() {
                                                             : t('settings.action_set_default')}
                                                     </button>
                                                     <button
+                                                        type="button"
                                                         className="btn btn-ghost btn-icon btn-sm"
                                                         aria-label={t('common.delete')}
                                                         style={{ color: 'var(--red)' }}

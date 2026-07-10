@@ -344,13 +344,56 @@ describe('AppContext', () => {
 
         const s1 = result.current.studentRubrics.find((sr) => sr.studentId === 's1')!;
         const s2 = result.current.studentRubrics.find((sr) => sr.studentId === 's2')!;
-        // Collaborative criterion propagates to the sibling.
         expect(s2.entries.find((e) => e.criterionId === 'shared')?.levelId).toBe('l1');
-        // Individually-scoped criterion stays ungraded for the sibling, not overwritten.
         expect(s2.entries.find((e) => e.criterionId === 'individual')?.levelId).toBeNull();
         expect(s1.entries.find((e) => e.criterionId === 'individual')?.levelId).toBe('l1');
-        // Whole-record fields (comment) still fan out since the rubric has at least one collaborative criterion.
         expect(s2.overallComment).toBe('Great teamwork');
+    });
+
+    it('should still fan out overallComment/globalModifier for an all-individually-scoped rubric, while entries stay per-student', () => {
+        const { result } = renderHook(() => useApp(), { wrapper });
+        act(() => {
+            result.current.addRubric({
+                name: 'Group Project',
+                subject: '',
+                description: '',
+                criteria: [
+                    {
+                        id: 'individual',
+                        title: 'Individual',
+                        description: '',
+                        weight: 100,
+                        levels: [],
+                        collaborative: false,
+                    },
+                ],
+                gradeScaleId: 'default-scale',
+                format: result.current.settings.defaultFormat,
+                attachmentIds: [],
+                totalMaxPoints: 100,
+                scoringMode: 'total-points',
+            });
+        });
+        const rubricId = result.current.rubrics[0].id;
+
+        let group: ReturnType<typeof result.current.createGroupStudentRubrics> = [];
+        act(() => {
+            group = result.current.createGroupStudentRubrics(rubricId, ['s1', 's2']);
+        });
+
+        act(() => {
+            result.current.saveStudentRubric({
+                ...group[0],
+                entries: [{ criterionId: 'individual', levelId: 'l1', comment: '', checkedSubItems: [] }],
+                overallComment: 'Great teamwork',
+                globalModifier: { type: 'points', value: 5, reason: 'Bonus' },
+            });
+        });
+
+        const s2 = result.current.studentRubrics.find((sr) => sr.studentId === 's2')!;
+        expect(s2.entries.find((e) => e.criterionId === 'individual')?.levelId).toBeNull();
+        expect(s2.overallComment).toBe('Great teamwork');
+        expect(s2.globalModifier).toEqual({ type: 'points', value: 5, reason: 'Bonus' });
     });
 
     it('should reuse an existing ungrouped StudentRubric instead of creating a duplicate', () => {
