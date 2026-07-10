@@ -164,7 +164,7 @@ describe('SupabaseAdapter marketplace methods', () => {
         expect(cloned).not.toBeNull();
         expect(cloned?.id).not.toBe(rubric.id);
         expect(cloned?.name).toBe(rubric.name);
-        expect(cloned?.versions).toBeUndefined();
+        expect((cloned as unknown as { versions?: unknown })?.versions).toBeUndefined();
     });
 
     it('cloneMarketplaceListing returns null on error', async () => {

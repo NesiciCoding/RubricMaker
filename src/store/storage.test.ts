@@ -30,8 +30,12 @@ import {
     clearTestTimer,
     onStorageQuotaExceeded,
     clearLocalData,
+    loadRubricVersions,
+    upsertRubricVersion,
+    deleteRubricVersions,
+    migrateLegacyRubricVersions,
 } from './storage';
-import type { Rubric, Student, Class, AppSettings, RubricFormat, StudentRubric } from '../types';
+import type { Rubric, Student, Class, AppSettings, RubricFormat, StudentRubric, RubricVersion } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 
 const makeRubric = (id = 'r1'): Rubric => ({
@@ -632,5 +636,78 @@ describe('test timer storage', () => {
         saveTestTimer(key, 60);
         clearTestTimer(key);
         expect(loadTestTimer(key)).toBeNull();
+    });
+});
+
+describe('rubric version history (Phase 18.4)', () => {
+    const makeVersion = (id: string, label?: string): RubricVersion => ({
+        id,
+        savedAt: '2024-01-01T00:00:00Z',
+        label,
+        snapshot: makeRubric(),
+    });
+
+    it('round-trips manual and auto versions, newest auto capped at 20', () => {
+        upsertRubricVersion('r1', makeVersion('manual1', 'v1'));
+        for (let i = 0; i < 25; i++) {
+            upsertRubricVersion('r1', makeVersion(`auto${i}`, 'auto:'));
+        }
+        const versions = loadRubricVersions('r1');
+        const manuals = versions.filter((v) => v.label === 'v1');
+        const autos = versions.filter((v) => v.label === 'auto:');
+        expect(manuals).toHaveLength(1);
+        expect(autos).toHaveLength(20);
+        expect(autos[0].id).toBe('auto5'); // oldest 5 evicted
+        expect(autos[19].id).toBe('auto24');
+    });
+
+    it('reports evicted auto-version ids so the caller can prune them server-side', () => {
+        for (let i = 0; i < 20; i++) {
+            expect(upsertRubricVersion('r1', makeVersion(`auto${i}`, 'auto:')).evictedIds).toEqual([]);
+        }
+        expect(upsertRubricVersion('r1', makeVersion('auto20', 'auto:')).evictedIds).toEqual(['auto0']);
+        expect(upsertRubricVersion('r1', makeVersion('manual1', 'v1')).evictedIds).toEqual([]);
+    });
+
+    it('upserting the same id replaces rather than duplicates', () => {
+        upsertRubricVersion('r1', makeVersion('v1', 'first'));
+        upsertRubricVersion('r1', { ...makeVersion('v1', 'first'), label: 'renamed' });
+        const versions = loadRubricVersions('r1');
+        expect(versions).toHaveLength(1);
+        expect(versions[0].label).toBe('renamed');
+    });
+
+    it('deleteRubricVersions clears only that rubric', () => {
+        upsertRubricVersion('r1', makeVersion('v1'));
+        upsertRubricVersion('r2', makeVersion('v2'));
+        deleteRubricVersions('r1');
+        expect(loadRubricVersions('r1')).toEqual([]);
+        expect(loadRubricVersions('r2')).toHaveLength(1);
+    });
+
+    // Pre-Phase-18.4 data: the embedded entries predate RubricVersion.id, so the raw
+    // shape genuinely lacks it (that's exactly what the migration has to backfill).
+    const makeLegacyRubric = () =>
+        ({
+            ...makeRubric('r1'),
+            versions: [{ savedAt: '2024-01-01', label: 'old', snapshot: makeRubric() }],
+        }) as unknown as Rubric & { versions?: RubricVersion[] };
+
+    it('migrateLegacyRubricVersions lifts an embedded versions array into the per-rubric store', () => {
+        const migrated = migrateLegacyRubricVersions(makeLegacyRubric());
+        expect((migrated as { versions?: unknown }).versions).toBeUndefined();
+        expect(loadRubricVersions('r1')).toHaveLength(1);
+        expect(loadRubricVersions('r1')[0].label).toBe('old');
+    });
+
+    it('migrateLegacyRubricVersions is a no-op (same reference) for a rubric without embedded versions', () => {
+        const rubric = makeRubric('r1');
+        expect(migrateLegacyRubricVersions(rubric)).toBe(rubric);
+    });
+
+    it('migrateLegacyRubricVersions does not duplicate on repeated runs', () => {
+        migrateLegacyRubricVersions(makeLegacyRubric());
+        migrateLegacyRubricVersions(makeLegacyRubric());
+        expect(loadRubricVersions('r1')).toHaveLength(1);
     });
 });

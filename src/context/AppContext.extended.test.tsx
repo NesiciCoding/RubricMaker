@@ -2,8 +2,13 @@ import React, { ReactNode } from 'react';
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AppProvider, useApp } from './AppContext';
-import type { Rubric } from '../types';
+import type { Rubric, RubricVersion } from '../types';
 import { DEFAULT_FORMAT } from '../types';
+
+// Stateful so saveRubricVersion/fetchRubricVersions round-trip like the real
+// per-rubric localStorage cache in storage.ts. vi.hoisted so the vi.mock
+// factory below (itself hoisted above imports) can reference it safely.
+const versionStore = vi.hoisted(() => new Map<string, RubricVersion[]>());
 
 vi.mock('../store/storage', () => ({
     loadStore: vi.fn(() => ({
@@ -47,6 +52,13 @@ vi.mock('../store/storage', () => ({
     saveAnalysisResults: vi.fn(),
     exportStore: vi.fn((s) => s),
     importFullBackup: vi.fn(() => true),
+    loadRubricVersions: vi.fn((rubricId: string) => versionStore.get(rubricId) ?? []),
+    upsertRubricVersion: vi.fn((rubricId: string, version: RubricVersion) => {
+        const next = [...(versionStore.get(rubricId) ?? []), version];
+        versionStore.set(rubricId, next);
+        return { versions: next, evictedIds: [] };
+    }),
+    deleteRubricVersions: vi.fn((rubricId: string) => versionStore.delete(rubricId)),
 }));
 
 // AppContext's DB-reconnect/OTP effects always dynamically import this module — mocked so
@@ -100,6 +112,7 @@ describe('AppContext — extended actions', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        versionStore.clear();
     });
 
     // ─── Students & Classes ───────────────────────────────────────────────────
@@ -219,63 +232,58 @@ describe('AppContext — extended actions', () => {
 
     // ─── Rubric Versioning ────────────────────────────────────────────────────
 
-    it('saves a rubric version', () => {
+    it('saves a rubric version', async () => {
         const { result } = renderHook(() => useApp(), { wrapper });
         act(() => {
             result.current.addRubric(makeRubric());
         });
         const rubricId = result.current.rubrics[0].id;
-        act(() => {
-            result.current.saveRubricVersion(rubricId, 'v1');
+        await act(async () => {
+            await result.current.saveRubricVersion(rubricId, 'v1');
         });
-        expect(result.current.rubrics[0].versions).toHaveLength(1);
-        expect(result.current.rubrics[0].versions![0].label).toBe('v1');
+        const versions = await result.current.fetchRubricVersions(rubricId);
+        expect(versions).toHaveLength(1);
+        expect(versions[0].label).toBe('v1');
     });
 
-    it('restores a rubric version', () => {
+    it('restores a rubric version', async () => {
         const { result } = renderHook(() => useApp(), { wrapper });
         act(() => {
             result.current.addRubric(makeRubric());
         });
         const rubricId = result.current.rubrics[0].id;
-        act(() => {
-            result.current.saveRubricVersion(rubricId, 'v1');
+        await act(async () => {
+            await result.current.saveRubricVersion(rubricId, 'v1');
         });
         act(() => {
             result.current.updateRubric({ ...result.current.rubrics[0], name: 'Modified' });
         });
+        const [version] = await result.current.fetchRubricVersions(rubricId);
         act(() => {
-            result.current.restoreRubricVersion(rubricId, 0);
+            result.current.restoreRubricVersion(rubricId, version.snapshot);
         });
         expect(result.current.rubrics[0].name).toBe('R1');
+        // Restoring snapshots the pre-restore ("Modified") state too, so that's
+        // itself recoverable rather than only reachable via an intervening edit.
+        const versionsAfterRestore = await result.current.fetchRubricVersions(rubricId);
+        expect(versionsAfterRestore.some((v) => v.snapshot.name === 'Modified')).toBe(true);
     });
 
-    it('saveRubricVersion does nothing for unknown rubricId', () => {
+    it('saveRubricVersion does nothing for unknown rubricId', async () => {
         const { result } = renderHook(() => useApp(), { wrapper });
-        act(() => {
-            result.current.saveRubricVersion('unknown');
+        await act(async () => {
+            await result.current.saveRubricVersion('unknown');
         });
         expect(result.current.rubrics).toHaveLength(0);
+        expect(await result.current.fetchRubricVersions('unknown')).toEqual([]);
     });
 
     it('restoreRubricVersion does nothing for unknown rubricId', () => {
         const { result } = renderHook(() => useApp(), { wrapper });
         act(() => {
-            result.current.restoreRubricVersion('unknown', 0);
+            result.current.restoreRubricVersion('unknown', makeRubric() as Rubric);
         });
         expect(result.current.rubrics).toHaveLength(0);
-    });
-
-    it('restoreRubricVersion does nothing for out-of-bounds index', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
-        act(() => {
-            result.current.addRubric(makeRubric());
-        });
-        const rubricId = result.current.rubrics[0].id;
-        act(() => {
-            result.current.restoreRubricVersion(rubricId, 99);
-        });
-        expect(result.current.rubrics[0].versions).toBeUndefined();
     });
 
     // ─── Rubric Snapshot Sync ─────────────────────────────────────────────────

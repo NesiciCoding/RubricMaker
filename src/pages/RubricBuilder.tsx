@@ -52,6 +52,7 @@ import type {
     CefrSkill,
     LinkedCefrDescriptor,
     LinkedFrameworkDescriptor,
+    RubricVersion,
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 import { saveCriterionClipboard, loadCriterionClipboard } from '../store/storage';
@@ -110,6 +111,7 @@ export default function RubricBuilder() {
         addRubric,
         updateRubric,
         syncRubricSnapshot,
+        fetchRubricVersions,
         saveRubricVersion,
         restoreRubricVersion,
         gradeScales,
@@ -164,7 +166,10 @@ export default function RubricBuilder() {
     const [syncDialogRubric, setSyncDialogRubric] = useState<Rubric | null>(null);
     const [showVersionHistory, setShowVersionHistory] = useState(false);
     const [versionLabel, setVersionLabel] = useState('');
-    const [diffAgainstVersionIndex, setDiffAgainstVersionIndex] = useState<number | null>(null);
+    const [versionHistory, setVersionHistory] = useState<RubricVersion[]>([]);
+    const [versionHistoryLoading, setVersionHistoryLoading] = useState(false);
+    const [savingVersion, setSavingVersion] = useState(false);
+    const [diffAgainstVersion, setDiffAgainstVersion] = useState<RubricVersion | null>(null);
     const [showPreviewStdDesc, setShowPreviewStdDesc] = useState(false);
     const [tourRun, setTourRun] = useState(false);
 
@@ -205,6 +210,24 @@ export default function RubricBuilder() {
         cefrAchieveThreshold,
     ]);
     const { dialogProps: unsavedDialogProps } = useUnsavedChangesGuard(isDirty);
+
+    // Version history lives outside rubric/AppContext state (Phase 18.4) — fetch it
+    // only while the panel is actually open.
+    useEffect(() => {
+        if (!showVersionHistory || !id) return;
+        let cancelled = false;
+        setVersionHistoryLoading(true);
+        fetchRubricVersions(id)
+            .then((v) => {
+                if (!cancelled) setVersionHistory(v);
+            })
+            .finally(() => {
+                if (!cancelled) setVersionHistoryLoading(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [showVersionHistory, id, fetchRubricVersions]);
 
     useEffect(() => {
         const EXPORT_GOOGLE_FONTS: Record<string, string> = {
@@ -3292,24 +3315,34 @@ export default function RubricBuilder() {
                             />
                             <button
                                 className="btn btn-primary btn-sm"
-                                onClick={() => {
-                                    saveRubricVersion(id, versionLabel || undefined);
-                                    setVersionLabel('');
+                                disabled={savingVersion}
+                                onClick={async () => {
+                                    if (savingVersion) return;
+                                    setSavingVersion(true);
+                                    try {
+                                        await saveRubricVersion(id, versionLabel || undefined);
+                                        setVersionLabel('');
+                                        setVersionHistory(await fetchRubricVersions(id));
+                                    } finally {
+                                        setSavingVersion(false);
+                                    }
                                 }}
                             >
                                 <Save size={13} /> {t('rubricBuilder.save_version')}
                             </button>
                         </div>
                         {/* Version list */}
-                        {(existing?.versions ?? []).length === 0 ? (
+                        {versionHistoryLoading ? (
+                            <p className="text-muted text-sm">{t('common.loading')}</p>
+                        ) : versionHistory.length === 0 ? (
                             <p className="text-muted text-sm">{t('rubricBuilder.no_versions_yet')}</p>
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                {[...(existing?.versions ?? [])].reverse().map((v, ri) => {
-                                    const actualIndex = (existing?.versions?.length ?? 0) - 1 - ri;
+                                {[...versionHistory].reverse().map((v, ri) => {
+                                    const ordinal = versionHistory.length - ri;
                                     return (
                                         <div
-                                            key={actualIndex}
+                                            key={v.id}
                                             style={{
                                                 display: 'flex',
                                                 alignItems: 'center',
@@ -3331,9 +3364,8 @@ export default function RubricBuilder() {
                                                     }}
                                                 >
                                                     {v.label?.startsWith('auto:')
-                                                        ? t('rubricBuilder.version_n', { n: actualIndex + 1 })
-                                                        : v.label ||
-                                                          t('rubricBuilder.version_n', { n: actualIndex + 1 })}
+                                                        ? t('rubricBuilder.version_n', { n: ordinal })
+                                                        : v.label || t('rubricBuilder.version_n', { n: ordinal })}
                                                     {v.label?.startsWith('auto:') && (
                                                         <span
                                                             style={{
@@ -3357,7 +3389,7 @@ export default function RubricBuilder() {
                                             </div>
                                             <button
                                                 className="btn btn-secondary btn-sm"
-                                                onClick={() => setDiffAgainstVersionIndex(actualIndex)}
+                                                onClick={() => setDiffAgainstVersion(v)}
                                             >
                                                 <GitCompare size={13} /> {t('rubricBuilder.compare_version')}
                                             </button>
@@ -3365,7 +3397,7 @@ export default function RubricBuilder() {
                                                 className="btn btn-secondary btn-sm"
                                                 onClick={() => {
                                                     if (!window.confirm(t('rubricBuilder.confirm_restore'))) return;
-                                                    restoreRubricVersion(id, actualIndex);
+                                                    restoreRubricVersion(id, v.snapshot);
                                                     setShowVersionHistory(false);
                                                     window.location.reload();
                                                 }}
@@ -3381,11 +3413,11 @@ export default function RubricBuilder() {
                 </Modal>
             )}
 
-            {diffAgainstVersionIndex !== null && existing?.versions?.[diffAgainstVersionIndex] && (
+            {diffAgainstVersion && (
                 <RubricVersionDiffModal
-                    from={existing.versions[diffAgainstVersionIndex].snapshot}
+                    from={diffAgainstVersion.snapshot}
                     to={getRubricData()}
-                    onClose={() => setDiffAgainstVersionIndex(null)}
+                    onClose={() => setDiffAgainstVersion(null)}
                 />
             )}
 

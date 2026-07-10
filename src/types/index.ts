@@ -281,9 +281,10 @@ export type ScoringMode = 'weighted-percentage' | 'total-points' | 'single-point
 export type SinglePointOutcome = 'exceeds' | 'meets' | 'not-yet';
 
 export interface RubricVersion {
+    id: string;
     savedAt: string;
     label?: string;
-    snapshot: Omit<Rubric, 'versions'>;
+    snapshot: Rubric;
 }
 
 // ─── CEFR-J Grammar Data Types ────────────────────────────────────────────────
@@ -434,8 +435,6 @@ export interface Rubric {
     cefrSkill?: CefrSkill;
     /** Minimum score percentage to count as 'Achieved' on student profile (default: 70) */
     cefrAchieveThreshold?: number;
-    /** Saved version snapshots for history/restore */
-    versions?: RubricVersion[];
     /** Vocabulary and grammar items to detect when analysing student documents */
     vocabularyItems?: VocabularyItem[];
     /** Manual sort position in list views (RubricList, Activity Dashboard); undefined sorts last by createdAt */

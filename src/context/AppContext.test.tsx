@@ -53,6 +53,9 @@ vi.mock('../store/storage', () => ({
     onStorageQuotaExceeded: vi.fn(),
     exportStore: vi.fn((state) => state),
     importFullBackup: vi.fn(() => true),
+    loadRubricVersions: vi.fn(() => []),
+    upsertRubricVersion: vi.fn(() => ({ versions: [], evictedIds: [] })),
+    deleteRubricVersions: vi.fn(),
 }));
 
 // AppContext's DB-reconnect/OTP effects always dynamically import this module — mocked so
