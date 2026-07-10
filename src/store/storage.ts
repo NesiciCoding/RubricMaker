@@ -436,7 +436,11 @@ export function saveStudentRubrics(srs: StudentRubric[]) {
             localStorage.setItem(KEYS.studentRubrics, JSON.stringify(stripAudioForOfflineCache(srs)));
             console.warn('[storage] rm_student_rubrics exceeded quota with audio; retried without it');
         } catch (e2) {
-            console.error('[storage] write failed even after stripping audio (quota exceeded?):', KEYS.studentRubrics, e2);
+            console.error(
+                '[storage] write failed even after stripping audio (quota exceeded?):',
+                KEYS.studentRubrics,
+                e2
+            );
             quotaExceededHandler?.();
         }
     }
