@@ -1422,6 +1422,7 @@ function DataTab() {
                         t('docs.da_settings_item_lang'),
                         t('docs.da_settings_item_tour'),
                         t('docs.da_settings_item_backup'),
+                        t('docs.da_settings_item_export_templates'),
                     ]}
                 />
             </FeatureSection>

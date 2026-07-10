@@ -1644,6 +1644,40 @@ export default function RubricBuilder() {
                                                                     </select>
                                                                 </div>
 
+                                                                {/* Per-criterion group-grading scope */}
+                                                                <div
+                                                                    style={{
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: 6,
+                                                                        marginTop: 8,
+                                                                    }}
+                                                                >
+                                                                    <label
+                                                                        style={{
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            gap: 6,
+                                                                            fontSize: '0.78rem',
+                                                                            color: 'var(--text-muted)',
+                                                                            cursor: 'pointer',
+                                                                        }}
+                                                                    >
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            checked={criterion.collaborative !== false}
+                                                                            onChange={(e) =>
+                                                                                updateCriterion(criterion.id, {
+                                                                                    collaborative: e.target.checked
+                                                                                        ? undefined
+                                                                                        : false,
+                                                                                })
+                                                                            }
+                                                                        />
+                                                                        {t('rubricBuilder.label_group_grading')}
+                                                                    </label>
+                                                                </div>
+
                                                                 {/* CEFR descriptors display */}
                                                                 {(criterion.cefrDescriptors || []).length > 0 && (
                                                                     <div

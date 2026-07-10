@@ -1,6 +1,8 @@
 import React, { useState, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Upload, FileText, AlertTriangle, CheckCircle, X, Loader } from 'lucide-react';
 import { parseTemplateHeaders } from '../../utils/docxTemplateExport';
+import { parseStyleTemplate } from '../../utils/docxStyleTemplate';
 import type { ExportTemplate } from '../../types';
 import Modal from '../ui/Modal';
 
@@ -9,17 +11,33 @@ interface Props {
     onSave: (template: Omit<ExportTemplate, 'id' | 'addedAt'>) => void;
 }
 
+type ParsedTemplate =
+    | {
+          kind: 'table';
+          levelHeaders: string[];
+          headerColor: string;
+          dataUrl: string;
+          size: number;
+          fileName: string;
+      }
+    | {
+          kind: 'style';
+          headingFont?: string;
+          headingSize?: number;
+          headingColor?: string;
+          bodyFont?: string;
+          dataUrl: string;
+          size: number;
+          fileName: string;
+      };
+
 export default function TemplateUploadModal({ onClose, onSave }: Props) {
+    const { t } = useTranslation();
+    const [kind, setKind] = useState<'table' | 'style'>('table');
     const [name, setName] = useState('');
     const [dragging, setDragging] = useState(false);
     const [parsing, setParsing] = useState(false);
-    const [parsed, setParsed] = useState<{
-        levelHeaders: string[];
-        headerColor: string;
-        dataUrl: string;
-        size: number;
-        fileName: string;
-    } | null>(null);
+    const [parsed, setParsed] = useState<ParsedTemplate | null>(null);
     const [error, setError] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -33,8 +51,6 @@ export default function TemplateUploadModal({ onClose, onSave }: Props) {
             setParsing(true);
 
             try {
-                const { levelHeaders, headerColor } = await parseTemplateHeaders(file);
-
                 // Read as base64 for storage
                 const dataUrl = await new Promise<string>((resolve, reject) => {
                     const reader = new FileReader();
@@ -43,7 +59,13 @@ export default function TemplateUploadModal({ onClose, onSave }: Props) {
                     reader.readAsDataURL(file);
                 });
 
-                setParsed({ levelHeaders, headerColor, dataUrl, size: file.size, fileName: file.name });
+                if (kind === 'table') {
+                    const { levelHeaders, headerColor } = await parseTemplateHeaders(file);
+                    setParsed({ kind: 'table', levelHeaders, headerColor, dataUrl, size: file.size, fileName: file.name });
+                } else {
+                    const style = await parseStyleTemplate(file);
+                    setParsed({ kind: 'style', ...style, dataUrl, size: file.size, fileName: file.name });
+                }
                 if (!name) setName(file.name.replace(/\.[^.]+$/, ''));
             } catch (err) {
                 const message = err instanceof Error ? err.message : 'Unknown error';
@@ -52,7 +74,7 @@ export default function TemplateUploadModal({ onClose, onSave }: Props) {
                 setParsing(false);
             }
         },
-        [name]
+        [name, kind]
     );
 
     const onDrop = useCallback(
@@ -67,13 +89,29 @@ export default function TemplateUploadModal({ onClose, onSave }: Props) {
 
     const handleSave = () => {
         if (!parsed) return;
-        onSave({
-            name: name || parsed.fileName.replace(/\.[^.]+$/, ''),
-            dataUrl: parsed.dataUrl,
-            levelHeaders: parsed.levelHeaders,
-            headerColor: parsed.headerColor,
-            size: parsed.size,
-        });
+        const baseName = name || parsed.fileName.replace(/\.[^.]+$/, '');
+        if (parsed.kind === 'table') {
+            onSave({
+                name: baseName,
+                kind: 'table',
+                dataUrl: parsed.dataUrl,
+                levelHeaders: parsed.levelHeaders,
+                headerColor: parsed.headerColor,
+                size: parsed.size,
+            });
+        } else {
+            onSave({
+                name: baseName,
+                kind: 'style',
+                dataUrl: parsed.dataUrl,
+                levelHeaders: [],
+                headingFont: parsed.headingFont,
+                headingSize: parsed.headingSize,
+                headingColor: parsed.headingColor,
+                bodyFont: parsed.bodyFont,
+                size: parsed.size,
+            });
+        }
     };
 
     return (
@@ -87,6 +125,23 @@ export default function TemplateUploadModal({ onClose, onSave }: Props) {
                 </button>
             </div>
             <div className="modal-body">
+                {!parsed && !parsing && (
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                        <button
+                            className={`btn btn-sm ${kind === 'table' ? 'btn-primary' : 'btn-ghost'}`}
+                            onClick={() => setKind('table')}
+                        >
+                            {t('settings.template_kind_table')}
+                        </button>
+                        <button
+                            className={`btn btn-sm ${kind === 'style' ? 'btn-primary' : 'btn-ghost'}`}
+                            onClick={() => setKind('style')}
+                        >
+                            {t('settings.template_kind_style')}
+                        </button>
+                    </div>
+                )}
+
                 <div
                     style={{
                         background: 'var(--bg-elevated)',
@@ -97,8 +152,15 @@ export default function TemplateUploadModal({ onClose, onSave }: Props) {
                         marginBottom: 16,
                     }}
                 >
-                    Upload a blank <strong>.docx</strong> rubric — the app will read its <strong>column headers</strong>{' '}
-                    (level names) and <strong>header colour</strong>, then use those when exporting rubrics to Word.
+                    {kind === 'table' ? (
+                        <>
+                            Upload a blank <strong>.docx</strong> rubric — the app will read its{' '}
+                            <strong>column headers</strong> (level names) and <strong>header colour</strong>, then use
+                            those when exporting rubrics to Word.
+                        </>
+                    ) : (
+                        t('settings.template_intro_style')
+                    )}
                 </div>
 
                 {/* Drop zone */}
@@ -152,7 +214,9 @@ export default function TemplateUploadModal({ onClose, onSave }: Props) {
                         }}
                     >
                         <Loader size={24} style={{ color: 'var(--accent)', animation: 'spin 1s linear infinite' }} />
-                        <span>Extracting template headers…</span>
+                        <span>
+                            {kind === 'table' ? 'Extracting template headers…' : t('settings.template_extracting_style')}
+                        </span>
                     </div>
                 )}
 
@@ -174,7 +238,57 @@ export default function TemplateUploadModal({ onClose, onSave }: Props) {
                     </div>
                 )}
 
-                {parsed && !parsing && (
+                {parsed && !parsing && parsed.kind === 'style' && (
+                    <>
+                        <div
+                            style={{
+                                display: 'flex',
+                                gap: 10,
+                                alignItems: 'center',
+                                background: 'color-mix(in srgb, var(--green, #22c55e) 12%, transparent)',
+                                border: '1px solid var(--green, #22c55e)',
+                                borderRadius: 8,
+                                padding: '10px 14px',
+                                marginBottom: 16,
+                            }}
+                        >
+                            <CheckCircle size={15} style={{ color: 'var(--green, #22c55e)', flexShrink: 0 }} />
+                            <span style={{ fontSize: '0.875rem' }}>
+                                <strong>{t('settings.template_style_parsed')}</strong>
+                                {' — '}
+                                {parsed.headingFont || parsed.bodyFont
+                                    ? t('settings.template_style_summary', {
+                                          heading: parsed.headingFont ?? t('settings.template_default_font'),
+                                          body: parsed.bodyFont ?? t('settings.template_default_font'),
+                                      })
+                                    : t('settings.template_style_none_detected')}
+                            </span>
+                        </div>
+
+                        <div className="form-group" style={{ marginBottom: 8 }}>
+                            <label>Template Name</label>
+                            <input
+                                type="text"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                placeholder="e.g. School Report Style"
+                            />
+                        </div>
+
+                        <button
+                            className="btn btn-ghost btn-sm"
+                            style={{ marginTop: 4 }}
+                            onClick={() => {
+                                setParsed(null);
+                                setName('');
+                            }}
+                        >
+                            ← Use a different file
+                        </button>
+                    </>
+                )}
+
+                {parsed && !parsing && parsed.kind === 'table' && (
                     <>
                         <div
                             style={{

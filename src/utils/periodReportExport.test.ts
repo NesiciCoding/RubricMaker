@@ -19,7 +19,7 @@ vi.mock('docx', () => ({
 vi.mock('file-saver', () => ({ saveAs: vi.fn() }));
 
 import { saveAs } from 'file-saver';
-import { TextRun, ImageRun } from 'docx';
+import { TextRun, ImageRun, Paragraph } from 'docx';
 import {
     exportPeriodReport,
     exportPeriodReportsBatch,
@@ -295,5 +295,14 @@ describe('exportReportCard', () => {
     it('exportReportCardsBatch calls saveAs once per student', async () => {
         await exportReportCardsBatch([fullReportCard, emptyReportCard]);
         expect(saveAs).toHaveBeenCalledTimes(2);
+    });
+
+    it('renders a Feedback section from the rubrics section, matching period report behavior', async () => {
+        await exportReportCard(fullReportCard);
+        const paragraphTexts = vi.mocked(Paragraph).mock.calls.map((call) => (call[0] as { text?: string }).text);
+        expect(paragraphTexts).toContain('Feedback');
+        const runTexts = vi.mocked(TextRun).mock.calls.map((call) => (call[0] as { text?: string }).text ?? '');
+        expect(runTexts).toContain('Well done');
+        expect(runTexts.some((t) => t.includes('Good job'))).toBe(true);
     });
 });

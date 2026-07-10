@@ -1222,77 +1222,113 @@ export default function SettingsPage() {
                                 </div>
                             ) : (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                    {exportTemplates.map((tmpl) => (
-                                        <div
-                                            key={tmpl.id}
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: 12,
-                                                background: 'var(--bg-elevated)',
-                                                borderRadius: 10,
-                                                padding: '12px 16px',
-                                                border:
-                                                    settings.exportTemplateId === tmpl.id
+                                    {exportTemplates.map((tmpl) => {
+                                        const isStyle = tmpl.kind === 'style';
+                                        const activeId = isStyle ? settings.styleTemplateId : settings.exportTemplateId;
+                                        const isActive = activeId === tmpl.id;
+                                        return (
+                                            <div
+                                                key={tmpl.id}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 12,
+                                                    background: 'var(--bg-elevated)',
+                                                    borderRadius: 10,
+                                                    padding: '12px 16px',
+                                                    border: isActive
                                                         ? '1.5px solid var(--accent)'
                                                         : '1px solid var(--border)',
-                                            }}
-                                        >
-                                            <div
-                                                style={{
-                                                    width: 32,
-                                                    height: 32,
-                                                    borderRadius: 8,
-                                                    background: tmpl.headerColor ?? '#1e3a5f',
-                                                    flexShrink: 0,
                                                 }}
-                                            />
-                                            <div style={{ flex: 1 }}>
-                                                <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{tmpl.name}</div>
+                                            >
                                                 <div
                                                     style={{
-                                                        fontSize: '0.78rem',
-                                                        color: 'var(--text-muted)',
-                                                        marginTop: 2,
+                                                        width: 32,
+                                                        height: 32,
+                                                        borderRadius: 8,
+                                                        background: isStyle
+                                                            ? (tmpl.headingColor ?? 'var(--text-muted)')
+                                                            : (tmpl.headerColor ?? '#1e3a5f'),
+                                                        flexShrink: 0,
                                                     }}
-                                                >
-                                                    {tmpl.levelHeaders.length > 0
-                                                        ? tmpl.levelHeaders.join(' · ')
-                                                        : t('settings.no_level_headers')}
+                                                />
+                                                <div style={{ flex: 1 }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                        <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                                                            {tmpl.name}
+                                                        </span>
+                                                        <span
+                                                            style={{
+                                                                fontSize: '0.7rem',
+                                                                fontWeight: 600,
+                                                                color: 'var(--text-muted)',
+                                                                background: 'var(--bg-panel)',
+                                                                borderRadius: 4,
+                                                                padding: '1px 6px',
+                                                            }}
+                                                        >
+                                                            {isStyle
+                                                                ? t('settings.template_kind_style')
+                                                                : t('settings.template_kind_table')}
+                                                        </span>
+                                                    </div>
+                                                    <div
+                                                        style={{
+                                                            fontSize: '0.78rem',
+                                                            color: 'var(--text-muted)',
+                                                            marginTop: 2,
+                                                        }}
+                                                    >
+                                                        {isStyle
+                                                            ? tmpl.headingFont || tmpl.bodyFont
+                                                                ? t('settings.template_style_summary', {
+                                                                      heading:
+                                                                          tmpl.headingFont ??
+                                                                          t('settings.template_default_font'),
+                                                                      body:
+                                                                          tmpl.bodyFont ??
+                                                                          t('settings.template_default_font'),
+                                                                  })
+                                                                : t('settings.template_style_none_detected')
+                                                            : tmpl.levelHeaders.length > 0
+                                                              ? tmpl.levelHeaders.join(' · ')
+                                                              : t('settings.no_level_headers')}
+                                                    </div>
+                                                </div>
+                                                <div style={{ display: 'flex', gap: 6 }}>
+                                                    <button
+                                                        className={`btn btn-sm ${isActive ? 'btn-primary' : 'btn-ghost'}`}
+                                                        onClick={() =>
+                                                            updateSettings(
+                                                                isStyle
+                                                                    ? { styleTemplateId: isActive ? undefined : tmpl.id }
+                                                                    : { exportTemplateId: isActive ? undefined : tmpl.id }
+                                                            )
+                                                        }
+                                                    >
+                                                        <Star size={13} aria-hidden="true" />
+                                                        {isActive ? t('settings.label_default') : t('settings.action_set_default')}
+                                                    </button>
+                                                    <button
+                                                        className="btn btn-ghost btn-icon btn-sm"
+                                                        aria-label={t('common.delete')}
+                                                        style={{ color: 'var(--red)' }}
+                                                        onClick={() => {
+                                                            deleteExportTemplate(tmpl.id);
+                                                            if (isActive)
+                                                                updateSettings(
+                                                                    isStyle
+                                                                        ? { styleTemplateId: undefined }
+                                                                        : { exportTemplateId: undefined }
+                                                                );
+                                                        }}
+                                                    >
+                                                        <Trash2 size={14} aria-hidden="true" />
+                                                    </button>
                                                 </div>
                                             </div>
-                                            <div style={{ display: 'flex', gap: 6 }}>
-                                                <button
-                                                    className={`btn btn-sm ${settings.exportTemplateId === tmpl.id ? 'btn-primary' : 'btn-ghost'}`}
-                                                    onClick={() =>
-                                                        updateSettings({
-                                                            exportTemplateId:
-                                                                settings.exportTemplateId === tmpl.id
-                                                                    ? undefined
-                                                                    : tmpl.id,
-                                                        })
-                                                    }
-                                                >
-                                                    <Star size={13} aria-hidden="true" />
-                                                    {settings.exportTemplateId === tmpl.id
-                                                        ? t('settings.label_default')
-                                                        : t('settings.action_set_default')}
-                                                </button>
-                                                <button
-                                                    className="btn btn-ghost btn-icon btn-sm"
-                                                    aria-label={t('common.delete')}
-                                                    style={{ color: 'var(--red)' }}
-                                                    onClick={() => {
-                                                        deleteExportTemplate(tmpl.id);
-                                                        if (settings.exportTemplateId === tmpl.id)
-                                                            updateSettings({ exportTemplateId: undefined });
-                                                    }}
-                                                >
-                                                    <Trash2 size={14} aria-hidden="true" />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>

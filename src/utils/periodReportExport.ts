@@ -14,8 +14,17 @@ import {
     ImageRun,
 } from 'docx';
 import { saveAs } from 'file-saver';
-import type { Student, StudentRubric, Rubric, GradeScale, ReportCardData, ReportCardSection } from '../types';
+import type {
+    Student,
+    StudentRubric,
+    Rubric,
+    GradeScale,
+    ReportCardData,
+    ReportCardSection,
+    ExportTemplate,
+} from '../types';
 import { calcGradeSummary } from './gradeCalc';
+import { buildDocxStyles } from './docxExport';
 import type { LearningGoalAggregate } from './learningGoalsAggregator';
 
 export interface PeriodReportEntry {
@@ -327,57 +336,14 @@ async function buildRubricGradeSections(summaries: RubricGradeSummary[]): Promis
         })
     );
 
-    return blocks;
-}
-
-export async function exportPeriodReport(input: PeriodReportInput): Promise<void> {
-    const { student, className, entries, periodLabel, goals } = input;
-
-    const summaries = summarizeRubricEntries(entries);
-
-    const sections: (Paragraph | Table)[] = [];
-
-    sections.push(
-        new Paragraph({
-            text: student.name,
-            heading: HeadingLevel.HEADING_1,
-            spacing: { after: 80 },
-        })
-    );
-
-    sections.push(
-        new Paragraph({
-            children: [
-                new TextRun({ text: className, size: 22, color: '6B7280' }),
-                periodLabel ? new TextRun({ text: `  ·  ${periodLabel}`, size: 22, color: '6B7280' }) : new TextRun(''),
-            ],
-            spacing: { after: 200 },
-        })
-    );
-
-    sections.push(...(await buildRubricGradeSections(summaries)));
-
-    if (goals && goals.length > 0) {
-        sections.push(
-            new Paragraph({
-                text: 'Learning Goals',
-                heading: HeadingLevel.HEADING_2,
-                spacing: { before: 360, after: 120 },
-            })
-        );
-
-        sections.push(buildGoalsTable(goals));
-    }
-
     const withComments = summaries.filter((s) => s.sr.overallComment || s.sr.entries.some((e) => e.comment));
-
     if (withComments.length > 0) {
-        sections.push(
+        blocks.push(
             new Paragraph({ text: 'Feedback', heading: HeadingLevel.HEADING_2, spacing: { before: 360, after: 120 } })
         );
 
         for (const s of withComments) {
-            sections.push(
+            blocks.push(
                 new Paragraph({
                     children: [new TextRun({ text: s.rubric.name, bold: true, size: 22 })],
                     spacing: { before: 200, after: 60 },
@@ -385,7 +351,7 @@ export async function exportPeriodReport(input: PeriodReportInput): Promise<void
             );
 
             if (s.sr.overallComment) {
-                sections.push(
+                blocks.push(
                     new Paragraph({
                         children: [new TextRun({ text: stripHtml(s.sr.overallComment), size: 20, color: '374151' })],
                         spacing: { after: 60 },
@@ -398,7 +364,7 @@ export async function exportPeriodReport(input: PeriodReportInput): Promise<void
                 const rubricForEntry = s.sr.rubricSnapshot ?? s.rubric;
                 const criterion = rubricForEntry.criteria.find((c) => c.id === entry.criterionId);
                 if (!criterion) continue;
-                sections.push(
+                blocks.push(
                     new Paragraph({
                         children: [
                             new TextRun({ text: `${criterion.title}: `, bold: true, size: 20 }),
@@ -411,15 +377,35 @@ export async function exportPeriodReport(input: PeriodReportInput): Promise<void
         }
     }
 
-    const doc = new Document({ sections: [{ children: sections }] });
+    return blocks;
+}
+
+export async function exportPeriodReport(input: PeriodReportInput, styleTemplate?: ExportTemplate): Promise<void> {
+    const { student, className, entries, periodLabel, goals } = input;
+
+    const sections: ReportCardSection[] = [{ type: 'rubrics', entries }];
+    if (goals && goals.length > 0) sections.push({ type: 'learningGoals', goals });
+
+    const blocks = await buildReportCardSections({
+        studentId: student.id,
+        studentName: student.name,
+        className,
+        periodLabel,
+        sections,
+    });
+
+    const doc = new Document({ styles: buildDocxStyles(undefined, styleTemplate), sections: [{ children: blocks }] });
     const blob = await Packer.toBlob(doc);
     const safeName = student.name.replace(/[^a-z0-9]/gi, '_');
     saveAs(blob, `${safeName}_period_report.docx`);
 }
 
-export async function exportPeriodReportsBatch(inputs: PeriodReportInput[]): Promise<void> {
+export async function exportPeriodReportsBatch(
+    inputs: PeriodReportInput[],
+    styleTemplate?: ExportTemplate
+): Promise<void> {
     for (const input of inputs) {
-        await exportPeriodReport(input);
+        await exportPeriodReport(input, styleTemplate);
     }
 }
 
@@ -658,16 +644,16 @@ async function buildReportCardSections(data: ReportCardData): Promise<(Paragraph
     return blocks;
 }
 
-export async function exportReportCard(data: ReportCardData): Promise<void> {
+export async function exportReportCard(data: ReportCardData, styleTemplate?: ExportTemplate): Promise<void> {
     const blocks = await buildReportCardSections(data);
-    const doc = new Document({ sections: [{ children: blocks }] });
+    const doc = new Document({ styles: buildDocxStyles(undefined, styleTemplate), sections: [{ children: blocks }] });
     const blob = await Packer.toBlob(doc);
     const safeName = data.studentName.replace(/[^a-z0-9]/gi, '_');
     saveAs(blob, `${safeName}_report_card.docx`);
 }
 
-export async function exportReportCardsBatch(dataList: ReportCardData[]): Promise<void> {
+export async function exportReportCardsBatch(dataList: ReportCardData[], styleTemplate?: ExportTemplate): Promise<void> {
     for (const data of dataList) {
-        await exportReportCard(data);
+        await exportReportCard(data, styleTemplate);
     }
 }

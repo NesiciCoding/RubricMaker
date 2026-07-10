@@ -188,6 +188,8 @@ export interface RubricCriterion {
     frameworkDescriptors?: LinkedFrameworkDescriptor[];
     /** Which CEFR skill this criterion assesses. Overrides the rubric-level cefrSkill for per-level CEFR aggregation. */
     cefrSkill?: CefrSkill;
+    /** When group-graded (StudentRubric.groupId), unset/true fans this criterion's entry out to every group member; false keeps it individually scored per student. */
+    collaborative?: boolean;
 }
 
 export type GradeScaleType = 'letter' | 'percentage' | 'points' | 'pass-fail' | 'custom';
@@ -227,16 +229,27 @@ export interface Attachment {
     addedAt: string; // ISO date string
 }
 
-/** A blank DOCX rubric template whose column headers & styling are used for export */
+/**
+ * A blank DOCX template used to style an export. Unset/'table' = a rubric template whose
+ * column headers & header colour are extracted (levelHeaders/headerColor). 'style' = an
+ * essay/period-report template whose heading/body font are extracted instead.
+ */
 export interface ExportTemplate {
     id: string;
     name: string;
+    kind?: 'table' | 'style';
     /** base64-encoded .docx file content */
     dataUrl: string;
-    /** Column headers (level names) extracted from the template */
+    /** Column headers (level names) extracted from the template (kind: 'table') */
     levelHeaders: string[];
-    /** Header background colour extracted from template (hex, e.g. '#1e3a5f') */
+    /** Header background colour extracted from template (hex, e.g. '#1e3a5f') (kind: 'table') */
     headerColor?: string;
+    /** Heading/body font styling extracted from the template (kind: 'style') */
+    headingFont?: string;
+    /** Half-points, matching the `docx` library's TextRun.size unit */
+    headingSize?: number;
+    headingColor?: string;
+    bodyFont?: string;
     size: number;
     addedAt: string;
 }
@@ -554,8 +567,9 @@ export interface StudentRubric {
     rubricSnapshot?: Rubric;
     /**
      * Links sibling StudentRubric records graded together as one group submission. Saving any
-     * member with the same groupId duplicates its entries/overallComment to the rest of the
-     * group — there is no per-criterion individual/collaborative split yet (phase 1).
+     * member with the same groupId fans its entries out to the rest of the group, scoped per
+     * criterion by RubricCriterion.collaborative — collaborative criteria propagate, individually
+     * scoped ones stay per-student. globalModifier/overallComment still fan out whole-record.
      */
     groupId?: string;
     /** ISO timestamp set when the grade was soft-deleted by a teacher; presence hides it from grading/analytics. */
@@ -613,8 +627,10 @@ export interface AppSettings {
     activeClassId?: string;
     /** API key for commonstandardsproject.com */
     standardsApiKey?: string;
-    /** ID of the default export template */
+    /** ID of the default rubric-table export template (ExportTemplate.kind 'table') */
     exportTemplateId?: string;
+    /** ID of the default essay/period-report style template (ExportTemplate.kind 'style') */
+    styleTemplateId?: string;
     /** How many comparative matchups to show an anchor student before picking a new anchor */
     comparativeMatchupLimit?: number;
     /** Whether "Save & Next" in the grading view stays within the current class or spans all rubric-linked classes */

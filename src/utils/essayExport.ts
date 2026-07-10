@@ -24,6 +24,7 @@ import type {
     GradeScale,
     DocumentAnalysisResult,
     VocabularyItem,
+    ExportTemplate,
 } from '../types';
 import { buildDocxStyles, buildRubricGridDocxChildren } from './docxExport';
 import { printHtml, buildRubricHTML } from './pdfExport';
@@ -410,8 +411,14 @@ export async function exportEssayMarkdown(assignment: EssayLike, student: Studen
     );
 }
 
-export async function exportEssayDocx(assignment: EssayLike, student: Student, submission: EssaySubmission) {
+export async function exportEssayDocx(
+    assignment: EssayLike,
+    student: Student,
+    submission: EssaySubmission,
+    styleTemplate?: ExportTemplate
+) {
     const doc = new Document({
+        styles: buildDocxStyles(undefined, styleTemplate),
         sections: [
             {
                 children: [
@@ -438,12 +445,13 @@ interface EssayBatchEntry {
 export async function exportEssaysBatch(
     entries: EssayBatchEntry[],
     format: 'markdown' | 'docx' | 'pdf',
-    mode: 'separate' | 'combined'
+    mode: 'separate' | 'combined',
+    styleTemplate?: ExportTemplate
 ) {
     if (mode === 'separate') {
         for (const { assignment, student, submission } of entries) {
             if (format === 'markdown') await exportEssayMarkdown(assignment, student, submission);
-            else if (format === 'docx') await exportEssayDocx(assignment, student, submission);
+            else if (format === 'docx') await exportEssayDocx(assignment, student, submission, styleTemplate);
             else await exportEssayPdf(assignment, student, submission);
         }
         return;
@@ -466,7 +474,7 @@ export async function exportEssaysBatch(
             ...essayDocxHeader(assignment, student, submission),
             ...htmlToDocxChildren(submission.contentHtml),
         ]);
-        const doc = new Document({ sections: [{ children }] });
+        const doc = new Document({ styles: buildDocxStyles(undefined, styleTemplate), sections: [{ children }] });
         const blob = await Packer.toBlob(doc);
         saveAs(blob, 'essays_batch.docx');
         return;
@@ -531,7 +539,8 @@ export async function exportEssayWithRubric(
     rubric: Rubric,
     scale: GradeScale | null,
     format: 'docx' | 'pdf',
-    analysis?: DocumentAnalysisResult
+    analysis?: DocumentAnalysisResult,
+    styleTemplate?: ExportTemplate
 ) {
     const vocabularyItems = rubric.vocabularyItems ?? [];
 
@@ -543,7 +552,10 @@ export async function exportEssayWithRubric(
             ...buildRubricGridDocxChildren(rubric, studentRubric, scale, student),
             ...(analysis ? analysisDocxChildren(analysis, vocabularyItems) : []),
         ];
-        const doc = new Document({ styles: buildDocxStyles(rubric.format.fontFamily), sections: [{ children }] });
+        const doc = new Document({
+            styles: buildDocxStyles(rubric.format.fontFamily, styleTemplate),
+            sections: [{ children }],
+        });
         const blob = await Packer.toBlob(doc);
         saveAs(blob, `${safeFilename(student.name)}_${safeFilename(assignment.title)}_with_rubric.docx`);
         return;

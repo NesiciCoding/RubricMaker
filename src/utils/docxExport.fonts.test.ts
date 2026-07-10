@@ -57,4 +57,32 @@ describe('buildDocxStyles', () => {
         expect(styles?.default.heading1.run.font).toBe('Inter');
         expect(styles?.default.heading2.run.font).toBe('Inter');
     });
+
+    it('applies a style template heading size/color and overrides body/heading font', () => {
+        const styles = buildDocxStyles('Inter, sans-serif', {
+            headingFont: 'Georgia',
+            headingSize: 32,
+            headingColor: '1F4E79',
+            bodyFont: 'Calibri',
+        });
+        expect(styles).toEqual({
+            default: {
+                document: { run: { font: 'Calibri' } },
+                heading1: { run: { font: 'Georgia', size: 32, color: '1F4E79' } },
+                heading2: { run: { font: 'Georgia', size: 32, color: '1F4E79' } },
+            },
+        });
+    });
+
+    it('falls back to fontFamily when the style template only sets heading size/color', () => {
+        const styles = buildDocxStyles('Inter, sans-serif', { headingSize: 32 });
+        expect(styles?.default.document.run.font).toBe('Inter');
+        expect(styles?.default.heading1.run).toEqual({ font: 'Inter', size: 32 });
+    });
+
+    it('builds styles from a style template alone, with no fontFamily', () => {
+        const styles = buildDocxStyles(undefined, { headingColor: '6B7280' });
+        expect(styles?.default.document.run).toEqual({});
+        expect(styles?.default.heading1.run).toEqual({ color: '6B7280' });
+    });
 });

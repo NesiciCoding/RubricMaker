@@ -313,22 +313,32 @@ function reducer(state: StoreData, action: Action): StoreData {
                 exists >= 0
                     ? state.studentRubrics.map((sr) => (sr.id === payload.id ? payload : sr))
                     : [...state.studentRubrics, payload];
-            // Group grading (phase 1, no per-criterion individual/collaborative split): saving any
-            // member of a group duplicates its entries/comment to every sibling sharing groupId.
+            // Group grading: saving any member of a group fans its entries out to every sibling
+            // sharing groupId, scoped per criterion by RubricCriterion.collaborative (unset/true =
+            // fan out, false = stays individually scored per student).
             if (payload.groupId) {
-                next = next.map((sr) =>
-                    sr.groupId === payload.groupId && sr.id !== payload.id
-                        ? {
-                              ...sr,
-                              entries: payload.entries,
-                              globalModifier: payload.globalModifier,
-                              overallComment: payload.overallComment,
-                              rubricSnapshot: payload.rubricSnapshot,
-                              gradedAt: payload.gradedAt,
-                              updatedAt: payload.updatedAt,
-                          }
-                        : sr
+                const rubric = state.rubrics.find((r) => r.id === payload.rubricId);
+                const collaborativeIds = new Set(
+                    (rubric?.criteria ?? []).filter((c) => c.collaborative !== false).map((c) => c.id)
                 );
+                const hasCollaborative = collaborativeIds.size > 0;
+                next = next.map((sr) => {
+                    if (sr.groupId !== payload.groupId || sr.id === payload.id) return sr;
+                    const mergedEntries = payload.entries.map((entry) =>
+                        collaborativeIds.has(entry.criterionId)
+                            ? entry
+                            : (sr.entries.find((e) => e.criterionId === entry.criterionId) ?? entry)
+                    );
+                    return {
+                        ...sr,
+                        entries: mergedEntries,
+                        globalModifier: hasCollaborative ? payload.globalModifier : sr.globalModifier,
+                        overallComment: hasCollaborative ? payload.overallComment : sr.overallComment,
+                        rubricSnapshot: payload.rubricSnapshot,
+                        gradedAt: payload.gradedAt,
+                        updatedAt: payload.updatedAt,
+                    };
+                });
             }
             if (isOffline()) saveStudentRubrics(next);
             return { ...state, studentRubrics: next };

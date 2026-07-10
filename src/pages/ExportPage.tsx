@@ -102,6 +102,8 @@ export default function ExportPage() {
 
     const activeTemplateId = settings.exportTemplateId ?? '';
     const activeTemplate = exportTemplates.find((t) => t.id === activeTemplateId) ?? null;
+    const activeStyleTemplateId = settings.styleTemplateId ?? '';
+    const activeStyleTemplate = exportTemplates.find((t) => t.id === activeStyleTemplateId) ?? undefined;
 
     const resolvedScaleId = rubric?.gradeScaleId ?? settings.defaultGradeScaleId;
     const scale =
@@ -225,7 +227,8 @@ export default function ExportPage() {
                         essayRubric,
                         essayScale,
                         essayFormat,
-                        analysis
+                        analysis,
+                        activeStyleTemplate
                     );
                     exportedCount += 1;
                 }
@@ -234,7 +237,7 @@ export default function ExportPage() {
                 }
             } else {
                 const { exportEssaysBatch } = await import('../utils/essayExport');
-                await exportEssaysBatch(toExport, essayFormat, essayBatchMode);
+                await exportEssaysBatch(toExport, essayFormat, essayBatchMode, activeStyleTemplate);
                 exportedCount = toExport.length;
             }
             logAuditEvent('export', `export_essays_${essayFormat}`, 'essay', essayTeacherKey, {
@@ -518,7 +521,7 @@ export default function ExportPage() {
                 };
             });
 
-            await exportPeriodReportsBatch(inputs);
+            await exportPeriodReportsBatch(inputs, activeStyleTemplate);
             logAuditEvent('export', 'export_period_report', 'class', reportClassId, { count: inputs.length });
             showToast(t('exportPage.period_report_success', { count: inputs.length }), 'success');
         } catch {
@@ -554,7 +557,7 @@ export default function ExportPage() {
             if (!student) return;
             const { exportReportCard } = await import('../utils/periodReportExport');
             const data = await buildReportCardDataForStudent(student);
-            await exportReportCard(data);
+            await exportReportCard(data, activeStyleTemplate);
             logAuditEvent('export', 'export_report_card', 'student', studentId, { count: 1 });
             showToast(t('exportPage.report_card_success', { count: 1 }), 'success');
         } catch {
@@ -571,7 +574,7 @@ export default function ExportPage() {
             const classStudents = students.filter((s) => s.classId === reportClassId && reportStudentIds.has(s.id));
             const { exportReportCardsBatch } = await import('../utils/periodReportExport');
             const dataList = await Promise.all(classStudents.map((student) => buildReportCardDataForStudent(student)));
-            await exportReportCardsBatch(dataList);
+            await exportReportCardsBatch(dataList, activeStyleTemplate);
             logAuditEvent('export', 'export_report_card', 'class', reportClassId, { count: dataList.length });
             showToast(t('exportPage.report_card_success', { count: dataList.length }), 'success');
         } catch {
