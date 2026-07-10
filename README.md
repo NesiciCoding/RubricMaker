@@ -32,7 +32,7 @@ A comprehensive rubric creation and grading tool built with React and TypeScript
 - **Voice grading**: Dictate comments hands-free using speech recognition.
 - **Overall feedback**: Add general comments and file attachments per graded rubric.
 - **Comparative grading**: Grade two students side-by-side for consistency.
-- **Group grading** (phase 1): Pick two or more students to share one grade from the Rubrics list. Saving any member's grade duplicates its scores and comments to the rest of the group — useful for group projects. Each student keeps their own record; there is no per-criterion individual/collaborative split yet.
+- **Group grading**: Pick two or more students to share one grade from the Rubrics list. Saving any member's grade fans its scores and comments out to the rest of the group — useful for group projects. Each student keeps their own record. Individual criteria can be excluded from group fan-out with the "Group grading" toggle per criterion in the Rubric Builder, so mixed rubrics (e.g. a shared project score plus an individual participation criterion) grade correctly.
 - **Peer review**: Students review each other's work against the same rubric.
 - **Peer review analytics**: Compare peer grades against the teacher baseline (consistency and leniency bias per reviewer), a feedback heatmap of which criteria attract the most peer comments, and round-over-round trends.
 - **Self-assessment**: Students self-assess against CEFR Can-Do statements.
@@ -72,7 +72,7 @@ A comprehensive rubric creation and grading tool built with React and TypeScript
 - **Overdue tracking**: Highlights students with assignments past due dates.
 - **Export options**:
     - **PDF**: Individual student reports or bulk class export.
-    - **Word (.docx)**: Raw export or mail-merge templates with field substitution.
+    - **Word (.docx)**: Raw export or mail-merge templates with field substitution. Two independently-settable upload-a-blank-.docx templates in Settings: a rubric table template (column headers/colour) and an essay/period-report style template (heading and body font, extracted from the file's own styles).
     - **CSV**: Raw data for Excel, or a ready-made column preset for Magister/SOMtoday (Dutch 1-10 grade scale) via the gradebook format dropdown next to the CSV button.
     - **Period report**: Aggregated CEFR progress report for a class over a date range, including a rasterized grade-trend chart when at least two rubrics are graded in the period.
     - **Report cards**: A single consolidated DOCX per student combining rubric grades, standards coverage, learning goals, and CEFR overview, with toggleable sections; export one student or batch-export a whole class.
@@ -212,6 +212,7 @@ npm run db:reset     # Reset and re-apply all migrations
 | `src/utils/learningGoalsAggregator.ts`  | Learning goal progress tracking                                                                                                                  |
 | `src/utils/docxExport.ts`               | DOCX generation via `docx` library                                                                                                               |
 | `src/utils/docxTemplateExport.ts`       | Mail-merge DOCX with field substitution                                                                                                          |
+| `src/utils/docxStyleTemplate.ts`        | Extracts heading/body font from an uploaded .docx for essay/period-report style templates                                                       |
 | `src/utils/pdfExport.ts`                | PDF report generation                                                                                                                            |
 | `src/utils/textExtraction.ts`           | OCR (Tesseract) + DOCX parsing (Mammoth)                                                                                                         |
 | `src/utils/essayShareCode.ts`           | Shareable codes for essay access (no auth needed)                                                                                                |

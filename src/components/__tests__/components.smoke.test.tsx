@@ -24,6 +24,7 @@ vi.mock('react-i18next', () => ({
         },
         i18n: { language: 'en' },
     }),
+    Trans: ({ i18nKey }: { i18nKey: string }) => React.createElement('span', null, i18nKey),
 }));
 
 vi.mock('../../context/AppContext', () => ({

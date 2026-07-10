@@ -37,15 +37,36 @@ export function extractDocxFontName(fontFamily?: string): string | undefined {
     return first || undefined;
 }
 
-/** Default document styles honoring the rubric's chosen export font, applied to body text and headings. */
-export function buildDocxStyles(fontFamily?: string) {
+export interface DocxStyleTemplateOverrides {
+    headingFont?: string;
+    /** Half-points, matching the `docx` library's TextRun.size unit */
+    headingSize?: number;
+    headingColor?: string;
+    bodyFont?: string;
+}
+
+/**
+ * Default document styles applied to body text and headings: `fontFamily` (the rubric/essay
+ * format's chosen export font) is the base, and `styleTemplate` (an uploaded style ExportTemplate)
+ * overrides body/heading font plus heading size/color when set.
+ */
+export function buildDocxStyles(fontFamily?: string, styleTemplate?: DocxStyleTemplateOverrides) {
     const font = extractDocxFontName(fontFamily);
-    if (!font) return undefined;
+    const bodyFont = styleTemplate?.bodyFont ?? font;
+    const headingFont = styleTemplate?.headingFont ?? font;
+    const { headingSize, headingColor } = styleTemplate ?? {};
+    if (!bodyFont && !headingFont && !headingSize && !headingColor) return undefined;
+
+    const headingRun: IRunOptions = {
+        ...(headingFont ? { font: headingFont } : {}),
+        ...(headingSize ? { size: headingSize } : {}),
+        ...(headingColor ? { color: headingColor } : {}),
+    };
     return {
         default: {
-            document: { run: { font } },
-            heading1: { run: { font } },
-            heading2: { run: { font } },
+            document: { run: bodyFont ? { font: bodyFont } : {} },
+            heading1: { run: headingRun },
+            heading2: { run: headingRun },
         },
     };
 }
