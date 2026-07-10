@@ -29,6 +29,7 @@ import type {
     StandardMasteryTarget,
     NewsFlash,
     NewsFlashRead,
+    RubricVersion,
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 import { nanoid } from '../utils/nanoid';
@@ -288,6 +289,51 @@ function save<T>(key: string, value: T): void {
     }
 }
 
+// ─── Rubric version history (Phase 18.4) ────────────────────────────────────────
+// Kept in their own per-rubric key rather than embedded in `rubrics` (the old
+// shape) so version snapshots never ride along in the payload that gets synced
+// on every rubric save — that embedding was measured to inflate a save/hydrate
+// ~20x. Not part of `StoreData`/`loadStore()`: fetched only when the version
+// history UI actually opens (see AppContext's `fetchRubricVersions`).
+
+const MAX_AUTO_VERSIONS = 20;
+
+function rubricVersionsKey(rubricId: string): string {
+    return `rm_rubric_versions_${rubricId}`;
+}
+
+export function loadRubricVersions(rubricId: string): RubricVersion[] {
+    return load<RubricVersion[]>(rubricVersionsKey(rubricId), []);
+}
+
+export function upsertRubricVersion(rubricId: string, version: RubricVersion): RubricVersion[] {
+    const existing = loadRubricVersions(rubricId).filter((v) => v.id !== version.id);
+    const isAuto = version.label?.startsWith('auto:') ?? false;
+    const manuals = existing.filter((v) => !v.label?.startsWith('auto:'));
+    const autos = existing.filter((v) => v.label?.startsWith('auto:'));
+    const next = isAuto
+        ? [...manuals, ...[...autos, version].slice(-MAX_AUTO_VERSIONS)]
+        : [...manuals, version, ...autos];
+    save(rubricVersionsKey(rubricId), next);
+    return next;
+}
+
+export function deleteRubricVersions(rubricId: string): void {
+    localStorage.removeItem(rubricVersionsKey(rubricId));
+}
+
+/**
+ * Rubrics saved before Phase 18.4 still carry an embedded `versions` array.
+ * Lifts it into the per-rubric store (deduped by id, so re-running this is a
+ * no-op after the first time) and strips it from the rubric going forward.
+ */
+export function migrateLegacyRubricVersions(rubric: Rubric & { versions?: RubricVersion[] }): Rubric {
+    if (!rubric.versions?.length) return rubric;
+    const { versions: legacy, ...rest } = rubric;
+    legacy.forEach((v, i) => upsertRubricVersion(rubric.id, { ...v, id: v.id ?? `legacy_${rubric.id}_${i}` }));
+    return rest;
+}
+
 // ─── Store ─────────────────────────────────────────────────────────────────────
 
 export interface StoreData {
@@ -323,8 +369,11 @@ export interface StoreData {
 }
 
 export function loadStore(): StoreData {
+    const rawRubrics = load<(Rubric & { versions?: RubricVersion[] })[]>(KEYS.rubrics, []);
+    const rubrics = rawRubrics.map(migrateLegacyRubricVersions);
+    if (rubrics.some((r, i) => r !== rawRubrics[i])) save(KEYS.rubrics, rubrics);
     return {
-        rubrics: load<Rubric[]>(KEYS.rubrics, []),
+        rubrics,
         students: load<Student[]>(KEYS.students, []),
         classes: sanitizeClassYears(load<Class[]>(KEYS.classes, [{ id: 'default', name: 'Default Class' }])),
         studentRubrics: load<StudentRubric[]>(KEYS.studentRubrics, []),

@@ -73,6 +73,7 @@ vi.mock('../../context/AppContext', () => ({
         addRubric: vi.fn(),
         updateRubric: vi.fn(),
         syncRubricSnapshot: vi.fn(),
+        fetchRubricVersions: vi.fn(() => Promise.resolve([])),
         saveRubricVersion: vi.fn(),
         restoreRubricVersion: vi.fn(),
         addVocabularyItem: vi.fn(),

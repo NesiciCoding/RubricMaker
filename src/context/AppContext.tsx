@@ -82,6 +82,9 @@ import {
     onStorageQuotaExceeded,
     clearLocalData,
     sanitizeClassYears,
+    loadRubricVersions,
+    upsertRubricVersion,
+    deleteRubricVersions,
 } from '../store/storage';
 import { mergeStoreData } from '../utils/syncMerge';
 import { diffCollection } from '../utils/syncDiff';
@@ -143,8 +146,7 @@ type Action =
     | { type: 'SAVE_SPEAKING_SESSION'; payload: SpeakingSession }
     | { type: 'DELETE_SPEAKING_SESSION'; id: string }
     | { type: 'SYNC_RUBRIC_SNAPSHOT'; rubricId: string; updatedRubric: Rubric }
-    | { type: 'SAVE_RUBRIC_VERSION'; rubricId: string; label?: string }
-    | { type: 'RESTORE_RUBRIC_VERSION'; rubricId: string; versionIndex: number }
+    | { type: 'RESTORE_RUBRIC_VERSION'; rubricId: string; snapshot: Rubric }
     | { type: 'ADD_VOCABULARY_ITEM'; rubricId: string; payload: VocabularyItem }
     | { type: 'UPDATE_VOCABULARY_ITEM'; rubricId: string; payload: VocabularyItem }
     | { type: 'DELETE_VOCABULARY_ITEM'; rubricId: string; itemId: string }
@@ -194,6 +196,21 @@ function isOffline(): boolean {
     return !navigator.onLine || !(getDb()?.storageSync.isConnected() ?? false);
 }
 
+// Auto-versioning snapshots the rubric before every edit, but the snapshot is
+// written to the dedicated per-rubric version store (storage.ts), not embedded
+// in the rubric document itself — see Phase 18.4: that embedding was the main
+// payload amplifier in the sync path (~20x per save/hydrate). Local write is
+// synchronous (same side-effecting-reducer pattern as `saveRubrics` below);
+// the network push is fire-and-forget — pushOne never throws, it falls back to
+// the pending-sync retry queue on failure.
+function recordAutoVersion(rubric: Rubric): void {
+    const version: RubricVersion = { id: nanoid(), savedAt: new Date().toISOString(), label: 'auto:', snapshot: rubric };
+    upsertRubricVersion(rubric.id, version);
+    if (!isOffline()) {
+        void getDb()?.storageSync.pushOne('rubricVersion', 'upsert', { ...version, rubricId: rubric.id }, version.id);
+    }
+}
+
 function reducer(state: StoreData, action: Action): StoreData {
     switch (action.type) {
         case 'SET_ALL':
@@ -205,26 +222,15 @@ function reducer(state: StoreData, action: Action): StoreData {
         }
         case 'UPDATE_RUBRIC': {
             const existing = state.rubrics.find((r) => r.id === action.payload.id);
-            let incoming = action.payload;
-            if (existing) {
-                const { versions: _v, ...snap } = existing;
-                const autoVersion: RubricVersion = {
-                    savedAt: new Date().toISOString(),
-                    label: 'auto:',
-                    snapshot: snap,
-                };
-                const prevVersions = existing.versions ?? [];
-                const manuals = prevVersions.filter((v) => !v.label?.startsWith('auto:'));
-                const autos = prevVersions.filter((v) => v.label?.startsWith('auto:')).slice(-19);
-                incoming = { ...incoming, versions: [...manuals, ...autos, autoVersion] };
-            }
-            const next = state.rubrics.map((r) => (r.id === action.payload.id ? incoming : r));
+            if (existing) recordAutoVersion(existing);
+            const next = state.rubrics.map((r) => (r.id === action.payload.id ? action.payload : r));
             if (isOffline()) saveRubrics(next);
             return { ...state, rubrics: next };
         }
         case 'DELETE_RUBRIC': {
             const next = state.rubrics.filter((r) => r.id !== action.id);
             if (isOffline()) saveRubrics(next);
+            deleteRubricVersions(action.id);
             return { ...state, rubrics: next };
         }
         case 'ADD_STUDENT': {
@@ -502,30 +508,10 @@ function reducer(state: StoreData, action: Action): StoreData {
             if (isOffline()) savePeerReviews(nextPRs);
             return { ...state, studentRubrics: nextSRs, peerReviews: nextPRs };
         }
-        case 'SAVE_RUBRIC_VERSION': {
-            const rubric = state.rubrics.find((r) => r.id === action.rubricId);
-            if (!rubric) return state;
-            const { versions: _v, ...snapshotFields } = rubric;
-            const version: RubricVersion = {
-                savedAt: new Date().toISOString(),
-                label: action.label,
-                snapshot: snapshotFields,
-            };
-            const updated = { ...rubric, versions: [...(rubric.versions ?? []), version] };
-            const next = state.rubrics.map((r) => (r.id === action.rubricId ? updated : r));
-            if (isOffline()) saveRubrics(next);
-            return { ...state, rubrics: next };
-        }
         case 'RESTORE_RUBRIC_VERSION': {
             const rubric = state.rubrics.find((r) => r.id === action.rubricId);
             if (!rubric) return state;
-            const version = rubric.versions?.[action.versionIndex];
-            if (!version) return state;
-            const restored: Rubric = {
-                ...version.snapshot,
-                versions: rubric.versions,
-                updatedAt: new Date().toISOString(),
-            };
+            const restored: Rubric = { ...action.snapshot, updatedAt: new Date().toISOString() };
             const next = state.rubrics.map((r) => (r.id === action.rubricId ? restored : r));
             if (isOffline()) saveRubrics(next);
             return { ...state, rubrics: next };
@@ -871,8 +857,9 @@ interface AppContextValue extends StoreData {
     // Rubric snapshot sync
     syncRubricSnapshot: (rubricId: string, updatedRubric: Rubric) => void;
     // Rubric version history
-    saveRubricVersion: (rubricId: string, label?: string) => void;
-    restoreRubricVersion: (rubricId: string, versionIndex: number) => void;
+    fetchRubricVersions: (rubricId: string) => Promise<RubricVersion[]>;
+    saveRubricVersion: (rubricId: string, label?: string) => Promise<void>;
+    restoreRubricVersion: (rubricId: string, snapshot: Rubric) => void;
     // Vocabulary items
     addVocabularyItem: (rubricId: string, item: Omit<VocabularyItem, 'id'>) => VocabularyItem;
     updateVocabularyItem: (rubricId: string, item: VocabularyItem) => void;
@@ -1682,12 +1669,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'SYNC_RUBRIC_SNAPSHOT', rubricId, updatedRubric });
     }, []);
 
-    const saveRubricVersion = useCallback((rubricId: string, label?: string) => {
-        dispatch({ type: 'SAVE_RUBRIC_VERSION', rubricId, label });
+    // Version history is fetched on demand (not part of `state`/hydrate) — see
+    // Phase 18.4. Prefers the server copy while connected since it's the shared,
+    // cross-device source of truth; falls back to the per-device local cache
+    // offline.
+    const fetchRubricVersions = useCallback(async (rubricId: string): Promise<RubricVersion[]> => {
+        if (!isOffline()) {
+            const remote = await getDb()?.storageSync.fetchRubricVersions(rubricId);
+            if (remote) return remote;
+        }
+        return loadRubricVersions(rubricId);
     }, []);
 
-    const restoreRubricVersion = useCallback((rubricId: string, versionIndex: number) => {
-        dispatch({ type: 'RESTORE_RUBRIC_VERSION', rubricId, versionIndex });
+    const saveRubricVersion = useCallback(
+        async (rubricId: string, label?: string) => {
+            const rubric = state.rubrics.find((r) => r.id === rubricId);
+            if (!rubric) return;
+            const version: RubricVersion = { id: nanoid(), savedAt: new Date().toISOString(), label, snapshot: rubric };
+            upsertRubricVersion(rubricId, version);
+            if (!isOffline()) {
+                await getDb()?.storageSync.pushOne('rubricVersion', 'upsert', { ...version, rubricId }, version.id);
+            }
+        },
+        [state.rubrics]
+    );
+
+    const restoreRubricVersion = useCallback((rubricId: string, snapshot: Rubric) => {
+        dispatch({ type: 'RESTORE_RUBRIC_VERSION', rubricId, snapshot });
     }, []);
 
     const addVocabularyItem = useCallback((rubricId: string, item: Omit<VocabularyItem, 'id'>): VocabularyItem => {
@@ -2201,6 +2209,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             saveSpeakingSession,
             deleteSpeakingSession,
             syncRubricSnapshot,
+            fetchRubricVersions,
             saveRubricVersion,
             restoreRubricVersion,
             addVocabularyItem,
@@ -2343,6 +2352,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             saveSpeakingSession,
             deleteSpeakingSession,
             syncRubricSnapshot,
+            fetchRubricVersions,
             saveRubricVersion,
             restoreRubricVersion,
             addVocabularyItem,

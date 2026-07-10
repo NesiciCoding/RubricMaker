@@ -13,10 +13,12 @@ import {
     removePendingWrites,
     clearLocalData,
     DEFAULT_SETTINGS,
+    migrateLegacyRubricVersions,
 } from '../../store/storage';
 import { logEvent } from '../logging/clientLogger';
 import type {
     Rubric,
+    RubricVersion,
     Student,
     Class,
     StudentRubric,
@@ -466,6 +468,12 @@ class StorageSyncService {
         return this.adapter.fetchMyFlashcardReview(deckId, studentId);
     }
 
+    // Phase 18.4: fetched only when the version-history UI opens, never as part
+    // of hydrate() — see fetchRubrics()'s much larger sibling above.
+    async fetchRubricVersions(rubricId: string): Promise<RubricVersion[]> {
+        return this.adapter.fetchRubricVersions(rubricId);
+    }
+
     async saveFlashcardReviewAsStudent(r: FlashcardReview): Promise<SyncResult> {
         return this.adapter.saveFlashcardReviewAsStudent(r);
     }
@@ -576,6 +584,12 @@ class StorageSyncService {
                 this.adapter.fetchMyProfile(),
             ]);
 
+            // Back-compat read path (Phase 18.4): rubrics synced before this phase still
+            // carry an embedded `versions` array in their jsonb row. Lift it into the
+            // dedicated per-rubric version store on first sight and strip it here so it
+            // never re-enters app state.
+            const migratedRubrics = rubrics.map(migrateLegacyRubricVersions);
+
             // Fetched as a second, sequential wave rather than joining the burst of ~20
             // requests above — a fresh feature's tables competing for the same local
             // connection pool at that exact startup instant was implicated in a
@@ -641,7 +655,7 @@ class StorageSyncService {
             }
 
             const result: Partial<StoreData> = {
-                rubrics,
+                rubrics: migratedRubrics,
                 classes: classes.length > 0 ? classes : undefined,
                 students,
                 studentRubrics,
@@ -768,6 +782,14 @@ class StorageSyncService {
                 case 'rubric':
                     if (action === 'upsert') result = await this.adapter.upsertRubric(payload as Rubric);
                     else if (id) result = await this.adapter.deleteRubric(id);
+                    break;
+                case 'rubricVersion':
+                    // Append-only: no delete branch. Cleaned up server-side via the
+                    // rubric_versions.rubric_id FK's ON DELETE CASCADE when the rubric goes.
+                    if (action === 'upsert') {
+                        const v = payload as RubricVersion & { rubricId: string };
+                        result = await this.adapter.upsertRubricVersion(v.rubricId, v);
+                    }
                     break;
                 case 'class':
                     if (action === 'upsert') result = await this.adapter.upsertClass(payload as Class);

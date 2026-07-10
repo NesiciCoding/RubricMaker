@@ -1,6 +1,7 @@
 import { createClient, SupabaseClient, Session, AuthChangeEvent } from '@supabase/supabase-js';
 import type {
     Rubric,
+    RubricVersion,
     Student,
     Class,
     StudentRubric,
@@ -596,6 +597,39 @@ export class SupabaseAdapter {
 
     async deleteRubric(id: string): Promise<SyncResult> {
         const { error } = await this.db().from('rubrics').delete().eq('id', id).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    // ── Rubric version history (Phase 18.4) ──────────────────────────────────
+    // Fetched only when the version-history UI opens — never part of hydrate()
+    // or the rubrics table itself. Append-only: no delete method (rows are
+    // cleaned up via the rubric_versions.rubric_id FK's ON DELETE CASCADE).
+
+    async fetchRubricVersions(rubricId: string): Promise<RubricVersion[]> {
+        const { data, error } = await this.db()
+            .from('rubric_versions')
+            .select('data')
+            .eq('rubric_id', rubricId)
+            .eq('owner_id', this.uid())
+            .order('created_at', { ascending: true });
+        if (error) {
+            console.error('fetchRubricVersions', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as RubricVersion);
+    }
+
+    async upsertRubricVersion(rubricId: string, v: RubricVersion): Promise<SyncResult> {
+        const { error } = await this.db().from('rubric_versions').upsert(
+            {
+                id: v.id,
+                owner_id: this.uid(),
+                rubric_id: rubricId,
+                created_at: v.savedAt,
+                data: v,
+            },
+            { onConflict: 'id' }
+        );
         return error ? { success: false, error: error.message } : { success: true };
     }
 
@@ -2102,7 +2136,9 @@ export class SupabaseAdapter {
             if (error) console.error('cloneMarketplaceListing', error);
             return null;
         }
-        const { versions: _versions, ...snapshot } = data.rubric_snapshot as Rubric;
+        // Older listings (pre-Phase 18.4) may still have a `versions` array embedded in
+        // the stored snapshot; drop it so a cloned rubric never resurrects it.
+        const { versions: _versions, ...snapshot } = data.rubric_snapshot as Rubric & { versions?: unknown };
         const now = new Date().toISOString();
         return {
             ...snapshot,
@@ -2186,6 +2222,7 @@ export class SupabaseAdapter {
         const db = this.db();
         const tables = [
             'rubrics',
+            'rubric_versions',
             'classes',
             'students',
             'student_rubrics',

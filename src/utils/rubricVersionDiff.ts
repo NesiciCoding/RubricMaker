@@ -23,7 +23,7 @@ export interface CriterionDiff {
     levelDiffs: LevelDiff[];
 }
 
-type RubricSnapshot = Omit<Rubric, 'versions'>;
+type RubricSnapshot = Rubric;
 
 function diffLevel(a: RubricLevel, b: RubricLevel): FieldChange[] {
     const changes: FieldChange[] = [];

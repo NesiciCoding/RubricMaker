@@ -4,8 +4,8 @@ import { diffRubricVersions, type FieldChange } from '../../utils/rubricVersionD
 import type { Rubric } from '../../types';
 
 interface Props {
-    from: Omit<Rubric, 'versions'>;
-    to: Omit<Rubric, 'versions'>;
+    from: Rubric;
+    to: Rubric;
     onClose: () => void;
 }
 

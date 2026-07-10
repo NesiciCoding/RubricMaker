@@ -89,16 +89,14 @@ const mockRubricWithLinks: Rubric = {
     ],
 };
 
-const mockRubricWithVersions: Rubric = {
-    ...mockRubric,
-    versions: [
-        {
-            savedAt: '2024-01-05T00:00:00Z',
-            label: 'v1',
-            snapshot: { ...mockRubric, name: 'Essay Rubric (old)' },
-        },
-    ],
-};
+const mockVersions = [
+    {
+        id: 'v1',
+        savedAt: '2024-01-05T00:00:00Z',
+        label: 'v1',
+        snapshot: { ...mockRubric, name: 'Essay Rubric (old)' },
+    },
+];
 
 const mockAddRubric = vi.fn(() => ({ ...mockRubric, id: 'new-r' }));
 const mockUpdateRubric = vi.fn();
@@ -107,7 +105,8 @@ const mockShowToast = vi.fn();
 const mockExportPdf = vi.fn();
 const mockExportDocx = vi.fn();
 const mockSyncRubricSnapshot = vi.fn();
-const mockSaveRubricVersion = vi.fn();
+const mockFetchRubricVersions = vi.fn(async () => [] as typeof mockVersions);
+const mockSaveRubricVersion = vi.fn(async () => {});
 const mockRestoreRubricVersion = vi.fn();
 
 let appOverrides: Record<string, unknown> = {};
@@ -125,6 +124,7 @@ vi.mock('../../context/AppContext', () => ({
         addRubric: mockAddRubric,
         updateRubric: mockUpdateRubric,
         syncRubricSnapshot: mockSyncRubricSnapshot,
+        fetchRubricVersions: mockFetchRubricVersions,
         saveRubricVersion: mockSaveRubricVersion,
         restoreRubricVersion: mockRestoreRubricVersion,
         gradeScales: [mockGradeScale],
@@ -262,6 +262,7 @@ describe('RubricBuilder', () => {
         mockExportPdf.mockClear();
         mockExportDocx.mockClear();
         mockSyncRubricSnapshot.mockClear();
+        mockFetchRubricVersions.mockClear().mockResolvedValue([]);
         mockSaveRubricVersion.mockClear();
         mockRestoreRubricVersion.mockClear();
         mockSaveCriterionClipboard.mockClear();
@@ -285,7 +286,7 @@ describe('RubricBuilder', () => {
     }
 
     function renderEditWithVersions() {
-        appOverrides = { rubrics: [mockRubricWithVersions] };
+        mockFetchRubricVersions.mockResolvedValue(mockVersions);
         return renderEdit();
     }
 
@@ -398,11 +399,11 @@ describe('RubricBuilder', () => {
         expect(screen.queryByText('rubricBuilder.version_history')).not.toBeInTheDocument();
     });
 
-    it('opens version history when editing', () => {
+    it('opens version history when editing', async () => {
         renderEdit();
         fireEvent.click(screen.getByText('rubricBuilder.version_history'));
-        // Toggling shouldn't crash; the panel content depends on rubric.versions which is unset here.
-        expect(screen.getByText('rubricBuilder.edit_rubric')).toBeInTheDocument();
+        // Toggling shouldn't crash; the panel content is fetched async via fetchRubricVersions.
+        expect(await screen.findByText('rubricBuilder.no_versions_yet')).toBeInTheDocument();
     });
 
     it('expands and collapses vocabulary section', () => {
@@ -451,24 +452,24 @@ describe('RubricBuilder', () => {
 
     // ── Version history ──────────────────────────────────────────────────────────
 
-    it('saves a new version from the version history panel', () => {
+    it('saves a new version from the version history panel', async () => {
         renderEdit();
         fireEvent.click(screen.getByText('rubricBuilder.version_history'));
-        expect(screen.getByText('rubricBuilder.no_versions_yet')).toBeInTheDocument();
+        expect(await screen.findByText('rubricBuilder.no_versions_yet')).toBeInTheDocument();
         fireEvent.click(screen.getByText('rubricBuilder.save_version'));
         expect(mockSaveRubricVersion).toHaveBeenCalledWith('r1', undefined);
     });
 
-    it('lists existing versions and opens the diff modal', () => {
+    it('lists existing versions and opens the diff modal', async () => {
         renderEditWithVersions();
         fireEvent.click(screen.getByText('rubricBuilder.version_history'));
-        fireEvent.click(screen.getByText('rubricBuilder.compare_version'));
+        fireEvent.click(await screen.findByText('rubricBuilder.compare_version'));
         expect(screen.getByTestId('version-diff-modal')).toBeInTheDocument();
         fireEvent.click(screen.getByText('Close Diff'));
         expect(screen.queryByTestId('version-diff-modal')).not.toBeInTheDocument();
     });
 
-    it('restores a version after confirming', () => {
+    it('restores a version after confirming', async () => {
         renderEditWithVersions();
         const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
         const reloadSpy = vi.fn();
@@ -478,8 +479,8 @@ describe('RubricBuilder', () => {
             configurable: true,
         });
         fireEvent.click(screen.getByText('rubricBuilder.version_history'));
-        fireEvent.click(screen.getByText('rubricBuilder.restore_version'));
-        expect(mockRestoreRubricVersion).toHaveBeenCalledWith('r1', 0);
+        fireEvent.click(await screen.findByText('rubricBuilder.restore_version'));
+        expect(mockRestoreRubricVersion).toHaveBeenCalledWith('r1', mockVersions[0].snapshot);
         expect(reloadSpy).toHaveBeenCalled();
         confirmSpy.mockRestore();
         Object.defineProperty(window, 'location', { value: originalLocation, configurable: true });

@@ -130,6 +130,7 @@ function makeApp(overrides = {}) {
         saveSpeakingSession: noop,
         deleteSpeakingSession: noop,
         syncRubricSnapshot: noop,
+        fetchRubricVersions: () => Promise.resolve([]),
         saveRubricVersion: noop,
         restoreRubricVersion: noop,
         addVocabularyItem: vi.fn(),
