@@ -652,7 +652,10 @@ export async function exportReportCard(data: ReportCardData, styleTemplate?: Exp
     saveAs(blob, `${safeName}_report_card.docx`);
 }
 
-export async function exportReportCardsBatch(dataList: ReportCardData[], styleTemplate?: ExportTemplate): Promise<void> {
+export async function exportReportCardsBatch(
+    dataList: ReportCardData[],
+    styleTemplate?: ExportTemplate
+): Promise<void> {
     for (const data of dataList) {
         await exportReportCard(data, styleTemplate);
     }

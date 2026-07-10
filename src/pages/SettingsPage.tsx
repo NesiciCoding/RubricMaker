@@ -1301,13 +1301,23 @@ export default function SettingsPage() {
                                                         onClick={() =>
                                                             updateSettings(
                                                                 isStyle
-                                                                    ? { styleTemplateId: isActive ? undefined : tmpl.id }
-                                                                    : { exportTemplateId: isActive ? undefined : tmpl.id }
+                                                                    ? {
+                                                                          styleTemplateId: isActive
+                                                                              ? undefined
+                                                                              : tmpl.id,
+                                                                      }
+                                                                    : {
+                                                                          exportTemplateId: isActive
+                                                                              ? undefined
+                                                                              : tmpl.id,
+                                                                      }
                                                             )
                                                         }
                                                     >
                                                         <Star size={13} aria-hidden="true" />
-                                                        {isActive ? t('settings.label_default') : t('settings.action_set_default')}
+                                                        {isActive
+                                                            ? t('settings.label_default')
+                                                            : t('settings.action_set_default')}
                                                     </button>
                                                     <button
                                                         className="btn btn-ghost btn-icon btn-sm"

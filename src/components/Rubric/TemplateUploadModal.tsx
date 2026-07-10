@@ -61,7 +61,14 @@ export default function TemplateUploadModal({ onClose, onSave }: Props) {
 
                 if (kind === 'table') {
                     const { levelHeaders, headerColor } = await parseTemplateHeaders(file);
-                    setParsed({ kind: 'table', levelHeaders, headerColor, dataUrl, size: file.size, fileName: file.name });
+                    setParsed({
+                        kind: 'table',
+                        levelHeaders,
+                        headerColor,
+                        dataUrl,
+                        size: file.size,
+                        fileName: file.name,
+                    });
                 } else {
                     const style = await parseStyleTemplate(file);
                     setParsed({ kind: 'style', ...style, dataUrl, size: file.size, fileName: file.name });
@@ -215,7 +222,9 @@ export default function TemplateUploadModal({ onClose, onSave }: Props) {
                     >
                         <Loader size={24} style={{ color: 'var(--accent)', animation: 'spin 1s linear infinite' }} />
                         <span>
-                            {kind === 'table' ? 'Extracting template headers…' : t('settings.template_extracting_style')}
+                            {kind === 'table'
+                                ? 'Extracting template headers…'
+                                : t('settings.template_extracting_style')}
                         </span>
                     </div>
                 )}
