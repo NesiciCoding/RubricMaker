@@ -1076,10 +1076,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const { t } = useTranslation();
 
     // storage.ts swallows quota errors internally (the write is dropped, not
-    // retried) so a reducer case never throws mid-update; this just surfaces
-    // that failure to the user instead of letting it pass silently.
+    // retried) so a reducer case never throws mid-update; this surfaces that
+    // failure to the user only while genuinely offline/disconnected, where
+    // localStorage is the only copy of the edit. While connected, this same
+    // write is just the disposable next-boot offline-readiness cache (see the
+    // "Storage rule" in CLAUDE.md) — Supabase already has the real data, so a
+    // quota hit there isn't data loss and shouldn't alarm the user.
     useEffect(() => {
-        onStorageQuotaExceeded(() => showToast(t('toast.storage_full'), 'error'));
+        onStorageQuotaExceeded(() => {
+            if (isOffline()) showToast(t('toast.storage_full'), 'error');
+        });
     }, [showToast, t]);
 
     // Keep currentStateRef in sync so the reconnect handler always sees fresh state

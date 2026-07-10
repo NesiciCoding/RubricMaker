@@ -174,6 +174,44 @@ describe('save functions', () => {
         expect(srs[0].entries[0].audioDataUrl).toBe('data:audio/webm;base64,AAAA'); // input untouched
     });
 
+    it('retries without embedded audio when the raw write exceeds quota, and does not notify the handler if that succeeds', () => {
+        const handler = vi.fn();
+        onStorageQuotaExceeded(handler);
+        const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementationOnce(() => {
+            throw new DOMException('quota exceeded', 'QuotaExceededError');
+        });
+
+        const srs: StudentRubric[] = [
+            {
+                id: 'sr1',
+                rubricId: 'r1',
+                studentId: 's1',
+                entries: [
+                    {
+                        criterionId: 'c1',
+                        levelId: 'l1',
+                        checkedSubItems: [],
+                        comment: 'nice work',
+                        audioDataUrl: 'data:audio/webm;base64,AAAA',
+                    },
+                ],
+                overallComment: 'good',
+                isPeerReview: false,
+            },
+        ];
+
+        expect(() => saveStudentRubrics(srs)).not.toThrow();
+        expect(handler).not.toHaveBeenCalled();
+
+        const persisted = loadStore().studentRubrics;
+        expect(persisted[0].entries[0].audioDataUrl).toBeUndefined();
+        expect(persisted[0].entries[0].comment).toBe('nice work');
+        expect(persisted[0].overallComment).toBe('good');
+
+        setItemSpy.mockRestore();
+        onStorageQuotaExceeded(() => {});
+    });
+
     it('drops the write and notifies the registered handler when localStorage quota is exceeded', () => {
         const handler = vi.fn();
         onStorageQuotaExceeded(handler);

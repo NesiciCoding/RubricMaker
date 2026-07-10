@@ -424,7 +424,22 @@ export function saveClasses(classes: Class[]) {
     save(KEYS.classes, classes);
 }
 export function saveStudentRubrics(srs: StudentRubric[]) {
-    save(KEYS.studentRubrics, srs);
+    try {
+        localStorage.setItem(KEYS.studentRubrics, JSON.stringify(srs));
+    } catch (e) {
+        if (!isQuotaExceededError(e)) throw e;
+        // Embedded voice-feedback audio in older entries is usually what pushes this over —
+        // retry without it so grades/comments still persist rather than dropping the whole
+        // write. Only the audio itself stays at risk until the next successful sync, same as
+        // it already was before this retry (see stripAudioForOfflineCache below).
+        try {
+            localStorage.setItem(KEYS.studentRubrics, JSON.stringify(stripAudioForOfflineCache(srs)));
+            console.warn('[storage] rm_student_rubrics exceeded quota with audio; retried without it');
+        } catch (e2) {
+            console.error('[storage] write failed even after stripping audio (quota exceeded?):', KEYS.studentRubrics, e2);
+            quotaExceededHandler?.();
+        }
+    }
 }
 
 /**
