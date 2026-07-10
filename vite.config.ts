@@ -7,11 +7,11 @@ import { VitePWA } from 'vite-plugin-pwa'
 export default defineConfig({
   plugins: [
     react(),
-    // Only emit the bundle-analysis page when explicitly requested (npm run build:analyze) —
-    // it's ~1.4MB and was otherwise being precached onto every user's device by the PWA
-    // service worker below (~20% of the precache manifest for a report nobody but a
-    // developer ever opens).
-    ...(process.env.ANALYZE
+    // Only emit the bundle-analysis page when explicitly requested (npm run build:analyze,
+    // or CI's "Bundle Analysis" job which sets VITE_ANALYZE) — it's ~1.4MB and was
+    // otherwise being precached onto every user's device by the PWA service worker below
+    // (~20% of the precache manifest for a report nobody but a developer ever opens).
+    ...(process.env.ANALYZE || process.env.VITE_ANALYZE
       ? [
           visualizer({
             filename: 'dist/stats.html',

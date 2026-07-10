@@ -30,6 +30,24 @@ function setCachedUrl(id: string, url: string) {
     }
 }
 
+// Caps in-flight signed-URL requests during hydrate — an unbounded Promise.all over every
+// row would burst the storage endpoint with one request per attachment/template on every
+// cold-cache login, which doesn't scale as a self-hosted deployment's library grows.
+const HYDRATE_CONCURRENCY = 8;
+
+async function mapWithConcurrency<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+    const results = new Array<R>(items.length);
+    let next = 0;
+    async function worker() {
+        while (next < items.length) {
+            const i = next++;
+            results[i] = await fn(items[i]);
+        }
+    }
+    await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+    return results;
+}
+
 function base64ToBlob(dataUrl: string): Blob {
     const [header, b64] = dataUrl.split(',');
     const mimeMatch = header.match(/:(.*?);/);
@@ -102,22 +120,18 @@ export class AttachmentSync {
     /** Hydrate attachments: fetch metadata + resolve signed URLs. Returns Attachment[] with dataUrl set. */
     async hydrateAttachments(): Promise<Attachment[]> {
         const rows = await this.adapter.fetchAttachments();
-        return Promise.all(
-            rows.map(async (row) => {
-                const dataUrl = row.storagePath ? await this.resolveAttachmentUrl(row.id, row.storagePath) : '';
-                return { ...(row as Omit<Attachment, 'dataUrl'>), dataUrl };
-            })
-        );
+        return mapWithConcurrency(rows, HYDRATE_CONCURRENCY, async (row) => {
+            const dataUrl = row.storagePath ? await this.resolveAttachmentUrl(row.id, row.storagePath) : '';
+            return { ...(row as Omit<Attachment, 'dataUrl'>), dataUrl };
+        });
     }
 
     /** Hydrate export templates: fetch metadata + resolve signed URLs. */
     async hydrateExportTemplates(): Promise<ExportTemplate[]> {
         const rows = await this.adapter.fetchExportTemplates();
-        return Promise.all(
-            rows.map(async (row) => {
-                const dataUrl = row.storagePath ? await this.resolveExportTemplateUrl(row.id, row.storagePath) : '';
-                return { ...(row as Omit<ExportTemplate, 'dataUrl'>), dataUrl };
-            })
-        );
+        return mapWithConcurrency(rows, HYDRATE_CONCURRENCY, async (row) => {
+            const dataUrl = row.storagePath ? await this.resolveExportTemplateUrl(row.id, row.storagePath) : '';
+            return { ...(row as Omit<ExportTemplate, 'dataUrl'>), dataUrl };
+        });
     }
 }
