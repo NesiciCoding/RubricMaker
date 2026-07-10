@@ -54,7 +54,7 @@ vi.mock('../store/storage', () => ({
     exportStore: vi.fn((state) => state),
     importFullBackup: vi.fn(() => true),
     loadRubricVersions: vi.fn(() => []),
-    upsertRubricVersion: vi.fn(() => []),
+    upsertRubricVersion: vi.fn(() => ({ versions: [], evictedIds: [] })),
     deleteRubricVersions: vi.fn(),
 }));
 

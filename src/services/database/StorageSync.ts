@@ -784,11 +784,14 @@ class StorageSyncService {
                     else if (id) result = await this.adapter.deleteRubric(id);
                     break;
                 case 'rubricVersion':
-                    // Append-only: no delete branch. Cleaned up server-side via the
-                    // rubric_versions.rubric_id FK's ON DELETE CASCADE when the rubric goes.
+                    // Delete here mirrors the local per-rubric auto-version cap (a single
+                    // evicted row), not a whole-rubric wipe — that's still the FK's
+                    // ON DELETE CASCADE when the rubric itself is deleted.
                     if (action === 'upsert') {
                         const v = payload as RubricVersion & { rubricId: string };
                         result = await this.adapter.upsertRubricVersion(v.rubricId, v);
+                    } else if (id) {
+                        result = await this.adapter.deleteRubricVersion(id);
                     }
                     break;
                 case 'class':

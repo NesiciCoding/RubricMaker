@@ -306,16 +306,25 @@ export function loadRubricVersions(rubricId: string): RubricVersion[] {
     return load<RubricVersion[]>(rubricVersionsKey(rubricId), []);
 }
 
-export function upsertRubricVersion(rubricId: string, version: RubricVersion): RubricVersion[] {
+/**
+ * Upserts a version into the local cache. Returns the ids of any auto-versions
+ * evicted by the cap so the caller can prune the same rows server-side —
+ * otherwise remote history grows unbounded while the local cache stays capped.
+ */
+export function upsertRubricVersion(
+    rubricId: string,
+    version: RubricVersion
+): { versions: RubricVersion[]; evictedIds: string[] } {
     const existing = loadRubricVersions(rubricId).filter((v) => v.id !== version.id);
     const isAuto = version.label?.startsWith('auto:') ?? false;
     const manuals = existing.filter((v) => !v.label?.startsWith('auto:'));
     const autos = existing.filter((v) => v.label?.startsWith('auto:'));
-    const next = isAuto
-        ? [...manuals, ...[...autos, version].slice(-MAX_AUTO_VERSIONS)]
-        : [...manuals, version, ...autos];
+    const combinedAutos = isAuto ? [...autos, version] : autos;
+    const evictedIds = combinedAutos.slice(0, Math.max(0, combinedAutos.length - MAX_AUTO_VERSIONS)).map((v) => v.id);
+    const nextAutos = combinedAutos.slice(-MAX_AUTO_VERSIONS);
+    const next = isAuto ? [...manuals, ...nextAutos] : [...manuals, version, ...autos];
     save(rubricVersionsKey(rubricId), next);
-    return next;
+    return { versions: next, evictedIds };
 }
 
 export function deleteRubricVersions(rubricId: string): void {

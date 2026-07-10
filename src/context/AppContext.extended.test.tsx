@@ -2,15 +2,13 @@ import React, { ReactNode } from 'react';
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AppProvider, useApp } from './AppContext';
-import type { Rubric } from '../types';
+import type { Rubric, RubricVersion } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 
 // Stateful so saveRubricVersion/fetchRubricVersions round-trip like the real
 // per-rubric localStorage cache in storage.ts. vi.hoisted so the vi.mock
 // factory below (itself hoisted above imports) can reference it safely.
-const versionStore = vi.hoisted(
-    () => new Map<string, { id: string; savedAt: string; label?: string; snapshot: Rubric }[]>()
-);
+const versionStore = vi.hoisted(() => new Map<string, RubricVersion[]>());
 
 vi.mock('../store/storage', () => ({
     loadStore: vi.fn(() => ({
@@ -55,13 +53,11 @@ vi.mock('../store/storage', () => ({
     exportStore: vi.fn((s) => s),
     importFullBackup: vi.fn(() => true),
     loadRubricVersions: vi.fn((rubricId: string) => versionStore.get(rubricId) ?? []),
-    upsertRubricVersion: vi.fn(
-        (rubricId: string, version: { id: string; savedAt: string; label?: string; snapshot: Rubric }) => {
-            const next = [...(versionStore.get(rubricId) ?? []), version];
-            versionStore.set(rubricId, next);
-            return next;
-        }
-    ),
+    upsertRubricVersion: vi.fn((rubricId: string, version: RubricVersion) => {
+        const next = [...(versionStore.get(rubricId) ?? []), version];
+        versionStore.set(rubricId, next);
+        return { versions: next, evictedIds: [] };
+    }),
     deleteRubricVersions: vi.fn((rubricId: string) => versionStore.delete(rubricId)),
 }));
 
@@ -267,6 +263,10 @@ describe('AppContext — extended actions', () => {
             result.current.restoreRubricVersion(rubricId, version.snapshot);
         });
         expect(result.current.rubrics[0].name).toBe('R1');
+        // Restoring snapshots the pre-restore ("Modified") state too, so that's
+        // itself recoverable rather than only reachable via an intervening edit.
+        const versionsAfterRestore = await result.current.fetchRubricVersions(rubricId);
+        expect(versionsAfterRestore.some((v) => v.snapshot.name === 'Modified')).toBe(true);
     });
 
     it('saveRubricVersion does nothing for unknown rubricId', async () => {
@@ -275,6 +275,7 @@ describe('AppContext — extended actions', () => {
             await result.current.saveRubricVersion('unknown');
         });
         expect(result.current.rubrics).toHaveLength(0);
+        expect(await result.current.fetchRubricVersions('unknown')).toEqual([]);
     });
 
     it('restoreRubricVersion does nothing for unknown rubricId', () => {

@@ -199,10 +199,18 @@ function isOffline(): boolean {
 // Auto-versioning snapshots the rubric before every edit, but the snapshot is
 // written to the dedicated per-rubric version store (storage.ts), not embedded
 // in the rubric document itself — see Phase 18.4: that embedding was the main
-// payload amplifier in the sync path (~20x per save/hydrate). Local write is
-// synchronous (same side-effecting-reducer pattern as `saveRubrics` below);
-// the network push is fire-and-forget — pushOne never throws, it falls back to
-// the pending-sync retry queue on failure.
+// payload amplifier in the sync path (~20x per save/hydrate).
+//
+// Called from the `updateRubric`/`restoreRubricVersion` action creators, not
+// from the reducer: it mints a real id and fires a network push, and React
+// StrictMode double-invokes reducers in dev to catch exactly this kind of
+// impurity — a reducer-side call would mint two ids and push twice per edit.
+//
+// The push uses `isConnected()` only (not the stricter `isOffline()`, which
+// also checks `navigator.onLine`) — matching the delta-sync effect's own
+// connectivity gate, so a genuinely-offline-but-authenticated push attempt
+// still fails through to `pushOne`'s catch block and lands in the pending-sync
+// retry queue instead of being silently skipped.
 function recordAutoVersion(rubric: Rubric): void {
     const version: RubricVersion = {
         id: nanoid(),
@@ -210,9 +218,11 @@ function recordAutoVersion(rubric: Rubric): void {
         label: 'auto:',
         snapshot: rubric,
     };
-    upsertRubricVersion(rubric.id, version);
-    if (!isOffline()) {
-        void getDb()?.storageSync.pushOne('rubricVersion', 'upsert', { ...version, rubricId: rubric.id }, version.id);
+    const { evictedIds } = upsertRubricVersion(rubric.id, version);
+    const db = getDb();
+    if (db?.storageSync.isConnected()) {
+        void db.storageSync.pushOne('rubricVersion', 'upsert', { ...version, rubricId: rubric.id }, version.id);
+        for (const evictedId of evictedIds) void db.storageSync.pushOne('rubricVersion', 'delete', null, evictedId);
     }
 }
 
@@ -226,8 +236,8 @@ function reducer(state: StoreData, action: Action): StoreData {
             return { ...state, rubrics: next };
         }
         case 'UPDATE_RUBRIC': {
-            const existing = state.rubrics.find((r) => r.id === action.payload.id);
-            if (existing) recordAutoVersion(existing);
+            // Auto-versioning happens in the `updateRubric` action creator, not here —
+            // see recordAutoVersion's comment for why it can't safely live in the reducer.
             const next = state.rubrics.map((r) => (r.id === action.payload.id ? action.payload : r));
             if (isOffline()) saveRubrics(next);
             return { ...state, rubrics: next };
@@ -1435,10 +1445,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return rubric;
     }, []);
 
-    const updateRubric = useCallback((r: Rubric) => {
-        dispatch({ type: 'UPDATE_RUBRIC', payload: { ...r, updatedAt: new Date().toISOString() } });
-        logAuditEvent('grade', 'rubric_edit', 'rubric', r.id);
-    }, []);
+    const updateRubric = useCallback(
+        (r: Rubric) => {
+            const existing = state.rubrics.find((x) => x.id === r.id);
+            if (existing) recordAutoVersion(existing);
+            dispatch({ type: 'UPDATE_RUBRIC', payload: { ...r, updatedAt: new Date().toISOString() } });
+            logAuditEvent('grade', 'rubric_edit', 'rubric', r.id);
+        },
+        [state.rubrics]
+    );
 
     const deleteRubric = useCallback((id: string) => dispatch({ type: 'DELETE_RUBRIC', id }), []);
 
@@ -1680,8 +1695,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // offline.
     const fetchRubricVersions = useCallback(async (rubricId: string): Promise<RubricVersion[]> => {
         if (!isOffline()) {
-            const remote = await getDb()?.storageSync.fetchRubricVersions(rubricId);
-            if (remote) return remote;
+            try {
+                const remote = await getDb()?.storageSync.fetchRubricVersions(rubricId);
+                if (remote) return remote;
+            } catch (e) {
+                console.error('[sync] failed to fetch remote rubric versions', e);
+            }
         }
         return loadRubricVersions(rubricId);
     }, []);
@@ -1691,17 +1710,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const rubric = state.rubrics.find((r) => r.id === rubricId);
             if (!rubric) return;
             const version: RubricVersion = { id: nanoid(), savedAt: new Date().toISOString(), label, snapshot: rubric };
-            upsertRubricVersion(rubricId, version);
-            if (!isOffline()) {
-                await getDb()?.storageSync.pushOne('rubricVersion', 'upsert', { ...version, rubricId }, version.id);
+            const { evictedIds } = upsertRubricVersion(rubricId, version);
+            const db = getDb();
+            if (db?.storageSync.isConnected()) {
+                await db.storageSync.pushOne('rubricVersion', 'upsert', { ...version, rubricId }, version.id);
+                for (const evictedId of evictedIds)
+                    void db.storageSync.pushOne('rubricVersion', 'delete', null, evictedId);
             }
         },
         [state.rubrics]
     );
 
-    const restoreRubricVersion = useCallback((rubricId: string, snapshot: Rubric) => {
-        dispatch({ type: 'RESTORE_RUBRIC_VERSION', rubricId, snapshot });
-    }, []);
+    const restoreRubricVersion = useCallback(
+        (rubricId: string, snapshot: Rubric) => {
+            const existing = state.rubrics.find((r) => r.id === rubricId);
+            if (existing) recordAutoVersion(existing);
+            dispatch({ type: 'RESTORE_RUBRIC_VERSION', rubricId, snapshot });
+        },
+        [state.rubrics]
+    );
 
     const addVocabularyItem = useCallback((rubricId: string, item: Omit<VocabularyItem, 'id'>): VocabularyItem => {
         const v: VocabularyItem = { ...item, id: nanoid() };

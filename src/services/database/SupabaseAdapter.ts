@@ -602,8 +602,10 @@ export class SupabaseAdapter {
 
     // ── Rubric version history (Phase 18.4) ──────────────────────────────────
     // Fetched only when the version-history UI opens — never part of hydrate()
-    // or the rubrics table itself. Append-only: no delete method (rows are
-    // cleaned up via the rubric_versions.rubric_id FK's ON DELETE CASCADE).
+    // or the rubrics table itself. Individual rows are deleted only to mirror
+    // the local per-rubric auto-version cap (see upsertRubricVersion in
+    // storage.ts); a whole rubric's history is otherwise cleaned up via the
+    // rubric_versions.rubric_id FK's ON DELETE CASCADE.
 
     async fetchRubricVersions(rubricId: string): Promise<RubricVersion[]> {
         const { data, error } = await this.db()
@@ -630,6 +632,11 @@ export class SupabaseAdapter {
             },
             { onConflict: 'id' }
         );
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteRubricVersion(id: string): Promise<SyncResult> {
+        const { error } = await this.db().from('rubric_versions').delete().eq('id', id).eq('owner_id', this.uid());
         return error ? { success: false, error: error.message } : { success: true };
     }
 

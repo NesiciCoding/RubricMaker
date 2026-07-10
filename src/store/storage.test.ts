@@ -661,6 +661,14 @@ describe('rubric version history (Phase 18.4)', () => {
         expect(autos[19].id).toBe('auto24');
     });
 
+    it('reports evicted auto-version ids so the caller can prune them server-side', () => {
+        for (let i = 0; i < 20; i++) {
+            expect(upsertRubricVersion('r1', makeVersion(`auto${i}`, 'auto:')).evictedIds).toEqual([]);
+        }
+        expect(upsertRubricVersion('r1', makeVersion('auto20', 'auto:')).evictedIds).toEqual(['auto0']);
+        expect(upsertRubricVersion('r1', makeVersion('manual1', 'v1')).evictedIds).toEqual([]);
+    });
+
     it('upserting the same id replaces rather than duplicates', () => {
         upsertRubricVersion('r1', makeVersion('v1', 'first'));
         upsertRubricVersion('r1', { ...makeVersion('v1', 'first'), label: 'renamed' });

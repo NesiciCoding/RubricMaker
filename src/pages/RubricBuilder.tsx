@@ -168,6 +168,7 @@ export default function RubricBuilder() {
     const [versionLabel, setVersionLabel] = useState('');
     const [versionHistory, setVersionHistory] = useState<RubricVersion[]>([]);
     const [versionHistoryLoading, setVersionHistoryLoading] = useState(false);
+    const [savingVersion, setSavingVersion] = useState(false);
     const [diffAgainstVersion, setDiffAgainstVersion] = useState<RubricVersion | null>(null);
     const [showPreviewStdDesc, setShowPreviewStdDesc] = useState(false);
     const [tourRun, setTourRun] = useState(false);
@@ -3314,10 +3315,17 @@ export default function RubricBuilder() {
                             />
                             <button
                                 className="btn btn-primary btn-sm"
+                                disabled={savingVersion}
                                 onClick={async () => {
-                                    await saveRubricVersion(id, versionLabel || undefined);
-                                    setVersionLabel('');
-                                    setVersionHistory(await fetchRubricVersions(id));
+                                    if (savingVersion) return;
+                                    setSavingVersion(true);
+                                    try {
+                                        await saveRubricVersion(id, versionLabel || undefined);
+                                        setVersionLabel('');
+                                        setVersionHistory(await fetchRubricVersions(id));
+                                    } finally {
+                                        setSavingVersion(false);
+                                    }
                                 }}
                             >
                                 <Save size={13} /> {t('rubricBuilder.save_version')}
