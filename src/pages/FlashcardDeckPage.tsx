@@ -342,9 +342,20 @@ export default function FlashcardDeckPage() {
                                                 paddingTop: 10,
                                             }}
                                         >
-                                            <div style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: 6 }}>
+                                            <button
+                                                type="button"
+                                                className="btn btn-ghost btn-sm"
+                                                style={{
+                                                    fontWeight: 600,
+                                                    fontSize: '0.85rem',
+                                                    marginBottom: 6,
+                                                    padding: 0,
+                                                    justifyContent: 'flex-start',
+                                                }}
+                                                onClick={() => navigate(`/students/${student.id}`)}
+                                            >
                                                 {student.name}
-                                            </div>
+                                            </button>
                                             <FlashcardInsightsPanel insights={insights} deckKind={draft.deckKind} />
                                         </div>
                                     );

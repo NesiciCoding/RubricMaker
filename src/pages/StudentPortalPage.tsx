@@ -18,6 +18,8 @@ import {
     Send,
     Mail,
     Layers,
+    UserCheck,
+    PenSquare,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Joyride, STATUS } from 'react-joyride';
@@ -27,7 +29,17 @@ import { calcGradeSummary, calcEntryPoints } from '../utils/gradeCalc';
 import CefrProgressChart from '../components/Statistics/CefrProgressChart';
 import CriterionRadarChart from '../components/Statistics/CriterionRadarChart';
 import type { CriterionRadarDataPoint } from '../components/Statistics/CriterionRadarChart';
-import { CEFR_LEVELS } from '../data/cefrDescriptors';
+import { CEFR_LEVELS, CEFR_SKILL_LABELS } from '../data/cefrDescriptors';
+import { getGrammarItemById } from '../data/grammarStandards';
+import { getCefrStudentOverview } from '../utils/cefrStudentAggregator';
+import {
+    getLearningPathRecommendations,
+    buildCohortAverages,
+    getCriterionInterventionFlags,
+    getCefrSkillInterventionFlags,
+    getGrammarRecommendations,
+} from '../utils/learningPathAggregator';
+import { getModerationQueue, isSecondMarkerEntry } from '../utils/coGradingModerationQueue';
 import { getStudentPortalTutorialSteps } from '../data/StudentPortalTutorialSteps';
 import RubricSelfAssessPanel from '../components/Students/RubricSelfAssessPanel';
 import { encodeEssayAssignment, encodeTestAssignment } from '../utils/shareCode';
@@ -52,6 +64,7 @@ import type {
     FlashcardAssignment,
     NewsFlash,
     NewsFlashRead,
+    InterventionFlag,
 } from '../types';
 
 function scrollToSection(id: string) {
@@ -81,6 +94,9 @@ export default function StudentPortalPage() {
         gradeScales,
         settings,
         selfAssessments,
+        analysisResults,
+        tests,
+        studentTests,
         saveRubricSelfAssessment,
         fetchMyEssayAssignments,
         fetchMyTestAssignments,
@@ -98,7 +114,8 @@ export default function StudentPortalPage() {
         markNewsFlashRead,
         markNewsFlashReadAsStudent,
     } = useApp();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
     const [linkCopied, setLinkCopied] = useState(false);
     const [portalQuery, setPortalQuery] = useState('');
     const [openSelfAssessId, setOpenSelfAssessId] = useState<string | null>(null);
@@ -391,9 +408,76 @@ export default function StudentPortalPage() {
         .filter((e) => !isDone(e) && (!dueAt(e) || new Date(dueAt(e)!) > now))
         .sort(byDueDateAsc);
     const completedWork = allWork.filter(isDone);
-    const hasPeerReviews = peerReviews.some((pr) => pr.studentId === studentId && pr.gradedAt);
+    // Second-marker co-grading entries reuse this same peerReviews array (isPeerReview: true,
+    // gradedBy: a colleague id) — excluded here so a pending moderation dispute doesn't show
+    // up to the student looking like an ordinary classmate peer review.
+    const hasPeerReviews = peerReviews.some(
+        (pr) => pr.studentId === studentId && pr.gradedAt && !isSecondMarkerEntry(pr, students)
+    );
     const hasWork = allWork.length > 0;
     const hasRadar = combinedRadarData.length >= 3 || rubricRadarOptions.length > 0;
+
+    // Plain consts, not useMemo: this whole render branch is already past the `if (!student)
+    // return` guard below, so a hook here would violate the rules of hooks (see hasWork/
+    // myFlashcards above for the same reasoning).
+    const pendingModeration = student
+        ? getModerationQueue(rubrics, studentRubrics, peerReviews, students, 2).filter(
+              (item) => item.studentId === student.id
+          )
+        : [];
+
+    const cohortStudents = cls ? students.filter((s) => s.classId === cls.id) : [];
+
+    const studentCefrOverview = student
+        ? getCefrStudentOverview(student.id, studentRubrics, rubrics, selfAssessments, analysisResults)
+        : null;
+
+    const cohortAverages = buildCohortAverages(
+        cohortStudents.map(
+            (s) => getCefrStudentOverview(s.id, studentRubrics, rubrics, selfAssessments, analysisResults).cells
+        )
+    );
+
+    const achievedRubricIds = student
+        ? new Set(studentRubrics.filter((sr) => sr.studentId === student.id && sr.gradedAt).map((sr) => sr.rubricId))
+        : new Set<string>();
+
+    const learningPathRecommendations =
+        student && studentCefrOverview
+            ? getLearningPathRecommendations(
+                  student.id,
+                  studentCefrOverview.cells,
+                  cohortAverages,
+                  rubrics,
+                  achievedRubricIds
+              )
+            : [];
+
+    const learningPathFlags = student
+        ? [
+              ...getCriterionInterventionFlags(student.id, studentRubrics, rubrics),
+              ...getCefrSkillInterventionFlags(student.id, studentRubrics, rubrics),
+          ].sort((a, b) => b.triggeredAt.localeCompare(a.triggeredAt))
+        : [];
+
+    const grammarRecommendations = student
+        ? getGrammarRecommendations(student.id, studentRubrics, rubrics, studentTests, tests, flashcardDecks)
+        : [];
+
+    const hasLearningPath =
+        learningPathRecommendations.length > 0 || learningPathFlags.length > 0 || grammarRecommendations.length > 0;
+
+    function learningPathFlagLabel(flag: InterventionFlag): string {
+        if (flag.kind === 'cefrSkill') {
+            const skillLabel = CEFR_SKILL_LABELS[flag.targetId as keyof typeof CEFR_SKILL_LABELS]?.[lang];
+            return skillLabel ?? flag.targetId;
+        }
+        for (const rubric of rubrics) {
+            const criterion = rubric.criteria.find((c) => c.id === flag.targetId);
+            if (criterion) return criterion.title;
+        }
+        return flag.targetId;
+    }
 
     // fetchMyMessages() is scoped by the authenticated session the same way as
     // fetchMy*Assignments() above — filter to this portal's own student id for the same
@@ -485,6 +569,16 @@ export default function StudentPortalPage() {
             id: 'portal-section-peer-reviews',
             label: t('studentPortal.peer_reviews_received', 'Peer Reviews'),
             visible: hasPeerReviews,
+        },
+        {
+            id: 'portal-section-moderation',
+            label: t('studentPortal.moderation_section_title'),
+            visible: pendingModeration.length > 0,
+        },
+        {
+            id: 'portal-section-learning-path',
+            label: t('studentPortal.learning_path_section_title'),
+            visible: hasLearningPath,
         },
         { id: 'portal-section-feedback', label: t('studentPortal.rubric_grades'), visible: history.length > 0 },
     ].filter((link) => link.visible);
@@ -891,7 +985,9 @@ export default function StudentPortalPage() {
 
                 {/* Peer reviews received */}
                 {(() => {
-                    const received = peerReviews.filter((pr) => pr.studentId === studentId && pr.gradedAt);
+                    const received = peerReviews.filter(
+                        (pr) => pr.studentId === studentId && pr.gradedAt && !isSecondMarkerEntry(pr, students)
+                    );
                     if (received.length === 0) return null;
                     return (
                         <Section
@@ -945,6 +1041,147 @@ export default function StudentPortalPage() {
                         </Section>
                     );
                 })()}
+
+                {/* Pending co-grading moderation — deliberately vague: no delta/score details or
+                    reviewer identity, since a dispute isn't resolved yet and this is a read-only
+                    student-facing surface. */}
+                {pendingModeration.length > 0 && (
+                    <Section id="portal-section-moderation" title={t('studentPortal.moderation_section_title')}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            {pendingModeration.map((item) => {
+                                const rubric = rubrics.find((r) => r.id === item.rubricId);
+                                if (!rubric) return null;
+                                return (
+                                    <div
+                                        key={`${item.rubricId}-${item.round}`}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 10,
+                                            background: 'var(--bg)',
+                                            border: '1px solid var(--border)',
+                                            borderRadius: 10,
+                                            padding: '12px 14px',
+                                        }}
+                                    >
+                                        <UserCheck size={16} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+                                        <div>
+                                            <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{rubric.name}</div>
+                                            <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                                                {t('studentPortal.moderation_notice')}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </Section>
+                )}
+
+                {/* Read-only learning-path insights — same rule-based recommendations the
+                    teacher sees on StudentLearningPathPage, minus the navigate() actions since
+                    /rubrics, /flashcards, /tests are teacher-authenticated routes not reachable
+                    from this public portal. */}
+                {hasLearningPath && (
+                    <Section id="portal-section-learning-path" title={t('studentPortal.learning_path_section_title')}>
+                        {learningPathRecommendations.length > 0 && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+                                {learningPathRecommendations.map((rec) => {
+                                    const skillLabel = CEFR_SKILL_LABELS[rec.skill]?.[lang] ?? rec.skill;
+                                    return (
+                                        <div
+                                            key={`${rec.skill}__${rec.level}`}
+                                            style={{
+                                                display: 'flex',
+                                                flexWrap: 'wrap',
+                                                alignItems: 'center',
+                                                gap: 10,
+                                                padding: '10px 14px',
+                                                borderRadius: 10,
+                                                border: '1px solid var(--border)',
+                                                background: 'var(--bg)',
+                                            }}
+                                        >
+                                            <TrendingUp size={15} style={{ color: 'var(--accent)' }} />
+                                            <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{skillLabel}</span>
+                                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                                {t('learningPath.gap_summary', {
+                                                    studentScore: rec.studentScore.toFixed(0),
+                                                    cohortAverage: rec.cohortAverage.toFixed(0),
+                                                })}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {grammarRecommendations.length > 0 && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+                                {grammarRecommendations.map((rec) => {
+                                    const item = getGrammarItemById(rec.grammarItemId);
+                                    const itemLabel = item
+                                        ? lang === 'nl'
+                                            ? item.labelNl
+                                            : item.labelEn
+                                        : rec.grammarItemId;
+                                    return (
+                                        <div
+                                            key={`${rec.grammarItemId}__${rec.triggeredAt}`}
+                                            style={{
+                                                display: 'flex',
+                                                flexWrap: 'wrap',
+                                                alignItems: 'center',
+                                                gap: 10,
+                                                padding: '10px 14px',
+                                                borderRadius: 10,
+                                                border: '1px solid var(--border)',
+                                                background: 'var(--bg)',
+                                            }}
+                                        >
+                                            <PenSquare size={15} style={{ color: 'var(--accent)' }} />
+                                            <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{itemLabel}</span>
+                                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                                {t('grammar.recommend_streak', {
+                                                    count: rec.streakLength,
+                                                    label: itemLabel,
+                                                })}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {learningPathFlags.length > 0 && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                {learningPathFlags.map((flag, idx) => (
+                                    <div
+                                        key={`${flag.kind}-${flag.targetId}-${idx}`}
+                                        style={{
+                                            display: 'flex',
+                                            flexWrap: 'wrap',
+                                            alignItems: 'center',
+                                            gap: 10,
+                                            padding: '10px 14px',
+                                            borderRadius: 10,
+                                            border: '1px solid var(--border)',
+                                            background: 'var(--bg)',
+                                        }}
+                                    >
+                                        <AlertTriangle size={15} style={{ color: 'var(--accent)' }} />
+                                        <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>
+                                            {learningPathFlagLabel(flag)}
+                                        </span>
+                                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                            {t('learningPath.flag_streak', { count: flag.streakLength })}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </Section>
+                )}
 
                 {/* Rubric grades list */}
                 {history.length > 0 && (

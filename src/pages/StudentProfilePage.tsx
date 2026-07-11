@@ -18,6 +18,8 @@ import {
     Printer,
     Mic,
     ChevronDown,
+    Languages,
+    Layers,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Joyride, STATUS } from 'react-joyride';
@@ -1014,6 +1016,22 @@ export default function StudentProfilePage() {
                                         >
                                             <TrendingUp size={14} />
                                             {t('learningPath.view_button')}
+                                        </button>
+                                        <button
+                                            className="btn btn-secondary btn-sm"
+                                            onClick={() => navigate('/vocabulary')}
+                                            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                                        >
+                                            <Languages size={14} />
+                                            {t('vocabProfile.view_button')}
+                                        </button>
+                                        <button
+                                            className="btn btn-secondary btn-sm"
+                                            onClick={() => navigate('/flashcards')}
+                                            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                                        >
+                                            <Layers size={14} />
+                                            {t('flashcards.view_button')}
                                         </button>
                                         <button
                                             className="btn btn-primary btn-sm"

@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LayoutGrid, GripVertical, ClipboardList, X } from 'lucide-react';
+import { LayoutGrid, GripVertical, ClipboardList, Plus, X } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { useTranslation } from 'react-i18next';
 import { Joyride, STATUS } from 'react-joyride';
@@ -190,6 +190,9 @@ export default function ActivityDashboardPage() {
                     <div className="empty-state">
                         <LayoutGrid size={36} />
                         <p>{t('activityDashboard.empty')}</p>
+                        <button className="btn btn-primary" onClick={() => navigate('/rubrics')}>
+                            <Plus size={16} /> {t('activityDashboard.create_cta')}
+                        </button>
                     </div>
                 </div>
             </>

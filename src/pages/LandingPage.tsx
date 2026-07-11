@@ -186,6 +186,12 @@ const STUDENT_FEATURES = [
         color: '#f59e0b',
     },
     {
+        icon: TrendingUp,
+        title: 'Grade Review & Recommendations',
+        desc: 'See a note in your portal if a grade is currently being double-checked by a colleague of your teacher, plus personalised rubric and grammar-practice suggestions based on your own progress.',
+        color: '#6366f1',
+    },
+    {
         icon: Layers,
         title: 'Study Flashcards',
         desc: 'Practice vocabulary decks from your teacher with smart spaced repetition — hard words come back sooner, and you can see your progress grow.',
