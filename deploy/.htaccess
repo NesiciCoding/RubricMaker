@@ -35,6 +35,13 @@
     Header always set Permissions-Policy "geolocation=(), camera=(), payment=()"
 
     # Content Security Policy
+    # connect-src includes this deployment's self-hosted Supabase domain
+    # (supabase.rubricmaker.nl) explicitly — the https://*.supabase.co /
+    # wss://*.supabase.co wildcard does NOT match a custom domain, so it must
+    # be listed here too or the Realtime websocket gets silently CSP-blocked
+    # (GH #280). Forking this for a different deployment? Replace
+    # supabase.rubricmaker.nl with your own self-hosted Supabase domain, or
+    # drop that pair entirely if you're on Supabase Cloud instead.
     Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://supabase.rubricmaker.nl wss://supabase.rubricmaker.nl https://*.supabase.co wss://*.supabase.co https://api.languagetool.org https://api.commonstandardsproject.com; worker-src 'self' blob: https://cdn.jsdelivr.net; frame-src data: blob:;"
 </IfModule>
 
