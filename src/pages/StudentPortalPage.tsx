@@ -39,7 +39,11 @@ import {
     getCefrSkillInterventionFlags,
     getGrammarRecommendations,
 } from '../utils/learningPathAggregator';
-import { getModerationQueue, isSecondMarkerEntry } from '../utils/coGradingModerationQueue';
+import {
+    DEFAULT_MODERATION_THRESHOLD_POINTS,
+    getModerationQueue,
+    isSecondMarkerEntry,
+} from '../utils/coGradingModerationQueue';
 import { getStudentPortalTutorialSteps } from '../data/StudentPortalTutorialSteps';
 import RubricSelfAssessPanel from '../components/Students/RubricSelfAssessPanel';
 import { encodeEssayAssignment, encodeTestAssignment } from '../utils/shareCode';
@@ -299,6 +303,99 @@ export default function StudentPortalPage() {
 
     const selfAssess = selfAssessments.filter((sa) => sa.studentId === studentId);
 
+    // Second-marker co-grading entries reuse this same peerReviews array (isPeerReview: true,
+    // gradedBy: a colleague id) — excluded here so a pending moderation dispute doesn't show
+    // up to the student looking like an ordinary classmate peer review.
+    const receivedPeerReviews = useMemo(
+        () =>
+            peerReviews.filter((pr) => pr.studentId === studentId && pr.gradedAt && !isSecondMarkerEntry(pr, students)),
+        [peerReviews, studentId, students]
+    );
+
+    const pendingModeration = useMemo(
+        () =>
+            student
+                ? getModerationQueue(
+                      rubrics,
+                      studentRubrics,
+                      peerReviews,
+                      students,
+                      DEFAULT_MODERATION_THRESHOLD_POINTS
+                  ).filter((item) => item.studentId === student.id)
+                : [],
+        [student, rubrics, studentRubrics, peerReviews, students]
+    );
+
+    const cohortStudents = useMemo(() => (cls ? students.filter((s) => s.classId === cls.id) : []), [cls, students]);
+
+    const studentCefrOverview = useMemo(
+        () =>
+            student
+                ? getCefrStudentOverview(student.id, studentRubrics, rubrics, selfAssessments, analysisResults)
+                : null,
+        [student, studentRubrics, rubrics, selfAssessments, analysisResults]
+    );
+
+    const cohortAverages = useMemo(
+        () =>
+            buildCohortAverages(
+                cohortStudents.map(
+                    (s) => getCefrStudentOverview(s.id, studentRubrics, rubrics, selfAssessments, analysisResults).cells
+                )
+            ),
+        [cohortStudents, studentRubrics, rubrics, selfAssessments, analysisResults]
+    );
+
+    // Excludes notHandedIn/isPeerReview entries, matching the `history` filter above — a rubric
+    // marked "not handed in" shouldn't count as achieved and get silently dropped from
+    // suggestedRubricIds in getLearningPathRecommendations.
+    const achievedRubricIds = useMemo(
+        () =>
+            student
+                ? new Set(
+                      studentRubrics
+                          .filter(
+                              (sr) => sr.studentId === student.id && sr.gradedAt && !sr.isPeerReview && !sr.notHandedIn
+                          )
+                          .map((sr) => sr.rubricId)
+                  )
+                : new Set<string>(),
+        [student, studentRubrics]
+    );
+
+    const learningPathRecommendations = useMemo(
+        () =>
+            student && studentCefrOverview
+                ? getLearningPathRecommendations(
+                      student.id,
+                      studentCefrOverview.cells,
+                      cohortAverages,
+                      rubrics,
+                      achievedRubricIds
+                  )
+                : [],
+        [student, studentCefrOverview, cohortAverages, rubrics, achievedRubricIds]
+    );
+
+    const learningPathFlags = useMemo(
+        () =>
+            student
+                ? [
+                      ...getCriterionInterventionFlags(student.id, studentRubrics, rubrics),
+                      ...getCefrSkillInterventionFlags(student.id, studentRubrics, rubrics),
+                  ].sort((a, b) => b.triggeredAt.localeCompare(a.triggeredAt))
+                : [],
+        [student, studentRubrics, rubrics]
+    );
+
+    const grammarRecommendations = useMemo(
+        () =>
+            student
+                ? getGrammarRecommendations(student.id, studentRubrics, rubrics, studentTests, tests, flashcardDecks)
+                : [],
+        [student, studentRubrics, rubrics, studentTests, tests, flashcardDecks]
+    );
+
     if (!student) {
         return (
             <div
@@ -408,61 +505,9 @@ export default function StudentPortalPage() {
         .filter((e) => !isDone(e) && (!dueAt(e) || new Date(dueAt(e)!) > now))
         .sort(byDueDateAsc);
     const completedWork = allWork.filter(isDone);
-    // Second-marker co-grading entries reuse this same peerReviews array (isPeerReview: true,
-    // gradedBy: a colleague id) — excluded here so a pending moderation dispute doesn't show
-    // up to the student looking like an ordinary classmate peer review.
-    const hasPeerReviews = peerReviews.some(
-        (pr) => pr.studentId === studentId && pr.gradedAt && !isSecondMarkerEntry(pr, students)
-    );
+    const hasPeerReviews = receivedPeerReviews.length > 0;
     const hasWork = allWork.length > 0;
     const hasRadar = combinedRadarData.length >= 3 || rubricRadarOptions.length > 0;
-
-    // Plain consts, not useMemo: this whole render branch is already past the `if (!student)
-    // return` guard below, so a hook here would violate the rules of hooks (see hasWork/
-    // myFlashcards above for the same reasoning).
-    const pendingModeration = student
-        ? getModerationQueue(rubrics, studentRubrics, peerReviews, students, 2).filter(
-              (item) => item.studentId === student.id
-          )
-        : [];
-
-    const cohortStudents = cls ? students.filter((s) => s.classId === cls.id) : [];
-
-    const studentCefrOverview = student
-        ? getCefrStudentOverview(student.id, studentRubrics, rubrics, selfAssessments, analysisResults)
-        : null;
-
-    const cohortAverages = buildCohortAverages(
-        cohortStudents.map(
-            (s) => getCefrStudentOverview(s.id, studentRubrics, rubrics, selfAssessments, analysisResults).cells
-        )
-    );
-
-    const achievedRubricIds = student
-        ? new Set(studentRubrics.filter((sr) => sr.studentId === student.id && sr.gradedAt).map((sr) => sr.rubricId))
-        : new Set<string>();
-
-    const learningPathRecommendations =
-        student && studentCefrOverview
-            ? getLearningPathRecommendations(
-                  student.id,
-                  studentCefrOverview.cells,
-                  cohortAverages,
-                  rubrics,
-                  achievedRubricIds
-              )
-            : [];
-
-    const learningPathFlags = student
-        ? [
-              ...getCriterionInterventionFlags(student.id, studentRubrics, rubrics),
-              ...getCefrSkillInterventionFlags(student.id, studentRubrics, rubrics),
-          ].sort((a, b) => b.triggeredAt.localeCompare(a.triggeredAt))
-        : [];
-
-    const grammarRecommendations = student
-        ? getGrammarRecommendations(student.id, studentRubrics, rubrics, studentTests, tests, flashcardDecks)
-        : [];
 
     const hasLearningPath =
         learningPathRecommendations.length > 0 || learningPathFlags.length > 0 || grammarRecommendations.length > 0;
@@ -985,9 +1030,7 @@ export default function StudentPortalPage() {
 
                 {/* Peer reviews received */}
                 {(() => {
-                    const received = peerReviews.filter(
-                        (pr) => pr.studentId === studentId && pr.gradedAt && !isSecondMarkerEntry(pr, students)
-                    );
+                    const received = receivedPeerReviews;
                     if (received.length === 0) return null;
                     return (
                         <Section

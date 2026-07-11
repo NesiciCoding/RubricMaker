@@ -46,16 +46,16 @@ describe('Sidebar', () => {
     });
 
     it('shows the Insights domain sub-items including Activity Dashboard', () => {
-        renderSidebar('/statistics');
+        renderSidebar('/activity-dashboard');
         expect(screen.getByText('navigation.statistics')).toBeInTheDocument();
         expect(screen.getByText('navigation.export')).toBeInTheDocument();
         expect(screen.getByText('navigation.activity_dashboard')).toBeInTheDocument();
     });
 
     it('shows moderation under Assessments and messages under Students', () => {
-        renderSidebar('/rubrics');
+        renderSidebar('/moderation');
         expect(screen.getByText('navigation.moderation')).toBeInTheDocument();
-        renderSidebar('/students');
+        renderSidebar('/messages');
         expect(screen.getByText('navigation.messages')).toBeInTheDocument();
     });
 

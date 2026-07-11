@@ -134,6 +134,40 @@ const mockGradedStudentRubricsArr = [mockGradedStudentRubric, mockGradedStudentR
 const mockPeerReviewsArr = [mockPeerReview];
 const mockSaveRubricSelfAssessment = vi.fn();
 
+// A baseline grade plus a colleague's second-marker grade far enough apart (delta 4 >= the
+// default moderation threshold of 2) to land in the pending moderation queue.
+const mockModerationBaseline: StudentRubric = {
+    id: 'sr-mod',
+    rubricId: 'r1',
+    studentId: 's1',
+    entries: [{ criterionId: 'c1', levelId: null, overridePoints: 5, checkedSubItems: [], comment: '' }],
+    overallComment: '',
+    gradedAt: '2024-03-01T10:00:00Z',
+    isPeerReview: false,
+};
+const mockSecondMarkerEntry: StudentRubric = {
+    id: 'pr-mod',
+    rubricId: 'r1',
+    studentId: 's1',
+    entries: [{ criterionId: 'c1', levelId: null, overridePoints: 9, checkedSubItems: [], comment: '' }],
+    overallComment: '',
+    gradedAt: '2024-03-02T10:00:00Z',
+    isPeerReview: true,
+    gradedBy: 'colleague-x',
+};
+
+// Three consecutive low scores (<60%) on the same criterion trigger a criterion intervention
+// flag from getCriterionInterventionFlags, which is enough to make hasLearningPath true.
+const mockLowScoreStreakArr: StudentRubric[] = [1, 2, 3].map((n) => ({
+    id: `sr-flag-${n}`,
+    rubricId: 'r1',
+    studentId: 's1',
+    entries: [{ criterionId: 'c1', levelId: null, overridePoints: 30, checkedSubItems: [], comment: '' }],
+    overallComment: '',
+    gradedAt: `2024-04-0${n}T10:00:00Z`,
+    isPeerReview: false,
+}));
+
 const mockAppValue: Record<string, unknown> = {
     students: mockStudentsArr,
     classes: mockClassesArr,
@@ -279,6 +313,28 @@ describe('StudentPortalPage', () => {
         renderAt('s1');
         expect(screen.getByText('Nice peer review')).toBeInTheDocument();
         mockAppValue.peerReviews = emptyArr;
+    });
+
+    it('shows a pending-moderation notice and excludes the second-marker entry from peer reviews', () => {
+        mockAppValue.studentRubrics = [mockModerationBaseline];
+        mockAppValue.peerReviews = [mockSecondMarkerEntry];
+        renderAt('s1');
+        // Section title appears in both the jump-nav and the section heading.
+        expect(screen.getAllByText('studentPortal.moderation_section_title').length).toBeGreaterThan(0);
+        expect(screen.getByText('studentPortal.moderation_notice')).toBeInTheDocument();
+        // The second-marker entry must not show up as an ordinary peer review.
+        expect(screen.queryByText('studentPortal.peer_reviews_received')).not.toBeInTheDocument();
+        mockAppValue.studentRubrics = emptyArr;
+        mockAppValue.peerReviews = emptyArr;
+    });
+
+    it('renders learning-path recommendations when an intervention flag triggers', () => {
+        mockAppValue.studentRubrics = mockLowScoreStreakArr;
+        renderAt('s1');
+        expect(screen.getAllByText('studentPortal.learning_path_section_title').length).toBeGreaterThan(0);
+        // flagLabel resolves the criterion title for a 'criterion'-kind flag.
+        expect(screen.getAllByText('Content').length).toBeGreaterThan(0);
+        mockAppValue.studentRubrics = emptyArr;
     });
 
     it('renders news flash section when newsFlashes exist', () => {

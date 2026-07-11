@@ -1,6 +1,12 @@
 import { Rubric, ScoreEntry, Student, StudentRubric } from '../types';
 import { calcEntryPoints } from './gradeCalc';
 
+// Shared with StudentPortalPage.tsx so the student-facing "under review" notice and the
+// teacher-facing moderation queue agree on what counts as a dispute by default. The teacher can
+// still raise/lower this per-session via the number input on /moderation (local UI state, not
+// persisted), so full agreement isn't guaranteed once they do — only the shared starting point is.
+export const DEFAULT_MODERATION_THRESHOLD_POINTS = 2;
+
 export interface ModerationCriterionDelta {
     criterionId: string;
     title: string;
