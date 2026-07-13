@@ -680,6 +680,8 @@ export interface AppSettings {
     notifyStudentsOnGrade?: boolean;
     /** Whether to send an email notification to the student when a teacher replies to/starts a message thread (Supabase mode only). */
     notifyStudentsOnMessage?: boolean;
+    /** Whether to receive a nightly email digest (currently: pending moderation-queue disputes) via pg_cron. Supabase mode only. */
+    digestEmailEnabled?: boolean;
     /** Wider letter-spacing and increased line-height app-wide, for dyslexic readers. */
     dyslexiaFriendlyMode?: boolean;
 }

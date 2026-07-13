@@ -856,6 +856,40 @@ export default function SettingsPage() {
                             </div>
                         )}
 
+                        {/* Teacher email digest (Supabase mode only, pg_cron-driven) */}
+                        {dbStatus.isConnected && (
+                            <div className="card" style={{ marginBottom: 24 }}>
+                                <h3 style={{ marginBottom: 12 }}>{t('settings.digest_title', 'Email Digest')}</h3>
+                                <label
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 10,
+                                        cursor: 'pointer',
+                                        userSelect: 'none',
+                                    }}
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={!!settings.digestEmailEnabled}
+                                        onChange={(e) => updateSettings({ digestEmailEnabled: e.target.checked })}
+                                        style={{ accentColor: 'var(--accent)' }}
+                                    />
+                                    <div>
+                                        <div style={{ fontWeight: 500 }}>
+                                            {t('settings.digest_label', 'Send me a nightly email digest')}
+                                        </div>
+                                        <div className="text-xs text-muted" style={{ marginTop: 2 }}>
+                                            {t(
+                                                'settings.digest_help',
+                                                'Sends you an email when you have pending second-marker disputes on the Moderation Queue. Runs nightly via a scheduled job; requires the server-side digest job and SMTP to be set up (self-hosted deployments only, see docs/SELF_HOSTING_OPS.md).'
+                                            )}
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        )}
+
                         {/* Overdue Reminder Threshold */}
                         <div className="card" style={{ marginBottom: 24 }}>
                             <div className="card-header">

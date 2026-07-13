@@ -2197,6 +2197,1748 @@ create policy "recordings_storage_owner"
     and (storage.foldername(name))[1] = (select auth.uid())::text
   );
 
+-- ── 035_client_logs.sql ──────────────────────────────────────────────────────────────
+
+-- Stress-test diagnostics: append-only client-side event log.
+-- Captures action/sync/error/lifecycle events from both the teacher app and
+-- the standalone student pages (essay, test, feedback, preview), tagged with
+-- session/role/school for reconstructing what happened during a pilot class.
+-- Only written to when the client build sets VITE_STRESS_TEST_LOGGING=true.
+
+create table if not exists public.client_logs (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  session_id text not null,
+  role text,
+  school_id text,
+  user_id uuid,
+  category text not null,
+  name text not null,
+  level text not null default 'info',
+  meta jsonb,
+  app_version text
+);
+create index if not exists client_logs_created_at_idx on public.client_logs(created_at);
+create index if not exists client_logs_session_idx on public.client_logs(session_id);
+
+alter table public.client_logs enable row level security;
+
+-- Any signed-in client (including anonymous student sign-ins) may append
+-- diagnostic events; rows carry no content that benefits an attacker.
+drop policy if exists "client_logs_insert" on public.client_logs;
+create policy "client_logs_insert"
+  on public.client_logs for insert
+  to authenticated
+  with check (true);
+
+-- Logs are write-only from the client; reviewed via the SQL editor / service role.
+drop policy if exists "client_logs_no_select" on public.client_logs;
+create policy "client_logs_no_select"
+  on public.client_logs for select
+  using (false);
+
+-- ── 036_essay_templates.sql ──────────────────────────────────────────────────────────────
+
+-- Essay templates: saved assignment configurations not yet assigned to any student.
+-- Same jsonb-document pattern as tests (033_tests_tables.sql).
+
+create table if not exists public.essay_templates (
+  id text primary key,
+  owner_id uuid not null references public.profiles(id) on delete cascade,
+  data jsonb not null
+);
+create index if not exists essay_templates_owner_id_idx on public.essay_templates(owner_id);
+
+alter table public.essay_templates enable row level security;
+
+drop policy if exists "essay_templates_own" on public.essay_templates;
+create policy "essay_templates_own"
+  on public.essay_templates for all
+  using ((select auth.uid()) = owner_id)
+  with check ((select auth.uid()) = owner_id);
+
+-- ── 037_rename_user_role_to_teacher.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 036: Rename role value 'user' → 'teacher' throughout profiles.
+-- The old value 'user' was ambiguous; 'teacher' is the explicit, correct label.
+
+-- ── 1. Drop the existing CHECK constraint (auto-named in migration 007) ────────
+ALTER TABLE public.profiles
+  DROP CONSTRAINT IF EXISTS profiles_role_check;
+
+-- ── 2. Migrate existing data ──────────────────────────────────────────────────
+UPDATE public.profiles SET role = 'teacher' WHERE role = 'user';
+
+-- ── 3. New default + CHECK constraint ─────────────────────────────────────────
+ALTER TABLE public.profiles
+  ALTER COLUMN role SET DEFAULT 'teacher';
+
+ALTER TABLE public.profiles
+  ADD CONSTRAINT profiles_role_check CHECK (role IN ('admin', 'teacher', 'student'));
+
+-- ── 4. Update RLS policy that hard-coded 'user' in the IN list ───────────────
+-- Migration 009 created profiles_read_users_and_admins with IN ('user','admin').
+DROP POLICY IF EXISTS "profiles_read_users_and_admins" ON public.profiles;
+CREATE POLICY "profiles_read_users_and_admins"
+  ON public.profiles FOR SELECT
+  USING (
+    auth.uid() IS NOT NULL
+    AND get_my_role() IN ('teacher', 'admin')
+  );
+
+-- ── 5. Replace handle_new_user() — assigns 'teacher' instead of 'user' ────────
+-- Replaces migration 028's version; changes: 'user' → 'teacher' in fallback role
+-- and lock name; preserves the is_anonymous → 'student' branch from migration 028.
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_role TEXT;
+  v_name TEXT;
+BEGIN
+  v_name := COALESCE(
+    NULLIF(TRIM(new.raw_user_meta_data->>'full_name'), ''),
+    NULLIF(TRIM(new.raw_user_meta_data->>'name'), ''),
+    new.email
+  );
+
+  IF new.is_anonymous THEN
+    -- Anonymous sign-ins are always essay-submitting students.
+    v_role := 'student';
+
+  ELSIF new.email IS NOT NULL AND EXISTS (
+    SELECT 1 FROM public.students
+    WHERE data->>'email' IS NOT NULL
+      AND lower(data->>'email') = lower(new.email)
+  ) THEN
+    v_role := 'student';
+
+  ELSE
+    PERFORM pg_advisory_xact_lock(hashtext('public.handle_new_user:first_admin'));
+
+    SELECT CASE WHEN EXISTS (
+      SELECT 1 FROM public.profiles WHERE NOT (
+        role = 'student' AND email IS NULL
+      ) LIMIT 1
+    ) THEN 'teacher' ELSE 'admin' END
+      INTO v_role;
+  END IF;
+
+  INSERT INTO public.profiles (id, email, display_name, role)
+  VALUES (new.id, new.email, v_name, v_role)
+  ON CONFLICT (id) DO NOTHING;
+
+  RETURN new;
+END;
+$$;
+
+-- ── 6. Update protect_role_changes() — allow 'teacher' → 'student' self-downgrade
+-- Replaces migration 030's version which checked OLD.role = 'user'.
+CREATE OR REPLACE FUNCTION public.protect_role_changes()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF OLD.role IS DISTINCT FROM NEW.role THEN
+    -- Allow a user to downgrade their own role from 'teacher' to 'student'.
+    IF NEW.id = auth.uid() AND OLD.role = 'teacher' AND NEW.role = 'student' THEN
+      RETURN NEW;
+    END IF;
+    -- All other role changes require admin privileges.
+    IF get_my_role() IS DISTINCT FROM 'admin' THEN
+      RAISE EXCEPTION 'Only admins can change roles';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+-- ── 038_audit_logs.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 037: Compliance-grade audit log.
+-- Tracks admin actions (3 yr), grade/rubric edits (1 yr), export & auth events (1 mo).
+-- pg_cron is enabled here; also activates the anonymize_overdue_students() schedule
+-- that has been commented out since migration 017.
+
+-- ── 1. Enable pg_cron ─────────────────────────────────────────────────────────
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+
+-- ── 2. audit_logs table ───────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.audit_logs (
+  id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  actor_id    uuid        REFERENCES public.profiles(id) ON DELETE SET NULL,
+  category    text        NOT NULL
+                          CHECK (category IN ('admin', 'grade', 'export', 'auth')),
+  action      text        NOT NULL,
+  entity_type text,
+  entity_id   text,
+  details     jsonb,
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS audit_logs_actor_idx    ON public.audit_logs (actor_id);
+CREATE INDEX IF NOT EXISTS audit_logs_category_idx ON public.audit_logs (category);
+CREATE INDEX IF NOT EXISTS audit_logs_created_idx  ON public.audit_logs (created_at DESC);
+
+-- ── 3. RLS ────────────────────────────────────────────────────────────────────
+ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
+
+-- Admins see every entry; teachers see only their own.
+CREATE POLICY audit_logs_select ON public.audit_logs FOR SELECT TO authenticated
+  USING (
+    actor_id = auth.uid()
+    OR public.get_my_role() = 'admin'
+  );
+
+-- Authenticated users can only insert rows attributed to themselves.
+CREATE POLICY audit_logs_insert ON public.audit_logs FOR INSERT TO authenticated
+  WITH CHECK (actor_id = auth.uid());
+
+-- Deletion is cron-only; no user or app code deletes audit rows directly.
+-- The cron job runs as postgres (superuser) and bypasses RLS.
+
+-- ── 4. Retention cleanup (pg_cron) ───────────────────────────────────────────
+SELECT cron.schedule(
+  'audit-cleanup-admin',
+  '15 3 * * *',
+  $$ DELETE FROM public.audit_logs WHERE category = 'admin'  AND created_at < now() - interval '3 years' $$
+);
+
+SELECT cron.schedule(
+  'audit-cleanup-grade',
+  '20 3 * * *',
+  $$ DELETE FROM public.audit_logs WHERE category = 'grade'  AND created_at < now() - interval '1 year' $$
+);
+
+SELECT cron.schedule(
+  'audit-cleanup-export-auth',
+  '25 3 * * *',
+  $$ DELETE FROM public.audit_logs WHERE category IN ('export','auth') AND created_at < now() - interval '1 month' $$
+);
+
+-- ── 5. Activate the long-pending student anonymization schedule ────────────────
+-- anonymize_overdue_students() has existed since migration 017 but was never scheduled.
+SELECT cron.schedule(
+  'anonymize-overdue-students',
+  '0 2 * * *',
+  $$ SELECT public.anonymize_overdue_students() $$
+);
+
+-- ── 039_security_advisor_fixes.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 036: Fix two real Supabase advisor security warnings
+--
+-- 1. rls_policy_always_true — client_logs INSERT
+--    WITH CHECK (true) lets any authenticated user insert rows with an arbitrary
+--    user_id (spoofing another user's identity in the log). Constrain user_id to
+--    the calling user: either NULL (anonymous/unauthenticated context) or their
+--    own auth.uid().
+--
+-- 2. pg_graphql_anon_table_exposed — _migrations
+--    The _migrations table is Supabase CLI bookkeeping. It has no business being
+--    discoverable or queryable via the PostgREST/GraphQL API. Revoke SELECT from
+--    both anon and authenticated.
+
+-- ── 1. Tighten client_logs INSERT policy ─────────────────────────────────────
+
+DROP POLICY IF EXISTS "client_logs_insert" ON public.client_logs;
+
+CREATE POLICY "client_logs_insert"
+  ON public.client_logs FOR INSERT
+  TO authenticated
+  WITH CHECK (user_id IS NULL OR user_id = (SELECT auth.uid()));
+
+-- ── 2. Hide _migrations from the API ─────────────────────────────────────────
+-- The table only exists in cloud Supabase projects; local stacks skip it.
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = '_migrations'
+  ) THEN
+    REVOKE SELECT ON TABLE public._migrations FROM anon;
+    REVOKE SELECT ON TABLE public._migrations FROM authenticated;
+  END IF;
+END;
+$$;
+
+-- ── 040_rubric_marketplace.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 040: Rubric marketplace (school-scoped)
+--
+-- Lets teachers publish a rubric to their school's marketplace and upvote
+-- listings published by colleagues. Scope is the existing schools /
+-- school_members tables — there is no public/cross-tenant sharing.
+--
+-- rubric_snapshot is a frozen jsonb copy of the rubric taken at publish time,
+-- not a live FK to public.rubrics, so a listing survives edits or deletion
+-- of the source rubric.
+--
+-- upvote_count is denormalized onto marketplace_listings and is maintained
+-- exclusively by the trigger below — clients get no UPDATE grant on it, so
+-- the only way to change it is to insert/delete a marketplace_upvotes row.
+
+-- ── 1. marketplace_listings ──────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS public.marketplace_listings (
+  id              uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id       uuid        NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
+  published_by    uuid        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  rubric_snapshot jsonb       NOT NULL,
+  name            text        NOT NULL,
+  subject         text,
+  description     text,
+  attribution     text,
+  upvote_count    integer     NOT NULL DEFAULT 0,
+  created_at      timestamptz DEFAULT now(),
+  updated_at      timestamptz DEFAULT now()
+);
+
+ALTER TABLE public.marketplace_listings ENABLE ROW LEVEL SECURITY;
+
+CREATE INDEX IF NOT EXISTS marketplace_listings_school_id_idx    ON public.marketplace_listings (school_id);
+CREATE INDEX IF NOT EXISTS marketplace_listings_published_by_idx ON public.marketplace_listings (published_by);
+
+-- ── 2. marketplace_upvotes ───────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS public.marketplace_upvotes (
+  listing_id uuid        NOT NULL REFERENCES public.marketplace_listings(id) ON DELETE CASCADE,
+  profile_id uuid        NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  created_at timestamptz DEFAULT now(),
+  PRIMARY KEY (listing_id, profile_id)
+);
+
+ALTER TABLE public.marketplace_upvotes ENABLE ROW LEVEL SECURITY;
+
+CREATE INDEX IF NOT EXISTS marketplace_upvotes_profile_id_idx ON public.marketplace_upvotes (profile_id);
+
+-- ── 3. marketplace_listings policies ─────────────────────────────────────────
+-- SELECT/INSERT are scoped to members of the listing's school. UPDATE/DELETE
+-- are restricted to the publisher (school staff can't edit each other's
+-- listings, matching the "own rows" convention used elsewhere).
+
+DROP POLICY IF EXISTS marketplace_listings_select ON public.marketplace_listings;
+CREATE POLICY marketplace_listings_select ON public.marketplace_listings FOR SELECT TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.school_members sm
+      WHERE sm.school_id = marketplace_listings.school_id
+        AND sm.profile_id = (SELECT auth.uid())
+    )
+  );
+
+DROP POLICY IF EXISTS marketplace_listings_insert ON public.marketplace_listings;
+CREATE POLICY marketplace_listings_insert ON public.marketplace_listings FOR INSERT TO authenticated
+  WITH CHECK (
+    published_by = (SELECT auth.uid())
+    AND EXISTS (
+      SELECT 1 FROM public.school_members sm
+      WHERE sm.school_id = marketplace_listings.school_id
+        AND sm.profile_id = (SELECT auth.uid())
+    )
+  );
+
+DROP POLICY IF EXISTS marketplace_listings_update ON public.marketplace_listings;
+CREATE POLICY marketplace_listings_update ON public.marketplace_listings FOR UPDATE TO authenticated
+  USING       (published_by = (SELECT auth.uid()))
+  WITH CHECK  (published_by = (SELECT auth.uid()));
+
+DROP POLICY IF EXISTS marketplace_listings_delete ON public.marketplace_listings;
+CREATE POLICY marketplace_listings_delete ON public.marketplace_listings FOR DELETE TO authenticated
+  USING (published_by = (SELECT auth.uid()));
+
+-- ── 4. marketplace_upvotes policies ──────────────────────────────────────────
+-- SELECT is scoped via the parent listing's school membership. INSERT/DELETE
+-- are restricted to the voter's own row — nobody can cast or remove a vote
+-- on someone else's behalf.
+
+DROP POLICY IF EXISTS marketplace_upvotes_select ON public.marketplace_upvotes;
+CREATE POLICY marketplace_upvotes_select ON public.marketplace_upvotes FOR SELECT TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.marketplace_listings ml
+      JOIN public.school_members sm ON sm.school_id = ml.school_id
+      WHERE ml.id = marketplace_upvotes.listing_id
+        AND sm.profile_id = (SELECT auth.uid())
+    )
+  );
+
+DROP POLICY IF EXISTS marketplace_upvotes_insert ON public.marketplace_upvotes;
+CREATE POLICY marketplace_upvotes_insert ON public.marketplace_upvotes FOR INSERT TO authenticated
+  WITH CHECK (
+    profile_id = (SELECT auth.uid())
+    AND EXISTS (
+      SELECT 1 FROM public.marketplace_listings ml
+      JOIN public.school_members sm ON sm.school_id = ml.school_id
+      WHERE ml.id = marketplace_upvotes.listing_id
+        AND sm.profile_id = (SELECT auth.uid())
+    )
+  );
+
+DROP POLICY IF EXISTS marketplace_upvotes_delete ON public.marketplace_upvotes;
+CREATE POLICY marketplace_upvotes_delete ON public.marketplace_upvotes FOR DELETE TO authenticated
+  USING (profile_id = (SELECT auth.uid()));
+
+-- ── 5. upvote_count trigger ───────────────────────────────────────────────────
+-- Keeps marketplace_listings.upvote_count in sync without giving clients any
+-- write path to it directly. SECURITY DEFINER so the trigger can update the
+-- listing row regardless of the caller's UPDATE grants on that column.
+
+CREATE OR REPLACE FUNCTION public.sync_marketplace_upvote_count()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    UPDATE public.marketplace_listings
+       SET upvote_count = upvote_count + 1
+     WHERE id = NEW.listing_id;
+    RETURN NEW;
+  ELSIF TG_OP = 'DELETE' THEN
+    UPDATE public.marketplace_listings
+       SET upvote_count = GREATEST(upvote_count - 1, 0)
+     WHERE id = OLD.listing_id;
+    RETURN OLD;
+  END IF;
+  RETURN NULL;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS marketplace_upvotes_sync_count ON public.marketplace_upvotes;
+CREATE TRIGGER marketplace_upvotes_sync_count
+  AFTER INSERT OR DELETE ON public.marketplace_upvotes
+  FOR EACH ROW
+  EXECUTE FUNCTION public.sync_marketplace_upvote_count();
+
+-- ── 6. Grants ─────────────────────────────────────────────────────────────────
+-- upvote_count is deliberately omitted from the column list on UPDATE so
+-- clients cannot write it directly; only the SECURITY DEFINER trigger above
+-- (running as the function owner) can change it.
+
+GRANT SELECT, INSERT, DELETE ON public.marketplace_listings TO authenticated;
+GRANT UPDATE (name, subject, description, attribution) ON public.marketplace_listings TO authenticated;
+GRANT SELECT, INSERT, DELETE ON public.marketplace_upvotes TO authenticated;
+
+-- ── 041_school_sharing.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 041: Department rubric & comment bank libraries (school-scoped)
+--
+-- Lets a teacher mark a rubric or comment bank item read-only-visible to every
+-- other teacher in their school. The flag lives inside the existing `data`
+-- jsonb column (Rubric.sharedWithSchool / CommentBankItem.sharedWithSchool) —
+-- no new column, since `data` already round-trips the whole entity on every save.
+--
+-- Cannot join through two school_members rows the way marketplace_listings_select
+-- (migration 040) does: that policy only ever reads the QUERYING user's own
+-- school_members row (profile_id = auth.uid()), which their own RLS
+-- (school_members_select, migration 016) always allows. A second school_members
+-- row for the RUBRIC'S OWNER, looked up by a non-admin colleague, is exactly the
+-- case school_members_select hides — so a `me JOIN owner_sm` shape here always
+-- evaluates to false for anyone but the owner. Reading the owner's `school_id` off
+-- `profiles` instead works because profiles_read_users_and_admins (migration 037)
+-- already lets any teacher/admin read every profile.
+
+CREATE POLICY rubrics_school_select ON public.rubrics FOR SELECT TO authenticated
+  USING (
+    data->'sharedWithSchool' = 'true'::jsonb
+    AND EXISTS (
+      SELECT 1 FROM public.school_members me
+      JOIN public.profiles owner_p ON owner_p.id = rubrics.owner_id
+      WHERE me.profile_id = (SELECT auth.uid())
+        AND me.school_id = owner_p.school_id
+    )
+  );
+
+CREATE POLICY comment_bank_school_select ON public.comment_bank FOR SELECT TO authenticated
+  USING (
+    data->'sharedWithSchool' = 'true'::jsonb
+    AND EXISTS (
+      SELECT 1 FROM public.school_members me
+      JOIN public.profiles owner_p ON owner_p.id = comment_bank.owner_id
+      WHERE me.profile_id = (SELECT auth.uid())
+        AND me.school_id = owner_p.school_id
+    )
+  );
+
+-- ── 042_grading_tasks.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 042: Grading task assignment
+-- Same jsonb-document pattern as essay_templates (036_essay_templates.sql).
+-- `assigned_to_teacher` is a free-text name/email (same loose-identity model as
+-- co-grading's `gradedBy`), not a profile id, so RLS stays owner-only — the
+-- creator manages the tasks they assigned.
+
+create table if not exists public.grading_tasks (
+  id text primary key,
+  owner_id uuid not null references public.profiles(id) on delete cascade,
+  data jsonb not null
+);
+create index if not exists grading_tasks_owner_id_idx on public.grading_tasks(owner_id);
+
+alter table public.grading_tasks enable row level security;
+
+drop policy if exists "grading_tasks_own" on public.grading_tasks;
+create policy "grading_tasks_own"
+  on public.grading_tasks for all
+  using ((select auth.uid()) = owner_id)
+  with check ((select auth.uid()) = owner_id);
+
+-- ── 043_marketplace_cefr_tags.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 043: CEFR level tags on marketplace listings
+--
+-- Lets a published rubric carry the CEFR level(s) it targets, so browsers
+-- can filter/identify listings by level without opening rubric_snapshot.
+
+ALTER TABLE public.marketplace_listings ADD COLUMN IF NOT EXISTS cefr_levels text[];
+
+-- ── 044_test_assignments.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 044: Test assignment tracking, mirroring essay_assignments (008, tightened in 023/025/026).
+--
+-- Lets the student portal show a to-do list of assigned tests, the same way it already
+-- does for essays via essay_assignments/get_my_essay_assignment_ids(). test_name is
+-- denormalized onto the assignment row (like essay_assignments' title/prompt) so the
+-- to-do list can render without reading `tests` at all.
+--
+-- Scope note: this migration only grants read access to a portal-authenticated student's
+-- OWN main app session (the one already used by fetchMy*Assignments()). It does not touch
+-- StudentTestPage's separate disconnected/embedded-credentials client (created with
+-- persistSession: false for cold share-code links), which has a pre-existing, unrelated gap:
+-- it never authenticates at all (no anonymous sign-in, unlike the essay flow), so its own
+-- `tests` content-fetch already fails under `tests_own` regardless of this migration. Fixing
+-- that parity gap is a separate, larger change (would need to mirror StudentEssayPage's
+-- anonymous-session + short-code resolution) and is out of scope here.
+
+-- ── 1. Table ────────────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS public.test_assignments (
+  id               TEXT        PRIMARY KEY,          -- nanoid (= teacherKey), one row per student
+  owner_id         UUID        NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  test_id          TEXT        NOT NULL,
+  student_id       TEXT        NOT NULL,             -- local app student ID
+  test_name        TEXT        NOT NULL,             -- denormalized so the portal never needs to read `tests`
+  require_seb      BOOLEAN     NOT NULL DEFAULT FALSE,
+  duration_minutes INTEGER,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  expires_at       TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS test_assignments_owner_idx ON public.test_assignments(owner_id);
+CREATE INDEX IF NOT EXISTS test_assignments_test_student_idx ON public.test_assignments(test_id, student_id);
+
+ALTER TABLE public.test_assignments ENABLE ROW LEVEL SECURITY;
+
+-- Teacher owns their assignments
+CREATE POLICY "test_assignments_owner_all"
+  ON public.test_assignments FOR ALL
+  USING      ((SELECT auth.uid()) = owner_id)
+  WITH CHECK ((SELECT auth.uid()) = owner_id);
+
+-- Admin can read all assignments
+CREATE POLICY "test_assignments_admin_select"
+  ON public.test_assignments FOR SELECT
+  USING (get_my_role() = 'admin');
+
+-- ── 2. Portal student: may only see their own assignments ─────────────────────────
+-- Mirrors get_my_essay_assignment_ids() (migration 023, initplan-wrapped in 026).
+
+CREATE OR REPLACE FUNCTION public.get_my_test_assignment_ids()
+RETURNS SETOF text LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT ta.id
+  FROM   public.test_assignments ta
+  WHERE  ta.student_id IN (SELECT get_my_student_ids())
+$$;
+
+CREATE POLICY "test_assignments_student_select"
+  ON public.test_assignments FOR SELECT
+  USING (id IN (SELECT get_my_test_assignment_ids()));
+
+REVOKE EXECUTE ON FUNCTION public.get_my_test_assignment_ids() FROM PUBLIC, anon;
+GRANT  EXECUTE ON FUNCTION public.get_my_test_assignment_ids() TO authenticated;
+
+-- ── 3. student_tests: read-only access for a portal student to their own rows ─────
+-- student_tests (migration 033) is otherwise owned entirely by the teacher
+-- (owner_id = teacher's auth.uid()) — it was designed for the teacher's own connected
+-- session to sync locally-graded/imported StudentTest records up, not for direct writes
+-- by students. This policy is purely additive and read-only: it lets a portal-authenticated
+-- student see the submission status of their own attempts (populated via the teacher's
+-- normal submission-code-import flow), without opening any new write path.
+
+CREATE POLICY "student_tests_student_select"
+  ON public.student_tests FOR SELECT
+  USING ((data->>'studentId') IN (SELECT get_my_student_ids()));
+
+-- ── 4. tests: read-only access to the content of a student's own assigned tests ───
+-- Additive alongside the existing owner-only `tests_own` policy. Scoped strictly to
+-- tests the student has a persisted assignment row for — lets the portal embed full
+-- test content into a one-click "Open" link (the same self-contained-URL approach
+-- TestAssignmentModal already uses when DB embedding is off), rather than pointing
+-- students at the still-broken disconnected-client DB-mode fetch described above.
+--
+-- test_assignments.owner_id records who created the assignment row, not who owns the
+-- referenced test_id — nothing enforces those match (no FK from test_assignments.test_id
+-- into a per-owner scope). Without the extra `ta.owner_id = tests.owner_id` check below, an
+-- assignment row whose test_id points at a DIFFERENT teacher's test would leak that
+-- teacher's full test content to the assigned student.
+
+CREATE POLICY "tests_student_select"
+  ON public.tests FOR SELECT
+  USING (
+    id IN (
+      SELECT ta.test_id
+      FROM public.test_assignments ta
+      WHERE ta.id IN (SELECT get_my_test_assignment_ids())
+        AND ta.owner_id = tests.owner_id
+    )
+  );
+
+-- ── 045_essay_local_tracking_sync.sql ──────────────────────────────────────────────────────────────
+
+-- Multi-device sync for two local-only essay collections that are distinct from
+-- the existing essay_assignments/essay_submissions tables:
+--
+-- - essay_batch_assignments: a teacher's class-assignment bookkeeping (which
+--   student was assigned which essay), used by the Activity Dashboard/EssayListPage.
+--   Unrelated to essay_assignments, which is a single row per shareable link used
+--   by the student-facing DB-submission flow (keyed by teacherKey alone).
+-- - essay_offline_submissions: essays imported via a manually pasted share code
+--   (the fully offline submission path, no student account), embedding full HTML
+--   content — distinct from essay_submissions, which stores Storage-bucket paths
+--   for the online student-portal flow.
+--
+-- Same jsonb-document pattern as essay_templates (036_essay_templates.sql).
+--
+-- Indexes below are plain (not CONCURRENTLY) intentionally: Supabase migrations run
+-- inside a transaction, where CONCURRENTLY is not allowed. Both tables are created
+-- immediately above in this same migration, so there's no existing data to lock.
+
+create table if not exists public.essay_batch_assignments (
+  id text primary key, -- `${teacherKey}:${studentId}`
+  owner_id uuid not null references public.profiles(id) on delete cascade,
+  data jsonb not null
+);
+create index if not exists essay_batch_assignments_owner_id_idx on public.essay_batch_assignments(owner_id);
+
+create table if not exists public.essay_offline_submissions (
+  id text primary key,
+  owner_id uuid not null references public.profiles(id) on delete cascade,
+  data jsonb not null
+);
+create index if not exists essay_offline_submissions_owner_id_idx on public.essay_offline_submissions(owner_id);
+
+alter table public.essay_batch_assignments enable row level security;
+alter table public.essay_offline_submissions enable row level security;
+
+drop policy if exists "essay_batch_assignments_own" on public.essay_batch_assignments;
+create policy "essay_batch_assignments_own"
+  on public.essay_batch_assignments for all
+  using ((select auth.uid()) = owner_id)
+  with check ((select auth.uid()) = owner_id);
+
+drop policy if exists "essay_offline_submissions_own" on public.essay_offline_submissions;
+create policy "essay_offline_submissions_own"
+  on public.essay_offline_submissions for all
+  using ((select auth.uid()) = owner_id)
+  with check ((select auth.uid()) = owner_id);
+
+-- ── 046_user_templates_sync.sql ──────────────────────────────────────────────────────────────
+
+-- Saved rubric templates ("save as template" on the Rubric Builder), previously
+-- localStorage-only and lost on device change. Same jsonb-document pattern as
+-- essay_templates (036_essay_templates.sql).
+--
+-- The index below is plain (not CONCURRENTLY) intentionally: Supabase migrations run
+-- inside a transaction, where CONCURRENTLY is not allowed. The table is created
+-- immediately above in this same migration, so there's no existing data to lock.
+
+create table if not exists public.user_templates (
+  id text primary key,
+  owner_id uuid not null references public.profiles(id) on delete cascade,
+  data jsonb not null
+);
+create index if not exists user_templates_owner_id_idx on public.user_templates(owner_id);
+
+alter table public.user_templates enable row level security;
+
+drop policy if exists "user_templates_own" on public.user_templates;
+create policy "user_templates_own"
+  on public.user_templates for all
+  using ((select auth.uid()) = owner_id)
+  with check ((select auth.uid()) = owner_id);
+
+-- ── 047_enable_realtime.sql ──────────────────────────────────────────────────────────────
+
+-- Adds every user-data table to the supabase_realtime publication so connected
+-- clients get notified of changes made on other devices/sessions, instead of only
+-- picking them up on next login or network reconnect (see StorageSync.startRealtimeSync).
+-- RLS still applies to postgres_changes payloads, so this does not widen access —
+-- a client only receives change events for rows it could already SELECT.
+--
+-- Unlike CREATE TABLE/INDEX, `ALTER PUBLICATION ... ADD TABLE` has no IF NOT EXISTS
+-- form and errors (not a no-op) if a table is already a member — so a retry or a
+-- table added manually beforehand would abort this migration. Guard each one.
+
+DO $$
+DECLARE
+  tbl text;
+BEGIN
+  FOREACH tbl IN ARRAY ARRAY[
+    'rubrics', 'classes', 'students', 'student_rubrics', 'attachments',
+    'grade_scales', 'comment_snippets', 'comment_bank', 'export_templates',
+    'favorite_standards', 'self_assessments', 'speaking_sessions', 'analysis_results',
+    'tests', 'student_tests', 'essay_templates', 'grading_tasks',
+    'essay_batch_assignments', 'essay_offline_submissions', 'user_templates', 'user_settings'
+  ]
+  LOOP
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_publication_tables
+      WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = tbl
+    ) THEN
+      EXECUTE format('ALTER PUBLICATION supabase_realtime ADD TABLE public.%I', tbl);
+    END IF;
+  END LOOP;
+END $$;
+
+-- ── 048_nightly_backup.sql ──────────────────────────────────────────────────────────────
+
+-- Automated backup for deployments with no server-side pg_dump access: Supabase Cloud,
+-- and any Supabase instance self-hosted separately from this repo's own docker-compose.yml
+-- (scripts/backup.sh only works against that bundled stack — it calls `docker-compose
+-- exec db pg_dump` and archives a hardcoded volume name specific to it).
+--
+-- export_owner_backup() dumps every row a teacher/admin owns as raw table rows (not the
+-- app's camelCase StoreData shape) — a disaster-recovery snapshot restorable by a DBA
+-- re-inserting rows, not a JSON file meant to round-trip through the app's own
+-- importFullBackup(). Called once per teacher/admin profile by the nightly-backup edge
+-- function (supabase/functions/nightly-backup), same auth pattern as
+-- delete-old-attachments: service-role-only, scheduled via Supabase Dashboard Cron Jobs
+-- (Cloud) or pg_cron/an external cron hitting the function URL (self-hosted).
+--
+-- Metadata only: rows like essay_submissions/speaking_sessions store Storage-bucket
+-- paths (essays/recordings buckets), not file contents — this function does not copy
+-- the referenced objects. A restored row's storage_path will be broken if the bucket
+-- itself isn't backed up separately (e.g. Supabase's own project-level backups, or a
+-- storage sync job). Out of scope here to keep this a lightweight per-user DB snapshot.
+
+CREATE OR REPLACE FUNCTION public.export_owner_backup(target_owner uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  result jsonb := '{}'::jsonb;
+BEGIN
+  result := result || jsonb_build_object('rubrics',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.rubrics t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('classes',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.classes t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('students',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.students t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('student_rubrics',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.student_rubrics t WHERE t.grader_id = target_owner AND t.is_peer_review = false));
+  result := result || jsonb_build_object('peer_reviews',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.student_rubrics t WHERE t.grader_id = target_owner AND t.is_peer_review = true));
+  result := result || jsonb_build_object('attachments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.attachments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('grade_scales',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.grade_scales t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('comment_snippets',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.comment_snippets t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('comment_bank',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.comment_bank t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('export_templates',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.export_templates t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('favorite_standards',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.favorite_standards t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('self_assessments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.self_assessments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('speaking_sessions',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.speaking_sessions t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('analysis_results',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.analysis_results t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('tests',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.tests t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('student_tests',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.student_tests t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_templates',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_templates t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('grading_tasks',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.grading_tasks t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_batch_assignments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_batch_assignments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_offline_submissions',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_offline_submissions t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('user_templates',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.user_templates t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('user_settings',
+    (SELECT to_jsonb(t) FROM public.user_settings t WHERE t.user_id = target_owner));
+  -- essay_assignments/essay_submissions have no localStorage mirror at all (unlike the
+  -- tables above, which are also cached client-side) — this is their only backup copy.
+  result := result || jsonb_build_object('essay_assignments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_assignments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_submissions',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_submissions t
+     WHERE t.assignment_id IN (SELECT id FROM public.essay_assignments WHERE owner_id = target_owner)));
+
+  RETURN result;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.export_owner_backup(uuid) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.export_owner_backup(uuid) TO service_role;
+
+-- ── Storage bucket for the resulting JSON snapshots ────────────────────────────
+
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES ('backups', 'backups', false, 104857600, ARRAY['application/json'])
+ON CONFLICT (id) DO NOTHING;
+
+-- Owner can read/list their own backups ({userId}/{timestamp}.json); writes and
+-- deletes are service-role only (the edge function uses the service key, which
+-- bypasses RLS, so no write/delete policy is granted to authenticated users here).
+CREATE POLICY "backups_storage_owner_read"
+  ON storage.objects FOR SELECT
+  USING (
+    bucket_id = 'backups'
+    AND (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+-- ── 049_test_submission_columns.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 049: student_tests submission columns + duplicate-submission guard,
+-- for the submit-test edge function (fixes the disconnected/never-authenticates
+-- StudentTestPage DB-mode client flagged in migration 044's scope note).
+--
+-- Mirrors essay_submissions' real-column-for-identity/jsonb-for-everything-else
+-- pattern (008/010), but deliberately does NOT copy essay's original
+-- UNIQUE(assignment_id, student_user_id) guard (migration 010). That constraint
+-- had to be replaced with UNIQUE(assignment_id, student_email) in migration 022
+-- because an anonymous auth.uid() isn't stable across devices/cleared storage — a
+-- student resubmitting from a second device got a fresh anon user and slipped past
+-- the guard. A test_assignments row is already 1:1 with one student (unlike
+-- essay_assignments' shared-per-class link), so assignment_id alone already scopes
+-- to exactly one student — no email/user_id pairing needed. student_user_id is
+-- kept only for the submit-test rate-limit query, not for uniqueness.
+
+ALTER TABLE public.student_tests
+  ADD COLUMN IF NOT EXISTS assignment_id   TEXT REFERENCES public.test_assignments(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS student_user_id UUID,
+  ADD COLUMN IF NOT EXISTS submitted_at    TIMESTAMPTZ;
+
+-- Indexes below are plain (not CONCURRENTLY) intentionally: Supabase migrations run
+-- inside a transaction, where CONCURRENTLY is not allowed. student_tests holds one
+-- row per graded/imported test attempt (small per-teacher volume, unlike a
+-- high-write table), so the brief exclusive lock during index creation is
+-- acceptable.
+CREATE UNIQUE INDEX IF NOT EXISTS student_tests_assignment_uniq
+  ON public.student_tests (assignment_id)
+  WHERE assignment_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS student_tests_student_user_idx ON public.student_tests(student_user_id);
+
+-- No new RLS insert policy: submit-test writes exclusively via the service-role
+-- client, so a client-facing insert policy would be dead code from day one
+-- (unlike essay_submissions_student_insert, which predates the edge-function
+-- design and is kept only defensively).
+
+-- ── 050_messages.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 050: Student <-> teacher messaging (roadmap 14.3).
+--
+-- Portal-authenticated students only (real auth.uid() session via get_my_student_ids(),
+-- same as test_assignments/essay_assignments) -- the anonymous share-link hand-in flows
+-- (StudentEssayPage/StudentTestPage) are out of scope, they have no stable identity to
+-- ever see a reply. That means this table needs no edge function: a portal session is a
+-- real authenticated user, not signInAnonymously(), so direct-table RLS is sufficient.
+--
+-- A "thread" is just every row sharing (student_id, context_type, context_id) -- no
+-- separate threads table. Flat columns (not jsonb) since we filter/group by that key,
+-- mirroring test_assignments' shape rather than essay_assignments' jsonb `data` blob.
+
+CREATE TABLE IF NOT EXISTS public.messages (
+  id              TEXT        PRIMARY KEY,
+  owner_id        UUID        NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  student_id      TEXT        NOT NULL,
+  context_type    TEXT        NOT NULL CHECK (context_type IN ('rubric', 'test', 'essay', 'general')),
+  context_id      TEXT,                    -- NULL when context_type = 'general'
+  context_label   TEXT,                    -- denormalized rubric/test/essay title, avoids a join
+  sender          TEXT        NOT NULL CHECK (sender IN ('student', 'teacher')),
+  body            TEXT        NOT NULL,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  read_by_teacher BOOLEAN     NOT NULL DEFAULT FALSE,
+  read_by_student BOOLEAN     NOT NULL DEFAULT FALSE
+);
+
+CREATE INDEX IF NOT EXISTS messages_owner_idx ON public.messages(owner_id);
+CREATE INDEX IF NOT EXISTS messages_thread_idx ON public.messages(owner_id, student_id, context_type, context_id);
+
+ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
+
+-- Teacher owns/manages every message in their scope (read, reply, mark read).
+CREATE POLICY "messages_owner_all"
+  ON public.messages FOR ALL
+  USING      ((SELECT auth.uid()) = owner_id)
+  WITH CHECK ((SELECT auth.uid()) = owner_id);
+
+-- Portal student: read own thread messages.
+CREATE POLICY "messages_student_select"
+  ON public.messages FOR SELECT
+  USING (student_id IN (SELECT get_my_student_ids()));
+
+-- A portal student's app-level Student type has no owner_id field (it's a DB-only
+-- column), so the client can't supply a trustworthy owner_id on insert. Resolve it
+-- server-side instead: a BEFORE INSERT trigger looks it up from the roster row itself,
+-- which also closes the door on a crafted INSERT pointing a message at some other
+-- teacher's owner_id -- the trigger overwrites whatever (if anything) the client sent.
+CREATE OR REPLACE FUNCTION public.set_message_owner_from_student()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF NEW.sender = 'student' THEN
+    SELECT owner_id INTO NEW.owner_id FROM public.students WHERE id = NEW.student_id;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER messages_set_owner_from_student
+  BEFORE INSERT ON public.messages
+  FOR EACH ROW EXECUTE FUNCTION public.set_message_owner_from_student();
+
+-- Portal student: may insert only their own student-authored rows (owner_id is
+-- resolved server-side by the trigger above, not trusted from the client).
+CREATE POLICY "messages_student_insert"
+  ON public.messages FOR INSERT
+  WITH CHECK (
+    sender = 'student'
+    AND student_id IN (SELECT get_my_student_ids())
+  );
+
+-- Portal student: may flip read_by_student on their own thread's messages (marking a
+-- teacher reply as read). Same USING/WITH CHECK scope as the select policy.
+CREATE POLICY "messages_student_update_read"
+  ON public.messages FOR UPDATE
+  USING      (student_id IN (SELECT get_my_student_ids()))
+  WITH CHECK (student_id IN (SELECT get_my_student_ids()));
+
+-- ── 051_flashcards.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 051: Anki-like vocabulary flashcards (roadmap 14.4).
+--
+-- Three tables following the jsonb-document pattern (033_tests_tables.sql): real
+-- columns only for identity/ownership/filtering, everything else in `data`.
+--
+--   flashcard_decks        teacher-authored decks (cards embedded in data, like Test.questions)
+--   flashcard_assignments  one row per (deck, student), id = '<deckId>:<studentId>'
+--   flashcard_reviews      one row per (deck, student): the student's FSRS spaced-repetition
+--                          state for that deck, id = '<deckId>:<studentId>'
+--
+-- Students study via the portal with their own authenticated session, mirroring the
+-- test_assignments (044) read pattern and the messages (050) trigger-resolved-owner
+-- write pattern.
+
+-- ── 1. Tables ───────────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS public.flashcard_decks (
+  id       TEXT  PRIMARY KEY,
+  owner_id UUID  NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  data     JSONB NOT NULL
+);
+CREATE INDEX IF NOT EXISTS flashcard_decks_owner_idx ON public.flashcard_decks(owner_id);
+
+CREATE TABLE IF NOT EXISTS public.flashcard_assignments (
+  id         TEXT  PRIMARY KEY,
+  owner_id   UUID  NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  deck_id    TEXT  NOT NULL,
+  student_id TEXT  NOT NULL,
+  data       JSONB NOT NULL
+);
+CREATE INDEX IF NOT EXISTS flashcard_assignments_owner_idx ON public.flashcard_assignments(owner_id);
+CREATE INDEX IF NOT EXISTS flashcard_assignments_deck_student_idx ON public.flashcard_assignments(deck_id, student_id);
+
+CREATE TABLE IF NOT EXISTS public.flashcard_reviews (
+  id         TEXT  PRIMARY KEY,
+  -- Nullable on purpose: a portal student's insert can't supply a trustworthy
+  -- owner_id; the BEFORE INSERT trigger below resolves it from the roster row.
+  owner_id   UUID  REFERENCES public.profiles(id) ON DELETE CASCADE,
+  deck_id    TEXT  NOT NULL,
+  student_id TEXT  NOT NULL,
+  data       JSONB NOT NULL
+);
+CREATE INDEX IF NOT EXISTS flashcard_reviews_owner_idx ON public.flashcard_reviews(owner_id);
+CREATE INDEX IF NOT EXISTS flashcard_reviews_deck_student_idx ON public.flashcard_reviews(deck_id, student_id);
+
+ALTER TABLE public.flashcard_decks       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.flashcard_assignments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.flashcard_reviews     ENABLE ROW LEVEL SECURITY;
+
+-- ── 2. Teacher (owner) policies ─────────────────────────────────────────────────
+
+CREATE POLICY "flashcard_decks_owner_all"
+  ON public.flashcard_decks FOR ALL
+  USING      ((SELECT auth.uid()) = owner_id)
+  WITH CHECK ((SELECT auth.uid()) = owner_id);
+
+CREATE POLICY "flashcard_assignments_owner_all"
+  ON public.flashcard_assignments FOR ALL
+  USING      ((SELECT auth.uid()) = owner_id)
+  WITH CHECK ((SELECT auth.uid()) = owner_id);
+
+CREATE POLICY "flashcard_reviews_owner_all"
+  ON public.flashcard_reviews FOR ALL
+  USING      ((SELECT auth.uid()) = owner_id)
+  WITH CHECK ((SELECT auth.uid()) = owner_id);
+
+-- ── 3. Portal student: read own assignments, read assigned decks ────────────────
+-- Mirrors get_my_test_assignment_ids() (044).
+
+CREATE OR REPLACE FUNCTION public.get_my_flashcard_assignment_ids()
+RETURNS SETOF text LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT fa.id
+  FROM   public.flashcard_assignments fa
+  WHERE  fa.student_id IN (SELECT get_my_student_ids())
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.get_my_flashcard_assignment_ids() FROM PUBLIC, anon;
+GRANT  EXECUTE ON FUNCTION public.get_my_flashcard_assignment_ids() TO authenticated;
+
+CREATE POLICY "flashcard_assignments_student_select"
+  ON public.flashcard_assignments FOR SELECT
+  USING (id IN (SELECT get_my_flashcard_assignment_ids()));
+
+CREATE OR REPLACE FUNCTION public.get_my_flashcard_deck_ids()
+RETURNS SETOF text LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT DISTINCT fa.deck_id
+  FROM   public.flashcard_assignments fa
+  WHERE  fa.student_id IN (SELECT get_my_student_ids())
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.get_my_flashcard_deck_ids() FROM PUBLIC, anon;
+GRANT  EXECUTE ON FUNCTION public.get_my_flashcard_deck_ids() TO authenticated;
+
+CREATE POLICY "flashcard_decks_student_select"
+  ON public.flashcard_decks FOR SELECT
+  USING (id IN (SELECT get_my_flashcard_deck_ids()));
+
+-- ── 4. Portal student: own review state (read + write) ──────────────────────────
+-- owner_id is resolved server-side from the roster row, same rationale as
+-- set_message_owner_from_student (050): the app-level Student type has no owner_id,
+-- and trusting a client-sent one would let a crafted INSERT attach rows to another
+-- teacher's account.
+
+CREATE OR REPLACE FUNCTION public.set_flashcard_review_owner()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF NEW.owner_id IS NULL THEN
+    SELECT owner_id INTO NEW.owner_id FROM public.students WHERE id = NEW.student_id;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER flashcard_reviews_set_owner
+  BEFORE INSERT ON public.flashcard_reviews
+  FOR EACH ROW EXECUTE FUNCTION public.set_flashcard_review_owner();
+
+CREATE POLICY "flashcard_reviews_student_select"
+  ON public.flashcard_reviews FOR SELECT
+  USING (student_id IN (SELECT get_my_student_ids()));
+
+-- Scoped to decks actually assigned to the student, so a student can't create
+-- review rows for arbitrary deck ids.
+CREATE POLICY "flashcard_reviews_student_insert"
+  ON public.flashcard_reviews FOR INSERT
+  WITH CHECK (
+    student_id IN (SELECT get_my_student_ids())
+    AND deck_id IN (SELECT get_my_flashcard_deck_ids())
+  );
+
+CREATE POLICY "flashcard_reviews_student_update"
+  ON public.flashcard_reviews FOR UPDATE
+  USING      (student_id IN (SELECT get_my_student_ids()))
+  WITH CHECK (student_id IN (SELECT get_my_student_ids()));
+
+-- ── 5. Include the new tables in the nightly owner backup ──────────────────────
+-- Full replacement of export_owner_backup (048) — same body plus the three
+-- flashcard tables appended at the end.
+
+CREATE OR REPLACE FUNCTION public.export_owner_backup(target_owner uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  result jsonb := '{}'::jsonb;
+BEGIN
+  result := result || jsonb_build_object('rubrics',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.rubrics t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('classes',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.classes t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('students',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.students t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('student_rubrics',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.student_rubrics t WHERE t.grader_id = target_owner AND t.is_peer_review = false));
+  result := result || jsonb_build_object('peer_reviews',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.student_rubrics t WHERE t.grader_id = target_owner AND t.is_peer_review = true));
+  result := result || jsonb_build_object('attachments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.attachments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('grade_scales',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.grade_scales t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('comment_snippets',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.comment_snippets t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('comment_bank',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.comment_bank t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('export_templates',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.export_templates t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('favorite_standards',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.favorite_standards t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('self_assessments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.self_assessments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('speaking_sessions',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.speaking_sessions t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('analysis_results',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.analysis_results t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('tests',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.tests t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('student_tests',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.student_tests t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_templates',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_templates t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('grading_tasks',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.grading_tasks t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_batch_assignments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_batch_assignments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_offline_submissions',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_offline_submissions t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('user_templates',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.user_templates t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('user_settings',
+    (SELECT to_jsonb(t) FROM public.user_settings t WHERE t.user_id = target_owner));
+  -- essay_assignments/essay_submissions have no localStorage mirror at all (unlike the
+  -- tables above, which are also cached client-side) — this is their only backup copy.
+  result := result || jsonb_build_object('essay_assignments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_assignments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_submissions',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_submissions t
+     WHERE t.assignment_id IN (SELECT id FROM public.essay_assignments WHERE owner_id = target_owner)));
+  result := result || jsonb_build_object('flashcard_decks',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.flashcard_decks t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('flashcard_assignments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.flashcard_assignments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('flashcard_reviews',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.flashcard_reviews t WHERE t.owner_id = target_owner));
+  RETURN result;
+END;
+$$;
+
+-- ── 052_flashcards_realtime.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 052: Add the flashcard tables to the supabase_realtime publication.
+--
+-- 051_flashcards.sql added flashcard_decks/flashcard_assignments/flashcard_reviews
+-- to StorageSync's client-side REALTIME_TABLES list, but never published them
+-- (047_enable_realtime.sql only covered the tables that existed at the time) —
+-- so every session's realtime channel was subscribing to postgres_changes for
+-- three tables Postgres doesn't recognize as part of the publication. Same
+-- guarded pattern as 047: ALTER PUBLICATION ... ADD TABLE has no IF NOT EXISTS
+-- form and errors on a table that's already a member.
+
+DO $$
+DECLARE
+  tbl text;
+BEGIN
+  FOREACH tbl IN ARRAY ARRAY[
+    'flashcard_decks', 'flashcard_assignments', 'flashcard_reviews'
+  ]
+  LOOP
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_publication_tables
+      WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = tbl
+    ) THEN
+      EXECUTE format('ALTER PUBLICATION supabase_realtime ADD TABLE public.%I', tbl);
+    END IF;
+  END LOOP;
+END $$;
+
+-- ── 053_grant_authenticated_table_access.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 053: Grant authenticated/service_role table-level access in the public schema.
+--
+-- Every migration up to now was applied as role `postgres`, and Postgres's
+-- default privileges for objects owned by `postgres` in schema `public`
+-- only give `authenticated`/`anon`/`service_role` DELETE/REFERENCES/TRIGGER/
+-- TRUNCATE (Dxt) — not SELECT/INSERT/UPDATE. Only `schools`/`school_members`
+-- (016) and `marketplace_listings`/`marketplace_upvotes` (040) ever received
+-- an explicit GRANT, so every other table has been returning PostgREST
+-- "permission denied" (42501) before RLS is even evaluated — for
+-- authenticated users, and for the edge functions that talk to these tables
+-- with the service-role key (BYPASSRLS skips row-security policies, not the
+-- table-level grant check). This repo's own docker-compose.yml happens to
+-- dodge the bug by running migrations as `supabase_admin`, whose default
+-- privileges in `public` are already permissive — but `supabase db push`
+-- (CLI, Cloud, and the official self-hosted Docker stack) all connect as
+-- `postgres`, so they hit it. RLS (already enabled on every table) remains
+-- the real access control; these grants only unlock the table-level check
+-- PostgREST does first.
+--
+-- `anon` is deliberately not granted here: every RLS policy in this schema
+-- targets `authenticated` only (even the "anonymous sign-in" student flow
+-- authenticates and holds an `authenticated` JWT) — anon-key requests
+-- should keep getting nothing.
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO authenticated, service_role;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO authenticated, service_role;
+
+-- ── 054_standard_mastery_targets.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 054: Standard mastery targets (roadmap 15.2 slice B).
+--
+-- Teacher-configured expected-mastery-% per linked standard, per (year, track) —
+-- set once globally, reused everywhere that standard is linked across rubrics.
+-- Teacher-owned only (no student read/write), so this is simpler than the
+-- flashcards tables (051): one jsonb-doc table, owner-only RLS.
+
+CREATE TABLE IF NOT EXISTS public.standard_mastery_targets (
+  id       TEXT  PRIMARY KEY,
+  owner_id UUID  NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  data     JSONB NOT NULL
+);
+CREATE INDEX IF NOT EXISTS standard_mastery_targets_owner_idx ON public.standard_mastery_targets(owner_id);
+
+ALTER TABLE public.standard_mastery_targets ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "standard_mastery_targets_owner_all"
+  ON public.standard_mastery_targets FOR ALL
+  USING      ((SELECT auth.uid()) = owner_id)
+  WITH CHECK ((SELECT auth.uid()) = owner_id);
+
+-- Full replacement of export_owner_backup (048, last extended by 051) — same body
+-- plus standard_mastery_targets appended at the end.
+
+CREATE OR REPLACE FUNCTION public.export_owner_backup(target_owner uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  result jsonb := '{}'::jsonb;
+BEGIN
+  result := result || jsonb_build_object('rubrics',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.rubrics t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('classes',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.classes t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('students',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.students t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('student_rubrics',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.student_rubrics t WHERE t.grader_id = target_owner AND t.is_peer_review = false));
+  result := result || jsonb_build_object('peer_reviews',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.student_rubrics t WHERE t.grader_id = target_owner AND t.is_peer_review = true));
+  result := result || jsonb_build_object('attachments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.attachments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('grade_scales',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.grade_scales t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('comment_snippets',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.comment_snippets t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('comment_bank',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.comment_bank t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('export_templates',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.export_templates t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('favorite_standards',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.favorite_standards t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('self_assessments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.self_assessments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('speaking_sessions',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.speaking_sessions t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('analysis_results',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.analysis_results t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('tests',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.tests t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('student_tests',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.student_tests t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_templates',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_templates t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('grading_tasks',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.grading_tasks t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_batch_assignments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_batch_assignments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_offline_submissions',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_offline_submissions t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('user_templates',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.user_templates t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('user_settings',
+    (SELECT to_jsonb(t) FROM public.user_settings t WHERE t.user_id = target_owner));
+  result := result || jsonb_build_object('essay_assignments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_assignments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_submissions',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_submissions t
+     WHERE t.assignment_id IN (SELECT id FROM public.essay_assignments WHERE owner_id = target_owner)));
+  result := result || jsonb_build_object('flashcard_decks',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.flashcard_decks t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('flashcard_assignments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.flashcard_assignments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('flashcard_reviews',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.flashcard_reviews t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('standard_mastery_targets',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.standard_mastery_targets t WHERE t.owner_id = target_owner));
+  RETURN result;
+END;
+$$;
+
+-- ── 055_test_assignments_mode.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 055: denormalize Test.mode ('practice' | 'assessment') onto test_assignments,
+-- same pattern as test_name in 044, so the student portal to-do list can badge
+-- practice vs. assessment without reading `tests`.
+
+ALTER TABLE public.test_assignments ADD COLUMN IF NOT EXISTS mode TEXT;
+
+-- ── 056_test_multiple_attempts.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 056: allow multiple submissions per test_assignments row for practice-mode
+-- tests (Test.allowMultipleAttempts), without weakening the existing one-shot guard for
+-- assessment-mode tests.
+--
+-- 049's student_tests_assignment_uniq (UNIQUE on assignment_id alone) hard-blocks a second
+-- submit-test insert for the same assignment, full stop. Practice-mode retakes need more
+-- than one student_tests row per assignment_id, so the guard is widened to
+-- UNIQUE(assignment_id, attempt_number) — submit-test (application code, not this migration)
+-- still inserts attempt_number = 1 for assessment-mode assignments, so the original
+-- one-submission behavior is unchanged there; it only computes attempt_number > 1 when the
+-- assignment's denormalized mode = 'practice'.
+
+ALTER TABLE public.student_tests
+  ADD COLUMN IF NOT EXISTS attempt_number INTEGER NOT NULL DEFAULT 1;
+
+DROP INDEX IF EXISTS public.student_tests_assignment_uniq;
+
+CREATE UNIQUE INDEX IF NOT EXISTS student_tests_assignment_attempt_uniq
+  ON public.student_tests (assignment_id, attempt_number)
+  WHERE assignment_id IS NOT NULL;
+
+-- ── 057_news_flashes.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 057: Curated news/resource flashes (roadmap 16.4).
+--
+-- Two tables following the jsonb-document pattern (033_tests_tables.sql), mirroring
+-- the flashcards migration (051) exactly:
+--
+--   news_flashes       teacher-authored flashes
+--   news_flash_reads   one row per (flash, student): read receipt, id = '<flashId>:<studentId>'
+--
+-- Students read via the portal with their own authenticated session, mirroring the
+-- flashcard_reviews (051) read/trigger-resolved-owner write pattern. No email/digest
+-- mechanism — the portal timeline + unread badge is the entire v1 delivery surface.
+
+-- ── 1. Tables ───────────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS public.news_flashes (
+  id       TEXT  PRIMARY KEY,
+  owner_id UUID  NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  data     JSONB NOT NULL
+);
+CREATE INDEX IF NOT EXISTS news_flashes_owner_idx ON public.news_flashes(owner_id);
+
+CREATE TABLE IF NOT EXISTS public.news_flash_reads (
+  id         TEXT  PRIMARY KEY,
+  -- Nullable on purpose: a portal student's insert can't supply a trustworthy
+  -- owner_id; the BEFORE INSERT trigger below resolves it from the roster row.
+  owner_id   UUID  REFERENCES public.profiles(id) ON DELETE CASCADE,
+  flash_id   TEXT  NOT NULL,
+  student_id TEXT  NOT NULL,
+  data       JSONB NOT NULL
+);
+CREATE INDEX IF NOT EXISTS news_flash_reads_owner_idx ON public.news_flash_reads(owner_id);
+CREATE INDEX IF NOT EXISTS news_flash_reads_flash_student_idx ON public.news_flash_reads(flash_id, student_id);
+
+ALTER TABLE public.news_flashes     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.news_flash_reads ENABLE ROW LEVEL SECURITY;
+
+-- ── 2. Teacher (owner) policies ─────────────────────────────────────────────────
+
+CREATE POLICY "news_flashes_owner_all"
+  ON public.news_flashes FOR ALL
+  USING      ((SELECT auth.uid()) = owner_id)
+  WITH CHECK ((SELECT auth.uid()) = owner_id);
+
+CREATE POLICY "news_flash_reads_owner_all"
+  ON public.news_flash_reads FOR ALL
+  USING      ((SELECT auth.uid()) = owner_id)
+  WITH CHECK ((SELECT auth.uid()) = owner_id);
+
+-- ── 3. Portal student: read flashes published by their own teacher ──────────────
+-- Mirrors get_my_flashcard_deck_ids() (051), but news flashes aren't scoped to
+-- explicit per-student assignments — every flash from a student's own teacher(s) is
+-- visible, matched via get_my_student_ids() -> students.owner_id the same way
+-- get_my_flashcard_assignment_ids() ultimately resolves ownership.
+
+CREATE OR REPLACE FUNCTION public.get_my_news_flash_ids()
+RETURNS SETOF text LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT nf.id
+  FROM   public.news_flashes nf
+  WHERE  nf.owner_id IN (
+    SELECT DISTINCT s.owner_id FROM public.students s WHERE s.id IN (SELECT get_my_student_ids())
+  )
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.get_my_news_flash_ids() FROM PUBLIC, anon;
+GRANT  EXECUTE ON FUNCTION public.get_my_news_flash_ids() TO authenticated;
+
+CREATE POLICY "news_flashes_student_select"
+  ON public.news_flashes FOR SELECT
+  USING (id IN (SELECT get_my_news_flash_ids()));
+
+-- ── 4. Portal student: own read receipts (read + write) ─────────────────────────
+-- owner_id is resolved server-side from the roster row, same rationale as
+-- set_flashcard_review_owner (051).
+
+CREATE OR REPLACE FUNCTION public.set_news_flash_read_owner()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF NEW.owner_id IS NULL THEN
+    SELECT owner_id INTO NEW.owner_id FROM public.students WHERE id = NEW.student_id;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER news_flash_reads_set_owner
+  BEFORE INSERT ON public.news_flash_reads
+  FOR EACH ROW EXECUTE FUNCTION public.set_news_flash_read_owner();
+
+CREATE POLICY "news_flash_reads_student_select"
+  ON public.news_flash_reads FOR SELECT
+  USING (student_id IN (SELECT get_my_student_ids()));
+
+-- Scoped to flashes actually visible to the student, so a student can't create
+-- read receipts for arbitrary flash ids.
+CREATE POLICY "news_flash_reads_student_insert"
+  ON public.news_flash_reads FOR INSERT
+  WITH CHECK (
+    student_id IN (SELECT get_my_student_ids())
+    AND flash_id IN (SELECT get_my_news_flash_ids())
+  );
+
+-- markNewsFlashReadAsStudent() upserts on onConflict: 'id', so a repeat write for the
+-- same (flash, student) pair takes this UPDATE path, not the INSERT path above — mirrors
+-- that policy's flash_id scope too, so a student can't repoint an existing read row at a
+-- flash outside their visibility.
+CREATE POLICY "news_flash_reads_student_update"
+  ON public.news_flash_reads FOR UPDATE
+  USING (
+    student_id IN (SELECT get_my_student_ids())
+    AND flash_id IN (SELECT get_my_news_flash_ids())
+  )
+  WITH CHECK (
+    student_id IN (SELECT get_my_student_ids())
+    AND flash_id IN (SELECT get_my_news_flash_ids())
+  );
+
+-- ── 5. Include the new tables in the nightly owner backup ──────────────────────
+-- Full replacement of export_owner_backup (056 was the last to touch it, via
+-- 055_test_assignments_mode.sql's ancestor 048) — same body plus the two
+-- news_flash tables appended at the end.
+
+CREATE OR REPLACE FUNCTION public.export_owner_backup(target_owner uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  result jsonb := '{}'::jsonb;
+BEGIN
+  result := result || jsonb_build_object('rubrics',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.rubrics t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('classes',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.classes t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('students',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.students t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('student_rubrics',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.student_rubrics t WHERE t.grader_id = target_owner AND t.is_peer_review = false));
+  result := result || jsonb_build_object('peer_reviews',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.student_rubrics t WHERE t.grader_id = target_owner AND t.is_peer_review = true));
+  result := result || jsonb_build_object('attachments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.attachments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('grade_scales',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.grade_scales t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('comment_snippets',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.comment_snippets t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('comment_bank',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.comment_bank t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('export_templates',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.export_templates t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('favorite_standards',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.favorite_standards t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('self_assessments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.self_assessments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('speaking_sessions',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.speaking_sessions t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('analysis_results',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.analysis_results t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('tests',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.tests t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('student_tests',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.student_tests t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_templates',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_templates t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('grading_tasks',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.grading_tasks t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_batch_assignments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_batch_assignments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_offline_submissions',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_offline_submissions t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('user_templates',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.user_templates t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('user_settings',
+    (SELECT to_jsonb(t) FROM public.user_settings t WHERE t.user_id = target_owner));
+  -- essay_assignments/essay_submissions have no localStorage mirror at all (unlike the
+  -- tables above, which are also cached client-side) — this is their only backup copy.
+  result := result || jsonb_build_object('essay_assignments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_assignments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_submissions',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_submissions t
+     WHERE t.assignment_id IN (SELECT id FROM public.essay_assignments WHERE owner_id = target_owner)));
+  result := result || jsonb_build_object('flashcard_decks',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.flashcard_decks t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('flashcard_assignments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.flashcard_assignments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('flashcard_reviews',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.flashcard_reviews t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('news_flashes',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.news_flashes t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('news_flash_reads',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.news_flash_reads t WHERE t.owner_id = target_owner));
+  RETURN result;
+END;
+$$;
+
+-- ── 058_rubric_versions.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 058: Rubric version history as its own table (roadmap 18.4).
+--
+-- Every rubric save used to embed a capped-at-20 array of full-rubric snapshots
+-- directly in rubrics.data (Rubric.versions), so each save/hydrate carried ~20x
+-- the rubric's real payload. rubric_versions moves that history into its own
+-- append-only, jsonb-document table (033_tests_tables.sql pattern), fetched only
+-- when the version-history UI opens rather than on every hydrate.
+--
+-- Owner-only: no student-facing use case, so (unlike flashcards/news flashes)
+-- there's no portal read policy or trigger-resolved owner_id.
+
+-- ── 1. Table ────────────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS public.rubric_versions (
+  id         TEXT  PRIMARY KEY,
+  owner_id   UUID  NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  rubric_id  TEXT  NOT NULL REFERENCES public.rubrics(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  data       JSONB NOT NULL
+);
+CREATE INDEX IF NOT EXISTS rubric_versions_owner_idx ON public.rubric_versions(owner_id);
+CREATE INDEX IF NOT EXISTS rubric_versions_rubric_idx ON public.rubric_versions(rubric_id);
+
+ALTER TABLE public.rubric_versions ENABLE ROW LEVEL SECURITY;
+
+-- ── 2. Owner policies ─────────────────────────────────────────────────────────
+-- Append-only in practice (the app never updates or deletes a version row
+-- directly — cleanup happens via the rubric_id FK's ON DELETE CASCADE), but
+-- FOR ALL matches every other owner-scoped table in this schema rather than
+-- inventing a narrower grant for one table.
+
+CREATE POLICY "rubric_versions_owner_all"
+  ON public.rubric_versions FOR ALL
+  USING      ((SELECT auth.uid()) = owner_id)
+  WITH CHECK ((SELECT auth.uid()) = owner_id);
+
+-- ── 3. Include the new table in the nightly owner backup ───────────────────────
+-- Full replacement of export_owner_backup (057 was the last to touch it) — same
+-- body plus rubric_versions appended at the end.
+
+CREATE OR REPLACE FUNCTION public.export_owner_backup(target_owner uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  result jsonb := '{}'::jsonb;
+BEGIN
+  result := result || jsonb_build_object('rubrics',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.rubrics t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('rubric_versions',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.rubric_versions t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('classes',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.classes t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('students',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.students t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('student_rubrics',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.student_rubrics t WHERE t.grader_id = target_owner AND t.is_peer_review = false));
+  result := result || jsonb_build_object('peer_reviews',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.student_rubrics t WHERE t.grader_id = target_owner AND t.is_peer_review = true));
+  result := result || jsonb_build_object('attachments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.attachments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('grade_scales',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.grade_scales t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('comment_snippets',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.comment_snippets t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('comment_bank',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.comment_bank t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('export_templates',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.export_templates t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('favorite_standards',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.favorite_standards t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('self_assessments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.self_assessments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('speaking_sessions',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.speaking_sessions t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('analysis_results',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.analysis_results t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('tests',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.tests t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('student_tests',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.student_tests t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_templates',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_templates t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('grading_tasks',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.grading_tasks t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_batch_assignments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_batch_assignments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_offline_submissions',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_offline_submissions t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('user_templates',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.user_templates t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('user_settings',
+    (SELECT to_jsonb(t) FROM public.user_settings t WHERE t.user_id = target_owner));
+  -- essay_assignments/essay_submissions have no localStorage mirror at all (unlike the
+  -- tables above, which are also cached client-side) — this is their only backup copy.
+  result := result || jsonb_build_object('essay_assignments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_assignments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_submissions',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_submissions t
+     WHERE t.assignment_id IN (SELECT id FROM public.essay_assignments WHERE owner_id = target_owner)));
+  result := result || jsonb_build_object('flashcard_decks',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.flashcard_decks t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('flashcard_assignments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.flashcard_assignments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('flashcard_reviews',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.flashcard_reviews t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('news_flashes',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.news_flashes t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('news_flash_reads',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.news_flash_reads t WHERE t.owner_id = target_owner));
+  RETURN result;
+END;
+$$;
+
+-- ── 059_scheduled_digest.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 059: pg_cron-triggered teacher-facing email digest infrastructure (Phase 21.6).
+-- Every prior email this app sends (notify-student-graded, notify-student-message) is
+-- fired synchronously from a frontend action and addressed to a student. This is the
+-- first scheduled, teacher-facing send, so it needs its own dispatch path: pg_cron calls
+-- OUT to an edge function via pg_net (raw SQL can't reach the auth mailer the edge
+-- function uses), same service-role bearer-token pattern as nightly-backup.
+
+CREATE EXTENSION IF NOT EXISTS pg_net;
+
+-- Approximates ModerationQueuePage's pending-dispute count for the digest: a peer-review
+-- (second-marker) grade exists whose gradedBy isn't one of the owner's own students
+-- (mirrors isSecondMarkerEntry's colleague-vs-student fallback heuristic in
+-- coGradingModerationQueue.ts) and a baseline grade exists for the same rubric/student.
+-- Deliberately does not recompute the point-delta threshold — that's a client-only,
+-- unpersisted UI setting on /moderation — so this counts every open second-marker
+-- review, a reasonable "you have work waiting" digest number even where it's wider than
+-- the in-app filtered list.
+CREATE OR REPLACE FUNCTION public.get_pending_moderation_count(target_owner uuid)
+RETURNS int
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT count(*)::int
+  FROM public.student_rubrics sr
+  WHERE sr.grader_id = target_owner
+    AND sr.is_peer_review = true
+    AND sr.data->>'gradedBy' IS NOT NULL
+    AND NOT EXISTS (
+      SELECT 1 FROM public.students s
+      WHERE s.owner_id = target_owner AND s.id = sr.data->>'gradedBy'
+    )
+    AND EXISTS (
+      SELECT 1 FROM public.student_rubrics baseline
+      WHERE baseline.grader_id = target_owner
+        AND baseline.is_peer_review = false
+        AND baseline.rubric_id = sr.rubric_id
+        AND baseline.student_id = sr.student_id
+    );
+$$;
+
+REVOKE ALL ON FUNCTION public.get_pending_moderation_count(uuid) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.get_pending_moderation_count(uuid) TO service_role;
+
+-- ── Nightly schedule: call the scheduled-digest edge function ────────────────────────
+-- net.http_post needs this project's URL and service-role key, which aren't available
+-- to a shared migration file. Set them once per deployment (see docs/SELF_HOSTING_OPS.md
+-- for the self-hosted steps; on Supabase Cloud run this from the SQL Editor after
+-- deploying the function):
+--   ALTER DATABASE postgres SET app.settings.project_url = 'https://<project-ref>.supabase.co';
+--   ALTER DATABASE postgres SET app.settings.service_role_key = '<service-role-key>';
+-- Until those are set, current_setting(..., true) returns NULL and the job's http_post
+-- calls fail silently (visible in cron.job_run_details) rather than blocking this migration.
+SELECT cron.schedule(
+  'teacher-email-digest',
+  '0 6 * * *',
+  $$
+    SELECT net.http_post(
+      url := current_setting('app.settings.project_url', true) || '/functions/v1/scheduled-digest',
+      headers := jsonb_build_object(
+        'Authorization', 'Bearer ' || current_setting('app.settings.service_role_key', true),
+        'Content-Type', 'application/json'
+      ),
+      body := '{}'::jsonb
+    )
+  $$
+);
+
+-- ── 20260617093844_delete_old_attachments_fn.sql ──────────────────────────────────────────────────────────────
+
+-- Returns attachments whose updated_at has passed the owner's school retention
+-- period (default 7 years for users not attached to a school).
+-- Called by the delete-old-attachments edge function so only the Storage API,
+-- not raw SQL, is used to remove files from the attachments bucket.
+
+CREATE OR REPLACE FUNCTION public.get_overdue_attachments(batch_size int DEFAULT 100)
+RETURNS TABLE (id text, owner_id uuid, storage_path text)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT a.id, a.owner_id, a.storage_path
+  FROM public.attachments a
+  LEFT JOIN public.profiles p ON p.id = a.owner_id
+  LEFT JOIN public.schools  s ON s.id = p.school_id
+  WHERE a.storage_path IS NOT NULL
+    AND a.updated_at < now() - make_interval(years => COALESCE(s.retention_years, 7))
+  LIMIT batch_size;
+$$;
+
+-- Only callable by service_role (the edge-function runtime)
+REVOKE ALL ON FUNCTION public.get_overdue_attachments(int) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.get_overdue_attachments(int) TO service_role;
+
 -- ── record applied migrations ──────────────────────────────────────────
 
 create table if not exists public._migrations (
@@ -2243,5 +3985,31 @@ insert into public._migrations (name) values
     ('031_restrict_anon_profiles_read.sql'),
     ('032_essay_word_limit_status.sql'),
     ('033_tests_tables.sql'),
-    ('034_recordings_storage.sql')
+    ('034_recordings_storage.sql'),
+    ('035_client_logs.sql'),
+    ('036_essay_templates.sql'),
+    ('037_rename_user_role_to_teacher.sql'),
+    ('038_audit_logs.sql'),
+    ('039_security_advisor_fixes.sql'),
+    ('040_rubric_marketplace.sql'),
+    ('041_school_sharing.sql'),
+    ('042_grading_tasks.sql'),
+    ('043_marketplace_cefr_tags.sql'),
+    ('044_test_assignments.sql'),
+    ('045_essay_local_tracking_sync.sql'),
+    ('046_user_templates_sync.sql'),
+    ('047_enable_realtime.sql'),
+    ('048_nightly_backup.sql'),
+    ('049_test_submission_columns.sql'),
+    ('050_messages.sql'),
+    ('051_flashcards.sql'),
+    ('052_flashcards_realtime.sql'),
+    ('053_grant_authenticated_table_access.sql'),
+    ('054_standard_mastery_targets.sql'),
+    ('055_test_assignments_mode.sql'),
+    ('056_test_multiple_attempts.sql'),
+    ('057_news_flashes.sql'),
+    ('058_rubric_versions.sql'),
+    ('059_scheduled_digest.sql'),
+    ('20260617093844_delete_old_attachments_fn.sql')
 on conflict (name) do nothing;
