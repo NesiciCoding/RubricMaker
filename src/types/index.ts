@@ -889,7 +889,8 @@ export type TestQuestionType =
     | 'matching'
     | 'ordering'
     | 'categorize'
-    | 'hot-text';
+    | 'hot-text'
+    | 'numeric';
 
 export interface TestOption {
     id: string;
@@ -941,6 +942,10 @@ export interface TestQuestion {
     expectedAnswer?: string;
     /** Accepted alternative answers for exact-match auto-scoring of short-answer questions; supersedes expectedAnswer when set */
     expectedAnswers?: string[];
+    /** Correct value for numeric questions; response is scored correct within ± numericTolerance */
+    expectedNumericValue?: number;
+    /** Accepted margin of error around expectedNumericValue (default 0 = exact match) */
+    numericTolerance?: number;
     /** Correct answer for true-false questions */
     correctBoolean?: boolean;
     /** Pairs for matching questions */

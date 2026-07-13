@@ -26,6 +26,20 @@ export function scoreShortAnswerExact(question: TestQuestion, response: string):
     return answers.some((a) => a.trim().toLowerCase() === trimmedResponse) ? question.points : 0;
 }
 
+/**
+ * Auto-score for a numeric question: full points when the response parses as a
+ * number within ± numericTolerance (default 0 = exact) of expectedNumericValue.
+ * Returns null when the question has no expected value or the response doesn't parse.
+ */
+export function scoreNumeric(question: TestQuestion, response: string): number | null {
+    if (question.type !== 'numeric' || question.expectedNumericValue === undefined) return null;
+    const value = Number(response.trim());
+    if (Number.isNaN(value)) return 0;
+    const tolerance = question.numericTolerance ?? 0;
+    // Epsilon guards against float imprecision (e.g. 3.14 - 3.13 !== 0.01 exactly in IEEE 754)
+    return Math.abs(value - question.expectedNumericValue) <= tolerance + 1e-9 ? question.points : 0;
+}
+
 /** Auto-score for a multiple-response (checkbox) question, supporting partial credit. */
 export function scoreMultipleResponse(question: TestQuestion, response: string): number {
     const options = question.options ?? [];
@@ -177,6 +191,9 @@ export function autoScoreResponse(question: TestQuestion, response: string): num
     }
     if (question.type === 'short-answer') {
         return scoreShortAnswerExact(question, response) ?? 0;
+    }
+    if (question.type === 'numeric') {
+        return scoreNumeric(question, response) ?? 0;
     }
     if (question.type === 'cloze' || question.type === 'cloze-dropdown') {
         return scoreCloze(question, response);
