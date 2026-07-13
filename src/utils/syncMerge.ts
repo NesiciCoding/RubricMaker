@@ -128,12 +128,6 @@ const COLLECTIONS: CollectionSpec[] = [
         getUpdatedAt: (gs: { updatedAt?: string }) => gs.updatedAt,
     },
     {
-        key: 'commentSnippets',
-        entity: 'commentSnippet',
-        getId: (cs: { id: string }) => cs.id,
-        getUpdatedAt: (cs: { updatedAt?: string }) => cs.updatedAt,
-    },
-    {
         key: 'commentBank',
         entity: 'commentBankItem',
         getId: (cb: { id: string }) => cb.id,

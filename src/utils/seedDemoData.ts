@@ -5,7 +5,6 @@ import {
     saveClasses,
     saveStudentRubrics,
     savePeerReviews,
-    saveCommentSnippets,
     saveTests,
     saveStudentTests,
     saveEssayAssignments,
@@ -23,7 +22,6 @@ import type {
     TestQuestion,
     StudentTest,
     EssayAssignment,
-    CommentSnippet,
     CefrLevel,
     CefrSkill,
     VoTrack,
@@ -352,18 +350,9 @@ export function seedDemoData(): void {
         expiresAt: i === 4 ? daysAgo(1) : new Date(now + 7 * 86_400_000).toISOString(),
     }));
 
-    // ── Comment bank (CommentSnippet — what CommentBankPage / grading chips read) ──
-    const commentSnippets: CommentSnippet[] = [
-        { id: nanoid(), text: 'Great use of varied vocabulary!', tag: 'positive' },
-        { id: nanoid(), text: 'Watch your verb tense agreement.', tag: 'improvement' },
-        { id: nanoid(), text: 'Try linking your paragraphs with transition words.', tag: 'structure' },
-        { id: nanoid(), text: 'Excellent argument structure — clear thesis and support.', tag: 'positive' },
-        { id: nanoid(), text: 'Re-read your work aloud to catch run-on sentences.', tag: 'improvement' },
-        { id: nanoid(), text: 'Your examples really bring the content to life.', tag: 'content' },
-        { id: nanoid(), text: 'Consider a more original angle here.', tag: 'creativity' },
-    ];
-
     // ── Persist ───────────────────────────────────────────────────────────────
+    // Comment bank is intentionally not seeded here — DEFAULT_COMMENT_BANK (storage.ts)
+    // already becomes a fresh session's comment bank automatically.
     saveClasses(classes);
     saveStudents(students);
     saveRubrics(rubrics);
@@ -372,5 +361,4 @@ export function seedDemoData(): void {
     saveTests(tests);
     saveStudentTests(studentTests);
     saveEssayAssignments(essayAssignments);
-    saveCommentSnippets(commentSnippets);
 }

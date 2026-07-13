@@ -8,10 +8,10 @@ import {
     stripAudioForOfflineCache,
     saveAttachments,
     saveGradeScales,
-    saveCommentSnippets,
     saveSettings,
     saveFavoriteStandards,
     saveCommentBank,
+    mergeLegacyCommentSnippets,
     saveExportTemplates,
     savePeerReviews,
     saveSelfAssessments,
@@ -253,11 +253,6 @@ describe('save functions', () => {
     it('saveGradeScales persists', () => {
         saveGradeScales([{ id: 'gs1', name: 'Test', type: 'letter', ranges: [] }]);
         expect(loadStore().gradeScales[0].id).toBe('gs1');
-    });
-
-    it('saveCommentSnippets persists', () => {
-        saveCommentSnippets([{ id: 'cs1', text: 'Great!', tag: 'positive' }]);
-        expect(loadStore().commentSnippets[0].text).toBe('Great!');
     });
 
     it('saveSettings persists', () => {
@@ -747,5 +742,36 @@ describe('rubric version history (Phase 18.4)', () => {
         migrateLegacyRubricVersions(makeLegacyRubric());
         migrateLegacyRubricVersions(makeLegacyRubric());
         expect(loadRubricVersions('r1')).toHaveLength(1);
+    });
+
+    it('mergeLegacyCommentSnippets converts a snippet into a tagged bank item and appends it', () => {
+        const bank = [{ id: 'cb1', text: 'Existing', tags: ['general'], createdAt: '2024-01-01T00:00:00.000Z' }];
+        const snippets = [
+            { id: 'cs1', text: 'Legacy snippet', tag: 'positive', updatedAt: '2024-02-01T00:00:00.000Z' },
+        ];
+        const merged = mergeLegacyCommentSnippets(snippets, bank);
+        expect(merged).toHaveLength(2);
+        expect(merged[1]).toEqual({
+            id: 'cs1',
+            text: 'Legacy snippet',
+            tags: ['positive'],
+            createdAt: '2024-02-01T00:00:00.000Z',
+            updatedAt: '2024-02-01T00:00:00.000Z',
+        });
+    });
+
+    it('mergeLegacyCommentSnippets is a no-op (same reference) when there are no legacy snippets', () => {
+        const bank = [{ id: 'cb1', text: 'Existing', tags: ['general'], createdAt: '2024-01-01T00:00:00.000Z' }];
+        expect(mergeLegacyCommentSnippets([], bank)).toBe(bank);
+    });
+
+    it('mergeLegacyCommentSnippets skips a snippet whose id already exists in the bank (no duplicate on repeated runs)', () => {
+        const bank = [
+            { id: 'cs1', text: 'Already migrated', tags: ['positive'], createdAt: '2024-01-01T00:00:00.000Z' },
+        ];
+        const snippets = [{ id: 'cs1', text: 'Legacy snippet', tag: 'positive' }];
+        const merged = mergeLegacyCommentSnippets(snippets, bank);
+        expect(merged).toHaveLength(1);
+        expect(merged[0].text).toBe('Already migrated');
     });
 });

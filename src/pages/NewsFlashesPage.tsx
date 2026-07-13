@@ -10,6 +10,7 @@ import {
     ExternalLink,
     Layers,
     ListChecks,
+    Eye,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
@@ -60,9 +61,20 @@ function emptyDraft(): DraftState {
 
 export default function NewsFlashesPage() {
     const { t, i18n } = useTranslation();
-    const { newsFlashes, flashcardDecks, tests, rubrics, addNewsFlash, updateNewsFlash, deleteNewsFlash } = useApp();
+    const {
+        newsFlashes,
+        newsFlashReads,
+        students,
+        flashcardDecks,
+        tests,
+        rubrics,
+        addNewsFlash,
+        updateNewsFlash,
+        deleteNewsFlash,
+    } = useApp();
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
     const [draft, setDraft] = useState<DraftState | null>(null);
+    const [expandedReadsFor, setExpandedReadsFor] = useState<string | null>(null);
 
     const sorted = [...newsFlashes].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
@@ -208,7 +220,50 @@ export default function NewsFlashesPage() {
                                                     </a>
                                                 </>
                                             )}
+                                            {' · '}
+                                            <button
+                                                type="button"
+                                                style={{
+                                                    font: 'inherit',
+                                                    color: 'inherit',
+                                                    padding: 0,
+                                                    background: 'none',
+                                                    border: 'none',
+                                                    cursor: 'pointer',
+                                                    textDecoration: 'underline',
+                                                }}
+                                                onClick={() =>
+                                                    setExpandedReadsFor((cur) => (cur === flash.id ? null : flash.id))
+                                                }
+                                            >
+                                                <Eye size={11} style={{ verticalAlign: 'middle', marginRight: 3 }} />
+                                                {t('newsFlashes.read_receipt_count', {
+                                                    read: newsFlashReads.filter((r) => r.flashId === flash.id).length,
+                                                    total: students.length,
+                                                })}
+                                            </button>
                                         </div>
+                                        {expandedReadsFor === flash.id && (
+                                            <div
+                                                className="text-muted text-xs"
+                                                style={{ marginTop: 4, display: 'flex', flexWrap: 'wrap', gap: 6 }}
+                                            >
+                                                {newsFlashReads.filter((r) => r.flashId === flash.id).length === 0 ? (
+                                                    <span>{t('newsFlashes.read_receipt_none')}</span>
+                                                ) : (
+                                                    newsFlashReads
+                                                        .filter((r) => r.flashId === flash.id)
+                                                        .map((r) => {
+                                                            const student = students.find((s) => s.id === r.studentId);
+                                                            return (
+                                                                <span key={r.id} className="badge">
+                                                                    {student?.name ?? r.studentId}
+                                                                </span>
+                                                            );
+                                                        })
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                     <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
                                         <button

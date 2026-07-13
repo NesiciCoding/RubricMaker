@@ -8,7 +8,6 @@ import type {
     StudentRubric,
     Class,
     GradeScale,
-    CommentSnippet,
     CommentBankItem,
     SelfAssessment,
     SpeakingSession,
@@ -205,10 +204,6 @@ function makeGradeScale(id: string, name: string, updatedAt?: string): GradeScal
     return { id, name, type: 'percentage', ranges: [], updatedAt };
 }
 
-function makeCommentSnippet(id: string, text: string, updatedAt?: string): CommentSnippet {
-    return { id, text, tag: 'general', updatedAt };
-}
-
 function makeCommentBankItem(id: string, text: string, updatedAt?: string): CommentBankItem {
     return { id, text, tags: [], createdAt: '2024-01-01T00:00:00.000Z', updatedAt };
 }
@@ -264,7 +259,6 @@ function baseStoreData(overrides: Partial<StoreData> = {}): StoreData {
         studentRubrics: [],
         attachments: [],
         gradeScales: [],
-        commentSnippets: [],
         settings: {
             defaultGradeScaleId: 'gs1',
             theme: 'light',
@@ -434,14 +428,14 @@ describe('mergeStoreData', () => {
         expect(result.gradeScales).toEqual([localGs]);
     });
 
-    it('commentSnippet LWW: remote newer wins', () => {
-        const localCs = makeCommentSnippet('cs1', 'Local text', '2024-01-01T00:00:00.000Z');
-        const remoteCs = makeCommentSnippet('cs1', 'Remote text', '2024-02-01T00:00:00.000Z');
-        const local = baseStoreData({ commentSnippets: [localCs] });
-        const remote: Partial<StoreData> = { commentSnippets: [remoteCs] };
+    it('commentBank item LWW: remote newer wins', () => {
+        const localCb = makeCommentBankItem('cb1', 'Local text', '2024-01-01T00:00:00.000Z');
+        const remoteCb = makeCommentBankItem('cb1', 'Remote text', '2024-02-01T00:00:00.000Z');
+        const local = baseStoreData({ commentBank: [localCb] });
+        const remote: Partial<StoreData> = { commentBank: [remoteCb] };
 
         const result = mergeStoreData(local, remote, []);
-        expect(result.commentSnippets).toEqual([remoteCs]);
+        expect(result.commentBank).toEqual([remoteCb]);
     });
 
     it('commentBank item LWW: local newer wins', () => {

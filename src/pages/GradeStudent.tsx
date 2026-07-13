@@ -45,6 +45,7 @@ import TiptapEditor, { type TiptapEditorHandle } from '../components/Editor/Tipt
 import type { ScoreEntry, Modifier, EssayAssignment } from '../types';
 import type { DbUser } from '../services/database';
 import { calcGradeSummary } from '../utils/gradeCalc';
+import { getCriterionInterventionFlags } from '../utils/learningPathAggregator';
 import { exportSinglePdf } from '../utils/pdfExport';
 import { logAuditEvent } from '../services/database/AuditLogger';
 import { loadSupabaseConfig } from '../services/database';
@@ -281,6 +282,13 @@ export default function GradeStudent() {
         if (!sr || !rubric) return null;
         return calcGradeSummary(sr, rubric.criteria, scale, rubric);
     }, [sr, rubric, scale]);
+
+    // Criteria with a low-score streak for this student — drives the comment-bank
+    // "Suggested" group so it only appears when there's an actual signal, not on every save.
+    const interventionFlags = useMemo(() => {
+        if (!studentId) return [];
+        return getCriterionInterventionFlags(studentId, studentRubrics, rubrics);
+    }, [studentId, studentRubrics, rubrics]);
 
     const handleSave = useCallback(() => {
         if (!sr || !rubric) return;
@@ -1719,6 +1727,15 @@ export default function GradeStudent() {
             )}
             {showCommentBankFor && (
                 <CommentBankModal
+                    suggestedTags={
+                        interventionFlags.some((f) => f.targetId === showCommentBankFor)
+                            ? ([
+                                  rubric?.criteria.find((c) => c.id === showCommentBankFor)?.cefrSkill ??
+                                      rubric?.cefrSkill,
+                                  rubric?.cefrTargetLevel,
+                              ].filter(Boolean) as string[])
+                            : undefined
+                    }
                     onClose={() => setShowCommentBankFor(null)}
                     onSelect={(text) => {
                         if (!showCommentBankFor) return;

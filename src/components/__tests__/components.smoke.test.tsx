@@ -248,29 +248,29 @@ describe('CommentBankModal', () => {
         render(<CommentBankModal onClose={vi.fn()} />);
         const newBtn = screen.getByRole('button', { name: /new/i });
         fireEvent.click(newBtn);
-        expect(screen.getByPlaceholderText(/write your comment/i)).toBeInTheDocument();
+        expect(screen.getByPlaceholderText(/form_placeholder/i)).toBeInTheDocument();
     });
 
     it('saving a new comment hides the editor form', () => {
         render(<CommentBankModal onClose={vi.fn()} />);
         const newBtn = screen.getByRole('button', { name: /new/i });
         fireEvent.click(newBtn);
-        const textarea = screen.getByPlaceholderText(/write your comment/i);
+        const textarea = screen.getByPlaceholderText(/form_placeholder/i);
         fireEvent.change(textarea, { target: { value: 'Great effort!' } });
         const saveBtn = screen.getByRole('button', { name: /save/i });
         fireEvent.click(saveBtn);
         // form should close after save
-        expect(screen.queryByPlaceholderText(/write your comment/i)).not.toBeInTheDocument();
+        expect(screen.queryByPlaceholderText(/form_placeholder/i)).not.toBeInTheDocument();
     });
 
     it('clicking cancel in editor hides form', () => {
         render(<CommentBankModal onClose={vi.fn()} />);
         const newBtn = screen.getByRole('button', { name: /new/i });
         fireEvent.click(newBtn);
-        expect(screen.getByPlaceholderText(/write your comment/i)).toBeInTheDocument();
+        expect(screen.getByPlaceholderText(/form_placeholder/i)).toBeInTheDocument();
         const cancelBtn = screen.getByRole('button', { name: /cancel/i });
         fireEvent.click(cancelBtn);
-        expect(screen.queryByPlaceholderText(/write your comment/i)).not.toBeInTheDocument();
+        expect(screen.queryByPlaceholderText(/form_placeholder/i)).not.toBeInTheDocument();
     });
 
     it('clicking Edit button on an item shows form with item text', () => {
@@ -278,7 +278,7 @@ describe('CommentBankModal', () => {
         const editBtn = screen.queryByRole('button', { name: 'common.edit' });
         if (editBtn) {
             fireEvent.click(editBtn);
-            const textarea = screen.getByPlaceholderText(/write your comment/i);
+            const textarea = screen.getByPlaceholderText(/form_placeholder/i);
             expect((textarea as HTMLTextAreaElement).value).toBe('Well done!');
         } else {
             // onSelect not provided means edit buttons ARE rendered — skip gracefully

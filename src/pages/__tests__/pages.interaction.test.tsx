@@ -90,7 +90,6 @@ const mockUseApp = {
     studentRubrics: [mockSr],
     attachments: [],
     gradeScales: [mockGradeScale],
-    commentSnippets: [],
     settings: mockSettings,
     favoriteStandards: [],
     commentBank: [],
@@ -126,9 +125,6 @@ const mockUseApp = {
     addGradeScale: mockAddGradeScale,
     updateGradeScale: mockUpdateGradeScale,
     deleteGradeScale: mockDeleteGradeScale,
-    addCommentSnippet: vi.fn(),
-    updateCommentSnippet: noop,
-    deleteCommentSnippet: noop,
     updateSettings: mockUpdateSettings,
     getActiveGradeScale: vi.fn(() => mockGradeScale),
     addFavoriteStandard: noop,
@@ -164,6 +160,10 @@ const mockUseApp = {
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
 vi.mock('../../context/AppContext', () => ({ useApp: () => mockUseApp }));
+
+vi.mock('../../hooks/useDbStatus', () => ({
+    useDbStatus: () => ({ isConnected: false }),
+}));
 
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({

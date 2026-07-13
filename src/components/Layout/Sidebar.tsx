@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
+import { getModerationQueue } from '../../utils/coGradingModerationQueue';
 
 interface SidebarProps {
     mobileOpen?: boolean;
@@ -37,6 +38,7 @@ interface SubItem {
     icon: React.ElementType;
     label: string;
     end?: boolean;
+    badge?: number;
 }
 
 interface Domain {
@@ -50,9 +52,17 @@ interface Domain {
 
 export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
     const { t } = useTranslation();
-    const { settings } = useApp();
+    const { settings, rubrics, studentRubrics, peerReviews, students } = useApp();
     const isAdmin = settings.userRole === 'admin';
     const location = useLocation();
+
+    // Same default threshold as ModerationQueuePage's own initial state; colleagueIds is
+    // left undefined here (falls back to the "not a known student id" heuristic) since
+    // fetching the school directory is async and page-specific — good enough for a count.
+    const moderationPendingCount = React.useMemo(
+        () => getModerationQueue(rubrics, studentRubrics, peerReviews, students, 2).length,
+        [rubrics, studentRubrics, peerReviews, students]
+    );
 
     // Auto-close mobile drawer on navigation
     useEffect(() => {
@@ -94,7 +104,12 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
                 { to: '/flashcards', icon: Layers, label: t('navigation.flashcards') },
                 { to: '/news-flashes', icon: Newspaper, label: t('navigation.news_flashes') },
                 { to: '/marketplace', icon: Store, label: t('navigation.marketplace') },
-                { to: '/moderation', icon: UserCheck, label: t('navigation.moderation') },
+                {
+                    to: '/moderation',
+                    icon: UserCheck,
+                    label: t('navigation.moderation'),
+                    badge: moderationPendingCount > 0 ? moderationPendingCount : undefined,
+                },
             ],
         },
         {
@@ -144,7 +159,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
     }, [matchedDomain?.key]);
     const activeDomain = matchedDomain ?? domains.find((d) => d.key === lastDomainKey) ?? domains[0];
 
-    const renderNavLink = ({ to, icon: Icon, label, end }: SubItem) => (
+    const renderNavLink = ({ to, icon: Icon, label, end, badge }: SubItem) => (
         <NavLink
             key={to}
             to={to}
@@ -154,6 +169,15 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
         >
             <Icon size={16} aria-hidden="true" />
             {label}
+            {!!badge && (
+                <span
+                    className="badge badge-orange"
+                    style={{ marginLeft: 'auto', fontSize: '0.7rem' }}
+                    aria-label={t('sidebar.moderation_pending_badge', { count: badge })}
+                >
+                    {badge}
+                </span>
+            )}
         </NavLink>
     );
 

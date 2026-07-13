@@ -981,6 +981,9 @@ function GradingTab() {
                     <strong>{t('docs.gr_cograding_reconcile_button')}</strong>{' '}
                     {t('docs.gr_cograding_reconcile_body_suffix')}
                 </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginTop: 8 }}>
+                    {t('docs.gr_cograding_pending_note')}
+                </p>
             </FeatureSection>
 
             <FeatureSection icon={Mail} title={t('docs.gr_messages_title')} color="#f59e0b">
@@ -993,9 +996,12 @@ function GradingTab() {
             </FeatureSection>
 
             <FeatureSection icon={MessageSquare} title={t('docs.gr_comment_bank_title')} color="#06b6d4">
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
                     {t('docs.gr_comment_bank_body_prefix')} <strong>{t('docs.gr_comment_bank_nav')}</strong>{' '}
                     {t('docs.gr_comment_bank_body')}
+                </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    {t('docs.gr_comment_bank_suggested_note')}
                 </p>
             </FeatureSection>
 
@@ -1141,6 +1147,7 @@ function CefrTab() {
                         t('docs.ce_speaking_item_inside'),
                         t('docs.ce_speaking_item_results'),
                         t('docs.ce_speaking_item_recording'),
+                        t('docs.ce_speaking_item_practice_mode'),
                     ]}
                 />
                 <InfoBox color="#f59e0b">{t('docs.ce_speaking_info')}</InfoBox>
@@ -1179,6 +1186,7 @@ function CefrTab() {
                         t('docs.ce_news_flashes_item_content'),
                         t('docs.ce_news_flashes_item_link'),
                         t('docs.ce_news_flashes_item_timeline'),
+                        t('docs.ce_news_flashes_item_read_receipts'),
                     ]}
                 />
                 <InfoBox color="#8b5cf6">{t('docs.ce_news_flashes_info')}</InfoBox>

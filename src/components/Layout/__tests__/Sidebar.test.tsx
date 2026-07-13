@@ -9,6 +9,10 @@ let mockUserRole: string = 'user';
 vi.mock('../../../context/AppContext', () => ({
     useApp: () => ({
         settings: { userRole: mockUserRole },
+        rubrics: [],
+        studentRubrics: [],
+        peerReviews: [],
+        students: [],
     }),
 }));
 
