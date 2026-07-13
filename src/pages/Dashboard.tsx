@@ -311,6 +311,7 @@ export default function Dashboard() {
                                     style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}
                                 >
                                     <button
+                                        type="button"
                                         className="btn btn-secondary btn-sm"
                                         title={t('dashboard.at_risk_go_to_grading', 'Go to grading')}
                                         onClick={() => navigate(`/rubrics/${rubricId}/grade/${student.id}`)}
@@ -361,7 +362,7 @@ export default function Dashboard() {
                                         <div style={{ display: 'flex', gap: 6, width: '100%', marginTop: 4 }}>
                                             <input
                                                 type="text"
-                                                autoFocus
+                                                aria-label={t('dashboard.at_risk_message_placeholder')}
                                                 value={messageText}
                                                 onChange={(e) => setMessageText(e.target.value)}
                                                 onKeyDown={(e) => {

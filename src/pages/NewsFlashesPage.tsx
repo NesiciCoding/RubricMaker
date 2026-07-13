@@ -163,97 +163,102 @@ export default function NewsFlashesPage() {
                     </div>
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                        {sorted.map((flash) => (
-                            <div key={flash.id} className="card">
-                                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                            <span style={{ color: 'var(--accent)' }}>{KIND_ICONS[flash.kind]}</span>
-                                            <h3 style={{ margin: 0 }}>{flash.title}</h3>
-                                        </div>
-                                        {flash.summary && (
-                                            <p className="text-muted text-sm" style={{ marginTop: 6 }}>
-                                                {flash.summary}
-                                            </p>
-                                        )}
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
-                                            {flash.cefrLevel && (
-                                                <span className="badge badge-blue">{flash.cefrLevel}</span>
+                        {sorted.map((flash) => {
+                            const flashReads = newsFlashReads.filter((r) => r.flashId === flash.id);
+                            return (
+                                <div key={flash.id} className="card">
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                <span style={{ color: 'var(--accent)' }}>{KIND_ICONS[flash.kind]}</span>
+                                                <h3 style={{ margin: 0 }}>{flash.title}</h3>
+                                            </div>
+                                            {flash.summary && (
+                                                <p className="text-muted text-sm" style={{ marginTop: 6 }}>
+                                                    {flash.summary}
+                                                </p>
                                             )}
-                                            {flash.tags.map((tag) => (
-                                                <span key={tag} className="badge">
-                                                    {tag}
-                                                </span>
-                                            ))}
-                                            {flash.linkedResourceType === 'flashcardDeck' && (
-                                                <span className="badge badge-green">
-                                                    <Layers size={11} style={{ verticalAlign: 'middle' }} />{' '}
-                                                    {t('newsFlashes.linked_flashcardDeck')}
-                                                </span>
-                                            )}
-                                            {flash.linkedResourceType === 'test' && (
-                                                <span className="badge badge-green">
-                                                    <ListChecks size={11} style={{ verticalAlign: 'middle' }} />{' '}
-                                                    {t('newsFlashes.linked_test')}
-                                                </span>
-                                            )}
-                                            {flash.linkedResourceType === 'rubric' && (
-                                                <span className="badge badge-green">
-                                                    {t('newsFlashes.linked_rubric')}
-                                                </span>
-                                            )}
-                                            {flash.content && (
-                                                <span className="badge">{t('newsFlashes.has_full_article')}</span>
-                                            )}
-                                        </div>
-                                        <div className="text-muted text-xs" style={{ marginTop: 8 }}>
-                                            {new Date(flash.createdAt).toLocaleDateString(i18n.language)}
-                                            {flash.url && (
-                                                <>
-                                                    {' · '}
-                                                    <a href={flash.url} target="_blank" rel="noopener noreferrer">
-                                                        <ExternalLink
-                                                            size={11}
-                                                            style={{ verticalAlign: 'middle', marginRight: 3 }}
-                                                        />
-                                                        {t('newsFlashes.open_link')}
-                                                    </a>
-                                                </>
-                                            )}
-                                            {' · '}
-                                            <button
-                                                type="button"
-                                                style={{
-                                                    font: 'inherit',
-                                                    color: 'inherit',
-                                                    padding: 0,
-                                                    background: 'none',
-                                                    border: 'none',
-                                                    cursor: 'pointer',
-                                                    textDecoration: 'underline',
-                                                }}
-                                                onClick={() =>
-                                                    setExpandedReadsFor((cur) => (cur === flash.id ? null : flash.id))
-                                                }
-                                            >
-                                                <Eye size={11} style={{ verticalAlign: 'middle', marginRight: 3 }} />
-                                                {t('newsFlashes.read_receipt_count', {
-                                                    read: newsFlashReads.filter((r) => r.flashId === flash.id).length,
-                                                    total: students.length,
-                                                })}
-                                            </button>
-                                        </div>
-                                        {expandedReadsFor === flash.id && (
-                                            <div
-                                                className="text-muted text-xs"
-                                                style={{ marginTop: 4, display: 'flex', flexWrap: 'wrap', gap: 6 }}
-                                            >
-                                                {newsFlashReads.filter((r) => r.flashId === flash.id).length === 0 ? (
-                                                    <span>{t('newsFlashes.read_receipt_none')}</span>
-                                                ) : (
-                                                    newsFlashReads
-                                                        .filter((r) => r.flashId === flash.id)
-                                                        .map((r) => {
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+                                                {flash.cefrLevel && (
+                                                    <span className="badge badge-blue">{flash.cefrLevel}</span>
+                                                )}
+                                                {flash.tags.map((tag) => (
+                                                    <span key={tag} className="badge">
+                                                        {tag}
+                                                    </span>
+                                                ))}
+                                                {flash.linkedResourceType === 'flashcardDeck' && (
+                                                    <span className="badge badge-green">
+                                                        <Layers size={11} style={{ verticalAlign: 'middle' }} />{' '}
+                                                        {t('newsFlashes.linked_flashcardDeck')}
+                                                    </span>
+                                                )}
+                                                {flash.linkedResourceType === 'test' && (
+                                                    <span className="badge badge-green">
+                                                        <ListChecks size={11} style={{ verticalAlign: 'middle' }} />{' '}
+                                                        {t('newsFlashes.linked_test')}
+                                                    </span>
+                                                )}
+                                                {flash.linkedResourceType === 'rubric' && (
+                                                    <span className="badge badge-green">
+                                                        {t('newsFlashes.linked_rubric')}
+                                                    </span>
+                                                )}
+                                                {flash.content && (
+                                                    <span className="badge">{t('newsFlashes.has_full_article')}</span>
+                                                )}
+                                            </div>
+                                            <div className="text-muted text-xs" style={{ marginTop: 8 }}>
+                                                {new Date(flash.createdAt).toLocaleDateString(i18n.language)}
+                                                {flash.url && (
+                                                    <>
+                                                        {' · '}
+                                                        <a href={flash.url} target="_blank" rel="noopener noreferrer">
+                                                            <ExternalLink
+                                                                size={11}
+                                                                style={{ verticalAlign: 'middle', marginRight: 3 }}
+                                                            />
+                                                            {t('newsFlashes.open_link')}
+                                                        </a>
+                                                    </>
+                                                )}
+                                                {' · '}
+                                                <button
+                                                    type="button"
+                                                    style={{
+                                                        font: 'inherit',
+                                                        color: 'inherit',
+                                                        padding: 0,
+                                                        background: 'none',
+                                                        border: 'none',
+                                                        cursor: 'pointer',
+                                                        textDecoration: 'underline',
+                                                    }}
+                                                    onClick={() =>
+                                                        setExpandedReadsFor((cur) =>
+                                                            cur === flash.id ? null : flash.id
+                                                        )
+                                                    }
+                                                >
+                                                    <Eye
+                                                        size={11}
+                                                        style={{ verticalAlign: 'middle', marginRight: 3 }}
+                                                    />
+                                                    {t('newsFlashes.read_receipt_count', {
+                                                        read: flashReads.length,
+                                                        total: students.length,
+                                                    })}
+                                                </button>
+                                            </div>
+                                            {expandedReadsFor === flash.id && (
+                                                <div
+                                                    className="text-muted text-xs"
+                                                    style={{ marginTop: 4, display: 'flex', flexWrap: 'wrap', gap: 6 }}
+                                                >
+                                                    {flashReads.length === 0 ? (
+                                                        <span>{t('newsFlashes.read_receipt_none')}</span>
+                                                    ) : (
+                                                        flashReads.map((r) => {
                                                             const student = students.find((s) => s.id === r.studentId);
                                                             return (
                                                                 <span key={r.id} className="badge">
@@ -261,34 +266,35 @@ export default function NewsFlashesPage() {
                                                                 </span>
                                                             );
                                                         })
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-                                        <button
-                                            type="button"
-                                            className="btn btn-ghost btn-icon btn-sm"
-                                            title={t('newsFlashes.action_edit')}
-                                            aria-label={t('newsFlashes.action_edit')}
-                                            onClick={() => openEdit(flash)}
-                                        >
-                                            <Edit2 size={14} />
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="btn btn-ghost btn-icon btn-sm"
-                                            title={t('newsFlashes.action_delete')}
-                                            aria-label={t('newsFlashes.action_delete')}
-                                            style={{ color: 'var(--red)' }}
-                                            onClick={() => handleDelete(flash)}
-                                        >
-                                            <Trash2 size={14} />
-                                        </button>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                                            <button
+                                                type="button"
+                                                className="btn btn-ghost btn-icon btn-sm"
+                                                title={t('newsFlashes.action_edit')}
+                                                aria-label={t('newsFlashes.action_edit')}
+                                                onClick={() => openEdit(flash)}
+                                            >
+                                                <Edit2 size={14} />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="btn btn-ghost btn-icon btn-sm"
+                                                title={t('newsFlashes.action_delete')}
+                                                aria-label={t('newsFlashes.action_delete')}
+                                                style={{ color: 'var(--red)' }}
+                                                onClick={() => handleDelete(flash)}
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </div>

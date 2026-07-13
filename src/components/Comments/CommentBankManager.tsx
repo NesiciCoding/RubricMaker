@@ -27,7 +27,13 @@ export default function CommentBankManager({ onSelect, suggestedTags }: CommentB
             setSchoolShared([]);
             return;
         }
-        storageSync.adapter.fetchSchoolSharedCommentBank().then(setSchoolShared);
+        let cancelled = false;
+        storageSync.adapter.fetchSchoolSharedCommentBank().then((items) => {
+            if (!cancelled) setSchoolShared(items);
+        });
+        return () => {
+            cancelled = true;
+        };
     }, [dbStatus.isConnected]);
 
     // Form state for creating/editing
@@ -107,7 +113,15 @@ export default function CommentBankManager({ onSelect, suggestedTags }: CommentB
                 cursor: onSelect ? 'pointer' : 'default',
                 border: editingId === item.id ? '1px solid var(--accent)' : undefined,
             }}
+            role={onSelect ? 'button' : undefined}
+            tabIndex={onSelect ? 0 : undefined}
             onClick={() => onSelect && onSelect(item.text)}
+            onKeyDown={(e) => {
+                if (onSelect && (e.key === 'Enter' || e.key === ' ')) {
+                    e.preventDefault();
+                    onSelect(item.text);
+                }
+            }}
         >
             <div
                 style={{
@@ -139,6 +153,7 @@ export default function CommentBankManager({ onSelect, suggestedTags }: CommentB
                             <Users2 size={12} />
                         </button>
                         <button
+                            type="button"
                             className="btn btn-ghost btn-icon btn-xs"
                             aria-label={t('common.edit')}
                             onClick={(e) => {
@@ -149,6 +164,7 @@ export default function CommentBankManager({ onSelect, suggestedTags }: CommentB
                             <Edit2 size={12} />
                         </button>
                         <button
+                            type="button"
                             className="btn btn-ghost btn-icon btn-xs"
                             aria-label={t('common.delete')}
                             style={{ color: 'var(--red)' }}
@@ -231,6 +247,7 @@ export default function CommentBankManager({ onSelect, suggestedTags }: CommentB
                         />
                     </div>
                     <button
+                        type="button"
                         className="btn btn-primary"
                         onClick={handleCreate}
                         disabled={isCreating || editingId !== null}
@@ -243,6 +260,7 @@ export default function CommentBankManager({ onSelect, suggestedTags }: CommentB
                         {allTags.map((tag) => (
                             <button
                                 key={tag}
+                                type="button"
                                 className={`btn btn-xs ${selectedTags.has(tag) ? 'btn-primary' : 'btn-secondary'}`}
                                 onClick={() => toggleTagFilter(tag)}
                                 style={{ borderRadius: 12, fontSize: '0.75rem', padding: '2px 8px' }}
@@ -281,6 +299,7 @@ export default function CommentBankManager({ onSelect, suggestedTags }: CommentB
                             style={{ flex: 1 }}
                         />
                         <button
+                            type="button"
                             className="btn btn-ghost btn-sm"
                             onClick={() => {
                                 setIsCreating(false);
@@ -289,7 +308,12 @@ export default function CommentBankManager({ onSelect, suggestedTags }: CommentB
                         >
                             {t('common.cancel')}
                         </button>
-                        <button className="btn btn-primary btn-sm" onClick={handleSave} disabled={!formText.trim()}>
+                        <button
+                            type="button"
+                            className="btn btn-primary btn-sm"
+                            onClick={handleSave}
+                            disabled={!formText.trim()}
+                        >
                             <Save size={14} /> {t('common.save')}
                         </button>
                     </div>

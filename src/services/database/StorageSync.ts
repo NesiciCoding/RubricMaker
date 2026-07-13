@@ -594,8 +594,17 @@ class StorageSyncService {
             // `comment_snippets` rows get lifted into `commentBank` on every hydrate —
             // intentionally not one-time, since the remote table itself is left in
             // place (not deleted) rather than forcing a destructive backfill; this is
-            // cheap and a no-op once nothing is left to migrate.
+            // cheap and a no-op once nothing is left to migrate. Newly-lifted items are
+            // also pushed to `comment_bank` (fire-and-forget, idempotent upsert) so they
+            // become real rows — otherwise they'd stay purely in-memory (recomputed every
+            // hydrate) and could never be marked shared-with-department.
             const mergedCommentBank = mergeLegacyCommentSnippets(commentSnippets, commentBank);
+            if (mergedCommentBank !== commentBank) {
+                const existingIds = new Set(commentBank.map((item) => item.id));
+                mergedCommentBank
+                    .filter((item) => !existingIds.has(item.id))
+                    .forEach((item) => this.adapter.upsertCommentBankItem(item));
+            }
 
             // Fetched as a second, sequential wave rather than joining the burst of ~20
             // requests above — a fresh feature's tables competing for the same local

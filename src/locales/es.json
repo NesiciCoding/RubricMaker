@@ -2338,7 +2338,7 @@
         "gr_comment_bank_body_prefix": "Ve a",
         "gr_comment_bank_nav": "Banco de comentarios",
         "gr_comment_bank_body": "en la barra lateral para gestionar tus fragmentos. Organízalos con etiquetas (p. ej. «escritura», «gramática», «esfuerzo»). Durante la calificación, haz clic en el icono de comentario para abrir el banco e insertar cualquier fragmento en el campo de retroalimentación con un clic. Con la sincronización en la nube conectada, haz clic en el icono de departamento de un elemento para compartirlo solo de lectura con todos los demás profesores de tu centro; los elementos compartidos por colegas aparecen en el banco con una insignia de «Departamento».",
-        "gr_comment_bank_suggested_note": "Si un criterio ha tenido una racha de puntuaciones bajas, el banco de comentarios se abre con un grupo «Sugerido» arriba — comentarios etiquetados con la destreza o el nivel CEFR de ese criterio (p. ej. «speaking_interaction», «B1»).",
+        "gr_comment_bank_suggested_note": "Si un criterio ha tenido una racha de puntuaciones bajas, el banco de comentarios se abre con un grupo «Sugerido» arriba — comentarios etiquetados con la destreza o el nivel MCER de ese criterio (p. ej. «speaking_interaction», «B1»).",
         "gr_test_results_title": "Resultados de pruebas y calificación",
         "gr_test_results_intro_prefix": "Desde la lista",
         "gr_test_results_intro_tests": "Pruebas",
