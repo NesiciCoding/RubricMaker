@@ -11,19 +11,20 @@ export class CommentBankPage extends BasePage {
     }
 
     async fillSnippetText(text: string): Promise<void> {
-        await this.page.getByPlaceholder('Type a reusable comment snippet…').fill(text);
+        await this.page.getByRole('button', { name: /^new$/i }).click();
+        await this.page.getByPlaceholder('Write your comment here...').fill(text);
     }
 
     async addSnippet(): Promise<void> {
-        await this.page.getByRole('button', { name: /^add$/i }).click();
+        await this.page.getByRole('button', { name: /^save$/i }).click();
     }
 
     async searchSnippets(term: string): Promise<void> {
-        await this.page.getByPlaceholder('Search snippets...').fill(term);
+        await this.page.getByPlaceholder('Search comments...').fill(term);
     }
 
     getSnippetItems() {
-        return this.page.locator('.snippet-item, .comment-snippet');
+        return this.page.locator('.card');
     }
 
     async deleteSnippet(index: number): Promise<void> {
