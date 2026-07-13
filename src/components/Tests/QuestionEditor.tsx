@@ -1014,8 +1014,17 @@ export default function QuestionEditor({
                     <input
                         id={`question-expected-${question.id}`}
                         type="text"
-                        value={question.expectedAnswer ?? ''}
-                        onChange={(e) => update({ expectedAnswer: e.target.value })}
+                        value={question.expectedAnswers?.join(' | ') ?? question.expectedAnswer ?? ''}
+                        onChange={(e) => {
+                            const answers = e.target.value
+                                .split('|')
+                                .map((a) => a.trim())
+                                .filter(Boolean);
+                            update({
+                                expectedAnswers: answers.length ? answers : undefined,
+                                expectedAnswer: undefined,
+                            });
+                        }}
                         placeholder={t('tests.expected_answer_placeholder')}
                     />
                     <p className="text-muted text-xs" style={{ marginTop: 4 }}>

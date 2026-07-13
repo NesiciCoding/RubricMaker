@@ -11,12 +11,19 @@ export function calcTestMaxPoints(test: Test): number {
 
 /**
  * Exact-match auto-score for a short-answer question: full points when the
- * trimmed, case-insensitive response equals expectedAnswer; 0 otherwise.
- * Returns null when the question has no expectedAnswer to match against.
+ * trimmed, case-insensitive response matches any of expectedAnswers (or the
+ * legacy single expectedAnswer); 0 otherwise. Returns null when the question
+ * has no expected answer to match against.
  */
 export function scoreShortAnswerExact(question: TestQuestion, response: string): number | null {
-    if (question.type !== 'short-answer' || !question.expectedAnswer) return null;
-    return response.trim().toLowerCase() === question.expectedAnswer.trim().toLowerCase() ? question.points : 0;
+    const answers = question.expectedAnswers?.length
+        ? question.expectedAnswers
+        : question.expectedAnswer
+          ? [question.expectedAnswer]
+          : [];
+    if (question.type !== 'short-answer' || answers.length === 0) return null;
+    const trimmedResponse = response.trim().toLowerCase();
+    return answers.some((a) => a.trim().toLowerCase() === trimmedResponse) ? question.points : 0;
 }
 
 /** Auto-score for a multiple-response (checkbox) question, supporting partial credit. */
