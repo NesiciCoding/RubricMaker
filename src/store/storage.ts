@@ -217,6 +217,658 @@ export const DEFAULT_COMMENT_BANK: CommentBankItem[] = [
         tags: ['Exec Functions', 'Focus', 'Self-Regulation'],
         createdAt: date,
     },
+
+    // ── CEFR skill/level-tagged (Phase 21.5 convention: tags may include a CefrSkill and/or
+    // CefrLevel string, matched against a criterion's cefrSkill/rubric's cefrTargetLevel to
+    // drive comment-bank suggestions during grading) ──
+    {
+        id: 'cb-cefr-reading-1',
+        text: "Great job picking out the main idea in a short text — you're reading with real confidence now.",
+        tags: ['reading', 'A2', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-reading-2',
+        text: 'Try re-reading tricky sentences slowly — it will help you catch details you might miss the first time.',
+        tags: ['reading', 'A2', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-reading-3',
+        text: 'You handled that longer text well, picking up on tone as well as content.',
+        tags: ['reading', 'B1', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-reading-4',
+        text: 'Work on skimming for the gist before diving into every detail — it will save you time on longer texts.',
+        tags: ['reading', 'B1', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-reading-5',
+        text: "Excellent inference skills — you're reading between the lines and picking up on implied meaning.",
+        tags: ['reading', 'C1', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-reading-6',
+        text: 'Push yourself with more nuanced, opinion-based texts to sharpen your critical reading further.',
+        tags: ['reading', 'C1', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-reading-7',
+        text: 'You matched simple words to pictures confidently — a great first step in reading.',
+        tags: ['reading', 'A1', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-reading-8',
+        text: 'Practice sounding out unfamiliar words slowly instead of guessing from the picture alone.',
+        tags: ['reading', 'A1', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-reading-9',
+        text: "You picked up on the writer's attitude, not just the facts — strong critical reading.",
+        tags: ['reading', 'B2', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-reading-10',
+        text: 'When a text uses more abstract vocabulary, slow down and reread the sentence before moving on.',
+        tags: ['reading', 'B2', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-reading-11',
+        text: 'You read with near-native ease, catching subtle humor and cultural references.',
+        tags: ['reading', 'C2', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-reading-12',
+        text: 'Try texts with dense academic or literary style to keep stretching your reading range.',
+        tags: ['reading', 'C2', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-writing-1',
+        text: 'Nice, clear sentences — your basic writing is easy to follow.',
+        tags: ['writing', 'A2', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-writing-2',
+        text: 'Watch your word order in simple sentences — re-read your work out loud to catch mistakes.',
+        tags: ['writing', 'A2', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-writing-3',
+        text: 'Good paragraph structure — your ideas connect logically from one sentence to the next.',
+        tags: ['writing', 'B1', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-writing-4',
+        text: 'Try varying your sentence openings — too many sentences start the same way.',
+        tags: ['writing', 'B1', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-writing-5',
+        text: 'Sophisticated vocabulary choices and a confident, natural writing style.',
+        tags: ['writing', 'C1', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-writing-6',
+        text: 'Tighten up your argument structure — some points could be more concise.',
+        tags: ['writing', 'C1', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-writing-7',
+        text: 'You wrote simple, correct sentences about yourself — well done!',
+        tags: ['writing', 'A1', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-writing-8',
+        text: 'Practice writing full sentences instead of just words or phrases.',
+        tags: ['writing', 'A1', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-writing-9',
+        text: 'Your essay had a clear argument with well-organized paragraphs.',
+        tags: ['writing', 'B2', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-writing-10',
+        text: 'Work on linking paragraphs more smoothly with transition phrases.',
+        tags: ['writing', 'B2', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-writing-11',
+        text: "Precise, idiomatic writing that reads like a native speaker's.",
+        tags: ['writing', 'C2', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-writing-12',
+        text: 'Push for even more stylistic variety — try switching between formal and informal register deliberately.',
+        tags: ['writing', 'C2', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-speaking-prod-1',
+        text: 'You spoke clearly and stayed on topic — well done!',
+        tags: ['speaking_production', 'A2', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-speaking-prod-2',
+        text: 'Try to slow down slightly so your pronunciation stays clear throughout.',
+        tags: ['speaking_production', 'A2', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-speaking-prod-3',
+        text: 'Good use of linking words to structure your talk.',
+        tags: ['speaking_production', 'B1', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-speaking-prod-4',
+        text: "Practice reducing filler words like 'um' — short pauses work just as well.",
+        tags: ['speaking_production', 'B1', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-speaking-prod-5',
+        text: 'Fluent and natural delivery, with a clear point of view throughout.',
+        tags: ['speaking_production', 'C1', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-speaking-prod-6',
+        text: 'Work on varying your intonation to keep listeners engaged during longer stretches.',
+        tags: ['speaking_production', 'C1', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-speaking-prod-7',
+        text: 'You introduced yourself clearly using simple, memorized phrases.',
+        tags: ['speaking_production', 'A1', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-speaking-prod-8',
+        text: "Practice a few more everyday phrases so you're not just relying on memorized lines.",
+        tags: ['speaking_production', 'A1', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-speaking-prod-9',
+        text: 'You gave a well-structured talk with a clear beginning, middle, and end.',
+        tags: ['speaking_production', 'B2', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-speaking-prod-10',
+        text: 'Work on speaking in longer stretches without stopping to search for words.',
+        tags: ['speaking_production', 'B2', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-speaking-prod-11',
+        text: 'Effortless, articulate delivery — you could easily pass as a native speaker.',
+        tags: ['speaking_production', 'C2', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-speaking-prod-12',
+        text: 'Experiment with more rhetorical techniques (rhetorical questions, emphasis) to elevate an already excellent delivery.',
+        tags: ['speaking_production', 'C2', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-speaking-inter-1',
+        text: 'You answered questions with confidence and stayed engaged in the conversation.',
+        tags: ['speaking_interaction', 'A2', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-speaking-inter-2',
+        text: 'Try asking a follow-up question instead of just answering — it keeps the conversation going.',
+        tags: ['speaking_interaction', 'A2', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-speaking-inter-3',
+        text: 'Great turn-taking — you listened well and responded naturally.',
+        tags: ['speaking_interaction', 'B1', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-speaking-inter-4',
+        text: "Practice negotiating meaning when you don't understand — asking for clarification is a useful skill.",
+        tags: ['speaking_interaction', 'B1', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-speaking-inter-5',
+        text: 'You handled disagreement smoothly, defending your view while staying polite.',
+        tags: ['speaking_interaction', 'C1', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-speaking-inter-6',
+        text: 'Work on picking up on subtler cues from your conversation partner to react more quickly.',
+        tags: ['speaking_interaction', 'C1', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-speaking-inter-7',
+        text: 'You answered simple questions about yourself with confidence.',
+        tags: ['speaking_interaction', 'A1', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-speaking-inter-8',
+        text: 'Practice basic greetings and short exchanges until they feel automatic.',
+        tags: ['speaking_interaction', 'A1', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-speaking-inter-9',
+        text: 'You handled a spontaneous conversation smoothly, adapting to what your partner said.',
+        tags: ['speaking_interaction', 'B2', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-speaking-inter-10',
+        text: "Try to react a little faster in conversation — a short pause to think is fine, but don't over-plan your answer.",
+        tags: ['speaking_interaction', 'B2', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-speaking-inter-11',
+        text: 'You navigated a nuanced discussion effortlessly, including humor and idiom.',
+        tags: ['speaking_interaction', 'C2', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-speaking-inter-12',
+        text: 'Keep seeking out native-speed group conversations to stay sharp at this level.',
+        tags: ['speaking_interaction', 'C2', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-listening-1',
+        text: 'You picked out the key information from the recording — nice work.',
+        tags: ['listening', 'A2', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-listening-2',
+        text: 'Listen to the audio a second time before answering — it helps catch details you missed.',
+        tags: ['listening', 'A2', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-listening-3',
+        text: 'Good job following the speaker even with some unfamiliar vocabulary.',
+        tags: ['listening', 'B1', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-listening-4',
+        text: 'Practice listening for tone and attitude, not just words — it changes the meaning.',
+        tags: ['listening', 'B1', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-listening-5',
+        text: 'You followed a fast, natural conversation with ease — impressive listening skills.',
+        tags: ['listening', 'C1', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-listening-6',
+        text: 'Challenge yourself with unscripted, authentic audio to sharpen listening at native speed.',
+        tags: ['listening', 'C1', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-listening-7',
+        text: 'You understood simple, slow instructions without help.',
+        tags: ['listening', 'A1', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-listening-8',
+        text: 'Listen to short clips more than once — repetition really helps at this stage.',
+        tags: ['listening', 'A1', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-listening-9',
+        text: 'You followed a conversation between two native speakers with only minor gaps.',
+        tags: ['listening', 'B2', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-listening-10',
+        text: 'Practice with different accents — you understood this one but might struggle with others.',
+        tags: ['listening', 'B2', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-listening-11',
+        text: 'You caught every nuance in a fast, informal conversation — outstanding listening.',
+        tags: ['listening', 'C2', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-cefr-listening-12',
+        text: 'Try listening without subtitles to podcasts or films with regional dialects to keep progressing.',
+        tags: ['listening', 'C2', 'Improvement'],
+        createdAt: date,
+    },
+
+    // ── Grammar category comments (mirrors GRAMMAR_CATEGORIES in grammarStandards.ts —
+    // one positive/improvement pair per category, tagged with the category label + its
+    // typical CEFR level so these are filterable the same way as the CEFR-skill items above) ──
+    {
+        id: 'cb-grammar-present-simple-1',
+        text: 'Solid use of present simple for daily routines and facts.',
+        tags: ['Present Simple', 'A1', 'Grammar', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-present-simple-2',
+        text: 'Watch the third-person -s (he go → he goes) in present simple.',
+        tags: ['Present Simple', 'A1', 'Grammar', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-present-continuous-1',
+        text: 'Nice use of the present continuous for things happening right now.',
+        tags: ['Present Continuous', 'A1', 'Grammar', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-present-continuous-2',
+        text: "Careful not to use present continuous for habits — 'I go to school every day', not 'I am going'.",
+        tags: ['Present Continuous', 'A1', 'Grammar', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-past-simple-1',
+        text: 'Good, consistent past simple forms throughout your writing.',
+        tags: ['Past Simple', 'A1', 'Grammar', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-past-simple-2',
+        text: 'A few irregular past forms need review (goed → went, buyed → bought).',
+        tags: ['Past Simple', 'A1', 'Grammar', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-past-continuous-1',
+        text: 'Nice use of past continuous to set the scene (I was walking when...).',
+        tags: ['Past Continuous', 'A2', 'Grammar', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-past-continuous-2',
+        text: 'Practice combining past continuous and past simple in one sentence (I was reading when the phone rang).',
+        tags: ['Past Continuous', 'A2', 'Grammar', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-present-perfect-1',
+        text: 'Correct use of present perfect for experiences and unfinished time periods.',
+        tags: ['Present Perfect', 'B1', 'Grammar', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-present-perfect-2',
+        text: "Watch the difference between past simple and present perfect — 'I have seen it' vs 'I saw it yesterday'.",
+        tags: ['Present Perfect', 'B1', 'Grammar', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-past-perfect-1',
+        text: 'Good use of past perfect to show one past event happened before another.',
+        tags: ['Past Perfect', 'B1', 'Grammar', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-past-perfect-2',
+        text: 'Try using past perfect a bit more in narratives to clarify the order of events.',
+        tags: ['Past Perfect', 'B1', 'Grammar', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-future-1',
+        text: "Confident use of 'going to' and 'will' for future plans.",
+        tags: ['Future Forms', 'A2', 'Grammar', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-future-2',
+        text: "Review when to use 'will' (decisions/predictions) vs 'going to' (plans/intentions).",
+        tags: ['Future Forms', 'A2', 'Grammar', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-modals-1',
+        text: 'Nice range of modals for ability, advice, and obligation.',
+        tags: ['Modal Verbs', 'B1', 'Grammar', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-modals-2',
+        text: "Double-check modal + deduction forms (must have, can't have) — these are still a bit shaky.",
+        tags: ['Modal Verbs', 'B1', 'Grammar', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-conditionals-1',
+        text: 'Clear, correctly formed first and second conditional sentences.',
+        tags: ['Conditionals', 'B1', 'Grammar', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-conditionals-2',
+        text: "Practice the third conditional (if I had known, I would have...) — it's the trickiest one.",
+        tags: ['Conditionals', 'B1', 'Grammar', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-passive-1',
+        text: "Good use of the passive voice where the doer of the action isn't the focus.",
+        tags: ['Passive Voice', 'B1', 'Grammar', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-passive-2',
+        text: 'Watch your past participles in passive sentences (the cake was maked → made).',
+        tags: ['Passive Voice', 'B1', 'Grammar', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-reported-speech-1',
+        text: 'Nice work shifting tenses correctly in reported speech.',
+        tags: ['Reported Speech', 'B1', 'Grammar', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-reported-speech-2',
+        text: 'Remember to also shift pronouns and time expressions (today → that day) in reported speech.',
+        tags: ['Reported Speech', 'B1', 'Grammar', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-relative-clauses-1',
+        text: 'Good use of relative pronouns (who, which, that) to combine ideas smoothly.',
+        tags: ['Relative Clauses', 'B1', 'Grammar', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-relative-clauses-2',
+        text: "Watch when to drop 'that/which' in defining relative clauses — it's often optional.",
+        tags: ['Relative Clauses', 'B1', 'Grammar', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-clauses-1',
+        text: 'Effective use of linking words to show cause, result, and contrast.',
+        tags: ['Linking & Subordinate Clauses', 'B2', 'Grammar', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-clauses-2',
+        text: "Try varying your linkers beyond 'because' and 'but' — 'therefore', 'although', 'despite' add sophistication.",
+        tags: ['Linking & Subordinate Clauses', 'B2', 'Grammar', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-verb-patterns-1',
+        text: "Correct choice between gerund and to-infinitive after verbs like 'enjoy' and 'want'.",
+        tags: ['Verb Patterns', 'B1', 'Grammar', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-verb-patterns-2',
+        text: 'A few verb + gerund/infinitive patterns need review — not all verbs follow the same rule.',
+        tags: ['Verb Patterns', 'B1', 'Grammar', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-comparatives-1',
+        text: 'Good use of comparatives and superlatives, including irregular forms.',
+        tags: ['Comparatives & Superlatives', 'A2', 'Grammar', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-comparatives-2',
+        text: 'Watch the spelling of comparative/superlative forms (bigger, biggest — double the consonant).',
+        tags: ['Comparatives & Superlatives', 'A2', 'Grammar', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-articles-1',
+        text: "Good instinct for when to use 'a/an' vs 'the'.",
+        tags: ['Articles & Determiners', 'A1', 'Grammar', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-articles-2',
+        text: 'Articles are tricky — review when no article is needed at all (uncountable/plural general nouns).',
+        tags: ['Articles & Determiners', 'A1', 'Grammar', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-nouns-1',
+        text: 'Solid, consistent use of regular and irregular plurals.',
+        tags: ['Nouns & Plurals', 'A1', 'Grammar', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-nouns-2',
+        text: 'A few irregular plurals need review (child → children, not childs).',
+        tags: ['Nouns & Plurals', 'A1', 'Grammar', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-pronouns-1',
+        text: 'Clear, accurate use of personal and possessive pronouns.',
+        tags: ['Pronouns', 'A1', 'Grammar', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-pronouns-2',
+        text: 'Watch subject vs object pronouns (me and him went → he and I went).',
+        tags: ['Pronouns', 'A1', 'Grammar', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-adjectives-adverbs-1',
+        text: 'Nice use of adverbs of manner to add detail to your writing.',
+        tags: ['Adjectives & Adverbs', 'A2', 'Grammar', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-adjectives-adverbs-2',
+        text: 'Review adjective order (a beautiful old Italian car) — it can feel unnatural otherwise.',
+        tags: ['Adjectives & Adverbs', 'A2', 'Grammar', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-prepositions-1',
+        text: 'Good, natural use of prepositions of time and place.',
+        tags: ['Prepositions', 'A1', 'Grammar', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-prepositions-2',
+        text: 'Prepositions of movement (into, onto, through) still need some practice.',
+        tags: ['Prepositions', 'A1', 'Grammar', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-questions-negation-1',
+        text: 'Clear, correctly formed questions and negatives.',
+        tags: ['Questions & Negation', 'A1', 'Grammar', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-grammar-questions-negation-2',
+        text: 'Watch auxiliary verb agreement in questions (Does she goes? → Does she go?).',
+        tags: ['Questions & Negation', 'A1', 'Grammar', 'Improvement'],
+        createdAt: date,
+    },
+
+    // ── Additional general-variety comments (broader than the original 20) ──
+    {
+        id: 'cb-general-1',
+        text: 'You worked really well with your partner today, sharing ideas and listening to their input.',
+        tags: ['EFL', 'Collaboration', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-general-2',
+        text: "Try to include your partner's ideas more when working in pairs — it makes for stronger teamwork.",
+        tags: ['EFL', 'Collaboration', 'Improvement'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-general-3',
+        text: 'Great job asking for help when you got stuck instead of giving up.',
+        tags: ['Exec Functions', 'Self-Advocacy', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-general-4',
+        text: 'It’s great to see you helping a classmate — that shows real kindness and leadership.',
+        tags: ['Exec Functions', 'Leadership', 'Positive'],
+        createdAt: date,
+    },
+    {
+        id: 'cb-general-5',
+        text: "Try to check in with yourself midway through a task to see if you're on track.",
+        tags: ['Exec Functions', 'Self-Monitoring', 'Improvement'],
+        createdAt: date,
+    },
 ];
 
 // ─── Storage Keys ──────────────────────────────────────────────────────────────
@@ -343,6 +995,29 @@ export function migrateLegacyRubricVersions(rubric: Rubric & { versions?: Rubric
     return rest;
 }
 
+/**
+ * The app used to have two parallel comment-bank features: the single-tag
+ * `CommentSnippet` (fed only the old standalone Comment Bank page) and the
+ * multi-tag, department-shareable `CommentBankItem` (used everywhere during
+ * grading). They've been consolidated onto `CommentBankItem` — this lifts any
+ * pre-existing snippets into the bank (deduped by id, so re-running this is a
+ * no-op once nothing is left to migrate).
+ */
+export function mergeLegacyCommentSnippets(snippets: CommentSnippet[], bank: CommentBankItem[]): CommentBankItem[] {
+    if (!snippets.length) return bank;
+    const existingIds = new Set(bank.map((item) => item.id));
+    const lifted: CommentBankItem[] = snippets
+        .filter((s) => !existingIds.has(s.id))
+        .map((s) => ({
+            id: s.id,
+            text: s.text,
+            tags: [s.tag],
+            createdAt: s.updatedAt ?? new Date().toISOString(),
+            updatedAt: s.updatedAt,
+        }));
+    return lifted.length ? [...bank, ...lifted] : bank;
+}
+
 // ─── Store ─────────────────────────────────────────────────────────────────────
 
 export interface StoreData {
@@ -352,7 +1027,6 @@ export interface StoreData {
     studentRubrics: StudentRubric[];
     attachments: Attachment[];
     gradeScales: GradeScale[];
-    commentSnippets: CommentSnippet[];
     settings: AppSettings;
     favoriteStandards: LinkedStandard[];
     commentBank: CommentBankItem[];
@@ -381,6 +1055,15 @@ export function loadStore(): StoreData {
     const rawRubrics = load<(Rubric & { versions?: RubricVersion[] })[]>(KEYS.rubrics, []);
     const rubrics = rawRubrics.map(migrateLegacyRubricVersions);
     if (rubrics.some((r, i) => r !== rawRubrics[i])) save(KEYS.rubrics, rubrics);
+
+    const legacySnippets = load<CommentSnippet[]>(KEYS.commentSnippets, []);
+    const rawCommentBank = load<CommentBankItem[]>(KEYS.commentBank, DEFAULT_COMMENT_BANK);
+    const commentBank = mergeLegacyCommentSnippets(legacySnippets, rawCommentBank);
+    if (commentBank !== rawCommentBank) {
+        save(KEYS.commentBank, commentBank);
+        localStorage.removeItem(KEYS.commentSnippets);
+    }
+
     return {
         rubrics,
         students: load<Student[]>(KEYS.students, []),
@@ -388,10 +1071,9 @@ export function loadStore(): StoreData {
         studentRubrics: load<StudentRubric[]>(KEYS.studentRubrics, []),
         attachments: load<Attachment[]>(KEYS.attachments, []),
         gradeScales: load<GradeScale[]>(KEYS.gradeScales, DEFAULT_GRADE_SCALES),
-        commentSnippets: load<CommentSnippet[]>(KEYS.commentSnippets, []),
         settings: load<AppSettings>(KEYS.settings, DEFAULT_SETTINGS),
         favoriteStandards: load<LinkedStandard[]>(KEYS.favoriteStandards, []),
-        commentBank: load<CommentBankItem[]>(KEYS.commentBank, DEFAULT_COMMENT_BANK),
+        commentBank,
         exportTemplates: load<ExportTemplate[]>(KEYS.exportTemplates, []),
         peerReviews: load<StudentRubric[]>(KEYS.peerReviews, []),
         selfAssessments: load<SelfAssessment[]>(KEYS.selfAssessments, []),
@@ -465,9 +1147,6 @@ export function saveAttachments(atts: Attachment[]) {
 }
 export function saveGradeScales(scales: GradeScale[]) {
     save(KEYS.gradeScales, scales);
-}
-export function saveCommentSnippets(snips: CommentSnippet[]) {
-    save(KEYS.commentSnippets, snips);
 }
 export function saveSettings(settings: AppSettings) {
     save(KEYS.settings, settings);
@@ -625,10 +1304,6 @@ export function importFullBackup(json: string): boolean {
             if (isObjectArray(data.gradeScales)) saveGradeScales(data.gradeScales as GradeScale[]);
             else console.warn('[importFullBackup] gradeScales failed validation — skipped');
         }
-        if (data.commentSnippets !== undefined) {
-            if (isObjectArray(data.commentSnippets)) saveCommentSnippets(data.commentSnippets as CommentSnippet[]);
-            else console.warn('[importFullBackup] commentSnippets failed validation — skipped');
-        }
         if (data.settings !== undefined) {
             if (isPlainObject(data.settings)) saveSettings(data.settings as AppSettings);
             else console.warn('[importFullBackup] settings failed validation — skipped');
@@ -646,6 +1321,17 @@ export function importFullBackup(json: string): boolean {
         if (data.commentBank !== undefined) {
             if (isObjectArray(data.commentBank)) saveCommentBank(data.commentBank as CommentBankItem[]);
             else console.warn('[importFullBackup] commentBank failed validation — skipped');
+        }
+        // Legacy backups (pre comment-bank consolidation) may still carry a top-level
+        // `commentSnippets` array — no longer part of StoreData, so read it off the raw
+        // parsed JSON — lift it into whatever commentBank state this import just left on
+        // disk (or the existing one, if this backup had no commentBank key).
+        const legacyCommentSnippets = (raw as Record<string, unknown>).commentSnippets;
+        if (legacyCommentSnippets !== undefined) {
+            if (isObjectArray(legacyCommentSnippets)) {
+                const currentBank = load<CommentBankItem[]>(KEYS.commentBank, DEFAULT_COMMENT_BANK);
+                saveCommentBank(mergeLegacyCommentSnippets(legacyCommentSnippets as CommentSnippet[], currentBank));
+            } else console.warn('[importFullBackup] commentSnippets failed validation — skipped');
         }
         if (data.exportTemplates !== undefined) {
             if (isObjectArray(data.exportTemplates)) saveExportTemplates(data.exportTemplates as ExportTemplate[]);

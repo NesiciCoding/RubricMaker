@@ -14,7 +14,6 @@ vi.mock('../store/storage', () => ({
         studentRubrics: [],
         attachments: [],
         gradeScales: [{ id: 'default-scale', name: 'Default', type: 'letter', ranges: [] }],
-        commentSnippets: [],
         settings: {
             defaultGradeScaleId: 'default-scale',
             theme: 'light',
@@ -44,7 +43,6 @@ vi.mock('../store/storage', () => ({
     saveStudentRubrics: vi.fn(),
     saveAttachments: vi.fn(),
     saveGradeScales: vi.fn(),
-    saveCommentSnippets: vi.fn(),
     saveSettings: vi.fn(),
     saveFavoriteStandards: vi.fn(),
     saveCommentBank: vi.fn(),
@@ -86,7 +84,6 @@ vi.mock('../services/microsoftGraph_deleted_placeholder', () => ({
                 studentRubrics: [],
                 attachments: [],
                 gradeScales: [],
-                commentSnippets: [],
                 settings: {
                     theme: 'light',
                     language: 'en',
@@ -518,26 +515,6 @@ describe('AppContext', () => {
             result.current.deleteAttachment(att.id);
         });
         expect(result.current.attachments).toHaveLength(0);
-    });
-
-    it('should manage comment snippets', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
-
-        act(() => {
-            result.current.addCommentSnippet('Snippet 1', 'tag1');
-        });
-        expect(result.current.commentSnippets).toHaveLength(1);
-
-        const snippet = result.current.commentSnippets[0];
-        act(() => {
-            result.current.updateCommentSnippet({ ...snippet, text: 'New Text' });
-        });
-        expect(result.current.commentSnippets[0].text).toBe('New Text');
-
-        act(() => {
-            result.current.deleteCommentSnippet(snippet.id);
-        });
-        expect(result.current.commentSnippets).toHaveLength(0);
     });
 
     it('should manage export templates', () => {

@@ -66,9 +66,9 @@ const mockSettings: AppSettings = {
     defaultFormat: DEFAULT_FORMAT,
 };
 
-const mockAddCommentSnippet = vi.fn();
-const mockUpdateCommentSnippet = vi.fn();
-const mockDeleteCommentSnippet = vi.fn();
+const mockAddCommentBankItem = vi.fn();
+const mockUpdateCommentBankItem = vi.fn();
+const mockDeleteCommentBankItem = vi.fn();
 const mockDeleteAttachment = vi.fn();
 const noop = vi.fn();
 
@@ -80,7 +80,6 @@ function makeApp(overrides = {}) {
         studentRubrics: [mockSr],
         attachments: [] as Attachment[],
         gradeScales: [mockGradeScale],
-        commentSnippets: [],
         commentBank: [],
         settings: mockSettings,
         favoriteStandards: [],
@@ -110,17 +109,14 @@ function makeApp(overrides = {}) {
         addGradeScale: vi.fn(() => mockGradeScale),
         updateGradeScale: noop,
         deleteGradeScale: noop,
-        addCommentSnippet: mockAddCommentSnippet,
-        updateCommentSnippet: mockUpdateCommentSnippet,
-        deleteCommentSnippet: mockDeleteCommentSnippet,
         updateSettings: noop,
         getActiveGradeScale: vi.fn(() => mockGradeScale),
         addFavoriteStandard: noop,
         removeFavoriteStandard: noop,
         isFavoriteStandard: vi.fn(() => false),
-        addCommentBankItem: vi.fn(),
-        updateCommentBankItem: noop,
-        deleteCommentBankItem: noop,
+        addCommentBankItem: mockAddCommentBankItem,
+        updateCommentBankItem: mockUpdateCommentBankItem,
+        deleteCommentBankItem: mockDeleteCommentBankItem,
         addExportTemplate: vi.fn(),
         deleteExportTemplate: noop,
         savePeerReview: noop,
@@ -151,6 +147,10 @@ let currentApp = makeApp();
 
 vi.mock('../../context/AppContext', () => ({
     useApp: () => currentApp,
+}));
+
+vi.mock('../../hooks/useDbStatus', () => ({
+    useDbStatus: () => ({ isConnected: false }),
 }));
 
 vi.mock('react-i18next', () => ({
@@ -211,42 +211,48 @@ describe('CommentBankPage', () => {
         vi.clearAllMocks();
     });
 
-    it('renders add snippet form', () => {
+    it('shows empty state when the bank is empty', () => {
         renderPage(<CommentBankPage />);
-        expect(screen.getByPlaceholderText(/reusable comment/i)).toBeInTheDocument();
+        expect(screen.getByText('commentBank.empty_state')).toBeInTheDocument();
     });
 
-    it('Add button is disabled when text is empty', () => {
-        renderPage(<CommentBankPage />);
-        const addBtn = screen.getByRole('button', { name: /add/i });
-        expect(addBtn).toBeDisabled();
-    });
-
-    it('Add button calls addCommentSnippet', () => {
-        renderPage(<CommentBankPage />);
-        fireEvent.change(screen.getByPlaceholderText(/reusable comment/i), { target: { value: 'Great effort!' } });
-        fireEvent.click(screen.getByRole('button', { name: /add/i }));
-        expect(mockAddCommentSnippet).toHaveBeenCalledWith('Great effort!', 'general');
-    });
-
-    it('shows empty state when no snippets', () => {
-        renderPage(<CommentBankPage />);
-        expect(screen.getByText(/no snippets/i)).toBeInTheDocument();
-    });
-
-    it('shows snippets when present', () => {
+    it('shows items when present', () => {
         currentApp = makeApp({
-            commentSnippets: [{ id: 's1', text: 'Well done!', tag: 'positive' }],
+            commentBank: [{ id: 'c1', text: 'Well done!', tags: ['positive'], createdAt: '2026-01-01T00:00:00.000Z' }],
         });
         renderPage(<CommentBankPage />);
         expect(screen.getByText('Well done!')).toBeInTheDocument();
     });
 
-    it('filter by tag shows only matching snippets', () => {
+    it('New button reveals the create form, and Save is disabled until text is entered', () => {
+        renderPage(<CommentBankPage />);
+        fireEvent.click(screen.getByRole('button', { name: 'commentBank.new_button' }));
+        const textarea = screen.getByPlaceholderText('commentBank.form_placeholder');
+        expect(textarea).toBeInTheDocument();
+        const saveBtn = screen.getByRole('button', { name: 'common.save' });
+        expect(saveBtn).toBeDisabled();
+        fireEvent.change(textarea, { target: { value: 'Great effort!' } });
+        expect(saveBtn).not.toBeDisabled();
+    });
+
+    it('Save calls addCommentBankItem with the entered text and tags', () => {
+        renderPage(<CommentBankPage />);
+        fireEvent.click(screen.getByRole('button', { name: 'commentBank.new_button' }));
+        fireEvent.change(screen.getByPlaceholderText('commentBank.form_placeholder'), {
+            target: { value: 'Great effort!' },
+        });
+        fireEvent.change(screen.getByPlaceholderText('commentBank.tags_placeholder'), {
+            target: { value: 'positive, effort' },
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'common.save' }));
+        expect(mockAddCommentBankItem).toHaveBeenCalledWith('Great effort!', ['positive', 'effort']);
+    });
+
+    it('filter by tag shows only matching items', () => {
         currentApp = makeApp({
-            commentSnippets: [
-                { id: 's1', text: 'Well done!', tag: 'positive' },
-                { id: 's2', text: 'Needs improvement', tag: 'improvement' },
+            commentBank: [
+                { id: 'c1', text: 'Well done!', tags: ['positive'], createdAt: '2026-01-01T00:00:00.000Z' },
+                { id: 'c2', text: 'Needs improvement', tags: ['improvement'], createdAt: '2026-01-02T00:00:00.000Z' },
             ],
         });
         renderPage(<CommentBankPage />);
@@ -255,41 +261,37 @@ describe('CommentBankPage', () => {
         expect(screen.queryByText('Needs improvement')).not.toBeInTheDocument();
     });
 
-    it('search filters snippets', () => {
+    it('search filters items', () => {
         currentApp = makeApp({
-            commentSnippets: [
-                { id: 's1', text: 'Well done!', tag: 'positive' },
-                { id: 's2', text: 'Needs improvement', tag: 'improvement' },
+            commentBank: [
+                { id: 'c1', text: 'Well done!', tags: ['positive'], createdAt: '2026-01-01T00:00:00.000Z' },
+                { id: 'c2', text: 'Needs improvement', tags: ['improvement'], createdAt: '2026-01-02T00:00:00.000Z' },
             ],
         });
         renderPage(<CommentBankPage />);
-        fireEvent.change(screen.getByPlaceholderText(/search/i), { target: { value: 'well' } });
+        fireEvent.change(screen.getByPlaceholderText('commentBank.search_placeholder'), {
+            target: { value: 'well' },
+        });
         expect(screen.getByText('Well done!')).toBeInTheDocument();
         expect(screen.queryByText('Needs improvement')).not.toBeInTheDocument();
     });
 
-    it('delete snippet calls deleteCommentSnippet', () => {
+    it('delete calls deleteCommentBankItem', () => {
         currentApp = makeApp({
-            commentSnippets: [{ id: 's1', text: 'Well done!', tag: 'positive' }],
+            commentBank: [{ id: 'c1', text: 'Well done!', tags: ['positive'], createdAt: '2026-01-01T00:00:00.000Z' }],
         });
         renderPage(<CommentBankPage />);
-        // find delete button specifically by proximity
-        const allBtns = screen.getAllByRole('button');
-        // The delete button is the last icon button in the snippet card
-        fireEvent.click(allBtns[allBtns.length - 1]);
-        expect(mockDeleteCommentSnippet).toHaveBeenCalled();
+        fireEvent.click(screen.getByRole('button', { name: 'common.delete' }));
+        expect(mockDeleteCommentBankItem).toHaveBeenCalledWith('c1');
     });
 
-    it('clicking edit shows inline editor', () => {
+    it('clicking edit shows the inline editor pre-filled', () => {
         currentApp = makeApp({
-            commentSnippets: [{ id: 's1', text: 'Well done!', tag: 'positive' }],
+            commentBank: [{ id: 'c1', text: 'Well done!', tags: ['positive'], createdAt: '2026-01-01T00:00:00.000Z' }],
         });
         renderPage(<CommentBankPage />);
-        const editBtns = screen.getAllByRole('button');
-        // Just fire on 2nd-to-last button
-        fireEvent.click(editBtns[editBtns.length - 2]);
-        // Should show cancel/save buttons
-        expect(screen.queryByText('Cancel') || screen.queryByText('Save') || true).toBeTruthy();
+        fireEvent.click(screen.getByRole('button', { name: 'common.edit' }));
+        expect(screen.getByDisplayValue('Well done!')).toBeInTheDocument();
     });
 });
 

@@ -18,7 +18,6 @@ vi.mock('../store/storage', () => ({
         studentRubrics: [],
         attachments: [],
         gradeScales: [{ id: 'gs1', name: 'Default', type: 'letter', ranges: [] }],
-        commentSnippets: [],
         settings: {
             defaultGradeScaleId: 'gs1',
             theme: 'dark',

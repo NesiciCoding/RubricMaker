@@ -45,18 +45,25 @@ export default function ModerationQueuePage() {
 
     const colleagueIds = useMemo(() => colleagues.map((c) => c.id), [colleagues]);
 
-    const queue = useMemo(
-        () =>
-            getModerationQueue(
-                rubrics,
-                studentRubrics,
-                peerReviews,
-                students,
-                threshold,
-                colleagueIds.length > 0 ? colleagueIds : undefined
-            ),
-        [rubrics, studentRubrics, peerReviews, students, threshold, colleagueIds]
-    );
+    const queue = useMemo(() => {
+        const items = getModerationQueue(
+            rubrics,
+            studentRubrics,
+            peerReviews,
+            students,
+            threshold,
+            colleagueIds.length > 0 ? colleagueIds : undefined
+        );
+        // Oldest-pending-first: the longest-waiting disputes are the most urgent.
+        return [...items].sort((a, b) =>
+            (a.secondMarkerEntry.gradedAt ?? '').localeCompare(b.secondMarkerEntry.gradedAt ?? '')
+        );
+    }, [rubrics, studentRubrics, peerReviews, students, threshold, colleagueIds]);
+
+    function pendingDays(item: ModerationQueueItem): number | null {
+        if (!item.secondMarkerEntry.gradedAt) return null;
+        return Math.floor((Date.now() - new Date(item.secondMarkerEntry.gradedAt).getTime()) / 86_400_000);
+    }
 
     function resolveKeepBaseline(secondMarkerEntryId: string) {
         deletePeerReview(secondMarkerEntryId);
@@ -129,9 +136,26 @@ export default function ModerationQueuePage() {
                                                 })}
                                             </div>
                                         </div>
-                                        <span className="badge badge-orange">
-                                            {t('coGrading.delta_badge', { delta: item.totalAbsDelta.toFixed(1) })}
-                                        </span>
+                                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                                            {pendingDays(item) !== null && (
+                                                <span
+                                                    className="badge"
+                                                    style={{
+                                                        color:
+                                                            pendingDays(item)! >= 5
+                                                                ? 'var(--red)'
+                                                                : pendingDays(item)! >= 2
+                                                                  ? 'var(--yellow, #f59e0b)'
+                                                                  : undefined,
+                                                    }}
+                                                >
+                                                    {t('coGrading.pending_days', { count: pendingDays(item)! })}
+                                                </span>
+                                            )}
+                                            <span className="badge badge-orange">
+                                                {t('coGrading.delta_badge', { delta: item.totalAbsDelta.toFixed(1) })}
+                                            </span>
+                                        </div>
                                     </div>
 
                                     <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 12 }}>

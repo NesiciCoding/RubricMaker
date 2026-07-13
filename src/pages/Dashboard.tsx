@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     BookOpen,
@@ -11,14 +11,19 @@ import {
     CheckCircle,
     AlertTriangle,
     Clock,
+    Layers,
+    Mail,
 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import type { Rubric } from '../types';
+import type { Message, Rubric } from '../types';
 import { useApp } from '../context/AppContext';
 import { QUICK_START_TEMPLATES } from '../data/templates';
 import { calcGradeSummary } from '../utils/gradeCalc';
+import { getGrammarRecommendations } from '../utils/learningPathAggregator';
+import { nanoid } from '../utils/nanoid';
+import { useToast } from '../hooks/useToast';
 
 function dayKey(iso: string): string {
     return new Date(iso).toDateString();
@@ -42,7 +47,24 @@ function timeAgo(iso: string): string {
 export default function Dashboard() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { rubrics, students, studentRubrics, gradeScales, settings, userTemplates, deleteUserTemplate } = useApp();
+    const { showToast } = useToast();
+    const {
+        rubrics,
+        students,
+        studentRubrics,
+        studentTests,
+        tests,
+        flashcardDecks,
+        gradeScales,
+        settings,
+        userTemplates,
+        deleteUserTemplate,
+        addFlashcardAssignments,
+        sendMessage,
+        notifyStudentMessage,
+    } = useApp();
+    const [messagingStudentId, setMessagingStudentId] = useState<string | null>(null);
+    const [messageText, setMessageText] = useState('');
 
     const scale = useMemo(
         () => gradeScales.find((g) => g.id === settings.defaultGradeScaleId) ?? gradeScales[0],
@@ -152,6 +174,65 @@ export default function Dashboard() {
         return { atRiskStudents: atRisk.slice(0, 6), feedbackAge: feedbackAgeMap };
     }, [studentRubrics, rubrics, students, gradeScales, scale]);
 
+    // studentId → first recommended grammar deck id, when the at-risk student's low-score
+    // streak has an existing deck to assign (reuses the Phase 16.1 recommendation engine)
+    const recommendedDeckByStudent = useMemo(() => {
+        const map = new Map<string, string>();
+        for (const { student } of atRiskStudents) {
+            const recs = getGrammarRecommendations(
+                student.id,
+                studentRubrics,
+                rubrics,
+                studentTests,
+                tests,
+                flashcardDecks
+            );
+            const deckId = recs.find((r) => r.suggestedGrammarDeckIds.length > 0)?.suggestedGrammarDeckIds[0];
+            if (deckId) map.set(student.id, deckId);
+        }
+        return map;
+    }, [atRiskStudents, studentRubrics, rubrics, studentTests, tests, flashcardDecks]);
+
+    function assignRecommendedDeck(studentId: string) {
+        const deckId = recommendedDeckByStudent.get(studentId);
+        const deck = deckId ? flashcardDecks.find((d) => d.id === deckId) : undefined;
+        if (!deck) return;
+        addFlashcardAssignments([
+            {
+                deckId: deck.id,
+                studentId,
+                deckName: deck.name,
+                cardCount: deck.cards.length,
+                createdAt: new Date().toISOString(),
+            },
+        ]);
+        showToast(t('dashboard.at_risk_deck_assigned', { deck: deck.name }), 'success');
+    }
+
+    function sendAtRiskMessage(studentId: string) {
+        const body = messageText.trim();
+        if (!body) return;
+        const message: Message = {
+            id: nanoid(),
+            studentId,
+            contextType: 'general',
+            contextId: null,
+            contextLabel: null,
+            sender: 'teacher',
+            body,
+            createdAt: new Date().toISOString(),
+            readByTeacher: true,
+            readByStudent: false,
+        };
+        sendMessage(message);
+        if (settings.notifyStudentsOnMessage) {
+            notifyStudentMessage(studentId, null, body);
+        }
+        setMessagingStudentId(null);
+        setMessageText('');
+        showToast(t('dashboard.at_risk_message_sent'), 'success');
+    }
+
     return (
         <>
             <Topbar
@@ -223,34 +304,84 @@ export default function Dashboard() {
                                 (scored below 55% on 2+ recent assessments)
                             </span>
                         </div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                             {atRiskStudents.map(({ student, recentPct, rubricId }) => (
-                                <button
+                                <div
                                     key={student.id}
-                                    className="btn btn-secondary btn-sm"
-                                    title={t('dashboard.at_risk_go_to_grading', 'Go to grading')}
-                                    onClick={() => navigate(`/rubrics/${rubricId}/grade/${student.id}`)}
-                                    style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}
                                 >
-                                    <span style={{ fontWeight: 600 }}>{student.name}</span>
-                                    <span style={{ color: 'var(--red)', fontSize: '0.78rem' }}>
-                                        {recentPct.toFixed(0)}%
-                                    </span>
-                                    {feedbackAge.has(student.id) && feedbackAge.get(student.id)! >= 7 && (
-                                        <span title={`Last feedback ${feedbackAge.get(student.id)} days ago`}>
-                                            <Clock
-                                                size={11}
-                                                style={{
-                                                    color:
-                                                        feedbackAge.get(student.id)! >= 10
-                                                            ? 'var(--red)'
-                                                            : 'var(--yellow, #f59e0b)',
-                                                }}
-                                            />
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary btn-sm"
+                                        title={t('dashboard.at_risk_go_to_grading', 'Go to grading')}
+                                        onClick={() => navigate(`/rubrics/${rubricId}/grade/${student.id}`)}
+                                        style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}
+                                    >
+                                        <span style={{ fontWeight: 600 }}>{student.name}</span>
+                                        <span style={{ color: 'var(--red)', fontSize: '0.78rem' }}>
+                                            {recentPct.toFixed(0)}%
                                         </span>
+                                        {feedbackAge.has(student.id) && feedbackAge.get(student.id)! >= 7 && (
+                                            <span title={`Last feedback ${feedbackAge.get(student.id)} days ago`}>
+                                                <Clock
+                                                    size={11}
+                                                    style={{
+                                                        color:
+                                                            feedbackAge.get(student.id)! >= 10
+                                                                ? 'var(--red)'
+                                                                : 'var(--yellow, #f59e0b)',
+                                                    }}
+                                                />
+                                            </span>
+                                        )}
+                                        <ChevronRight size={13} style={{ opacity: 0.6 }} />
+                                    </button>
+                                    {recommendedDeckByStudent.has(student.id) && (
+                                        <button
+                                            type="button"
+                                            className="btn btn-ghost btn-icon btn-sm"
+                                            title={t('dashboard.at_risk_assign_deck')}
+                                            aria-label={t('dashboard.at_risk_assign_deck')}
+                                            onClick={() => assignRecommendedDeck(student.id)}
+                                        >
+                                            <Layers size={14} />
+                                        </button>
                                     )}
-                                    <ChevronRight size={13} style={{ opacity: 0.6 }} />
-                                </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-ghost btn-icon btn-sm"
+                                        title={t('dashboard.at_risk_message')}
+                                        aria-label={t('dashboard.at_risk_message')}
+                                        onClick={() =>
+                                            setMessagingStudentId((cur) => (cur === student.id ? null : student.id))
+                                        }
+                                    >
+                                        <Mail size={14} />
+                                    </button>
+                                    {messagingStudentId === student.id && (
+                                        <div style={{ display: 'flex', gap: 6, width: '100%', marginTop: 4 }}>
+                                            <input
+                                                type="text"
+                                                aria-label={t('dashboard.at_risk_message_placeholder')}
+                                                value={messageText}
+                                                onChange={(e) => setMessageText(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') sendAtRiskMessage(student.id);
+                                                }}
+                                                placeholder={t('dashboard.at_risk_message_placeholder')}
+                                                style={{ flex: 1 }}
+                                            />
+                                            <button
+                                                type="button"
+                                                className="btn btn-primary btn-sm"
+                                                disabled={!messageText.trim()}
+                                                onClick={() => sendAtRiskMessage(student.id)}
+                                            >
+                                                {t('dashboard.at_risk_message_send')}
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             ))}
                         </div>
                     </div>

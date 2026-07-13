@@ -39,8 +39,17 @@ export default function SpeakingSession() {
     const scale =
         gradeScales.find((g) => g.id === (rubric?.gradeScaleId ?? settings.defaultGradeScaleId)) ?? gradeScales[0];
 
-    // Existing session if returning to edit
-    const existingSession = speakingSessions.find((s) => s.rubricId === rubricId && s.studentId === studentId);
+    // Existing sessions if returning to edit — practice and assessment are tracked as
+    // separate singleton slots per (rubric, student) so a low-stakes practice attempt
+    // never overwrites the graded one.
+    const existingAssessmentSession = speakingSessions.find(
+        (s) => s.rubricId === rubricId && s.studentId === studentId && s.mode !== 'practice'
+    );
+    const existingPracticeSession = speakingSessions.find(
+        (s) => s.rubricId === rubricId && s.studentId === studentId && s.mode === 'practice'
+    );
+    const [mode, setMode] = useState<'practice' | 'assessment'>('assessment');
+    const existingSession = mode === 'practice' ? existingPracticeSession : existingAssessmentSession;
 
     // ── Timer state ─────────────────────────────────────────────────────────────
     const [durationMinutes, setDurationMinutes] = useState(2);
@@ -127,6 +136,23 @@ export default function SpeakingSession() {
     const timerPct = Math.min(100, (elapsed / durationSeconds) * 100);
     const timeUp = elapsed >= durationSeconds;
 
+    // ── Mode switching ──────────────────────────────────────────────────────────
+    function switchMode(next: 'practice' | 'assessment') {
+        if (next === mode || isDirty) return;
+        const target = next === 'practice' ? existingPracticeSession : existingAssessmentSession;
+        setMode(next);
+        setElapsed(target?.elapsedSeconds ?? 0);
+        setTimerLocked(!!target);
+        setTimerRunning(false);
+        setEntries(
+            target?.entries ??
+                criteria.map((c) => ({ criterionId: c.id, levelId: null, comment: '', checkedSubItems: [] }))
+        );
+        setOverallComment(target?.overallComment ?? '');
+        setMarks(target?.pronunciationMarks ?? []);
+        setRecordings(target?.recordings ?? []);
+    }
+
     // ── Scoring helpers ─────────────────────────────────────────────────────────
     function selectLevel(criterionId: string, levelId: string) {
         setIsDirty(true);
@@ -157,6 +183,7 @@ export default function SpeakingSession() {
             id: existingSession?.id ?? nanoid(),
             rubricId: rubricId!,
             studentId: studentId!,
+            mode: mode === 'practice' ? 'practice' : undefined,
             durationSeconds,
             elapsedSeconds: elapsed,
             pronunciationMarks: marks,
@@ -234,6 +261,29 @@ export default function SpeakingSession() {
             />
 
             <div className="page-content fade-in" style={{ maxWidth: 900 }}>
+                {/* ── Mode toggle ── */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center' }}>
+                    <button
+                        type="button"
+                        className={`btn btn-sm ${mode === 'assessment' ? 'btn-primary' : 'btn-secondary'}`}
+                        disabled={mode !== 'assessment' && isDirty}
+                        onClick={() => switchMode('assessment')}
+                    >
+                        {t('speaking.mode_assessment')}
+                    </button>
+                    <button
+                        type="button"
+                        className={`btn btn-sm ${mode === 'practice' ? 'btn-primary' : 'btn-secondary'}`}
+                        disabled={mode !== 'practice' && isDirty}
+                        onClick={() => switchMode('practice')}
+                    >
+                        {t('speaking.mode_practice')}
+                    </button>
+                    <span className="text-muted text-xs">
+                        {mode === 'practice' ? t('speaking.mode_practice_help') : t('speaking.mode_assessment_help')}
+                    </span>
+                </div>
+
                 {/* ── Timer Panel ── */}
                 <div className="card" data-tour="sp-timer" style={{ marginBottom: 24 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>

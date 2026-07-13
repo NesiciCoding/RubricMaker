@@ -839,7 +839,10 @@ export class SupabaseAdapter {
         return error ? { success: false, error: error.message } : { success: true };
     }
 
-    // ── Comment Snippets ──────────────────────────────────────────────────────
+    // ── Comment Snippets (legacy) ──────────────────────────────────────────────
+    // The `comment_snippets` table predates `comment_bank` and has been retired —
+    // the app no longer writes to it. This read stays only so `mergeLegacyCommentSnippets`
+    // can lift any pre-existing rows into `comment_bank` on hydrate (see StorageSync).
 
     async fetchCommentSnippets(): Promise<CommentSnippet[]> {
         const { data, error } = await this.db().from('comment_snippets').select('data');
@@ -848,23 +851,6 @@ export class SupabaseAdapter {
             return [];
         }
         return (data ?? []).map((r) => r.data as CommentSnippet);
-    }
-
-    async upsertCommentSnippet(cs: CommentSnippet): Promise<SyncResult> {
-        const { error } = await this.db().from('comment_snippets').upsert(
-            {
-                id: cs.id,
-                owner_id: this.uid(),
-                data: cs,
-            },
-            { onConflict: 'id' }
-        );
-        return error ? { success: false, error: error.message } : { success: true };
-    }
-
-    async deleteCommentSnippet(id: string): Promise<SyncResult> {
-        const { error } = await this.db().from('comment_snippets').delete().eq('id', id).eq('owner_id', this.uid());
-        return error ? { success: false, error: error.message } : { success: true };
     }
 
     // ── Comment Bank ──────────────────────────────────────────────────────────

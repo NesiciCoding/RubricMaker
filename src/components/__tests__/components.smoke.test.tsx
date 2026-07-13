@@ -221,6 +221,13 @@ describe('VocabularyListEditor', () => {
 
 // ─── CommentBankModal ─────────────────────────────────────────────────────────
 
+const SEARCH_PLACEHOLDER_RE = /search/i;
+const FORM_PLACEHOLDER_RE = /form_placeholder/i;
+const NEW_BUTTON_RE = /new/i;
+const SAVE_BUTTON_RE = /save/i;
+const CANCEL_BUTTON_RE = /cancel/i;
+const POSITIVE_TAG_RE = /positive/i;
+
 describe('CommentBankModal', () => {
     it('renders modal with existing items', () => {
         render(<CommentBankModal onClose={vi.fn()} />);
@@ -229,12 +236,12 @@ describe('CommentBankModal', () => {
 
     it('renders search input', () => {
         render(<CommentBankModal onClose={vi.fn()} />);
-        expect(screen.getByPlaceholderText(/search/i)).toBeInTheDocument();
+        expect(screen.getByPlaceholderText(SEARCH_PLACEHOLDER_RE)).toBeInTheDocument();
     });
 
     it('filters items by search term', () => {
         render(<CommentBankModal onClose={vi.fn()} />);
-        const searchInput = screen.getByPlaceholderText(/search/i);
+        const searchInput = screen.getByPlaceholderText(SEARCH_PLACEHOLDER_RE);
         fireEvent.change(searchInput, { target: { value: 'nonexistent term xyz' } });
         expect(screen.queryByText('Well done!')).not.toBeInTheDocument();
     });
@@ -246,31 +253,31 @@ describe('CommentBankModal', () => {
 
     it('clicking New button shows editor form', () => {
         render(<CommentBankModal onClose={vi.fn()} />);
-        const newBtn = screen.getByRole('button', { name: /new/i });
+        const newBtn = screen.getByRole('button', { name: NEW_BUTTON_RE });
         fireEvent.click(newBtn);
-        expect(screen.getByPlaceholderText(/write your comment/i)).toBeInTheDocument();
+        expect(screen.getByPlaceholderText(FORM_PLACEHOLDER_RE)).toBeInTheDocument();
     });
 
     it('saving a new comment hides the editor form', () => {
         render(<CommentBankModal onClose={vi.fn()} />);
-        const newBtn = screen.getByRole('button', { name: /new/i });
+        const newBtn = screen.getByRole('button', { name: NEW_BUTTON_RE });
         fireEvent.click(newBtn);
-        const textarea = screen.getByPlaceholderText(/write your comment/i);
+        const textarea = screen.getByPlaceholderText(FORM_PLACEHOLDER_RE);
         fireEvent.change(textarea, { target: { value: 'Great effort!' } });
-        const saveBtn = screen.getByRole('button', { name: /save/i });
+        const saveBtn = screen.getByRole('button', { name: SAVE_BUTTON_RE });
         fireEvent.click(saveBtn);
         // form should close after save
-        expect(screen.queryByPlaceholderText(/write your comment/i)).not.toBeInTheDocument();
+        expect(screen.queryByPlaceholderText(FORM_PLACEHOLDER_RE)).not.toBeInTheDocument();
     });
 
     it('clicking cancel in editor hides form', () => {
         render(<CommentBankModal onClose={vi.fn()} />);
-        const newBtn = screen.getByRole('button', { name: /new/i });
+        const newBtn = screen.getByRole('button', { name: NEW_BUTTON_RE });
         fireEvent.click(newBtn);
-        expect(screen.getByPlaceholderText(/write your comment/i)).toBeInTheDocument();
-        const cancelBtn = screen.getByRole('button', { name: /cancel/i });
+        expect(screen.getByPlaceholderText(FORM_PLACEHOLDER_RE)).toBeInTheDocument();
+        const cancelBtn = screen.getByRole('button', { name: CANCEL_BUTTON_RE });
         fireEvent.click(cancelBtn);
-        expect(screen.queryByPlaceholderText(/write your comment/i)).not.toBeInTheDocument();
+        expect(screen.queryByPlaceholderText(FORM_PLACEHOLDER_RE)).not.toBeInTheDocument();
     });
 
     it('clicking Edit button on an item shows form with item text', () => {
@@ -278,7 +285,7 @@ describe('CommentBankModal', () => {
         const editBtn = screen.queryByRole('button', { name: 'common.edit' });
         if (editBtn) {
             fireEvent.click(editBtn);
-            const textarea = screen.getByPlaceholderText(/write your comment/i);
+            const textarea = screen.getByPlaceholderText(FORM_PLACEHOLDER_RE);
             expect((textarea as HTMLTextAreaElement).value).toBe('Well done!');
         } else {
             // onSelect not provided means edit buttons ARE rendered — skip gracefully
@@ -299,7 +306,7 @@ describe('CommentBankModal', () => {
     it('tag filter button filters items by tag', () => {
         render(<CommentBankModal onClose={vi.fn()} />);
         // The tag 'positive' should appear as a filter button
-        const tagBtn = screen.queryByRole('button', { name: /positive/i });
+        const tagBtn = screen.queryByRole('button', { name: POSITIVE_TAG_RE });
         if (tagBtn) {
             fireEvent.click(tagBtn);
             // Item with tag 'positive' stays visible
@@ -317,7 +324,7 @@ describe('CommentBankModal', () => {
 
     it('searching by tag text filters correctly', () => {
         render(<CommentBankModal onClose={vi.fn()} />);
-        const searchInput = screen.getByPlaceholderText(/search/i);
+        const searchInput = screen.getByPlaceholderText(SEARCH_PLACEHOLDER_RE);
         fireEvent.change(searchInput, { target: { value: 'positive' } });
         expect(screen.getByText('Well done!')).toBeInTheDocument();
     });

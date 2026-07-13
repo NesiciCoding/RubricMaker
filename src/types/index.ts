@@ -758,6 +758,8 @@ export interface SpeakingSession {
     id: string;
     rubricId: string;
     studentId: string;
+    /** Ungraded, retakeable practice attempt vs. the graded one; undefined = assessment (back-compat) */
+    mode?: 'practice' | 'assessment';
     /** Teacher-configured speaking time limit in seconds */
     durationSeconds: number;
     /** Actual elapsed time when the session was stopped */

@@ -16,7 +16,6 @@ import type {
     StudentRubric,
     Attachment,
     GradeScale,
-    CommentSnippet,
     AppSettings,
     ScoreEntry,
     LinkedStandard,
@@ -54,7 +53,6 @@ import {
     stripAudioForOfflineCache,
     saveAttachments,
     saveGradeScales,
-    saveCommentSnippets,
     saveSettings,
     saveFavoriteStandards,
     saveCommentBank,
@@ -128,9 +126,6 @@ type Action =
     | { type: 'ADD_GRADE_SCALE'; payload: GradeScale }
     | { type: 'UPDATE_GRADE_SCALE'; payload: GradeScale }
     | { type: 'DELETE_GRADE_SCALE'; id: string }
-    | { type: 'ADD_COMMENT_SNIPPET'; payload: CommentSnippet }
-    | { type: 'UPDATE_COMMENT_SNIPPET'; payload: CommentSnippet }
-    | { type: 'DELETE_COMMENT_SNIPPET'; id: string }
     | { type: 'UPDATE_SETTINGS'; payload: Partial<AppSettings> }
     | { type: 'ADD_FAVORITE_STANDARD'; payload: LinkedStandard }
     | { type: 'REMOVE_FAVORITE_STANDARD'; guid: string }
@@ -408,22 +403,6 @@ function reducer(state: StoreData, action: Action): StoreData {
             const next = state.gradeScales.filter((gs) => gs.id !== action.id);
             if (isOffline()) saveGradeScales(next);
             return { ...state, gradeScales: next };
-        }
-        case 'ADD_COMMENT_SNIPPET': {
-            const next = [...state.commentSnippets, { ...action.payload, updatedAt: new Date().toISOString() }];
-            if (isOffline()) saveCommentSnippets(next);
-            return { ...state, commentSnippets: next };
-        }
-        case 'UPDATE_COMMENT_SNIPPET': {
-            const payload = { ...action.payload, updatedAt: new Date().toISOString() };
-            const next = state.commentSnippets.map((cs) => (cs.id === payload.id ? payload : cs));
-            if (isOffline()) saveCommentSnippets(next);
-            return { ...state, commentSnippets: next };
-        }
-        case 'DELETE_COMMENT_SNIPPET': {
-            const next = state.commentSnippets.filter((cs) => cs.id !== action.id);
-            if (isOffline()) saveCommentSnippets(next);
-            return { ...state, commentSnippets: next };
         }
         case 'UPDATE_SETTINGS': {
             const next = { ...state.settings, ...action.payload };
@@ -856,9 +835,6 @@ interface AppContextValue extends StoreData {
     addGradeScale: (gs: Omit<GradeScale, 'id'>) => GradeScale;
     updateGradeScale: (gs: GradeScale) => void;
     deleteGradeScale: (id: string) => void;
-    addCommentSnippet: (text: string, tag: string) => CommentSnippet;
-    updateCommentSnippet: (cs: CommentSnippet) => void;
-    deleteCommentSnippet: (id: string) => void;
     updateSettings: (s: Partial<AppSettings>) => void;
     getActiveGradeScale: () => GradeScale;
     addFavoriteStandard: (s: LinkedStandard) => void;
@@ -1026,7 +1002,6 @@ async function flushToLocalStorage(merged: StoreData) {
     saveStudentRubrics(stripAudioForOfflineCache(merged.studentRubrics));
     saveAttachments(merged.attachments);
     saveGradeScales(merged.gradeScales);
-    saveCommentSnippets(merged.commentSnippets);
     saveSettings(merged.settings);
     saveFavoriteStandards(merged.favoriteStandards);
     saveCommentBank(merged.commentBank);
@@ -1419,7 +1394,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         diff(prev.peerReviews, state.peerReviews, 'peerReview', (sr) => sr.id);
         diff(prev.attachments, state.attachments, 'attachment', (a) => a.id);
         diff(prev.gradeScales, state.gradeScales, 'gradeScale', (gs) => gs.id);
-        diff(prev.commentSnippets, state.commentSnippets, 'commentSnippet', (cs) => cs.id);
         diff(prev.commentBank, state.commentBank, 'commentBankItem', (cb) => cb.id);
         diff(prev.exportTemplates, state.exportTemplates, 'exportTemplate', (t) => t.id);
         diff(prev.favoriteStandards, state.favoriteStandards, 'favoriteStandard', (fs) => fs.guid);
@@ -1632,17 +1606,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const updateGradeScale = useCallback((gs: GradeScale) => dispatch({ type: 'UPDATE_GRADE_SCALE', payload: gs }), []);
     const deleteGradeScale = useCallback((id: string) => dispatch({ type: 'DELETE_GRADE_SCALE', id }), []);
 
-    const addCommentSnippet = useCallback((text: string, tag: string): CommentSnippet => {
-        const snip: CommentSnippet = { id: nanoid(), text, tag };
-        dispatch({ type: 'ADD_COMMENT_SNIPPET', payload: snip });
-        return snip;
-    }, []);
-
-    const updateCommentSnippet = useCallback(
-        (cs: CommentSnippet) => dispatch({ type: 'UPDATE_COMMENT_SNIPPET', payload: cs }),
-        []
-    );
-    const deleteCommentSnippet = useCallback((id: string) => dispatch({ type: 'DELETE_COMMENT_SNIPPET', id }), []);
     const updateSettings = useCallback(
         (s: Partial<AppSettings>) => dispatch({ type: 'UPDATE_SETTINGS', payload: s }),
         []
@@ -2236,9 +2199,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
             addGradeScale,
             updateGradeScale,
             deleteGradeScale,
-            addCommentSnippet,
-            updateCommentSnippet,
-            deleteCommentSnippet,
             updateSettings,
             getActiveGradeScale,
             addFavoriteStandard,
@@ -2379,9 +2339,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
             addGradeScale,
             updateGradeScale,
             deleteGradeScale,
-            addCommentSnippet,
-            updateCommentSnippet,
-            deleteCommentSnippet,
             updateSettings,
             getActiveGradeScale,
             addFavoriteStandard,

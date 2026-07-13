@@ -14,6 +14,7 @@ import {
     clearLocalData,
     DEFAULT_SETTINGS,
     migrateLegacyRubricVersions,
+    mergeLegacyCommentSnippets,
 } from '../../store/storage';
 import { logEvent } from '../logging/clientLogger';
 import type {
@@ -24,7 +25,6 @@ import type {
     StudentRubric,
     Attachment,
     GradeScale,
-    CommentSnippet,
     LinkedStandard,
     CommentBankItem,
     ExportTemplate,
@@ -590,6 +590,22 @@ class StorageSyncService {
             // never re-enters app state.
             const migratedRubrics = rubrics.map(migrateLegacyRubricVersions);
 
+            // Back-compat read path (comment-bank consolidation): any pre-existing
+            // `comment_snippets` rows get lifted into `commentBank` on every hydrate —
+            // intentionally not one-time, since the remote table itself is left in
+            // place (not deleted) rather than forcing a destructive backfill; this is
+            // cheap and a no-op once nothing is left to migrate. Newly-lifted items are
+            // also pushed to `comment_bank` (fire-and-forget, idempotent upsert) so they
+            // become real rows — otherwise they'd stay purely in-memory (recomputed every
+            // hydrate) and could never be marked shared-with-department.
+            const mergedCommentBank = mergeLegacyCommentSnippets(commentSnippets, commentBank);
+            if (mergedCommentBank !== commentBank) {
+                const existingIds = new Set(commentBank.map((item) => item.id));
+                mergedCommentBank
+                    .filter((item) => !existingIds.has(item.id))
+                    .forEach((item) => this.adapter.upsertCommentBankItem(item));
+            }
+
             // Fetched as a second, sequential wave rather than joining the burst of ~20
             // requests above — a fresh feature's tables competing for the same local
             // connection pool at that exact startup instant was implicated in a
@@ -661,8 +677,7 @@ class StorageSyncService {
                 studentRubrics,
                 peerReviews,
                 gradeScales: gradeScales.length > 0 ? gradeScales : undefined,
-                commentSnippets,
-                commentBank: commentBank.length > 0 ? commentBank : undefined,
+                commentBank: mergedCommentBank.length > 0 ? mergedCommentBank : undefined,
                 exportTemplates,
                 favoriteStandards,
                 selfAssessments,
@@ -721,7 +736,6 @@ class StorageSyncService {
                 ...state.studentRubrics.map((sr) => this.adapter.upsertStudentRubric(sr)),
                 ...state.peerReviews.map((sr) => this.adapter.upsertPeerReview(sr)),
                 ...state.gradeScales.map((gs) => this.adapter.upsertGradeScale(gs)),
-                ...state.commentSnippets.map((cs) => this.adapter.upsertCommentSnippet(cs)),
                 ...state.commentBank.map((cb) => this.adapter.upsertCommentBankItem(cb)),
                 ...state.favoriteStandards.map((fs) => this.adapter.upsertFavoriteStandard(fs)),
                 ...state.selfAssessments.map((sa) => this.adapter.upsertSelfAssessment(sa)),
@@ -817,11 +831,6 @@ class StorageSyncService {
                 case 'gradeScale':
                     if (action === 'upsert') result = await this.adapter.upsertGradeScale(payload as GradeScale);
                     else if (id) result = await this.adapter.deleteGradeScale(id);
-                    break;
-                case 'commentSnippet':
-                    if (action === 'upsert')
-                        result = await this.adapter.upsertCommentSnippet(payload as CommentSnippet);
-                    else if (id) result = await this.adapter.deleteCommentSnippet(id);
                     break;
                 case 'commentBankItem':
                     if (action === 'upsert')
