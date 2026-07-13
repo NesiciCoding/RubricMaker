@@ -5,7 +5,12 @@ import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import { useDbStatus } from '../hooks/useDbStatus';
-import { buildReconciledEntries, getModerationQueue, ModerationQueueItem } from '../utils/coGradingModerationQueue';
+import {
+    buildReconciledEntries,
+    DEFAULT_MODERATION_THRESHOLD_POINTS,
+    getModerationQueue,
+    ModerationQueueItem,
+} from '../utils/coGradingModerationQueue';
 import type { DbUser } from '../services/database';
 
 export default function ModerationQueuePage() {
@@ -22,7 +27,7 @@ export default function ModerationQueuePage() {
         fetchSchoolMembers,
     } = useApp();
     const dbStatus = useDbStatus();
-    const [threshold, setThreshold] = useState(2);
+    const [threshold, setThreshold] = useState(DEFAULT_MODERATION_THRESHOLD_POINTS);
     const [colleagues, setColleagues] = useState<DbUser[]>([]);
 
     useEffect(() => {

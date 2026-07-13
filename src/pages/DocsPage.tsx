@@ -165,7 +165,7 @@ function getRouteTree(t: TFunction): RouteNode[] {
                     color: '#6366f1',
                     children: [
                         {
-                            path: '/essays/:teacherKey/monitor',
+                            path: '/essays/:assignmentId/monitor',
                             label: t('docs.route_essay_monitor_label'),
                             description: t('docs.route_essay_monitor_desc'),
                             color: '#8b5cf6',
@@ -255,6 +255,27 @@ function getRouteTree(t: TFunction): RouteNode[] {
                     badge: 'student',
                 },
             ],
+        },
+        {
+            path: '/feedback/:code',
+            label: t('docs.route_feedback_label'),
+            description: t('docs.route_feedback_desc'),
+            color: '#06b6d4',
+            badge: 'student',
+        },
+        {
+            path: '/preview/:code',
+            label: t('docs.route_preview_label'),
+            description: t('docs.route_preview_desc'),
+            color: '#06b6d4',
+            badge: 'public',
+        },
+        {
+            path: '/essay/:code',
+            label: t('docs.route_essay_take_label'),
+            description: t('docs.route_essay_take_desc'),
+            color: '#06b6d4',
+            badge: 'student',
         },
         {
             path: '/test/:code',

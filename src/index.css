@@ -1224,6 +1224,14 @@ select.input-error {
         transform: translateX(0);
     }
 
+    [dir='rtl'] .sidebar {
+        transform: translateX(100%);
+    }
+
+    [dir='rtl'] .sidebar.mobile-open {
+        transform: translateX(0);
+    }
+
     /* Show close button on mobile */
     .sidebar-close-btn {
         display: flex;

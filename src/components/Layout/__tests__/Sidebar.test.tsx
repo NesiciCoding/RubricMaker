@@ -36,7 +36,6 @@ describe('Sidebar', () => {
         expect(screen.getAllByText('sidebar.domain_overview').length).toBeGreaterThan(0);
         expect(screen.getByText('sidebar.domain_assessments')).toBeInTheDocument();
         expect(screen.getByText('sidebar.domain_students')).toBeInTheDocument();
-        expect(screen.getByText('sidebar.domain_grading')).toBeInTheDocument();
         expect(screen.getByText('sidebar.domain_insights')).toBeInTheDocument();
         expect(screen.getByText('sidebar.domain_library')).toBeInTheDocument();
     });
@@ -44,7 +43,20 @@ describe('Sidebar', () => {
     it('shows the Overview domain sub-items by default at /', () => {
         renderSidebar('/');
         expect(screen.getByText('navigation.dashboard')).toBeInTheDocument();
+    });
+
+    it('shows the Insights domain sub-items including Activity Dashboard', () => {
+        renderSidebar('/activity-dashboard');
+        expect(screen.getByText('navigation.statistics')).toBeInTheDocument();
+        expect(screen.getByText('navigation.export')).toBeInTheDocument();
         expect(screen.getByText('navigation.activity_dashboard')).toBeInTheDocument();
+    });
+
+    it('shows moderation under Assessments and messages under Students', () => {
+        renderSidebar('/moderation');
+        expect(screen.getByText('navigation.moderation')).toBeInTheDocument();
+        renderSidebar('/messages');
+        expect(screen.getByText('navigation.messages')).toBeInTheDocument();
     });
 
     it('shows the Assessments domain sub-items when on a rubrics route', () => {

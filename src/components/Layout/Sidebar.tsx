@@ -20,7 +20,6 @@ import {
     LayoutGrid,
     Store,
     UserCheck,
-    PenTool,
     Folder,
     Mail,
     Newspaper,
@@ -69,11 +68,8 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
             key: 'overview',
             icon: LayoutDashboard,
             label: t('sidebar.domain_overview'),
-            matchPrefixes: ['/', '/activity-dashboard'],
-            items: [
-                { to: '/', icon: LayoutDashboard, label: t('navigation.dashboard'), end: true },
-                { to: '/activity-dashboard', icon: LayoutGrid, label: t('navigation.activity_dashboard') },
-            ],
+            matchPrefixes: ['/'],
+            items: [{ to: '/', icon: LayoutDashboard, label: t('navigation.dashboard'), end: true }],
         },
         {
             key: 'assessments',
@@ -89,6 +85,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
                 '/peer-analytics',
                 '/grade-comparative',
                 '/speaking',
+                '/moderation',
             ],
             items: [
                 { to: '/rubrics', icon: BookOpen, label: t('navigation.rubrics') },
@@ -97,26 +94,18 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
                 { to: '/flashcards', icon: Layers, label: t('navigation.flashcards') },
                 { to: '/news-flashes', icon: Newspaper, label: t('navigation.news_flashes') },
                 { to: '/marketplace', icon: Store, label: t('navigation.marketplace') },
+                { to: '/moderation', icon: UserCheck, label: t('navigation.moderation') },
             ],
         },
         {
             key: 'students',
             icon: Users,
             label: t('sidebar.domain_students'),
-            matchPrefixes: ['/students', '/cefr-overview', '/vocabulary'],
+            matchPrefixes: ['/students', '/cefr-overview', '/vocabulary', '/messages'],
             items: [
                 { to: '/students', icon: Users, label: t('navigation.students') },
                 { to: '/cefr-overview', icon: GraduationCap, label: t('navigation.cefr_overview') },
                 { to: '/vocabulary', icon: Languages, label: t('navigation.vocabulary') },
-            ],
-        },
-        {
-            key: 'grading',
-            icon: PenTool,
-            label: t('sidebar.domain_grading'),
-            matchPrefixes: ['/moderation', '/messages'],
-            items: [
-                { to: '/moderation', icon: UserCheck, label: t('navigation.moderation') },
                 { to: '/messages', icon: Mail, label: t('navigation.messages') },
             ],
         },
@@ -124,10 +113,11 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
             key: 'insights',
             icon: BarChart3,
             label: t('sidebar.domain_insights'),
-            matchPrefixes: ['/statistics', '/export'],
+            matchPrefixes: ['/statistics', '/export', '/activity-dashboard'],
             items: [
                 { to: '/statistics', icon: BarChart3, label: t('navigation.statistics') },
                 { to: '/export', icon: Download, label: t('navigation.export') },
+                { to: '/activity-dashboard', icon: LayoutGrid, label: t('navigation.activity_dashboard') },
             ],
         },
         {
