@@ -46,11 +46,14 @@ RubricMaker's `docker-compose.yml` pins image versions. To upgrade:
 1. Pull the new `docker-compose.yml` from the repository (or edit image tags manually).
 2. Take a database backup before upgrading.
 3. Apply any new migrations:
+
     ```bash
     docker-compose up -d --build db_migrate
     docker-compose logs db_migrate
     ```
+
 4. Restart remaining services:
+
     ```bash
     docker-compose up -d --build
     ```
@@ -80,7 +83,7 @@ Migration `037_audit_logs.sql` calls `CREATE EXTENSION IF NOT EXISTS pg_cron` an
 
 1. **Add `pg_cron` to `shared_preload_libraries`** in `postgresql.conf`:
 
-    ```
+    ```ini
     shared_preload_libraries = 'pg_cron'
     cron.database_name = 'postgres'
     ```
@@ -88,6 +91,7 @@ Migration `037_audit_logs.sql` calls `CREATE EXTENSION IF NOT EXISTS pg_cron` an
     With the Docker stack this is set via the `POSTGRES_EXTRA_FLAGS` or a mounted `postgresql.conf`.
 
 2. **Grant usage** (handled automatically by the migration via the `postgres` superuser role):
+
     ```sql
     GRANT USAGE ON SCHEMA cron TO postgres;
     ```
@@ -107,11 +111,14 @@ Migration `059_scheduled_digest.sql` schedules a `teacher-email-digest` cron job
 
 1. **The `pg_net` extension** — also enabled by that migration (`CREATE EXTENSION IF NOT EXISTS pg_net`), same "just works on Cloud, needs `shared_preload_libraries` self-hosted" caveat as `pg_cron` above.
 2. **This project's URL and service-role key**, set once as database-level GUCs (a shared migration file can't hardcode per-deployment secrets):
+
     ```sql
     ALTER DATABASE postgres SET app.settings.project_url = 'https://<project-ref>.supabase.co';
     ALTER DATABASE postgres SET app.settings.service_role_key = '<service-role-key>';
     ```
+
     Until both are set, `current_setting(..., true)` returns `NULL` and the job's `net.http_post` calls fail silently — check `cron.job_run_details` for the `teacher-email-digest` jobname to confirm it's actually reaching the function.
+
 3. **The `scheduled-digest` function deployed** — same deploy step as `nightly-backup` (copy `index.ts` into the official self-hosted stack's `volumes/functions/scheduled-digest/index.ts`, or deploy via Cloud).
 
 The job only emails teachers who opted in via Settings → Email Digest (`digestEmailEnabled`); it's a no-op for everyone else.
