@@ -173,5 +173,52 @@ describe('LiveMonitorPage', () => {
 
             vi.useRealTimers();
         });
+
+        it('flags a submission made after the due date as late', () => {
+            mockUseApp = {
+                ...mockUseApp,
+                tests: [{ ...mockTest, dueDate: '2026-06-01T00:00:00.000Z' }],
+                studentTests: [
+                    {
+                        id: 'st-1',
+                        testId: 'test-1',
+                        studentId: 'student-1',
+                        answers: [],
+                        status: 'submitted',
+                        startedAt: '2026-06-01T00:00:00.000Z',
+                        submittedAt: '2026-06-02T00:00:00.000Z',
+                        events: [],
+                    },
+                ],
+            };
+
+            renderPage(['/tests/test-1/monitor']);
+
+            expect(screen.getByTitle('tests.monitor.status.late')).toBeInTheDocument();
+        });
+
+        it('does not flag an on-time submission as late', () => {
+            mockUseApp = {
+                ...mockUseApp,
+                tests: [{ ...mockTest, dueDate: '2026-06-01T00:00:00.000Z' }],
+                studentTests: [
+                    {
+                        id: 'st-1',
+                        testId: 'test-1',
+                        studentId: 'student-1',
+                        answers: [],
+                        status: 'submitted',
+                        startedAt: '2026-05-31T00:00:00.000Z',
+                        submittedAt: '2026-05-31T12:00:00.000Z',
+                        events: [],
+                    },
+                ],
+            };
+
+            renderPage(['/tests/test-1/monitor']);
+
+            expect(screen.queryByTitle('tests.monitor.status.late')).not.toBeInTheDocument();
+            expect(screen.getByTitle('tests.monitor.status.submitted')).toBeInTheDocument();
+        });
     });
 });

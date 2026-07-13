@@ -528,6 +528,7 @@
             "action_results": "Resultaten",
             "action_import": "Inzendingscode importeren",
             "student_label": "Leerling",
+            "late_submission": "Te laat ingeleverd",
             "total_points": "Totaal aantal punten",
             "raw_points": "Ruwe punten",
             "adjustment_label": "correctie",

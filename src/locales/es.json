@@ -528,6 +528,7 @@
             "action_results": "Resultados",
             "action_import": "Importar código de entrega",
             "student_label": "Estudiante",
+            "late_submission": "Entrega tardía",
             "total_points": "Puntos totales",
             "raw_points": "Puntos brutos",
             "adjustment_label": "ajuste",

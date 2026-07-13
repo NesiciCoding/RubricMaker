@@ -528,6 +528,7 @@
             "action_results": "Ergebnisse",
             "action_import": "Abgabecode importieren",
             "student_label": "Schüler/in",
+            "late_submission": "Verspätete Abgabe",
             "total_points": "Gesamtpunkte",
             "raw_points": "Rohpunkte",
             "adjustment_label": "Korrektur",
