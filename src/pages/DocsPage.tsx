@@ -984,6 +984,9 @@ function GradingTab() {
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginTop: 8 }}>
                     {t('docs.gr_cograding_pending_note')}
                 </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginTop: 8 }}>
+                    {t('docs.gr_cograding_digest_note')}
+                </p>
             </FeatureSection>
 
             <FeatureSection icon={Mail} title={t('docs.gr_messages_title')} color="#f59e0b">

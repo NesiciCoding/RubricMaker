@@ -333,6 +333,19 @@ Schedule it nightly: on Cloud via [Supabase Dashboard → Edge Functions](https:
 
 This is a disaster-recovery snapshot of raw table rows, not a file you can feed back into the app's own JSON import (Settings → Backup & Restore) — restoring it means re-inserting the rows directly (e.g. via `psql` or the Supabase SQL editor), not through `importFullBackup()`. It's metadata only: rows that reference uploaded files (essay submissions, speaking-session recordings) store a Storage-bucket path, not the file itself, so back up the `essays`/`recordings`/`attachments` buckets separately if you need those files recoverable too. If you're self-hosting Supabase separately from this repo's stack, you may also want your own `pg_dump`-based backup of the whole instance — `export_owner_backup()` only covers the app's own tables, scoped per teacher/admin.
 
+**Teacher email digest (optional, `pg_cron`-driven):**
+
+Every other email this app sends is triggered synchronously from a frontend action and addressed to a student (`notify-student-graded`, `notify-student-message`). The `scheduled-digest` edge function is the first scheduled, teacher-facing send: nightly, it emails any teacher/admin who enabled "Send me a nightly email digest" (Settings → Email Digest) and has pending second-marker disputes on the Moderation Queue.
+
+Migration `059_scheduled_digest.sql` enables the `pg_net` extension and schedules `net.http_post` (via `cron.schedule`, same job runner `audit_logs` retention cleanup already uses) to call the function nightly at 06:00 UTC. `net.http_post` needs this project's URL and service-role key, which a shared migration file can't hardcode — set them once per deployment before the job can actually send anything:
+
+```sql
+ALTER DATABASE postgres SET app.settings.project_url = 'https://<project-ref>.supabase.co';
+ALTER DATABASE postgres SET app.settings.service_role_key = '<service-role-key>';
+```
+
+Deploy `scheduled-digest` the same way as `nightly-backup` (Cloud, or copy `index.ts` into the official self-hosted stack's `volumes/functions/scheduled-digest/index.ts`). See [docs/SELF_HOSTING_OPS.md](docs/SELF_HOSTING_OPS.md) for the full self-hosted `pg_cron`/`pg_net` setup.
+
 **Stress-test logging (optional):**
 
 Before a school-wide rollout, you can enable a diagnostic event stream to a
