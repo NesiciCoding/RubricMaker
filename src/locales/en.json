@@ -638,6 +638,7 @@
             "drag_to_order": "Drag the items below into the correct order.",
             "word_count": "{{count}} words",
             "question_image_alt": "Question image",
+            "option_image_fallback": "Option image",
             "question_audio_alt": "Question audio",
             "hint_show": "Show hint",
             "hint_hide": "Hide hint",

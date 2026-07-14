@@ -638,6 +638,7 @@
             "drag_to_order": "Arrastra los elementos de abajo al orden correcto.",
             "word_count": "{{count}} palabras",
             "question_image_alt": "Imagen de la pregunta",
+            "option_image_fallback": "Imagen de la opción",
             "question_audio_alt": "Audio de la pregunta",
             "hint_show": "Mostrar pista",
             "hint_hide": "Ocultar pista",

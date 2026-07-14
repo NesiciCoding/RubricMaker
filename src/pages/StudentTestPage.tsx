@@ -1132,7 +1132,7 @@ function QuestionCard({ question, index, total, value, onChange, code }: Questio
                             {safeImgSrc(opt.imageUrl) && (
                                 <img
                                     src={safeImgSrc(opt.imageUrl)}
-                                    alt=""
+                                    alt={opt.text ? '' : t('tests.taking.option_image_fallback')}
                                     style={{ maxWidth: 80, maxHeight: 60, borderRadius: 4, objectFit: 'contain' }}
                                 />
                             )}
@@ -1176,7 +1176,7 @@ function QuestionCard({ question, index, total, value, onChange, code }: Questio
                                 {safeImgSrc(opt.imageUrl) && (
                                     <img
                                         src={safeImgSrc(opt.imageUrl)}
-                                        alt=""
+                                        alt={opt.text ? '' : t('tests.taking.option_image_fallback')}
                                         style={{ maxWidth: 80, maxHeight: 60, borderRadius: 4, objectFit: 'contain' }}
                                     />
                                 )}

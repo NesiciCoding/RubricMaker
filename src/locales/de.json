@@ -638,6 +638,7 @@
             "drag_to_order": "Ziehe die Elemente unten in die richtige Reihenfolge.",
             "word_count": "{{count}} Wörter",
             "question_image_alt": "Bild zur Frage",
+            "option_image_fallback": "Bild zur Option",
             "question_audio_alt": "Audio zur Frage",
             "hint_show": "Hinweis anzeigen",
             "hint_hide": "Hinweis verbergen",

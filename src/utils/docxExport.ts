@@ -280,13 +280,43 @@ export async function exportRubricToDocx(rubric: Rubric) {
     saveAs(blob, `${rubric.name.replace(/[^a-z0-9]/gi, '_')}_rubric.docx`);
 }
 
-// Strip basic HTML tags from TipTap output — shared by parseMdSimple and any plain-text label
-// (e.g. a table cell) that embeds a TipTap-authored field like TestQuestion.prompt.
-function stripHtmlTags(text: string): string {
-    return text
-        .replace(/<[^>]*>/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
+const HTML_BLOCK_TAGS = new Set([
+    'P',
+    'DIV',
+    'LI',
+    'TR',
+    'H1',
+    'H2',
+    'H3',
+    'H4',
+    'H5',
+    'H6',
+    'BLOCKQUOTE',
+    'UL',
+    'OL',
+    'TABLE',
+]);
+
+// Strip HTML tags from TipTap output via DOMParser — shared by parseMdSimple and any plain-text
+// label (e.g. a table cell) that embeds a TipTap-authored field like TestQuestion.prompt. A regex
+// approach would leave entities like &amp; encoded and could misparse literal "<"/">" in plain text
+// (e.g. "x < y") as a tag; DOMParser handles both correctly. Plain .textContent would also collapse
+// list items/paragraphs together with no separator, so block elements insert a trailing space.
+export function stripHtmlTags(text: string): string {
+    if (!text) return '';
+    const doc = new DOMParser().parseFromString(text, 'text/html');
+    let result = '';
+    const walk = (node: ChildNode) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+            result += node.textContent ?? '';
+            return;
+        }
+        if (node.nodeType !== Node.ELEMENT_NODE) return;
+        node.childNodes.forEach(walk);
+        if (HTML_BLOCK_TAGS.has((node as Element).tagName)) result += ' ';
+    };
+    doc.body.childNodes.forEach(walk);
+    return result.replace(/\s+/g, ' ').trim();
 }
 
 function parseMdSimple(text: string): TextRun[] {
