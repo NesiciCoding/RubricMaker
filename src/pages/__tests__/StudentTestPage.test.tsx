@@ -208,6 +208,30 @@ describe('StudentTestPage — answering and offline submission', () => {
         expect(screen.getByText('4 is the sum of 2 and 2.')).toBeInTheDocument();
     });
 
+    it('shows the sanitized instruction instead of raw cloze markup in the practice review', async () => {
+        const test = makeTest({
+            mode: 'practice',
+            questions: [
+                {
+                    id: 'q1',
+                    prompt: 'The capital of France is {{Paris}}.',
+                    type: 'cloze',
+                    points: 1,
+                },
+            ],
+        });
+        renderPage(makeAssignment({}, test));
+
+        fireEvent.change(screen.getAllByRole('textbox')[0], { target: { value: 'Paris' } });
+
+        await act(async () => {
+            fireEvent.click(screen.getByText('tests.taking.submit_btn'));
+        });
+
+        expect(screen.getByText('tests.taking.cloze_instruction')).toBeInTheDocument();
+        expect(screen.queryByText(/\{\{Paris\}\}/)).not.toBeInTheDocument();
+    });
+
     it('does not show explanations after submitting an assessment-mode test', async () => {
         const test = makeTest({
             questions: [

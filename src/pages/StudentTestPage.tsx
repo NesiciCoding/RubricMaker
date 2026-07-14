@@ -688,11 +688,23 @@ export default function StudentTestPage() {
                                                         number: index + 1,
                                                     })}
                                                 </div>
-                                                <div style={{ fontWeight: 600, marginTop: 2 }}>{q.prompt}</div>
+                                                <div style={{ fontWeight: 600, marginTop: 2 }}>
+                                                    {q.type === 'cloze' || q.type === 'cloze-dropdown'
+                                                        ? t(
+                                                              q.type === 'cloze-dropdown'
+                                                                  ? 'tests.taking.cloze_dropdown_instruction'
+                                                                  : 'tests.taking.cloze_instruction'
+                                                          )
+                                                        : q.prompt}
+                                                </div>
                                                 {q.explanation && (
                                                     <p
                                                         className="text-muted text-sm"
-                                                        style={{ marginTop: 8, marginBottom: 0 }}
+                                                        style={{
+                                                            marginTop: 8,
+                                                            marginBottom: 0,
+                                                            whiteSpace: 'pre-wrap',
+                                                        }}
                                                     >
                                                         {q.explanation}
                                                     </p>
