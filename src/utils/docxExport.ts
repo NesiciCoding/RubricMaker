@@ -280,14 +280,51 @@ export async function exportRubricToDocx(rubric: Rubric) {
     saveAs(blob, `${rubric.name.replace(/[^a-z0-9]/gi, '_')}_rubric.docx`);
 }
 
+const HTML_BLOCK_TAGS = new Set([
+    'P',
+    'DIV',
+    'LI',
+    'TR',
+    'H1',
+    'H2',
+    'H3',
+    'H4',
+    'H5',
+    'H6',
+    'BLOCKQUOTE',
+    'UL',
+    'OL',
+    'TABLE',
+    'TD',
+    'TH',
+    'BR',
+]);
+
+// Strip HTML tags from TipTap output via DOMParser — shared by parseMdSimple and any plain-text
+// label (e.g. a table cell) that embeds a TipTap-authored field like TestQuestion.prompt. A regex
+// approach would leave entities like &amp; encoded and could misparse literal "<"/">" in plain text
+// (e.g. "x < y") as a tag; DOMParser handles both correctly. Plain .textContent would also collapse
+// list items/paragraphs together with no separator, so block elements insert a trailing space.
+export function stripHtmlTags(text: string): string {
+    if (!text) return '';
+    const doc = new DOMParser().parseFromString(text, 'text/html');
+    let result = '';
+    const walk = (node: ChildNode) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+            result += node.textContent ?? '';
+            return;
+        }
+        if (node.nodeType !== Node.ELEMENT_NODE) return;
+        node.childNodes.forEach(walk);
+        if (HTML_BLOCK_TAGS.has((node as Element).tagName)) result += ' ';
+    };
+    doc.body.childNodes.forEach(walk);
+    return result.replace(/\s+/g, ' ').trim();
+}
+
 function parseMdSimple(text: string): TextRun[] {
     if (!text) return [new TextRun('')];
-    // Strip basic HTML tags from TipTap output
-    const stripped = text
-        .replace(/<[^>]*>/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-    return [new TextRun(stripped)];
+    return [new TextRun(stripHtmlTags(text))];
 }
 
 /** Builds the student-name heading, score line, and criteria grid for one graded rubric — shared by exportBatchDocx and the essay+rubric combined export. */
@@ -593,7 +630,7 @@ function buildTestSummaryChildren(
             headerRow(['Question', 'Accuracy', 'Submissions']),
             ...questions.map((qb, i) =>
                 breakdownRow(
-                    `Q${i + 1}. ${questionsById.get(qb.questionId)?.prompt ?? ''}`,
+                    `Q${i + 1}. ${stripHtmlTags(questionsById.get(qb.questionId)?.prompt ?? '')}`,
                     qb.accuracyPct,
                     qb.bucket,
                     qb.sampleSize
