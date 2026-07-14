@@ -18,6 +18,11 @@ describe('stripHtmlTags', () => {
         expect(stripHtmlTags('<ul><li>One</li><li>Two</li></ul><p>Three</p>')).toBe('One Two Three');
     });
 
+    it('separates table cells and hard breaks with whitespace', () => {
+        expect(stripHtmlTags('<table><tr><td>One</td><td>Two</td></tr></table>')).toBe('One Two');
+        expect(stripHtmlTags('Hello<br>World')).toBe('Hello World');
+    });
+
     it('returns empty string for empty input', () => {
         expect(stripHtmlTags('')).toBe('');
     });

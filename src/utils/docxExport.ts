@@ -295,6 +295,9 @@ const HTML_BLOCK_TAGS = new Set([
     'UL',
     'OL',
     'TABLE',
+    'TD',
+    'TH',
+    'BR',
 ]);
 
 // Strip HTML tags from TipTap output via DOMParser — shared by parseMdSimple and any plain-text
