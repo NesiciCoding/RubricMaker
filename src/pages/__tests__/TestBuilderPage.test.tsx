@@ -98,6 +98,13 @@ vi.mock('../../components/CEFR/CefrPickerModal', () => ({
     default: () => null,
 }));
 
+// Replace TipTap-heavy editor with a plain textarea (same pattern as StudentEssayPage.test.tsx)
+vi.mock('../../components/Editor/EssayEditor', () => ({
+    default: ({ content, onChange }: { content: string; onChange: (html: string) => void }) => (
+        <textarea aria-label="tests.question_prompt_label" value={content} onChange={(e) => onChange(e.target.value)} />
+    ),
+}));
+
 describe('TestBuilderPage', () => {
     beforeEach(() => {
         mockTests = [];
