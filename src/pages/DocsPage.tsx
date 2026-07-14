@@ -1041,6 +1041,20 @@ function GradingTab() {
                 />
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.gr_test_rich_authoring_title')}
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
+                    {t('docs.gr_test_rich_authoring_body')}
+                </p>
+                <FeatureList
+                    items={[
+                        t('docs.gr_test_rich_authoring_item_prompt'),
+                        t('docs.gr_test_rich_authoring_item_passage'),
+                        t('docs.gr_test_rich_authoring_item_option_image'),
+                    ]}
+                />
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.gr_class_avg_title')}
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
