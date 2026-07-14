@@ -1067,6 +1067,7 @@ export default function QuestionEditor({
                         <input
                             id={`question-numeric-value-${question.id}`}
                             type="number"
+                            step="any"
                             value={question.expectedNumericValue ?? ''}
                             onChange={(e) =>
                                 update({
@@ -1085,6 +1086,7 @@ export default function QuestionEditor({
                         <input
                             id={`question-numeric-tolerance-${question.id}`}
                             type="number"
+                            step="any"
                             min={0}
                             value={question.numericTolerance ?? ''}
                             onChange={(e) =>

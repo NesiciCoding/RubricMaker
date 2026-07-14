@@ -26,14 +26,13 @@ export function scoreShortAnswerExact(question: TestQuestion, response: string):
     return answers.some((a) => a.trim().toLowerCase() === trimmedResponse) ? question.points : 0;
 }
 
-/**
- * Auto-score for a numeric question: full points when the response parses as a
- * number within ± numericTolerance (default 0 = exact) of expectedNumericValue.
- * Returns null when the question has no expected value or the response doesn't parse.
- */
+/** Auto-score for a numeric question: full points when the response is within ± numericTolerance of expectedNumericValue. */
 export function scoreNumeric(question: TestQuestion, response: string): number | null {
     if (question.type !== 'numeric' || question.expectedNumericValue === undefined) return null;
-    const value = Number(response.trim());
+    const trimmed = response.trim();
+    // Number('') is 0, not NaN — an unanswered question must not auto-match expectedNumericValue: 0
+    if (trimmed === '') return 0;
+    const value = Number(trimmed);
     if (Number.isNaN(value)) return 0;
     const tolerance = question.numericTolerance ?? 0;
     // Epsilon guards against float imprecision (e.g. 3.14 - 3.13 !== 0.01 exactly in IEEE 754)

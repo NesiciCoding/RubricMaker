@@ -194,6 +194,12 @@ describe('scoreNumeric', () => {
     it('awards zero for a non-numeric response', () => {
         expect(scoreNumeric(numericQuestion, 'not a number')).toBe(0);
     });
+
+    it('awards zero for an empty or whitespace-only response even when expectedNumericValue is 0', () => {
+        const zeroQuestion = { ...numericQuestion, expectedNumericValue: 0 };
+        expect(scoreNumeric(zeroQuestion, '')).toBe(0);
+        expect(scoreNumeric(zeroQuestion, '   ')).toBe(0);
+    });
 });
 
 const mrQuestion: TestQuestion = {

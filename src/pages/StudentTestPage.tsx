@@ -1206,6 +1206,7 @@ function QuestionCard({ question, index, total, value, onChange, code }: Questio
             {question.type === 'numeric' && (
                 <input
                     type="number"
+                    step="any"
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     placeholder={t('tests.taking.numeric_placeholder')}
