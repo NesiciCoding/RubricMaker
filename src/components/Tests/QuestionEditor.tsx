@@ -382,6 +382,7 @@ export default function QuestionEditor({
                 </div>
                 <div style={{ display: 'flex', gap: 4 }}>
                     <button
+                        type="button"
                         className="btn btn-ghost btn-icon btn-sm"
                         aria-label={t('questionBank.save_to_bank')}
                         title={t('questionBank.save_to_bank')}

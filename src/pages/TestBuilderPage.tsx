@@ -574,10 +574,14 @@ export default function TestBuilderPage() {
                         </span>
                     </h3>
                     <div style={{ display: 'flex', gap: 8 }}>
-                        <button className="btn btn-secondary btn-sm" onClick={() => setShowBankModal(true)}>
+                        <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => setShowBankModal(true)}
+                        >
                             <Plus size={14} /> {t('questionBank.insert_button')}
                         </button>
-                        <button className="btn btn-secondary btn-sm" onClick={() => addQuestion()}>
+                        <button type="button" className="btn btn-secondary btn-sm" onClick={() => addQuestion()}>
                             <Plus size={14} /> {t('tests.add_question')}
                         </button>
                     </div>

@@ -1161,6 +1161,7 @@
         "empty_state": "Noch keine Fragen gespeichert. Speichere eine Frage aus einem Test, um zu beginnen.",
         "untitled_prompt": "(kein Fragetext)",
         "edit_tags": "Tags bearbeiten",
+        "tags_placeholder": "Tags (kommagetrennt)",
         "insert_title": "Aus Fragenbank einfügen",
         "insert_button": "Aus Bank einfügen",
         "save_to_bank": "In Fragenbank speichern",

@@ -73,7 +73,7 @@ describe('QuestionBankManager', () => {
     it('edits and saves tags', () => {
         render(<QuestionBankManager />);
         fireEvent.click(screen.getAllByText('questionBank.edit_tags')[0]);
-        const input = screen.getByPlaceholderText('commentBank.tags_placeholder');
+        const input = screen.getByPlaceholderText('questionBank.tags_placeholder');
         fireEvent.change(input, { target: { value: 'art, revised' } });
         fireEvent.click(screen.getByText('common.save'));
         expect(updateQuestionBankItem).toHaveBeenCalledWith({ ...questionBank[1], tags: ['art', 'revised'] });
@@ -83,7 +83,7 @@ describe('QuestionBankManager', () => {
         render(<QuestionBankManager />);
         fireEvent.click(screen.getAllByText('questionBank.edit_tags')[0]);
         fireEvent.click(screen.getByText('common.cancel'));
-        expect(screen.queryByPlaceholderText('commentBank.tags_placeholder')).toBeNull();
+        expect(screen.queryByPlaceholderText('questionBank.tags_placeholder')).toBeNull();
     });
 
     it('renders as a pick target and calls onSelect', () => {

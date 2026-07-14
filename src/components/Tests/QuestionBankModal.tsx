@@ -22,7 +22,12 @@ export default function QuestionBankModal({ onClose, onSelect }: QuestionBankMod
         >
             <div className="modal-header">
                 <h3 id="question-bank-title">{t('questionBank.insert_title')}</h3>
-                <button className="btn btn-ghost btn-icon" onClick={onClose} aria-label={t('common.close')}>
+                <button
+                    type="button"
+                    className="btn btn-ghost btn-icon"
+                    onClick={onClose}
+                    aria-label={t('common.close')}
+                >
                     <X size={18} />
                 </button>
             </div>

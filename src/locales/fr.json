@@ -1161,6 +1161,7 @@
         "empty_state": "Aucune question enregistrée. Enregistrez une question depuis un test pour commencer.",
         "untitled_prompt": "(aucun texte de question)",
         "edit_tags": "Modifier les étiquettes",
+        "tags_placeholder": "Étiquettes (séparées par des virgules)",
         "insert_title": "Insérer depuis la banque de questions",
         "insert_button": "Insérer depuis la banque",
         "save_to_bank": "Enregistrer dans la banque de questions",

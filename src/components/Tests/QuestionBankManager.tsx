@@ -89,6 +89,7 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
                                 type="button"
                                 className={`btn btn-xs ${selectedTags.has(tag) ? 'btn-primary' : 'btn-secondary'}`}
                                 onClick={() => toggleTagFilter(tag)}
+                                aria-pressed={selectedTags.has(tag)}
                                 style={{ borderRadius: 12, fontSize: '0.75rem', padding: '2px 8px' }}
                             >
                                 {tag}
@@ -159,7 +160,7 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
                                             type="text"
                                             value={editTags}
                                             onChange={(e) => setEditTags(e.target.value)}
-                                            placeholder={t('commentBank.tags_placeholder')}
+                                            placeholder={t('questionBank.tags_placeholder')}
                                             style={{ flex: 1 }}
                                             autoFocus
                                             onClick={(e) => e.stopPropagation()}

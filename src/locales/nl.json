@@ -1161,6 +1161,7 @@
         "empty_state": "Nog geen vragen opgeslagen. Sla een vraag op vanuit een test om te beginnen.",
         "untitled_prompt": "(geen vraagtekst)",
         "edit_tags": "Tags bewerken",
+        "tags_placeholder": "Tags (kommagescheiden)",
         "insert_title": "Invoegen vanuit vragenbank",
         "insert_button": "Invoegen uit bank",
         "save_to_bank": "Opslaan in vragenbank",

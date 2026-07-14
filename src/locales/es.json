@@ -1161,6 +1161,7 @@
         "empty_state": "Aún no hay preguntas guardadas. Guarda una pregunta desde una prueba para empezar.",
         "untitled_prompt": "(sin texto de pregunta)",
         "edit_tags": "Editar etiquetas",
+        "tags_placeholder": "Etiquetas (separadas por comas)",
         "insert_title": "Insertar desde el banco de preguntas",
         "insert_button": "Insertar desde el banco",
         "save_to_bank": "Guardar en el banco de preguntas",

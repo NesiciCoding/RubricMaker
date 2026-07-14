@@ -1161,6 +1161,7 @@
         "empty_state": "No questions saved yet. Save a question from any test to get started.",
         "untitled_prompt": "(no prompt text)",
         "edit_tags": "Edit tags",
+        "tags_placeholder": "Tags (comma separated)",
         "insert_title": "Insert from Question Bank",
         "insert_button": "Insert from bank",
         "save_to_bank": "Save to question bank",
