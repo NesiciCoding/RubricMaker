@@ -61,6 +61,9 @@ vi.mock('../../context/AppContext', () => ({
         // Phase 3/4 collections
         tests: [],
         studentTests: [],
+        flashcardDecks: [],
+        flashcardAssignments: [],
+        flashcardReviews: [],
         essayAssignments: [],
         peerReviews: [],
         analysisResults: [],

@@ -36,6 +36,7 @@ import CefrProgressChart from '../components/Statistics/CefrProgressChart';
 import CefrTrackYearBand from '../components/CEFR/CefrTrackYearBand';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import { getCefrStudentOverview } from '../utils/cefrStudentAggregator';
+import { getStudentMasteryProfile, withEvidenceOnly } from '../utils/masteryProfileAggregator';
 import { CEFR_LEVELS, CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
 import { VO_TRACK_LABELS, getTrackBadgeColor, getEffectiveVoTrack } from '../data/voTracks';
 import RecordingPlayer from '../components/Recordings/RecordingPlayer';
@@ -53,6 +54,11 @@ export default function StudentProfilePage() {
         selfAssessments,
         speakingSessions,
         standardMasteryTargets,
+        tests,
+        studentTests,
+        flashcardDecks,
+        flashcardAssignments,
+        flashcardReviews,
     } = useApp();
     const [exportingId, setExportingId] = useState<string | null>(null);
     const [copiedSALink, setCopiedSALink] = useState<string | null>(null);
@@ -116,6 +122,21 @@ export default function StudentProfilePage() {
             effectiveTrack
         );
     }, [student, studentRubrics, rubrics, standardMasteryTargets, cls?.year, effectiveTrack]);
+
+    const masteryProfile = useMemo(() => {
+        if (!student) return [];
+        return withEvidenceOnly(
+            getStudentMasteryProfile(student.id, {
+                tests,
+                studentTests,
+                rubrics,
+                studentRubrics,
+                flashcardDecks,
+                flashcardAssignments,
+                flashcardReviews,
+            })
+        );
+    }, [student, tests, studentTests, rubrics, studentRubrics, flashcardDecks, flashcardAssignments, flashcardReviews]);
 
     const trackYearProgress = useMemo(
         () =>
@@ -1354,6 +1375,78 @@ export default function StudentProfilePage() {
                             </div>
                         </>
                     ))}
+
+                {/* Cross-Domain Mastery Profile (roadmap 24.3) — independent of rubric grade history above */}
+                {activeTab === 'overview' && masteryProfile.length > 0 && (
+                    <div className="card" style={{ marginTop: 24 }}>
+                        <h3 style={{ marginBottom: 4 }}>{t('masteryProfile.title')}</h3>
+                        <p className="text-muted text-sm" style={{ marginBottom: 14 }}>
+                            {t('masteryProfile.intro')}
+                        </p>
+                        <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                                <thead>
+                                    <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                                        <th style={{ textAlign: 'left', padding: '6px 8px' }}>
+                                            {t('masteryProfile.col_item')}
+                                        </th>
+                                        <th style={{ textAlign: 'left', padding: '6px 8px' }}>
+                                            {t('masteryProfile.col_test')}
+                                        </th>
+                                        <th style={{ textAlign: 'left', padding: '6px 8px' }}>
+                                            {t('masteryProfile.col_flashcards')}
+                                        </th>
+                                        <th style={{ textAlign: 'left', padding: '6px 8px' }}>
+                                            {t('masteryProfile.col_writing')}
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {masteryProfile.map((row) => (
+                                        <tr key={row.itemId} style={{ borderBottom: '1px solid var(--border)' }}>
+                                            <td style={{ padding: '6px 8px' }}>
+                                                <div style={{ fontWeight: 600 }}>
+                                                    {lang === 'nl' ? row.labelNl : row.labelEn}
+                                                </div>
+                                                <div className="text-muted" style={{ fontSize: 11 }}>
+                                                    {(lang === 'nl' ? row.categoryLabelNl : row.categoryLabelEn) +
+                                                        ' · ' +
+                                                        row.level}
+                                                </div>
+                                            </td>
+                                            <td style={{ padding: '6px 8px' }}>
+                                                {row.test
+                                                    ? t('masteryProfile.test_summary', {
+                                                          correct: row.test.correctAttempts,
+                                                          attempts: row.test.attempts,
+                                                          pct: row.test.accuracyPct.toFixed(0),
+                                                      })
+                                                    : t('masteryProfile.no_data')}
+                                            </td>
+                                            <td style={{ padding: '6px 8px' }}>
+                                                {row.flashcards
+                                                    ? t('masteryProfile.flashcards_summary', {
+                                                          mastered: row.flashcards.masteredCount,
+                                                          total: row.flashcards.cardCount,
+                                                          due: row.flashcards.dueCount,
+                                                      })
+                                                    : t('masteryProfile.no_data')}
+                                            </td>
+                                            <td style={{ padding: '6px 8px' }}>
+                                                {row.writing
+                                                    ? t('masteryProfile.writing_summary', {
+                                                          pct: row.writing.avgPct.toFixed(0),
+                                                          count: row.writing.instances,
+                                                      })
+                                                    : t('masteryProfile.no_data')}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
 
                 {activeTab === 'overview' &&
                     (() => {

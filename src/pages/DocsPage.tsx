@@ -1175,6 +1175,12 @@ function CefrTab() {
                 />
             </FeatureSection>
 
+            <FeatureSection icon={BarChart3} title={t('docs.ce_mastery_profile_title')} color="#10b981">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    {t('docs.ce_mastery_profile_body')}
+                </p>
+            </FeatureSection>
+
             <FeatureSection icon={Mic} title={t('docs.ce_speaking_title')} color="#f59e0b">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     {t('docs.ce_speaking_intro')}

@@ -87,6 +87,12 @@ const mockAppValue = {
     settings: mockSettings,
     selfAssessments: emptyArr,
     speakingSessions: emptyArr,
+    standardMasteryTargets: emptyArr,
+    tests: emptyArr,
+    studentTests: emptyArr,
+    flashcardDecks: emptyArr,
+    flashcardAssignments: emptyArr,
+    flashcardReviews: emptyArr,
 };
 
 vi.mock('../../context/AppContext', () => ({

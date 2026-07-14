@@ -2466,6 +2466,8 @@
         "ce_learning_paths_item_flags": "Señales de intervención — tres o más puntuaciones bajas consecutivas en el mismo criterio de rúbrica, o en la misma destreza MCER, generan una señal para detectar fácilmente a los alumnos que necesitan apoyo adicional.",
         "ce_learning_paths_item_computed": "Todo se calcula al vuelo a partir de las calificaciones existentes; no se almacena nada nuevo.",
         "ce_learning_paths_item_grammar": "Una sección aparte de Práctica de gramática sugiere un mazo de tarjetas y una prueba de práctica correspondientes cuando un alumno obtiene puntuaciones bajas repetidas en un criterio o pregunta vinculados a la gramática.",
+        "ce_mastery_profile_title": "Perfil de dominio gramatical",
+        "ce_mastery_profile_body": "En la p\u00e1gina de perfil de un alumno, una tabla combina la precisi\u00f3n en pruebas, el progreso de las tarjetas de memoria (repetici\u00f3n espaciada) y las calificaciones de textos, por punto gramatical \u2014 una vista \u00fanica de lo que el alumno ha demostrado realmente en todos los \u00e1mbitos que etiquetan el mismo punto gramatical.",
         "ce_speaking_title": "Sesiones de expresión oral",
         "ce_speaking_intro": "Inicia una sesión oral desde uno de estos dos puntos de entrada:",
         "ce_speaking_item_profile": "Perfil del alumno → botón «Sesión oral» en la barra superior. Con una sola rúbrica navega directamente; con varias rúbricas, una lista desplegable te permite elegir.",
@@ -2667,6 +2669,18 @@
         "definition_placeholder": "Definición (opcional)…",
         "docs_title": "Etiquetas de exámenes de Cambridge English",
         "docs_body": "Cuando se activa en Configuración, las insignias de nivel MCER muestran el examen de Cambridge English correspondiente (p. ej., A2 Key, B1 Preliminary, B2 First, C1 Advanced, C2 Proficiency) como una etiqueta secundaria discreta. En el panel de vocabulario del creador de rúbricas, si hay configurada una clave API de Cambridge Dictionary en Administración → Integraciones, cada palabra tiene un botón \"Buscar\" que obtiene automáticamente su nivel MCER y definición."
+    },
+    "masteryProfile": {
+        "title": "Perfil de dominio gramatical",
+        "intro": "Lo que este alumno ha demostrado en pruebas, tarjetas de memoria y textos calificados, por punto gramatical.",
+        "col_item": "Punto gramatical",
+        "col_test": "Evaluado",
+        "col_flashcards": "Tarjetas",
+        "col_writing": "Escritura",
+        "no_data": "\u2014",
+        "test_summary": "{{correct}}/{{attempts}} correctas ({{pct}}%)",
+        "flashcards_summary": "{{mastered}}/{{total}} dominadas ({{due}} pendientes)",
+        "writing_summary": "{{pct}}% prom. ({{count}})"
     },
     "vocabProfile": {
         "page_title": "Perfil de vocabulario",
