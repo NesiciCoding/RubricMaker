@@ -180,6 +180,61 @@ describe('StudentTestPage — answering and offline submission', () => {
         expect(decoded!.events!.some((e) => e.type === 'seb_status')).toBe(true);
     });
 
+    it('shows per-question explanations after submitting a practice-mode test', async () => {
+        const test = makeTest({
+            mode: 'practice',
+            questions: [
+                {
+                    id: 'q1',
+                    prompt: 'What is 2 + 2?',
+                    type: 'multiple-choice',
+                    points: 1,
+                    options: [
+                        { id: 'a', text: '3', isCorrect: false },
+                        { id: 'b', text: '4', isCorrect: true },
+                    ],
+                    explanation: '4 is the sum of 2 and 2.',
+                },
+            ],
+        });
+        renderPage(makeAssignment({}, test));
+
+        fireEvent.click(screen.getByRole('radio', { name: '4' }));
+
+        await act(async () => {
+            fireEvent.click(screen.getByText('tests.taking.submit_btn'));
+        });
+
+        expect(screen.getByText('4 is the sum of 2 and 2.')).toBeInTheDocument();
+    });
+
+    it('does not show explanations after submitting an assessment-mode test', async () => {
+        const test = makeTest({
+            questions: [
+                {
+                    id: 'q1',
+                    prompt: 'What is 2 + 2?',
+                    type: 'multiple-choice',
+                    points: 1,
+                    options: [
+                        { id: 'a', text: '3', isCorrect: false },
+                        { id: 'b', text: '4', isCorrect: true },
+                    ],
+                    explanation: '4 is the sum of 2 and 2.',
+                },
+            ],
+        });
+        renderPage(makeAssignment({}, test));
+
+        fireEvent.click(screen.getByRole('radio', { name: '4' }));
+
+        await act(async () => {
+            fireEvent.click(screen.getByText('tests.taking.submit_btn'));
+        });
+
+        expect(screen.queryByText('4 is the sum of 2 and 2.')).not.toBeInTheDocument();
+    });
+
     it('restores a draft answer from localStorage on reload', () => {
         const assignment = makeAssignment();
         const code = encodeTestAssignment(assignment as TestAssignmentPayload);

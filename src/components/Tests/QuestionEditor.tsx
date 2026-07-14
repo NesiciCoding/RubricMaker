@@ -12,6 +12,7 @@ import {
     Image,
     Music,
     Lightbulb,
+    MessageCircle,
     ChevronUp,
     ChevronDown,
 } from 'lucide-react';
@@ -539,6 +540,29 @@ export default function QuestionEditor({
                     onChange={(e) => update({ hint: e.target.value || undefined })}
                     placeholder={t('tests.question_hint_placeholder')}
                 />
+            </div>
+
+            {/* Practice-mode explanation */}
+            <div className="form-group" style={{ marginBottom: 0 }}>
+                <label
+                    htmlFor={`question-explanation-${question.id}`}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                >
+                    <MessageCircle size={14} /> {t('tests.question_explanation_label')}{' '}
+                    <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
+                        ({t('essay_assignment.optional')})
+                    </span>
+                </label>
+                <textarea
+                    id={`question-explanation-${question.id}`}
+                    value={question.explanation ?? ''}
+                    onChange={(e) => update({ explanation: e.target.value || undefined })}
+                    placeholder={t('tests.question_explanation_placeholder')}
+                    rows={2}
+                />
+                <p className="text-muted text-xs" style={{ marginTop: 4 }}>
+                    {t('tests.question_explanation_help')}
+                </p>
             </div>
 
             {(question.type === 'cloze' ||

@@ -635,7 +635,8 @@
             "categorize_select_placeholder": "Select a category…",
             "move_item_up": "Move up",
             "move_item_down": "Move down",
-            "retake": "Take again"
+            "retake": "Take again",
+            "practice_review_question_number": "Question {{number}}"
         },
         "monitor": {
             "title": "Live monitor",
@@ -720,6 +721,9 @@
         "question_audio_preview_alt": "Question audio preview",
         "question_hint_label": "Hint",
         "question_hint_placeholder": "Optional hint for students…",
+        "question_explanation_label": "Explanation",
+        "question_explanation_placeholder": "Explain why the correct answer is right…",
+        "question_explanation_help": "Shown to students after they submit a practice-mode test. Never shown for assessment-mode tests.",
         "question_type_multiple_response": "Multiple response",
         "question_type_true_false": "True / False",
         "question_type_cloze": "Fill in the gap (text)",

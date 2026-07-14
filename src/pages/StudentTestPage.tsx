@@ -1,7 +1,18 @@
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { ToastContext } from '../context/ToastContext';
-import { Clock, CheckCircle, Copy, AlertTriangle, Loader2, Eye, ChevronUp, ChevronDown, Lightbulb } from 'lucide-react';
+import {
+    Clock,
+    CheckCircle,
+    XCircle,
+    Copy,
+    AlertTriangle,
+    Loader2,
+    Eye,
+    ChevronUp,
+    ChevronDown,
+    Lightbulb,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { decodeTestAssignment } from '../utils/shareCode';
 import { encodeTestSubmission } from '../utils/shareCode';
@@ -21,6 +32,7 @@ import { seededShuffle } from '../utils/seededShuffle';
 import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse';
 import { initClientLogger, logEvent } from '../services/logging/clientLogger';
 import { TestAdapter } from '../services/database/TestAdapter';
+import { autoScoreResponse } from '../utils/testCalc';
 import type {
     TestAnswer,
     TestAssignmentContent,
@@ -648,7 +660,52 @@ export default function StudentTestPage() {
                                 </button>
                             )}
                         </div>
-                    ) : (
+                    ) : null}
+
+                    {submitted && test?.mode === 'practice' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
+                            {orderedQuestions.map((q, index) => {
+                                const response = answers.get(q.id) ?? '';
+                                const earned = autoScoreResponse(q, response);
+                                const isCorrect = earned >= q.points;
+                                return (
+                                    <div key={q.id} className="card" style={{ padding: 14 }}>
+                                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                                            {isCorrect ? (
+                                                <CheckCircle
+                                                    size={18}
+                                                    style={{ color: 'var(--green)', flexShrink: 0, marginTop: 2 }}
+                                                />
+                                            ) : (
+                                                <XCircle
+                                                    size={18}
+                                                    style={{ color: 'var(--red)', flexShrink: 0, marginTop: 2 }}
+                                                />
+                                            )}
+                                            <div style={{ flex: 1 }}>
+                                                <div className="text-muted text-xs">
+                                                    {t('tests.taking.practice_review_question_number', {
+                                                        number: index + 1,
+                                                    })}
+                                                </div>
+                                                <div style={{ fontWeight: 600, marginTop: 2 }}>{q.prompt}</div>
+                                                {q.explanation && (
+                                                    <p
+                                                        className="text-muted text-sm"
+                                                        style={{ marginTop: 8, marginBottom: 0 }}
+                                                    >
+                                                        {q.explanation}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    {!submitted && (
                         <>
                             {/* Section label */}
                             {currentSection && (

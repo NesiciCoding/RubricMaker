@@ -635,7 +635,8 @@
             "categorize_select_placeholder": "Sélectionner une catégorie…",
             "move_item_up": "Monter",
             "move_item_down": "Descendre",
-            "retake": "Recommencer"
+            "retake": "Recommencer",
+            "practice_review_question_number": "Question {{number}}"
         },
         "monitor": {
             "title": "Suivi en direct",
@@ -720,6 +721,9 @@
         "question_audio_placeholder": "Collez une URL audio…",
         "question_hint_label": "Indice",
         "question_hint_placeholder": "Indice optionnel pour les élèves…",
+        "question_explanation_label": "Explication",
+        "question_explanation_placeholder": "Expliquez pourquoi la bonne réponse est correcte…",
+        "question_explanation_help": "Affichée aux élèves après la soumission d'un test en mode entraînement. Jamais affichée pour un test noté.",
         "question_type_multiple_response": "Réponses multiples",
         "question_type_true_false": "Vrai / Faux",
         "question_type_cloze": "Texte à trous (saisie)",
