@@ -544,6 +544,8 @@
             "feedback_placeholder": "Feedback for this answer…",
             "save_score": "Save score",
             "integrity_title": "Session integrity",
+            "time_on_task": "{{minutes}} min on task (class average: {{average}} min)",
+            "time_on_task_outlier": "Unusually fast",
             "integrity_no_events": "No proctoring events were recorded during this session.",
             "event_type_tab_switch": "Tab switches",
             "event_type_copy": "Copy",

@@ -544,6 +544,8 @@
             "feedback_placeholder": "Feedback voor dit antwoord…",
             "save_score": "Score opslaan",
             "integrity_title": "Sessie-integriteit",
+            "time_on_task": "{{minutes}} min besteed (klasgemiddelde: {{average}} min)",
+            "time_on_task_outlier": "Opvallend snel",
             "integrity_no_events": "Er zijn geen toezichtgebeurtenissen geregistreerd tijdens deze sessie.",
             "event_type_tab_switch": "Tabwisselingen",
             "event_type_copy": "Kopiëren",

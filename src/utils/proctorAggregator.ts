@@ -1,4 +1,4 @@
-import type { ProctorEvent } from '../types';
+import type { ProctorEvent, StudentTest, Test } from '../types';
 
 export type PresenceState = 'active' | 'idle' | 'disconnected';
 
@@ -111,4 +111,55 @@ export function mergeProctorEvents(persisted: ProctorEvent[], live: ProctorEvent
         merged.push(event);
     }
     return merged;
+}
+
+export interface StudentTimeOnTask {
+    studentId: string;
+    durationMinutes: number;
+    /** True when this submission looks suspiciously fast next to the class or the test's time limit. */
+    isOutlier: boolean;
+}
+
+export interface TestTimeOnTaskSummary {
+    perStudent: StudentTimeOnTask[];
+    averageMinutes: number;
+    medianMinutes: number;
+}
+
+const EMPTY_SUMMARY: TestTimeOnTaskSummary = { perStudent: [], averageMinutes: 0, medianMinutes: 0 };
+
+// ponytail: outlier = under 30% of the class median, or under 20% of the test's time
+// limit when set — a simple relative-speed heuristic, not a statistical model. Revisit
+// with a proper z-score/IQR approach if teachers report false positives/negatives.
+const CLASS_MEDIAN_OUTLIER_RATIO = 0.3;
+const TIME_LIMIT_OUTLIER_RATIO = 0.2;
+
+/**
+ * Duration-on-task per submitted StudentTest, from startedAt/submittedAt, plus the
+ * class average/median and an outlier flag for submissions that look too fast.
+ */
+export function calcTestTimeOnTask(test: Test, studentTests: StudentTest[]): TestTimeOnTaskSummary {
+    const durations = studentTests
+        .filter((st) => st.testId === test.id && st.submittedAt)
+        .map((st) => ({
+            studentId: st.studentId,
+            durationMinutes: (new Date(st.submittedAt!).getTime() - new Date(st.startedAt).getTime()) / 60_000,
+        }))
+        .filter((d) => d.durationMinutes >= 0);
+
+    if (durations.length === 0) return EMPTY_SUMMARY;
+
+    const sorted = [...durations.map((d) => d.durationMinutes)].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    const medianMinutes = sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+    const averageMinutes = sorted.reduce((sum, d) => sum + d, 0) / sorted.length;
+
+    const perStudent = durations.map(({ studentId, durationMinutes }) => {
+        const belowClassMedian = durations.length >= 3 && durationMinutes <= medianMinutes * CLASS_MEDIAN_OUTLIER_RATIO;
+        const belowTimeLimit =
+            !!test.durationMinutes && durationMinutes <= test.durationMinutes * TIME_LIMIT_OUTLIER_RATIO;
+        return { studentId, durationMinutes, isOutlier: belowClassMedian || belowTimeLimit };
+    });
+
+    return { perStudent, averageMinutes, medianMinutes };
 }
