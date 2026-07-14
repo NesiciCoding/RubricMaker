@@ -506,6 +506,7 @@
         "mark_correct_option": "Als richtige Antwort markieren",
         "option_placeholder": "Optionstext…",
         "option_text_label": "Optionstext",
+        "option_image_label": "Bild zur Option",
         "remove_option": "Option entfernen",
         "add_option": "Option hinzufügen",
         "expected_answer_label": "Erwartete Antwort",

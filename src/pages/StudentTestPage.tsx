@@ -1101,6 +1101,13 @@ function QuestionCard({ question, index, total, value, onChange, code }: Questio
                                 checked={value === opt.id}
                                 onChange={() => onChange(opt.id)}
                             />
+                            {safeImgSrc(opt.imageUrl) && (
+                                <img
+                                    src={safeImgSrc(opt.imageUrl)}
+                                    alt=""
+                                    style={{ maxWidth: 80, maxHeight: 60, borderRadius: 4, objectFit: 'contain' }}
+                                />
+                            )}
                             <span style={{ color: 'var(--text)' }}>{opt.text}</span>
                         </label>
                     ))}
@@ -1138,6 +1145,13 @@ function QuestionCard({ question, index, total, value, onChange, code }: Questio
                                         onChange(JSON.stringify(next));
                                     }}
                                 />
+                                {safeImgSrc(opt.imageUrl) && (
+                                    <img
+                                        src={safeImgSrc(opt.imageUrl)}
+                                        alt=""
+                                        style={{ maxWidth: 80, maxHeight: 60, borderRadius: 4, objectFit: 'contain' }}
+                                    />
+                                )}
                                 <span style={{ color: 'var(--text)' }}>{opt.text}</span>
                             </label>
                         );

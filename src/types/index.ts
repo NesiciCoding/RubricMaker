@@ -895,6 +895,8 @@ export interface TestOption {
     id: string;
     text: string;
     isCorrect: boolean;
+    /** Image shown alongside the option text — either a public URL or a data URI */
+    imageUrl?: string;
 }
 
 /** A left/right pair for matching questions; correct match is left.id === right pair's id */

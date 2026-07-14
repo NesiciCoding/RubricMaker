@@ -74,6 +74,7 @@ export default function QuestionEditor({
     const { settings } = useApp();
     const [pickingStandard, setPickingStandard] = React.useState(false);
     const [pickingCefr, setPickingCefr] = React.useState(false);
+    const [expandedOptionImages, setExpandedOptionImages] = React.useState<Set<string>>(new Set());
     const promptRef = React.useRef<HTMLTextAreaElement>(null);
     const hotTextPassageRef = React.useRef<HTMLTextAreaElement>(null);
 
@@ -592,46 +593,104 @@ export default function QuestionEditor({
                             {t(`tests.help.${question.type.replace('-', '_')}_teacher_body`)}
                         </HelpPopover>
                     </label>
-                    {(question.options ?? []).map((option) => (
-                        <div key={option.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <button
-                                type="button"
-                                className="btn btn-ghost btn-icon btn-sm"
-                                aria-label={t('tests.mark_correct_option')}
-                                aria-pressed={option.isCorrect}
-                                title={t('tests.mark_correct_option')}
-                                onClick={() =>
-                                    question.type === 'multiple-response'
-                                        ? toggleOptionCorrect(option.id)
-                                        : setCorrectOption(option.id)
-                                }
-                                style={{
-                                    color: option.isCorrect ? 'var(--green)' : 'var(--text-muted)',
-                                    flexShrink: 0,
-                                }}
-                            >
-                                <Check size={16} />
-                            </button>
-                            <input
-                                type="text"
-                                value={option.text}
-                                onChange={(e) => updateOption(option.id, { text: e.target.value })}
-                                placeholder={t('tests.option_placeholder')}
-                                style={{ flex: 1 }}
-                                aria-label={t('tests.option_text_label')}
-                            />
-                            <button
-                                type="button"
-                                className="btn btn-ghost btn-icon btn-sm"
-                                aria-label={t('tests.remove_option')}
-                                style={{ color: 'var(--red)' }}
-                                disabled={(question.options ?? []).length <= 1}
-                                onClick={() => removeOption(option.id)}
-                            >
-                                <X size={14} />
-                            </button>
-                        </div>
-                    ))}
+                    {(question.options ?? []).map((option) => {
+                        const showImageField = expandedOptionImages.has(option.id) || !!option.imageUrl;
+                        return (
+                            <div key={option.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <button
+                                        type="button"
+                                        className="btn btn-ghost btn-icon btn-sm"
+                                        aria-label={t('tests.mark_correct_option')}
+                                        aria-pressed={option.isCorrect}
+                                        title={t('tests.mark_correct_option')}
+                                        onClick={() =>
+                                            question.type === 'multiple-response'
+                                                ? toggleOptionCorrect(option.id)
+                                                : setCorrectOption(option.id)
+                                        }
+                                        style={{
+                                            color: option.isCorrect ? 'var(--green)' : 'var(--text-muted)',
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        <Check size={16} />
+                                    </button>
+                                    <input
+                                        type="text"
+                                        value={option.text}
+                                        onChange={(e) => updateOption(option.id, { text: e.target.value })}
+                                        placeholder={t('tests.option_placeholder')}
+                                        style={{ flex: 1 }}
+                                        aria-label={t('tests.option_text_label')}
+                                    />
+                                    <button
+                                        type="button"
+                                        className="btn btn-ghost btn-icon btn-sm"
+                                        aria-label={t('tests.option_image_label')}
+                                        aria-pressed={showImageField}
+                                        title={t('tests.option_image_label')}
+                                        onClick={() =>
+                                            setExpandedOptionImages((prev) => {
+                                                const next = new Set(prev);
+                                                if (next.has(option.id)) next.delete(option.id);
+                                                else next.add(option.id);
+                                                return next;
+                                            })
+                                        }
+                                        style={{
+                                            color: option.imageUrl ? 'var(--accent)' : 'var(--text-muted)',
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        <Image size={14} />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-ghost btn-icon btn-sm"
+                                        aria-label={t('tests.remove_option')}
+                                        style={{ color: 'var(--red)' }}
+                                        disabled={(question.options ?? []).length <= 1}
+                                        onClick={() => removeOption(option.id)}
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                </div>
+                                {showImageField && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 32 }}>
+                                        <input
+                                            type="url"
+                                            value={option.imageUrl ?? ''}
+                                            onChange={(e) => updateOption(option.id, { imageUrl: e.target.value || undefined })}
+                                            placeholder={t('tests.question_image_placeholder')}
+                                            style={{ flex: 1 }}
+                                            aria-label={t('tests.option_image_label')}
+                                        />
+                                        {option.imageUrl && (
+                                            <img
+                                                src={option.imageUrl}
+                                                alt={t('tests.question_image_preview_alt')}
+                                                style={{
+                                                    maxWidth: 60,
+                                                    maxHeight: 44,
+                                                    borderRadius: 4,
+                                                    objectFit: 'contain',
+                                                    border: '1px solid var(--border)',
+                                                    flexShrink: 0,
+                                                }}
+                                                onError={(e) => {
+                                                    (e.target as HTMLImageElement).style.display = 'none';
+                                                }}
+                                                onLoad={(e) => {
+                                                    (e.target as HTMLImageElement).style.display = '';
+                                                }}
+                                            />
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
                     <button type="button" className="btn btn-secondary btn-sm" onClick={addOption}>
                         <Plus size={14} /> {t('tests.add_option')}
                     </button>

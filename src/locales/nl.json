@@ -506,6 +506,7 @@
         "mark_correct_option": "Markeren als juist antwoord",
         "option_placeholder": "Tekst van optie…",
         "option_text_label": "Tekst van optie",
+        "option_image_label": "Afbeelding bij optie",
         "remove_option": "Optie verwijderen",
         "add_option": "Optie toevoegen",
         "expected_answer_label": "Verwacht antwoord",
