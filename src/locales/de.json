@@ -648,7 +648,8 @@
             "move_item_up": "Nach oben",
             "move_item_down": "Nach unten",
             "retake": "Erneut versuchen",
-            "practice_review_question_number": "Frage {{number}}"
+            "practice_review_question_number": "Frage {{number}}",
+            "numeric_placeholder": "Zahl eingeben…"
         },
         "monitor": {
             "title": "Live-Überwachung",
@@ -817,7 +818,10 @@
             "categorize_student_body": "Ziehe jedes Element in die richtige Kategorie.",
             "hot_text_student_title": "Interaktiver Text",
             "hot_text_student_body": "Klicke oder tippe auf die hervorgehobenen Wörter, die die Frage richtig beantworten."
-        }
+        },
+        "question_type_numeric": "Numerisch",
+        "numeric_expected_value_label": "Erwarteter Wert",
+        "numeric_tolerance_label": "Toleranz (±)"
     },
     "studentsPage": {
         "title": "Schüler und Klassen",

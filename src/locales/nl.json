@@ -648,7 +648,8 @@
             "move_item_up": "Omhoog",
             "move_item_down": "Omlaag",
             "retake": "Opnieuw maken",
-            "practice_review_question_number": "Vraag {{number}}"
+            "practice_review_question_number": "Vraag {{number}}",
+            "numeric_placeholder": "Voer een getal in…"
         },
         "monitor": {
             "title": "Live-monitor",
@@ -817,7 +818,10 @@
             "categorize_student_body": "Sleep elk item naar de juiste categorie.",
             "hot_text_student_title": "Hot tekst",
             "hot_text_student_body": "Klik of tik op de gemarkeerde woorden die de vraag correct beantwoorden."
-        }
+        },
+        "question_type_numeric": "Numeriek",
+        "numeric_expected_value_label": "Verwachte waarde",
+        "numeric_tolerance_label": "Marge (±)"
     },
     "studentsPage": {
         "title": "Leerlingen & Klassen",

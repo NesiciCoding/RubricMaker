@@ -648,7 +648,8 @@
             "move_item_up": "Move up",
             "move_item_down": "Move down",
             "retake": "Take again",
-            "practice_review_question_number": "Question {{number}}"
+            "practice_review_question_number": "Question {{number}}",
+            "numeric_placeholder": "Enter a number…"
         },
         "monitor": {
             "title": "Live monitor",
@@ -817,7 +818,10 @@
             "categorize_student_body": "Drag each item into the correct category.",
             "hot_text_student_title": "Hot text",
             "hot_text_student_body": "Click or tap the highlighted words that answer the question correctly."
-        }
+        },
+        "question_type_numeric": "Numeric",
+        "numeric_expected_value_label": "Expected value",
+        "numeric_tolerance_label": "Tolerance (±)"
     },
     "studentsPage": {
         "title": "Students & Classes",

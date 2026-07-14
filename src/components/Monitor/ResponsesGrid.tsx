@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { scoreShortAnswerExact, autoScoreResponse } from '../../utils/testCalc';
+import { scoreShortAnswerExact, scoreNumeric, autoScoreResponse } from '../../utils/testCalc';
 import { parseClozeGaps, parseHotTextFragments } from '../../utils/clozeParse';
 import type { Test, TestAnswer, TestQuestion } from '../../types';
 
@@ -43,6 +43,11 @@ function cellState(question: TestQuestion, answer: TestAnswer | undefined): Cell
     }
     if (question.type === 'short-answer') {
         const score = scoreShortAnswerExact(question, answer.response);
+        if (score === null) return 'ungraded';
+        return score > 0 ? 'correct' : 'incorrect';
+    }
+    if (question.type === 'numeric') {
+        const score = scoreNumeric(question, answer.response);
         if (score === null) return 'ungraded';
         return score > 0 ? 'correct' : 'incorrect';
     }

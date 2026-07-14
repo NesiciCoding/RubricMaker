@@ -1203,6 +1203,25 @@ function QuestionCard({ question, index, total, value, onChange, code }: Questio
                 />
             )}
 
+            {question.type === 'numeric' && (
+                <input
+                    type="number"
+                    step="any"
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    placeholder={t('tests.taking.numeric_placeholder')}
+                    style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: 8,
+                        border: '1px solid var(--border)',
+                        fontSize: '0.95rem',
+                        background: 'var(--bg)',
+                        color: 'var(--text)',
+                    }}
+                />
+            )}
+
             {question.type === 'open' && (
                 <>
                     <textarea

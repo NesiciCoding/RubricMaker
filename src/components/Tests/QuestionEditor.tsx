@@ -59,6 +59,7 @@ const QUESTION_TYPES: TestQuestionType[] = [
     'ordering',
     'categorize',
     'hot-text',
+    'numeric',
 ];
 
 export default function QuestionEditor({
@@ -1054,6 +1055,46 @@ export default function QuestionEditor({
                     <p className="text-muted text-xs" style={{ marginTop: 4 }}>
                         {t('tests.expected_answer_help')}
                     </p>
+                </div>
+            )}
+
+            {question.type === 'numeric' && (
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label htmlFor={`question-numeric-value-${question.id}`}>
+                            {t('tests.numeric_expected_value_label')}
+                        </label>
+                        <input
+                            id={`question-numeric-value-${question.id}`}
+                            type="number"
+                            step="any"
+                            value={question.expectedNumericValue ?? ''}
+                            onChange={(e) =>
+                                update({
+                                    expectedNumericValue: e.target.value === '' ? undefined : Number(e.target.value),
+                                })
+                            }
+                        />
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label htmlFor={`question-numeric-tolerance-${question.id}`}>
+                            {t('tests.numeric_tolerance_label')}{' '}
+                            <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
+                                ({t('essay_assignment.optional')})
+                            </span>
+                        </label>
+                        <input
+                            id={`question-numeric-tolerance-${question.id}`}
+                            type="number"
+                            step="any"
+                            min={0}
+                            value={question.numericTolerance ?? ''}
+                            onChange={(e) =>
+                                update({ numericTolerance: e.target.value === '' ? undefined : Number(e.target.value) })
+                            }
+                            placeholder="0"
+                        />
+                    </div>
                 </div>
             )}
 

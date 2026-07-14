@@ -28,7 +28,8 @@ function isAutoScored(question: TestQuestion, answer: TestAnswer | undefined): b
         question.type === 'ordering' ||
         question.type === 'categorize' ||
         question.type === 'hot-text' ||
-        (question.type === 'short-answer' && !!question.expectedAnswer)
+        (question.type === 'short-answer' && !!question.expectedAnswer) ||
+        (question.type === 'numeric' && question.expectedNumericValue !== undefined)
     );
 }
 
@@ -486,6 +487,7 @@ export default function TestResultsPage() {
                         const allowManual =
                             question.type === 'open' ||
                             question.type === 'short-answer' ||
+                            question.type === 'numeric' ||
                             question.type === 'multiple-choice' ||
                             question.type === 'multiple-response' ||
                             question.type === 'true-false' ||
