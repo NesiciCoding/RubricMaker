@@ -670,7 +670,9 @@ export default function QuestionEditor({
                                         <input
                                             type="url"
                                             value={option.imageUrl ?? ''}
-                                            onChange={(e) => updateOption(option.id, { imageUrl: e.target.value || undefined })}
+                                            onChange={(e) =>
+                                                updateOption(option.id, { imageUrl: e.target.value || undefined })
+                                            }
                                             placeholder={t('tests.question_image_placeholder')}
                                             style={{ flex: 1 }}
                                             aria-label={t('tests.option_image_label')}
