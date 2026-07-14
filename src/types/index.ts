@@ -930,6 +930,8 @@ export interface CategorizeItem {
 export interface TestSection {
     id: string;
     title: string;
+    /** Reading passage / stimulus shown above the section's questions — rich-text HTML */
+    content?: string;
 }
 
 export interface TestQuestion {

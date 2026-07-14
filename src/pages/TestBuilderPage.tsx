@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { flushSync } from 'react-dom';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Plus, Save, ArrowLeft, AlertCircle, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
+import { Plus, Save, ArrowLeft, AlertCircle, ChevronDown, ChevronRight, Trash2, FileText } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
@@ -15,6 +15,7 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { nanoid } from '../utils/nanoid';
 import { toLocalDatetimeInput } from '../utils/dateInput';
 import QuestionEditor from '../components/Tests/QuestionEditor';
+import EssayEditor from '../components/Editor/EssayEditor';
 import type { TestQuestion, TestSection, CefrLevel, CefrSkill } from '../types';
 import { CEFR_LEVELS, CEFR_SKILLS, CEFR_SKILL_LABELS } from '../data/cefrDescriptors';
 
@@ -48,6 +49,9 @@ export default function TestBuilderPage() {
     const [questions, setQuestions] = useState<TestQuestion[]>(existing?.questions ?? []);
     const [sections, setSections] = useState<TestSection[]>(existing?.sections ?? []);
     const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+    const [expandedPassages, setExpandedPassages] = useState<Set<string>>(
+        new Set((existing?.sections ?? []).filter((s) => s.content).map((s) => s.id))
+    );
     const [newSectionTitle, setNewSectionTitle] = useState('');
     const [durationMinutes, setDurationMinutes] = useState(
         existing?.durationMinutes ? String(existing.durationMinutes) : ''
@@ -181,6 +185,10 @@ export default function TestBuilderPage() {
 
     function renameSection(sectionId: string, title: string) {
         setSections((prev) => prev.map((s) => (s.id === sectionId ? { ...s, title } : s)));
+    }
+
+    function updateSectionContent(sectionId: string, content: string) {
+        setSections((prev) => prev.map((s) => (s.id === sectionId ? { ...s, content } : s)));
     }
 
     function toggleSection(sectionId: string) {
@@ -661,6 +669,30 @@ export default function TestBuilderPage() {
 
                                     {!collapsed && (
                                         <div style={{ padding: '16px 14px' }}>
+                                            <div style={{ marginBottom: 16 }}>
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-ghost btn-sm"
+                                                    onClick={() =>
+                                                        setExpandedPassages((prev) => {
+                                                            const next = new Set(prev);
+                                                            if (next.has(section.id)) next.delete(section.id);
+                                                            else next.add(section.id);
+                                                            return next;
+                                                        })
+                                                    }
+                                                    style={{ marginBottom: expandedPassages.has(section.id) ? 8 : 0 }}
+                                                >
+                                                    <FileText size={14} /> {t('tests.section_passage_label')}
+                                                </button>
+                                                {expandedPassages.has(section.id) && (
+                                                    <EssayEditor
+                                                        content={section.content ?? ''}
+                                                        onChange={(html) => updateSectionContent(section.id, html)}
+                                                        placeholder={t('tests.section_passage_placeholder')}
+                                                    />
+                                                )}
+                                            </div>
                                             <Droppable droppableId={section.id}>
                                                 {(provided) => (
                                                     <div

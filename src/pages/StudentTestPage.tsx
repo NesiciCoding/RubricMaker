@@ -739,6 +739,19 @@ export default function StudentTestPage() {
                                     {currentSection.title}
                                 </div>
                             )}
+                            {currentSection?.content && (
+                                <div
+                                    style={{
+                                        marginBottom: 16,
+                                        padding: 16,
+                                        background: 'var(--bg-elevated)',
+                                        border: '1px solid var(--border)',
+                                        borderRadius: 10,
+                                    }}
+                                >
+                                    <RichContent html={currentSection.content} />
+                                </div>
+                            )}
 
                             {question && (
                                 <QuestionCard
