@@ -27,6 +27,7 @@ import {
 } from '../store/storage';
 import SebGate from '../components/Tests/SebGate';
 import HelpPopover from '../components/Tests/HelpPopover';
+import RichContent from '../components/Editor/RichContent';
 import { useLiveSessionTelemetry } from '../hooks/useLiveSessionTelemetry';
 import { seededShuffle } from '../utils/seededShuffle';
 import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse';
@@ -985,14 +986,28 @@ function QuestionCard({ question, index, total, value, onChange, code }: Questio
             >
                 {t('tests.taking.question_label', { current: index + 1, total })}
             </div>
-            <p style={{ margin: '0 0 16px', fontSize: '1rem', lineHeight: 1.6, color: 'var(--text)' }}>
-                {isCloze
-                    ? t(
-                          question.type === 'cloze-dropdown'
-                              ? 'tests.taking.cloze_dropdown_instruction'
-                              : 'tests.taking.cloze_instruction'
-                      )
-                    : question.prompt}
+            <div
+                style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: 6,
+                    margin: '0 0 16px',
+                    fontSize: '1rem',
+                    lineHeight: 1.6,
+                    color: 'var(--text)',
+                }}
+            >
+                {isCloze ? (
+                    <p style={{ margin: 0 }}>
+                        {t(
+                            question.type === 'cloze-dropdown'
+                                ? 'tests.taking.cloze_dropdown_instruction'
+                                : 'tests.taking.cloze_instruction'
+                        )}
+                    </p>
+                ) : (
+                    <RichContent html={question.prompt} className="rm-question-prompt" />
+                )}
                 {(question.type === 'true-false' ||
                     question.type === 'multiple-response' ||
                     question.type === 'matching' ||
@@ -1004,7 +1019,7 @@ function QuestionCard({ question, index, total, value, onChange, code }: Questio
                         {t(`tests.help.${question.type.replace('-', '_')}_student_body`)}
                     </HelpPopover>
                 )}
-            </p>
+            </div>
 
             {/* Image stimulus */}
             {safeImgSrc(question.imageUrl) && (

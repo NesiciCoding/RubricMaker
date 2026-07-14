@@ -19,6 +19,7 @@ import {
 import type { DraggableProvidedDragHandleProps } from '@hello-pangea/dnd';
 import { useApp } from '../../context/AppContext';
 import { nanoid } from '../../utils/nanoid';
+import EssayEditor from '../Editor/EssayEditor';
 import StandardsPickerModal from '../Standards/StandardsPickerModal';
 import CefrPickerModal from '../CEFR/CefrPickerModal';
 import GrammarItemSelect from '../CEFR/GrammarItemSelect';
@@ -400,15 +401,23 @@ export default function QuestionEditor({
 
             <div className="form-group" style={{ marginBottom: 0 }}>
                 <label htmlFor={`question-prompt-${question.id}`}>{t('tests.question_prompt_label')}</label>
-                <textarea
-                    ref={promptRef}
-                    id={`question-prompt-${question.id}`}
-                    value={question.prompt}
-                    onChange={(e) => update({ prompt: e.target.value })}
-                    rows={2}
-                    placeholder={t('tests.question_prompt_placeholder')}
-                    style={{ resize: 'vertical' }}
-                />
+                {question.type === 'cloze' || question.type === 'cloze-dropdown' ? (
+                    // Cloze/cloze-dropdown gaps are authored as raw {{gap|alt}} syntax directly in
+                    // the prompt string (see clozeParse.ts) — a rich-text editor would corrupt that
+                    // grammar and render literal HTML tags around gaps. Stays plain text until a
+                    // dedicated gap node (roadmap Phase 23.5) can serialize back to it.
+                    <textarea
+                        ref={promptRef}
+                        id={`question-prompt-${question.id}`}
+                        value={question.prompt}
+                        onChange={(e) => update({ prompt: e.target.value })}
+                        rows={2}
+                        placeholder={t('tests.question_prompt_placeholder')}
+                        style={{ resize: 'vertical' }}
+                    />
+                ) : (
+                    <EssayEditor content={question.prompt} onChange={(html) => update({ prompt: html })} />
+                )}
             </div>
 
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>

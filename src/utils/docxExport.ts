@@ -280,14 +280,18 @@ export async function exportRubricToDocx(rubric: Rubric) {
     saveAs(blob, `${rubric.name.replace(/[^a-z0-9]/gi, '_')}_rubric.docx`);
 }
 
-function parseMdSimple(text: string): TextRun[] {
-    if (!text) return [new TextRun('')];
-    // Strip basic HTML tags from TipTap output
-    const stripped = text
+// Strip basic HTML tags from TipTap output — shared by parseMdSimple and any plain-text label
+// (e.g. a table cell) that embeds a TipTap-authored field like TestQuestion.prompt.
+function stripHtmlTags(text: string): string {
+    return text
         .replace(/<[^>]*>/g, ' ')
         .replace(/\s+/g, ' ')
         .trim();
-    return [new TextRun(stripped)];
+}
+
+function parseMdSimple(text: string): TextRun[] {
+    if (!text) return [new TextRun('')];
+    return [new TextRun(stripHtmlTags(text))];
 }
 
 /** Builds the student-name heading, score line, and criteria grid for one graded rubric — shared by exportBatchDocx and the essay+rubric combined export. */
@@ -593,7 +597,7 @@ function buildTestSummaryChildren(
             headerRow(['Question', 'Accuracy', 'Submissions']),
             ...questions.map((qb, i) =>
                 breakdownRow(
-                    `Q${i + 1}. ${questionsById.get(qb.questionId)?.prompt ?? ''}`,
+                    `Q${i + 1}. ${stripHtmlTags(questionsById.get(qb.questionId)?.prompt ?? '')}`,
                     qb.accuracyPct,
                     qb.bucket,
                     qb.sampleSize

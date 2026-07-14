@@ -48,10 +48,12 @@ function makeQuestion(overrides: Partial<TestQuestion> = {}): TestQuestion {
 }
 
 describe('QuestionEditor', () => {
-    it('renders prompt textarea and type selector', () => {
+    it('renders prompt field and type selector', () => {
+        // Non-cloze prompts render as a TipTap rich-text editor (Phase 23.2); cloze/cloze-dropdown
+        // keep the plain textarea since {{gap}} syntax lives directly in the prompt string.
         render(
             <QuestionEditor
-                question={makeQuestion()}
+                question={makeQuestion({ type: 'cloze' })}
                 index={0}
                 total={1}
                 sections={sections}
@@ -61,7 +63,7 @@ describe('QuestionEditor', () => {
         );
         expect(screen.getByDisplayValue('Sample question')).toBeInTheDocument();
         // select displays the translated key for the selected option
-        expect(screen.getByDisplayValue('tests.question_type_multiple_choice')).toBeInTheDocument();
+        expect(screen.getByDisplayValue('tests.question_type_cloze')).toBeInTheDocument();
     });
 
     it('calls onRemove when remove button clicked', () => {
@@ -84,7 +86,7 @@ describe('QuestionEditor', () => {
         const onChange = vi.fn();
         render(
             <QuestionEditor
-                question={makeQuestion()}
+                question={makeQuestion({ type: 'cloze' })}
                 index={0}
                 total={1}
                 sections={sections}
