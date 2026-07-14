@@ -531,6 +531,7 @@
             "action_results": "Résultats",
             "action_import": "Importer un code de soumission",
             "student_label": "Élève",
+            "late_submission": "Soumission tardive",
             "total_points": "Total des points",
             "raw_points": "Points bruts",
             "adjustment_label": "ajustement",

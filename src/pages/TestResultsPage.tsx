@@ -261,6 +261,7 @@ export default function TestResultsPage() {
     const test = tests.find((tst) => tst.id === testId);
     const studentTest = studentTests.find((st) => st.id === studentTestId && st.testId === testId);
     const student = students.find((s) => s.id === studentTest?.studentId);
+    const isLateSubmission = !!test?.dueDate && !!studentTest?.submittedAt && studentTest.submittedAt > test.dueDate;
 
     const [drafts, setDrafts] = useState<Record<string, { pointsEarned: string; feedback: string }>>({});
 
@@ -410,6 +411,14 @@ export default function TestResultsPage() {
                     <h2 style={{ margin: '0 0 4px' }}>{test.name}</h2>
                     <p className="text-muted text-sm" style={{ margin: '0 0 14px' }}>
                         {t('tests.results.student_label')}: {student?.name ?? studentTest.studentId}
+                        {isLateSubmission && (
+                            <span
+                                className="badge badge-red"
+                                style={{ marginLeft: 8, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                            >
+                                <Clock size={12} /> {t('tests.results.late_submission')}
+                            </span>
+                        )}
                     </p>
                     <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'flex-end' }}>
                         <div>

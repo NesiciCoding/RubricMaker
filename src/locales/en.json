@@ -531,6 +531,7 @@
             "action_results": "Results",
             "action_import": "Import submission code",
             "student_label": "Student",
+            "late_submission": "Late submission",
             "total_points": "Total points",
             "raw_points": "Raw points",
             "adjustment_label": "adjustment",
