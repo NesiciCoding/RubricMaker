@@ -5,6 +5,7 @@ import {
     calcTestStrongWeakSummary,
     mergeTestStrongWeakSummaries,
     bucketForAccuracy,
+    calcTestItemAnalysis,
 } from './testSummaryAggregator';
 import type { Test, StudentTest, TestQuestion } from '../types';
 
@@ -286,5 +287,98 @@ describe('mergeTestStrongWeakSummaries', () => {
         expect(merged.skills[0].bucket).toBe('weak');
         expect(merged.skills[0].sampleSize).toBe(2);
         expect(merged.skills[0].questionIds).toEqual(['q1', 'q2']);
+    });
+});
+
+describe('calcTestItemAnalysis', () => {
+    const q: TestQuestion = {
+        id: 'q1',
+        prompt: 'Pick one',
+        type: 'multiple-choice',
+        points: 4,
+        options: [
+            { id: 'a', text: 'Distractor A', isCorrect: false },
+            { id: 'b', text: 'Right', isCorrect: true },
+            { id: 'c', text: 'Distractor C', isCorrect: false },
+        ],
+    };
+    const test: Test = {
+        id: 't1',
+        name: 'Item analysis test',
+        questions: [q],
+        requireSEB: false,
+        shuffleQuestions: false,
+        createdAt: '2026-01-01T00:00:00.000Z',
+    };
+
+    function submission(id: string, response: string, rawTotalPoints: number): StudentTest {
+        return {
+            id: `st-${id}`,
+            testId: 't1',
+            studentId: id,
+            answers: [{ questionId: 'q1', response }],
+            status: 'submitted',
+            startedAt: '2026-01-01T09:00:00.000Z',
+            rawTotalPoints,
+        };
+    }
+
+    it('returns sampleSize 0, null discrimination, and no distractor for a question nobody answered', () => {
+        const [row] = calcTestItemAnalysis([], test);
+        expect(row).toEqual({ questionId: 'q1', sampleSize: 0, discrimination: null, topDistractor: null });
+    });
+
+    it('returns null discrimination when the class is too small to split reliably', () => {
+        const studentTests = [submission('s1', 'b', 4), submission('s2', 'a', 0)];
+        const [row] = calcTestItemAnalysis(studentTests, test);
+        expect(row.discrimination).toBeNull();
+        expect(row.sampleSize).toBe(2);
+    });
+
+    it('computes a positive discrimination index when high scorers get the item right more often', () => {
+        // 8 students: top 2 (by total score) answer correctly, bottom 2 answer wrong (option a).
+        const studentTests = [
+            submission('top1', 'b', 20),
+            submission('top2', 'b', 19),
+            submission('mid1', 'b', 15),
+            submission('mid2', 'a', 14),
+            submission('mid3', 'b', 12),
+            submission('mid4', 'a', 11),
+            submission('bot1', 'a', 3),
+            submission('bot2', 'a', 2),
+        ];
+        const [row] = calcTestItemAnalysis(studentTests, test);
+        expect(row.sampleSize).toBe(8);
+        expect(row.discrimination).not.toBeNull();
+        expect(row.discrimination!).toBeGreaterThan(0);
+    });
+
+    it('identifies the most commonly chosen wrong option as the top distractor', () => {
+        const studentTests = [
+            submission('s1', 'a', 4),
+            submission('s2', 'a', 4),
+            submission('s3', 'a', 4),
+            submission('s4', 'c', 4),
+            submission('s5', 'b', 4),
+        ];
+        const [row] = calcTestItemAnalysis(studentTests, test);
+        expect(row.topDistractor).toEqual({ optionId: 'a', text: 'Distractor A', count: 3, isCorrect: false });
+    });
+
+    it('ignores submissions with no answers and submissions for other tests', () => {
+        const studentTests: StudentTest[] = [
+            {
+                id: 'empty',
+                testId: 't1',
+                studentId: 's1',
+                answers: [],
+                status: 'in_progress',
+                startedAt: '2026-01-01T00:00:00.000Z',
+            },
+            submission('s2', 'a', 4),
+            { ...submission('s3', 'b', 4), testId: 'other' },
+        ];
+        const [row] = calcTestItemAnalysis(studentTests, test);
+        expect(row.sampleSize).toBe(1);
     });
 });
