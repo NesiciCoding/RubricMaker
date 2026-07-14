@@ -327,7 +327,11 @@ describe('StudentTestPage — audio-response answer', () => {
     it('restores an existing recording as playable audio with a re-record button', () => {
         const assignment = makeAssignment({}, audioTest);
         const code = encodeTestAssignment(assignment as TestAssignmentPayload);
-        const encoded = encodeAudioResponse({ dataUri: 'data:audio/webm;base64,AA==', mimeType: 'audio/webm', durationSec: 5 });
+        const encoded = encodeAudioResponse({
+            dataUri: 'data:audio/webm;base64,AA==',
+            mimeType: 'audio/webm',
+            durationSec: 5,
+        });
         localStorage.setItem(
             `rm_test_draft_${code}`,
             JSON.stringify({ answers: { q1: encoded }, savedAt: new Date().toISOString() })
