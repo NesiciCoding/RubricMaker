@@ -33,6 +33,8 @@ import { seededShuffle } from '../utils/seededShuffle';
 import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse';
 import { initClientLogger, logEvent } from '../services/logging/clientLogger';
 import { TestAdapter } from '../services/database/TestAdapter';
+import { useMediaRecorder } from '../hooks/useMediaRecorder';
+import { encodeAudioResponse, parseAudioResponse } from '../utils/audioResponseCode';
 import { autoScoreResponse } from '../utils/testCalc';
 import type {
     TestAnswer,
@@ -1301,6 +1303,120 @@ function QuestionCard({ question, index, total, value, onChange, code }: Questio
             {question.type === 'ordering' && (
                 <OrderingAnswer question={question} value={value} onChange={onChange} code={code} />
             )}
+
+            {question.type === 'audio-response' && (
+                <AudioResponseAnswer
+                    value={value}
+                    onChange={onChange}
+                    maxRecordingSeconds={question.maxRecordingSeconds ?? DEFAULT_MAX_RECORDING_SECONDS}
+                />
+            )}
+        </div>
+    );
+}
+
+const DEFAULT_MAX_RECORDING_SECONDS = 60;
+
+function blobToDataUri(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(blob);
+    });
+}
+
+interface AudioResponseAnswerProps {
+    value: string;
+    onChange: (value: string) => void;
+    maxRecordingSeconds: number;
+}
+
+function AudioResponseAnswer({ value, onChange, maxRecordingSeconds }: AudioResponseAnswerProps) {
+    const { t } = useTranslation();
+    const { status, start, stop } = useMediaRecorder();
+    const [elapsedSec, setElapsedSec] = useState(0);
+    const [micError, setMicError] = useState(false);
+    const elapsedRef = useRef(0);
+    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const existing = parseAudioResponse(value);
+
+    const stopRecording = useCallback(async () => {
+        if (timerRef.current) clearInterval(timerRef.current);
+        const result = await stop();
+        if (result) {
+            const dataUri = await blobToDataUri(result.blob);
+            onChange(encodeAudioResponse({ dataUri, mimeType: result.mimeType, durationSec: elapsedRef.current }));
+        }
+    }, [stop, onChange]);
+
+    async function startRecording() {
+        setMicError(false);
+        elapsedRef.current = 0;
+        setElapsedSec(0);
+        const ok = await start();
+        if (!ok) {
+            setMicError(true);
+            return;
+        }
+        timerRef.current = setInterval(() => {
+            elapsedRef.current += 1;
+            setElapsedSec(elapsedRef.current);
+            if (elapsedRef.current >= maxRecordingSeconds) void stopRecording();
+        }, 1000);
+    }
+
+    useEffect(() => {
+        return () => {
+            if (timerRef.current) clearInterval(timerRef.current);
+        };
+    }, []);
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {status === 'recording' ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <span
+                        style={{
+                            width: 10,
+                            height: 10,
+                            borderRadius: '50%',
+                            background: 'var(--red)',
+                            animation: 'pulse 1s infinite',
+                            flexShrink: 0,
+                        }}
+                    />
+                    <span style={{ fontSize: '0.9rem', color: 'var(--text)' }}>
+                        {t('tests.taking.recording_in_progress', {
+                            elapsed: elapsedSec,
+                            max: maxRecordingSeconds,
+                        })}
+                    </span>
+                    <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => void stopRecording()}
+                        style={{ marginLeft: 'auto' }}
+                    >
+                        {t('tests.taking.stop_recording')}
+                    </button>
+                </div>
+            ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                    <button type="button" className="btn btn-primary btn-sm" onClick={() => void startRecording()}>
+                        {existing ? t('tests.taking.re_record') : t('tests.taking.start_recording')}
+                    </button>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        {t('tests.taking.max_recording_note', { max: maxRecordingSeconds })}
+                    </span>
+                </div>
+            )}
+            {micError && (
+                <p style={{ color: 'var(--red)', fontSize: '0.85rem', margin: 0 }}>
+                    {t('tests.taking.microphone_error')}
+                </p>
+            )}
+            {existing && status !== 'recording' && <audio controls src={existing.dataUri} style={{ width: '100%' }} />}
         </div>
     );
 }

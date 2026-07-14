@@ -651,6 +651,12 @@
             "move_item_up": "Omhoog",
             "move_item_down": "Omlaag",
             "retake": "Opnieuw maken",
+            "start_recording": "Opname starten",
+            "stop_recording": "Opname stoppen",
+            "re_record": "Opnieuw opnemen",
+            "recording_in_progress": "Opname bezig… {{elapsed}}s / {{max}}s",
+            "max_recording_note": "Max {{max}} seconden.",
+            "microphone_error": "Kon geen toegang krijgen tot je microfoon. Controleer je machtigingen en probeer opnieuw.",
             "practice_review_question_number": "Vraag {{number}}",
             "numeric_placeholder": "Voer een getal in…"
         },
@@ -703,7 +709,8 @@
                     "empty": "Geen antwoord"
                 },
                 "gallery_title": "Vraag {{index}} — alle antwoorden",
-                "no_answer": "Nog geen antwoord"
+                "no_answer": "Nog geen antwoord",
+                "audio_recorded": "Audio opgenomen ({{seconds}}s)"
             },
             "draft": {
                 "word_count": "{{count}} woorden",
@@ -739,6 +746,8 @@
         "question_audio_placeholder": "Plak een audio-URL…",
         "question_hint_label": "Hint",
         "question_hint_placeholder": "Optionele hint voor leerlingen…",
+        "max_recording_seconds_label": "Maximale opnameduur (seconden)",
+        "max_recording_seconds_help": "De opname stopt automatisch zodra deze limiet is bereikt.",
         "question_explanation_label": "Uitleg",
         "question_explanation_placeholder": "Leg uit waarom het juiste antwoord klopt…",
         "question_explanation_help": "Wordt getoond aan leerlingen nadat ze een oefentoets hebben ingeleverd. Nooit zichtbaar bij een beoordeelde toets.",
@@ -749,6 +758,7 @@
         "question_type_matching": "Koppelen",
         "question_type_categorize": "Categoriseren",
         "question_type_hot_text": "Hot tekst",
+        "question_type_audio_response": "Audioantwoord (opname)",
         "partial_credit_label": "Deelpunten toestaan",
         "partial_credit_help": "Ken een gedeelte van de punten toe bij gedeeltelijk correcte antwoorden.",
         "true_false_correct_label": "Correct antwoord",
@@ -2376,6 +2386,7 @@
         "gr_test_results_item_grade": "Totaalpunten, percentage en een letter/schaalcijfer (van de cijferschaal van de toets) staan boven aan de pagina.",
         "gr_test_results_item_standards": "Standaarden- en ERK-overzichten tellen behaalde punten op per gekoppelde standaard of Can-Do-descriptor, vergelijkbaar met de Leerdoelenweergave.",
         "gr_test_results_item_integrity": "Een paneel \"Sessie-integriteit\" vat surveillancegebeurtenissen samen (tabwissels, kopiëren/plakken, batterij, SEB-status) die zijn vastgelegd terwijl de leerling de toets maakte, plus hoeveel tijd is besteed vergeleken met het klasgemiddelde — gemarkeerd als dit opvallend snel lijkt.",
+        "gr_test_results_item_audio_response": "Bij audioantwoord-vragen neemt de student rechtstreeks in de browser een gesproken antwoord op; beluister het en beoordeel het handmatig, net als bij een open vraag.",
         "gr_test_mode_title": "Oefen- versus beoordelingstoetsen",
         "gr_test_mode_body": "Zet in het toetsinstellingenpaneel Modus op Oefening om een toets niet-beoordeeld en formatief te maken, of laat het op Beoordeling staan voor de normale beoordeelde flow met deadline.",
         "gr_test_mode_item_practice": "Resultaten van oefenmodus tellen nooit mee in de beoordeelde CEFR-voortgangsgrafiek van een leerling — ze verschijnen apart als oefenvoortgang.",

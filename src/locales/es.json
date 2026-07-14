@@ -651,6 +651,12 @@
             "move_item_up": "Subir",
             "move_item_down": "Bajar",
             "retake": "Repetir",
+            "start_recording": "Iniciar grabación",
+            "stop_recording": "Detener grabación",
+            "re_record": "Grabar de nuevo",
+            "recording_in_progress": "Grabando… {{elapsed}}s / {{max}}s",
+            "max_recording_note": "Máximo {{max}} segundos.",
+            "microphone_error": "No se pudo acceder al micrófono. Comprueba los permisos e inténtalo de nuevo.",
             "practice_review_question_number": "Pregunta {{number}}",
             "numeric_placeholder": "Introduce un número…"
         },
@@ -703,7 +709,8 @@
                     "empty": "Sin respuesta"
                 },
                 "gallery_title": "Pregunta {{index}} — todas las respuestas",
-                "no_answer": "Aún sin respuesta"
+                "no_answer": "Aún sin respuesta",
+                "audio_recorded": "Audio grabado ({{seconds}}s)"
             },
             "draft": {
                 "word_count": "{{count}} palabras",
@@ -739,6 +746,8 @@
         "question_audio_placeholder": "Pega una URL de audio…",
         "question_hint_label": "Pista",
         "question_hint_placeholder": "Pista opcional para los estudiantes…",
+        "max_recording_seconds_label": "Duración máxima de grabación (segundos)",
+        "max_recording_seconds_help": "La grabación se detiene automáticamente al alcanzar este límite.",
         "question_explanation_label": "Explicación",
         "question_explanation_placeholder": "Explica por qué la respuesta correcta es correcta…",
         "question_explanation_help": "Se muestra a los estudiantes tras enviar una prueba en modo práctica. Nunca se muestra en pruebas calificadas.",
@@ -749,6 +758,7 @@
         "question_type_matching": "Relacionar",
         "question_type_categorize": "Categorizar",
         "question_type_hot_text": "Texto interactivo",
+        "question_type_audio_response": "Respuesta de audio (grabación)",
         "partial_credit_label": "Permitir crédito parcial",
         "partial_credit_help": "Otorga una fracción de los puntos por respuestas parcialmente correctas.",
         "true_false_correct_label": "Respuesta correcta",
@@ -2376,6 +2386,7 @@
         "gr_test_results_item_grade": "El total de puntos, el porcentaje y una nota en letra/escala (de la escala de notas de la prueba) se muestran en la parte superior de la página.",
         "gr_test_results_item_standards": "Los desgloses por estándares y MCER agregan los puntos obtenidos por estándar o descriptor Can-Do vinculado, similar a la vista de Objetivos de aprendizaje.",
         "gr_test_results_item_integrity": "Un panel de «Integridad de la sesión» resume los eventos de supervisión (cambios de pestaña, copiar/pegar, batería, estado SEB) capturados mientras el alumno realizaba la prueba, además del tiempo dedicado en comparación con el promedio de la clase — marcado si parece inusualmente rápido.",
+        "gr_test_results_item_audio_response": "Las preguntas de respuesta de audio permiten al alumno grabar una respuesta hablada directamente en el navegador; reprodúcela y califícala manualmente, igual que una pregunta abierta.",
         "gr_test_mode_title": "Pruebas de práctica frente a evaluación",
         "gr_test_mode_body": "En el panel de ajustes de la prueba, cambia el Modo a Práctica para que la prueba no se califique y sea formativa, o déjalo en Evaluación para el flujo normal calificado con fecha límite.",
         "gr_test_mode_item_practice": "Los resultados en modo práctica nunca afectan al gráfico de progreso CEFR calificado de un alumno — aparecen por separado como progreso de práctica.",

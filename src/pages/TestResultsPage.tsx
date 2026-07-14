@@ -9,6 +9,7 @@ import { calcTestMaxPoints, calcStudentTestRawPoints, calcTestPercentage, autoSc
 import { calcLetterGrade, calcGradeColor } from '../utils/gradeCalc';
 import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse';
 import { calcTestTimeOnTask } from '../utils/proctorAggregator';
+import { parseAudioResponse } from '../utils/audioResponseCode';
 import type { TestAnswer, TestQuestion, ProctorEventType } from '../types';
 
 function clamp(value: number, min: number, max: number): number {
@@ -238,6 +239,11 @@ function formatStudentResponse(
                 })}
             </>
         );
+    }
+    if (question.type === 'audio-response') {
+        const audio = parseAudioResponse(response);
+        if (!audio) return t('tests.results.no_response');
+        return <audio controls src={audio.dataUri} style={{ width: '100%', maxWidth: 360 }} />;
     }
     return response || t('tests.results.no_response');
 }
@@ -505,7 +511,8 @@ export default function TestResultsPage() {
                             question.type === 'matching' ||
                             question.type === 'ordering' ||
                             question.type === 'categorize' ||
-                            question.type === 'hot-text';
+                            question.type === 'hot-text' ||
+                            question.type === 'audio-response';
 
                         return (
                             <div className="card" key={question.id}>

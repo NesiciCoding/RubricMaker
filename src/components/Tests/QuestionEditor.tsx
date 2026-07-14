@@ -62,7 +62,10 @@ const QUESTION_TYPES: TestQuestionType[] = [
     'categorize',
     'hot-text',
     'numeric',
+    'audio-response',
 ];
+
+const DEFAULT_MAX_RECORDING_SECONDS = 60;
 
 export default function QuestionEditor({
     question,
@@ -136,6 +139,12 @@ export default function QuestionEditor({
                 linkedGrammarItemId,
                 hotTextPassage: question.hotTextPassage ?? '',
                 hotTextCorrectIndices: question.hotTextCorrectIndices ?? [],
+            });
+        } else if (type === 'audio-response') {
+            update({
+                type,
+                linkedGrammarItemId,
+                maxRecordingSeconds: question.maxRecordingSeconds ?? DEFAULT_MAX_RECORDING_SECONDS,
             });
         } else {
             update({ type, linkedGrammarItemId });
@@ -1133,6 +1142,25 @@ export default function QuestionEditor({
                             placeholder="0"
                         />
                     </div>
+                </div>
+            )}
+
+            {question.type === 'audio-response' && (
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label htmlFor={`question-max-recording-${question.id}`}>
+                        {t('tests.max_recording_seconds_label')}
+                    </label>
+                    <input
+                        id={`question-max-recording-${question.id}`}
+                        type="number"
+                        min={5}
+                        value={question.maxRecordingSeconds ?? DEFAULT_MAX_RECORDING_SECONDS}
+                        onChange={(e) => update({ maxRecordingSeconds: Math.max(5, Number(e.target.value) || 5) })}
+                        style={{ width: 120 }}
+                    />
+                    <p className="text-muted text-xs" style={{ marginTop: 4 }}>
+                        {t('tests.max_recording_seconds_help')}
+                    </p>
                 </div>
             )}
 
