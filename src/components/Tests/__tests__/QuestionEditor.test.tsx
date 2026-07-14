@@ -18,6 +18,39 @@ vi.mock('../../../context/AppContext', () => ({
     useApp: () => ({ settings: {} }),
 }));
 
+// Replace TipTap-heavy editors with plain textareas (same pattern as StudentEssayPage.test.tsx /
+// TestBuilderPage.test.tsx) — this file tests QuestionEditor's wiring, not the editors themselves.
+vi.mock('../../Editor/EssayEditor', () => ({
+    default: ({ content, onChange }: { content: string; onChange: (html: string) => void }) => (
+        <textarea aria-label="tests.question_prompt_label" value={content} onChange={(e) => onChange(e.target.value)} />
+    ),
+}));
+vi.mock('../ClozeGapEditor', () => ({
+    default: ({
+        value,
+        onChange,
+        allowDropdown,
+        insertGapLabel,
+        insertDropdownGapLabel,
+    }: {
+        value: string;
+        onChange: (prompt: string) => void;
+        allowDropdown: boolean;
+        insertGapLabel: string;
+        insertDropdownGapLabel: string;
+    }) => (
+        <div>
+            <span>{insertGapLabel}</span>
+            {allowDropdown && <span>{insertDropdownGapLabel}</span>}
+            <textarea
+                aria-label="tests.question_prompt_label"
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+            />
+        </div>
+    ),
+}));
+
 vi.mock('../../Standards/StandardsPickerModal', () => ({ default: () => null }));
 vi.mock('../../CEFR/CefrPickerModal', () => ({
     default: ({ onClose }: { onClose: () => void }) =>

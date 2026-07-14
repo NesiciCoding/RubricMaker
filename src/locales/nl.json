@@ -2388,6 +2388,7 @@
         "gr_test_rich_authoring_item_prompt": "Maak elke vraagtekst op met vet, tabellen, sub-/superscript, links en kleur — handig voor wiskundige, scheikundige of andere notatie.",
         "gr_test_rich_authoring_item_passage": "Voeg een leestekst of bronmateriaal toe aan een sectie (via de knop \"Tekst / bronmateriaal\") — wordt aan leerlingen getoond boven de vragen van die sectie.",
         "gr_test_rich_authoring_item_option_image": "Voeg een afbeelding toe aan een individuele optie bij een meerkeuze- of meerdere-antwoordenvraag, voor vragen met beeldkeuze.",
+        "gr_test_rich_authoring_item_cloze_gap": "Voeg invulgaten toe met één klik in plaats van {{...}}-syntax te typen — klik op een gat-pil om de geaccepteerde antwoorden te bewerken.",
         "gr_class_avg_title": "Klasgemiddelde-aanpassing",
         "gr_class_avg_body_prefix": "Open",
         "gr_class_avg_body_results": "Resultaten",

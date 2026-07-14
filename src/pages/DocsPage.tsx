@@ -1051,6 +1051,7 @@ function GradingTab() {
                         t('docs.gr_test_rich_authoring_item_prompt'),
                         t('docs.gr_test_rich_authoring_item_passage'),
                         t('docs.gr_test_rich_authoring_item_option_image'),
+                        t('docs.gr_test_rich_authoring_item_cloze_gap'),
                     ]}
                 />
 
