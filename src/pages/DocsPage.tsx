@@ -802,7 +802,8 @@ function RubricsTab() {
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
                     {t('docs.rb_marketplace_body_prefix')} <strong>{t('docs.rb_marketplace_body_name')}</strong>{' '}
-                    {t('docs.rb_marketplace_body_suffix')} {t('docs.rb_marketplace_cefr_tags_body')}
+                    {t('docs.rb_marketplace_body_suffix')} {t('docs.rb_marketplace_cefr_tags_body')}{' '}
+                    {t('docs.rb_marketplace_kinds_note')}
                 </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>

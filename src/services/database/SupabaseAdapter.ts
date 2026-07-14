@@ -27,6 +27,7 @@ import type {
     StudentTestAssignmentSummary,
     UserTemplate,
     MarketplaceListing,
+    MarketplaceListingKind,
     CefrLevel,
     Message,
     MessageContextType,
@@ -2034,12 +2035,13 @@ export class SupabaseAdapter {
         return (data ?? []).map((r) => r.data as Rubric).filter(Boolean);
     }
 
-    // ── Rubric Marketplace ────────────────────────────────────────────────────
+    // ── Marketplace (rubrics, tests, flashcard decks — roadmap 24.4) ──────────
 
     private mapMarketplaceListing(row: {
         id: string;
         school_id: string;
         published_by: string;
+        kind: string;
         rubric_snapshot: unknown;
         name: string;
         subject: string | null;
@@ -2054,7 +2056,8 @@ export class SupabaseAdapter {
             id: row.id,
             schoolId: row.school_id,
             publishedBy: row.published_by,
-            rubricSnapshot: row.rubric_snapshot as Rubric,
+            kind: (row.kind as MarketplaceListingKind) || 'rubric',
+            snapshot: row.rubric_snapshot as Rubric | Test | FlashcardDeck,
             name: row.name,
             subject: row.subject ?? undefined,
             description: row.description ?? undefined,
@@ -2066,14 +2069,15 @@ export class SupabaseAdapter {
         };
     }
 
+    private static readonly MARKETPLACE_LISTING_COLUMNS =
+        'id, school_id, published_by, kind, rubric_snapshot, name, subject, description, attribution, cefr_levels, upvote_count, created_at, updated_at';
+
     /** RLS scopes results to the caller's school; schoolId here is just a hint for callers, not an extra filter. */
     async listMarketplaceListings(schoolId: string): Promise<MarketplaceListing[]> {
         if (!this.client || !this.userId) return [];
         const { data, error } = await this.client
             .from('marketplace_listings')
-            .select(
-                'id, school_id, published_by, rubric_snapshot, name, subject, description, attribution, cefr_levels, upvote_count, created_at, updated_at'
-            )
+            .select(SupabaseAdapter.MARKETPLACE_LISTING_COLUMNS)
             .eq('school_id', schoolId)
             .order('created_at', { ascending: false });
         if (error || !data) {
@@ -2085,26 +2089,27 @@ export class SupabaseAdapter {
 
     async publishToMarketplace(
         schoolId: string,
-        rubric: Rubric,
+        kind: MarketplaceListingKind,
+        entity: Rubric | Test | FlashcardDeck,
         attribution?: string,
         options?: { name?: string; subject?: string; description?: string; cefrLevels?: CefrLevel[] }
     ): Promise<MarketplaceListing | null> {
         if (!this.client || !this.userId) return null;
+        const subject = kind === 'rubric' ? ((entity as Rubric).subject ?? null) : null;
         const { data, error } = await this.client
             .from('marketplace_listings')
             .insert({
                 school_id: schoolId,
                 published_by: this.userId,
-                rubric_snapshot: rubric,
-                name: options?.name ?? rubric.name,
-                subject: options?.subject ?? rubric.subject ?? null,
-                description: options?.description ?? rubric.description ?? null,
+                kind,
+                rubric_snapshot: entity,
+                name: options?.name ?? entity.name,
+                subject: options?.subject ?? subject,
+                description: options?.description ?? entity.description ?? null,
                 attribution: attribution ?? null,
                 cefr_levels: options?.cefrLevels?.length ? options.cefrLevels : null,
             })
-            .select(
-                'id, school_id, published_by, rubric_snapshot, name, subject, description, attribution, cefr_levels, upvote_count, created_at, updated_at'
-            )
+            .select(SupabaseAdapter.MARKETPLACE_LISTING_COLUMNS)
             .single();
         if (error || !data) {
             if (error) console.error('publishToMarketplace', error);
@@ -2114,30 +2119,37 @@ export class SupabaseAdapter {
     }
 
     /**
-     * Fetches a listing's snapshot and materializes it as a new local Rubric shape.
-     * Does not write anywhere — caller must add the returned Rubric via the normal
-     * AppContext/storage.ts path so localStorage stays the single write point.
+     * Fetches a listing's snapshot and materializes it as a new local entity (Rubric, Test,
+     * or FlashcardDeck depending on `kind`). Does not write anywhere — caller must add the
+     * returned entity via the normal AppContext/storage.ts path so localStorage stays the
+     * single write point.
      */
-    async cloneMarketplaceListing(listingId: string): Promise<Rubric | null> {
+    async cloneMarketplaceListing(
+        listingId: string
+    ): Promise<{ kind: MarketplaceListingKind; entity: Rubric | Test | FlashcardDeck } | null> {
         if (!this.client || !this.userId) return null;
         const { data, error } = await this.client
             .from('marketplace_listings')
-            .select('rubric_snapshot')
+            .select('kind, rubric_snapshot')
             .eq('id', listingId)
             .single();
         if (error || !data) {
             if (error) console.error('cloneMarketplaceListing', error);
             return null;
         }
-        // Older listings (pre-Phase 18.4) may still have a `versions` array embedded in
+        const kind = ((data.kind as MarketplaceListingKind) || 'rubric') as MarketplaceListingKind;
+        // Older rubric listings (pre-Phase 18.4) may still have a `versions` array embedded in
         // the stored snapshot; drop it so a cloned rubric never resurrects it.
         const { versions: _versions, ...snapshot } = data.rubric_snapshot as Rubric & { versions?: unknown };
         const now = new Date().toISOString();
         return {
-            ...snapshot,
-            id: nanoid(),
-            createdAt: now,
-            updatedAt: now,
+            kind,
+            entity: {
+                ...snapshot,
+                id: nanoid(),
+                createdAt: now,
+                updatedAt: now,
+            } as Rubric | Test | FlashcardDeck,
         };
     }
 

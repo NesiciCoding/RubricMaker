@@ -114,7 +114,7 @@ Current functions:
 | `client_logs` | Client-side error/diagnostic logs |
 | `audit_logs` | Audit trail of sensitive actions |
 | `grading_tasks` | Async grading job records |
-| `marketplace_listings` | Published rubrics on the rubric marketplace |
+| `marketplace_listings` | Published rubrics, tests, or flashcard decks on the school marketplace, discriminated by `kind` |
 | `marketplace_upvotes` | Upvotes on marketplace listings |
 
 The full schema is spread across migrations — `001_initial_schema.sql` covers most core tables; see individual `NNN_description.sql` files (named after the feature) for the rest.

@@ -603,11 +603,15 @@ export interface SchoolMember {
 }
 
 /** A rubric published to a school's marketplace. rubricSnapshot is frozen at publish time. */
+export type MarketplaceListingKind = 'rubric' | 'test' | 'deck';
+
 export interface MarketplaceListing {
     id: string;
     schoolId: string;
     publishedBy: string;
-    rubricSnapshot: Rubric;
+    /** 'rubric' (default, back-compat with pre-24.4 listings) | 'test' | 'deck' — discriminates the shape of `snapshot`. */
+    kind: MarketplaceListingKind;
+    snapshot: Rubric | Test | FlashcardDeck;
     name: string;
     subject?: string;
     description?: string;
