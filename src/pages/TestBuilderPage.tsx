@@ -690,6 +690,8 @@ export default function TestBuilderPage() {
                                                         content={section.content ?? ''}
                                                         onChange={(html) => updateSectionContent(section.id, html)}
                                                         placeholder={t('tests.section_passage_placeholder')}
+                                                        minHeight={160}
+                                                        allowPageMode={false}
                                                     />
                                                 )}
                                             </div>

@@ -398,7 +398,12 @@ export default function QuestionEditor({
                         insertDropdownGapLabel={t('tests.cloze_insert_dropdown_gap')}
                     />
                 ) : (
-                    <EssayEditor content={question.prompt} onChange={(html) => update({ prompt: html })} />
+                    <EssayEditor
+                        content={question.prompt}
+                        onChange={(html) => update({ prompt: html })}
+                        minHeight={80}
+                        allowPageMode={false}
+                    />
                 )}
             </div>
 

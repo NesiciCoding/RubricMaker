@@ -60,6 +60,11 @@ interface EssayEditorProps {
     editable?: boolean;
     placeholder?: string;
     defaultPageMode?: boolean;
+    /** Min-height of the compact (non-page-mode) editor area in px. Defaults to the essay-length 420. */
+    minHeight?: number;
+    /** Whether the A4 "page view" toggle is offered. Defaults to true; set false for short fields
+     * (e.g. a question prompt) where a full simulated page makes no sense. */
+    allowPageMode?: boolean;
 }
 
 function Divider() {
@@ -117,12 +122,14 @@ export default function EssayEditor({
     editable = true,
     placeholder,
     defaultPageMode = false,
+    minHeight = 420,
+    allowPageMode = true,
 }: EssayEditorProps) {
     const { t } = useTranslation();
     const colorInputRef = useRef<HTMLInputElement>(null);
     const highlightInputRef = useRef<HTMLInputElement>(null);
     const [showInvisibles, setShowInvisibles] = useState(false);
-    const [pageMode, setPageMode] = useState(defaultPageMode);
+    const [pageMode, setPageMode] = useState(allowPageMode && defaultPageMode);
     const lastTableInsertRef = useRef(0);
 
     const editor = useEditor({
@@ -532,16 +539,20 @@ export default function EssayEditor({
                         <span style={{ fontSize: 14, lineHeight: 1, fontFamily: 'serif', fontWeight: 400 }}>¶</span>
                     </ToolbarBtn>
 
-                    <Divider />
+                    {allowPageMode && (
+                        <>
+                            <Divider />
 
-                    {/* ── A4 page mode ── */}
-                    <ToolbarBtn
-                        active={pageMode}
-                        onClick={() => setPageMode((v) => !v)}
-                        title={pageMode ? t('editor.switchToCompactView') : t('editor.switchToPageView')}
-                    >
-                        <FileText size={15} />
-                    </ToolbarBtn>
+                            {/* ── A4 page mode ── */}
+                            <ToolbarBtn
+                                active={pageMode}
+                                onClick={() => setPageMode((v) => !v)}
+                                title={pageMode ? t('editor.switchToCompactView') : t('editor.switchToPageView')}
+                            >
+                                <FileText size={15} />
+                            </ToolbarBtn>
+                        </>
+                    )}
                 </div>
             )}
 
@@ -577,10 +588,7 @@ export default function EssayEditor({
                     </div>
                 </div>
             ) : (
-                <div
-                    style={{ padding: '18px 22px', minHeight: 420 }}
-                    className={showInvisibles ? 'show-invisibles' : ''}
-                >
+                <div style={{ padding: '18px 22px', minHeight }} className={showInvisibles ? 'show-invisibles' : ''}>
                     <EditorContent editor={editor} placeholder={placeholder} />
                 </div>
             )}
