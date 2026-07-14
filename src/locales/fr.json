@@ -351,7 +351,8 @@
         "moderation": "Modération",
         "messages": "Messages",
         "flashcards": "Cartes mémoire",
-        "news_flashes": "Actualités"
+        "news_flashes": "Actualités",
+        "question_bank": "Banque de questions"
     },
     "dashboard": {
         "title": "Tableau de bord",
@@ -1152,6 +1153,18 @@
         "tags_placeholder": "Étiquettes (séparées par des virgules)",
         "empty_state": "Aucun commentaire trouvé.",
         "suggested_for_criterion": "Suggéré pour ce critère"
+    },
+    "questionBank": {
+        "title": "Banque de questions",
+        "page_intro": "Questions de test réutilisables que vous pouvez insérer dans n'importe quel test.",
+        "search_placeholder": "Rechercher des questions...",
+        "empty_state": "Aucune question enregistrée. Enregistrez une question depuis un test pour commencer.",
+        "untitled_prompt": "(aucun texte de question)",
+        "edit_tags": "Modifier les étiquettes",
+        "insert_title": "Insérer depuis la banque de questions",
+        "insert_button": "Insérer depuis la banque",
+        "save_to_bank": "Enregistrer dans la banque de questions",
+        "saved_toast": "Question enregistrée dans la banque"
     },
     "peerAnalytics": {
         "title": "Analyse des évaluations par les pairs — {{rubricName}}",
@@ -2142,6 +2155,8 @@
         "route_attachments_desc": "Gérer les fichiers téléchargés ; OCR et analyse de documents propulsés par Tesseract et Mammoth.",
         "route_comments_label": "Banque de commentaires",
         "route_comments_desc": "Extraits de feedback réutilisables, organisés par étiquette, insérables pendant la notation.",
+        "route_question_bank_label": "Banque de questions",
+        "route_question_bank_desc": "Questions de test réutilisables enregistrées en dehors de tout test, insérables dans n'importe quel test.",
         "route_statistics_label": "Statistiques",
         "route_statistics_desc": "Répartitions des notes, performance par critère, comparaison de classes et analyse de tendances.",
         "route_activity_dashboard_label": "Tableau d'activité",
@@ -2365,6 +2380,9 @@
         "gr_comment_bank_nav": "Banque de commentaires",
         "gr_comment_bank_body": "dans la barre latérale pour gérer vos extraits. Organisez-les avec des étiquettes (par ex. « écriture », « grammaire », « effort »). Pendant la notation, cliquez sur l'icône de commentaire pour ouvrir la banque et insérer n'importe quel extrait dans le champ de feedback en un clic. Avec la synchronisation cloud connectée, cliquez sur l'icône de département d'un élément pour le partager en lecture seule avec tous les autres enseignants de votre établissement ; les éléments partagés par des collègues apparaissent dans la banque avec un badge « Département ».",
         "gr_comment_bank_suggested_note": "Si un critère a connu une série de scores faibles, la banque de commentaires s'ouvre avec un groupe « Suggéré » en haut — des commentaires étiquetés avec la compétence ou le niveau CECRL de ce critère (ex. « speaking_interaction », « B1 »).",
+        "gr_question_bank_title": "Banque de questions",
+        "gr_question_bank_body_prefix": "Enregistrez n'importe quelle question de test dans une banque réutilisable via l'icône de signet dans l'éditeur de question, puis insérez les questions enregistrées dans n'importe quel test depuis",
+        "gr_question_bank_body_suffix": "— gérez, étiquetez et recherchez vos questions enregistrées là-bas.",
         "gr_test_results_title": "Résultats de test & notation",
         "gr_test_results_intro_prefix": "Depuis la liste",
         "gr_test_results_intro_tests": "Tests",

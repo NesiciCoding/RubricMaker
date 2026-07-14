@@ -351,7 +351,8 @@
         "moderation": "Moderación",
         "messages": "Mensajes",
         "flashcards": "Tarjetas",
-        "news_flashes": "Novedades"
+        "news_flashes": "Novedades",
+        "question_bank": "Banco de preguntas"
     },
     "dashboard": {
         "title": "Panel",
@@ -1152,6 +1153,18 @@
         "tags_placeholder": "Etiquetas (separadas por comas)",
         "empty_state": "No se encontraron comentarios.",
         "suggested_for_criterion": "Sugerido para este criterio"
+    },
+    "questionBank": {
+        "title": "Banco de preguntas",
+        "page_intro": "Preguntas de examen reutilizables que puedes insertar en cualquier prueba.",
+        "search_placeholder": "Buscar preguntas...",
+        "empty_state": "Aún no hay preguntas guardadas. Guarda una pregunta desde una prueba para empezar.",
+        "untitled_prompt": "(sin texto de pregunta)",
+        "edit_tags": "Editar etiquetas",
+        "insert_title": "Insertar desde el banco de preguntas",
+        "insert_button": "Insertar desde el banco",
+        "save_to_bank": "Guardar en el banco de preguntas",
+        "saved_toast": "Pregunta guardada en el banco"
     },
     "peerAnalytics": {
         "title": "Estadísticas de revisión por pares — {{rubricName}}",
@@ -2142,6 +2155,8 @@
         "route_attachments_desc": "Gestionar archivos subidos; OCR y análisis de documentos con Tesseract y Mammoth.",
         "route_comments_label": "Banco de comentarios",
         "route_comments_desc": "Fragmentos de comentarios reutilizables organizados por etiqueta, insertables durante la calificación.",
+        "route_question_bank_label": "Banco de preguntas",
+        "route_question_bank_desc": "Preguntas de examen reutilizables guardadas fuera de una prueba concreta, insertables en cualquier prueba.",
         "route_statistics_label": "Estadísticas",
         "route_statistics_desc": "Distribuciones de notas, rendimiento por criterio, comparación de clases y análisis de tendencias.",
         "route_activity_dashboard_label": "Panel de actividad",
@@ -2365,6 +2380,9 @@
         "gr_comment_bank_nav": "Banco de comentarios",
         "gr_comment_bank_body": "en la barra lateral para gestionar tus fragmentos. Organízalos con etiquetas (p. ej. «escritura», «gramática», «esfuerzo»). Durante la calificación, haz clic en el icono de comentario para abrir el banco e insertar cualquier fragmento en el campo de retroalimentación con un clic. Con la sincronización en la nube conectada, haz clic en el icono de departamento de un elemento para compartirlo solo de lectura con todos los demás profesores de tu centro; los elementos compartidos por colegas aparecen en el banco con una insignia de «Departamento».",
         "gr_comment_bank_suggested_note": "Si un criterio ha tenido una racha de puntuaciones bajas, el banco de comentarios se abre con un grupo «Sugerido» arriba — comentarios etiquetados con la destreza o el nivel MCER de ese criterio (p. ej. «speaking_interaction», «B1»).",
+        "gr_question_bank_title": "Banco de preguntas",
+        "gr_question_bank_body_prefix": "Guarda cualquier pregunta de examen en un banco reutilizable mediante el icono de marcador en el editor de preguntas, y luego inserta preguntas guardadas en cualquier prueba desde",
+        "gr_question_bank_body_suffix": "— gestiona, etiqueta y busca ahí tus preguntas guardadas.",
         "gr_test_results_title": "Resultados de pruebas y calificación",
         "gr_test_results_intro_prefix": "Desde la lista",
         "gr_test_results_intro_tests": "Pruebas",

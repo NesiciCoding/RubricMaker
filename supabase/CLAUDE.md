@@ -116,6 +116,7 @@ Current functions:
 | `grading_tasks` | Async grading job records |
 | `marketplace_listings` | Published rubrics on the rubric marketplace |
 | `marketplace_upvotes` | Upvotes on marketplace listings |
+| `question_bank_items` | Reusable test questions saved outside any one test (roadmap 24.1) |
 
 The full schema is spread across migrations — `001_initial_schema.sql` covers most core tables; see individual `NNN_description.sql` files (named after the feature) for the rest.
 
