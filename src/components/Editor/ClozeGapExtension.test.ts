@@ -41,7 +41,9 @@ describe('ClozeGapExtension prompt <-> doc conversion', () => {
     });
 
     it('round-trips a dropdown gap with multiple alternatives', () => {
-        expect(roundTrip('Pick {{correct|wrong1|wrong2}} carefully.')).toBe('Pick {{correct|wrong1|wrong2}} carefully.');
+        expect(roundTrip('Pick {{correct|wrong1|wrong2}} carefully.')).toBe(
+            'Pick {{correct|wrong1|wrong2}} carefully.'
+        );
     });
 
     it('round-trips multiple gaps in one prompt', () => {

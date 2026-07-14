@@ -42,7 +42,13 @@ interface Props {
  * Document/Paragraph/Text/ClozeGap — no bold/tables/etc — since the stored value must stay a flat
  * string that clozeParse.ts can parse unchanged.
  */
-export default function ClozeGapEditor({ value, onChange, allowDropdown, insertGapLabel, insertDropdownGapLabel }: Props) {
+export default function ClozeGapEditor({
+    value,
+    onChange,
+    allowDropdown,
+    insertGapLabel,
+    insertDropdownGapLabel,
+}: Props) {
     const editor = useEditor({
         extensions: [CLOZE_STARTER_KIT, ClozeGap],
         content: promptToClozeContent(value),

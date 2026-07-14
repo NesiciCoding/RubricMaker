@@ -42,7 +42,11 @@ vi.mock('../ClozeGapEditor', () => ({
         <div>
             <span>{insertGapLabel}</span>
             {allowDropdown && <span>{insertDropdownGapLabel}</span>}
-            <textarea aria-label="tests.question_prompt_label" value={value} onChange={(e) => onChange(e.target.value)} />
+            <textarea
+                aria-label="tests.question_prompt_label"
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+            />
         </div>
     ),
 }));

@@ -91,10 +91,14 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
                 if (alternatives.length === 0) return;
                 const pos = typeof getPos === 'function' ? getPos() : undefined;
                 if (pos === undefined) return;
-                editor.chain().focus().command(({ tr }) => {
-                    tr.setNodeMarkup(pos, undefined, { alternatives });
-                    return true;
-                }).run();
+                editor
+                    .chain()
+                    .focus()
+                    .command(({ tr }) => {
+                        tr.setNodeMarkup(pos, undefined, { alternatives });
+                        return true;
+                    })
+                    .run();
             });
 
             return {
