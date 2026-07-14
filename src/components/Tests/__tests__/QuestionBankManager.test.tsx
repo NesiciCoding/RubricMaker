@@ -31,7 +31,9 @@ vi.mock('../../../context/AppContext', () => ({
 }));
 
 vi.mock('react-i18next', () => ({
-    useTranslation: () => ({ t: (key: string, opts?: Record<string, unknown>) => (opts ? `${key}:${JSON.stringify(opts)}` : key) }),
+    useTranslation: () => ({
+        t: (key: string, opts?: Record<string, unknown>) => (opts ? `${key}:${JSON.stringify(opts)}` : key),
+    }),
 }));
 
 describe('QuestionBankManager', () => {
