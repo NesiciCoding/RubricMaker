@@ -638,7 +638,8 @@
             "categorize_select_placeholder": "Selecteer een categorie…",
             "move_item_up": "Omhoog",
             "move_item_down": "Omlaag",
-            "retake": "Opnieuw maken"
+            "retake": "Opnieuw maken",
+            "practice_review_question_number": "Vraag {{number}}"
         },
         "monitor": {
             "title": "Live-monitor",
@@ -723,6 +724,9 @@
         "question_audio_placeholder": "Plak een audio-URL…",
         "question_hint_label": "Hint",
         "question_hint_placeholder": "Optionele hint voor leerlingen…",
+        "question_explanation_label": "Uitleg",
+        "question_explanation_placeholder": "Leg uit waarom het juiste antwoord klopt…",
+        "question_explanation_help": "Wordt getoond aan leerlingen nadat ze een oefentoets hebben ingeleverd. Nooit zichtbaar bij een beoordeelde toets.",
         "question_type_multiple_response": "Meerdere antwoorden",
         "question_type_true_false": "Waar / Niet waar",
         "question_type_cloze": "Invuloefening (tekst)",

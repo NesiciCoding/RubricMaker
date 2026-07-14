@@ -974,6 +974,8 @@ export interface TestQuestion {
     hint?: string;
     /** References GrammarItem.id (src/data/grammarStandards.ts) — tags which grammar point this question drills, for the grammar recommendation engine. */
     linkedGrammarItemId?: string;
+    /** Shown to the student after submission, only when the test's mode is 'practice' — keeps assessment-mode answer secrecy intact */
+    explanation?: string;
 }
 
 export interface Test {

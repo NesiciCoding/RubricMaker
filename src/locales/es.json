@@ -638,7 +638,8 @@
             "categorize_select_placeholder": "Seleccionar una categoría…",
             "move_item_up": "Subir",
             "move_item_down": "Bajar",
-            "retake": "Repetir"
+            "retake": "Repetir",
+            "practice_review_question_number": "Pregunta {{number}}"
         },
         "monitor": {
             "title": "Monitor en vivo",
@@ -723,6 +724,9 @@
         "question_audio_placeholder": "Pega una URL de audio…",
         "question_hint_label": "Pista",
         "question_hint_placeholder": "Pista opcional para los estudiantes…",
+        "question_explanation_label": "Explicación",
+        "question_explanation_placeholder": "Explica por qué la respuesta correcta es correcta…",
+        "question_explanation_help": "Se muestra a los estudiantes tras enviar una prueba en modo práctica. Nunca se muestra en pruebas calificadas.",
         "question_type_multiple_response": "Respuesta múltiple",
         "question_type_true_false": "Verdadero / Falso",
         "question_type_cloze": "Rellenar el hueco (texto)",

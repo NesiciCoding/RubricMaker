@@ -638,7 +638,8 @@
             "categorize_select_placeholder": "Kategorie wählen…",
             "move_item_up": "Nach oben",
             "move_item_down": "Nach unten",
-            "retake": "Erneut versuchen"
+            "retake": "Erneut versuchen",
+            "practice_review_question_number": "Frage {{number}}"
         },
         "monitor": {
             "title": "Live-Überwachung",
@@ -723,6 +724,9 @@
         "question_audio_placeholder": "Audio-URL einfügen…",
         "question_hint_label": "Hinweis",
         "question_hint_placeholder": "Optionaler Hinweis für Schüler…",
+        "question_explanation_label": "Erklärung",
+        "question_explanation_placeholder": "Erklären Sie, warum die richtige Antwort stimmt…",
+        "question_explanation_help": "Wird Schülern nach dem Absenden eines Übungstests angezeigt. Bei bewerteten Tests nie sichtbar.",
         "question_type_multiple_response": "Mehrere Antworten",
         "question_type_true_false": "Wahr / Falsch",
         "question_type_cloze": "Lückentext (Eingabe)",
