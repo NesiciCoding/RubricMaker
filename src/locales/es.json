@@ -2388,6 +2388,7 @@
         "gr_test_rich_authoring_item_prompt": "Formatea cualquier enunciado de pregunta con negrita, tablas, sub/superíndice, enlaces y color — útil para notación matemática, química u otra.",
         "gr_test_rich_authoring_item_passage": "Añade un texto de lectura o material de apoyo a una sección (mediante su botón \"Texto / material de apoyo\") — se muestra a los estudiantes encima de las preguntas de esa sección.",
         "gr_test_rich_authoring_item_option_image": "Adjunta una imagen a cualquier opción individual de opción múltiple o respuesta múltiple, para preguntas de elección de imagen.",
+        "gr_test_rich_authoring_item_cloze_gap": "Inserta huecos para completar con un clic en lugar de escribir la sintaxis {{...}} — haz clic en una píldora de hueco para editar sus respuestas aceptadas.",
         "gr_class_avg_title": "Ajuste de la media de la clase",
         "gr_class_avg_body_prefix": "Abre",
         "gr_class_avg_body_results": "Resultados",

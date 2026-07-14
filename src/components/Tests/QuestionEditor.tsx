@@ -20,6 +20,7 @@ import type { DraggableProvidedDragHandleProps } from '@hello-pangea/dnd';
 import { useApp } from '../../context/AppContext';
 import { nanoid } from '../../utils/nanoid';
 import EssayEditor from '../Editor/EssayEditor';
+import ClozeGapEditor from './ClozeGapEditor';
 import StandardsPickerModal from '../Standards/StandardsPickerModal';
 import CefrPickerModal from '../CEFR/CefrPickerModal';
 import GrammarItemSelect from '../CEFR/GrammarItemSelect';
@@ -77,28 +78,10 @@ export default function QuestionEditor({
     const [pickingStandard, setPickingStandard] = React.useState(false);
     const [pickingCefr, setPickingCefr] = React.useState(false);
     const [expandedOptionImages, setExpandedOptionImages] = React.useState<Set<string>>(new Set());
-    const promptRef = React.useRef<HTMLTextAreaElement>(null);
     const hotTextPassageRef = React.useRef<HTMLTextAreaElement>(null);
 
     function update(patch: Partial<TestQuestion>) {
         onChange({ ...question, ...patch });
-    }
-
-    function insertIntoPrompt(snippet: string) {
-        const el = promptRef.current;
-        if (!el) {
-            update({ prompt: question.prompt + snippet });
-            return;
-        }
-        const start = el.selectionStart ?? question.prompt.length;
-        const end = el.selectionEnd ?? question.prompt.length;
-        const next = question.prompt.slice(0, start) + snippet + question.prompt.slice(end);
-        update({ prompt: next });
-        requestAnimationFrame(() => {
-            el.focus();
-            const cursor = start + snippet.length;
-            el.setSelectionRange(cursor, cursor);
-        });
     }
 
     function changeType(type: TestQuestionType) {
@@ -403,18 +386,16 @@ export default function QuestionEditor({
             <div className="form-group" style={{ marginBottom: 0 }}>
                 <label htmlFor={`question-prompt-${question.id}`}>{t('tests.question_prompt_label')}</label>
                 {question.type === 'cloze' || question.type === 'cloze-dropdown' ? (
-                    // Cloze/cloze-dropdown gaps are authored as raw {{gap|alt}} syntax directly in
-                    // the prompt string (see clozeParse.ts) — a rich-text editor would corrupt that
-                    // grammar and render literal HTML tags around gaps. Stays plain text until a
-                    // dedicated gap node (roadmap Phase 23.5) can serialize back to it.
-                    <textarea
-                        ref={promptRef}
-                        id={`question-prompt-${question.id}`}
+                    // Cloze/cloze-dropdown gaps are authored as {{gap|alt}} syntax directly in the
+                    // prompt string (see clozeParse.ts) — ClozeGapEditor edits that string via
+                    // clickable pills instead of hand-typed syntax, but the stored format and the
+                    // parse/scoring layer are unchanged.
+                    <ClozeGapEditor
                         value={question.prompt}
-                        onChange={(e) => update({ prompt: e.target.value })}
-                        rows={2}
-                        placeholder={t('tests.question_prompt_placeholder')}
-                        style={{ resize: 'vertical' }}
+                        onChange={(prompt) => update({ prompt })}
+                        allowDropdown={question.type === 'cloze-dropdown'}
+                        insertGapLabel={t('tests.cloze_insert_gap')}
+                        insertDropdownGapLabel={t('tests.cloze_insert_dropdown_gap')}
                     />
                 ) : (
                     <EssayEditor content={question.prompt} onChange={(html) => update({ prompt: html })} />
@@ -793,24 +774,6 @@ export default function QuestionEditor({
                             {t(`tests.help.${question.type.replace('-', '_')}_teacher_body`)}
                         </HelpPopover>
                     </label>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                        <button
-                            type="button"
-                            className="btn btn-secondary btn-sm"
-                            onClick={() => insertIntoPrompt('{{answer}}')}
-                        >
-                            <Plus size={14} /> {t('tests.cloze_insert_gap')}
-                        </button>
-                        {question.type === 'cloze-dropdown' && (
-                            <button
-                                type="button"
-                                className="btn btn-secondary btn-sm"
-                                onClick={() => insertIntoPrompt('{{correct|wrong1|wrong2}}')}
-                            >
-                                <Plus size={14} /> {t('tests.cloze_insert_dropdown_gap')}
-                            </button>
-                        )}
-                    </div>
                     {(() => {
                         const gaps = parseClozeGaps(question.prompt);
                         if (gaps.length === 0) {

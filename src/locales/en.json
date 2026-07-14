@@ -2386,6 +2386,7 @@
         "gr_test_rich_authoring_item_prompt": "Format any question prompt with bold, tables, sub/superscript, links, and colour — useful for math, chemistry, or other notation.",
         "gr_test_rich_authoring_item_passage": "Add a reading passage or stimulus to a section (via its \"Passage / stimulus\" toggle) — shown to students above that section's questions.",
         "gr_test_rich_authoring_item_option_image": "Attach an image to any individual multiple-choice or multiple-response option, for picture-choice questions.",
+        "gr_test_rich_authoring_item_cloze_gap": "Insert fill-in-the-gap blanks with a click instead of typing {{...}} syntax — click a gap pill to edit its accepted answers.",
         "gr_class_avg_title": "Class average adjustment",
         "gr_class_avg_body_prefix": "Open",
         "gr_class_avg_body_results": "Results",
