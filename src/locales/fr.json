@@ -544,6 +544,8 @@
             "feedback_placeholder": "Commentaire pour cette réponse…",
             "save_score": "Enregistrer la note",
             "integrity_title": "Intégrité de la session",
+            "time_on_task": "{{minutes}} min passées (moyenne de la classe : {{average}} min)",
+            "time_on_task_outlier": "Anormalement rapide",
             "integrity_no_events": "Aucun événement de surveillance n'a été enregistré pendant cette session.",
             "event_type_tab_switch": "Changements d'onglet",
             "event_type_copy": "Copier",

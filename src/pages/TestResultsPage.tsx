@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, XCircle, Award, Languages, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, XCircle, Award, Languages, ShieldAlert, Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import HelpPopover from '../components/ui/HelpPopover';
@@ -8,6 +8,7 @@ import { useApp } from '../context/AppContext';
 import { calcTestMaxPoints, calcStudentTestRawPoints, calcTestPercentage, autoScoreResponse } from '../utils/testCalc';
 import { calcLetterGrade, calcGradeColor } from '../utils/gradeCalc';
 import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse';
+import { calcTestTimeOnTask } from '../utils/proctorAggregator';
 import type { TestAnswer, TestQuestion, ProctorEventType } from '../types';
 
 function clamp(value: number, min: number, max: number): number {
@@ -331,6 +332,9 @@ export default function TestResultsPage() {
         eventCounts.set(ev.type, (eventCounts.get(ev.type) ?? 0) + 1);
     }
 
+    const timeOnTask = test ? calcTestTimeOnTask(test, studentTests) : null;
+    const studentTimeOnTask = timeOnTask?.perStudent.find((row) => row.studentId === studentTest?.studentId) ?? null;
+
     function getDraft(questionId: string, answer: TestAnswer | undefined) {
         return (
             drafts[questionId] ?? {
@@ -441,6 +445,21 @@ export default function TestResultsPage() {
                         {t('tests.results.integrity_title')}
                         <HelpPopover title={t('help.proctoring_title')}>{t('help.proctoring_body')}</HelpPopover>
                     </h3>
+                    {studentTimeOnTask && (
+                        <p
+                            className="text-muted text-sm"
+                            style={{ margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: 6 }}
+                        >
+                            <Clock size={14} />
+                            {t('tests.results.time_on_task', {
+                                minutes: studentTimeOnTask.durationMinutes.toFixed(0),
+                                average: (timeOnTask?.averageMinutes ?? 0).toFixed(0),
+                            })}
+                            {studentTimeOnTask.isOutlier && (
+                                <span className="badge badge-yellow">{t('tests.results.time_on_task_outlier')}</span>
+                            )}
+                        </p>
+                    )}
                     {(studentTest.events ?? []).length === 0 ? (
                         <p className="text-muted text-sm" style={{ margin: 0 }}>
                             {t('tests.results.integrity_no_events')}

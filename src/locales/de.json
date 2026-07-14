@@ -544,6 +544,8 @@
             "feedback_placeholder": "Feedback zu dieser Antwort…",
             "save_score": "Bewertung speichern",
             "integrity_title": "Sitzungsintegrität",
+            "time_on_task": "{{minutes}} Min. bearbeitet (Klassendurchschnitt: {{average}} Min.)",
+            "time_on_task_outlier": "Auffällig schnell",
             "integrity_no_events": "Während dieser Sitzung wurden keine Aufsichtsereignisse aufgezeichnet.",
             "event_type_tab_switch": "Tab-Wechsel",
             "event_type_copy": "Kopieren",
