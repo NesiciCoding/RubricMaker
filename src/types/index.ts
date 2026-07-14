@@ -939,6 +939,8 @@ export interface TestQuestion {
     options?: TestOption[];
     /** Model answer used for exact-match auto-scoring of short-answer questions */
     expectedAnswer?: string;
+    /** Accepted alternative answers for exact-match auto-scoring of short-answer questions; supersedes expectedAnswer when set */
+    expectedAnswers?: string[];
     /** Correct answer for true-false questions */
     correctBoolean?: boolean;
     /** Pairs for matching questions */

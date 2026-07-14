@@ -136,6 +136,24 @@ describe('scoreShortAnswerExact', () => {
     it('returns null for non short-answer questions', () => {
         expect(scoreShortAnswerExact(openQuestion, 'Paris')).toBeNull();
     });
+
+    it('matches a trimmed case-insensitive single expectedAnswer', () => {
+        expect(scoreShortAnswerExact(saQuestion, '  paris  ')).toBe(2);
+        expect(scoreShortAnswerExact(saQuestion, 'Lyon')).toBe(0);
+    });
+
+    it('matches any of expectedAnswers when set', () => {
+        const question = { ...saQuestion, expectedAnswers: ['grey', 'gray'] };
+        expect(scoreShortAnswerExact(question, 'Gray')).toBe(2);
+        expect(scoreShortAnswerExact(question, ' grey ')).toBe(2);
+        expect(scoreShortAnswerExact(question, 'green')).toBe(0);
+    });
+
+    it('prefers expectedAnswers over the legacy expectedAnswer when both are set', () => {
+        const question = { ...saQuestion, expectedAnswer: 'Paris', expectedAnswers: ['Lyon'] };
+        expect(scoreShortAnswerExact(question, 'Paris')).toBe(0);
+        expect(scoreShortAnswerExact(question, 'Lyon')).toBe(2);
+    });
 });
 
 const mrQuestion: TestQuestion = {

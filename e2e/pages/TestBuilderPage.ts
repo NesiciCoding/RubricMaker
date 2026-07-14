@@ -74,7 +74,7 @@ export class TestBuilderPage extends BasePage {
     }
 
     async setExpectedAnswer(index: number, answer: string): Promise<void> {
-        const input = this.questionCard(index).getByPlaceholder(/model answer for auto-scoring/i);
+        const input = this.questionCard(index).getByPlaceholder(/model answer\(s\)? for auto-scoring/i);
         await input.fill(answer);
     }
 
