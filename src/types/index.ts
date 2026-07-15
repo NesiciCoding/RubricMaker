@@ -890,7 +890,8 @@ export type TestQuestionType =
     | 'ordering'
     | 'categorize'
     | 'hot-text'
-    | 'numeric';
+    | 'numeric'
+    | 'audio-response';
 
 export interface TestOption {
     id: string;
@@ -985,6 +986,8 @@ export interface TestQuestion {
     linkedGrammarItemId?: string;
     /** Shown to the student after submission, only when the test's mode is 'practice' — keeps assessment-mode answer secrecy intact */
     explanation?: string;
+    /** For 'audio-response' questions: recording cap in seconds (default 60 in the UI). */
+    maxRecordingSeconds?: number;
 }
 
 export interface Test {

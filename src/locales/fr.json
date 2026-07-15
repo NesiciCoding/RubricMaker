@@ -652,6 +652,12 @@
             "move_item_up": "Monter",
             "move_item_down": "Descendre",
             "retake": "Recommencer",
+            "start_recording": "Démarrer l'enregistrement",
+            "stop_recording": "Arrêter l'enregistrement",
+            "re_record": "Réenregistrer",
+            "recording_in_progress": "Enregistrement en cours… {{elapsed}}s / {{max}}s",
+            "max_recording_note": "Maximum {{max}} secondes.",
+            "microphone_error": "Impossible d'accéder à votre microphone. Vérifiez les autorisations et réessayez.",
             "practice_review_question_number": "Question {{number}}",
             "numeric_placeholder": "Entrez un nombre…"
         },
@@ -704,7 +710,8 @@
                     "empty": "Pas de réponse"
                 },
                 "gallery_title": "Question {{index}} — toutes les réponses",
-                "no_answer": "Pas encore de réponse"
+                "no_answer": "Pas encore de réponse",
+                "audio_recorded": "Audio enregistré ({{seconds}}s)"
             },
             "draft": {
                 "word_count": "{{count}} mots",
@@ -740,6 +747,8 @@
         "question_audio_placeholder": "Collez une URL audio…",
         "question_hint_label": "Indice",
         "question_hint_placeholder": "Indice optionnel pour les élèves…",
+        "max_recording_seconds_label": "Durée maximale d'enregistrement (secondes)",
+        "max_recording_seconds_help": "L'enregistrement s'arrête automatiquement une fois cette limite atteinte.",
         "question_explanation_label": "Explication",
         "question_explanation_placeholder": "Expliquez pourquoi la bonne réponse est correcte…",
         "question_explanation_help": "Affichée aux élèves après la soumission d'un test en mode entraînement. Jamais affichée pour un test noté.",
@@ -750,6 +759,7 @@
         "question_type_matching": "Association",
         "question_type_categorize": "Catégoriser",
         "question_type_hot_text": "Texte interactif",
+        "question_type_audio_response": "Réponse audio (enregistrement)",
         "partial_credit_label": "Autoriser le crédit partiel",
         "partial_credit_help": "Attribue une fraction des points pour les réponses partiellement correctes.",
         "true_false_correct_label": "Bonne réponse",
@@ -2395,6 +2405,7 @@
         "gr_test_results_item_grade": "Le total des points, le pourcentage et une note en lettres/échelle (issue du barème du test) sont affichés en haut de la page.",
         "gr_test_results_item_standards": "Les répartitions par référentiel et CECRL agrègent les points obtenus par référentiel ou descripteur Can-Do lié, à l'image de la vue Objectifs d'apprentissage.",
         "gr_test_results_item_integrity": "Un panneau « Intégrité de la session » résume les événements de surveillance (changements d'onglet, copier/coller, batterie, statut SEB) capturés pendant que l'élève passait le test, ainsi que le temps passé par rapport à la moyenne de la classe — signalé si cela semble anormalement rapide.",
+        "gr_test_results_item_audio_response": "Les questions à réponse audio permettent aux élèves d'enregistrer une réponse orale directement dans le navigateur ; écoutez-la et notez-la manuellement, comme une question ouverte.",
         "gr_test_mode_title": "Tests d'entraînement vs. tests d'évaluation",
         "gr_test_mode_body": "Dans le panneau des paramètres du test, réglez le Mode sur Entraînement pour rendre un test non noté et formatif, ou laissez-le sur Évaluation pour le déroulement normal noté avec échéance.",
         "gr_test_mode_item_practice": "Les résultats en mode entraînement n'affectent jamais le graphique de progression CECR noté d'un élève — ils apparaissent séparément comme progression d'entraînement.",

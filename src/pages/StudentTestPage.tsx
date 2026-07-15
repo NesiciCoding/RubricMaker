@@ -33,6 +33,8 @@ import { seededShuffle } from '../utils/seededShuffle';
 import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse';
 import { initClientLogger, logEvent } from '../services/logging/clientLogger';
 import { TestAdapter } from '../services/database/TestAdapter';
+import { useMediaRecorder } from '../hooks/useMediaRecorder';
+import { encodeAudioResponse, parseAudioResponse } from '../utils/audioResponseCode';
 import { autoScoreResponse } from '../utils/testCalc';
 import type {
     TestAnswer,
@@ -187,6 +189,7 @@ export default function StudentTestPage() {
     const [copied, setCopied] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState('');
+    const [isRecordingAudio, setIsRecordingAudio] = useState(false);
 
     const startedAtRef = useRef<string>(new Date().toISOString());
     const submitInFlightRef = useRef(false);
@@ -762,6 +765,7 @@ export default function StudentTestPage() {
                                     value={answers.get(question.id) ?? ''}
                                     onChange={(value) => setAnswers((prev) => new Map(prev).set(question.id, value))}
                                     code={code ?? ''}
+                                    onRecordingChange={setIsRecordingAudio}
                                 />
                             )}
 
@@ -776,7 +780,7 @@ export default function StudentTestPage() {
                             >
                                 <button
                                     onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
-                                    disabled={isFirst}
+                                    disabled={isFirst || isRecordingAudio}
                                     className="btn btn-secondary"
                                     style={{ opacity: isFirst ? 0.5 : 1 }}
                                 >
@@ -786,7 +790,7 @@ export default function StudentTestPage() {
                                 {isLast ? (
                                     <button
                                         onClick={handleSubmit}
-                                        disabled={submitting}
+                                        disabled={submitting || isRecordingAudio}
                                         style={{
                                             padding: '10px 32px',
                                             borderRadius: 8,
@@ -815,6 +819,7 @@ export default function StudentTestPage() {
                                         onClick={() =>
                                             setCurrentIndex((i) => Math.min(orderedQuestions.length - 1, i + 1))
                                         }
+                                        disabled={isRecordingAudio}
                                         className="btn btn-primary"
                                     >
                                         {t('tests.taking.next')}
@@ -970,9 +975,10 @@ interface QuestionCardProps {
     value: string;
     onChange: (value: string) => void;
     code: string;
+    onRecordingChange?: (recording: boolean) => void;
 }
 
-function QuestionCard({ question, index, total, value, onChange, code }: QuestionCardProps) {
+function QuestionCard({ question, index, total, value, onChange, code, onRecordingChange }: QuestionCardProps) {
     const { t } = useTranslation();
     const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown';
     const [hintVisible, setHintVisible] = useState(false);
@@ -1300,6 +1306,133 @@ function QuestionCard({ question, index, total, value, onChange, code }: Questio
 
             {question.type === 'ordering' && (
                 <OrderingAnswer question={question} value={value} onChange={onChange} code={code} />
+            )}
+
+            {question.type === 'audio-response' && (
+                <AudioResponseAnswer
+                    value={value}
+                    onChange={onChange}
+                    maxRecordingSeconds={question.maxRecordingSeconds ?? DEFAULT_MAX_RECORDING_SECONDS}
+                    onRecordingChange={onRecordingChange}
+                />
+            )}
+        </div>
+    );
+}
+
+const DEFAULT_MAX_RECORDING_SECONDS = 60;
+
+function blobToDataUri(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(blob);
+    });
+}
+
+interface AudioResponseAnswerProps {
+    value: string;
+    onChange: (value: string) => void;
+    maxRecordingSeconds: number;
+    onRecordingChange?: (recording: boolean) => void;
+}
+
+/** Recordings are always `data:audio/...` URIs produced locally by blobToDataUri — reject anything else before it reaches an <audio src>. */
+function safeRecordedAudioSrc(dataUri: string): string | undefined {
+    return /^data:audio\//i.test(dataUri) ? dataUri : undefined;
+}
+
+function AudioResponseAnswer({ value, onChange, maxRecordingSeconds, onRecordingChange }: AudioResponseAnswerProps) {
+    const { t } = useTranslation();
+    const { status, start, stop } = useMediaRecorder();
+    const [elapsedSec, setElapsedSec] = useState(0);
+    const [micError, setMicError] = useState(false);
+    const elapsedRef = useRef(0);
+    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const existing = parseAudioResponse(value);
+
+    useEffect(() => {
+        onRecordingChange?.(status === 'recording');
+    }, [status, onRecordingChange]);
+
+    const stopRecording = useCallback(async () => {
+        if (timerRef.current) clearInterval(timerRef.current);
+        const result = await stop();
+        if (result) {
+            const dataUri = await blobToDataUri(result.blob);
+            onChange(encodeAudioResponse({ dataUri, mimeType: result.mimeType, durationSec: elapsedRef.current }));
+        }
+    }, [stop, onChange]);
+
+    async function startRecording() {
+        setMicError(false);
+        elapsedRef.current = 0;
+        setElapsedSec(0);
+        const ok = await start();
+        if (!ok) {
+            setMicError(true);
+            return;
+        }
+        timerRef.current = setInterval(() => {
+            elapsedRef.current += 1;
+            setElapsedSec(elapsedRef.current);
+            if (elapsedRef.current >= maxRecordingSeconds) void stopRecording();
+        }, 1000);
+    }
+
+    useEffect(() => {
+        return () => {
+            if (timerRef.current) clearInterval(timerRef.current);
+        };
+    }, []);
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {status === 'recording' ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <span
+                        style={{
+                            width: 10,
+                            height: 10,
+                            borderRadius: '50%',
+                            background: 'var(--red)',
+                            animation: 'pulse 1s infinite',
+                            flexShrink: 0,
+                        }}
+                    />
+                    <span style={{ fontSize: '0.9rem', color: 'var(--text)' }}>
+                        {t('tests.taking.recording_in_progress', {
+                            elapsed: elapsedSec,
+                            max: maxRecordingSeconds,
+                        })}
+                    </span>
+                    <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => void stopRecording()}
+                        style={{ marginLeft: 'auto' }}
+                    >
+                        {t('tests.taking.stop_recording')}
+                    </button>
+                </div>
+            ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                    <button type="button" className="btn btn-primary btn-sm" onClick={() => void startRecording()}>
+                        {existing ? t('tests.taking.re_record') : t('tests.taking.start_recording')}
+                    </button>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        {t('tests.taking.max_recording_note', { max: maxRecordingSeconds })}
+                    </span>
+                </div>
+            )}
+            {micError && (
+                <p style={{ color: 'var(--red)', fontSize: '0.85rem', margin: 0 }}>
+                    {t('tests.taking.microphone_error')}
+                </p>
+            )}
+            {existing && status !== 'recording' && safeRecordedAudioSrc(existing.dataUri) && (
+                <audio controls src={safeRecordedAudioSrc(existing.dataUri)} style={{ width: '100%' }} />
             )}
         </div>
     );

@@ -652,6 +652,12 @@
             "move_item_up": "Nach oben",
             "move_item_down": "Nach unten",
             "retake": "Erneut versuchen",
+            "start_recording": "Aufnahme starten",
+            "stop_recording": "Aufnahme stoppen",
+            "re_record": "Neu aufnehmen",
+            "recording_in_progress": "Aufnahme läuft… {{elapsed}}s / {{max}}s",
+            "max_recording_note": "Max. {{max}} Sekunden.",
+            "microphone_error": "Zugriff auf dein Mikrofon nicht möglich. Bitte überprüfe die Berechtigungen und versuche es erneut.",
             "practice_review_question_number": "Frage {{number}}",
             "numeric_placeholder": "Zahl eingeben…"
         },
@@ -704,7 +710,8 @@
                     "empty": "Keine Antwort"
                 },
                 "gallery_title": "Frage {{index}} — alle Antworten",
-                "no_answer": "Noch keine Antwort"
+                "no_answer": "Noch keine Antwort",
+                "audio_recorded": "Audio aufgenommen ({{seconds}}s)"
             },
             "draft": {
                 "word_count": "{{count}} Wörter",
@@ -740,6 +747,8 @@
         "question_audio_placeholder": "Audio-URL einfügen…",
         "question_hint_label": "Hinweis",
         "question_hint_placeholder": "Optionaler Hinweis für Schüler…",
+        "max_recording_seconds_label": "Maximale Aufnahmedauer (Sekunden)",
+        "max_recording_seconds_help": "Die Aufnahme stoppt automatisch, sobald dieses Limit erreicht ist.",
         "question_explanation_label": "Erklärung",
         "question_explanation_placeholder": "Erklären Sie, warum die richtige Antwort stimmt…",
         "question_explanation_help": "Wird Schülern nach dem Absenden eines Übungstests angezeigt. Bei bewerteten Tests nie sichtbar.",
@@ -750,6 +759,7 @@
         "question_type_matching": "Zuordnung",
         "question_type_categorize": "Kategorisieren",
         "question_type_hot_text": "Interaktiver Text",
+        "question_type_audio_response": "Audioantwort (Aufnahme)",
         "partial_credit_label": "Teilpunkte zulassen",
         "partial_credit_help": "Vergib einen Anteil der Punkte für teilweise richtige Antworten.",
         "true_false_correct_label": "Richtige Antwort",
@@ -2395,6 +2405,7 @@
         "gr_test_results_item_grade": "Gesamtpunkte, Prozentsatz und eine Buchstaben-/Skalennote (aus der Notenskala des Tests) werden oben auf der Seite angezeigt.",
         "gr_test_results_item_standards": "Standards- und GER-Aufschlüsselungen summieren erreichte Punkte pro verknüpftem Standard oder Can-Do-Deskriptor, ähnlich der Lernziele-Ansicht.",
         "gr_test_results_item_integrity": "Ein Panel „Sitzungsintegrität“ fasst Aufsichtsereignisse (Tabwechsel, Kopieren/Einfügen, Akku, SEB-Status) zusammen, die während der Testbearbeitung erfasst wurden, sowie die benötigte Zeit im Vergleich zum Klassendurchschnitt — markiert, wenn sie auffällig schnell wirkt.",
+        "gr_test_results_item_audio_response": "Bei Fragen mit Audioantwort nimmt der Schüler direkt im Browser eine gesprochene Antwort auf; höre sie an und bewerte sie manuell, genau wie bei einer offenen Frage.",
         "gr_test_mode_title": "Übungs- vs. Bewertungstests",
         "gr_test_mode_body": "Stellen Sie im Testeinstellungen-Panel den Modus auf Übung, um einen Test unbenotet und formativ zu machen, oder belassen Sie ihn bei Bewertung für den normalen benoteten Ablauf mit Frist.",
         "gr_test_mode_item_practice": "Ergebnisse im Übungsmodus wirken sich nie auf das benotete CEFR-Fortschrittsdiagramm eines Schülers aus — sie erscheinen stattdessen separat als Übungsfortschritt.",

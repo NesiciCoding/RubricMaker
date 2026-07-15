@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { scoreShortAnswerExact, scoreNumeric, autoScoreResponse } from '../../utils/testCalc';
 import { parseClozeGaps, parseHotTextFragments } from '../../utils/clozeParse';
+import { parseAudioResponse } from '../../utils/audioResponseCode';
 import type { Test, TestAnswer, TestQuestion } from '../../types';
 
 export interface ResponsesGridStudentRow {
@@ -101,7 +102,11 @@ const CELL_COLORS: Record<CellState, string> = {
     empty: 'var(--bg)',
 };
 
-function answerDisplayText(question: TestQuestion, answer: TestAnswer | undefined, t: (key: string) => string): string {
+function answerDisplayText(
+    question: TestQuestion,
+    answer: TestAnswer | undefined,
+    t: (key: string, options?: Record<string, unknown>) => string
+): string {
     if (!answer || answer.response.trim() === '') return '';
     if (question.type === 'multiple-choice') {
         return question.options?.find((o) => o.id === answer.response)?.text ?? answer.response;
@@ -142,6 +147,10 @@ function answerDisplayText(question: TestQuestion, answer: TestAnswer | undefine
         } catch {
             return '';
         }
+    }
+    if (question.type === 'audio-response') {
+        const audio = parseAudioResponse(answer.response);
+        return audio ? t('tests.monitor.grid.audio_recorded', { seconds: audio.durationSec }) : '';
     }
     return answer.response;
 }
