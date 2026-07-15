@@ -11,4 +11,7 @@ ALTER TABLE public.marketplace_listings
   ADD COLUMN IF NOT EXISTS kind text NOT NULL DEFAULT 'rubric';
 
 ALTER TABLE public.marketplace_listings
-  ADD CONSTRAINT marketplace_listings_kind_check CHECK (kind IN ('rubric', 'test', 'deck'));
+  ADD CONSTRAINT marketplace_listings_kind_check CHECK (kind IN ('rubric', 'test', 'deck')) NOT VALID;
+
+ALTER TABLE public.marketplace_listings
+  VALIDATE CONSTRAINT marketplace_listings_kind_check;
