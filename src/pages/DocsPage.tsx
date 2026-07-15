@@ -297,6 +297,12 @@ function getRouteTree(t: TFunction): RouteNode[] {
             color: '#64748b',
         },
         {
+            path: '/question-bank',
+            label: t('docs.route_question_bank_label'),
+            description: t('docs.route_question_bank_desc'),
+            color: '#64748b',
+        },
+        {
             path: '/statistics',
             label: t('docs.route_statistics_label'),
             description: t('docs.route_statistics_desc'),
@@ -1023,6 +1029,14 @@ function GradingTab() {
                         t('docs.gr_test_results_item_integrity'),
                     ]}
                 />
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.gr_question_bank_title')}
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    {t('docs.gr_question_bank_body_prefix')} <code>/question-bank</code>{' '}
+                    {t('docs.gr_question_bank_body_suffix')}
+                </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.gr_test_mode_title')}

@@ -46,6 +46,7 @@ import type {
     StandardMasteryTarget,
     NewsFlash,
     NewsFlashRead,
+    QuestionBankItem,
 } from '../../types';
 
 const LAST_SYNC_KEY = 'rm_last_sync_at';
@@ -100,6 +101,7 @@ class StorageSyncService {
         { table: 'standard_mastery_targets', filterColumn: 'owner_id' },
         { table: 'news_flashes', filterColumn: 'owner_id' },
         { table: 'news_flash_reads', filterColumn: 'owner_id' },
+        { table: 'question_bank_items', filterColumn: 'owner_id' },
     ];
     private static readonly REALTIME_DEBOUNCE_MS = 800;
 
@@ -617,6 +619,7 @@ class StorageSyncService {
                 standardMasteryTargets,
                 newsFlashes,
                 newsFlashReads,
+                questionBank,
             ] = await Promise.all([
                 this.adapter.fetchFlashcardDecks().catch(() => []),
                 this.adapter.fetchFlashcardAssignments().catch(() => []),
@@ -624,6 +627,7 @@ class StorageSyncService {
                 this.adapter.fetchStandardMasteryTargets().catch(() => []),
                 this.adapter.fetchNewsFlashes().catch(() => []),
                 this.adapter.fetchNewsFlashReads().catch(() => []),
+                this.adapter.fetchQuestionBank().catch(() => []),
             ]);
 
             // The profile.role is authoritative; always override whatever userRole
@@ -697,6 +701,7 @@ class StorageSyncService {
                 standardMasteryTargets,
                 newsFlashes,
                 newsFlashReads,
+                questionBank,
                 attachments,
                 ...(mergedSettings ? { settings: mergedSettings as StoreData['settings'] } : {}),
             };
@@ -757,6 +762,7 @@ class StorageSyncService {
                 ...state.standardMasteryTargets.map((t) => this.adapter.upsertStandardMasteryTarget(t)),
                 ...state.newsFlashes.map((f) => this.adapter.upsertNewsFlash(f)),
                 ...state.newsFlashReads.map((r) => this.adapter.upsertNewsFlashRead(r)),
+                ...state.questionBank.map((q) => this.adapter.upsertQuestionBankItem(q)),
                 this.adapter.saveSettings(state.settings),
             ];
             await Promise.all(ups);
@@ -932,6 +938,11 @@ class StorageSyncService {
                     // Teacher-session pushes only, mirroring flashcardReview; the portal
                     // student writes through markNewsFlashReadAsStudent instead.
                     if (action === 'upsert') result = await this.adapter.upsertNewsFlashRead(payload as NewsFlashRead);
+                    break;
+                case 'questionBankItem':
+                    if (action === 'upsert')
+                        result = await this.adapter.upsertQuestionBankItem(payload as QuestionBankItem);
+                    else if (id) result = await this.adapter.deleteQuestionBankItem(id);
                     break;
                 case 'settings':
                     if (action === 'upsert')

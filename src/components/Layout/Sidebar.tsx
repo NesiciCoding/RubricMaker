@@ -23,6 +23,7 @@ import {
     Folder,
     Mail,
     Newspaper,
+    Library,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
@@ -139,9 +140,10 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
             key: 'library',
             icon: Folder,
             label: t('sidebar.domain_library'),
-            matchPrefixes: ['/comments', '/attachments'],
+            matchPrefixes: ['/comments', '/attachments', '/question-bank'],
             items: [
                 { to: '/comments', icon: MessageSquare, label: t('navigation.comment_bank') },
+                { to: '/question-bank', icon: Library, label: t('navigation.question_bank') },
                 { to: '/attachments', icon: FileText, label: t('navigation.attachments') },
             ],
         },

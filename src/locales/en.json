@@ -351,7 +351,8 @@
         "moderation": "Moderation",
         "messages": "Messages",
         "flashcards": "Flashcards",
-        "news_flashes": "News Flashes"
+        "news_flashes": "News Flashes",
+        "question_bank": "Question Bank"
     },
     "dashboard": {
         "title": "Dashboard",
@@ -1152,6 +1153,19 @@
         "tags_placeholder": "Tags (comma separated)",
         "empty_state": "No comments found.",
         "suggested_for_criterion": "Suggested for this criterion"
+    },
+    "questionBank": {
+        "title": "Question Bank",
+        "page_intro": "Reusable test questions you can insert into any test.",
+        "search_placeholder": "Search questions...",
+        "empty_state": "No questions saved yet. Save a question from any test to get started.",
+        "untitled_prompt": "(no prompt text)",
+        "edit_tags": "Edit tags",
+        "tags_placeholder": "Tags (comma separated)",
+        "insert_title": "Insert from Question Bank",
+        "insert_button": "Insert from bank",
+        "save_to_bank": "Save to question bank",
+        "saved_toast": "Question saved to bank"
     },
     "peerAnalytics": {
         "title": "Peer Review Analytics — {{rubricName}}",
@@ -2142,6 +2156,8 @@
         "route_attachments_desc": "Manage uploaded files; OCR and document analysis powered by Tesseract and Mammoth.",
         "route_comments_label": "Comment Bank",
         "route_comments_desc": "Reusable feedback snippets organised by tag, insertable during grading.",
+        "route_question_bank_label": "Question Bank",
+        "route_question_bank_desc": "Reusable test questions saved outside any one test, insertable into any test.",
         "route_statistics_label": "Statistics",
         "route_statistics_desc": "Grade distributions, per-criterion performance, class comparison, and trend analysis.",
         "route_activity_dashboard_label": "Activity Dashboard",
@@ -2363,6 +2379,9 @@
         "gr_comment_bank_nav": "Comment Bank",
         "gr_comment_bank_body": "in the sidebar to manage your snippets. Organise them with tags (e.g. \"writing\", \"grammar\", \"effort\"). During grading, click the comment icon to open the bank and insert any snippet into the feedback field with one click. With cloud sync connected, click the department icon on an item to share it read-only with every other teacher in your school; items shared by colleagues appear in the bank with a \"Department\" badge.",
         "gr_comment_bank_suggested_note": "If a criterion has had a run of low scores, the comment bank opens with a \"Suggested\" group at the top — comments tagged with that criterion's CEFR skill or level (e.g. \"speaking_interaction\", \"B1\").",
+        "gr_question_bank_title": "Question Bank",
+        "gr_question_bank_body_prefix": "Save any test question to a reusable bank via the bookmark icon in the question editor, then insert saved questions into any test from",
+        "gr_question_bank_body_suffix": "— manage, tag, and search saved questions there.",
         "gr_test_results_title": "Test results & grading",
         "gr_test_results_intro_prefix": "From the",
         "gr_test_results_intro_tests": "Tests",

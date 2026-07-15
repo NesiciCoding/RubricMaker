@@ -36,6 +36,7 @@ import type {
     StandardMasteryTarget,
     NewsFlash,
     NewsFlashRead,
+    QuestionBankItem,
 } from '../../types';
 import type { DatabaseConfig, DbUser, SyncResult } from './types';
 import { nanoid } from '../../utils/nanoid';
@@ -896,6 +897,38 @@ export class SupabaseAdapter {
 
     async deleteCommentBankItem(id: string): Promise<SyncResult> {
         const { error } = await this.db().from('comment_bank').delete().eq('id', id).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    // ── Question Bank (roadmap 24.1) ─────────────────────────────────────────────
+    // Owner-only for v1 — unlike comment_bank, no school-shared read path yet.
+    // ponytail: add a school-select policy + fetchSchoolSharedQuestionBank() later
+    // if teachers ask to share question banks across a department, mirroring
+    // comment_bank_school_select (041_school_sharing.sql).
+
+    async fetchQuestionBank(): Promise<QuestionBankItem[]> {
+        const { data, error } = await this.db().from('question_bank_items').select('data').eq('owner_id', this.uid());
+        if (error) {
+            console.error('fetchQuestionBank', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as QuestionBankItem);
+    }
+
+    async upsertQuestionBankItem(item: QuestionBankItem): Promise<SyncResult> {
+        const { error } = await this.db().from('question_bank_items').upsert(
+            {
+                id: item.id,
+                owner_id: this.uid(),
+                data: item,
+            },
+            { onConflict: 'id' }
+        );
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteQuestionBankItem(id: string): Promise<SyncResult> {
+        const { error } = await this.db().from('question_bank_items').delete().eq('id', id).eq('owner_id', this.uid());
         return error ? { success: false, error: error.message } : { success: true };
     }
 

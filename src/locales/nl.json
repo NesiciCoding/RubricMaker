@@ -351,7 +351,8 @@
         "moderation": "Moderatie",
         "messages": "Berichten",
         "flashcards": "Flashcards",
-        "news_flashes": "Nieuwsflitsen"
+        "news_flashes": "Nieuwsflitsen",
+        "question_bank": "Vragenbank"
     },
     "dashboard": {
         "title": "Dashboard",
@@ -1152,6 +1153,19 @@
         "tags_placeholder": "Tags (kommagescheiden)",
         "empty_state": "Geen opmerkingen gevonden.",
         "suggested_for_criterion": "Aanbevolen voor dit criterium"
+    },
+    "questionBank": {
+        "title": "Vragenbank",
+        "page_intro": "Herbruikbare testvragen die je in elke test kunt invoegen.",
+        "search_placeholder": "Zoek vragen...",
+        "empty_state": "Nog geen vragen opgeslagen. Sla een vraag op vanuit een test om te beginnen.",
+        "untitled_prompt": "(geen vraagtekst)",
+        "edit_tags": "Tags bewerken",
+        "tags_placeholder": "Tags (kommagescheiden)",
+        "insert_title": "Invoegen vanuit vragenbank",
+        "insert_button": "Invoegen uit bank",
+        "save_to_bank": "Opslaan in vragenbank",
+        "saved_toast": "Vraag opgeslagen in bank"
     },
     "peerAnalytics": {
         "title": "Peerreview-analyse — {{rubricName}}",
@@ -2142,6 +2156,8 @@
         "route_attachments_desc": "Beheer geüploade bestanden; OCR en documentanalyse aangedreven door Tesseract en Mammoth.",
         "route_comments_label": "Opmerkingenbank",
         "route_comments_desc": "Herbruikbare feedbacksnippets, georganiseerd per tag, invoegbaar tijdens het beoordelen.",
+        "route_question_bank_label": "Vragenbank",
+        "route_question_bank_desc": "Herbruikbare testvragen los van een specifieke test, invoegbaar in elke test.",
         "route_statistics_label": "Statistieken",
         "route_statistics_desc": "Cijferverdelingen, prestaties per criterium, klasvergelijking en trendanalyse.",
         "route_activity_dashboard_label": "Activiteitendashboard",
@@ -2365,6 +2381,9 @@
         "gr_comment_bank_nav": "Opmerkingenbank",
         "gr_comment_bank_body": "in de zijbalk om je snippets te beheren. Organiseer ze met tags (bijv. \"schrijven\", \"grammatica\", \"inzet\"). Klik tijdens het beoordelen op het opmerkingenicoon om de bank te openen en voeg een snippet met één klik in het feedbackveld in. Met cloudsynchronisatie verbonden kun je op het afdelingsicoon van een item klikken om het alleen-lezen te delen met elke andere docent op je school; items die door collega's zijn gedeeld, verschijnen in de bank met een \"Afdeling\"-badge.",
         "gr_comment_bank_suggested_note": "Als een criterium een reeks lage scores heeft gehad, opent de opmerkingenbank met een groep \"Aanbevolen\" bovenaan — opmerkingen getagd met de ERK-vaardigheid of het niveau van dat criterium (bijv. \"speaking_interaction\", \"B1\").",
+        "gr_question_bank_title": "Vragenbank",
+        "gr_question_bank_body_prefix": "Sla elke testvraag op in een herbruikbare bank via het bladwijzer-icoon in de vraageditor, en voeg opgeslagen vragen daarna in bij elke test vanuit",
+        "gr_question_bank_body_suffix": "— beheer, tag en doorzoek daar je opgeslagen vragen.",
         "gr_test_results_title": "Toetsresultaten & beoordelen",
         "gr_test_results_intro_prefix": "Klik vanaf de lijst",
         "gr_test_results_intro_tests": "Toetsen",

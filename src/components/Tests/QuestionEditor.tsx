@@ -15,9 +15,11 @@ import {
     MessageCircle,
     ChevronUp,
     ChevronDown,
+    BookmarkPlus,
 } from 'lucide-react';
 import type { DraggableProvidedDragHandleProps } from '@hello-pangea/dnd';
 import { useApp } from '../../context/AppContext';
+import { useToast } from '../../hooks/useToast';
 import { nanoid } from '../../utils/nanoid';
 import EssayEditor from '../Editor/EssayEditor';
 import ClozeGapEditor from './ClozeGapEditor';
@@ -74,7 +76,8 @@ export default function QuestionEditor({
     onRemove,
 }: Props) {
     const { t } = useTranslation();
-    const { settings } = useApp();
+    const { settings, addQuestionBankItem } = useApp();
+    const { showToast } = useToast();
     const [pickingStandard, setPickingStandard] = React.useState(false);
     const [pickingCefr, setPickingCefr] = React.useState(false);
     const [expandedOptionImages, setExpandedOptionImages] = React.useState<Set<string>>(new Set());
@@ -339,6 +342,12 @@ export default function QuestionEditor({
         update({ linkedStandards: next });
     }
 
+    function saveToBank() {
+        const { sectionId: _sectionId, ...forBank } = question;
+        addQuestionBankItem(forBank, []);
+        showToast(t('questionBank.saved_toast'), 'success');
+    }
+
     function addCefrDescriptor(descriptor: LinkedCefrDescriptor) {
         update({ linkedCefrDescriptors: [...(question.linkedCefrDescriptors ?? []), descriptor] });
     }
@@ -372,6 +381,15 @@ export default function QuestionEditor({
                     <span className="badge badge-blue">{t('tests.question_number', { number: index + 1 })}</span>
                 </div>
                 <div style={{ display: 'flex', gap: 4 }}>
+                    <button
+                        type="button"
+                        className="btn btn-ghost btn-icon btn-sm"
+                        aria-label={t('questionBank.save_to_bank')}
+                        title={t('questionBank.save_to_bank')}
+                        onClick={saveToBank}
+                    >
+                        <BookmarkPlus size={14} />
+                    </button>
                     <button
                         className="btn btn-ghost btn-icon btn-sm"
                         aria-label={t('tests.remove_question')}

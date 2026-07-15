@@ -16,7 +16,9 @@ import { nanoid } from '../utils/nanoid';
 import { toLocalDatetimeInput } from '../utils/dateInput';
 import QuestionEditor from '../components/Tests/QuestionEditor';
 import EssayEditor from '../components/Editor/EssayEditor';
-import type { TestQuestion, TestSection, CefrLevel, CefrSkill } from '../types';
+import QuestionBankModal from '../components/Tests/QuestionBankModal';
+import { cloneQuestionWithFreshIds } from '../utils/testQuestionClone';
+import type { TestQuestion, TestSection, CefrLevel, CefrSkill, QuestionBankItem } from '../types';
 import { CEFR_LEVELS, CEFR_SKILLS, CEFR_SKILL_LABELS } from '../data/cefrDescriptors';
 
 function newQuestion(sectionId?: string): TestQuestion {
@@ -47,6 +49,7 @@ export default function TestBuilderPage() {
     const [nameError, setNameError] = useState('');
     const [description, setDescription] = useState(existing?.description ?? '');
     const [questions, setQuestions] = useState<TestQuestion[]>(existing?.questions ?? []);
+    const [showBankModal, setShowBankModal] = useState(false);
     const [sections, setSections] = useState<TestSection[]>(existing?.sections ?? []);
     const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
     const [expandedPassages, setExpandedPassages] = useState<Set<string>>(
@@ -161,6 +164,11 @@ export default function TestBuilderPage() {
 
     function addQuestion(sectionId?: string) {
         setQuestions((prev) => [...prev, newQuestion(sectionId)]);
+    }
+
+    function insertFromBank(item: QuestionBankItem) {
+        setQuestions((prev) => [...prev, cloneQuestionWithFreshIds(item.question as TestQuestion)]);
+        setShowBankModal(false);
     }
 
     function updateQuestion(qid: string, question: TestQuestion) {
@@ -565,9 +573,18 @@ export default function TestBuilderPage() {
                             {t('tests.questions_summary', { count: questions.length, points: totalPoints })}
                         </span>
                     </h3>
-                    <button className="btn btn-secondary btn-sm" onClick={() => addQuestion()}>
-                        <Plus size={14} /> {t('tests.add_question')}
-                    </button>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                        <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => setShowBankModal(true)}
+                        >
+                            <Plus size={14} /> {t('questionBank.insert_button')}
+                        </button>
+                        <button type="button" className="btn btn-secondary btn-sm" onClick={() => addQuestion()}>
+                            <Plus size={14} /> {t('tests.add_question')}
+                        </button>
+                    </div>
                 </div>
 
                 {questions.length === 0 ? (
@@ -764,6 +781,7 @@ export default function TestBuilderPage() {
                     </DragDropContext>
                 )}
             </div>
+            {showBankModal && <QuestionBankModal onClose={() => setShowBankModal(false)} onSelect={insertFromBank} />}
             <ConfirmDialog {...unsavedDialogProps} />
         </>
     );
