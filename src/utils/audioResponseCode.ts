@@ -24,7 +24,7 @@ export function parseAudioResponse(response: string | undefined): AudioResponseD
     if (!response) return null;
     try {
         const parsed = JSON.parse(response) as Partial<AudioResponseData>;
-        if (typeof parsed.dataUri !== 'string' || !parsed.dataUri) return null;
+        if (typeof parsed.dataUri !== 'string' || !/^data:/i.test(parsed.dataUri)) return null;
         return {
             dataUri: parsed.dataUri,
             mimeType: typeof parsed.mimeType === 'string' ? parsed.mimeType : 'audio/webm',

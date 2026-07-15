@@ -351,6 +351,63 @@ describe('StudentTestPage — audio-response answer', () => {
         expect(audioEl?.getAttribute('src')).toBe('data:audio/webm;base64,AA==');
     });
 
+    it('does not render a restored recording whose data URI is not an audio MIME type', () => {
+        const assignment = makeAssignment({}, audioTest);
+        const code = encodeTestAssignment(assignment as TestAssignmentPayload);
+        const encoded = encodeAudioResponse({
+            dataUri: 'data:text/html,<script>alert(1)</script>',
+            mimeType: 'audio/webm',
+            durationSec: 5,
+        });
+        localStorage.setItem(
+            `rm_test_draft_${code}`,
+            JSON.stringify({ answers: { q1: encoded }, savedAt: new Date().toISOString() })
+        );
+
+        render(
+            <MemoryRouter initialEntries={[`/test/${code}`]}>
+                <Routes>
+                    <Route path="/test/:code" element={<StudentTestPage />} />
+                </Routes>
+            </MemoryRouter>
+        );
+
+        expect(document.querySelector('audio')).toBeNull();
+    });
+
+    it('disables Next while actively recording (getUserMedia + MediaRecorder mocked)', async () => {
+        class FakeMediaRecorder {
+            mimeType = 'audio/webm';
+            start() {}
+            stop() {}
+        }
+        const getUserMedia = vi.fn().mockResolvedValue({ getTracks: () => [{ stop: vi.fn() }] });
+        Object.defineProperty(navigator, 'mediaDevices', { value: { getUserMedia }, configurable: true });
+        (globalThis as unknown as { MediaRecorder: typeof FakeMediaRecorder }).MediaRecorder = FakeMediaRecorder;
+
+        try {
+            const twoQuestionTest = makeTest({
+                questions: [
+                    { id: 'q1', prompt: 'Describe your weekend.', type: 'audio-response', points: 3 },
+                    { id: 'q2', prompt: 'Describe your favourite season.', type: 'open', points: 2 },
+                ],
+            });
+            renderPage(makeAssignment({}, twoQuestionTest));
+
+            expect(screen.getByText('tests.taking.next')).not.toBeDisabled();
+
+            await act(async () => {
+                fireEvent.click(screen.getByText('tests.taking.start_recording'));
+            });
+
+            expect(screen.getByText('tests.taking.next')).toBeDisabled();
+        } finally {
+            // @ts-expect-error test cleanup — restore jsdom's undefined mediaDevices
+            delete navigator.mediaDevices;
+            delete (globalThis as unknown as { MediaRecorder?: unknown }).MediaRecorder;
+        }
+    });
+
     it('records and stops, producing a playable recording (getUserMedia + MediaRecorder mocked)', async () => {
         class FakeMediaRecorder {
             mimeType = 'audio/webm';

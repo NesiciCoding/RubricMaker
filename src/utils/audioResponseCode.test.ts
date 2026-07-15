@@ -28,6 +28,15 @@ describe('audioResponseCode', () => {
         expect(parseAudioResponse(JSON.stringify({ mimeType: 'audio/webm', durationSec: 5 }))).toBeNull();
     });
 
+    it('returns null when dataUri is not a data: URI (e.g. javascript: or a bare http URL)', () => {
+        expect(
+            parseAudioResponse(JSON.stringify({ dataUri: 'javascript:alert(1)', mimeType: 'audio/webm' }))
+        ).toBeNull();
+        expect(
+            parseAudioResponse(JSON.stringify({ dataUri: 'https://evil.example/x.webm', mimeType: 'audio/webm' }))
+        ).toBeNull();
+    });
+
     it('defaults mimeType/durationSec when absent', () => {
         expect(parseAudioResponse(JSON.stringify({ dataUri: 'data:audio/webm;base64,BBB' }))).toEqual({
             dataUri: 'data:audio/webm;base64,BBB',

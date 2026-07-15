@@ -189,6 +189,7 @@ export default function StudentTestPage() {
     const [copied, setCopied] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState('');
+    const [isRecordingAudio, setIsRecordingAudio] = useState(false);
 
     const startedAtRef = useRef<string>(new Date().toISOString());
     const submitInFlightRef = useRef(false);
@@ -764,6 +765,7 @@ export default function StudentTestPage() {
                                     value={answers.get(question.id) ?? ''}
                                     onChange={(value) => setAnswers((prev) => new Map(prev).set(question.id, value))}
                                     code={code ?? ''}
+                                    onRecordingChange={setIsRecordingAudio}
                                 />
                             )}
 
@@ -778,7 +780,7 @@ export default function StudentTestPage() {
                             >
                                 <button
                                     onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
-                                    disabled={isFirst}
+                                    disabled={isFirst || isRecordingAudio}
                                     className="btn btn-secondary"
                                     style={{ opacity: isFirst ? 0.5 : 1 }}
                                 >
@@ -788,7 +790,7 @@ export default function StudentTestPage() {
                                 {isLast ? (
                                     <button
                                         onClick={handleSubmit}
-                                        disabled={submitting}
+                                        disabled={submitting || isRecordingAudio}
                                         style={{
                                             padding: '10px 32px',
                                             borderRadius: 8,
@@ -817,6 +819,7 @@ export default function StudentTestPage() {
                                         onClick={() =>
                                             setCurrentIndex((i) => Math.min(orderedQuestions.length - 1, i + 1))
                                         }
+                                        disabled={isRecordingAudio}
                                         className="btn btn-primary"
                                     >
                                         {t('tests.taking.next')}
@@ -972,9 +975,10 @@ interface QuestionCardProps {
     value: string;
     onChange: (value: string) => void;
     code: string;
+    onRecordingChange?: (recording: boolean) => void;
 }
 
-function QuestionCard({ question, index, total, value, onChange, code }: QuestionCardProps) {
+function QuestionCard({ question, index, total, value, onChange, code, onRecordingChange }: QuestionCardProps) {
     const { t } = useTranslation();
     const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown';
     const [hintVisible, setHintVisible] = useState(false);
@@ -1309,6 +1313,7 @@ function QuestionCard({ question, index, total, value, onChange, code }: Questio
                     value={value}
                     onChange={onChange}
                     maxRecordingSeconds={question.maxRecordingSeconds ?? DEFAULT_MAX_RECORDING_SECONDS}
+                    onRecordingChange={onRecordingChange}
                 />
             )}
         </div>
@@ -1330,9 +1335,15 @@ interface AudioResponseAnswerProps {
     value: string;
     onChange: (value: string) => void;
     maxRecordingSeconds: number;
+    onRecordingChange?: (recording: boolean) => void;
 }
 
-function AudioResponseAnswer({ value, onChange, maxRecordingSeconds }: AudioResponseAnswerProps) {
+/** Recordings are always `data:audio/...` URIs produced locally by blobToDataUri — reject anything else before it reaches an <audio src>. */
+function safeRecordedAudioSrc(dataUri: string): string | undefined {
+    return /^data:audio\//i.test(dataUri) ? dataUri : undefined;
+}
+
+function AudioResponseAnswer({ value, onChange, maxRecordingSeconds, onRecordingChange }: AudioResponseAnswerProps) {
     const { t } = useTranslation();
     const { status, start, stop } = useMediaRecorder();
     const [elapsedSec, setElapsedSec] = useState(0);
@@ -1340,6 +1351,10 @@ function AudioResponseAnswer({ value, onChange, maxRecordingSeconds }: AudioResp
     const elapsedRef = useRef(0);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const existing = parseAudioResponse(value);
+
+    useEffect(() => {
+        onRecordingChange?.(status === 'recording');
+    }, [status, onRecordingChange]);
 
     const stopRecording = useCallback(async () => {
         if (timerRef.current) clearInterval(timerRef.current);
@@ -1416,7 +1431,9 @@ function AudioResponseAnswer({ value, onChange, maxRecordingSeconds }: AudioResp
                     {t('tests.taking.microphone_error')}
                 </p>
             )}
-            {existing && status !== 'recording' && <audio controls src={existing.dataUri} style={{ width: '100%' }} />}
+            {existing && status !== 'recording' && safeRecordedAudioSrc(existing.dataUri) && (
+                <audio controls src={safeRecordedAudioSrc(existing.dataUri)} style={{ width: '100%' }} />
+            )}
         </div>
     );
 }
