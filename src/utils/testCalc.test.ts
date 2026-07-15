@@ -7,6 +7,7 @@ import {
     suggestAdjustmentToTarget,
     applyAdjustment,
     scoreShortAnswerExact,
+    scoreNumeric,
     scoreMultipleResponse,
     scoreCloze,
     scoreMatching,
@@ -135,6 +136,69 @@ describe('scoreShortAnswerExact', () => {
 
     it('returns null for non short-answer questions', () => {
         expect(scoreShortAnswerExact(openQuestion, 'Paris')).toBeNull();
+    });
+
+    it('matches a trimmed case-insensitive single expectedAnswer', () => {
+        expect(scoreShortAnswerExact(saQuestion, '  paris  ')).toBe(2);
+        expect(scoreShortAnswerExact(saQuestion, 'Lyon')).toBe(0);
+    });
+
+    it('matches any of expectedAnswers when set', () => {
+        const question = { ...saQuestion, expectedAnswers: ['grey', 'gray'] };
+        expect(scoreShortAnswerExact(question, 'Gray')).toBe(2);
+        expect(scoreShortAnswerExact(question, ' grey ')).toBe(2);
+        expect(scoreShortAnswerExact(question, 'green')).toBe(0);
+    });
+
+    it('prefers expectedAnswers over the legacy expectedAnswer when both are set', () => {
+        const question = { ...saQuestion, expectedAnswer: 'Paris', expectedAnswers: ['Lyon'] };
+        expect(scoreShortAnswerExact(question, 'Paris')).toBe(0);
+        expect(scoreShortAnswerExact(question, 'Lyon')).toBe(2);
+    });
+});
+
+const numericQuestion: TestQuestion = {
+    id: 'q-num',
+    prompt: 'What is pi to 2 decimal places?',
+    type: 'numeric',
+    points: 3,
+    expectedNumericValue: 3.14,
+    numericTolerance: 0.01,
+};
+
+describe('scoreNumeric', () => {
+    it('returns null when no expectedNumericValue is set', () => {
+        expect(scoreNumeric({ ...numericQuestion, expectedNumericValue: undefined }, '3.14')).toBeNull();
+    });
+
+    it('returns null for non-numeric question types', () => {
+        expect(scoreNumeric(openQuestion, '3.14')).toBeNull();
+    });
+
+    it('awards full points within tolerance', () => {
+        expect(scoreNumeric(numericQuestion, '3.14')).toBe(3);
+        expect(scoreNumeric(numericQuestion, '3.15')).toBe(3);
+        expect(scoreNumeric(numericQuestion, '3.13')).toBe(3);
+    });
+
+    it('awards zero outside tolerance', () => {
+        expect(scoreNumeric(numericQuestion, '3.20')).toBe(0);
+    });
+
+    it('defaults tolerance to 0 (exact match) when unset', () => {
+        const exact = { ...numericQuestion, numericTolerance: undefined };
+        expect(scoreNumeric(exact, '3.14')).toBe(3);
+        expect(scoreNumeric(exact, '3.140001')).toBe(0);
+    });
+
+    it('awards zero for a non-numeric response', () => {
+        expect(scoreNumeric(numericQuestion, 'not a number')).toBe(0);
+    });
+
+    it('awards zero for an empty or whitespace-only response even when expectedNumericValue is 0', () => {
+        const zeroQuestion = { ...numericQuestion, expectedNumericValue: 0 };
+        expect(scoreNumeric(zeroQuestion, '')).toBe(0);
+        expect(scoreNumeric(zeroQuestion, '   ')).toBe(0);
     });
 });
 

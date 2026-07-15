@@ -7,14 +7,19 @@ import { useApp } from '../context/AppContext';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { storageSync } from '../services/database';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
-import type { CefrLevel, MarketplaceListing } from '../types';
+import type { CefrLevel, MarketplaceListing, MarketplaceListingKind, Rubric, Test, FlashcardDeck } from '../types';
+
+const KIND_TABS: Array<MarketplaceListingKind | 'all'> = ['all', 'rubric', 'test', 'deck'];
 
 export function filterAndSortListings(
     listings: MarketplaceListing[],
     subjectFilter: string,
-    sortBy: 'newest' | 'upvotes'
+    sortBy: 'newest' | 'upvotes',
+    kindFilter: MarketplaceListingKind | 'all' = 'all'
 ): MarketplaceListing[] {
-    const filtered = subjectFilter === 'all' ? listings : listings.filter((l) => l.subject === subjectFilter);
+    const filtered = listings
+        .filter((l) => kindFilter === 'all' || l.kind === kindFilter)
+        .filter((l) => subjectFilter === 'all' || l.subject === subjectFilter);
     return [...filtered].sort((a, b) =>
         sortBy === 'upvotes'
             ? b.upvoteCount - a.upvoteCount
@@ -24,7 +29,7 @@ export function filterAndSortListings(
 
 export default function MarketplacePage() {
     const { t } = useTranslation();
-    const { rubrics, addRubric, settings } = useApp();
+    const { rubrics, tests, flashcardDecks, addRubric, addTest, addFlashcardDeck, settings } = useApp();
     const dbStatus = useDbStatus();
     const schoolId = settings.schoolId;
 
@@ -32,7 +37,8 @@ export default function MarketplacePage() {
     const [loading, setLoading] = useState(true);
     const [myUpvotes, setMyUpvotes] = useState<Set<string>>(new Set());
     const [showPublish, setShowPublish] = useState(false);
-    const [publishRubricId, setPublishRubricId] = useState('');
+    const [publishKind, setPublishKind] = useState<MarketplaceListingKind>('rubric');
+    const [publishEntityId, setPublishEntityId] = useState('');
     const [publishAttribution, setPublishAttribution] = useState(
         dbStatus.currentUser?.displayName
             ? `${t('marketplace.shared_by_prefix')} ${dbStatus.currentUser.displayName}`
@@ -43,6 +49,7 @@ export default function MarketplacePage() {
     const [publishCefrLevels, setPublishCefrLevels] = useState<CefrLevel[]>([]);
     const [subjectFilter, setSubjectFilter] = useState('all');
     const [sortBy, setSortBy] = useState<'newest' | 'upvotes'>('newest');
+    const [kindFilter, setKindFilter] = useState<MarketplaceListingKind | 'all'>('all');
 
     const subjectOptions = useMemo(
         () => Array.from(new Set(listings.map((l) => l.subject).filter((s): s is string => !!s))).sort(),
@@ -50,9 +57,11 @@ export default function MarketplacePage() {
     );
 
     const visibleListings = useMemo(
-        () => filterAndSortListings(listings, subjectFilter, sortBy),
-        [listings, subjectFilter, sortBy]
+        () => filterAndSortListings(listings, subjectFilter, sortBy, kindFilter),
+        [listings, subjectFilter, sortBy, kindFilter]
     );
+
+    const publishOptions = publishKind === 'rubric' ? rubrics : publishKind === 'test' ? tests : flashcardDecks;
 
     function toggleCefrLevel(level: CefrLevel) {
         setPublishCefrLevels((prev) => (prev.includes(level) ? prev.filter((l) => l !== level) : [...prev, level]));
@@ -76,19 +85,20 @@ export default function MarketplacePage() {
     }, [load]);
 
     async function handlePublish() {
-        const rubric = rubrics.find((r) => r.id === publishRubricId);
-        if (!rubric || !schoolId) return;
+        const entity = publishOptions.find((r) => r.id === publishEntityId);
+        if (!entity || !schoolId) return;
         setPublishing(true);
         const result = await storageSync.adapter.publishToMarketplace(
             schoolId,
-            rubric,
+            publishKind,
+            entity,
             publishAttribution.trim() || undefined,
             { cefrLevels: publishCefrLevels.length ? publishCefrLevels : undefined }
         );
         setPublishing(false);
         if (result) {
             setShowPublish(false);
-            setPublishRubricId('');
+            setPublishEntityId('');
             setPublishCefrLevels([]);
             await load();
         }
@@ -97,8 +107,11 @@ export default function MarketplacePage() {
     async function handleClone(listingId: string) {
         const cloned = await storageSync.adapter.cloneMarketplaceListing(listingId);
         if (!cloned) return;
-        const { id: _id, createdAt: _createdAt, updatedAt: _updatedAt, ...fields } = cloned;
-        addRubric(fields);
+        const { id: _id, createdAt: _createdAt, updatedAt: _updatedAt, ...fields } = cloned.entity;
+        if (cloned.kind === 'test') addTest(fields as Omit<Test, 'id' | 'createdAt' | 'updatedAt'>);
+        else if (cloned.kind === 'deck')
+            addFlashcardDeck(fields as Omit<FlashcardDeck, 'id' | 'createdAt' | 'updatedAt'>);
+        else addRubric(fields as Omit<Rubric, 'id' | 'createdAt' | 'updatedAt'>);
         setClonedId(listingId);
         setTimeout(() => setClonedId(null), 2000);
     }
@@ -164,12 +177,28 @@ export default function MarketplacePage() {
                     <div className="card" style={{ marginBottom: 20, maxWidth: 480 }}>
                         <h3 style={{ marginBottom: 12 }}>{t('marketplace.publish_title')}</h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            <label className="text-xs text-muted">{t('marketplace.publish_select_rubric')}</label>
-                            <select value={publishRubricId} onChange={(e) => setPublishRubricId(e.target.value)}>
+                            <label className="text-xs text-muted">{t('marketplace.publish_kind_label')}</label>
+                            <div style={{ display: 'flex', gap: 6 }}>
+                                {(['rubric', 'test', 'deck'] as MarketplaceListingKind[]).map((kind) => (
+                                    <button
+                                        key={kind}
+                                        type="button"
+                                        className={`btn btn-sm ${publishKind === kind ? 'btn-primary' : 'btn-secondary'}`}
+                                        onClick={() => {
+                                            setPublishKind(kind);
+                                            setPublishEntityId('');
+                                        }}
+                                    >
+                                        {t(`marketplace.kind_${kind}`)}
+                                    </button>
+                                ))}
+                            </div>
+                            <label className="text-xs text-muted">{t('marketplace.publish_select_entity')}</label>
+                            <select value={publishEntityId} onChange={(e) => setPublishEntityId(e.target.value)}>
                                 <option value="">{t('marketplace.publish_select_placeholder')}</option>
-                                {rubrics.map((r) => (
-                                    <option key={r.id} value={r.id}>
-                                        {r.name}
+                                {publishOptions.map((entity) => (
+                                    <option key={entity.id} value={entity.id}>
+                                        {entity.name}
                                     </option>
                                 ))}
                             </select>
@@ -199,7 +228,7 @@ export default function MarketplacePage() {
                             <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                                 <button
                                     className="btn btn-primary btn-sm"
-                                    disabled={!publishRubricId || publishing}
+                                    disabled={!publishEntityId || publishing}
                                     onClick={handlePublish}
                                 >
                                     {t('marketplace.publish_confirm')}
@@ -224,6 +253,18 @@ export default function MarketplacePage() {
                     </div>
                 ) : (
                     <>
+                        <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
+                            {KIND_TABS.map((kind) => (
+                                <button
+                                    key={kind}
+                                    type="button"
+                                    className={`btn btn-sm ${kindFilter === kind ? 'btn-primary' : 'btn-secondary'}`}
+                                    onClick={() => setKindFilter(kind)}
+                                >
+                                    {t(kind === 'all' ? 'marketplace.filter_kind_all' : `marketplace.kind_${kind}s`)}
+                                </button>
+                            ))}
+                        </div>
                         <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
                             {subjectOptions.length > 0 && (
                                 <div className="form-group" style={{ marginBottom: 0, maxWidth: 180 }}>
@@ -259,6 +300,9 @@ export default function MarketplacePage() {
                             {visibleListings.map((listing) => (
                                 <div key={listing.id} className="card">
                                     <div style={{ marginBottom: 8 }}>
+                                        <span className="badge badge-blue" style={{ marginBottom: 4 }}>
+                                            {t(`marketplace.kind_${listing.kind}`)}
+                                        </span>
                                         <h3>{listing.name}</h3>
                                         {listing.subject && (
                                             <div className="text-muted text-xs" style={{ marginTop: 2 }}>

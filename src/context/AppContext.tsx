@@ -42,6 +42,7 @@ import type {
     StandardMasteryTarget,
     NewsFlash,
     NewsFlashRead,
+    QuestionBankItem,
 } from '../types';
 import {
     loadStore,
@@ -74,6 +75,7 @@ import {
     saveStandardMasteryTargets,
     saveNewsFlashes,
     saveNewsFlashReads,
+    saveQuestionBank,
     saveUserTemplates,
     importFullBackup,
     loadPendingQueue,
@@ -176,7 +178,10 @@ type Action =
     | { type: 'DELETE_NEWS_FLASH'; id: string }
     | { type: 'SAVE_NEWS_FLASH_READ'; payload: NewsFlashRead }
     | { type: 'SAVE_USER_TEMPLATE'; payload: UserTemplate }
-    | { type: 'DELETE_USER_TEMPLATE'; id: string };
+    | { type: 'DELETE_USER_TEMPLATE'; id: string }
+    | { type: 'ADD_QUESTION_BANK_ITEM'; payload: QuestionBankItem }
+    | { type: 'UPDATE_QUESTION_BANK_ITEM'; payload: QuestionBankItem }
+    | { type: 'DELETE_QUESTION_BANK_ITEM'; id: string };
 
 // Type-only handle on the lazily-loaded singleton's shape — pure type-level, so it
 // doesn't force the (heavy) module to be imported as a value just to describe it.
@@ -780,6 +785,22 @@ function reducer(state: StoreData, action: Action): StoreData {
             if (isOffline()) saveUserTemplates(next);
             return { ...state, userTemplates: next };
         }
+        case 'ADD_QUESTION_BANK_ITEM': {
+            const next = [...state.questionBank, { ...action.payload, updatedAt: new Date().toISOString() }];
+            if (isOffline()) saveQuestionBank(next);
+            return { ...state, questionBank: next };
+        }
+        case 'UPDATE_QUESTION_BANK_ITEM': {
+            const payload = { ...action.payload, updatedAt: new Date().toISOString() };
+            const next = state.questionBank.map((i) => (i.id === payload.id ? payload : i));
+            if (isOffline()) saveQuestionBank(next);
+            return { ...state, questionBank: next };
+        }
+        case 'DELETE_QUESTION_BANK_ITEM': {
+            const next = state.questionBank.filter((i) => i.id !== action.id);
+            if (isOffline()) saveQuestionBank(next);
+            return { ...state, questionBank: next };
+        }
         default:
             return state;
     }
@@ -843,6 +864,9 @@ interface AppContextValue extends StoreData {
     addCommentBankItem: (text: string, tags: string[]) => CommentBankItem;
     updateCommentBankItem: (item: CommentBankItem) => void;
     deleteCommentBankItem: (id: string) => void;
+    addQuestionBankItem: (question: QuestionBankItem['question'], tags: string[]) => QuestionBankItem;
+    updateQuestionBankItem: (item: QuestionBankItem) => void;
+    deleteQuestionBankItem: (id: string) => void;
     addExportTemplate: (t: Omit<ExportTemplate, 'id' | 'addedAt'>) => ExportTemplate;
     deleteExportTemplate: (id: string) => void;
     // Peer Review
@@ -1024,6 +1048,7 @@ async function flushToLocalStorage(merged: StoreData) {
     saveStandardMasteryTargets(merged.standardMasteryTargets);
     saveNewsFlashes(merged.newsFlashes);
     saveNewsFlashReads(merged.newsFlashReads);
+    saveQuestionBank(merged.questionBank);
 
     // Best-effort: a recording blob whose session was deleted on another device has no
     // app-level delete call to clean it up locally, so sweep for orphans after every sync.
@@ -1052,7 +1077,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const merged = { ...mergedIn, classes: sanitizeClassYears(mergedIn.classes) };
         dispatch({ type: 'SET_ALL', payload: merged });
         if (seedDiffBaseline) {
-            // eslint-disable-next-line react-hooks/immutability -- cross-effect ref hand-off is intentional
             prevStateRef.current = merged;
         }
     }, []);
@@ -1371,7 +1395,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // ── Supabase: delta-sync after each mutation ───────────────────────────────
     useEffect(() => {
         const prev = prevStateRef.current;
-        // eslint-disable-next-line react-hooks/immutability -- also hand-off-written by applyHydrated above so a fresh server pull isn't re-diffed as a local edit
+
         prevStateRef.current = state;
         const db = getDb();
         if (!db?.storageSync.isConnected()) return;
@@ -1421,6 +1445,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         diff(prev.standardMasteryTargets, state.standardMasteryTargets, 'standardMasteryTarget', (t) => t.id);
         diff(prev.newsFlashes, state.newsFlashes, 'newsFlash', (f) => f.id);
         diff(prev.newsFlashReads, state.newsFlashReads, 'newsFlashRead', (r) => r.id);
+        diff(prev.questionBank, state.questionBank, 'questionBankItem', (q) => q.id);
 
         if (prev.settings !== state.settings && JSON.stringify(prev.settings) !== JSON.stringify(state.settings)) {
             storageSync.pushOne('settings', 'upsert', state.settings);
@@ -1639,6 +1664,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
         []
     );
     const deleteCommentBankItem = useCallback((id: string) => dispatch({ type: 'DELETE_COMMENT_BANK_ITEM', id }), []);
+
+    const addQuestionBankItem = useCallback(
+        (question: QuestionBankItem['question'], tags: string[]): QuestionBankItem => {
+            const item: QuestionBankItem = { id: nanoid(), question, tags, createdAt: new Date().toISOString() };
+            dispatch({ type: 'ADD_QUESTION_BANK_ITEM', payload: item });
+            return item;
+        },
+        []
+    );
+    const updateQuestionBankItem = useCallback(
+        (item: QuestionBankItem) => dispatch({ type: 'UPDATE_QUESTION_BANK_ITEM', payload: item }),
+        []
+    );
+    const deleteQuestionBankItem = useCallback((id: string) => dispatch({ type: 'DELETE_QUESTION_BANK_ITEM', id }), []);
 
     const addExportTemplate = useCallback((t: Omit<ExportTemplate, 'id' | 'addedAt'>): ExportTemplate => {
         const template: ExportTemplate = { ...t, id: nanoid(), addedAt: new Date().toISOString() };
@@ -2207,6 +2246,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
             addCommentBankItem,
             updateCommentBankItem,
             deleteCommentBankItem,
+            addQuestionBankItem,
+            updateQuestionBankItem,
+            deleteQuestionBankItem,
             addExportTemplate,
             deleteExportTemplate,
             savePeerReview,
@@ -2347,6 +2389,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
             addCommentBankItem,
             updateCommentBankItem,
             deleteCommentBankItem,
+            addQuestionBankItem,
+            updateQuestionBankItem,
+            deleteQuestionBankItem,
             addExportTemplate,
             deleteExportTemplate,
             savePeerReview,

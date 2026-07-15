@@ -1,7 +1,18 @@
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { ToastContext } from '../context/ToastContext';
-import { Clock, CheckCircle, Copy, AlertTriangle, Loader2, Eye, ChevronUp, ChevronDown, Lightbulb } from 'lucide-react';
+import {
+    Clock,
+    CheckCircle,
+    XCircle,
+    Copy,
+    AlertTriangle,
+    Loader2,
+    Eye,
+    ChevronUp,
+    ChevronDown,
+    Lightbulb,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { decodeTestAssignment } from '../utils/shareCode';
 import { encodeTestSubmission } from '../utils/shareCode';
@@ -16,12 +27,16 @@ import {
 } from '../store/storage';
 import SebGate from '../components/Tests/SebGate';
 import HelpPopover from '../components/Tests/HelpPopover';
+import RichContent from '../components/Editor/RichContent';
 import { useLiveSessionTelemetry } from '../hooks/useLiveSessionTelemetry';
 import { seededShuffle } from '../utils/seededShuffle';
 import { isStagedTest, entrySectionId, sectionQuestions, resolveNextSection } from '../utils/placementRouting';
 import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse';
 import { initClientLogger, logEvent } from '../services/logging/clientLogger';
 import { TestAdapter } from '../services/database/TestAdapter';
+import { useMediaRecorder } from '../hooks/useMediaRecorder';
+import { encodeAudioResponse, parseAudioResponse } from '../utils/audioResponseCode';
+import { autoScoreResponse } from '../utils/testCalc';
 import type {
     TestAnswer,
     TestAssignmentContent,
@@ -180,6 +195,7 @@ export default function StudentTestPage() {
     const [copied, setCopied] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState('');
+    const [isRecordingAudio, setIsRecordingAudio] = useState(false);
 
     const startedAtRef = useRef<string>(new Date().toISOString());
     const submitInFlightRef = useRef(false);
@@ -710,7 +726,64 @@ export default function StudentTestPage() {
                                 </button>
                             )}
                         </div>
-                    ) : (
+                    ) : null}
+
+                    {submitted && test?.mode === 'practice' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
+                            {orderedQuestions.map((q, index) => {
+                                const response = answers.get(q.id) ?? '';
+                                const earned = autoScoreResponse(q, response);
+                                const isCorrect = earned >= q.points;
+                                return (
+                                    <div key={q.id} className="card" style={{ padding: 14 }}>
+                                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                                            {isCorrect ? (
+                                                <CheckCircle
+                                                    size={18}
+                                                    style={{ color: 'var(--green)', flexShrink: 0, marginTop: 2 }}
+                                                />
+                                            ) : (
+                                                <XCircle
+                                                    size={18}
+                                                    style={{ color: 'var(--red)', flexShrink: 0, marginTop: 2 }}
+                                                />
+                                            )}
+                                            <div style={{ flex: 1 }}>
+                                                <div className="text-muted text-xs">
+                                                    {t('tests.taking.practice_review_question_number', {
+                                                        number: index + 1,
+                                                    })}
+                                                </div>
+                                                <div style={{ fontWeight: 600, marginTop: 2 }}>
+                                                    {q.type === 'cloze' || q.type === 'cloze-dropdown'
+                                                        ? t(
+                                                              q.type === 'cloze-dropdown'
+                                                                  ? 'tests.taking.cloze_dropdown_instruction'
+                                                                  : 'tests.taking.cloze_instruction'
+                                                          )
+                                                        : q.prompt}
+                                                </div>
+                                                {q.explanation && (
+                                                    <p
+                                                        className="text-muted text-sm"
+                                                        style={{
+                                                            marginTop: 8,
+                                                            marginBottom: 0,
+                                                            whiteSpace: 'pre-wrap',
+                                                        }}
+                                                    >
+                                                        {q.explanation}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    {!submitted && (
                         <>
                             {/* Section label */}
                             {currentSection && (
@@ -731,6 +804,19 @@ export default function StudentTestPage() {
                                     {currentSection.title}
                                 </div>
                             )}
+                            {currentSection?.content && (
+                                <div
+                                    style={{
+                                        marginBottom: 16,
+                                        padding: 16,
+                                        background: 'var(--bg-elevated)',
+                                        border: '1px solid var(--border)',
+                                        borderRadius: 10,
+                                    }}
+                                >
+                                    <RichContent html={currentSection.content} />
+                                </div>
+                            )}
 
                             {question && (
                                 <QuestionCard
@@ -741,6 +827,7 @@ export default function StudentTestPage() {
                                     value={answers.get(question.id) ?? ''}
                                     onChange={(value) => setAnswers((prev) => new Map(prev).set(question.id, value))}
                                     code={code ?? ''}
+                                    onRecordingChange={setIsRecordingAudio}
                                 />
                             )}
 
@@ -755,7 +842,7 @@ export default function StudentTestPage() {
                             >
                                 <button
                                     onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
-                                    disabled={isFirst}
+                                    disabled={isFirst || isRecordingAudio}
                                     className="btn btn-secondary"
                                     style={{ opacity: isFirst ? 0.5 : 1 }}
                                 >
@@ -773,7 +860,7 @@ export default function StudentTestPage() {
                                 ) : isLast ? (
                                     <button
                                         onClick={handleSubmit}
-                                        disabled={submitting}
+                                        disabled={submitting || isRecordingAudio}
                                         style={{
                                             padding: '10px 32px',
                                             borderRadius: 8,
@@ -802,6 +889,7 @@ export default function StudentTestPage() {
                                         onClick={() =>
                                             setCurrentIndex((i) => Math.min(orderedQuestions.length - 1, i + 1))
                                         }
+                                        disabled={isRecordingAudio}
                                         className="btn btn-primary"
                                     >
                                         {t('tests.taking.next')}
@@ -957,9 +1045,10 @@ interface QuestionCardProps {
     value: string;
     onChange: (value: string) => void;
     code: string;
+    onRecordingChange?: (recording: boolean) => void;
 }
 
-function QuestionCard({ question, index, total, value, onChange, code }: QuestionCardProps) {
+function QuestionCard({ question, index, total, value, onChange, code, onRecordingChange }: QuestionCardProps) {
     const { t } = useTranslation();
     const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown';
     const [hintVisible, setHintVisible] = useState(false);
@@ -986,14 +1075,28 @@ function QuestionCard({ question, index, total, value, onChange, code }: Questio
             >
                 {t('tests.taking.question_label', { current: index + 1, total })}
             </div>
-            <p style={{ margin: '0 0 16px', fontSize: '1rem', lineHeight: 1.6, color: 'var(--text)' }}>
-                {isCloze
-                    ? t(
-                          question.type === 'cloze-dropdown'
-                              ? 'tests.taking.cloze_dropdown_instruction'
-                              : 'tests.taking.cloze_instruction'
-                      )
-                    : question.prompt}
+            <div
+                style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: 6,
+                    margin: '0 0 16px',
+                    fontSize: '1rem',
+                    lineHeight: 1.6,
+                    color: 'var(--text)',
+                }}
+            >
+                {isCloze ? (
+                    <p style={{ margin: 0 }}>
+                        {t(
+                            question.type === 'cloze-dropdown'
+                                ? 'tests.taking.cloze_dropdown_instruction'
+                                : 'tests.taking.cloze_instruction'
+                        )}
+                    </p>
+                ) : (
+                    <RichContent html={question.prompt} className="rm-question-prompt" />
+                )}
                 {(question.type === 'true-false' ||
                     question.type === 'multiple-response' ||
                     question.type === 'matching' ||
@@ -1005,7 +1108,7 @@ function QuestionCard({ question, index, total, value, onChange, code }: Questio
                         {t(`tests.help.${question.type.replace('-', '_')}_student_body`)}
                     </HelpPopover>
                 )}
-            </p>
+            </div>
 
             {/* Image stimulus */}
             {safeImgSrc(question.imageUrl) && (
@@ -1102,6 +1205,13 @@ function QuestionCard({ question, index, total, value, onChange, code }: Questio
                                 checked={value === opt.id}
                                 onChange={() => onChange(opt.id)}
                             />
+                            {safeImgSrc(opt.imageUrl) && (
+                                <img
+                                    src={safeImgSrc(opt.imageUrl)}
+                                    alt={opt.text ? '' : t('tests.taking.option_image_fallback')}
+                                    style={{ maxWidth: 80, maxHeight: 60, borderRadius: 4, objectFit: 'contain' }}
+                                />
+                            )}
                             <span style={{ color: 'var(--text)' }}>{opt.text}</span>
                         </label>
                     ))}
@@ -1139,6 +1249,13 @@ function QuestionCard({ question, index, total, value, onChange, code }: Questio
                                         onChange(JSON.stringify(next));
                                     }}
                                 />
+                                {safeImgSrc(opt.imageUrl) && (
+                                    <img
+                                        src={safeImgSrc(opt.imageUrl)}
+                                        alt={opt.text ? '' : t('tests.taking.option_image_fallback')}
+                                        style={{ maxWidth: 80, maxHeight: 60, borderRadius: 4, objectFit: 'contain' }}
+                                    />
+                                )}
                                 <span style={{ color: 'var(--text)' }}>{opt.text}</span>
                             </label>
                         );
@@ -1204,6 +1321,25 @@ function QuestionCard({ question, index, total, value, onChange, code }: Questio
                 />
             )}
 
+            {question.type === 'numeric' && (
+                <input
+                    type="number"
+                    step="any"
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    placeholder={t('tests.taking.numeric_placeholder')}
+                    style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: 8,
+                        border: '1px solid var(--border)',
+                        fontSize: '0.95rem',
+                        background: 'var(--bg)',
+                        color: 'var(--text)',
+                    }}
+                />
+            )}
+
             {question.type === 'open' && (
                 <>
                     <textarea
@@ -1240,6 +1376,133 @@ function QuestionCard({ question, index, total, value, onChange, code }: Questio
 
             {question.type === 'ordering' && (
                 <OrderingAnswer question={question} value={value} onChange={onChange} code={code} />
+            )}
+
+            {question.type === 'audio-response' && (
+                <AudioResponseAnswer
+                    value={value}
+                    onChange={onChange}
+                    maxRecordingSeconds={question.maxRecordingSeconds ?? DEFAULT_MAX_RECORDING_SECONDS}
+                    onRecordingChange={onRecordingChange}
+                />
+            )}
+        </div>
+    );
+}
+
+const DEFAULT_MAX_RECORDING_SECONDS = 60;
+
+function blobToDataUri(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(blob);
+    });
+}
+
+interface AudioResponseAnswerProps {
+    value: string;
+    onChange: (value: string) => void;
+    maxRecordingSeconds: number;
+    onRecordingChange?: (recording: boolean) => void;
+}
+
+/** Recordings are always `data:audio/...` URIs produced locally by blobToDataUri — reject anything else before it reaches an <audio src>. */
+function safeRecordedAudioSrc(dataUri: string): string | undefined {
+    return /^data:audio\//i.test(dataUri) ? dataUri : undefined;
+}
+
+function AudioResponseAnswer({ value, onChange, maxRecordingSeconds, onRecordingChange }: AudioResponseAnswerProps) {
+    const { t } = useTranslation();
+    const { status, start, stop } = useMediaRecorder();
+    const [elapsedSec, setElapsedSec] = useState(0);
+    const [micError, setMicError] = useState(false);
+    const elapsedRef = useRef(0);
+    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const existing = parseAudioResponse(value);
+
+    useEffect(() => {
+        onRecordingChange?.(status === 'recording');
+    }, [status, onRecordingChange]);
+
+    const stopRecording = useCallback(async () => {
+        if (timerRef.current) clearInterval(timerRef.current);
+        const result = await stop();
+        if (result) {
+            const dataUri = await blobToDataUri(result.blob);
+            onChange(encodeAudioResponse({ dataUri, mimeType: result.mimeType, durationSec: elapsedRef.current }));
+        }
+    }, [stop, onChange]);
+
+    async function startRecording() {
+        setMicError(false);
+        elapsedRef.current = 0;
+        setElapsedSec(0);
+        const ok = await start();
+        if (!ok) {
+            setMicError(true);
+            return;
+        }
+        timerRef.current = setInterval(() => {
+            elapsedRef.current += 1;
+            setElapsedSec(elapsedRef.current);
+            if (elapsedRef.current >= maxRecordingSeconds) void stopRecording();
+        }, 1000);
+    }
+
+    useEffect(() => {
+        return () => {
+            if (timerRef.current) clearInterval(timerRef.current);
+        };
+    }, []);
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {status === 'recording' ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <span
+                        style={{
+                            width: 10,
+                            height: 10,
+                            borderRadius: '50%',
+                            background: 'var(--red)',
+                            animation: 'pulse 1s infinite',
+                            flexShrink: 0,
+                        }}
+                    />
+                    <span style={{ fontSize: '0.9rem', color: 'var(--text)' }}>
+                        {t('tests.taking.recording_in_progress', {
+                            elapsed: elapsedSec,
+                            max: maxRecordingSeconds,
+                        })}
+                    </span>
+                    <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => void stopRecording()}
+                        style={{ marginLeft: 'auto' }}
+                    >
+                        {t('tests.taking.stop_recording')}
+                    </button>
+                </div>
+            ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                    <button type="button" className="btn btn-primary btn-sm" onClick={() => void startRecording()}>
+                        {existing ? t('tests.taking.re_record') : t('tests.taking.start_recording')}
+                    </button>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        {t('tests.taking.max_recording_note', { max: maxRecordingSeconds })}
+                    </span>
+                </div>
+            )}
+            {micError && (
+                <p style={{ color: 'var(--red)', fontSize: '0.85rem', margin: 0 }}>
+                    {t('tests.taking.microphone_error')}
+                </p>
+            )}
+            {existing && status !== 'recording' && safeRecordedAudioSrc(existing.dataUri) && (
+                <audio controls src={safeRecordedAudioSrc(existing.dataUri)} style={{ width: '100%' }} />
             )}
         </div>
     );

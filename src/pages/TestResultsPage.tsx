@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, XCircle, Award, Languages, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, XCircle, Award, Languages, ShieldAlert, Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import HelpPopover from '../components/ui/HelpPopover';
@@ -9,6 +9,8 @@ import { calcTestMaxPoints, calcStudentTestRawPoints, calcTestPercentage, autoSc
 import { isStagedTest, maxPointsForPath, sectionQuestions, scoreSectionPct } from '../utils/placementRouting';
 import { calcLetterGrade, calcGradeColor } from '../utils/gradeCalc';
 import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse';
+import { calcTestTimeOnTask } from '../utils/proctorAggregator';
+import { parseAudioResponse } from '../utils/audioResponseCode';
 import type { TestAnswer, TestQuestion, ProctorEventType } from '../types';
 
 function clamp(value: number, min: number, max: number): number {
@@ -28,7 +30,8 @@ function isAutoScored(question: TestQuestion, answer: TestAnswer | undefined): b
         question.type === 'ordering' ||
         question.type === 'categorize' ||
         question.type === 'hot-text' ||
-        (question.type === 'short-answer' && !!question.expectedAnswer)
+        (question.type === 'short-answer' && !!question.expectedAnswer) ||
+        (question.type === 'numeric' && question.expectedNumericValue !== undefined)
     );
 }
 
@@ -238,6 +241,11 @@ function formatStudentResponse(
             </>
         );
     }
+    if (question.type === 'audio-response') {
+        const audio = parseAudioResponse(response);
+        if (!audio) return t('tests.results.no_response');
+        return <audio controls src={audio.dataUri} style={{ width: '100%', maxWidth: 360 }} />;
+    }
     return response || t('tests.results.no_response');
 }
 
@@ -260,6 +268,7 @@ export default function TestResultsPage() {
     const test = tests.find((tst) => tst.id === testId);
     const studentTest = studentTests.find((st) => st.id === studentTestId && st.testId === testId);
     const student = students.find((s) => s.id === studentTest?.studentId);
+    const isLateSubmission = !!test?.dueDate && !!studentTest?.submittedAt && studentTest.submittedAt > test.dueDate;
 
     const [drafts, setDrafts] = useState<Record<string, { pointsEarned: string; feedback: string }>>({});
 
@@ -347,6 +356,9 @@ export default function TestResultsPage() {
         eventCounts.set(ev.type, (eventCounts.get(ev.type) ?? 0) + 1);
     }
 
+    const timeOnTask = test ? calcTestTimeOnTask(test, studentTests) : null;
+    const studentTimeOnTask = timeOnTask?.perStudent.find((row) => row.studentId === studentTest?.studentId) ?? null;
+
     function getDraft(questionId: string, answer: TestAnswer | undefined) {
         return (
             drafts[questionId] ?? {
@@ -421,6 +433,14 @@ export default function TestResultsPage() {
                     <h2 style={{ margin: '0 0 4px' }}>{test.name}</h2>
                     <p className="text-muted text-sm" style={{ margin: '0 0 14px' }}>
                         {t('tests.results.student_label')}: {student?.name ?? studentTest.studentId}
+                        {isLateSubmission && (
+                            <span
+                                className="badge badge-red"
+                                style={{ marginLeft: 8, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                            >
+                                <Clock size={12} /> {t('tests.results.late_submission')}
+                            </span>
+                        )}
                     </p>
                     <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'flex-end' }}>
                         <div>
@@ -487,6 +507,21 @@ export default function TestResultsPage() {
                         {t('tests.results.integrity_title')}
                         <HelpPopover title={t('help.proctoring_title')}>{t('help.proctoring_body')}</HelpPopover>
                     </h3>
+                    {studentTimeOnTask && (
+                        <p
+                            className="text-muted text-sm"
+                            style={{ margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: 6 }}
+                        >
+                            <Clock size={14} />
+                            {t('tests.results.time_on_task', {
+                                minutes: studentTimeOnTask.durationMinutes.toFixed(0),
+                                average: (timeOnTask?.averageMinutes ?? 0).toFixed(0),
+                            })}
+                            {studentTimeOnTask.isOutlier && (
+                                <span className="badge badge-yellow">{t('tests.results.time_on_task_outlier')}</span>
+                            )}
+                        </p>
+                    )}
                     {(studentTest.events ?? []).length === 0 ? (
                         <p className="text-muted text-sm" style={{ margin: 0 }}>
                             {t('tests.results.integrity_no_events')}
@@ -513,6 +548,7 @@ export default function TestResultsPage() {
                         const allowManual =
                             question.type === 'open' ||
                             question.type === 'short-answer' ||
+                            question.type === 'numeric' ||
                             question.type === 'multiple-choice' ||
                             question.type === 'multiple-response' ||
                             question.type === 'true-false' ||
@@ -521,7 +557,8 @@ export default function TestResultsPage() {
                             question.type === 'matching' ||
                             question.type === 'ordering' ||
                             question.type === 'categorize' ||
-                            question.type === 'hot-text';
+                            question.type === 'hot-text' ||
+                            question.type === 'audio-response';
 
                         return (
                             <div className="card" key={question.id}>

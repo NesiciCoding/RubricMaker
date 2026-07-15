@@ -98,17 +98,20 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                 .map((studentId) => {
                     const student = students.find((s) => s.id === studentId);
                     const st = relevantStudentTests.find((row) => row.studentId === studentId);
+                    const submitted = st?.status === 'submitted' || st?.status === 'graded';
+                    const isLate = submitted && !!test.dueDate && !!st?.submittedAt && st.submittedAt > test.dueDate;
                     return {
                         studentId,
                         name: student?.name ?? studentId,
                         persistedEvents: st?.events ?? [],
                         persistedAnswers: st?.answers ?? [],
-                        status:
-                            st?.status === 'submitted' || st?.status === 'graded'
-                                ? 'submitted'
-                                : st?.status === 'in_progress'
-                                  ? 'opened'
-                                  : undefined,
+                        status: isLate
+                            ? 'late'
+                            : submitted
+                              ? 'submitted'
+                              : st?.status === 'in_progress'
+                                ? 'opened'
+                                : undefined,
                     } satisfies MonitorStudent;
                 })
                 .filter((row) => students.some((s) => s.id === row.studentId));

@@ -12,12 +12,17 @@ import {
     Image,
     Music,
     Lightbulb,
+    MessageCircle,
     ChevronUp,
     ChevronDown,
+    BookmarkPlus,
 } from 'lucide-react';
 import type { DraggableProvidedDragHandleProps } from '@hello-pangea/dnd';
 import { useApp } from '../../context/AppContext';
+import { useToast } from '../../hooks/useToast';
 import { nanoid } from '../../utils/nanoid';
+import EssayEditor from '../Editor/EssayEditor';
+import ClozeGapEditor from './ClozeGapEditor';
 import StandardsPickerModal from '../Standards/StandardsPickerModal';
 import CefrPickerModal from '../CEFR/CefrPickerModal';
 import GrammarItemSelect from '../CEFR/GrammarItemSelect';
@@ -58,7 +63,11 @@ const QUESTION_TYPES: TestQuestionType[] = [
     'ordering',
     'categorize',
     'hot-text',
+    'numeric',
+    'audio-response',
 ];
+
+const DEFAULT_MAX_RECORDING_SECONDS = 60;
 
 export default function QuestionEditor({
     question,
@@ -70,31 +79,15 @@ export default function QuestionEditor({
     onRemove,
 }: Props) {
     const { t } = useTranslation();
-    const { settings } = useApp();
+    const { settings, addQuestionBankItem } = useApp();
+    const { showToast } = useToast();
     const [pickingStandard, setPickingStandard] = React.useState(false);
     const [pickingCefr, setPickingCefr] = React.useState(false);
-    const promptRef = React.useRef<HTMLTextAreaElement>(null);
+    const [expandedOptionImages, setExpandedOptionImages] = React.useState<Set<string>>(new Set());
     const hotTextPassageRef = React.useRef<HTMLTextAreaElement>(null);
 
     function update(patch: Partial<TestQuestion>) {
         onChange({ ...question, ...patch });
-    }
-
-    function insertIntoPrompt(snippet: string) {
-        const el = promptRef.current;
-        if (!el) {
-            update({ prompt: question.prompt + snippet });
-            return;
-        }
-        const start = el.selectionStart ?? question.prompt.length;
-        const end = el.selectionEnd ?? question.prompt.length;
-        const next = question.prompt.slice(0, start) + snippet + question.prompt.slice(end);
-        update({ prompt: next });
-        requestAnimationFrame(() => {
-            el.focus();
-            const cursor = start + snippet.length;
-            el.setSelectionRange(cursor, cursor);
-        });
     }
 
     function changeType(type: TestQuestionType) {
@@ -149,6 +142,12 @@ export default function QuestionEditor({
                 linkedGrammarItemId,
                 hotTextPassage: question.hotTextPassage ?? '',
                 hotTextCorrectIndices: question.hotTextCorrectIndices ?? [],
+            });
+        } else if (type === 'audio-response') {
+            update({
+                type,
+                linkedGrammarItemId,
+                maxRecordingSeconds: question.maxRecordingSeconds ?? DEFAULT_MAX_RECORDING_SECONDS,
             });
         } else {
             update({ type, linkedGrammarItemId });
@@ -352,6 +351,12 @@ export default function QuestionEditor({
         update({ linkedStandards: next });
     }
 
+    function saveToBank() {
+        const { sectionId: _sectionId, ...forBank } = question;
+        addQuestionBankItem(forBank, []);
+        showToast(t('questionBank.saved_toast'), 'success');
+    }
+
     function addCefrDescriptor(descriptor: LinkedCefrDescriptor) {
         update({ linkedCefrDescriptors: [...(question.linkedCefrDescriptors ?? []), descriptor] });
     }
@@ -386,6 +391,15 @@ export default function QuestionEditor({
                 </div>
                 <div style={{ display: 'flex', gap: 4 }}>
                     <button
+                        type="button"
+                        className="btn btn-ghost btn-icon btn-sm"
+                        aria-label={t('questionBank.save_to_bank')}
+                        title={t('questionBank.save_to_bank')}
+                        onClick={saveToBank}
+                    >
+                        <BookmarkPlus size={14} />
+                    </button>
+                    <button
                         className="btn btn-ghost btn-icon btn-sm"
                         aria-label={t('tests.remove_question')}
                         style={{ color: 'var(--red)' }}
@@ -398,15 +412,26 @@ export default function QuestionEditor({
 
             <div className="form-group" style={{ marginBottom: 0 }}>
                 <label htmlFor={`question-prompt-${question.id}`}>{t('tests.question_prompt_label')}</label>
-                <textarea
-                    ref={promptRef}
-                    id={`question-prompt-${question.id}`}
-                    value={question.prompt}
-                    onChange={(e) => update({ prompt: e.target.value })}
-                    rows={2}
-                    placeholder={t('tests.question_prompt_placeholder')}
-                    style={{ resize: 'vertical' }}
-                />
+                {question.type === 'cloze' || question.type === 'cloze-dropdown' ? (
+                    // Cloze/cloze-dropdown gaps are authored as {{gap|alt}} syntax directly in the
+                    // prompt string (see clozeParse.ts) — ClozeGapEditor edits that string via
+                    // clickable pills instead of hand-typed syntax, but the stored format and the
+                    // parse/scoring layer are unchanged.
+                    <ClozeGapEditor
+                        value={question.prompt}
+                        onChange={(prompt) => update({ prompt })}
+                        allowDropdown={question.type === 'cloze-dropdown'}
+                        insertGapLabel={t('tests.cloze_insert_gap')}
+                        insertDropdownGapLabel={t('tests.cloze_insert_dropdown_gap')}
+                    />
+                ) : (
+                    <EssayEditor
+                        content={question.prompt}
+                        onChange={(html) => update({ prompt: html })}
+                        minHeight={80}
+                        allowPageMode={false}
+                    />
+                )}
             </div>
 
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
@@ -541,6 +566,29 @@ export default function QuestionEditor({
                 />
             </div>
 
+            {/* Practice-mode explanation */}
+            <div className="form-group" style={{ marginBottom: 0 }}>
+                <label
+                    htmlFor={`question-explanation-${question.id}`}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                >
+                    <MessageCircle size={14} /> {t('tests.question_explanation_label')}{' '}
+                    <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
+                        ({t('essay_assignment.optional')})
+                    </span>
+                </label>
+                <textarea
+                    id={`question-explanation-${question.id}`}
+                    value={question.explanation ?? ''}
+                    onChange={(e) => update({ explanation: e.target.value || undefined })}
+                    placeholder={t('tests.question_explanation_placeholder')}
+                    rows={2}
+                />
+                <p className="text-muted text-xs" style={{ marginTop: 4 }}>
+                    {t('tests.question_explanation_help')}
+                </p>
+            </div>
+
             {(question.type === 'cloze' ||
                 question.type === 'cloze-dropdown' ||
                 question.type === 'hot-text' ||
@@ -568,46 +616,106 @@ export default function QuestionEditor({
                             {t(`tests.help.${question.type.replace('-', '_')}_teacher_body`)}
                         </HelpPopover>
                     </label>
-                    {(question.options ?? []).map((option) => (
-                        <div key={option.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <button
-                                type="button"
-                                className="btn btn-ghost btn-icon btn-sm"
-                                aria-label={t('tests.mark_correct_option')}
-                                aria-pressed={option.isCorrect}
-                                title={t('tests.mark_correct_option')}
-                                onClick={() =>
-                                    question.type === 'multiple-response'
-                                        ? toggleOptionCorrect(option.id)
-                                        : setCorrectOption(option.id)
-                                }
-                                style={{
-                                    color: option.isCorrect ? 'var(--green)' : 'var(--text-muted)',
-                                    flexShrink: 0,
-                                }}
-                            >
-                                <Check size={16} />
-                            </button>
-                            <input
-                                type="text"
-                                value={option.text}
-                                onChange={(e) => updateOption(option.id, { text: e.target.value })}
-                                placeholder={t('tests.option_placeholder')}
-                                style={{ flex: 1 }}
-                                aria-label={t('tests.option_text_label')}
-                            />
-                            <button
-                                type="button"
-                                className="btn btn-ghost btn-icon btn-sm"
-                                aria-label={t('tests.remove_option')}
-                                style={{ color: 'var(--red)' }}
-                                disabled={(question.options ?? []).length <= 1}
-                                onClick={() => removeOption(option.id)}
-                            >
-                                <X size={14} />
-                            </button>
-                        </div>
-                    ))}
+                    {(question.options ?? []).map((option) => {
+                        const showImageField = expandedOptionImages.has(option.id) || !!option.imageUrl;
+                        return (
+                            <div key={option.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <button
+                                        type="button"
+                                        className="btn btn-ghost btn-icon btn-sm"
+                                        aria-label={t('tests.mark_correct_option')}
+                                        aria-pressed={option.isCorrect}
+                                        title={t('tests.mark_correct_option')}
+                                        onClick={() =>
+                                            question.type === 'multiple-response'
+                                                ? toggleOptionCorrect(option.id)
+                                                : setCorrectOption(option.id)
+                                        }
+                                        style={{
+                                            color: option.isCorrect ? 'var(--green)' : 'var(--text-muted)',
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        <Check size={16} />
+                                    </button>
+                                    <input
+                                        type="text"
+                                        value={option.text}
+                                        onChange={(e) => updateOption(option.id, { text: e.target.value })}
+                                        placeholder={t('tests.option_placeholder')}
+                                        style={{ flex: 1 }}
+                                        aria-label={t('tests.option_text_label')}
+                                    />
+                                    <button
+                                        type="button"
+                                        className="btn btn-ghost btn-icon btn-sm"
+                                        aria-label={t('tests.option_image_label')}
+                                        aria-pressed={showImageField}
+                                        title={t('tests.option_image_label')}
+                                        onClick={() =>
+                                            setExpandedOptionImages((prev) => {
+                                                const next = new Set(prev);
+                                                if (next.has(option.id)) next.delete(option.id);
+                                                else next.add(option.id);
+                                                return next;
+                                            })
+                                        }
+                                        style={{
+                                            color: option.imageUrl ? 'var(--accent)' : 'var(--text-muted)',
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        <Image size={14} />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-ghost btn-icon btn-sm"
+                                        aria-label={t('tests.remove_option')}
+                                        style={{ color: 'var(--red)' }}
+                                        disabled={(question.options ?? []).length <= 1}
+                                        onClick={() => removeOption(option.id)}
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                </div>
+                                {showImageField && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 32 }}>
+                                        <input
+                                            type="url"
+                                            value={option.imageUrl ?? ''}
+                                            onChange={(e) =>
+                                                updateOption(option.id, { imageUrl: e.target.value || undefined })
+                                            }
+                                            placeholder={t('tests.question_image_placeholder')}
+                                            style={{ flex: 1 }}
+                                            aria-label={t('tests.option_image_label')}
+                                        />
+                                        {option.imageUrl && (
+                                            <img
+                                                src={option.imageUrl}
+                                                alt={t('tests.question_image_preview_alt')}
+                                                style={{
+                                                    maxWidth: 60,
+                                                    maxHeight: 44,
+                                                    borderRadius: 4,
+                                                    objectFit: 'contain',
+                                                    border: '1px solid var(--border)',
+                                                    flexShrink: 0,
+                                                }}
+                                                onError={(e) => {
+                                                    (e.target as HTMLImageElement).style.display = 'none';
+                                                }}
+                                                onLoad={(e) => {
+                                                    (e.target as HTMLImageElement).style.display = '';
+                                                }}
+                                            />
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
                     <button type="button" className="btn btn-secondary btn-sm" onClick={addOption}>
                         <Plus size={14} /> {t('tests.add_option')}
                     </button>
@@ -698,24 +806,6 @@ export default function QuestionEditor({
                             {t(`tests.help.${question.type.replace('-', '_')}_teacher_body`)}
                         </HelpPopover>
                     </label>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                        <button
-                            type="button"
-                            className="btn btn-secondary btn-sm"
-                            onClick={() => insertIntoPrompt('{{answer}}')}
-                        >
-                            <Plus size={14} /> {t('tests.cloze_insert_gap')}
-                        </button>
-                        {question.type === 'cloze-dropdown' && (
-                            <button
-                                type="button"
-                                className="btn btn-secondary btn-sm"
-                                onClick={() => insertIntoPrompt('{{correct|wrong1|wrong2}}')}
-                            >
-                                <Plus size={14} /> {t('tests.cloze_insert_dropdown_gap')}
-                            </button>
-                        )}
-                    </div>
                     {(() => {
                         const gaps = parseClozeGaps(question.prompt);
                         if (gaps.length === 0) {
@@ -1014,12 +1104,80 @@ export default function QuestionEditor({
                     <input
                         id={`question-expected-${question.id}`}
                         type="text"
-                        value={question.expectedAnswer ?? ''}
-                        onChange={(e) => update({ expectedAnswer: e.target.value })}
+                        value={question.expectedAnswers?.join(' | ') ?? question.expectedAnswer ?? ''}
+                        onChange={(e) => {
+                            const answers = e.target.value
+                                .split('|')
+                                .map((a) => a.trim())
+                                .filter(Boolean);
+                            update({
+                                expectedAnswers: answers.length ? answers : undefined,
+                                expectedAnswer: undefined,
+                            });
+                        }}
                         placeholder={t('tests.expected_answer_placeholder')}
                     />
                     <p className="text-muted text-xs" style={{ marginTop: 4 }}>
                         {t('tests.expected_answer_help')}
+                    </p>
+                </div>
+            )}
+
+            {question.type === 'numeric' && (
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label htmlFor={`question-numeric-value-${question.id}`}>
+                            {t('tests.numeric_expected_value_label')}
+                        </label>
+                        <input
+                            id={`question-numeric-value-${question.id}`}
+                            type="number"
+                            step="any"
+                            value={question.expectedNumericValue ?? ''}
+                            onChange={(e) =>
+                                update({
+                                    expectedNumericValue: e.target.value === '' ? undefined : Number(e.target.value),
+                                })
+                            }
+                        />
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label htmlFor={`question-numeric-tolerance-${question.id}`}>
+                            {t('tests.numeric_tolerance_label')}{' '}
+                            <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
+                                ({t('essay_assignment.optional')})
+                            </span>
+                        </label>
+                        <input
+                            id={`question-numeric-tolerance-${question.id}`}
+                            type="number"
+                            step="any"
+                            min={0}
+                            value={question.numericTolerance ?? ''}
+                            onChange={(e) =>
+                                update({ numericTolerance: e.target.value === '' ? undefined : Number(e.target.value) })
+                            }
+                            placeholder="0"
+                        />
+                    </div>
+                </div>
+            )}
+
+            {question.type === 'audio-response' && (
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label htmlFor={`question-max-recording-${question.id}`}>
+                        {t('tests.max_recording_seconds_label')}
+                    </label>
+                    <input
+                        id={`question-max-recording-${question.id}`}
+                        type="number"
+                        min={5}
+                        value={question.maxRecordingSeconds ?? DEFAULT_MAX_RECORDING_SECONDS}
+                        onChange={(e) => update({ maxRecordingSeconds: Math.max(5, Number(e.target.value) || 5) })}
+                        style={{ width: 120 }}
+                    />
+                    <p className="text-muted text-xs" style={{ marginTop: 4 }}>
+                        {t('tests.max_recording_seconds_help')}
                     </p>
                 </div>
             )}

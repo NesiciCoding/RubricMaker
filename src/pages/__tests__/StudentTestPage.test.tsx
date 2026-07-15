@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { encodeTestAssignment } from '../../utils/shareCode';
 import { decodeTestSubmission } from '../../utils/shareCode';
+import { encodeAudioResponse } from '../../utils/audioResponseCode';
 import type { Test, TestAssignmentPayload } from '../../types';
 
 vi.mock('react-i18next', () => ({
@@ -180,6 +181,85 @@ describe('StudentTestPage — answering and offline submission', () => {
         expect(decoded!.events!.some((e) => e.type === 'seb_status')).toBe(true);
     });
 
+    it('shows per-question explanations after submitting a practice-mode test', async () => {
+        const test = makeTest({
+            mode: 'practice',
+            questions: [
+                {
+                    id: 'q1',
+                    prompt: 'What is 2 + 2?',
+                    type: 'multiple-choice',
+                    points: 1,
+                    options: [
+                        { id: 'a', text: '3', isCorrect: false },
+                        { id: 'b', text: '4', isCorrect: true },
+                    ],
+                    explanation: '4 is the sum of 2 and 2.',
+                },
+            ],
+        });
+        renderPage(makeAssignment({}, test));
+
+        fireEvent.click(screen.getByRole('radio', { name: '4' }));
+
+        await act(async () => {
+            fireEvent.click(screen.getByText('tests.taking.submit_btn'));
+        });
+
+        expect(screen.getByText('4 is the sum of 2 and 2.')).toBeInTheDocument();
+    });
+
+    it('shows the sanitized instruction instead of raw cloze markup in the practice review', async () => {
+        const test = makeTest({
+            mode: 'practice',
+            questions: [
+                {
+                    id: 'q1',
+                    prompt: 'The capital of France is {{Paris}}.',
+                    type: 'cloze',
+                    points: 1,
+                },
+            ],
+        });
+        renderPage(makeAssignment({}, test));
+
+        fireEvent.change(screen.getAllByRole('textbox')[0], { target: { value: 'Paris' } });
+
+        await act(async () => {
+            fireEvent.click(screen.getByText('tests.taking.submit_btn'));
+        });
+
+        expect(screen.getByText('tests.taking.cloze_instruction')).toBeInTheDocument();
+        expect(screen.queryByText(/\{\{Paris\}\}/)).not.toBeInTheDocument();
+    });
+
+    it('does not show explanations after submitting an assessment-mode test', async () => {
+        const test = makeTest({
+            questions: [
+                {
+                    id: 'q1',
+                    prompt: 'What is 2 + 2?',
+                    type: 'multiple-choice',
+                    points: 1,
+                    options: [
+                        { id: 'a', text: '3', isCorrect: false },
+                        { id: 'b', text: '4', isCorrect: true },
+                    ],
+                    explanation: '4 is the sum of 2 and 2.',
+                },
+            ],
+        });
+        renderPage(makeAssignment({}, test));
+
+        fireEvent.click(screen.getByRole('radio', { name: '4' }));
+
+        await act(async () => {
+            fireEvent.click(screen.getByText('tests.taking.submit_btn'));
+        });
+
+        expect(screen.queryByText('4 is the sum of 2 and 2.')).not.toBeInTheDocument();
+    });
+
     it('restores a draft answer from localStorage on reload', () => {
         const assignment = makeAssignment();
         const code = encodeTestAssignment(assignment as TestAssignmentPayload);
@@ -217,6 +297,155 @@ describe('StudentTestPage — timer auto-submit', () => {
         });
 
         expect(screen.getByText(/tests\.taking\.submitted_title\b/)).toBeInTheDocument();
+    });
+});
+
+describe('StudentTestPage — audio-response answer', () => {
+    beforeEach(() => {
+        localStorage.clear();
+        sessionStorage.clear();
+    });
+
+    const audioTest = makeTest({
+        questions: [{ id: 'q1', prompt: 'Describe your weekend.', type: 'audio-response', points: 3 }],
+    });
+
+    it('shows a start-recording button and the max-duration note', () => {
+        renderPage(makeAssignment({}, audioTest));
+        expect(screen.getByText('tests.taking.start_recording')).toBeInTheDocument();
+        expect(screen.getByText(/tests\.taking\.max_recording_note/)).toBeInTheDocument();
+    });
+
+    it('shows the microphone error when getUserMedia is unavailable (jsdom has no media devices)', async () => {
+        renderPage(makeAssignment({}, audioTest));
+        await act(async () => {
+            fireEvent.click(screen.getByText('tests.taking.start_recording'));
+        });
+        expect(screen.getByText('tests.taking.microphone_error')).toBeInTheDocument();
+    });
+
+    it('restores an existing recording as playable audio with a re-record button', () => {
+        const assignment = makeAssignment({}, audioTest);
+        const code = encodeTestAssignment(assignment as TestAssignmentPayload);
+        const encoded = encodeAudioResponse({
+            dataUri: 'data:audio/webm;base64,AA==',
+            mimeType: 'audio/webm',
+            durationSec: 5,
+        });
+        localStorage.setItem(
+            `rm_test_draft_${code}`,
+            JSON.stringify({ answers: { q1: encoded }, savedAt: new Date().toISOString() })
+        );
+
+        render(
+            <MemoryRouter initialEntries={[`/test/${code}`]}>
+                <Routes>
+                    <Route path="/test/:code" element={<StudentTestPage />} />
+                </Routes>
+            </MemoryRouter>
+        );
+
+        expect(screen.getByText('tests.taking.re_record')).toBeInTheDocument();
+        const audioEl = document.querySelector('audio');
+        expect(audioEl).not.toBeNull();
+        expect(audioEl?.getAttribute('src')).toBe('data:audio/webm;base64,AA==');
+    });
+
+    it('does not render a restored recording whose data URI is not an audio MIME type', () => {
+        const assignment = makeAssignment({}, audioTest);
+        const code = encodeTestAssignment(assignment as TestAssignmentPayload);
+        const encoded = encodeAudioResponse({
+            dataUri: 'data:text/html,<script>alert(1)</script>',
+            mimeType: 'audio/webm',
+            durationSec: 5,
+        });
+        localStorage.setItem(
+            `rm_test_draft_${code}`,
+            JSON.stringify({ answers: { q1: encoded }, savedAt: new Date().toISOString() })
+        );
+
+        render(
+            <MemoryRouter initialEntries={[`/test/${code}`]}>
+                <Routes>
+                    <Route path="/test/:code" element={<StudentTestPage />} />
+                </Routes>
+            </MemoryRouter>
+        );
+
+        expect(document.querySelector('audio')).toBeNull();
+    });
+
+    it('disables Next while actively recording (getUserMedia + MediaRecorder mocked)', async () => {
+        class FakeMediaRecorder {
+            mimeType = 'audio/webm';
+            start() {}
+            stop() {}
+        }
+        const getUserMedia = vi.fn().mockResolvedValue({ getTracks: () => [{ stop: vi.fn() }] });
+        Object.defineProperty(navigator, 'mediaDevices', { value: { getUserMedia }, configurable: true });
+        (globalThis as unknown as { MediaRecorder: typeof FakeMediaRecorder }).MediaRecorder = FakeMediaRecorder;
+
+        try {
+            const twoQuestionTest = makeTest({
+                questions: [
+                    { id: 'q1', prompt: 'Describe your weekend.', type: 'audio-response', points: 3 },
+                    { id: 'q2', prompt: 'Describe your favourite season.', type: 'open', points: 2 },
+                ],
+            });
+            renderPage(makeAssignment({}, twoQuestionTest));
+
+            expect(screen.getByText('tests.taking.next')).not.toBeDisabled();
+
+            await act(async () => {
+                fireEvent.click(screen.getByText('tests.taking.start_recording'));
+            });
+
+            expect(screen.getByText('tests.taking.next')).toBeDisabled();
+        } finally {
+            // @ts-expect-error test cleanup — restore jsdom's undefined mediaDevices
+            delete navigator.mediaDevices;
+            delete (globalThis as unknown as { MediaRecorder?: unknown }).MediaRecorder;
+        }
+    });
+
+    it('records and stops, producing a playable recording (getUserMedia + MediaRecorder mocked)', async () => {
+        class FakeMediaRecorder {
+            mimeType = 'audio/webm';
+            state: 'inactive' | 'recording' = 'inactive';
+            ondataavailable: ((e: { data: Blob }) => void) | null = null;
+            onstop: (() => void) | null = null;
+            start() {
+                this.state = 'recording';
+            }
+            stop() {
+                this.state = 'inactive';
+                this.ondataavailable?.({ data: new Blob(['audio-bytes'], { type: 'audio/webm' }) });
+                this.onstop?.();
+            }
+        }
+        const getUserMedia = vi.fn().mockResolvedValue({ getTracks: () => [{ stop: vi.fn() }] });
+        Object.defineProperty(navigator, 'mediaDevices', { value: { getUserMedia }, configurable: true });
+        (globalThis as unknown as { MediaRecorder: typeof FakeMediaRecorder }).MediaRecorder = FakeMediaRecorder;
+
+        try {
+            renderPage(makeAssignment({}, audioTest));
+
+            await act(async () => {
+                fireEvent.click(screen.getByText('tests.taking.start_recording'));
+            });
+            expect(screen.getByText('tests.taking.stop_recording')).toBeInTheDocument();
+
+            await act(async () => {
+                fireEvent.click(screen.getByText('tests.taking.stop_recording'));
+            });
+
+            await waitFor(() => expect(screen.getByText('tests.taking.re_record')).toBeInTheDocument());
+            expect(document.querySelector('audio')).not.toBeNull();
+        } finally {
+            // @ts-expect-error test cleanup — restore jsdom's undefined mediaDevices
+            delete navigator.mediaDevices;
+            delete (globalThis as unknown as { MediaRecorder?: unknown }).MediaRecorder;
+        }
     });
 });
 

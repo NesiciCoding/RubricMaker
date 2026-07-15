@@ -25,6 +25,7 @@ import { useConfirm } from '../hooks/useConfirm';
 import TestAssignmentModal from '../components/Tests/TestAssignmentModal';
 import TestSubmissionImportModal from '../components/Tests/TestSubmissionImportModal';
 import ClassAverageAdjuster from '../components/Tests/ClassAverageAdjuster';
+import ItemAnalysisPanel from '../components/Tests/ItemAnalysisPanel';
 import type { Test, CohortFilter as CohortFilterValue } from '../types';
 import { sortByDisplayOrder, reorderDisplayOrder } from '../utils/displayOrder';
 import { getCohortStudentIds, isAllCohorts, ALL_COHORTS } from '../utils/cohortAggregator';
@@ -460,6 +461,12 @@ export default function TestListPage() {
                                                                     )}
                                                                     students={students}
                                                                     onSaveStudentTest={saveStudentTest}
+                                                                />
+                                                                <ItemAnalysisPanel
+                                                                    test={test}
+                                                                    studentTests={studentTests.filter(
+                                                                        (st) => st.testId === test.id
+                                                                    )}
                                                                 />
 
                                                                 <div

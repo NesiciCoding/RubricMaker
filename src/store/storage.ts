@@ -30,6 +30,7 @@ import type {
     NewsFlash,
     NewsFlashRead,
     RubricVersion,
+    QuestionBankItem,
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 import { nanoid } from '../utils/nanoid';
@@ -903,6 +904,7 @@ const KEYS = {
     standardMasteryTargets: 'rm_standard_mastery_targets',
     newsFlashes: 'rm_news_flashes',
     newsFlashReads: 'rm_news_flash_reads',
+    questionBank: 'rm_question_bank',
 };
 
 // ─── Generic helpers ───────────────────────────────────────────────────────────
@@ -1049,6 +1051,7 @@ export interface StoreData {
     standardMasteryTargets: StandardMasteryTarget[];
     newsFlashes: NewsFlash[];
     newsFlashReads: NewsFlashRead[];
+    questionBank: QuestionBankItem[];
 }
 
 export function loadStore(): StoreData {
@@ -1093,6 +1096,7 @@ export function loadStore(): StoreData {
         standardMasteryTargets: load<StandardMasteryTarget[]>(KEYS.standardMasteryTargets, []),
         newsFlashes: load<NewsFlash[]>(KEYS.newsFlashes, []),
         newsFlashReads: load<NewsFlashRead[]>(KEYS.newsFlashReads, []),
+        questionBank: load<QuestionBankItem[]>(KEYS.questionBank, []),
     };
 }
 
@@ -1210,6 +1214,9 @@ export function saveNewsFlashes(flashes: NewsFlash[]) {
 }
 export function saveNewsFlashReads(reads: NewsFlashRead[]) {
     save(KEYS.newsFlashReads, reads);
+}
+export function saveQuestionBank(items: QuestionBankItem[]) {
+    save(KEYS.questionBank, items);
 }
 
 // ─── Local data wipe (user switch / sign-out) ─────────────────────────────────
@@ -1504,6 +1511,19 @@ export function importFullBackup(json: string): boolean {
             )
                 saveNewsFlashReads(data.newsFlashReads as NewsFlashRead[]);
             else console.warn('[importFullBackup] newsFlashReads failed validation — skipped');
+        }
+        if (data.questionBank !== undefined) {
+            if (
+                Array.isArray(data.questionBank) &&
+                data.questionBank.every(
+                    (q) =>
+                        isPlainObject(q) &&
+                        typeof (q as Record<string, unknown>).id === 'string' &&
+                        isPlainObject((q as Record<string, unknown>).question)
+                )
+            )
+                saveQuestionBank(data.questionBank as QuestionBankItem[]);
+            else console.warn('[importFullBackup] questionBank failed validation — skipped');
         }
         return true;
     } catch (e) {

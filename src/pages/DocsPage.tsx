@@ -297,6 +297,12 @@ function getRouteTree(t: TFunction): RouteNode[] {
             color: '#64748b',
         },
         {
+            path: '/question-bank',
+            label: t('docs.route_question_bank_label'),
+            description: t('docs.route_question_bank_desc'),
+            color: '#64748b',
+        },
+        {
             path: '/statistics',
             label: t('docs.route_statistics_label'),
             description: t('docs.route_statistics_desc'),
@@ -802,7 +808,8 @@ function RubricsTab() {
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
                     {t('docs.rb_marketplace_body_prefix')} <strong>{t('docs.rb_marketplace_body_name')}</strong>{' '}
-                    {t('docs.rb_marketplace_body_suffix')} {t('docs.rb_marketplace_cefr_tags_body')}
+                    {t('docs.rb_marketplace_body_suffix')} {t('docs.rb_marketplace_cefr_tags_body')}{' '}
+                    {t('docs.rb_marketplace_kinds_note')}
                 </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
@@ -984,6 +991,9 @@ function GradingTab() {
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginTop: 8 }}>
                     {t('docs.gr_cograding_pending_note')}
                 </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginTop: 8 }}>
+                    {t('docs.gr_cograding_digest_note')}
+                </p>
             </FeatureSection>
 
             <FeatureSection icon={Mail} title={t('docs.gr_messages_title')} color="#f59e0b">
@@ -1018,8 +1028,17 @@ function GradingTab() {
                         t('docs.gr_test_results_item_grade'),
                         t('docs.gr_test_results_item_standards'),
                         t('docs.gr_test_results_item_integrity'),
+                        t('docs.gr_test_results_item_audio_response'),
                     ]}
                 />
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.gr_question_bank_title')}
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    {t('docs.gr_question_bank_body_prefix')} <code>/question-bank</code>{' '}
+                    {t('docs.gr_question_bank_body_suffix')}
+                </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.gr_test_mode_title')}
@@ -1034,6 +1053,21 @@ function GradingTab() {
                         t('docs.gr_test_mode_item_audio'),
                         t('docs.gr_test_mode_item_retake'),
                         t('docs.gr_test_mode_item_grammar'),
+                    ]}
+                />
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.gr_test_rich_authoring_title')}
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
+                    {t('docs.gr_test_rich_authoring_body')}
+                </p>
+                <FeatureList
+                    items={[
+                        t('docs.gr_test_rich_authoring_item_prompt'),
+                        t('docs.gr_test_rich_authoring_item_passage'),
+                        t('docs.gr_test_rich_authoring_item_option_image'),
+                        t('docs.gr_test_rich_authoring_item_cloze_gap'),
                     ]}
                 />
 
@@ -1060,6 +1094,13 @@ function GradingTab() {
                     {t('docs.gr_class_avg_body_suffix')} <strong>{t('docs.gr_class_avg_apply')}</strong>
                     {t('docs.gr_class_avg_body2')} <strong>{t('docs.gr_class_avg_revert')}</strong>
                     {t('docs.gr_class_avg_body3')}
+                </p>
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.gr_item_analysis_title')}
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    {t('docs.gr_item_analysis_body')}
                 </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
@@ -1148,6 +1189,12 @@ function CefrTab() {
                         t('docs.ce_learning_paths_item_grammar'),
                     ]}
                 />
+            </FeatureSection>
+
+            <FeatureSection icon={BarChart3} title={t('docs.ce_mastery_profile_title')} color="#10b981">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    {t('docs.ce_mastery_profile_body')}
+                </p>
             </FeatureSection>
 
             <FeatureSection icon={Mic} title={t('docs.ce_speaking_title')} color="#f59e0b">

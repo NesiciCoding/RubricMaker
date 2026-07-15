@@ -145,6 +145,36 @@ describe('TestResultsPage', () => {
         expect(saved.rawTotalPoints).toBe(9); // 4 (MC) + 5 (open)
     });
 
+    it('shows a late-submission badge when submittedAt is after the test due date', async () => {
+        mockUseApp.tests = [{ ...mockTest, dueDate: '2026-01-01T09:15:00.000Z' }];
+        const { default: TestResultsPage } = await import('../TestResultsPage');
+        render(
+            <MemoryRouter initialEntries={['/tests/t1/results/st1']}>
+                <Routes>
+                    <Route path="/tests/:testId/results/:studentTestId" element={<TestResultsPage />} />
+                </Routes>
+            </MemoryRouter>
+        );
+
+        expect(screen.getByText('tests.results.late_submission')).toBeInTheDocument();
+        mockUseApp.tests = [mockTest];
+    });
+
+    it('does not show a late-submission badge when submitted before the due date', async () => {
+        mockUseApp.tests = [{ ...mockTest, dueDate: '2026-01-02T00:00:00.000Z' }];
+        const { default: TestResultsPage } = await import('../TestResultsPage');
+        render(
+            <MemoryRouter initialEntries={['/tests/t1/results/st1']}>
+                <Routes>
+                    <Route path="/tests/:testId/results/:studentTestId" element={<TestResultsPage />} />
+                </Routes>
+            </MemoryRouter>
+        );
+
+        expect(screen.queryByText('tests.results.late_submission')).not.toBeInTheDocument();
+        mockUseApp.tests = [mockTest];
+    });
+
     it('shows a not-found message for an unknown submission', async () => {
         const { default: TestResultsPage } = await import('../TestResultsPage');
         render(

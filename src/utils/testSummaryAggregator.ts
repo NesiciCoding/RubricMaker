@@ -8,7 +8,7 @@ import type {
     TestStrengthBucket,
     TestStrongWeakSummary,
 } from '../types';
-import { autoScoreResponse } from './testCalc';
+import { autoScoreResponse, calcStudentTestRawPoints } from './testCalc';
 
 function clamp(value: number, min: number, max: number): number {
     return Math.min(max, Math.max(min, value));
@@ -205,4 +205,98 @@ export function mergeTestStrongWeakSummaries(summaries: TestStrongWeakSummary[])
     });
 
     return { studentId: summaries[0].studentId, questions, skills };
+}
+
+export interface QuestionDistractor {
+    optionId: string;
+    text: string;
+    count: number;
+    isCorrect: boolean;
+}
+
+export interface QuestionItemAnalysis {
+    questionId: string;
+    sampleSize: number;
+    /** Upper-27%/lower-27% accuracy gap on this question (-1 to 1); null when the class is too small to split reliably. */
+    discrimination: number | null;
+    /** The most commonly chosen wrong option, for multiple-choice/multiple-response questions with options. */
+    topDistractor: QuestionDistractor | null;
+}
+
+// ponytail: classic upper/lower-27% split, needs at least this many submissions per
+// group to mean anything at typical class sizes. Below this, discrimination is null
+// rather than a noisy number.
+const MIN_STUDENTS_FOR_DISCRIMINATION = 8;
+const DISCRIMINATION_GROUP_RATIO = 0.27;
+
+/**
+ * Per-question discrimination index (do high scorers get this item right more often
+ * than low scorers?) and distractor analysis (which wrong option attracts the most
+ * students) for every question in a test, across all of its StudentTest submissions.
+ */
+export function calcTestItemAnalysis(studentTests: StudentTest[], test: Test): QuestionItemAnalysis[] {
+    const relevant = relevantStudentTests(null, studentTests, test).filter((st) => st.answers.length > 0);
+    const maxPoints = test.questions.reduce((sum, q) => sum + q.points, 0);
+
+    const ranked = [...relevant].sort(
+        (a, b) => calcStudentTestRawPoints(test, b.answers) - calcStudentTestRawPoints(test, a.answers)
+    );
+    const groupSize = Math.max(1, Math.round(ranked.length * DISCRIMINATION_GROUP_RATIO));
+    const upperIds = new Set(ranked.slice(0, groupSize).map((st) => st.studentId));
+    const lowerIds = new Set(ranked.slice(-groupSize).map((st) => st.studentId));
+    const canDiscriminate = ranked.length >= MIN_STUDENTS_FOR_DISCRIMINATION && maxPoints > 0;
+
+    const answersByStudent = relevant.map((st) => ({
+        studentId: st.studentId,
+        byQuestion: latestAnswerByQuestion(st),
+    }));
+
+    return test.questions.map((question) => {
+        let sampleSize = 0;
+        let upperSum = 0;
+        let upperCount = 0;
+        let lowerSum = 0;
+        let lowerCount = 0;
+        const optionCounts = new Map<string, number>();
+
+        for (const { studentId, byQuestion } of answersByStudent) {
+            const answer = byQuestion.get(question.id);
+            if (!answer) continue;
+            sampleSize++;
+            const fraction = question.points > 0 ? scoreAnswer(question, answer) / question.points : 0;
+            if (upperIds.has(studentId)) {
+                upperSum += fraction;
+                upperCount++;
+            }
+            if (lowerIds.has(studentId)) {
+                lowerSum += fraction;
+                lowerCount++;
+            }
+            if (question.type === 'multiple-choice' || question.type === 'multiple-response') {
+                let selected: string[];
+                try {
+                    selected = question.type === 'multiple-choice' ? [answer.response] : JSON.parse(answer.response);
+                } catch {
+                    selected = [];
+                }
+                for (const optionId of selected) {
+                    optionCounts.set(optionId, (optionCounts.get(optionId) ?? 0) + 1);
+                }
+            }
+        }
+
+        const discrimination =
+            canDiscriminate && upperCount > 0 && lowerCount > 0 ? upperSum / upperCount - lowerSum / lowerCount : null;
+
+        let topDistractor: QuestionDistractor | null = null;
+        for (const option of question.options ?? []) {
+            if (option.isCorrect) continue;
+            const count = optionCounts.get(option.id) ?? 0;
+            if (count > 0 && (!topDistractor || count > topDistractor.count)) {
+                topDistractor = { optionId: option.id, text: option.text, count, isCorrect: false };
+            }
+        }
+
+        return { questionId: question.id, sampleSize, discrimination, topDistractor };
+    });
 }

@@ -18,6 +18,39 @@ vi.mock('../../../context/AppContext', () => ({
     useApp: () => ({ settings: {} }),
 }));
 
+// Replace TipTap-heavy editors with plain textareas (same pattern as StudentEssayPage.test.tsx /
+// TestBuilderPage.test.tsx) — this file tests QuestionEditor's wiring, not the editors themselves.
+vi.mock('../../Editor/EssayEditor', () => ({
+    default: ({ content, onChange }: { content: string; onChange: (html: string) => void }) => (
+        <textarea aria-label="tests.question_prompt_label" value={content} onChange={(e) => onChange(e.target.value)} />
+    ),
+}));
+vi.mock('../ClozeGapEditor', () => ({
+    default: ({
+        value,
+        onChange,
+        allowDropdown,
+        insertGapLabel,
+        insertDropdownGapLabel,
+    }: {
+        value: string;
+        onChange: (prompt: string) => void;
+        allowDropdown: boolean;
+        insertGapLabel: string;
+        insertDropdownGapLabel: string;
+    }) => (
+        <div>
+            <span>{insertGapLabel}</span>
+            {allowDropdown && <span>{insertDropdownGapLabel}</span>}
+            <textarea
+                aria-label="tests.question_prompt_label"
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+            />
+        </div>
+    ),
+}));
+
 vi.mock('../../Standards/StandardsPickerModal', () => ({ default: () => null }));
 vi.mock('../../CEFR/CefrPickerModal', () => ({
     default: ({ onClose }: { onClose: () => void }) =>
@@ -48,10 +81,12 @@ function makeQuestion(overrides: Partial<TestQuestion> = {}): TestQuestion {
 }
 
 describe('QuestionEditor', () => {
-    it('renders prompt textarea and type selector', () => {
+    it('renders prompt field and type selector', () => {
+        // Non-cloze prompts render as a TipTap rich-text editor (Phase 23.2); cloze/cloze-dropdown
+        // keep the plain textarea since {{gap}} syntax lives directly in the prompt string.
         render(
             <QuestionEditor
-                question={makeQuestion()}
+                question={makeQuestion({ type: 'cloze' })}
                 index={0}
                 total={1}
                 sections={sections}
@@ -61,7 +96,7 @@ describe('QuestionEditor', () => {
         );
         expect(screen.getByDisplayValue('Sample question')).toBeInTheDocument();
         // select displays the translated key for the selected option
-        expect(screen.getByDisplayValue('tests.question_type_multiple_choice')).toBeInTheDocument();
+        expect(screen.getByDisplayValue('tests.question_type_cloze')).toBeInTheDocument();
     });
 
     it('calls onRemove when remove button clicked', () => {
@@ -84,7 +119,7 @@ describe('QuestionEditor', () => {
         const onChange = vi.fn();
         render(
             <QuestionEditor
-                question={makeQuestion()}
+                question={makeQuestion({ type: 'cloze' })}
                 index={0}
                 total={1}
                 sections={sections}

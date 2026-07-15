@@ -40,7 +40,10 @@ export class TestBuilderPage extends BasePage {
     }
 
     async addQuestion(): Promise<void> {
-        await this.page.getByRole('button', { name: /add question/i }).first().click();
+        await this.page
+            .getByRole('button', { name: /add question/i })
+            .first()
+            .click();
     }
 
     questionCard(index: number): Locator {
@@ -48,12 +51,20 @@ export class TestBuilderPage extends BasePage {
     }
 
     async setQuestionPrompt(index: number, prompt: string): Promise<void> {
-        const input = this.questionCard(index).getByPlaceholder(/type the question text/i);
-        await input.fill(prompt);
+        // Phase 23.2: the prompt field is a TipTap rich-text editor (EssayEditor for most types,
+        // ClozeGapEditor for cloze/cloze-dropdown), not a plain textarea — no placeholder attribute
+        // to target. `.fill()` works on contenteditable elements.
+        const editor = this.questionCard(index).locator('.essay-editor-content, .cloze-gap-editor-content').first();
+        await editor.fill(prompt);
     }
 
     async setQuestionType(index: number, type: 'multiple-choice' | 'short-answer' | 'open'): Promise<void> {
-        await this.questionCard(index).locator('select').first().selectOption(type);
+        // Phase 23.2's rich prompt editor adds its own toolbar <select> elements (paragraph
+        // style, font family, etc.) ahead of this one in DOM order — target by label instead of
+        // positional "first select".
+        await this.questionCard(index)
+            .getByLabel(/question type/i)
+            .selectOption(type);
     }
 
     async setQuestionPoints(index: number, points: number): Promise<void> {
@@ -74,7 +85,7 @@ export class TestBuilderPage extends BasePage {
     }
 
     async setExpectedAnswer(index: number, answer: string): Promise<void> {
-        const input = this.questionCard(index).getByPlaceholder(/model answer for auto-scoring/i);
+        const input = this.questionCard(index).getByPlaceholder(/model answer\(s\)? for auto-scoring/i);
         await input.fill(answer);
     }
 

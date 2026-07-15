@@ -78,7 +78,7 @@ const TEACHER_FEATURES = [
     {
         icon: ClipboardCheck,
         title: 'Tests & Quizzes',
-        desc: 'Build multiple-choice, multiple-response, true/false, short-answer, open, fill-the-gap, matching, ordering, categorize, and hot text tests, assign them with a share link or Safe Exam Browser, then auto-grade, fine-tune the class average, and export a strong/weak point summary per student or class. Add an ungraded, retakeable Practice mode with audio questions for listening comprehension.',
+        desc: 'Build multiple-choice, multiple-response, true/false, short-answer, open, fill-the-gap, matching, ordering, categorize, hot text, and audio-response tests with rich-text prompts, reading passages, and picture-choice options, assign them with a share link or Safe Exam Browser, then auto-grade, fine-tune the class average, and export a strong/weak point summary per student or class. Add an ungraded, retakeable Practice mode with audio questions for listening comprehension, or have students record a spoken answer for speaking practice.',
         color: '#3b82f6',
     },
     {
@@ -101,8 +101,8 @@ const TEACHER_FEATURES = [
     },
     {
         icon: Store,
-        title: 'Rubric Marketplace',
-        desc: 'Share your best rubrics with colleagues at your school, and clone theirs.',
+        title: 'Marketplace',
+        desc: 'Share your best rubrics, tests, and flashcard decks with colleagues at your school, and clone theirs.',
         color: '#3b82f6',
     },
     {

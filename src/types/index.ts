@@ -603,11 +603,15 @@ export interface SchoolMember {
 }
 
 /** A rubric published to a school's marketplace. rubricSnapshot is frozen at publish time. */
+export type MarketplaceListingKind = 'rubric' | 'test' | 'deck';
+
 export interface MarketplaceListing {
     id: string;
     schoolId: string;
     publishedBy: string;
-    rubricSnapshot: Rubric;
+    /** 'rubric' (default, back-compat with pre-24.4 listings) | 'test' | 'deck' — discriminates the shape of `snapshot`. */
+    kind: MarketplaceListingKind;
+    snapshot: Rubric | Test | FlashcardDeck;
     name: string;
     subject?: string;
     description?: string;
@@ -680,6 +684,8 @@ export interface AppSettings {
     notifyStudentsOnGrade?: boolean;
     /** Whether to send an email notification to the student when a teacher replies to/starts a message thread (Supabase mode only). */
     notifyStudentsOnMessage?: boolean;
+    /** Whether to receive a nightly email digest (currently: pending moderation-queue disputes) via pg_cron. Supabase mode only. */
+    digestEmailEnabled?: boolean;
     /** Wider letter-spacing and increased line-height app-wide, for dyslexic readers. */
     dyslexiaFriendlyMode?: boolean;
 }
@@ -887,12 +893,16 @@ export type TestQuestionType =
     | 'matching'
     | 'ordering'
     | 'categorize'
-    | 'hot-text';
+    | 'hot-text'
+    | 'numeric'
+    | 'audio-response';
 
 export interface TestOption {
     id: string;
     text: string;
     isCorrect: boolean;
+    /** Image shown alongside the option text — either a public URL or a data URI */
+    imageUrl?: string;
 }
 
 /** A left/right pair for matching questions; correct match is left.id === right pair's id */
@@ -926,6 +936,8 @@ export interface CategorizeItem {
 export interface TestSection {
     id: string;
     title: string;
+    /** Reading passage / stimulus shown above the section's questions — rich-text HTML */
+    content?: string;
     /** Target CEFR level this section is written at, for placement-test routing and result estimation */
     cefrLevel?: CefrLevel;
     /** Deterministic branching rule for placement tests (roadmap Phase 25.1): scoring at/above the threshold on this section routes to passSectionId, otherwise failSectionId */
@@ -945,6 +957,12 @@ export interface TestQuestion {
     options?: TestOption[];
     /** Model answer used for exact-match auto-scoring of short-answer questions */
     expectedAnswer?: string;
+    /** Accepted alternative answers for exact-match auto-scoring of short-answer questions; supersedes expectedAnswer when set */
+    expectedAnswers?: string[];
+    /** Correct value for numeric questions; response is scored correct within ± numericTolerance */
+    expectedNumericValue?: number;
+    /** Accepted margin of error around expectedNumericValue (default 0 = exact match) */
+    numericTolerance?: number;
     /** Correct answer for true-false questions */
     correctBoolean?: boolean;
     /** Pairs for matching questions */
@@ -978,6 +996,10 @@ export interface TestQuestion {
     hint?: string;
     /** References GrammarItem.id (src/data/grammarStandards.ts) — tags which grammar point this question drills, for the grammar recommendation engine. */
     linkedGrammarItemId?: string;
+    /** Shown to the student after submission, only when the test's mode is 'practice' — keeps assessment-mode answer secrecy intact */
+    explanation?: string;
+    /** For 'audio-response' questions: recording cap in seconds (default 60 in the UI). */
+    maxRecordingSeconds?: number;
 }
 
 export interface Test {
@@ -1009,6 +1031,17 @@ export interface Test {
     cefrSkill?: CefrSkill;
     /** Which Phase 16 practice category a practice-mode test belongs to — grammar isn't itself a CefrSkill, so this is separate from cefrSkill above. */
     contentArea?: 'listening' | 'reading' | 'grammar';
+}
+
+/** A reusable test question saved outside any one test, for cross-test reuse (roadmap 24.1). */
+export interface QuestionBankItem {
+    id: string;
+    /** The question verbatim, minus its test-local sectionId (bank items aren't tied to a section). */
+    question: Omit<TestQuestion, 'sectionId'>;
+    tags: string[];
+    createdAt: string;
+    /** ISO timestamp of the last local edit; used for last-write-wins sync conflict resolution */
+    updatedAt?: string;
 }
 
 export type ProctorEventType = 'tab_switch' | 'copy' | 'paste' | 'cut' | 'battery' | 'heartbeat' | 'seb_status';

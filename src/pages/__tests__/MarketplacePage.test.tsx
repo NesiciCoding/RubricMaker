@@ -37,11 +37,15 @@ const emptyArr: never[] = [];
 // Base app value — settings without schoolId → disabled state.
 const mockAppValue: Record<string, unknown> = {
     rubrics: mockRubricsArr,
+    tests: emptyArr,
+    flashcardDecks: emptyArr,
     students: emptyArr,
     classes: emptyArr,
     studentRubrics: emptyArr,
     settings: mockSettings,
     addRubric: mockAddRubric,
+    addTest: vi.fn(),
+    addFlashcardDeck: vi.fn(),
 };
 
 vi.mock('../../context/AppContext', () => ({
@@ -125,7 +129,7 @@ describe('MarketplacePage', () => {
         });
         fireEvent.click(screen.getByText('marketplace.publish_button'));
         expect(screen.getByText('marketplace.publish_title')).toBeInTheDocument();
-        expect(screen.getByText('marketplace.publish_select_rubric')).toBeInTheDocument();
+        expect(screen.getByText('marketplace.publish_select_entity')).toBeInTheDocument();
         (mockAppValue as Record<string, unknown>).settings = mockSettings;
     });
 
@@ -136,7 +140,8 @@ describe('MarketplacePage', () => {
             id: 'l1',
             schoolId: 'school-1',
             publishedBy: 'u1',
-            rubricSnapshot: mockRubric,
+            kind: 'rubric',
+            snapshot: mockRubric,
             name: 'Grammar Rubric',
             subject: 'English',
             description: 'A grammar rubric for B2 students',

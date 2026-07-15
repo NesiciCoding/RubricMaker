@@ -11,12 +11,32 @@ export function calcTestMaxPoints(test: Test): number {
 
 /**
  * Exact-match auto-score for a short-answer question: full points when the
- * trimmed, case-insensitive response equals expectedAnswer; 0 otherwise.
- * Returns null when the question has no expectedAnswer to match against.
+ * trimmed, case-insensitive response matches any of expectedAnswers (or the
+ * legacy single expectedAnswer); 0 otherwise. Returns null when the question
+ * has no expected answer to match against.
  */
 export function scoreShortAnswerExact(question: TestQuestion, response: string): number | null {
-    if (question.type !== 'short-answer' || !question.expectedAnswer) return null;
-    return response.trim().toLowerCase() === question.expectedAnswer.trim().toLowerCase() ? question.points : 0;
+    const answers = question.expectedAnswers?.length
+        ? question.expectedAnswers
+        : question.expectedAnswer
+          ? [question.expectedAnswer]
+          : [];
+    if (question.type !== 'short-answer' || answers.length === 0) return null;
+    const trimmedResponse = response.trim().toLowerCase();
+    return answers.some((a) => a.trim().toLowerCase() === trimmedResponse) ? question.points : 0;
+}
+
+/** Auto-score for a numeric question: full points when the response is within ± numericTolerance of expectedNumericValue. */
+export function scoreNumeric(question: TestQuestion, response: string): number | null {
+    if (question.type !== 'numeric' || question.expectedNumericValue === undefined) return null;
+    const trimmed = response.trim();
+    // Number('') is 0, not NaN — an unanswered question must not auto-match expectedNumericValue: 0
+    if (trimmed === '') return 0;
+    const value = Number(trimmed);
+    if (Number.isNaN(value)) return 0;
+    const tolerance = question.numericTolerance ?? 0;
+    // Epsilon guards against float imprecision (e.g. 3.14 - 3.13 !== 0.01 exactly in IEEE 754)
+    return Math.abs(value - question.expectedNumericValue) <= tolerance + 1e-9 ? question.points : 0;
 }
 
 /** Auto-score for a multiple-response (checkbox) question, supporting partial credit. */
@@ -170,6 +190,9 @@ export function autoScoreResponse(question: TestQuestion, response: string): num
     }
     if (question.type === 'short-answer') {
         return scoreShortAnswerExact(question, response) ?? 0;
+    }
+    if (question.type === 'numeric') {
+        return scoreNumeric(question, response) ?? 0;
     }
     if (question.type === 'cloze' || question.type === 'cloze-dropdown') {
         return scoreCloze(question, response);
