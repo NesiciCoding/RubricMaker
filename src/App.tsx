@@ -26,6 +26,7 @@ const AttachmentsPage = lazy(() => import('./pages/AttachmentsPage'));
 const ExportPage = lazy(() => import('./pages/ExportPage'));
 const StatisticsPage = lazy(() => import('./pages/StatisticsPage'));
 const CommentBankPage = lazy(() => import('./pages/CommentBankPage'));
+const QuestionBankPage = lazy(() => import('./pages/QuestionBankPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const StudentProfilePage = lazy(() => import('./pages/StudentProfilePage'));
 const ComparativeGrading = lazy(() => import('./pages/ComparativeGrading'));
@@ -243,6 +244,7 @@ export default function App() {
                                 <Route path="/moderation" element={<ModerationQueuePage />} />
                                 <Route path="/messages" element={<MessagesPage />} />
                                 <Route path="/comments" element={<CommentBankPage />} />
+                                <Route path="/question-bank" element={<QuestionBankPage />} />
                                 <Route path="/marketplace" element={<MarketplacePage />} />
                                 <Route path="/settings" element={<SettingsPage />} />
                                 <Route

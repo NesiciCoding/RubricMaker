@@ -1021,6 +1021,17 @@ export interface Test {
     contentArea?: 'listening' | 'reading' | 'grammar';
 }
 
+/** A reusable test question saved outside any one test, for cross-test reuse (roadmap 24.1). */
+export interface QuestionBankItem {
+    id: string;
+    /** The question verbatim, minus its test-local sectionId (bank items aren't tied to a section). */
+    question: Omit<TestQuestion, 'sectionId'>;
+    tags: string[];
+    createdAt: string;
+    /** ISO timestamp of the last local edit; used for last-write-wins sync conflict resolution */
+    updatedAt?: string;
+}
+
 export type ProctorEventType = 'tab_switch' | 'copy' | 'paste' | 'cut' | 'battery' | 'heartbeat' | 'seb_status';
 
 export interface ProctorEvent {

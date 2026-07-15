@@ -351,7 +351,8 @@
         "moderation": "Moderation",
         "messages": "Nachrichten",
         "flashcards": "Karteikarten",
-        "news_flashes": "Neuigkeiten"
+        "news_flashes": "Neuigkeiten",
+        "question_bank": "Fragenbank"
     },
     "dashboard": {
         "title": "Dashboard",
@@ -1162,6 +1163,19 @@
         "tags_placeholder": "Tags (kommagetrennt)",
         "empty_state": "Keine Kommentare gefunden.",
         "suggested_for_criterion": "Vorgeschlagen für dieses Kriterium"
+    },
+    "questionBank": {
+        "title": "Fragenbank",
+        "page_intro": "Wiederverwendbare Testfragen, die du in jeden Test einfügen kannst.",
+        "search_placeholder": "Fragen durchsuchen...",
+        "empty_state": "Noch keine Fragen gespeichert. Speichere eine Frage aus einem Test, um zu beginnen.",
+        "untitled_prompt": "(kein Fragetext)",
+        "edit_tags": "Tags bearbeiten",
+        "tags_placeholder": "Tags (kommagetrennt)",
+        "insert_title": "Aus Fragenbank einfügen",
+        "insert_button": "Aus Bank einfügen",
+        "save_to_bank": "In Fragenbank speichern",
+        "saved_toast": "Frage in Bank gespeichert"
     },
     "peerAnalytics": {
         "title": "Peer-Review-Statistiken — {{rubricName}}",
@@ -2152,6 +2166,8 @@
         "route_attachments_desc": "Hochgeladene Dateien verwalten; OCR und Dokumentenanalyse mit Tesseract und Mammoth.",
         "route_comments_label": "Kommentarbank",
         "route_comments_desc": "Wiederverwendbare Feedback-Schnipsel, nach Tag organisiert, während der Bewertung einfügbar.",
+        "route_question_bank_label": "Fragenbank",
+        "route_question_bank_desc": "Wiederverwendbare Testfragen, unabhängig von einem bestimmten Test gespeichert und in jeden Test einfügbar.",
         "route_statistics_label": "Statistik",
         "route_statistics_desc": "Notenverteilungen, Leistung pro Kriterium, Klassenvergleich und Trendanalyse.",
         "route_activity_dashboard_label": "Aktivitäts-Dashboard",
@@ -2375,6 +2391,9 @@
         "gr_comment_bank_nav": "Kommentarbank",
         "gr_comment_bank_body": "in der Seitenleiste, um deine Schnipsel zu verwalten. Organisiere sie mit Tags (z. B. „Schreiben“, „Grammatik“, „Engagement“). Klicke während der Bewertung auf das Kommentarsymbol, um die Bank zu öffnen und einen Schnipsel mit einem Klick in das Feedbackfeld einzufügen. Bei verbundener Cloud-Synchronisierung kannst du auf das Abteilungssymbol eines Eintrags klicken, um ihn schreibgeschützt mit jedem anderen Lehrer an deiner Schule zu teilen; von Kollegen geteilte Einträge erscheinen in der Bank mit einem „Abteilung“-Abzeichen.",
         "gr_comment_bank_suggested_note": "Wenn ein Kriterium eine Serie niedriger Bewertungen hatte, öffnet sich die Kommentarbank mit einer Gruppe „Vorgeschlagen“ oben — Kommentare, die mit der GER-Kompetenz oder dem -Niveau dieses Kriteriums getaggt sind (z. B. „speaking_interaction“, „B1“).",
+        "gr_question_bank_title": "Fragenbank",
+        "gr_question_bank_body_prefix": "Speichere jede Testfrage über das Lesezeichen-Symbol im Fragen-Editor in einer wiederverwendbaren Bank und füge gespeicherte Fragen dann in jeden Test ein über",
+        "gr_question_bank_body_suffix": "— verwalte, tagge und durchsuche dort deine gespeicherten Fragen.",
         "gr_test_results_title": "Testergebnisse & Bewertung",
         "gr_test_results_intro_prefix": "Klicke in der Liste",
         "gr_test_results_intro_tests": "Tests",

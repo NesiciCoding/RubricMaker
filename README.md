@@ -29,6 +29,7 @@ A comprehensive rubric creation and grading tool built with React and TypeScript
 - **Interactive grading**: Click levels, toggle sub-items, or use the slider for point ranges.
 - **Score modifiers**: Apply percentage, point, or level adjustments with a reason.
 - **Comment Bank**: Tag and insert reusable feedback snippets while grading. When a criterion has had a run of low scores, the bank opens with a "Suggested" group of comments tagged with that criterion's CEFR skill or level.
+- **Question Bank**: Save any test question to a reusable bank via a bookmark icon in the Test Builder's question editor, then insert saved questions into any other test. Tag and search saved questions from the `/question-bank` page.
 - **Voice grading**: Dictate comments hands-free using speech recognition.
 - **Overall feedback**: Add general comments and file attachments per graded rubric.
 - **Comparative grading**: Grade two students side-by-side for consistency.
@@ -197,6 +198,7 @@ npm run db:reset     # Reset and re-apply all migrations
 | `/test/:code`                               | Take a test (public, no login — answer questions, optional timer, submit)                                                                   |
 | `/attachments`                              | Attachment manager                                                                                                                          |
 | `/comments`                                 | Comment bank                                                                                                                                |
+| `/question-bank`                            | Question bank — reusable test questions, insertable into any test                                                                          |
 | `/statistics`                               | Statistics dashboard (by-rubric, by-student, multi-class compare with insights)                                                             |
 | `/activity-dashboard`                       | Activity Dashboard — rubric/test/essay × class grid with link/assign/reorder actions, pending grading-task list                             |
 | `/moderation`                               | Moderation queue — disputed co-graded submissions, per-criterion delta, keep/accept resolution                                              |
@@ -224,6 +226,7 @@ npm run db:reset     # Reset and re-apply all migrations
 | `src/utils/pinHash.ts`                  | PIN hashing for student self-assessment locks                                                                                                                                       |
 | `src/utils/clozeParse.ts`               | Parses `{{...}}` cloze gap syntax and `[[...]]` hot-text fragment syntax for test questions                                                                                         |
 | `src/utils/audioResponseCode.ts`        | Encodes/parses the data-URI JSON carried in an `audio-response` question's `TestAnswer.response`                                                                                    |
+| `src/utils/testQuestionClone.ts`        | Regenerates a test question's id and every nested option/pair/item id — used when inserting a Question Bank item into a test                                                       |
 | `src/utils/learningPathAggregator.ts`   | Rule-based rubric recommendations, intervention flagging, and grammar practice recommendations                                                                                      |
 | `src/utils/testSummaryAggregator.ts`    | Per-question/per-skill strong-weak test breakdown                                                                                                                                   |
 | `src/utils/reportCardAggregator.ts`     | Composes CEFR, learning-goals, and test-summary data into one report card                                                                                                           |
