@@ -1617,6 +1617,8 @@ export function saveUserTemplates(templates: UserTemplate[]): void {
 export interface TestDraft {
     answers: Record<string, string>;
     savedAt: string;
+    /** Sections visited so far, in order — only set while taking a staged (placement) test, so a reload resumes at the right stage */
+    sectionPath?: string[];
 }
 
 export function loadTestDraft(draftKey: string): TestDraft | null {

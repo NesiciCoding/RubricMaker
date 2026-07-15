@@ -43,9 +43,19 @@ export default function StudentLearningPathPage() {
     const studentOverview = useMemo(
         () =>
             student
-                ? getCefrStudentOverview(student.id, studentRubrics, rubrics, selfAssessments, analysisResults)
+                ? getCefrStudentOverview(
+                      student.id,
+                      studentRubrics,
+                      rubrics,
+                      selfAssessments,
+                      analysisResults,
+                      undefined,
+                      undefined,
+                      tests,
+                      studentTests
+                  )
                 : null,
-        [student, studentRubrics, rubrics, selfAssessments, analysisResults]
+        [student, studentRubrics, rubrics, selfAssessments, analysisResults, tests, studentTests]
     );
 
     const cohortAverages = useMemo(() => {
@@ -184,6 +194,33 @@ export default function StudentLearningPathPage() {
                         <ExternalLink size={14} /> {t('navigation.vocabulary')}
                     </button>
                 </div>
+
+                {studentOverview?.placement && (
+                    <div
+                        className="card"
+                        style={{
+                            marginBottom: 24,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 10,
+                            flexWrap: 'wrap',
+                            borderLeft: '3px solid var(--yellow)',
+                        }}
+                    >
+                        <CefrBadge
+                            level={studentOverview.placement.level}
+                            size="md"
+                            showCambridgeLabel={settings.showCambridgeLabels}
+                        />
+                        <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{t('cefrOverview.placement_badge')}</span>
+                        <span className="text-muted text-sm">
+                            {t('cefrOverview.placement_from', {
+                                testName: studentOverview.placement.testName,
+                                date: new Date(studentOverview.placement.assessedAt).toLocaleDateString(),
+                            })}
+                        </span>
+                    </div>
+                )}
 
                 <div className="card" style={{ marginBottom: 24 }}>
                     <h3 style={{ marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>

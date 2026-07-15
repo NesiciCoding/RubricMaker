@@ -288,6 +288,28 @@ export default function StudentCefrOverviewPage() {
                     </div>
                 )}
 
+                {/* Placement estimate — provisional, never blended into the assessed grid above */}
+                {overview?.placement && (
+                    <div className="card" style={{ marginBottom: 24, borderLeft: '3px solid var(--yellow)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                            <CefrBadge
+                                level={overview.placement.level}
+                                size="md"
+                                showCambridgeLabel={settings.showCambridgeLabels}
+                            />
+                            <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                                {t('cefrOverview.placement_badge')}
+                            </span>
+                            <span className="text-muted text-sm">
+                                {t('cefrOverview.placement_from', {
+                                    testName: overview.placement.testName,
+                                    date: new Date(overview.placement.assessedAt).toLocaleDateString(),
+                                })}
+                            </span>
+                        </div>
+                    </div>
+                )}
+
                 {/* CEFR Can-Do Grid */}
                 {overview && (
                     <div className="card" style={{ marginBottom: 24 }}>

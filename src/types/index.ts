@@ -926,6 +926,14 @@ export interface CategorizeItem {
 export interface TestSection {
     id: string;
     title: string;
+    /** Target CEFR level this section is written at, for placement-test routing and result estimation */
+    cefrLevel?: CefrLevel;
+    /** Deterministic branching rule for placement tests (roadmap Phase 25.1): scoring at/above the threshold on this section routes to passSectionId, otherwise failSectionId */
+    routing?: {
+        thresholdPct: number;
+        passSectionId: string;
+        failSectionId: string;
+    };
 }
 
 export interface TestQuestion {
@@ -991,8 +999,8 @@ export interface Test {
     updatedAt?: string;
     /** Manual sort position in list views (TestListPage, Activity Dashboard); undefined sorts last by createdAt */
     displayOrder?: number;
-    /** 'assessment' (default when unset, for back-compat with existing tests) is graded/due-dated as today; 'practice' is ungraded, retakeable, and feeds a separate practice-progress view instead of the graded CEFR chart */
-    mode?: 'practice' | 'assessment';
+    /** 'assessment' (default when unset, for back-compat with existing tests) is graded/due-dated as today; 'practice' is ungraded, retakeable, and feeds a separate practice-progress view instead of the graded CEFR chart; 'placement' presents sections sequentially via routing rules and produces a provisional CEFR estimate instead of a graded score (roadmap Phase 25) */
+    mode?: 'practice' | 'assessment' | 'placement';
     /** When true, students may submit more than one StudentTest attempt (only meaningful for mode: 'practice') */
     allowMultipleAttempts?: boolean;
     /** Target CEFR level for this test/practice set (e.g. 'B1' for a listening comprehension set) */
@@ -1046,6 +1054,8 @@ export interface StudentTest {
     updatedAt?: string;
     /** 1-based attempt count, for practice tests with allowMultipleAttempts; omitted/1 for single-attempt tests */
     attemptNumber?: number;
+    /** Ids of sections actually presented, in order taken — only set for staged (routed) tests; drives path-aware scoring and the placement estimate */
+    sectionPath?: string[];
 }
 
 export type TestStrengthBucket = 'strong' | 'developing' | 'weak';
@@ -1236,6 +1246,8 @@ export interface TestSubmissionPayload {
     startedAt: string;
     submittedAt: string;
     events?: ProctorEvent[];
+    /** Ids of sections actually presented, in order — only set for staged (placement) tests */
+    sectionPath?: string[];
 }
 
 /** A student's completed essay, encoded into a submission code for the teacher to import */

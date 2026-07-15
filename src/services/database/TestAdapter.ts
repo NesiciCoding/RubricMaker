@@ -115,7 +115,8 @@ export class TestAdapter {
         answers: TestAnswer[],
         startedAt: string,
         submittedAt: string,
-        events?: ProctorEvent[]
+        events?: ProctorEvent[],
+        sectionPath?: string[]
     ): Promise<SyncResult> {
         const {
             data: { session },
@@ -131,7 +132,15 @@ export class TestAdapter {
                     Authorization: `Bearer ${session.access_token}`,
                     apikey: this.supabaseAnonKey,
                 },
-                body: JSON.stringify({ assignmentId, submissionId, answers, startedAt, submittedAt, events }),
+                body: JSON.stringify({
+                    assignmentId,
+                    submissionId,
+                    answers,
+                    startedAt,
+                    submittedAt,
+                    events,
+                    sectionPath,
+                }),
             });
         } catch (err) {
             return { success: false, error: `Network error: ${String(err)}` };

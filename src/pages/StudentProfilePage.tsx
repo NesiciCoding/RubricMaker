@@ -53,6 +53,8 @@ export default function StudentProfilePage() {
         selfAssessments,
         speakingSessions,
         standardMasteryTargets,
+        tests,
+        studentTests,
     } = useApp();
     const [exportingId, setExportingId] = useState<string | null>(null);
     const [copiedSALink, setCopiedSALink] = useState<string | null>(null);
@@ -117,7 +119,7 @@ export default function StudentProfilePage() {
         );
     }, [student, studentRubrics, rubrics, standardMasteryTargets, cls?.year, effectiveTrack]);
 
-    const trackYearProgress = useMemo(
+    const cefrSummary = useMemo(
         () =>
             student
                 ? getCefrStudentOverview(
@@ -127,11 +129,15 @@ export default function StudentProfilePage() {
                       selfAssessments,
                       undefined,
                       cls?.year,
-                      effectiveTrack
-                  ).trackYearProgress
+                      effectiveTrack,
+                      tests,
+                      studentTests
+                  )
                 : undefined,
-        [student, studentRubrics, rubrics, selfAssessments, cls?.year, effectiveTrack]
+        [student, studentRubrics, rubrics, selfAssessments, cls?.year, effectiveTrack, tests, studentTests]
     );
+    const trackYearProgress = cefrSummary?.trackYearProgress;
+    const placementEstimate = cefrSummary?.placement;
 
     // ── CEFR progress ──────────────────────────────────────────────────────────
     // A student "achieves" a CEFR level when their average score meets the per-rubric threshold (default 70%).
@@ -770,6 +776,33 @@ export default function StudentProfilePage() {
                                 })}
                             </div>
                         )}
+                    </div>
+                )}
+
+                {activeTab === 'overview' && placementEstimate && (
+                    <div
+                        className="card"
+                        style={{
+                            marginBottom: 24,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 10,
+                            flexWrap: 'wrap',
+                            borderLeft: '3px solid var(--yellow)',
+                        }}
+                    >
+                        <CefrBadge
+                            level={placementEstimate.level}
+                            size="md"
+                            showCambridgeLabel={settings.showCambridgeLabels}
+                        />
+                        <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{t('cefrOverview.placement_badge')}</span>
+                        <span className="text-muted text-sm">
+                            {t('cefrOverview.placement_from', {
+                                testName: placementEstimate.testName,
+                                date: new Date(placementEstimate.assessedAt).toLocaleDateString(),
+                            })}
+                        </span>
                     </div>
                 )}
 

@@ -32,6 +32,7 @@ import {
     ListChecks,
     Mail,
     Newspaper,
+    Route,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { loadSupabaseConfig } from '../services/database/supabaseConfig';
@@ -79,6 +80,12 @@ const TEACHER_FEATURES = [
         title: 'Tests & Quizzes',
         desc: 'Build multiple-choice, multiple-response, true/false, short-answer, open, fill-the-gap, matching, ordering, categorize, and hot text tests, assign them with a share link or Safe Exam Browser, then auto-grade, fine-tune the class average, and export a strong/weak point summary per student or class. Add an ungraded, retakeable Practice mode with audio questions for listening comprehension.',
         color: '#3b82f6',
+    },
+    {
+        icon: Route,
+        title: 'Placement Testing',
+        desc: 'Build a staged placement test that routes each student to an easier or harder section based on their score — results show the exact path taken and a provisional CEFR estimate, ideal for sizing up new students at the start of the year.',
+        color: '#10b981',
     },
     {
         icon: PenLine,

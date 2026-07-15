@@ -18,6 +18,7 @@ import SebGate from '../components/Tests/SebGate';
 import HelpPopover from '../components/Tests/HelpPopover';
 import { useLiveSessionTelemetry } from '../hooks/useLiveSessionTelemetry';
 import { seededShuffle } from '../utils/seededShuffle';
+import { isStagedTest, entrySectionId, sectionQuestions, resolveNextSection } from '../utils/placementRouting';
 import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse';
 import { initClientLogger, logEvent } from '../services/logging/clientLogger';
 import { TestAdapter } from '../services/database/TestAdapter';
@@ -169,6 +170,11 @@ export default function StudentTestPage() {
     });
     const [draftRestored, setDraftRestored] = useState<boolean>(() => !!loadTestDraft(draftKey));
     const [currentIndex, setCurrentIndex] = useState(0);
+    // Ids of sections visited so far, in order — only meaningful for staged (placement) tests.
+    // Seeded from the draft when resuming; the effect below seeds the entry section once the
+    // test loads for a fresh attempt (the currentStageId fallback below covers the one-render
+    // gap before that effect runs, so nothing needs to block on it).
+    const [sectionPath, setSectionPath] = useState<string[]>(() => loadTestDraft(draftKey)?.sectionPath ?? []);
     const [submitted, setSubmitted] = useState(false);
     const [submissionCode, setSubmissionCode] = useState('');
     const [copied, setCopied] = useState(false);
@@ -237,17 +243,45 @@ export default function StudentTestPage() {
         };
     }, [hasDb, assignment, adapter, contentReady, secondsLeft, draftKey, t]);
 
+    const staged = !!test && isStagedTest(test);
+    // Falls back to the entry section directly (rather than waiting for the seeding effect
+    // below to commit) so a staged test never renders a blank question list for one frame.
+    const currentStageId =
+        sectionPath.length > 0 ? sectionPath[sectionPath.length - 1] : test ? entrySectionId(test) : null;
+
+    // Persists sectionPath=[entry] into real state once the test loads, so the first
+    // "continue to next section" click has a non-empty path to append to.
+    useEffect(() => {
+        if (!test || !staged || sectionPath.length > 0) return;
+        const entry = entrySectionId(test);
+        if (entry) setSectionPath([entry]);
+    }, [test, staged, sectionPath.length]);
+
+    useEffect(() => {
+        setCurrentIndex(0);
+    }, [currentStageId]);
+
     const orderedQuestions = useMemo<TestQuestion[]>(() => {
         if (!test) return [];
+        if (staged) {
+            if (!currentStageId) return [];
+            const stageQuestions = sectionQuestions(test, currentStageId);
+            if (!test.shuffleQuestions || !code) return stageQuestions;
+            return seededShuffle(stageQuestions, `${code}-${currentStageId}`);
+        }
         if (!test.shuffleQuestions || !code) return test.questions;
         return seededShuffle(test.questions, code);
-    }, [test, code]);
+    }, [test, code, staged, currentStageId]);
 
     // ── Draft autosave ────────────────────────────────────────────────────────
     useEffect(() => {
         if (submitted) return;
-        saveTestDraft(draftKey, { answers: Object.fromEntries(answers), savedAt: new Date().toISOString() });
-    }, [answers, draftKey, submitted]);
+        saveTestDraft(draftKey, {
+            answers: Object.fromEntries(answers),
+            savedAt: new Date().toISOString(),
+            sectionPath: sectionPath.length > 0 ? sectionPath : undefined,
+        });
+    }, [answers, draftKey, submitted, sectionPath]);
 
     const getSnapshot = useCallback(
         () => ({
@@ -294,6 +328,7 @@ export default function StudentTestPage() {
             startedAt: startedAtRef.current,
             submittedAt,
             events: telemetry.flush(),
+            sectionPath: staged && sectionPath.length > 0 ? sectionPath : undefined,
         };
         const legacyCode = encodeTestSubmission(submissionPayload);
 
@@ -307,7 +342,8 @@ export default function StudentTestPage() {
                 testAnswers,
                 startedAtRef.current,
                 submittedAt,
-                submissionPayload.events
+                submissionPayload.events,
+                submissionPayload.sectionPath
             );
             setSubmitting(false);
             if (!result.success) {
@@ -326,7 +362,20 @@ export default function StudentTestPage() {
         clearTestTimer(draftKey + '_timer');
         setSubmitted(true);
         submitInFlightRef.current = false;
-    }, [assignment, test, resolvedContent, answers, hasDb, adapter, draftKey, telemetry, t, submitted]);
+    }, [
+        assignment,
+        test,
+        resolvedContent,
+        answers,
+        hasDb,
+        adapter,
+        draftKey,
+        telemetry,
+        t,
+        submitted,
+        staged,
+        sectionPath,
+    ]);
 
     const handleSubmitRef = useRef(handleSubmit);
     useEffect(() => {
@@ -359,6 +408,7 @@ export default function StudentTestPage() {
         startedAtRef.current = new Date().toISOString();
         setAnswers(new Map());
         setCurrentIndex(0);
+        setSectionPath([]);
         setSubmitted(false);
         setSubmissionCode('');
         setSubmitError('');
@@ -430,6 +480,18 @@ export default function StudentTestPage() {
     // Find current question's section label
     const sections = test.sections ?? [];
     const currentSection = question?.sectionId ? sections.find((s) => s.id === question.sectionId) : null;
+
+    // For a staged test, the last question of a stage routes onward instead of submitting
+    // directly — resolveNextSection returns null once the path reaches a terminal section.
+    const nextStageId =
+        staged && currentStageId
+            ? resolveNextSection(
+                  test,
+                  currentStageId,
+                  test.questions.map((q) => ({ questionId: q.id, response: answers.get(q.id) ?? '' })),
+                  sectionPath
+              )
+            : null;
 
     return (
         <SebGate requireSEB={resolvedContent?.requireSEB ?? assignment.requireSEB}>
@@ -700,7 +762,15 @@ export default function StudentTestPage() {
                                     {t('tests.taking.previous')}
                                 </button>
 
-                                {isLast ? (
+                                {isLast && staged && nextStageId ? (
+                                    <button
+                                        onClick={() => setSectionPath((prev) => [...prev, nextStageId])}
+                                        className="btn btn-primary"
+                                        style={{ padding: '10px 32px', fontWeight: 700, fontSize: '0.95rem' }}
+                                    >
+                                        {t('tests.taking.continue_section')}
+                                    </button>
+                                ) : isLast ? (
                                     <button
                                         onClick={handleSubmit}
                                         disabled={submitting}

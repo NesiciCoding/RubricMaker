@@ -105,7 +105,7 @@ export default function GlobalSearch({ onClose, growFrom }: Props) {
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                     <div style={{ fontSize: 13.5, color: 'var(--text)' }}>
                                         {result.label}
-                                        {result.testMode === 'practice' && (
+                                        {(result.testMode === 'practice' || result.testMode === 'placement') && (
                                             <span
                                                 style={{
                                                     marginLeft: 6,
@@ -116,7 +116,9 @@ export default function GlobalSearch({ onClose, growFrom }: Props) {
                                                     padding: '0 6px',
                                                 }}
                                             >
-                                                {t('search.practice_badge')}
+                                                {result.testMode === 'placement'
+                                                    ? t('search.placement_badge')
+                                                    : t('search.practice_badge')}
                                             </span>
                                         )}
                                     </div>

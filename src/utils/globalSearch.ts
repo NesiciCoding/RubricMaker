@@ -26,8 +26,8 @@ export interface SearchResult {
     label: string;
     sublabel?: string;
     route: string;
-    /** Only set for type: 'test' results — lets the UI badge practice vs. assessment tests. */
-    testMode?: 'practice' | 'assessment';
+    /** Only set for type: 'test' results — lets the UI badge practice/placement vs. assessment tests. */
+    testMode?: Test['mode'];
 }
 
 export interface SearchableData {

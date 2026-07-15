@@ -1038,6 +1038,21 @@ function GradingTab() {
                 />
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.gr_placement_title')}
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
+                    {t('docs.gr_placement_body')}
+                </p>
+                <FeatureList
+                    items={[
+                        t('docs.gr_placement_item_routing'),
+                        t('docs.gr_placement_item_taking'),
+                        t('docs.gr_placement_item_results'),
+                        t('docs.gr_placement_item_provisional'),
+                    ]}
+                />
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.gr_class_avg_title')}
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>

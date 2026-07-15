@@ -6,6 +6,7 @@ import Topbar from '../components/Layout/Topbar';
 import HelpPopover from '../components/ui/HelpPopover';
 import { useApp } from '../context/AppContext';
 import { calcTestMaxPoints, calcStudentTestRawPoints, calcTestPercentage, autoScoreResponse } from '../utils/testCalc';
+import { isStagedTest, maxPointsForPath, sectionQuestions, scoreSectionPct } from '../utils/placementRouting';
 import { calcLetterGrade, calcGradeColor } from '../utils/gradeCalc';
 import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse';
 import type { TestAnswer, TestQuestion, ProctorEventType } from '../types';
@@ -262,10 +263,25 @@ export default function TestResultsPage() {
 
     const [drafts, setDrafts] = useState<Record<string, { pointsEarned: string; feedback: string }>>({});
 
-    const maxPoints = test ? calcTestMaxPoints(test) : 0;
+    const sectionPath = studentTest?.sectionPath;
+    const staged = !!test && isStagedTest(test) && !!sectionPath?.length;
+
+    const maxPoints = test
+        ? staged && sectionPath
+            ? maxPointsForPath(test, sectionPath)
+            : calcTestMaxPoints(test)
+        : 0;
+
+    // For a staged (placement) submission, only the sections the student actually saw
+    // count — the other branch's questions were never presented and would otherwise
+    // show up as unanswered.
+    const pathQuestions =
+        test && staged && sectionPath
+            ? sectionPath.flatMap((id) => sectionQuestions(test, id))
+            : (test?.questions ?? []);
 
     const answersById = new Map((studentTest?.answers ?? []).map((a) => [a.questionId, a]));
-    const effectiveAnswers = (test?.questions ?? []).map((question) => ({
+    const effectiveAnswers = pathQuestions.map((question) => ({
         question,
         answer: answersById.get(question.id),
     }));
@@ -434,6 +450,36 @@ export default function TestResultsPage() {
                         )}
                     </div>
                 </div>
+
+                {staged && sectionPath && (
+                    <div className="card">
+                        <h3 style={{ margin: '0 0 12px' }}>{t('tests.results.placement_path_title')}</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {sectionPath.map((sectionId, i) => {
+                                const section = test.sections?.find((s) => s.id === sectionId);
+                                const pct = scoreSectionPct(test, sectionId, studentTest.answers);
+                                return (
+                                    <div
+                                        key={`${sectionId}-${i}`}
+                                        style={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            gap: 12,
+                                            fontSize: '0.85rem',
+                                        }}
+                                    >
+                                        <span>
+                                            {t('tests.results.placement_path_step', { number: i + 1 })}{' '}
+                                            {section?.title ?? sectionId}
+                                            {section?.cefrLevel ? ` (${section.cefrLevel})` : ''}
+                                        </span>
+                                        <span style={{ fontWeight: 700 }}>{pct.toFixed(0)}%</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
 
                 <div className="card">
                     <h3 style={{ margin: '0 0 12px' }}>
