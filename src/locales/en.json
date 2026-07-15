@@ -2464,6 +2464,8 @@
         "ce_learning_paths_item_flags": "Intervention flags — three or more consecutive low scores on the same rubric criterion, or on the same CEFR skill, raise a flag so it is easy to spot students who need extra support.",
         "ce_learning_paths_item_computed": "Everything is computed on the fly from existing grades; nothing new is stored.",
         "ce_learning_paths_item_grammar": "A separate Grammar practice section suggests a matching flashcard deck and practice test when a student repeatedly scores poorly on a grammar-linked criterion or question.",
+        "ce_mastery_profile_title": "Grammar Mastery Profile",
+        "ce_mastery_profile_body": "On a student's profile page, a table merges test accuracy, flashcard spaced-repetition progress, and graded-writing scores per grammar item — a single view of what a student has actually demonstrated across every domain that tags the same grammar point.",
         "ce_speaking_title": "Speaking Sessions",
         "ce_speaking_intro": "Start a speaking session from either of two entry points:",
         "ce_speaking_item_profile": "Student Profile → \"Speaking Session\" button in the top bar. With one rubric it navigates directly; with multiple rubrics a dropdown lets you pick.",
@@ -2665,6 +2667,18 @@
         "definition_placeholder": "Definition (optional)…",
         "docs_title": "Cambridge English exam labels",
         "docs_body": "When enabled in Settings, CEFR level badges show the matching Cambridge English Qualification (e.g. A2 Key, B1 Preliminary, B2 First, C1 Advanced, C2 Proficiency) as a subtle secondary label. In the Rubric Builder's vocabulary panel, if a Cambridge Dictionary API key is configured in Admin → Integrations, each word gets a \"Look up\" button that fetches its CEFR level and definition automatically."
+    },
+    "masteryProfile": {
+        "title": "Grammar Mastery Profile",
+        "intro": "What this student has demonstrated across tests, flashcards, and graded writing, per grammar item.",
+        "col_item": "Grammar item",
+        "col_test": "Tested",
+        "col_flashcards": "Flashcards",
+        "col_writing": "Writing",
+        "no_data": "\u2014",
+        "test_summary": "{{correct}}/{{attempts}} correct ({{pct}}%)",
+        "flashcards_summary": "{{mastered}}/{{total}} mastered ({{due}} due)",
+        "writing_summary": "{{pct}}% avg ({{count}})"
     },
     "vocabProfile": {
         "page_title": "Vocabulary Profile",

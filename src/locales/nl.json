@@ -2466,6 +2466,8 @@
         "ce_learning_paths_item_flags": "Interventiesignalen — drie of meer opeenvolgende lage scores op hetzelfde rubriekcriterium of dezelfde ERK-vaardigheid geven een signaal, zodat leerlingen die extra ondersteuning nodig hebben makkelijk opvallen.",
         "ce_learning_paths_item_computed": "Alles wordt direct berekend op basis van bestaande cijfers; er wordt niets nieuws opgeslagen.",
         "ce_learning_paths_item_grammar": "Een apart onderdeel Grammaticaoefening stelt een passende flashcardset en oefentoets voor wanneer een leerling herhaaldelijk laag scoort op een aan grammatica gekoppeld criterium of vraag.",
+        "ce_mastery_profile_title": "Grammaticabeheersing",
+        "ce_mastery_profile_body": "Op de profielpagina van een leerling toont een tabel per grammaticaonderdeel de toetsresultaten, de voortgang van flashcards (spaced repetition) en de scores van beoordeeld schrijfwerk samen \u2014 \u00e9\u00e9n overzicht van wat een leerling daadwerkelijk beheerst over alle domeinen die hetzelfde grammaticaonderdeel taggen.",
         "ce_speaking_title": "Spreeksessies",
         "ce_speaking_intro": "Start een spreeksessie vanaf een van twee invoerpunten:",
         "ce_speaking_item_profile": "Leerlingprofiel → knop \"Spreeksessie\" in de bovenbalk. Bij één rubriek navigeert het direct; bij meerdere rubrieken laat een keuzelijst je kiezen.",
@@ -2667,6 +2669,18 @@
         "definition_placeholder": "Definitie (optioneel)…",
         "docs_title": "Cambridge English-examenlabels",
         "docs_body": "Wanneer dit in Instellingen is ingeschakeld, tonen ERK-niveaubadges het bijbehorende Cambridge English-examen (bijv. A2 Key, B1 Preliminary, B2 First, C1 Advanced, C2 Proficiency) als subtiel extra label. In het woordenschatpaneel van de Rubricbouwer krijgt elk woord, als er een Cambridge Dictionary API-sleutel is ingesteld bij Beheer → Integraties, een knop \"Opzoeken\" die automatisch het ERK-niveau en de definitie ophaalt."
+    },
+    "masteryProfile": {
+        "title": "Grammaticabeheersing",
+        "intro": "Wat deze leerling heeft laten zien bij toetsen, flashcards en beoordeeld schrijfwerk, per grammaticaonderdeel.",
+        "col_item": "Grammaticaonderdeel",
+        "col_test": "Getoetst",
+        "col_flashcards": "Flashcards",
+        "col_writing": "Schrijven",
+        "no_data": "\u2014",
+        "test_summary": "{{correct}}/{{attempts}} goed ({{pct}}%)",
+        "flashcards_summary": "{{mastered}}/{{total}} onder de knie ({{due}} te herhalen)",
+        "writing_summary": "{{pct}}% gem. ({{count}})"
     },
     "vocabProfile": {
         "page_title": "Woordenschatprofiel",

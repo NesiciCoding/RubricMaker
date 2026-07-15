@@ -2466,6 +2466,8 @@
         "ce_learning_paths_item_flags": "Interventionssignale — drei oder mehr aufeinanderfolgende niedrige Bewertungen beim gleichen Rubrikkriterium oder der gleichen GER-Fertigkeit lösen ein Signal aus, damit Schüler, die zusätzliche Unterstützung benötigen, leicht erkennbar sind.",
         "ce_learning_paths_item_computed": "Alles wird live aus bestehenden Bewertungen berechnet; es wird nichts Neues gespeichert.",
         "ce_learning_paths_item_grammar": "Ein separater Abschnitt Grammatikübung schlägt einen passenden Karteikartenstapel und eine Übung vor, wenn ein Schüler wiederholt niedrig bei einem grammatikverknüpften Kriterium oder einer Frage abschneidet.",
+        "ce_mastery_profile_title": "Grammatikbeherrschung",
+        "ce_mastery_profile_body": "Auf der Profilseite eines Sch\u00fclers fasst eine Tabelle pro Grammatikpunkt die Testgenauigkeit, den Karteikarten-Fortschritt (Spaced Repetition) und die Noten bewerteter Texte zusammen \u2014 eine einzige \u00dcbersicht dessen, was ein Sch\u00fcler in allen Bereichen mit demselben Grammatikpunkt tats\u00e4chlich gezeigt hat.",
         "ce_speaking_title": "Sprechsitzungen",
         "ce_speaking_intro": "Starte eine Sprechsitzung über einen von zwei Einstiegspunkten:",
         "ce_speaking_item_profile": "Schülerprofil → Schaltfläche „Sprechsitzung“ in der oberen Leiste. Mit einer Rubrik navigiert es direkt; bei mehreren Rubriken lässt dich ein Dropdown wählen.",
@@ -2667,6 +2669,18 @@
         "definition_placeholder": "Definition (optional)…",
         "docs_title": "Cambridge English-Prüfungsbezeichnungen",
         "docs_body": "Wenn diese Option in den Einstellungen aktiviert ist, zeigen GER-Niveau-Badges die passende Cambridge English-Prüfung (z. B. A2 Key, B1 Preliminary, B2 First, C1 Advanced, C2 Proficiency) als dezente Zusatzbezeichnung an. Im Vokabelbereich des Rubrik-Editors erhält jedes Wort eine Schaltfläche \"Nachschlagen\", sofern unter Verwaltung → Integrationen ein Cambridge Dictionary API-Schlüssel hinterlegt ist; diese ruft automatisch GER-Niveau und Definition ab."
+    },
+    "masteryProfile": {
+        "title": "Grammatikbeherrschung",
+        "intro": "Was dieser Sch\u00fcler bei Tests, Karteikarten und bewerteten Texten pro Grammatikpunkt gezeigt hat.",
+        "col_item": "Grammatikpunkt",
+        "col_test": "Getestet",
+        "col_flashcards": "Karteikarten",
+        "col_writing": "Schreiben",
+        "no_data": "\u2014",
+        "test_summary": "{{correct}}/{{attempts}} richtig ({{pct}}%)",
+        "flashcards_summary": "{{mastered}}/{{total}} beherrscht ({{due}} f\u00e4llig)",
+        "writing_summary": "{{pct}}% \u00d8 ({{count}})"
     },
     "vocabProfile": {
         "page_title": "Wortschatzprofil",
