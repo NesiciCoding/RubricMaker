@@ -73,6 +73,7 @@ function testEvidenceByItem(
 
     for (const st of studentTests) {
         if (st.studentId !== studentId) continue;
+        if (st.status === 'in_progress') continue;
         const test = testsById.get(st.testId);
         if (!test) continue;
         for (const question of test.questions) {

@@ -94,6 +94,29 @@ describe('getStudentMasteryProfile', () => {
         expect(rows.find((r) => r.itemId === GRAMMAR_ITEM_ID)!.test).toBeNull();
     });
 
+    it('ignores a StudentTest that is still in progress (not yet submitted)', () => {
+        const test: Test = {
+            id: 't1',
+            name: 'Grammar test',
+            questions: [{ id: 'q1', prompt: '...', type: 'cloze', points: 1, linkedGrammarItemId: GRAMMAR_ITEM_ID }],
+            requireSEB: false,
+            shuffleQuestions: false,
+            createdAt: '2026-01-01T00:00:00.000Z',
+        };
+        const studentTests: StudentTest[] = [
+            {
+                id: 'st1',
+                testId: 't1',
+                studentId: 's1',
+                answers: [{ questionId: 'q1', response: 'x', pointsEarned: 1 }],
+                status: 'in_progress',
+                startedAt: '2026-01-01T00:00:00.000Z',
+            },
+        ];
+        const rows = getStudentMasteryProfile('s1', { ...emptyDeps, tests: [test], studentTests });
+        expect(rows.find((r) => r.itemId === GRAMMAR_ITEM_ID)!.test).toBeNull();
+    });
+
     it('computes flashcard stage counts for assigned decks only', () => {
         const deck: FlashcardDeck = {
             id: 'd1',
