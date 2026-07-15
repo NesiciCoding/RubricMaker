@@ -7,7 +7,8 @@ function listing(overrides: Partial<MarketplaceListing>): MarketplaceListing {
         id: 'x',
         schoolId: 's',
         publishedBy: 'u',
-        rubricSnapshot: {} as MarketplaceListing['rubricSnapshot'],
+        kind: 'rubric',
+        snapshot: {} as MarketplaceListing['snapshot'],
         name: 'n',
         upvoteCount: 0,
         createdAt: '2024-01-01T00:00:00.000Z',
@@ -36,5 +37,19 @@ describe('filterAndSortListings', () => {
     it('sorts by upvote count', () => {
         const result = filterAndSortListings(listings, 'all', 'upvotes');
         expect(result.map((l) => l.id)).toEqual(['b', 'c', 'a']);
+    });
+
+    it('filters by kind', () => {
+        const mixed = [
+            listing({ id: 'r1', kind: 'rubric' }),
+            listing({ id: 't1', kind: 'test' }),
+            listing({ id: 'd1', kind: 'deck' }),
+        ];
+        expect(filterAndSortListings(mixed, 'all', 'newest', 'test').map((l) => l.id)).toEqual(['t1']);
+        expect(
+            filterAndSortListings(mixed, 'all', 'newest', 'all')
+                .map((l) => l.id)
+                .sort()
+        ).toEqual(['d1', 'r1', 't1']);
     });
 });

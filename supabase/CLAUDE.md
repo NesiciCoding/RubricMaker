@@ -114,7 +114,7 @@ Current functions:
 | `client_logs` | Client-side error/diagnostic logs |
 | `audit_logs` | Audit trail of sensitive actions |
 | `grading_tasks` | Async grading job records |
-| `marketplace_listings` | Published rubrics on the rubric marketplace |
+| `marketplace_listings` | Published rubrics, tests, or flashcard decks on the school marketplace, discriminated by `kind` |
 | `marketplace_upvotes` | Upvotes on marketplace listings |
 | `question_bank_items` | Reusable test questions saved outside any one test (roadmap 24.1) |
 

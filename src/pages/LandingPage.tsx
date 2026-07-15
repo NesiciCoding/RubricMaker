@@ -94,8 +94,8 @@ const TEACHER_FEATURES = [
     },
     {
         icon: Store,
-        title: 'Rubric Marketplace',
-        desc: 'Share your best rubrics with colleagues at your school, and clone theirs.',
+        title: 'Marketplace',
+        desc: 'Share your best rubrics, tests, and flashcard decks with colleagues at your school, and clone theirs.',
         color: '#3b82f6',
     },
     {

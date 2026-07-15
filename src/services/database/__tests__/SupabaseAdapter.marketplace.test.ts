@@ -60,7 +60,7 @@ describe('SupabaseAdapter marketplace methods', () => {
     });
 
     it('publishToMarketplace returns null when not configured', async () => {
-        expect(await adapter.publishToMarketplace('school1', rubric)).toBeNull();
+        expect(await adapter.publishToMarketplace('school1', 'rubric', rubric)).toBeNull();
     });
 
     it('cloneMarketplaceListing returns null when not configured', async () => {
@@ -82,6 +82,7 @@ describe('SupabaseAdapter marketplace methods', () => {
             id: 'listing1',
             school_id: 'school1',
             published_by: 'user1',
+            kind: 'rubric',
             rubric_snapshot: rubric,
             name: 'Essay Rubric',
             subject: 'English',
@@ -102,7 +103,8 @@ describe('SupabaseAdapter marketplace methods', () => {
                 id: 'listing1',
                 schoolId: 'school1',
                 publishedBy: 'user1',
-                rubricSnapshot: rubric,
+                kind: 'rubric',
+                snapshot: rubric,
                 name: 'Essay Rubric',
                 subject: 'English',
                 description: 'desc',
@@ -112,6 +114,29 @@ describe('SupabaseAdapter marketplace methods', () => {
                 updatedAt: '2024-01-02T00:00:00.000Z',
             },
         ]);
+    });
+
+    it('listMarketplaceListings defaults kind to rubric for pre-24.4 rows', async () => {
+        const row = {
+            id: 'listing1',
+            school_id: 'school1',
+            published_by: 'user1',
+            kind: null,
+            rubric_snapshot: rubric,
+            name: 'Essay Rubric',
+            subject: 'English',
+            description: 'desc',
+            attribution: null,
+            upvote_count: 0,
+            created_at: '2024-01-01T00:00:00.000Z',
+            updated_at: '2024-01-01T00:00:00.000Z',
+        };
+        const client = makeClient({ data: [row], error: null });
+        const connectedAdapter = adapterWithClient(client);
+
+        const result = await connectedAdapter.listMarketplaceListings('school1');
+
+        expect(result[0].kind).toBe('rubric');
     });
 
     it('listMarketplaceListings returns [] on error', async () => {
@@ -126,6 +151,7 @@ describe('SupabaseAdapter marketplace methods', () => {
             id: 'listing1',
             school_id: 'school1',
             published_by: 'user1',
+            kind: 'rubric',
             rubric_snapshot: rubric,
             name: 'Essay Rubric',
             subject: 'English',
@@ -138,23 +164,42 @@ describe('SupabaseAdapter marketplace methods', () => {
         const client = makeClient({ data: row, error: null });
         const connectedAdapter = adapterWithClient(client);
 
-        const result = await connectedAdapter.publishToMarketplace('school1', rubric, 'Jane Doe');
+        const result = await connectedAdapter.publishToMarketplace('school1', 'rubric', rubric, 'Jane Doe');
 
         expect(client.from).toHaveBeenCalledWith('marketplace_listings');
         expect(result?.id).toBe('listing1');
+        expect(result?.kind).toBe('rubric');
         expect(result?.attribution).toBe('Jane Doe');
+    });
+
+    it('publishToMarketplace omits subject for non-rubric kinds', async () => {
+        const testEntity = {
+            id: 't1',
+            name: 'Grammar Quiz',
+            questions: [],
+            requireSEB: false,
+            shuffleQuestions: false,
+            createdAt: '2024-01-01T00:00:00.000Z',
+        };
+        const client = makeClient({ data: { ...testEntity, kind: 'test' }, error: null });
+        const connectedAdapter = adapterWithClient(client);
+
+        await connectedAdapter.publishToMarketplace('school1', 'test', testEntity as never);
+
+        const builder = client.from.mock.results[0].value as { insert: ReturnType<typeof vi.fn> };
+        expect(builder.insert).toHaveBeenCalledWith(expect.objectContaining({ kind: 'test', subject: null }));
     });
 
     it('publishToMarketplace returns null on error', async () => {
         const client = makeClient({ data: null, error: { message: 'boom' } });
         const connectedAdapter = adapterWithClient(client);
 
-        expect(await connectedAdapter.publishToMarketplace('school1', rubric)).toBeNull();
+        expect(await connectedAdapter.publishToMarketplace('school1', 'rubric', rubric)).toBeNull();
     });
 
     it('cloneMarketplaceListing returns a fresh local Rubric without versions', async () => {
         const client = makeClient({
-            data: { rubric_snapshot: { ...rubric, versions: [{ savedAt: 'x', snapshot: rubric }] } },
+            data: { kind: 'rubric', rubric_snapshot: { ...rubric, versions: [{ savedAt: 'x', snapshot: rubric }] } },
             error: null,
         });
         const connectedAdapter = adapterWithClient(client);
@@ -162,9 +207,22 @@ describe('SupabaseAdapter marketplace methods', () => {
         const cloned = await connectedAdapter.cloneMarketplaceListing('listing1');
 
         expect(cloned).not.toBeNull();
-        expect(cloned?.id).not.toBe(rubric.id);
-        expect(cloned?.name).toBe(rubric.name);
-        expect((cloned as unknown as { versions?: unknown })?.versions).toBeUndefined();
+        expect(cloned?.kind).toBe('rubric');
+        expect(cloned?.entity.id).not.toBe(rubric.id);
+        expect(cloned?.entity.name).toBe(rubric.name);
+        expect((cloned?.entity as unknown as { versions?: unknown })?.versions).toBeUndefined();
+    });
+
+    it('cloneMarketplaceListing returns the deck kind for a published flashcard deck', async () => {
+        const deck = { id: 'd1', name: 'Grammar Deck', cards: [], createdAt: '2024-01-01T00:00:00.000Z' };
+        const client = makeClient({ data: { kind: 'deck', rubric_snapshot: deck }, error: null });
+        const connectedAdapter = adapterWithClient(client);
+
+        const cloned = await connectedAdapter.cloneMarketplaceListing('listing1');
+
+        expect(cloned?.kind).toBe('deck');
+        expect(cloned?.entity.name).toBe('Grammar Deck');
+        expect(cloned?.entity.id).not.toBe('d1');
     });
 
     it('cloneMarketplaceListing returns null on error', async () => {
