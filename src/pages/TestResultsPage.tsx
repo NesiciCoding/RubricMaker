@@ -9,6 +9,7 @@ import { calcTestMaxPoints, calcStudentTestRawPoints, calcTestPercentage, autoSc
 import { isStagedTest, maxPointsForPath, sectionQuestions, scoreSectionPct } from '../utils/placementRouting';
 import { isStaircaseTest, staircaseMaxPoints } from '../utils/placementStaircase';
 import { calcLetterGrade, calcGradeColor } from '../utils/gradeCalc';
+import { stripHtmlTags } from '../utils/docxExport';
 import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse';
 import { calcTestTimeOnTask } from '../utils/proctorAggregator';
 import { parseAudioResponse } from '../utils/audioResponseCode';
@@ -43,7 +44,7 @@ function autoScore(question: TestQuestion, answer: TestAnswer | undefined): numb
 
 /** Renders a cloze prompt with each `{{...}}` gap shown as a blank placeholder. */
 function promptPreview(question: TestQuestion): string {
-    if (question.type !== 'cloze' && question.type !== 'cloze-dropdown') return question.prompt;
+    if (question.type !== 'cloze' && question.type !== 'cloze-dropdown') return stripHtmlTags(question.prompt);
     return renderClozeSegments(question.prompt)
         .map((segment) => (segment.type === 'text' ? segment.text : '_____'))
         .join('');

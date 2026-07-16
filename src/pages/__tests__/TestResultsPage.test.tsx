@@ -175,6 +175,36 @@ describe('TestResultsPage', () => {
         mockUseApp.tests = [mockTest];
     });
 
+    it('strips HTML tags from a rich-text question prompt', async () => {
+        const richQuestion = {
+            id: 'q-html',
+            prompt: '<p>What is <strong>5</strong> plus 3?</p>',
+            type: 'open' as const,
+            points: 2,
+        };
+        mockUseApp.tests = [{ ...mockTest, questions: [...mockTest.questions, richQuestion] }];
+        mockUseApp.studentTests = [
+            {
+                ...mockStudentTest,
+                answers: [...mockStudentTest.answers, { questionId: 'q-html', response: 'Eight', pointsEarned: 2 }],
+            },
+        ];
+        const { default: TestResultsPage } = await import('../TestResultsPage');
+        const { container } = render(
+            <MemoryRouter initialEntries={['/tests/t1/results/st1']}>
+                <Routes>
+                    <Route path="/tests/:testId/results/:studentTestId" element={<TestResultsPage />} />
+                </Routes>
+            </MemoryRouter>
+        );
+
+        expect(screen.getByText('What is 5 plus 3?')).toBeInTheDocument();
+        expect(container.textContent).not.toMatch(/<p>|<strong>/);
+
+        mockUseApp.tests = [mockTest];
+        mockUseApp.studentTests = [mockStudentTest];
+    });
+
     it('shows a not-found message for an unknown submission', async () => {
         const { default: TestResultsPage } = await import('../TestResultsPage');
         render(
