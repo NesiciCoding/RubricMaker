@@ -856,6 +856,14 @@ export default function StudentTestPage() {
                                     <RichContent html={currentSection.content} />
                                 </div>
                             )}
+                            {safeAudioSrc(currentSection?.audioUrl) && (
+                                <audio
+                                    controls
+                                    src={safeAudioSrc(currentSection?.audioUrl)}
+                                    aria-label={t('tests.taking.section_audio_alt')}
+                                    style={{ marginBottom: 16, width: '100%' }}
+                                />
+                            )}
 
                             {question && (
                                 <QuestionCard

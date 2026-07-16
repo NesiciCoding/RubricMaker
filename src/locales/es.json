@@ -673,7 +673,8 @@
             "max_recording_note": "Máximo {{max}} segundos.",
             "microphone_error": "No se pudo acceder al micrófono. Comprueba los permisos e inténtalo de nuevo.",
             "practice_review_question_number": "Pregunta {{number}}",
-            "numeric_placeholder": "Introduce un número…"
+            "numeric_placeholder": "Introduce un número…",
+            "section_audio_alt": "Reproducción de audio de la sección"
         },
         "monitor": {
             "title": "Monitor en vivo",
@@ -860,7 +861,8 @@
         },
         "question_type_numeric": "Numérico",
         "numeric_expected_value_label": "Valor esperado",
-        "numeric_tolerance_label": "Tolerancia (±)"
+        "numeric_tolerance_label": "Tolerancia (±)",
+        "section_audio_label": "Audio de la sección"
     },
     "studentsPage": {
         "title": "Estudiantes y Clases",
@@ -1198,7 +1200,27 @@
         "insert_title": "Insertar desde el banco de preguntas",
         "insert_button": "Insertar desde el banco",
         "save_to_bank": "Guardar en el banco de preguntas",
-        "saved_toast": "Pregunta guardada en el banco"
+        "saved_toast": "Pregunta guardada en el banco",
+        "section_bundle_meta": "{{count}} pregunta(s) en este pasaje",
+        "section_bundle_title": "Sección: {{title}}",
+        "cefr_level_label": "Nivel MCER",
+        "save_section_to_bank": "Guardar este pasaje + preguntas en el banco"
+    },
+    "generateTest": {
+        "entry_point": "Generar desde el banco",
+        "title": "Generar examen desde el banco",
+        "name_placeholder": "p. ej. Examen de nivel de septiembre",
+        "default_name": "Examen generado",
+        "organize_by_level_label": "Organizar en secciones por nivel MCER",
+        "criteria_title": "Criterios",
+        "add_criterion": "Añadir criterio",
+        "criterion_kind_label": "Tipo",
+        "criterion_kind_question": "Preguntas individuales",
+        "criterion_kind_section": "Secciones de lectura/audición",
+        "criterion_tag_placeholder": "Etiqueta (opcional)",
+        "criterion_count_label": "Cantidad",
+        "generate_button": "Generar",
+        "shortfall_row": "Fila {{row}}: solo se encontraron {{got}} de {{want}}."
     },
     "peerAnalytics": {
         "title": "Estadísticas de revisión por pares — {{rubricName}}",
@@ -2310,7 +2332,7 @@
         "rb_marketplace_body_name": "Mercado",
         "rb_marketplace_body_suffix": "te permite publicar una rúbrica para que los colegas de tu centro la exploren y copien, y votar las que te resulten útiles. Requiere que la sincronización en la nube esté configurada y que tu cuenta pertenezca a un centro — sin ambos, la página muestra una breve explicación en lugar de los anuncios. Copiar coloca un anuncio en tus propias rúbricas sin afectar al original.",
         "rb_marketplace_cefr_tags_body": "Al publicar, puedes etiquetar la rúbrica con el/los nivel(es) MCER que abarca, para que tus colegas lo vean de un vistazo.",
-        "rb_marketplace_kinds_note": "Las pruebas y los mazos de tarjetas tambi\u00e9n se pueden publicar en el mismo mercado desde las p\u00e1ginas de Pruebas y Tarjetas, filtrables por tipo.",
+        "rb_marketplace_kinds_note": "Las pruebas y los mazos de tarjetas también se pueden publicar en el mismo mercado desde las páginas de Pruebas y Tarjetas, filtrables por tipo.",
         "rb_department_sharing_title": "Compartición departamental",
         "rb_department_sharing_body_prefix": "A diferencia del Mercado (publicar una copia para que otros la copien), el diálogo de compartición en la lista de rúbricas tiene una casilla",
         "rb_department_sharing_body_checkbox": "«Compartir con mi departamento»",
@@ -2500,7 +2522,7 @@
         "ce_learning_paths_item_computed": "Todo se calcula al vuelo a partir de las calificaciones existentes; no se almacena nada nuevo.",
         "ce_learning_paths_item_grammar": "Una sección aparte de Práctica de gramática sugiere un mazo de tarjetas y una prueba de práctica correspondientes cuando un alumno obtiene puntuaciones bajas repetidas en un criterio o pregunta vinculados a la gramática.",
         "ce_mastery_profile_title": "Perfil de dominio gramatical",
-        "ce_mastery_profile_body": "En la p\u00e1gina de perfil de un alumno, una tabla combina la precisi\u00f3n en pruebas, el progreso de las tarjetas de memoria (repetici\u00f3n espaciada) y las calificaciones de textos, por punto gramatical \u2014 una vista \u00fanica de lo que el alumno ha demostrado realmente en todos los \u00e1mbitos que etiquetan el mismo punto gramatical.",
+        "ce_mastery_profile_body": "En la página de perfil de un alumno, una tabla combina la precisión en pruebas, el progreso de las tarjetas de memoria (repetición espaciada) y las calificaciones de textos, por punto gramatical — una vista única de lo que el alumno ha demostrado realmente en todos los ámbitos que etiquetan el mismo punto gramatical.",
         "ce_speaking_title": "Sesiones de expresión oral",
         "ce_speaking_intro": "Inicia una sesión oral desde uno de estos dos puntos de entrada:",
         "ce_speaking_item_profile": "Perfil del alumno → botón «Sesión oral» en la barra superior. Con una sola rúbrica navega directamente; con varias rúbricas, una lista desplegable te permite elegir.",
@@ -2675,7 +2697,15 @@
         "ce_news_flashes_item_link": "Enlaza opcionalmente una novedad con un mazo de tarjetas, prueba o rúbrica existente para que los alumnos puedan acceder directamente.",
         "ce_news_flashes_item_timeline": "Los alumnos ven las novedades nuevas en una cronología en su página de portal, con una insignia de no leído que desaparece al abrirla.",
         "ce_news_flashes_item_read_receipts": "Cada novedad en la lista del profesor muestra cuántos alumnos la han leído — haz clic en el número para ver quiénes.",
-        "ce_news_flashes_info": "Las novedades se envían a todos los alumnos del profesor que las creó — no hay asignación por alumno ni se envía ningún correo."
+        "ce_news_flashes_info": "Las novedades se envían a todos los alumnos del profesor que las creó — no hay asignación por alumno ni se envía ningún correo.",
+        "gr_question_bank_item_cefr": "Etiquete cualquier elemento del banco con un nivel MCER para un filtrado fiable, además de las etiquetas de texto libre.",
+        "gr_question_bank_item_bundle_save": "Agrupe todo un pasaje de lectura/audición — el contenido de la sección, el audio y sus preguntas — en una sola entrada reutilizable del banco mediante \"Guardar este pasaje + preguntas en el banco\" en el generador de exámenes.",
+        "gr_question_bank_item_bundle_insert": "Vuelva a insertar un conjunto guardado en cualquier examen como una sección completamente formada, lista para seguir editando.",
+        "gr_generate_test_title": "Generar un examen automáticamente",
+        "gr_generate_test_body": "\"Generar desde el banco\", disponible en la lista de exámenes, abre un asistente que ensambla un nuevo examen a partir de elementos del banco que coinciden con los criterios elegidos, sin necesidad de insertar preguntas una a una.",
+        "gr_generate_test_item_criteria": "Añada una o más filas de criterios (pregunta individual o sección agrupada, nivel MCER, etiqueta y cuántas extraer) — los elementos se eligen al azar entre las coincidencias, por lo que generaciones repetidas no siempre producen el mismo conjunto.",
+        "gr_generate_test_item_organize": "Organice opcionalmente el resultado en secciones por nivel MCER — esto produce exactamente la forma de grupo de nivel que espera el motor de posicionamiento Staircase, lista para usar de inmediato.",
+        "gr_generate_test_item_review": "El examen generado se abre en el generador de exámenes habitual, prellenado y listo para revisar, ajustar y guardar como cualquier otro examen."
     },
     "studentProfile": {
         "tab_overview": "Resumen",
@@ -2710,7 +2740,7 @@
         "col_test": "Evaluado",
         "col_flashcards": "Tarjetas",
         "col_writing": "Escritura",
-        "no_data": "\u2014",
+        "no_data": "—",
         "test_summary": "{{correct}}/{{attempts}} correctas ({{pct}}%)",
         "flashcards_summary": "{{mastered}}/{{total}} dominadas ({{due}} pendientes)",
         "writing_summary": "{{pct}}% prom. ({{count}})"
@@ -2775,20 +2805,20 @@
     "marketplace": {
         "title": "Mercado",
         "disabled_title": "Mercado no disponible",
-        "disabled_body": "Conecta Supabase y \u00fanete a un centro educativo para usar el mercado.",
-        "intro": "Explora r\u00fabricas, pruebas y mazos de tarjetas compartidos por colegas de tu centro, publica los tuyos y vota por los que te resulten \u00fatiles.",
+        "disabled_body": "Conecta Supabase y únete a un centro educativo para usar el mercado.",
+        "intro": "Explora rúbricas, pruebas y mazos de tarjetas compartidos por colegas de tu centro, publica los tuyos y vota por los que te resulten útiles.",
         "publish_button": "Publicar",
         "publish_title": "Publicar en el mercado",
-        "publish_kind_label": "\u00bfQu\u00e9 est\u00e1s compartiendo?",
+        "publish_kind_label": "¿Qué estás compartiendo?",
         "publish_select_entity": "Elemento",
-        "publish_select_placeholder": "Selecciona un elemento\u2026",
-        "publish_attribution_label": "Atribuci\u00f3n (opcional)",
-        "publish_attribution_placeholder": "p. ej. Compartido por Jane Doe \u2014 CC-BY-SA",
+        "publish_select_placeholder": "Selecciona un elemento…",
+        "publish_attribution_label": "Atribución (opcional)",
+        "publish_attribution_placeholder": "p. ej. Compartido por Jane Doe — CC-BY-SA",
         "publish_cefr_label": "Nivel(es) MCER (opcional)",
         "publish_confirm": "Publicar",
         "shared_by_prefix": "Compartido por",
-        "loading": "Cargando anuncios\u2026",
-        "empty_state": "A\u00fan no se ha compartido nada en tu centro.",
+        "loading": "Cargando anuncios…",
+        "empty_state": "Aún no se ha compartido nada en tu centro.",
         "upvote_title": "Votar",
         "clone_title": "Clonar en mi biblioteca",
         "clone_button": "Clonar",
@@ -2796,15 +2826,15 @@
         "filter_subject_label": "Asignatura",
         "filter_subject_all": "Todas las asignaturas",
         "filter_kind_all": "Todo",
-        "kind_rubric": "R\u00fabrica",
+        "kind_rubric": "Rúbrica",
         "kind_test": "Prueba",
         "kind_deck": "Mazo de tarjetas",
-        "kind_rubrics": "R\u00fabricas",
+        "kind_rubrics": "Rúbricas",
         "kind_tests": "Pruebas",
         "kind_decks": "Mazos",
         "sort_label": "Ordenar por",
-        "sort_newest": "M\u00e1s reciente",
-        "sort_upvotes": "M\u00e1s votado"
+        "sort_newest": "Más reciente",
+        "sort_upvotes": "Más votado"
     },
     "search": {
         "placeholder": "Buscar rúbricas, pruebas, alumnos… (prueba type:test, class:5A)",

@@ -78,7 +78,7 @@ const TEACHER_FEATURES = [
     {
         icon: ClipboardCheck,
         title: 'Tests & Quizzes',
-        desc: 'Build multiple-choice, multiple-response, true/false, short-answer, open, fill-the-gap, matching, ordering, categorize, hot text, and audio-response tests with rich-text prompts, reading passages, and picture-choice options, assign them with a share link or Safe Exam Browser, then auto-grade, fine-tune the class average, and export a strong/weak point summary per student or class. Add an ungraded, retakeable Practice mode with audio questions for listening comprehension, or have students record a spoken answer for speaking practice.',
+        desc: 'Build multiple-choice, multiple-response, true/false, short-answer, open, fill-the-gap, matching, ordering, categorize, hot text, and audio-response tests with rich-text prompts, reading passages, and picture-choice options, assign them with a share link or Safe Exam Browser, then auto-grade, fine-tune the class average, and export a strong/weak point summary per student or class. Add an ungraded, retakeable Practice mode with audio questions for listening comprehension, or have students record a spoken answer for speaking practice. Save questions — or a whole reading/listening passage — to a reusable bank, then generate a new test automatically from bank criteria in one click.',
         color: '#3b82f6',
     },
     {

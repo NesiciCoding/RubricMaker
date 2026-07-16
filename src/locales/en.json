@@ -673,7 +673,8 @@
             "max_recording_note": "Max {{max}} seconds.",
             "microphone_error": "Could not access your microphone. Please check permissions and try again.",
             "practice_review_question_number": "Question {{number}}",
-            "numeric_placeholder": "Enter a number…"
+            "numeric_placeholder": "Enter a number…",
+            "section_audio_alt": "Section audio playback"
         },
         "monitor": {
             "title": "Live monitor",
@@ -860,7 +861,8 @@
         },
         "question_type_numeric": "Numeric",
         "numeric_expected_value_label": "Expected value",
-        "numeric_tolerance_label": "Tolerance (±)"
+        "numeric_tolerance_label": "Tolerance (±)",
+        "section_audio_label": "Section audio"
     },
     "studentsPage": {
         "title": "Students & Classes",
@@ -1198,7 +1200,27 @@
         "insert_title": "Insert from Question Bank",
         "insert_button": "Insert from bank",
         "save_to_bank": "Save to question bank",
-        "saved_toast": "Question saved to bank"
+        "saved_toast": "Question saved to bank",
+        "section_bundle_meta": "{{count}} question(s) in this passage",
+        "section_bundle_title": "Section: {{title}}",
+        "cefr_level_label": "CEFR level",
+        "save_section_to_bank": "Save this passage + questions to bank"
+    },
+    "generateTest": {
+        "entry_point": "Generate from bank",
+        "title": "Generate Test from Bank",
+        "name_placeholder": "e.g. September Placement Test",
+        "default_name": "Generated Test",
+        "organize_by_level_label": "Organize into CEFR-level sections",
+        "criteria_title": "Criteria",
+        "add_criterion": "Add criterion",
+        "criterion_kind_label": "Kind",
+        "criterion_kind_question": "Single questions",
+        "criterion_kind_section": "Reading/listening sections",
+        "criterion_tag_placeholder": "Tag (optional)",
+        "criterion_count_label": "Count",
+        "generate_button": "Generate",
+        "shortfall_row": "Row {{row}}: only found {{got}} of {{want}} requested."
     },
     "peerAnalytics": {
         "title": "Peer Review Analytics — {{rubricName}}",
@@ -2673,7 +2695,15 @@
         "ce_news_flashes_item_link": "Optionally link a flash to an existing flashcard deck, test, or rubric so students can jump straight to it.",
         "ce_news_flashes_item_timeline": "Students see new flashes in a chronological timeline on their portal page, with an unread badge that clears once they open one.",
         "ce_news_flashes_item_read_receipts": "Each flash on the teacher-side list shows how many students have read it — click the count to see who.",
-        "ce_news_flashes_info": "News flashes are broadcast to every student of the teacher who created them — there is no per-student assignment step, and no email notification is sent."
+        "ce_news_flashes_info": "News flashes are broadcast to every student of the teacher who created them — there is no per-student assignment step, and no email notification is sent.",
+        "gr_question_bank_item_cefr": "Tag any bank item with a CEFR level for reliable filtering, in addition to free-text tags.",
+        "gr_question_bank_item_bundle_save": "Bundle a whole reading/listening passage — the section content, audio, and its questions — into one reusable bank entry via \"Save this passage + questions to bank\" in the Test Builder.",
+        "gr_question_bank_item_bundle_insert": "Insert a saved bundle back into any test as a fully-formed section, ready to edit further.",
+        "gr_generate_test_title": "Generate a Test Automatically",
+        "gr_generate_test_body": "From the Tests list, \"Generate from bank\" opens a wizard that assembles a new test from bank items matching criteria you pick — no manual question-by-question insertion needed.",
+        "gr_generate_test_item_criteria": "Add one or more criteria rows (question or section bundle, CEFR level, tag, and how many to draw) — items are picked at random from matches, so repeated generations don't always draw the same set.",
+        "gr_generate_test_item_organize": "Optionally organize the result into CEFR-level sections — produces exactly the level-pool shape the Staircase placement engine expects, ready to use immediately.",
+        "gr_generate_test_item_review": "The generated test opens in the normal Test Builder, pre-filled and ready to review, adjust, and save like any other test."
     },
     "studentProfile": {
         "tab_overview": "Overview",
@@ -2708,7 +2738,7 @@
         "col_test": "Tested",
         "col_flashcards": "Flashcards",
         "col_writing": "Writing",
-        "no_data": "\u2014",
+        "no_data": "—",
         "test_summary": "{{correct}}/{{attempts}} correct ({{pct}}%)",
         "flashcards_summary": "{{mastered}}/{{total}} mastered ({{due}} due)",
         "writing_summary": "{{pct}}% avg ({{count}})"
@@ -2779,13 +2809,13 @@
         "publish_title": "Publish to marketplace",
         "publish_kind_label": "What are you sharing?",
         "publish_select_entity": "Item",
-        "publish_select_placeholder": "Select an item\u2026",
+        "publish_select_placeholder": "Select an item…",
         "publish_attribution_label": "Attribution (optional)",
-        "publish_attribution_placeholder": "e.g. Shared by Jane Doe \u2014 CC-BY-SA",
+        "publish_attribution_placeholder": "e.g. Shared by Jane Doe — CC-BY-SA",
         "publish_cefr_label": "CEFR level(s) (optional)",
         "publish_confirm": "Publish",
         "shared_by_prefix": "Shared by",
-        "loading": "Loading listings\u2026",
+        "loading": "Loading listings…",
         "empty_state": "Nothing has been shared at your school yet.",
         "upvote_title": "Upvote",
         "clone_title": "Clone into my library",

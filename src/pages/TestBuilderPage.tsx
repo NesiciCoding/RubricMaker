@@ -1,7 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { flushSync } from 'react-dom';
-import { useNavigate, useParams } from 'react-router-dom';
-import { Plus, Save, ArrowLeft, AlertCircle, ChevronDown, ChevronRight, Trash2, FileText } from 'lucide-react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import {
+    Plus,
+    Save,
+    ArrowLeft,
+    AlertCircle,
+    ChevronDown,
+    ChevronRight,
+    Trash2,
+    FileText,
+    BookMarked,
+    Music,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
@@ -17,7 +28,7 @@ import { toLocalDatetimeInput } from '../utils/dateInput';
 import QuestionEditor from '../components/Tests/QuestionEditor';
 import EssayEditor from '../components/Editor/EssayEditor';
 import QuestionBankModal from '../components/Tests/QuestionBankModal';
-import { cloneQuestionWithFreshIds } from '../utils/testQuestionClone';
+import { cloneBankItemIntoTest } from '../utils/testQuestionClone';
 import type { TestQuestion, TestSection, CefrLevel, CefrSkill, QuestionBankItem } from '../types';
 import { CEFR_LEVELS, CEFR_SKILLS, CEFR_SKILL_LABELS } from '../data/cefrDescriptors';
 import { sectionQuestions, isAutoScorable, hasRoutingCycle } from '../utils/placementRouting';
@@ -42,22 +53,35 @@ function newQuestion(sectionId?: string): TestQuestion {
 export default function TestBuilderPage() {
     const navigate = useNavigate();
     const { id } = useParams();
+    const location = useLocation();
     const { t, i18n } = useTranslation();
     const { showToast } = useToast();
-    const { tests, addTest, updateTest, gradeScales, settings } = useApp();
+    const { tests, addTest, updateTest, gradeScales, settings, addSectionBankItem } = useApp();
 
     const existing = id ? tests.find((tst) => tst.id === id) : undefined;
     const notFound = !!id && !existing;
+    const generatedState = !existing
+        ? (location.state as {
+              generated?: {
+                  name?: string;
+                  mode?: 'practice' | 'assessment' | 'placement';
+                  questions?: TestQuestion[];
+                  sections?: TestSection[];
+              };
+              generatedShortfalls?: string[];
+          })
+        : undefined;
+    const generated = generatedState?.generated;
 
-    const [name, setName] = useState(existing?.name ?? '');
+    const [name, setName] = useState(existing?.name ?? generated?.name ?? '');
     const [nameError, setNameError] = useState('');
     const [description, setDescription] = useState(existing?.description ?? '');
-    const [questions, setQuestions] = useState<TestQuestion[]>(existing?.questions ?? []);
+    const [questions, setQuestions] = useState<TestQuestion[]>(existing?.questions ?? generated?.questions ?? []);
     const [showBankModal, setShowBankModal] = useState(false);
-    const [sections, setSections] = useState<TestSection[]>(existing?.sections ?? []);
+    const [sections, setSections] = useState<TestSection[]>(existing?.sections ?? generated?.sections ?? []);
     const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
     const [expandedPassages, setExpandedPassages] = useState<Set<string>>(
-        new Set((existing?.sections ?? []).filter((s) => s.content).map((s) => s.id))
+        new Set((existing?.sections ?? generated?.sections ?? []).filter((s) => s.content).map((s) => s.id))
     );
     const [newSectionTitle, setNewSectionTitle] = useState('');
     const [durationMinutes, setDurationMinutes] = useState(
@@ -69,7 +93,9 @@ export default function TestBuilderPage() {
     const [gradeScaleId, setGradeScaleId] = useState<string | undefined>(
         existing?.gradeScaleId ?? settings.defaultGradeScaleId
     );
-    const [mode, setMode] = useState<'practice' | 'assessment' | 'placement'>(existing?.mode ?? 'assessment');
+    const [mode, setMode] = useState<'practice' | 'assessment' | 'placement'>(
+        existing?.mode ?? generated?.mode ?? 'assessment'
+    );
     const [placementEngine, setPlacementEngine] = useState<'mst' | 'staircase'>(existing?.placementEngine ?? 'mst');
     const [allowMultipleAttempts, setAllowMultipleAttempts] = useState(existing?.allowMultipleAttempts ?? false);
     const [cefrTargetLevel, setCefrTargetLevel] = useState<CefrLevel | ''>(existing?.cefrTargetLevel ?? '');
@@ -106,6 +132,13 @@ export default function TestBuilderPage() {
         contentArea,
     ]);
     const { dialogProps: unsavedDialogProps } = useUnsavedChangesGuard(isDirty);
+
+    useEffect(() => {
+        const shortfalls = generatedState?.generatedShortfalls;
+        if (shortfalls?.length) showToast(shortfalls.join(' '), 'info');
+        // Only ever relevant right after a generator navigation lands on this fresh page.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const validSectionIds = React.useMemo(() => new Set(sections.map((s) => s.id)), [sections]);
     const routingCycleWarning = React.useMemo(
@@ -177,8 +210,21 @@ export default function TestBuilderPage() {
     }
 
     function insertFromBank(item: QuestionBankItem) {
-        setQuestions((prev) => [...prev, cloneQuestionWithFreshIds(item.question as TestQuestion)]);
+        const { questions: cloned, section } = cloneBankItemIntoTest(item);
+        if (section) setSections((prev) => [...prev, section]);
+        setQuestions((prev) => [...prev, ...cloned]);
         setShowBankModal(false);
+    }
+
+    function saveSectionToBank(section: TestSection) {
+        const sectionQs = questionsFor(section.id).map(({ sectionId: _sectionId, ...q }) => q);
+        addSectionBankItem(
+            { title: section.title, content: section.content, audioUrl: section.audioUrl },
+            sectionQs,
+            [],
+            section.cefrLevel
+        );
+        showToast(t('questionBank.saved_toast'), 'success');
     }
 
     function updateQuestion(qid: string, question: TestQuestion) {
@@ -960,29 +1006,83 @@ export default function TestBuilderPage() {
                                     {!collapsed && (
                                         <div style={{ padding: '16px 14px' }}>
                                             <div style={{ marginBottom: 16 }}>
-                                                <button
-                                                    type="button"
-                                                    className="btn btn-ghost btn-sm"
-                                                    onClick={() =>
-                                                        setExpandedPassages((prev) => {
-                                                            const next = new Set(prev);
-                                                            if (next.has(section.id)) next.delete(section.id);
-                                                            else next.add(section.id);
-                                                            return next;
-                                                        })
-                                                    }
-                                                    style={{ marginBottom: expandedPassages.has(section.id) ? 8 : 0 }}
-                                                >
-                                                    <FileText size={14} /> {t('tests.section_passage_label')}
-                                                </button>
+                                                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-ghost btn-sm"
+                                                        onClick={() =>
+                                                            setExpandedPassages((prev) => {
+                                                                const next = new Set(prev);
+                                                                if (next.has(section.id)) next.delete(section.id);
+                                                                else next.add(section.id);
+                                                                return next;
+                                                            })
+                                                        }
+                                                        style={{
+                                                            marginBottom: expandedPassages.has(section.id) ? 8 : 0,
+                                                        }}
+                                                    >
+                                                        <FileText size={14} /> {t('tests.section_passage_label')}
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-ghost btn-sm"
+                                                        onClick={() => saveSectionToBank(section)}
+                                                        disabled={sectionQs.length === 0}
+                                                    >
+                                                        <BookMarked size={14} />{' '}
+                                                        {t('questionBank.save_section_to_bank')}
+                                                    </button>
+                                                </div>
                                                 {expandedPassages.has(section.id) && (
-                                                    <EssayEditor
-                                                        content={section.content ?? ''}
-                                                        onChange={(html) => updateSectionContent(section.id, html)}
-                                                        placeholder={t('tests.section_passage_placeholder')}
-                                                        minHeight={160}
-                                                        allowPageMode={false}
-                                                    />
+                                                    <>
+                                                        <EssayEditor
+                                                            content={section.content ?? ''}
+                                                            onChange={(html) => updateSectionContent(section.id, html)}
+                                                            placeholder={t('tests.section_passage_placeholder')}
+                                                            minHeight={160}
+                                                            allowPageMode={false}
+                                                        />
+                                                        <div className="form-group" style={{ marginTop: 8 }}>
+                                                            <label
+                                                                htmlFor={`section-audio-${section.id}`}
+                                                                style={{
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: 6,
+                                                                }}
+                                                            >
+                                                                <Music size={14} /> {t('tests.section_audio_label')}{' '}
+                                                                <span
+                                                                    style={{
+                                                                        color: 'var(--text-muted)',
+                                                                        fontWeight: 400,
+                                                                    }}
+                                                                >
+                                                                    ({t('essay_assignment.optional')})
+                                                                </span>
+                                                            </label>
+                                                            <input
+                                                                id={`section-audio-${section.id}`}
+                                                                type="url"
+                                                                value={section.audioUrl ?? ''}
+                                                                onChange={(e) =>
+                                                                    updateSection(section.id, {
+                                                                        audioUrl: e.target.value || undefined,
+                                                                    })
+                                                                }
+                                                                placeholder={t('tests.question_audio_placeholder')}
+                                                            />
+                                                            {section.audioUrl && (
+                                                                <audio
+                                                                    controls
+                                                                    src={section.audioUrl}
+                                                                    aria-label={t('tests.question_audio_preview_alt')}
+                                                                    style={{ marginTop: 8, width: '100%' }}
+                                                                />
+                                                            )}
+                                                        </div>
+                                                    </>
                                                 )}
                                             </div>
                                             <Droppable droppableId={section.id}>

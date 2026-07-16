@@ -1035,10 +1035,31 @@ function GradingTab() {
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.gr_question_bank_title')}
                 </h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
                     {t('docs.gr_question_bank_body_prefix')} <code>/question-bank</code>{' '}
                     {t('docs.gr_question_bank_body_suffix')}
                 </p>
+                <FeatureList
+                    items={[
+                        t('docs.gr_question_bank_item_cefr'),
+                        t('docs.gr_question_bank_item_bundle_save'),
+                        t('docs.gr_question_bank_item_bundle_insert'),
+                    ]}
+                />
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.gr_generate_test_title')}
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
+                    {t('docs.gr_generate_test_body')}
+                </p>
+                <FeatureList
+                    items={[
+                        t('docs.gr_generate_test_item_criteria'),
+                        t('docs.gr_generate_test_item_organize'),
+                        t('docs.gr_generate_test_item_review'),
+                    ]}
+                />
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.gr_test_mode_title')}

@@ -938,6 +938,8 @@ export interface TestSection {
     title: string;
     /** Reading passage / stimulus shown above the section's questions — rich-text HTML */
     content?: string;
+    /** Shared listening clip for the whole section, played once above its questions (vs. per-question TestQuestion.audioUrl) */
+    audioUrl?: string;
     /** Target CEFR level this section is written at, for placement-test routing and result estimation */
     cefrLevel?: CefrLevel;
     /** Deterministic branching rule for placement tests (roadmap Phase 25.1): scoring at/above the threshold on this section routes to passSectionId, otherwise failSectionId */
@@ -1038,8 +1040,19 @@ export interface Test {
 /** A reusable test question saved outside any one test, for cross-test reuse (roadmap 24.1). */
 export interface QuestionBankItem {
     id: string;
-    /** The question verbatim, minus its test-local sectionId (bank items aren't tied to a section). */
-    question: Omit<TestQuestion, 'sectionId'>;
+    /** Absent/'question' = a single reusable question (original 24.1 shape); 'section' = a reading/listening passage bundled with its questions (roadmap 25.3 follow-on). */
+    kind?: 'question' | 'section';
+    /** Structured CEFR level facet on every bank item, for reliable generator/browsing filters (in addition to the free-text tags below). */
+    cefrLevel?: CefrLevel;
+    /** The question verbatim, minus its test-local sectionId (bank items aren't tied to a section). Present when kind is absent/'question'. */
+    question?: Omit<TestQuestion, 'sectionId'>;
+    /** A passage/stimulus bundled with its questions as one reusable unit. Present when kind === 'section'. */
+    section?: {
+        title: string;
+        content?: string;
+        audioUrl?: string;
+        questions: Omit<TestQuestion, 'sectionId'>[];
+    };
     tags: string[];
     createdAt: string;
     /** ISO timestamp of the last local edit; used for last-write-wins sync conflict resolution */
