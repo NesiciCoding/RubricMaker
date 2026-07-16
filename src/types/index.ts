@@ -1023,6 +1023,8 @@ export interface Test {
     displayOrder?: number;
     /** 'assessment' (default when unset, for back-compat with existing tests) is graded/due-dated as today; 'practice' is ungraded, retakeable, and feeds a separate practice-progress view instead of the graded CEFR chart; 'placement' presents sections sequentially via routing rules and produces a provisional CEFR estimate instead of a graded score (roadmap Phase 25) */
     mode?: 'practice' | 'assessment' | 'placement';
+    /** Only meaningful for mode: 'placement'. 'mst' (default when unset) is the branching-sections engine (routing rules, roadmap 25.1); 'staircase' is the per-question adaptive ladder (roadmap 25.3) — sections become CEFR-level question pools instead of routing stages. */
+    placementEngine?: 'mst' | 'staircase';
     /** When true, students may submit more than one StudentTest attempt (only meaningful for mode: 'practice') */
     allowMultipleAttempts?: boolean;
     /** Target CEFR level for this test/practice set (e.g. 'B1' for a listening comprehension set) */
@@ -1062,6 +1064,15 @@ export interface TestAnswer {
     feedback?: string;
 }
 
+/** One question asked during a staircase (roadmap 25.3) placement run, in order taken. */
+export interface StaircaseStep {
+    /** The level-pool section this question was drawn from */
+    sectionId: string;
+    level: CefrLevel;
+    questionId: string;
+    correct: boolean;
+}
+
 export interface StudentTest {
     id: string;
     testId: string;
@@ -1089,6 +1100,8 @@ export interface StudentTest {
     attemptNumber?: number;
     /** Ids of sections actually presented, in order taken — only set for staged (routed) tests; drives path-aware scoring and the placement estimate */
     sectionPath?: string[];
+    /** The full adaptive question trace — only set for staircase-engine placement tests (roadmap 25.3); drives path-aware scoring and the placement estimate */
+    levelPath?: StaircaseStep[];
 }
 
 export type TestStrengthBucket = 'strong' | 'developing' | 'weak';
@@ -1281,6 +1294,8 @@ export interface TestSubmissionPayload {
     events?: ProctorEvent[];
     /** Ids of sections actually presented, in order — only set for staged (placement) tests */
     sectionPath?: string[];
+    /** The full adaptive question trace — only set for staircase-engine placement tests */
+    levelPath?: StaircaseStep[];
 }
 
 /** A student's completed essay, encoded into a submission code for the teacher to import */

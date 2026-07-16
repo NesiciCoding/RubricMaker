@@ -7,6 +7,7 @@ import HelpPopover from '../components/ui/HelpPopover';
 import { useApp } from '../context/AppContext';
 import { calcTestMaxPoints, calcStudentTestRawPoints, calcTestPercentage, autoScoreResponse } from '../utils/testCalc';
 import { isStagedTest, maxPointsForPath, sectionQuestions, scoreSectionPct } from '../utils/placementRouting';
+import { isStaircaseTest, staircaseMaxPoints } from '../utils/placementStaircase';
 import { calcLetterGrade, calcGradeColor } from '../utils/gradeCalc';
 import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse';
 import { calcTestTimeOnTask } from '../utils/proctorAggregator';
@@ -274,20 +275,29 @@ export default function TestResultsPage() {
 
     const sectionPath = studentTest?.sectionPath;
     const staged = !!test && isStagedTest(test) && !!sectionPath?.length;
+    const levelPath = studentTest?.levelPath;
+    const isStaircase = !!test && isStaircaseTest(test) && !!levelPath?.length;
 
     const maxPoints = test
         ? staged && sectionPath
             ? maxPointsForPath(test, sectionPath)
-            : calcTestMaxPoints(test)
+            : isStaircase && levelPath
+              ? staircaseMaxPoints(test, levelPath)
+              : calcTestMaxPoints(test)
         : 0;
 
     // For a staged (placement) submission, only the sections the student actually saw
     // count — the other branch's questions were never presented and would otherwise
-    // show up as unanswered.
+    // show up as unanswered. Same idea for a staircase run: only the questions actually
+    // asked count.
     const pathQuestions =
         test && staged && sectionPath
             ? sectionPath.flatMap((id) => sectionQuestions(test, id))
-            : (test?.questions ?? []);
+            : test && isStaircase && levelPath
+              ? levelPath
+                    .map((step) => test.questions.find((q) => q.id === step.questionId))
+                    .filter((q): q is TestQuestion => !!q)
+              : (test?.questions ?? []);
 
     const answersById = new Map((studentTest?.answers ?? []).map((a) => [a.questionId, a]));
     const effectiveAnswers = pathQuestions.map((question) => ({
@@ -494,6 +504,34 @@ export default function TestResultsPage() {
                                             {section?.cefrLevel ? ` (${section.cefrLevel})` : ''}
                                         </span>
                                         <span style={{ fontWeight: 700 }}>{pct.toFixed(0)}%</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
+                {isStaircase && levelPath && (
+                    <div className="card">
+                        <h3 style={{ margin: '0 0 12px' }}>{t('tests.results.placement_path_title')}</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {levelPath.map((step, i) => {
+                                const q = test.questions.find((qq) => qq.id === step.questionId);
+                                return (
+                                    <div
+                                        key={`${step.questionId}-${i}`}
+                                        style={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            gap: 12,
+                                            fontSize: '0.85rem',
+                                        }}
+                                    >
+                                        <span>
+                                            {t('tests.results.placement_path_step', { number: i + 1 })} {step.level}
+                                            {q ? ` — ${promptPreview(q)}` : ''}
+                                        </span>
+                                        <span style={{ fontWeight: 700 }}>{step.correct ? 100 : 0}%</span>
                                     </div>
                                 );
                             })}

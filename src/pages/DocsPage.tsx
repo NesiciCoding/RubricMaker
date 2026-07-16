@@ -1080,6 +1080,7 @@ function GradingTab() {
                 <FeatureList
                     items={[
                         t('docs.gr_placement_item_routing'),
+                        t('docs.gr_placement_item_staircase'),
                         t('docs.gr_placement_item_taking'),
                         t('docs.gr_placement_item_results'),
                         t('docs.gr_placement_item_provisional'),

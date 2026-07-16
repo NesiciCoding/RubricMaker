@@ -22,6 +22,9 @@ import type { TestQuestion, TestSection, CefrLevel, CefrSkill, QuestionBankItem 
 import { CEFR_LEVELS, CEFR_SKILLS, CEFR_SKILL_LABELS } from '../data/cefrDescriptors';
 import { sectionQuestions, isAutoScorable, hasRoutingCycle } from '../utils/placementRouting';
 
+/** Soft heuristic for a staircase level pool's builder warning — enough headroom for a couple of up/down moves without exhausting the pool. */
+const MIN_QUESTIONS_PER_LEVEL = 3;
+
 function newQuestion(sectionId?: string): TestQuestion {
     return {
         id: nanoid(),
@@ -67,6 +70,7 @@ export default function TestBuilderPage() {
         existing?.gradeScaleId ?? settings.defaultGradeScaleId
     );
     const [mode, setMode] = useState<'practice' | 'assessment' | 'placement'>(existing?.mode ?? 'assessment');
+    const [placementEngine, setPlacementEngine] = useState<'mst' | 'staircase'>(existing?.placementEngine ?? 'mst');
     const [allowMultipleAttempts, setAllowMultipleAttempts] = useState(existing?.allowMultipleAttempts ?? false);
     const [cefrTargetLevel, setCefrTargetLevel] = useState<CefrLevel | ''>(existing?.cefrTargetLevel ?? '');
     const [cefrSkill, setCefrSkill] = useState<CefrSkill | ''>(existing?.cefrSkill ?? '');
@@ -95,6 +99,7 @@ export default function TestBuilderPage() {
         requireSEB,
         gradeScaleId,
         mode,
+        placementEngine,
         allowMultipleAttempts,
         cefrTargetLevel,
         cefrSkill,
@@ -104,8 +109,8 @@ export default function TestBuilderPage() {
 
     const validSectionIds = React.useMemo(() => new Set(sections.map((s) => s.id)), [sections]);
     const routingCycleWarning = React.useMemo(
-        () => mode === 'placement' && hasRoutingCycle({ sections }),
-        [mode, sections]
+        () => mode === 'placement' && placementEngine === 'mst' && hasRoutingCycle({ sections }),
+        [mode, placementEngine, sections]
     );
 
     // Group questions by section for rendering; normalize stale sectionIds to null
@@ -255,6 +260,7 @@ export default function TestBuilderPage() {
             requireSEB,
             gradeScaleId,
             mode,
+            placementEngine: mode === 'placement' ? placementEngine : undefined,
             allowMultipleAttempts: mode === 'practice' ? allowMultipleAttempts : undefined,
             cefrTargetLevel: cefrTargetLevel || undefined,
             cefrSkill: cefrSkill || undefined,
@@ -393,6 +399,24 @@ export default function TestBuilderPage() {
                                       : t('tests.mode_assessment_help')}
                             </p>
                         </div>
+                        {mode === 'placement' && (
+                            <div className="form-group" style={{ marginBottom: 0, flex: '1 1 220px' }}>
+                                <label htmlFor="test-placement-engine">{t('tests.placement_engine_label')}</label>
+                                <select
+                                    id="test-placement-engine"
+                                    value={placementEngine}
+                                    onChange={(e) => setPlacementEngine(e.target.value as 'mst' | 'staircase')}
+                                >
+                                    <option value="mst">{t('tests.placement_engine_mst')}</option>
+                                    <option value="staircase">{t('tests.placement_engine_staircase')}</option>
+                                </select>
+                                <p className="text-muted text-xs" style={{ marginTop: 4, marginBottom: 0 }}>
+                                    {placementEngine === 'staircase'
+                                        ? t('tests.placement_engine_staircase_help')
+                                        : t('tests.placement_engine_mst_help')}
+                                </p>
+                            </div>
+                        )}
                         {mode === 'practice' && (
                             <div className="form-group" style={{ marginBottom: 0, flex: '1 1 200px' }}>
                                 <label htmlFor="test-content-area">{t('tests.content_area_label')}</label>
@@ -557,9 +581,10 @@ export default function TestBuilderPage() {
                             )}
                             {sections.map((s) => {
                                 const routingEnabled = !!s.routing;
-                                const sectionHasAutoScorable = sectionQuestions({ questions, sections }, s.id).some(
+                                const autoScorableCount = sectionQuestions({ questions, sections }, s.id).filter(
                                     isAutoScorable
-                                );
+                                ).length;
+                                const sectionHasAutoScorable = autoScorableCount > 0;
                                 return (
                                     <div
                                         key={s.id}
@@ -617,144 +642,173 @@ export default function TestBuilderPage() {
                                                     </select>
                                                 </div>
 
-                                                <label
-                                                    style={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: 8,
-                                                        cursor: 'pointer',
-                                                        fontSize: '0.8125rem',
-                                                    }}
-                                                >
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={routingEnabled}
-                                                        onChange={(e) => toggleSectionRouting(s.id, e.target.checked)}
-                                                        style={{ accentColor: 'var(--accent)' }}
-                                                    />
-                                                    {t('tests.section_routing_toggle')}
-                                                </label>
-
-                                                {routingEnabled && s.routing && (
-                                                    <div
-                                                        style={{
-                                                            display: 'flex',
-                                                            gap: 8,
-                                                            flexWrap: 'wrap',
-                                                            alignItems: 'flex-end',
-                                                        }}
-                                                    >
-                                                        <div
-                                                            className="form-group"
-                                                            style={{ marginBottom: 0, width: 120 }}
-                                                        >
-                                                            <label
-                                                                htmlFor={`routing-threshold-${s.id}`}
-                                                                className="text-muted text-xs"
-                                                            >
-                                                                {t('tests.section_routing_threshold_label')}
-                                                            </label>
-                                                            <input
-                                                                id={`routing-threshold-${s.id}`}
-                                                                type="number"
-                                                                min={0}
-                                                                max={100}
-                                                                value={s.routing.thresholdPct}
-                                                                onChange={(e) =>
-                                                                    updateSection(s.id, {
-                                                                        routing: {
-                                                                            ...s.routing!,
-                                                                            thresholdPct: Number(e.target.value),
-                                                                        },
-                                                                    })
-                                                                }
-                                                            />
-                                                        </div>
-                                                        <div
-                                                            className="form-group"
-                                                            style={{ marginBottom: 0, flex: '1 1 160px' }}
-                                                        >
-                                                            <label
-                                                                htmlFor={`routing-pass-${s.id}`}
-                                                                className="text-muted text-xs"
-                                                            >
-                                                                {t('tests.section_routing_pass_label')}
-                                                            </label>
-                                                            <select
-                                                                id={`routing-pass-${s.id}`}
-                                                                value={s.routing.passSectionId}
-                                                                onChange={(e) =>
-                                                                    updateSection(s.id, {
-                                                                        routing: {
-                                                                            ...s.routing!,
-                                                                            passSectionId: e.target.value,
-                                                                        },
-                                                                    })
-                                                                }
-                                                            >
-                                                                <option value="">
-                                                                    {t('tests.section_routing_end_test')}
-                                                                </option>
-                                                                {sections
-                                                                    .filter((other) => other.id !== s.id)
-                                                                    .map((other) => (
-                                                                        <option key={other.id} value={other.id}>
-                                                                            {other.title}
-                                                                        </option>
-                                                                    ))}
-                                                            </select>
-                                                        </div>
-                                                        <div
-                                                            className="form-group"
-                                                            style={{ marginBottom: 0, flex: '1 1 160px' }}
-                                                        >
-                                                            <label
-                                                                htmlFor={`routing-fail-${s.id}`}
-                                                                className="text-muted text-xs"
-                                                            >
-                                                                {t('tests.section_routing_fail_label')}
-                                                            </label>
-                                                            <select
-                                                                id={`routing-fail-${s.id}`}
-                                                                value={s.routing.failSectionId}
-                                                                onChange={(e) =>
-                                                                    updateSection(s.id, {
-                                                                        routing: {
-                                                                            ...s.routing!,
-                                                                            failSectionId: e.target.value,
-                                                                        },
-                                                                    })
-                                                                }
-                                                            >
-                                                                <option value="">
-                                                                    {t('tests.section_routing_end_test')}
-                                                                </option>
-                                                                {sections
-                                                                    .filter((other) => other.id !== s.id)
-                                                                    .map((other) => (
-                                                                        <option key={other.id} value={other.id}>
-                                                                            {other.title}
-                                                                        </option>
-                                                                    ))}
-                                                            </select>
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {routingEnabled && !sectionHasAutoScorable && (
+                                                {placementEngine === 'staircase' ? (
                                                     <p
+                                                        className="text-muted text-xs"
                                                         style={{
-                                                            color: 'var(--yellow)',
-                                                            fontSize: '0.75rem',
                                                             margin: 0,
+                                                            color:
+                                                                autoScorableCount < MIN_QUESTIONS_PER_LEVEL
+                                                                    ? 'var(--yellow)'
+                                                                    : undefined,
                                                         }}
                                                     >
-                                                        <AlertCircle
-                                                            size={12}
-                                                            style={{ verticalAlign: 'middle', marginRight: 4 }}
-                                                        />
-                                                        {t('tests.section_routing_warning_no_autoscore')}
+                                                        {autoScorableCount < MIN_QUESTIONS_PER_LEVEL && (
+                                                            <AlertCircle
+                                                                size={12}
+                                                                style={{ verticalAlign: 'middle', marginRight: 4 }}
+                                                            />
+                                                        )}
+                                                        {t('tests.section_level_pool_count', {
+                                                            count: autoScorableCount,
+                                                        })}
                                                     </p>
+                                                ) : (
+                                                    <>
+                                                        <label
+                                                            style={{
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: 8,
+                                                                cursor: 'pointer',
+                                                                fontSize: '0.8125rem',
+                                                            }}
+                                                        >
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={routingEnabled}
+                                                                onChange={(e) =>
+                                                                    toggleSectionRouting(s.id, e.target.checked)
+                                                                }
+                                                                style={{ accentColor: 'var(--accent)' }}
+                                                            />
+                                                            {t('tests.section_routing_toggle')}
+                                                        </label>
+
+                                                        {routingEnabled && s.routing && (
+                                                            <div
+                                                                style={{
+                                                                    display: 'flex',
+                                                                    gap: 8,
+                                                                    flexWrap: 'wrap',
+                                                                    alignItems: 'flex-end',
+                                                                }}
+                                                            >
+                                                                <div
+                                                                    className="form-group"
+                                                                    style={{ marginBottom: 0, width: 120 }}
+                                                                >
+                                                                    <label
+                                                                        htmlFor={`routing-threshold-${s.id}`}
+                                                                        className="text-muted text-xs"
+                                                                    >
+                                                                        {t('tests.section_routing_threshold_label')}
+                                                                    </label>
+                                                                    <input
+                                                                        id={`routing-threshold-${s.id}`}
+                                                                        type="number"
+                                                                        min={0}
+                                                                        max={100}
+                                                                        value={s.routing.thresholdPct}
+                                                                        onChange={(e) =>
+                                                                            updateSection(s.id, {
+                                                                                routing: {
+                                                                                    ...s.routing!,
+                                                                                    thresholdPct: Number(
+                                                                                        e.target.value
+                                                                                    ),
+                                                                                },
+                                                                            })
+                                                                        }
+                                                                    />
+                                                                </div>
+                                                                <div
+                                                                    className="form-group"
+                                                                    style={{ marginBottom: 0, flex: '1 1 160px' }}
+                                                                >
+                                                                    <label
+                                                                        htmlFor={`routing-pass-${s.id}`}
+                                                                        className="text-muted text-xs"
+                                                                    >
+                                                                        {t('tests.section_routing_pass_label')}
+                                                                    </label>
+                                                                    <select
+                                                                        id={`routing-pass-${s.id}`}
+                                                                        value={s.routing.passSectionId}
+                                                                        onChange={(e) =>
+                                                                            updateSection(s.id, {
+                                                                                routing: {
+                                                                                    ...s.routing!,
+                                                                                    passSectionId: e.target.value,
+                                                                                },
+                                                                            })
+                                                                        }
+                                                                    >
+                                                                        <option value="">
+                                                                            {t('tests.section_routing_end_test')}
+                                                                        </option>
+                                                                        {sections
+                                                                            .filter((other) => other.id !== s.id)
+                                                                            .map((other) => (
+                                                                                <option key={other.id} value={other.id}>
+                                                                                    {other.title}
+                                                                                </option>
+                                                                            ))}
+                                                                    </select>
+                                                                </div>
+                                                                <div
+                                                                    className="form-group"
+                                                                    style={{ marginBottom: 0, flex: '1 1 160px' }}
+                                                                >
+                                                                    <label
+                                                                        htmlFor={`routing-fail-${s.id}`}
+                                                                        className="text-muted text-xs"
+                                                                    >
+                                                                        {t('tests.section_routing_fail_label')}
+                                                                    </label>
+                                                                    <select
+                                                                        id={`routing-fail-${s.id}`}
+                                                                        value={s.routing.failSectionId}
+                                                                        onChange={(e) =>
+                                                                            updateSection(s.id, {
+                                                                                routing: {
+                                                                                    ...s.routing!,
+                                                                                    failSectionId: e.target.value,
+                                                                                },
+                                                                            })
+                                                                        }
+                                                                    >
+                                                                        <option value="">
+                                                                            {t('tests.section_routing_end_test')}
+                                                                        </option>
+                                                                        {sections
+                                                                            .filter((other) => other.id !== s.id)
+                                                                            .map((other) => (
+                                                                                <option key={other.id} value={other.id}>
+                                                                                    {other.title}
+                                                                                </option>
+                                                                            ))}
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {routingEnabled && !sectionHasAutoScorable && (
+                                                            <p
+                                                                style={{
+                                                                    color: 'var(--yellow)',
+                                                                    fontSize: '0.75rem',
+                                                                    margin: 0,
+                                                                }}
+                                                            >
+                                                                <AlertCircle
+                                                                    size={12}
+                                                                    style={{ verticalAlign: 'middle', marginRight: 4 }}
+                                                                />
+                                                                {t('tests.section_routing_warning_no_autoscore')}
+                                                            </p>
+                                                        )}
+                                                    </>
                                                 )}
                                             </div>
                                         )}

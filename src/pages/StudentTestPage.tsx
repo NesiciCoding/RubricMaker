@@ -31,6 +31,7 @@ import RichContent from '../components/Editor/RichContent';
 import { useLiveSessionTelemetry } from '../hooks/useLiveSessionTelemetry';
 import { seededShuffle } from '../utils/seededShuffle';
 import { isStagedTest, entrySectionId, sectionQuestions, resolveNextSection } from '../utils/placementRouting';
+import { isStaircaseTest, resolveNextStaircaseQuestion } from '../utils/placementStaircase';
 import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse';
 import { initClientLogger, logEvent } from '../services/logging/clientLogger';
 import { TestAdapter } from '../services/database/TestAdapter';
@@ -44,6 +45,7 @@ import type {
     TestQuestion,
     TestSection,
     TestSubmissionPayload,
+    StaircaseStep,
 } from '../types';
 
 const DRAFT_KEY_PREFIX = 'rm_test_draft_';
@@ -190,6 +192,9 @@ export default function StudentTestPage() {
     // test loads for a fresh attempt (the currentStageId fallback below covers the one-render
     // gap before that effect runs, so nothing needs to block on it).
     const [sectionPath, setSectionPath] = useState<string[]>(() => loadTestDraft(draftKey)?.sectionPath ?? []);
+    // The full adaptive question trace for a staircase (placement) test — only meaningful when
+    // isStaircase is true. Each entry is scored and locked in immediately; there's no going back.
+    const [levelPath, setLevelPath] = useState<StaircaseStep[]>(() => loadTestDraft(draftKey)?.levelPath ?? []);
     const [submitted, setSubmitted] = useState(false);
     const [submissionCode, setSubmissionCode] = useState('');
     const [copied, setCopied] = useState(false);
@@ -289,6 +294,12 @@ export default function StudentTestPage() {
         return seededShuffle(test.questions, code);
     }, [test, code, staged, currentStageId]);
 
+    const isStaircase = !!test && isStaircaseTest(test);
+    const staircaseQuestion = useMemo(() => {
+        if (!test || !isStaircase) return null;
+        return resolveNextStaircaseQuestion(test, levelPath, code ?? '');
+    }, [test, isStaircase, levelPath, code]);
+
     // ── Draft autosave ────────────────────────────────────────────────────────
     useEffect(() => {
         if (submitted) return;
@@ -296,8 +307,9 @@ export default function StudentTestPage() {
             answers: Object.fromEntries(answers),
             savedAt: new Date().toISOString(),
             sectionPath: sectionPath.length > 0 ? sectionPath : undefined,
+            levelPath: levelPath.length > 0 ? levelPath : undefined,
         });
-    }, [answers, draftKey, submitted, sectionPath]);
+    }, [answers, draftKey, submitted, sectionPath, levelPath]);
 
     const getSnapshot = useCallback(
         () => ({
@@ -345,6 +357,7 @@ export default function StudentTestPage() {
             submittedAt,
             events: telemetry.flush(),
             sectionPath: staged && sectionPath.length > 0 ? sectionPath : undefined,
+            levelPath: isStaircase && levelPath.length > 0 ? levelPath : undefined,
         };
         const legacyCode = encodeTestSubmission(submissionPayload);
 
@@ -359,7 +372,8 @@ export default function StudentTestPage() {
                 startedAtRef.current,
                 submittedAt,
                 submissionPayload.events,
-                submissionPayload.sectionPath
+                submissionPayload.sectionPath,
+                submissionPayload.levelPath
             );
             setSubmitting(false);
             if (!result.success) {
@@ -391,6 +405,8 @@ export default function StudentTestPage() {
         submitted,
         staged,
         sectionPath,
+        isStaircase,
+        levelPath,
     ]);
 
     const handleSubmitRef = useRef(handleSubmit);
@@ -425,6 +441,7 @@ export default function StudentTestPage() {
         setAnswers(new Map());
         setCurrentIndex(0);
         setSectionPath([]);
+        setLevelPath([]);
         setSubmitted(false);
         setSubmissionCode('');
         setSubmitError('');
@@ -487,11 +504,31 @@ export default function StudentTestPage() {
         );
     }
 
+    // ── Guard: staircase test with no reachable question at all ──────────────
+    // A misconfigured staircase (empty or misassigned level pools) resolves the very first
+    // question to null — distinct from a legitimate convergence, which only happens after
+    // at least one question has been asked.
+    if (isStaircase && levelPath.length === 0 && !staircaseQuestion) {
+        return (
+            <CenteredMessage>
+                <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
+                <h2 style={{ marginBottom: 8, color: 'var(--text)' }}>{t('tests.taking.load_error_title')}</h2>
+                <p style={{ color: 'var(--text-muted)' }}>{t('tests.taking.staircase_not_configured')}</p>
+            </CenteredMessage>
+        );
+    }
+
     const timedOut = secondsLeft !== null && secondsLeft <= 0;
-    const question = orderedQuestions[currentIndex];
-    const isLast = currentIndex === orderedQuestions.length - 1;
-    const isFirst = currentIndex === 0;
-    const answeredCount = orderedQuestions.filter((q) => (answers.get(q.id) ?? '').trim().length > 0).length;
+    const question = isStaircase ? staircaseQuestion?.question : orderedQuestions[currentIndex];
+    // A staircase test has no fixed question count — every question is effectively the "last"
+    // of its own micro-stage, and there's no going back once an answer is locked in.
+    const isLast = isStaircase ? true : currentIndex === orderedQuestions.length - 1;
+    const isFirst = isStaircase ? true : currentIndex === 0;
+    const answeredCount = isStaircase
+        ? levelPath.length
+        : orderedQuestions.filter((q) => (answers.get(q.id) ?? '').trim().length > 0).length;
+    // The run has converged (or exhausted its pool) — ready to submit instead of continuing.
+    const staircaseTerminal = isStaircase && !staircaseQuestion;
 
     // Find current question's section label
     const sections = test.sections ?? [];
@@ -590,10 +627,12 @@ export default function StudentTestPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
                         {!submitted && (
                             <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-                                {t('tests.taking.progress', {
-                                    answered: answeredCount,
-                                    total: orderedQuestions.length,
-                                })}
+                                {isStaircase
+                                    ? t('tests.taking.staircase_progress', { answered: answeredCount })
+                                    : t('tests.taking.progress', {
+                                          answered: answeredCount,
+                                          total: orderedQuestions.length,
+                                      })}
                             </div>
                         )}
                         {secondsLeft !== null && (
@@ -822,12 +861,13 @@ export default function StudentTestPage() {
                                 <QuestionCard
                                     key={question.id}
                                     question={question}
-                                    index={currentIndex}
+                                    index={isStaircase ? levelPath.length : currentIndex}
                                     total={orderedQuestions.length}
                                     value={answers.get(question.id) ?? ''}
                                     onChange={(value) => setAnswers((prev) => new Map(prev).set(question.id, value))}
                                     code={code ?? ''}
                                     onRecordingChange={setIsRecordingAudio}
+                                    hideTotal={isStaircase}
                                 />
                             )}
 
@@ -852,6 +892,24 @@ export default function StudentTestPage() {
                                 {isLast && staged && nextStageId ? (
                                     <button
                                         onClick={() => setSectionPath((prev) => [...prev, nextStageId])}
+                                        className="btn btn-primary"
+                                        style={{ padding: '10px 32px', fontWeight: 700, fontSize: '0.95rem' }}
+                                    >
+                                        {t('tests.taking.continue_section')}
+                                    </button>
+                                ) : isLast && isStaircase && !staircaseTerminal && staircaseQuestion ? (
+                                    <button
+                                        onClick={() => {
+                                            const { sectionId, level, question: currentQuestion } = staircaseQuestion;
+                                            const response = answers.get(currentQuestion.id) ?? '';
+                                            const earned = autoScoreResponse(currentQuestion, response);
+                                            const correct = earned >= currentQuestion.points;
+                                            setLevelPath((prev) => [
+                                                ...prev,
+                                                { sectionId, level, questionId: currentQuestion.id, correct },
+                                            ]);
+                                        }}
+                                        disabled={isRecordingAudio}
                                         className="btn btn-primary"
                                         style={{ padding: '10px 32px', fontWeight: 700, fontSize: '0.95rem' }}
                                     >
@@ -900,8 +958,8 @@ export default function StudentTestPage() {
                     )}
                 </div>
 
-                {/* Question timeline — sticky footer */}
-                {!submitted && orderedQuestions.length > 0 && (
+                {/* Question timeline — sticky footer (not shown for an adaptive staircase run, which has no fixed question set to jump between) */}
+                {!submitted && !isStaircase && orderedQuestions.length > 0 && (
                     <QuestionTimeline
                         questions={orderedQuestions}
                         currentIndex={currentIndex}
@@ -1046,9 +1104,20 @@ interface QuestionCardProps {
     onChange: (value: string) => void;
     code: string;
     onRecordingChange?: (recording: boolean) => void;
+    /** True for an adaptive (staircase) run, where the total question count isn't known ahead of time */
+    hideTotal?: boolean;
 }
 
-function QuestionCard({ question, index, total, value, onChange, code, onRecordingChange }: QuestionCardProps) {
+function QuestionCard({
+    question,
+    index,
+    total,
+    value,
+    onChange,
+    code,
+    onRecordingChange,
+    hideTotal,
+}: QuestionCardProps) {
     const { t } = useTranslation();
     const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown';
     const [hintVisible, setHintVisible] = useState(false);
@@ -1073,7 +1142,9 @@ function QuestionCard({ question, index, total, value, onChange, code, onRecordi
                     letterSpacing: '0.05em',
                 }}
             >
-                {t('tests.taking.question_label', { current: index + 1, total })}
+                {hideTotal
+                    ? t('tests.taking.question_label_no_total', { current: index + 1 })
+                    : t('tests.taking.question_label', { current: index + 1, total })}
             </div>
             <div
                 style={{

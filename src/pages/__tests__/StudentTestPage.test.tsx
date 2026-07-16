@@ -586,6 +586,7 @@ describe('StudentTestPage — DB mode (TestAdapter, short-code link)', () => {
             expect.any(String),
             expect.any(String),
             expect.any(Array),
+            undefined,
             undefined
         );
     });

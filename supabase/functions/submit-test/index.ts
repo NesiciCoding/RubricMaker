@@ -48,6 +48,7 @@ serve(async (req) => {
         submittedAt?: string;
         events?: unknown[];
         sectionPath?: string[];
+        levelPath?: { sectionId: string; level: string; questionId: string; correct: boolean }[];
     };
     try {
         body = await req.json();
@@ -55,7 +56,7 @@ serve(async (req) => {
         return json({ error: 'Invalid request body' }, 400);
     }
 
-    const { assignmentId, submissionId, answers, startedAt, submittedAt, events, sectionPath } = body;
+    const { assignmentId, submissionId, answers, startedAt, submittedAt, events, sectionPath, levelPath } = body;
     if (
         !assignmentId ||
         !submissionId ||
@@ -64,7 +65,18 @@ serve(async (req) => {
         !startedAt ||
         !submittedAt ||
         (events !== undefined && !Array.isArray(events)) ||
-        (sectionPath !== undefined && (!Array.isArray(sectionPath) || !sectionPath.every((s) => typeof s === 'string')))
+        (sectionPath !== undefined &&
+            (!Array.isArray(sectionPath) || !sectionPath.every((s) => typeof s === 'string'))) ||
+        (levelPath !== undefined &&
+            (!Array.isArray(levelPath) ||
+                !levelPath.every(
+                    (s) =>
+                        s &&
+                        typeof s.sectionId === 'string' &&
+                        typeof s.level === 'string' &&
+                        typeof s.questionId === 'string' &&
+                        typeof s.correct === 'boolean'
+                )))
     ) {
         return json(
             { error: 'Missing required fields: assignmentId, submissionId, answers, startedAt, submittedAt' },
@@ -139,6 +151,7 @@ serve(async (req) => {
                 events: events ?? [],
                 attemptNumber,
                 ...(sectionPath ? { sectionPath } : {}),
+                ...(levelPath ? { levelPath } : {}),
             },
         });
 

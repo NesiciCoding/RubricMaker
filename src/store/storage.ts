@@ -31,6 +31,7 @@ import type {
     NewsFlashRead,
     RubricVersion,
     QuestionBankItem,
+    StaircaseStep,
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 import { nanoid } from '../utils/nanoid';
@@ -1639,6 +1640,8 @@ export interface TestDraft {
     savedAt: string;
     /** Sections visited so far, in order — only set while taking a staged (placement) test, so a reload resumes at the right stage */
     sectionPath?: string[];
+    /** The adaptive question trace so far — only set while taking a staircase (placement) test, so a reload resumes at the right level */
+    levelPath?: StaircaseStep[];
 }
 
 export function loadTestDraft(draftKey: string): TestDraft | null {

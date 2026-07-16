@@ -84,7 +84,7 @@ const TEACHER_FEATURES = [
     {
         icon: Route,
         title: 'Placement Testing',
-        desc: 'Build a staged placement test that routes each student to an easier or harder section based on their score — results show the exact path taken and a provisional CEFR estimate, ideal for sizing up new students at the start of the year.',
+        desc: 'Build a placement test with a branching-sections or per-question staircase engine — either way, each student lands on the right difficulty and gets a provisional CEFR estimate, ideal for sizing up new students at the start of the year.',
         color: '#10b981',
     },
     {

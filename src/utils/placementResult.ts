@@ -1,6 +1,7 @@
 import type { Test, StudentTest, CefrLevel } from '../types';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
 import { scoreSectionPct } from './placementRouting';
+import { isStaircaseTest, computeStaircaseState } from './placementStaircase';
 
 export interface PlacementPathStep {
     sectionId: string;
@@ -25,6 +26,8 @@ const DEFAULT_TERMINAL_THRESHOLD_PCT = 60;
  * still gets a starting estimate rather than none at all.
  */
 export function estimatePlacement(test: Test, studentTest: StudentTest): PlacementEstimate | null {
+    if (isStaircaseTest(test)) return estimateStaircasePlacement(test, studentTest);
+
     const sectionPath = studentTest.sectionPath;
     if (!sectionPath?.length) return null;
 
@@ -57,4 +60,24 @@ export function estimatePlacement(test: Test, studentTest: StudentTest): Placeme
               ).level;
 
     return { level, provisional: true, path };
+}
+
+/**
+ * Estimate for a staircase (roadmap Phase 25.3) placement run: unlike MST, the run's own
+ * convergence rule already settles at the right level, so the estimate is simply the level the
+ * replay ends on — no highest-passed/fallback logic needed.
+ */
+function estimateStaircasePlacement(test: Test, studentTest: StudentTest): PlacementEstimate | null {
+    const levelPath = studentTest.levelPath;
+    if (!levelPath?.length) return null;
+
+    const sectionsById = new Map((test.sections ?? []).map((s) => [s.id, s]));
+    const path: PlacementPathStep[] = levelPath.map((step) => ({
+        sectionId: step.sectionId,
+        title: sectionsById.get(step.sectionId)?.title ?? step.sectionId,
+        level: step.level,
+        scorePct: step.correct ? 100 : 0,
+    }));
+
+    return { level: computeStaircaseState(levelPath).level, provisional: true, path };
 }

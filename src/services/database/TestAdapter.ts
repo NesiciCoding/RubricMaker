@@ -13,7 +13,7 @@
  */
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import type { ProctorEvent, TestAnswer, TestAssignmentContent } from '../../types';
+import type { ProctorEvent, TestAnswer, TestAssignmentContent, StaircaseStep } from '../../types';
 import type { SyncResult } from './types';
 
 export type FetchTestContentResult =
@@ -116,7 +116,8 @@ export class TestAdapter {
         startedAt: string,
         submittedAt: string,
         events?: ProctorEvent[],
-        sectionPath?: string[]
+        sectionPath?: string[],
+        levelPath?: StaircaseStep[]
     ): Promise<SyncResult> {
         const {
             data: { session },
@@ -140,6 +141,7 @@ export class TestAdapter {
                     submittedAt,
                     events,
                     sectionPath,
+                    levelPath,
                 }),
             });
         } catch (err) {

@@ -141,3 +141,47 @@ describe('estimatePlacement', () => {
         expect(result?.path.find((s) => s.sectionId === 'routing')?.level).toBeUndefined();
     });
 });
+
+describe('estimatePlacement — staircase engine', () => {
+    const makeStaircaseTest = (): Test => ({
+        id: 't-staircase',
+        name: 'Staircase test',
+        questions: [],
+        requireSEB: false,
+        shuffleQuestions: false,
+        createdAt: '2026-01-01T00:00:00.000Z',
+        mode: 'placement',
+        placementEngine: 'staircase',
+        sections: [
+            { id: 'sec-A2', title: 'A2 pool', cefrLevel: 'A2' },
+            { id: 'sec-B1', title: 'B1 pool', cefrLevel: 'B1' },
+        ],
+    });
+
+    it('returns null when there is no level path', () => {
+        expect(estimatePlacement(makeStaircaseTest(), makeStudentTest())).toBeNull();
+    });
+
+    it('estimates the level the run ended on, not a highest-passed rule', () => {
+        const st = makeStudentTest({
+            levelPath: [
+                { sectionId: 'sec-A2', level: 'A2', questionId: 'q1', correct: true },
+                { sectionId: 'sec-A2', level: 'A2', questionId: 'q2', correct: true },
+                { sectionId: 'sec-B1', level: 'B1', questionId: 'q3', correct: false },
+            ],
+        });
+        const result = estimatePlacement(makeStaircaseTest(), st);
+        expect(result?.level).toBe('A2');
+        expect(result?.provisional).toBe(true);
+        expect(result?.path).toHaveLength(3);
+        expect(result?.path[2]).toEqual({ sectionId: 'sec-B1', title: 'B1 pool', level: 'B1', scorePct: 0 });
+    });
+
+    it('scores a correct step as 100% and an incorrect one as 0%', () => {
+        const st = makeStudentTest({
+            levelPath: [{ sectionId: 'sec-A2', level: 'A2', questionId: 'q1', correct: true }],
+        });
+        const result = estimatePlacement(makeStaircaseTest(), st);
+        expect(result?.path[0].scorePct).toBe(100);
+    });
+});
