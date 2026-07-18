@@ -30,11 +30,13 @@ A few migrations (e.g. `20260617093844_delete_old_attachments_fn.sql`) use a tim
 ## Row-level security (RLS)
 
 All tables have RLS enabled. The pattern is:
+
 - Users can only access rows they own (matched by `auth.uid() = user_id`).
 - Public/shared data uses specific policies defined per table.
 - The `site_config` table has its own access rules (see `012_site_config.sql`).
 
 When adding a table, always:
+
 1. Enable RLS: `ALTER TABLE foo ENABLE ROW LEVEL SECURITY;`
 2. Add ownership policies for SELECT, INSERT, UPDATE, DELETE.
 3. Do not rely on application-level auth checks alone.
@@ -56,6 +58,7 @@ Access is controlled via storage policies that match `auth.uid()` to the uploade
 Located in `supabase/functions/`. Written in TypeScript for Deno.
 
 Current functions:
+
 - `submit-essay` — validates and persists a student essay submission server-side (word-count, expiry, and duplicate-submission checks the client could otherwise bypass)
 - `submit-test` — mirrors `submit-essay` for test submissions: server-side expiry check and duplicate-submission guard (backed by the unique index on `student_tests.assignment_id`)
 - `get-essay-assignment` — returns the student-facing content of an essay assignment; the only way anonymous/portal students can read assignment content, since direct REST access is blocked
@@ -74,49 +77,46 @@ Current functions:
 
 ## Key tables
 
-| Table | Purpose |
-|---|---|
-| `profiles` | User profile, created automatically on signup via trigger |
-| `rubrics` | Rubric templates owned by a user |
-| `classes` | Class/group records |
-| `class_members` | Student–class membership |
-| `students` | Student records (with optional email for portal access) |
-| `student_rubrics` | Grade records (student + rubric + scores); peer reviews are rows with `is_peer_review = true`, not a separate table |
-| `attachments` | File attachment metadata |
-| `grade_scales` | Custom scoring scale definitions |
-| `comment_snippets` | Reusable comment bank entries |
-| `essay_assignments` | Essay prompts created by teachers |
-| `essay_submissions` | Student essay submissions (anonymous via submission codes) |
-| `test_assignments` | Per-student test assignment records (migration 044), mirrors `essay_assignments` so the student portal can list assigned tests |
-| `messages` | Student <-> teacher Q&A threads (migration 050), grouped client-side by `(student_id, context_type, context_id)`; portal-authenticated students only |
-| `peer_reviews` | Peer review entries on essay submissions |
-| `comment_bank` | Shared/library comment bank entries |
-| `export_templates` | Mail-merge DOCX template metadata |
-| `favorite_standards` | User-starred Common Standards (CCSS/NGSS) entries |
-| `self_assessments` | Student CEFR self-assessment records |
-| `speaking_sessions` | Speaking assessment session records |
-| `recording_metadata` | Metadata for `recordings` storage bucket audio files |
-| `analysis_results` | Document analysis (OCR/DOCX parsing) results |
-| `user_settings` | Per-user app settings |
-| `user_templates` | Saved rubric templates ("save as template"), synced across devices |
-| `rubric_shares` | Rubric sharing grants between users |
-| `essay_assignments` | Essay prompts created by teachers, one row per shareable link |
-| `essay_submissions` | Student essay submissions for the online student-portal flow (Storage-bucket file paths) |
-| `essay_batch_assignments` | Teacher's class-assignment bookkeeping (which student was assigned which essay), used by the Activity Dashboard/EssayListPage; distinct from `essay_assignments` |
-| `essay_offline_submissions` | Essays imported via a manually pasted share code (fully offline path, no student account); embeds full HTML content, distinct from `essay_submissions` |
-| `essay_templates` | Reusable essay assignment templates |
-| `test_assignments` | Per-student test assignment records, mirrors `essay_assignments` so the student portal can list assigned tests |
-| `tests` | Test/quiz definitions (including cloze and hot-text questions) |
-| `student_tests` | Student test attempts and results |
-| `site_config` | Per-user app configuration |
-| `schools` | School/organisation records for multi-user deployments |
-| `school_members` | User–school role mappings (admin / user / student) |
-| `client_logs` | Client-side error/diagnostic logs |
-| `audit_logs` | Audit trail of sensitive actions |
-| `grading_tasks` | Async grading job records |
-| `marketplace_listings` | Published rubrics, tests, or flashcard decks on the school marketplace, discriminated by `kind` |
-| `marketplace_upvotes` | Upvotes on marketplace listings |
-| `question_bank_items` | Reusable test questions saved outside any one test (roadmap 24.1) |
+| Table                       | Purpose                                                                                                                                                          |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `profiles`                  | User profile, created automatically on signup via trigger                                                                                                        |
+| `rubrics`                   | Rubric templates owned by a user                                                                                                                                 |
+| `classes`                   | Class/group records                                                                                                                                              |
+| `class_members`             | Student–class membership                                                                                                                                         |
+| `students`                  | Student records (with optional email for portal access)                                                                                                          |
+| `student_rubrics`           | Grade records (student + rubric + scores); peer reviews are rows with `is_peer_review = true`, not a separate table                                              |
+| `attachments`               | File attachment metadata                                                                                                                                         |
+| `grade_scales`              | Custom scoring scale definitions                                                                                                                                 |
+| `comment_snippets`          | Reusable comment bank entries                                                                                                                                    |
+| `messages`                  | Student <-> teacher Q&A threads (migration 050), grouped client-side by `(student_id, context_type, context_id)`; portal-authenticated students only             |
+| `peer_reviews`              | Peer review entries on essay submissions                                                                                                                         |
+| `comment_bank`              | Shared/library comment bank entries                                                                                                                              |
+| `export_templates`          | Mail-merge DOCX template metadata                                                                                                                                |
+| `favorite_standards`        | User-starred Common Standards (CCSS/NGSS) entries                                                                                                                |
+| `self_assessments`          | Student CEFR self-assessment records                                                                                                                             |
+| `speaking_sessions`         | Speaking assessment session records                                                                                                                              |
+| `recording_metadata`        | Metadata for `recordings` storage bucket audio files                                                                                                             |
+| `analysis_results`          | Document analysis (OCR/DOCX parsing) results                                                                                                                     |
+| `user_settings`             | Per-user app settings                                                                                                                                            |
+| `user_templates`            | Saved rubric templates ("save as template"), synced across devices                                                                                               |
+| `rubric_shares`             | Rubric sharing grants between users                                                                                                                              |
+| `essay_assignments`         | Essay prompts created by teachers, one row per shareable link                                                                                                    |
+| `essay_submissions`         | Student essay submissions for the online student-portal flow (Storage-bucket file paths)                                                                         |
+| `essay_batch_assignments`   | Teacher's class-assignment bookkeeping (which student was assigned which essay), used by the Activity Dashboard/EssayListPage; distinct from `essay_assignments` |
+| `essay_offline_submissions` | Essays imported via a manually pasted share code (fully offline path, no student account); embeds full HTML content, distinct from `essay_submissions`           |
+| `essay_templates`           | Reusable essay assignment templates                                                                                                                              |
+| `test_assignments`          | Per-student test assignment records, mirrors `essay_assignments` so the student portal can list assigned tests                                                   |
+| `tests`                     | Test/quiz definitions (including cloze and hot-text questions)                                                                                                   |
+| `student_tests`             | Student test attempts and results                                                                                                                                |
+| `site_config`               | Per-user app configuration                                                                                                                                       |
+| `schools`                   | School/organisation records for multi-user deployments                                                                                                           |
+| `school_members`            | User–school role mappings (admin / user / student)                                                                                                               |
+| `client_logs`               | Client-side error/diagnostic logs                                                                                                                                |
+| `audit_logs`                | Audit trail of sensitive actions                                                                                                                                 |
+| `grading_tasks`             | Async grading job records                                                                                                                                        |
+| `marketplace_listings`      | Published rubrics, tests, or flashcard decks on the school marketplace, discriminated by `kind`                                                                  |
+| `marketplace_upvotes`       | Upvotes on marketplace listings                                                                                                                                  |
+| `question_bank_items`       | Reusable test questions saved outside any one test (roadmap 24.1)                                                                                                |
 
 The full schema is spread across migrations — `001_initial_schema.sql` covers most core tables; see individual `NNN_description.sql` files (named after the feature) for the rest.
 

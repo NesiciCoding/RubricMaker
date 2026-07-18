@@ -2,7 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { Search, Trash2, Tag } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
-import type { QuestionBankItem } from '../../types';
+import { CEFR_LEVELS } from '../../data/cefrDescriptors';
+import type { QuestionBankItem, CefrLevel } from '../../types';
 
 interface QuestionBankManagerProps {
     /** When set, items render as pick targets (insert-from-bank) instead of a plain manager list. */
@@ -16,6 +17,7 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
     const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editTags, setEditTags] = useState('');
+    const [editCefrLevel, setEditCefrLevel] = useState<CefrLevel | ''>('');
 
     const allTags = useMemo(() => {
         const tags = new Set<string>();
@@ -23,13 +25,20 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
         return Array.from(tags).sort();
     }, [questionBank]);
 
+    function itemSearchText(item: QuestionBankItem): string {
+        if (item.kind === 'section' && item.section) {
+            return [item.section.title, ...item.section.questions.map((q) => q.prompt)].join(' ');
+        }
+        return item.question?.prompt ?? '';
+    }
+
     const filteredItems = useMemo(() => {
         const q = searchTerm.toLowerCase();
         return questionBank
             .filter((item) => {
                 const matchesSearch =
                     !q ||
-                    item.question.prompt.toLowerCase().includes(q) ||
+                    itemSearchText(item).toLowerCase().includes(q) ||
                     item.tags.some((tag) => tag.toLowerCase().includes(q));
                 const matchesTags = selectedTags.size === 0 || item.tags.some((tag) => selectedTags.has(tag));
                 return matchesSearch && matchesTags;
@@ -49,6 +58,7 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
     function startEditTags(item: QuestionBankItem) {
         setEditingId(item.id);
         setEditTags(item.tags.join(', '));
+        setEditCefrLevel(item.cefrLevel ?? '');
     }
 
     function saveTags(item: QuestionBankItem) {
@@ -56,7 +66,7 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
             .split(',')
             .map((tag) => tag.trim())
             .filter(Boolean);
-        updateQuestionBankItem({ ...item, tags });
+        updateQuestionBankItem({ ...item, tags, cefrLevel: editCefrLevel || undefined });
         setEditingId(null);
     }
 
@@ -130,11 +140,17 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
                                 >
                                     <div style={{ flex: 1 }}>
                                         <div className="text-muted text-xs">
-                                            {t(`tests.question_type_${item.question.type.replace(/-/g, '_')}`)} ·{' '}
-                                            {t('tests.total_points', { points: item.question.points })}
+                                            {item.kind === 'section' && item.section
+                                                ? t('questionBank.section_bundle_meta', {
+                                                      count: item.section.questions.length,
+                                                  })
+                                                : `${t(`tests.question_type_${(item.question?.type ?? 'multiple-choice').replace(/-/g, '_')}`)} · ${t('tests.total_points', { points: item.question?.points ?? 0 })}`}
+                                            {item.cefrLevel ? ` · ${item.cefrLevel}` : ''}
                                         </div>
                                         <div style={{ fontSize: '0.95rem', marginTop: 4 }}>
-                                            {item.question.prompt || t('questionBank.untitled_prompt')}
+                                            {item.kind === 'section' && item.section
+                                                ? t('questionBank.section_bundle_title', { title: item.section.title })
+                                                : item.question?.prompt || t('questionBank.untitled_prompt')}
                                         </div>
                                     </div>
                                     {!onSelect && (
@@ -154,7 +170,7 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
                                 </div>
 
                                 {!onSelect && editingId === item.id ? (
-                                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                                         <Tag size={14} className="text-muted" />
                                         <input
                                             type="text"
@@ -165,6 +181,19 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
                                             autoFocus
                                             onClick={(e) => e.stopPropagation()}
                                         />
+                                        <select
+                                            aria-label={t('questionBank.cefr_level_label')}
+                                            value={editCefrLevel}
+                                            onChange={(e) => setEditCefrLevel(e.target.value as CefrLevel | '')}
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            <option value="">{t('tests.section_cefr_level_none')}</option>
+                                            {CEFR_LEVELS.map((lvl) => (
+                                                <option key={lvl} value={lvl}>
+                                                    {lvl} – {t(`cefr.level_${lvl}`)}
+                                                </option>
+                                            ))}
+                                        </select>
                                         <button
                                             type="button"
                                             className="btn btn-ghost btn-sm"

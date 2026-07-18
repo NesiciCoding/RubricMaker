@@ -23,11 +23,7 @@ serve(async (req) => {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
     }
 
-    const admin = createClient(
-        supabaseUrl,
-        serviceKey,
-        { auth: { autoRefreshToken: false, persistSession: false } },
-    );
+    const admin = createClient(supabaseUrl, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
 
     let profiles: Array<{ id: string; email: string | null }>;
     try {
@@ -73,7 +69,7 @@ serve(async (req) => {
 // The Supabase API caps a single response at 1000 rows, same paging concern as
 // nightly-backup's fetchAllOwnerProfiles.
 async function fetchOptedInProfiles(
-    admin: ReturnType<typeof createClient>,
+    admin: ReturnType<typeof createClient>
 ): Promise<Array<{ id: string; email: string | null }>> {
     const all: Array<{ id: string; email: string | null }> = [];
     let from = 0;

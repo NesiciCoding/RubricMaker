@@ -6,7 +6,10 @@ import Topbar from '../components/Layout/Topbar';
 import HelpPopover from '../components/ui/HelpPopover';
 import { useApp } from '../context/AppContext';
 import { calcTestMaxPoints, calcStudentTestRawPoints, calcTestPercentage, autoScoreResponse } from '../utils/testCalc';
+import { isStagedTest, maxPointsForPath, sectionQuestions, scoreSectionPct } from '../utils/placementRouting';
+import { isStaircaseTest, staircaseMaxPoints } from '../utils/placementStaircase';
 import { calcLetterGrade, calcGradeColor } from '../utils/gradeCalc';
+import { stripHtmlTags } from '../utils/docxExport';
 import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse';
 import { calcTestTimeOnTask } from '../utils/proctorAggregator';
 import { parseAudioResponse } from '../utils/audioResponseCode';
@@ -41,8 +44,8 @@ function autoScore(question: TestQuestion, answer: TestAnswer | undefined): numb
 
 /** Renders a cloze prompt with each `{{...}}` gap shown as a blank placeholder. */
 function promptPreview(question: TestQuestion): string {
-    if (question.type !== 'cloze' && question.type !== 'cloze-dropdown') return question.prompt;
-    return renderClozeSegments(question.prompt)
+    if (question.type !== 'cloze' && question.type !== 'cloze-dropdown') return stripHtmlTags(question.prompt);
+    return renderClozeSegments(stripHtmlTags(question.prompt))
         .map((segment) => (segment.type === 'text' ? segment.text : '_____'))
         .join('');
 }
@@ -80,7 +83,7 @@ function formatStudentResponse(
             answers = {};
         }
         const isDropdown = question.type === 'cloze-dropdown';
-        const segments = renderClozeSegments(question.prompt);
+        const segments = renderClozeSegments(stripHtmlTags(question.prompt));
         if (!segments.some((s) => s.type === 'gap')) return t('tests.results.no_response');
         return (
             <>
@@ -201,7 +204,7 @@ function formatStudentResponse(
         );
     }
     if (question.type === 'hot-text') {
-        const segments = parseHotTextFragments(question.hotTextPassage ?? '');
+        const segments = parseHotTextFragments(stripHtmlTags(question.hotTextPassage ?? ''));
         if (!segments.some((s) => s.type === 'fragment')) return t('tests.results.no_response');
         let selected: number[];
         try {
@@ -271,16 +274,52 @@ export default function TestResultsPage() {
 
     const [drafts, setDrafts] = useState<Record<string, { pointsEarned: string; feedback: string }>>({});
 
-    const maxPoints = test ? calcTestMaxPoints(test) : 0;
+    const sectionPath = studentTest?.sectionPath;
+    const staged = !!test && isStagedTest(test) && !!sectionPath?.length;
+    const levelPath = studentTest?.levelPath;
+    const isStaircase = !!test && isStaircaseTest(test) && !!levelPath?.length;
+
+    const maxPoints = test
+        ? staged && sectionPath
+            ? maxPointsForPath(test, sectionPath)
+            : isStaircase && levelPath
+              ? staircaseMaxPoints(test, levelPath)
+              : calcTestMaxPoints(test)
+        : 0;
+
+    // For a staged (placement) submission, only the sections the student actually saw
+    // count — the other branch's questions were never presented and would otherwise
+    // show up as unanswered. Same idea for a staircase run: only the questions actually
+    // asked count.
+    const pathQuestions =
+        test && staged && sectionPath
+            ? sectionPath.flatMap((id) => sectionQuestions(test, id))
+            : test && isStaircase && levelPath
+              ? levelPath
+                    .map((step) => test.questions.find((q) => q.id === step.questionId))
+                    .filter((q): q is TestQuestion => !!q)
+              : (test?.questions ?? []);
 
     const answersById = new Map((studentTest?.answers ?? []).map((a) => [a.questionId, a]));
-    const effectiveAnswers = (test?.questions ?? []).map((question) => ({
+    const effectiveAnswers = pathQuestions.map((question) => ({
         question,
         answer: answersById.get(question.id),
     }));
 
-    const rawPoints =
-        test && studentTest ? (studentTest.rawTotalPoints ?? calcStudentTestRawPoints(test, studentTest.answers)) : 0;
+    // For a staged/staircase submission, points must be scored only from the path the student
+    // actually took — including off-path answers (or a stale rawTotalPoints) would let points
+    // from a section/level the student never routed through inflate the path-scoped percentage.
+    const pathQuestionIds = new Set(pathQuestions.map((q) => q.id));
+    const rawPoints = !test
+        ? 0
+        : staged || isStaircase
+          ? calcStudentTestRawPoints(
+                test,
+                (studentTest?.answers ?? []).filter((a) => pathQuestionIds.has(a.questionId))
+            )
+          : studentTest
+            ? (studentTest.rawTotalPoints ?? calcStudentTestRawPoints(test, studentTest.answers))
+            : 0;
 
     const adjustmentPoints = studentTest?.adjustmentPoints ?? 0;
     const totalPoints = clamp(rawPoints + adjustmentPoints, 0, maxPoints);
@@ -362,13 +401,19 @@ export default function TestResultsPage() {
 
     function handleSaveManualScore(question: TestQuestion) {
         if (!studentTest) return;
-        const draft = getDraft(
-            question.id,
-            studentTest.answers.find((a) => a.questionId === question.id)
-        );
-        const pointsEarned = clamp(Number(draft.pointsEarned) || 0, 0, question.points);
         const existingAnswers = studentTest.answers;
-        const idx = existingAnswers.findIndex((a) => a.questionId === question.id);
+        // calcStudentTestRawPoints dedups by keeping the *last* answer per questionId, so the
+        // edit must target that same last occurrence — editing the first would silently be
+        // ignored by scoring whenever duplicate entries exist for a question.
+        let idx = -1;
+        for (let i = existingAnswers.length - 1; i >= 0; i--) {
+            if (existingAnswers[i].questionId === question.id) {
+                idx = i;
+                break;
+            }
+        }
+        const draft = getDraft(question.id, idx >= 0 ? existingAnswers[idx] : undefined);
+        const pointsEarned = clamp(Number(draft.pointsEarned) || 0, 0, question.points);
         const updatedAnswer: TestAnswer =
             idx >= 0
                 ? { ...existingAnswers[idx], pointsEarned, feedback: draft.feedback }
@@ -377,7 +422,9 @@ export default function TestResultsPage() {
             idx >= 0
                 ? existingAnswers.map((a, i) => (i === idx ? updatedAnswer : a))
                 : [...existingAnswers, updatedAnswer];
-        const nextRaw = test ? calcStudentTestRawPoints(test, nextAnswers) : 0;
+        const scopedAnswers =
+            staged || isStaircase ? nextAnswers.filter((a) => pathQuestionIds.has(a.questionId)) : nextAnswers;
+        const nextRaw = test ? calcStudentTestRawPoints(test, scopedAnswers) : 0;
         saveStudentTest({
             ...studentTest,
             answers: nextAnswers,
@@ -454,6 +501,64 @@ export default function TestResultsPage() {
                         )}
                     </div>
                 </div>
+
+                {staged && sectionPath && (
+                    <div className="card">
+                        <h3 style={{ margin: '0 0 12px' }}>{t('tests.results.placement_path_title')}</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {sectionPath.map((sectionId, i) => {
+                                const section = test.sections?.find((s) => s.id === sectionId);
+                                const pct = scoreSectionPct(test, sectionId, studentTest.answers);
+                                return (
+                                    <div
+                                        key={`${sectionId}-${i}`}
+                                        style={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            gap: 12,
+                                            fontSize: '0.85rem',
+                                        }}
+                                    >
+                                        <span>
+                                            {t('tests.results.placement_path_step', { number: i + 1 })}{' '}
+                                            {section?.title ?? sectionId}
+                                            {section?.cefrLevel ? ` (${section.cefrLevel})` : ''}
+                                        </span>
+                                        <span style={{ fontWeight: 700 }}>{pct.toFixed(0)}%</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
+                {isStaircase && levelPath && (
+                    <div className="card">
+                        <h3 style={{ margin: '0 0 12px' }}>{t('tests.results.placement_path_title')}</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {levelPath.map((step, i) => {
+                                const q = test.questions.find((qq) => qq.id === step.questionId);
+                                return (
+                                    <div
+                                        key={`${step.questionId}-${i}`}
+                                        style={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            gap: 12,
+                                            fontSize: '0.85rem',
+                                        }}
+                                    >
+                                        <span>
+                                            {t('tests.results.placement_path_step', { number: i + 1 })} {step.level}
+                                            {q ? ` — ${promptPreview(q)}` : ''}
+                                        </span>
+                                        <span style={{ fontWeight: 700 }}>{step.correct ? 100 : 0}%</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
 
                 <div className="card">
                     <h3 style={{ margin: '0 0 12px' }}>

@@ -40,7 +40,10 @@ export class TestBuilderPage extends BasePage {
     }
 
     async addQuestion(): Promise<void> {
-        await this.page.getByRole('button', { name: /add question/i }).first().click();
+        await this.page
+            .getByRole('button', { name: /add question/i })
+            .first()
+            .click();
     }
 
     questionCard(index: number): Locator {
@@ -51,9 +54,7 @@ export class TestBuilderPage extends BasePage {
         // Phase 23.2: the prompt field is a TipTap rich-text editor (EssayEditor for most types,
         // ClozeGapEditor for cloze/cloze-dropdown), not a plain textarea — no placeholder attribute
         // to target. `.fill()` works on contenteditable elements.
-        const editor = this.questionCard(index)
-            .locator('.essay-editor-content, .cloze-gap-editor-content')
-            .first();
+        const editor = this.questionCard(index).locator('.essay-editor-content, .cloze-gap-editor-content').first();
         await editor.fill(prompt);
     }
 
@@ -61,7 +62,9 @@ export class TestBuilderPage extends BasePage {
         // Phase 23.2's rich prompt editor adds its own toolbar <select> elements (paragraph
         // style, font family, etc.) ahead of this one in DOM order — target by label instead of
         // positional "first select".
-        await this.questionCard(index).getByLabel(/question type/i).selectOption(type);
+        await this.questionCard(index)
+            .getByLabel(/question type/i)
+            .selectOption(type);
     }
 
     async setQuestionPoints(index: number, points: number): Promise<void> {
