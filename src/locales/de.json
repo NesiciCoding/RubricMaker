@@ -1219,6 +1219,7 @@
         "criterion_kind_question": "Einzelfragen",
         "criterion_kind_section": "Lese-/Hörabschnitte",
         "criterion_tag_placeholder": "Tag (optional)",
+        "criterion_tag_label": "Tag",
         "criterion_count_label": "Anzahl",
         "generate_button": "Generieren",
         "shortfall_row": "Zeile {{row}}: nur {{got}} von {{want}} gefunden."

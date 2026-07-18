@@ -471,6 +471,13 @@ serve(async (req) => {
         );
     }
 
+    // Client input can carry arbitrary extra fields — most importantly pointsEarned, which
+    // scoreAnswer() on the teacher-facing side (src/utils/testCalc.ts) treats as an
+    // already-graded manual score and uses verbatim instead of auto-scoring. Reconstructing
+    // the answer objects here (rather than trusting the spread) means a forged pointsEarned
+    // can never reach storage in the first place.
+    const sanitizedAnswers: MinimalAnswer[] = answers.map((a) => ({ questionId: a.questionId, response: a.response }));
+
     // Rate limit: at most 5 submissions per user per 60 seconds (mirrors submit-essay).
     const sixtySecondsAgo = new Date(Date.now() - 60_000).toISOString();
     const { count: recentCount, error: rateErr } = await admin
@@ -506,31 +513,42 @@ serve(async (req) => {
         if (testErr || !testRow) return json({ error: 'Test not found' }, 404);
         const test = testRow.data as MinimalTest;
 
-        if (sectionPath) {
-            const recomputed = recomputeSectionPath(test, answers);
-            if (!recomputed || !sectionPathsMatch(recomputed, sectionPath)) {
-                return json({ error: 'Invalid section path' }, 400);
+        // The scoring replay below parses each answer's `response` as JSON per question type
+        // (arrays for multiple-response/ordering/hot-text, objects for cloze/matching/categorize).
+        // A syntactically valid but wrongly-shaped response (e.g. an object where an array is
+        // expected) throws inside Set/array construction rather than JSON.parse itself, which
+        // the per-scorer try/catch around JSON.parse doesn't cover — treat any such failure as
+        // an invalid submission rather than letting it crash the request to an unhandled 500.
+        try {
+            if (sectionPath) {
+                const recomputed = recomputeSectionPath(test, sanitizedAnswers);
+                if (!recomputed || !sectionPathsMatch(recomputed, sectionPath)) {
+                    return json({ error: 'Invalid section path' }, 400);
+                }
             }
-        }
 
-        if (levelPath) {
-            if (!isStructurallyValidLevelPath(test, levelPath)) {
-                return json({ error: 'Invalid level path' }, 400);
+            if (levelPath) {
+                if (!isStructurallyValidLevelPath(test, levelPath)) {
+                    return json({ error: 'Invalid level path' }, 400);
+                }
+                const questionsById = new Map((test.questions ?? []).map((q) => [q.id, q]));
+                const answersByQuestionId = new Map(sanitizedAnswers.map((a) => [a.questionId, a]));
+                const correctFlags = levelPath.map((step) => {
+                    const question = questionsById.get(step.questionId)!;
+                    const answer = answersByQuestionId.get(step.questionId);
+                    return (answer ? autoScoreResponse(question, answer.response) : 0) >= question.points;
+                });
+                if (!correctFlags.every((c, i) => c === levelPath[i].correct)) {
+                    return json({ error: 'Invalid level path' }, 400);
+                }
+                const { levelBeforeStep, askedAfterConverged } = replayStaircaseLevels(correctFlags);
+                if (askedAfterConverged || !levelBeforeStep.every((lvl, i) => lvl === levelPath[i].level)) {
+                    return json({ error: 'Invalid level path' }, 400);
+                }
             }
-            const questionsById = new Map((test.questions ?? []).map((q) => [q.id, q]));
-            const answersByQuestionId = new Map(answers.map((a) => [a.questionId, a]));
-            const correctFlags = levelPath.map((step) => {
-                const question = questionsById.get(step.questionId)!;
-                const answer = answersByQuestionId.get(step.questionId);
-                return (answer ? autoScoreResponse(question, answer.response) : 0) >= question.points;
-            });
-            if (!correctFlags.every((c, i) => c === levelPath[i].correct)) {
-                return json({ error: 'Invalid level path' }, 400);
-            }
-            const { levelBeforeStep, askedAfterConverged } = replayStaircaseLevels(correctFlags);
-            if (askedAfterConverged || !levelBeforeStep.every((lvl, i) => lvl === levelPath[i].level)) {
-                return json({ error: 'Invalid level path' }, 400);
-            }
+        } catch (e) {
+            console.error('submit-test placement path replay failed:', e);
+            return json({ error: 'Invalid submission' }, 400);
         }
     }
 
@@ -568,7 +586,7 @@ serve(async (req) => {
                 id: submissionId,
                 testId: assignment.test_id,
                 studentId: assignment.student_id,
-                answers,
+                answers: sanitizedAnswers,
                 status: 'submitted',
                 startedAt,
                 submittedAt,

@@ -222,6 +222,7 @@ export default function GenerateTestModal({ onClose }: GenerateTestModalProps) {
                                     value={row.tag}
                                     onChange={(e) => updateRow(row.id, { tag: e.target.value })}
                                     placeholder={t('generateTest.criterion_tag_placeholder')}
+                                    aria-label={t('generateTest.criterion_tag_label')}
                                     style={{ flex: 1, minWidth: 100 }}
                                 />
                                 <input

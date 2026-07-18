@@ -1219,6 +1219,7 @@
         "criterion_kind_question": "Losse vragen",
         "criterion_kind_section": "Lees-/luistersecties",
         "criterion_tag_placeholder": "Tag (optioneel)",
+        "criterion_tag_label": "Tag",
         "criterion_count_label": "Aantal",
         "generate_button": "Genereren",
         "shortfall_row": "Rij {{row}}: slechts {{got}} van de {{want}} gevonden."

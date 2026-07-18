@@ -1219,6 +1219,7 @@
         "criterion_kind_question": "Questions isolées",
         "criterion_kind_section": "Sections lecture/écoute",
         "criterion_tag_placeholder": "Étiquette (optionnel)",
+        "criterion_tag_label": "Étiquette",
         "criterion_count_label": "Nombre",
         "generate_button": "Générer",
         "shortfall_row": "Ligne {{row}} : seulement {{got}} sur {{want}} trouvé(s)."

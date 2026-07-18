@@ -1219,6 +1219,7 @@
         "criterion_kind_question": "Single questions",
         "criterion_kind_section": "Reading/listening sections",
         "criterion_tag_placeholder": "Tag (optional)",
+        "criterion_tag_label": "Tag",
         "criterion_count_label": "Count",
         "generate_button": "Generate",
         "shortfall_row": "Row {{row}}: only found {{got}} of {{want}} requested."

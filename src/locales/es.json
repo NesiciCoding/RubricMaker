@@ -1219,6 +1219,7 @@
         "criterion_kind_question": "Preguntas individuales",
         "criterion_kind_section": "Secciones de lectura/audición",
         "criterion_tag_placeholder": "Etiqueta (opcional)",
+        "criterion_tag_label": "Etiqueta",
         "criterion_count_label": "Cantidad",
         "generate_button": "Generar",
         "shortfall_row": "Fila {{row}}: solo se encontraron {{got}} de {{want}}."
