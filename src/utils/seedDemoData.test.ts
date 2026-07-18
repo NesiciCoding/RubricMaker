@@ -25,16 +25,15 @@ describe('seedDemoData', () => {
         expect(studentTests.length).toBeGreaterThan(0);
         expect(essayAssignments.length).toBeGreaterThan(0);
 
-        // Every seeded student belongs to one of the seeded classes.
         const classIds = new Set(classes.map((c: { id: string }) => c.id));
         expect(students.every((s: { classId: string }) => classIds.has(s.classId))).toBe(true);
     });
 
-    it('is safe to call twice in a row (no crash, keeps appending demo data)', () => {
+    it('is safe to call twice in a row — each call overwrites with a fresh, same-shaped dataset', () => {
         seedDemoData();
         const firstCount = JSON.parse(localStorage.getItem('rm_classes') ?? '[]').length;
         seedDemoData();
         const secondCount = JSON.parse(localStorage.getItem('rm_classes') ?? '[]').length;
-        expect(secondCount).toBeGreaterThanOrEqual(firstCount);
+        expect(secondCount).toBe(firstCount);
     });
 });

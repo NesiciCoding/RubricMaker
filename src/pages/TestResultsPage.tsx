@@ -45,7 +45,7 @@ function autoScore(question: TestQuestion, answer: TestAnswer | undefined): numb
 /** Renders a cloze prompt with each `{{...}}` gap shown as a blank placeholder. */
 function promptPreview(question: TestQuestion): string {
     if (question.type !== 'cloze' && question.type !== 'cloze-dropdown') return stripHtmlTags(question.prompt);
-    return renderClozeSegments(question.prompt)
+    return renderClozeSegments(stripHtmlTags(question.prompt))
         .map((segment) => (segment.type === 'text' ? segment.text : '_____'))
         .join('');
 }
@@ -83,7 +83,7 @@ function formatStudentResponse(
             answers = {};
         }
         const isDropdown = question.type === 'cloze-dropdown';
-        const segments = renderClozeSegments(question.prompt);
+        const segments = renderClozeSegments(stripHtmlTags(question.prompt));
         if (!segments.some((s) => s.type === 'gap')) return t('tests.results.no_response');
         return (
             <>
@@ -204,7 +204,7 @@ function formatStudentResponse(
         );
     }
     if (question.type === 'hot-text') {
-        const segments = parseHotTextFragments(question.hotTextPassage ?? '');
+        const segments = parseHotTextFragments(stripHtmlTags(question.hotTextPassage ?? ''));
         if (!segments.some((s) => s.type === 'fragment')) return t('tests.results.no_response');
         let selected: number[];
         try {
@@ -401,13 +401,19 @@ export default function TestResultsPage() {
 
     function handleSaveManualScore(question: TestQuestion) {
         if (!studentTest) return;
-        const draft = getDraft(
-            question.id,
-            studentTest.answers.find((a) => a.questionId === question.id)
-        );
-        const pointsEarned = clamp(Number(draft.pointsEarned) || 0, 0, question.points);
         const existingAnswers = studentTest.answers;
-        const idx = existingAnswers.findIndex((a) => a.questionId === question.id);
+        // calcStudentTestRawPoints dedups by keeping the *last* answer per questionId, so the
+        // edit must target that same last occurrence — editing the first would silently be
+        // ignored by scoring whenever duplicate entries exist for a question.
+        let idx = -1;
+        for (let i = existingAnswers.length - 1; i >= 0; i--) {
+            if (existingAnswers[i].questionId === question.id) {
+                idx = i;
+                break;
+            }
+        }
+        const draft = getDraft(question.id, idx >= 0 ? existingAnswers[idx] : undefined);
+        const pointsEarned = clamp(Number(draft.pointsEarned) || 0, 0, question.points);
         const updatedAnswer: TestAnswer =
             idx >= 0
                 ? { ...existingAnswers[idx], pointsEarned, feedback: draft.feedback }
@@ -416,7 +422,9 @@ export default function TestResultsPage() {
             idx >= 0
                 ? existingAnswers.map((a, i) => (i === idx ? updatedAnswer : a))
                 : [...existingAnswers, updatedAnswer];
-        const nextRaw = test ? calcStudentTestRawPoints(test, nextAnswers) : 0;
+        const scopedAnswers =
+            staged || isStaircase ? nextAnswers.filter((a) => pathQuestionIds.has(a.questionId)) : nextAnswers;
+        const nextRaw = test ? calcStudentTestRawPoints(test, scopedAnswers) : 0;
         saveStudentTest({
             ...studentTest,
             answers: nextAnswers,

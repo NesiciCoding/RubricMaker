@@ -31,20 +31,22 @@ export function cloneQuestionWithFreshIds(question: TestQuestion): TestQuestion 
  * one function, so bundle-cloning logic exists in exactly one place.
  */
 export function cloneBankItemIntoTest(item: QuestionBankItem): { questions: TestQuestion[]; section?: TestSection } {
-    if (item.kind !== 'section' || !item.section) {
-        return { questions: [cloneQuestionWithFreshIds({ ...item.question, sectionId: undefined } as TestQuestion)] };
+    if (item.kind === 'section') {
+        if (!item.section) throw new Error(`Bank item ${item.id} is kind: 'section' but has no section payload`);
+        const sectionId = nanoid();
+        const questions = item.section.questions.map((q) => ({
+            ...cloneQuestionWithFreshIds({ ...q, sectionId: undefined } as TestQuestion),
+            sectionId,
+        }));
+        const section: TestSection = {
+            id: sectionId,
+            title: item.section.title,
+            content: item.section.content,
+            audioUrl: item.section.audioUrl,
+            cefrLevel: item.cefrLevel,
+        };
+        return { questions, section };
     }
-    const sectionId = nanoid();
-    const questions = item.section.questions.map((q) => ({
-        ...cloneQuestionWithFreshIds({ ...q, sectionId: undefined } as TestQuestion),
-        sectionId,
-    }));
-    const section: TestSection = {
-        id: sectionId,
-        title: item.section.title,
-        content: item.section.content,
-        audioUrl: item.section.audioUrl,
-        cefrLevel: item.cefrLevel,
-    };
-    return { questions, section };
+    if (!item.question) throw new Error(`Bank item ${item.id} has no question payload`);
+    return { questions: [cloneQuestionWithFreshIds({ ...item.question, sectionId: undefined } as TestQuestion)] };
 }

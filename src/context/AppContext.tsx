@@ -872,7 +872,7 @@ interface AppContextValue extends StoreData {
         cefrLevel?: CefrLevel
     ) => QuestionBankItem;
     addSectionBankItem: (
-        section: { title: string; content?: string; audioUrl?: string },
+        section: Pick<NonNullable<QuestionBankItem['section']>, 'title' | 'content' | 'audioUrl'>,
         questions: Omit<TestQuestion, 'sectionId'>[],
         tags: string[],
         cefrLevel?: CefrLevel
@@ -1693,7 +1693,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     );
     const addSectionBankItem = useCallback(
         (
-            section: { title: string; content?: string; audioUrl?: string },
+            section: Pick<NonNullable<QuestionBankItem['section']>, 'title' | 'content' | 'audioUrl'>,
             questions: Omit<TestQuestion, 'sectionId'>[],
             tags: string[],
             cefrLevel?: CefrLevel

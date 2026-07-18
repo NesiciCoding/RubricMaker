@@ -932,9 +932,12 @@ export default function StudentTestPage() {
                                     <button
                                         type="button"
                                         onClick={() => {
-                                            setSectionPath((prev) => [...prev, nextStageId]);
+                                            setSectionPath((prev) =>
+                                                prev[prev.length - 1] === nextStageId ? prev : [...prev, nextStageId]
+                                            );
                                             setCurrentIndex(0);
                                         }}
+                                        disabled={isRecordingAudio}
                                         className="btn btn-primary"
                                         style={{ padding: '10px 32px', fontWeight: 700, fontSize: '0.95rem' }}
                                     >
@@ -948,10 +951,14 @@ export default function StudentTestPage() {
                                             const response = answers.get(currentQuestion.id) ?? '';
                                             const earned = autoScoreResponse(currentQuestion, response);
                                             const correct = earned >= currentQuestion.points;
-                                            setLevelPath((prev) => [
-                                                ...prev,
-                                                { sectionId, level, questionId: currentQuestion.id, correct },
-                                            ]);
+                                            setLevelPath((prev) =>
+                                                prev.some((step) => step.questionId === currentQuestion.id)
+                                                    ? prev
+                                                    : [
+                                                          ...prev,
+                                                          { sectionId, level, questionId: currentQuestion.id, correct },
+                                                      ]
+                                            );
                                         }}
                                         disabled={isRecordingAudio}
                                         className="btn btn-primary"

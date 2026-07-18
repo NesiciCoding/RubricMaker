@@ -674,6 +674,7 @@ export default function TestBuilderPage() {
                                                 aria-label={t('tests.section_name_label')}
                                             />
                                             <button
+                                                type="button"
                                                 className="btn btn-ghost btn-icon btn-sm"
                                                 aria-label={t('tests.remove_section')}
                                                 style={{ color: 'var(--red)', flexShrink: 0 }}

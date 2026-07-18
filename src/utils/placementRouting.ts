@@ -52,11 +52,6 @@ export function scoreSectionPct(test: SectionedTest, sectionId: string, answers:
     return clamp((sectionRawPoints(test, sectionId, answers) / max) * 100, 0, 100);
 }
 
-/**
- * Resolves the next section for a staged test given the answers submitted so far for
- * `sectionId`. Returns null when the current section is terminal (no routing), the
- * routing target doesn't exist, or the target was already visited (cycle guard).
- */
 export function resolveNextSection(
     test: SectionedTest,
     sectionId: string,
@@ -77,11 +72,6 @@ export function maxPointsForPath(test: SectionedTest, sectionPath: string[]): nu
     return sectionPath.reduce((sum, id) => sum + sectionMaxPoints(test, id), 0);
 }
 
-/**
- * Static cycle detection over a test's routing graph (both pass and fail edges,
- * independent of any one student's answers) — used by the builder to warn authors
- * before a routed test is ever taken.
- */
 export function hasRoutingCycle(test: Pick<Test, 'sections'>): boolean {
     const sections = test.sections ?? [];
     const bySectionId = new Map(sections.map((s) => [s.id, s]));

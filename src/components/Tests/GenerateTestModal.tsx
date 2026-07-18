@@ -49,10 +49,12 @@ export default function GenerateTestModal({ onClose }: GenerateTestModalProps) {
         const sections: TestSection[] = [];
         const sectionByLevel = new Map<CefrLevel, TestSection>();
         const shortfalls: string[] = [];
+        const usedItemIds = new Set<string>();
 
         rows.forEach((row, index) => {
             const tag = row.tag.trim().toLowerCase();
             const pool = questionBank.filter((item) => {
+                if (usedItemIds.has(item.id)) return false;
                 const itemKind = item.kind ?? 'question';
                 if (itemKind !== row.kind) return false;
                 if (row.cefrLevel && item.cefrLevel !== row.cefrLevel) return false;
@@ -68,11 +70,11 @@ export default function GenerateTestModal({ onClose }: GenerateTestModalProps) {
             }
 
             picked.forEach((item) => {
+                usedItemIds.add(item.id);
                 const { questions: cloned, section } = cloneBankItemIntoTest(item);
                 if (section) {
                     sections.push(section);
                     questions.push(...cloned);
-                    if (organizeByLevel && section.cefrLevel) sectionByLevel.set(section.cefrLevel, section);
                     return;
                 }
                 if (organizeByLevel && item.cefrLevel) {
