@@ -12,13 +12,6 @@ interface QuestionBankManagerProps {
     onSelect?: (item: QuestionBankItem) => void;
 }
 
-function itemSearchText(item: QuestionBankItem): string {
-    if (item.kind === 'section' && item.section) {
-        return [item.section.title, ...item.section.questions.map((q) => q.prompt)].join(' ');
-    }
-    return item.question?.prompt ?? '';
-}
-
 export default function QuestionBankManager({ onSelect }: QuestionBankManagerProps) {
     const { t } = useTranslation();
     const { questionBank, addQuestionBankItems, updateQuestionBankItem, deleteQuestionBankItem } = useApp();
@@ -36,12 +29,21 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
         return Array.from(tags).sort();
     }, [questionBank]);
 
+    function itemSearchText(item: QuestionBankItem): string {
+        if (item.kind === 'section' && item.section) {
+            return [item.section.title, ...item.section.questions.map((q) => q.prompt)].join(' ');
+        }
+        return item.question?.prompt ?? '';
+    }
+
     const filteredItems = useMemo(() => {
         const q = searchTerm.toLowerCase();
         return questionBank
             .filter((item) => {
                 const matchesSearch =
-                    !q || itemSearchText(item).toLowerCase().includes(q) || item.tags.some((tag) => tag.toLowerCase().includes(q));
+                    !q ||
+                    itemSearchText(item).toLowerCase().includes(q) ||
+                    item.tags.some((tag) => tag.toLowerCase().includes(q));
                 const matchesTags = selectedTags.size === 0 || item.tags.some((tag) => selectedTags.has(tag));
                 return matchesSearch && matchesTags;
             })
@@ -150,7 +152,9 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
                                     <div style={{ flex: 1 }}>
                                         <div className="text-muted text-xs">
                                             {item.kind === 'section' && item.section
-                                                ? t('questionBank.section_bundle_meta', { count: item.section.questions.length })
+                                                ? t('questionBank.section_bundle_meta', {
+                                                      count: item.section.questions.length,
+                                                  })
                                                 : `${t(`tests.question_type_${(item.question?.type ?? 'multiple-choice').replace(/-/g, '_')}`)} · ${t('tests.total_points', { points: item.question?.points ?? 0 })}`}
                                             {item.cefrLevel ? ` · ${item.cefrLevel}` : ''}
                                         </div>

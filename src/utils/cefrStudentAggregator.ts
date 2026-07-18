@@ -21,6 +21,7 @@ import { calcGradeSummary } from './gradeCalc';
 import { profileText } from './cefrVocabularyProfiler';
 import { profileGrammar } from './grammarChecker';
 import { autoScoreResponse, calcStudentTestRawPoints, calcTestMaxPoints, calcTestPercentage } from './testCalc';
+import { estimatePlacement, type PlacementPathStep } from './placementResult';
 
 /** Highest level with data for one skill, preferring 'achieved' over 'developing' over 'not_started'. */
 export function highestLevelForSkill(cells: CefrCellData[], skill: CefrSkill): CefrLevel | null {
@@ -125,6 +126,19 @@ export interface StandardSetGroup {
     standards: StandardCellScore[];
 }
 
+/**
+ * Most recent placement-test estimate for a student (roadmap Phase 25.2) — always
+ * provisional, kept entirely separate from `cells`/`practiceCefrProgress` so it can
+ * never render or aggregate as an assessed level.
+ */
+export interface CefrPlacementEstimate {
+    level: CefrLevel;
+    testId: string;
+    testName: string;
+    assessedAt: string;
+    path: PlacementPathStep[];
+}
+
 export interface CefrStudentOverview {
     cells: CefrCellData[];
     cellMap: Map<string, CefrCellData>;
@@ -136,6 +150,8 @@ export interface CefrStudentOverview {
     trackYearProgress?: CefrTrackYearProgress;
     /** Practice-mode test progress, kept separate from `cells` — see PracticeCefrCell. */
     practiceCefrProgress: PracticeCefrCell[];
+    /** Most recent placement-test estimate, when one exists — see CefrPlacementEstimate. */
+    placement?: CefrPlacementEstimate;
 }
 
 // ─── Internal accumulator shape ───────────────────────────────────────────────
@@ -351,6 +367,7 @@ export function getCefrStudentOverview(
     // no guessed default skill since a test's skill isn't implied the way 'writing' is for an
     // ungraded rubric). mode === 'practice' tests are accumulated entirely separately into
     // practiceAccMap and never touch cellAccMap — see the module doc on PracticeCefrCell.
+    // mode === 'placement' tests skip this pipeline entirely — see Step 1c below.
 
     const studentTestsForStudent = studentTests.filter(
         (st) => st.studentId === studentId && (st.status === 'submitted' || st.status === 'graded')
@@ -358,7 +375,7 @@ export function getCefrStudentOverview(
 
     for (const st of studentTestsForStudent) {
         const test = tests.find((tst) => tst.id === st.testId);
-        if (!test || !test.cefrTargetLevel || !test.cefrSkill) continue;
+        if (!test || test.mode === 'placement' || !test.cefrTargetLevel || !test.cefrSkill) continue;
 
         const maxPoints = calcTestMaxPoints(test);
         if (maxPoints <= 0) continue;
@@ -434,6 +451,29 @@ export function getCefrStudentOverview(
                 }
                 cellAccMap.get(qKey)!.directlyAchieved = true;
             }
+        }
+    }
+
+    // ── Step 1c: placement estimate ───────────────────────────────────────────
+    // Entirely separate pipeline from Step 1b — a placement result is a provisional
+    // CEFR estimate (see estimatePlacement), never a graded or formative data point.
+    // Only the most recent placement submission is kept.
+
+    let placement: CefrPlacementEstimate | undefined;
+    for (const st of studentTestsForStudent) {
+        const test = tests.find((tst) => tst.id === st.testId);
+        if (!test || test.mode !== 'placement') continue;
+        const estimate = estimatePlacement(test, st);
+        if (!estimate) continue;
+        const assessedAt = st.submittedAt ?? st.startedAt;
+        if (!placement || assessedAt > placement.assessedAt) {
+            placement = {
+                level: estimate.level,
+                testId: test.id,
+                testName: test.name,
+                assessedAt,
+                path: estimate.path,
+            };
         }
     }
 
@@ -614,5 +654,6 @@ export function getCefrStudentOverview(
         practiceCefrProgress,
         standardsCovered,
         trackYearProgress,
+        placement,
     };
 }

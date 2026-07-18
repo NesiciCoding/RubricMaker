@@ -12,6 +12,7 @@ import {
     Radio,
     FileDown,
     GripVertical,
+    Sparkles,
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { useTranslation } from 'react-i18next';
@@ -26,6 +27,7 @@ import TestAssignmentModal from '../components/Tests/TestAssignmentModal';
 import TestSubmissionImportModal from '../components/Tests/TestSubmissionImportModal';
 import ClassAverageAdjuster from '../components/Tests/ClassAverageAdjuster';
 import ItemAnalysisPanel from '../components/Tests/ItemAnalysisPanel';
+import GenerateTestModal from '../components/Tests/GenerateTestModal';
 import type { Test, CohortFilter as CohortFilterValue } from '../types';
 import { sortByDisplayOrder, reorderDisplayOrder } from '../utils/displayOrder';
 import { getCohortStudentIds, isAllCohorts, ALL_COHORTS } from '../utils/cohortAggregator';
@@ -66,6 +68,7 @@ export default function TestListPage() {
     const [exportScope, setExportScope] = useState<'single' | 'batch'>('single');
     const [exportStudentId, setExportStudentId] = useState<string>('');
     const [exporting, setExporting] = useState(false);
+    const [showGenerateModal, setShowGenerateModal] = useState(false);
 
     async function handleExportTestSummary(test: Test, format: 'pdf' | 'docx') {
         const relevantStudentTests = studentTests.filter((st) => st.testId === test.id);
@@ -132,11 +135,17 @@ export default function TestListPage() {
             <Topbar
                 title={t('tests.list_title')}
                 actions={
-                    <button className="btn btn-primary btn-sm" onClick={() => navigate('/tests/new')}>
-                        <Plus size={15} /> {t('tests.new_test')}
-                    </button>
+                    <>
+                        <button className="btn btn-secondary btn-sm" onClick={() => setShowGenerateModal(true)}>
+                            <Sparkles size={15} /> {t('generateTest.entry_point')}
+                        </button>
+                        <button className="btn btn-primary btn-sm" onClick={() => navigate('/tests/new')}>
+                            <Plus size={15} /> {t('tests.new_test')}
+                        </button>
+                    </>
                 }
             />
+            {showGenerateModal && <GenerateTestModal onClose={() => setShowGenerateModal(false)} />}
             <div className="page-content fade-in">
                 <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
                     <CohortFilter classes={classes} value={cohortFilter} onChange={setCohortFilter} />

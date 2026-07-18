@@ -54,6 +54,8 @@ export default function TestSubmissionImportModal({ test, studentTests, onSave, 
             submittedAt: submission.submittedAt,
             rawTotalPoints,
             events: submission.events,
+            sectionPath: submission.sectionPath,
+            levelPath: submission.levelPath,
             updatedAt: now,
         };
         onSave(next);

@@ -1177,3 +1177,130 @@ describe('getCefrStudentOverview — practice-mode test scores', () => {
         ]);
     });
 });
+
+describe('getCefrStudentOverview — placement-mode test scores', () => {
+    function makePlacementTest(overrides: Partial<Test> = {}): Test {
+        return makeTest({
+            id: 't-placement',
+            mode: 'placement',
+            cefrTargetLevel: undefined,
+            cefrSkill: undefined,
+            questions: [
+                {
+                    id: 'q-routing',
+                    prompt: 'Routing question',
+                    type: 'multiple-choice',
+                    points: 10,
+                    sectionId: 'routing',
+                    options: [
+                        { id: 'right', text: 'Right', isCorrect: true },
+                        { id: 'wrong', text: 'Wrong', isCorrect: false },
+                    ],
+                },
+                {
+                    id: 'q-hard',
+                    prompt: 'Hard question',
+                    type: 'multiple-choice',
+                    points: 10,
+                    sectionId: 'hard',
+                    options: [
+                        { id: 'right', text: 'Right', isCorrect: true },
+                        { id: 'wrong', text: 'Wrong', isCorrect: false },
+                    ],
+                },
+            ],
+            sections: [
+                {
+                    id: 'routing',
+                    title: 'Routing',
+                    cefrLevel: 'A2',
+                    routing: { thresholdPct: 60, passSectionId: 'hard', failSectionId: 'easy' },
+                },
+                { id: 'easy', title: 'Easy', cefrLevel: 'A1' },
+                { id: 'hard', title: 'Hard', cefrLevel: 'B1' },
+            ],
+            ...overrides,
+        });
+    }
+
+    it('does not feed the graded cells or practiceCefrProgress', () => {
+        const test = makePlacementTest();
+        const st = makeStudentTest({
+            testId: 't-placement',
+            sectionPath: ['routing', 'hard'],
+            answers: [
+                { questionId: 'q-routing', response: 'right' },
+                { questionId: 'q-hard', response: 'right' },
+            ],
+        });
+        const result = getCefrStudentOverview('s1', [], [], [], undefined, undefined, undefined, [test], [st]);
+        expect(result.cells).toHaveLength(0);
+        expect(result.practiceCefrProgress).toHaveLength(0);
+    });
+
+    it('surfaces the most recent placement estimate', () => {
+        const test = makePlacementTest();
+        const st = makeStudentTest({
+            testId: 't-placement',
+            sectionPath: ['routing', 'hard'],
+            answers: [
+                { questionId: 'q-routing', response: 'right' },
+                { questionId: 'q-hard', response: 'right' },
+            ],
+        });
+        const result = getCefrStudentOverview('s1', [], [], [], undefined, undefined, undefined, [test], [st]);
+        expect(result.placement).toEqual(
+            expect.objectContaining({ level: 'B1', testId: 't-placement', testName: test.name })
+        );
+    });
+
+    it('keeps only the most recently submitted placement result when multiple exist', () => {
+        const test = makePlacementTest();
+        const older = makeStudentTest({
+            id: 'st-old',
+            testId: 't-placement',
+            sectionPath: ['routing', 'easy'],
+            submittedAt: '2026-01-01T09:00:00.000Z',
+            answers: [{ questionId: 'q-routing', response: 'wrong' }],
+        });
+        const newer = makeStudentTest({
+            id: 'st-new',
+            testId: 't-placement',
+            sectionPath: ['routing', 'hard'],
+            submittedAt: '2026-02-01T09:00:00.000Z',
+            answers: [
+                { questionId: 'q-routing', response: 'right' },
+                { questionId: 'q-hard', response: 'right' },
+            ],
+        });
+        const result = getCefrStudentOverview(
+            's1',
+            [],
+            [],
+            [],
+            undefined,
+            undefined,
+            undefined,
+            [test],
+            [older, newer]
+        );
+        expect(result.placement?.level).toBe('B1');
+        expect(result.placement?.assessedAt).toBe(newer.submittedAt);
+    });
+
+    it('ignores a placement test even if it accidentally carries a top-level cefrTargetLevel/cefrSkill', () => {
+        const test = makePlacementTest({ cefrTargetLevel: 'B1', cefrSkill: 'listening' });
+        const st = makeStudentTest({
+            testId: 't-placement',
+            sectionPath: ['routing', 'hard'],
+            answers: [
+                { questionId: 'q-routing', response: 'right' },
+                { questionId: 'q-hard', response: 'right' },
+            ],
+        });
+        const result = getCefrStudentOverview('s1', [], [], [], undefined, undefined, undefined, [test], [st]);
+        expect(result.cells).toHaveLength(0);
+        expect(result.practiceCefrProgress).toHaveLength(0);
+        expect(result.placement?.level).toBe('B1');
+    });
+});

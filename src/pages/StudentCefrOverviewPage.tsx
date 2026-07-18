@@ -4,6 +4,7 @@ import { ArrowLeft, BookOpen, Award, Users, Copy, Check, ExternalLink } from 'lu
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import CefrBadge from '../components/CEFR/CefrBadge';
+import CefrPlacementCard from '../components/CEFR/CefrPlacementCard';
 import CefrOverviewGrid from '../components/CEFR/CefrOverviewGrid';
 import PracticeCefrProgressPanel from '../components/CEFR/PracticeCefrProgressPanel';
 import CefrProgressChart from '../components/Statistics/CefrProgressChart';
@@ -286,6 +287,14 @@ export default function StudentCefrOverviewPage() {
                             status={overview.trackYearProgress.status}
                         />
                     </div>
+                )}
+
+                {/* Placement estimate — provisional, never blended into the assessed grid above */}
+                {overview?.placement && (
+                    <CefrPlacementCard
+                        placement={overview.placement}
+                        showCambridgeLabel={settings.showCambridgeLabels}
+                    />
                 )}
 
                 {/* CEFR Can-Do Grid */}

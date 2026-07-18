@@ -4,7 +4,9 @@ import { describe, it, expect, vi } from 'vitest';
 import QuestionBankImportModal from '../QuestionBankImportModal';
 
 vi.mock('react-i18next', () => ({
-    useTranslation: () => ({ t: (key: string, opts?: Record<string, unknown>) => (opts ? `${key}:${JSON.stringify(opts)}` : key) }),
+    useTranslation: () => ({
+        t: (key: string, opts?: Record<string, unknown>) => (opts ? `${key}:${JSON.stringify(opts)}` : key),
+    }),
 }));
 
 function jsonFile(data: unknown, name = 'questions.json') {
@@ -28,7 +30,10 @@ describe('QuestionBankImportModal', () => {
         await selectFile(
             jsonFile({
                 items: [
-                    { tags: ['a1'], question: { prompt: 'Q1', type: 'short-answer', points: 1, expectedAnswers: ['x'] } },
+                    {
+                        tags: ['a1'],
+                        question: { prompt: 'Q1', type: 'short-answer', points: 1, expectedAnswers: ['x'] },
+                    },
                     { tags: ['a1'], question: { prompt: 'Q2', type: 'true-false', points: 1, correctBoolean: true } },
                 ],
             })

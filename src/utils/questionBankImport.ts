@@ -115,7 +115,10 @@ function parseQuestion(q: RawQuestion | undefined, label: string, warnings: stri
             isCorrect: !!o.isCorrect,
             ...(o.imageUrl ? { imageUrl: o.imageUrl } : {}),
         }));
-        if ((type === 'multiple-choice' || type === 'multiple-response') && !question.options.some((o) => o.isCorrect)) {
+        if (
+            (type === 'multiple-choice' || type === 'multiple-response') &&
+            !question.options.some((o) => o.isCorrect)
+        ) {
             warnings.push(`${label}: no correct option marked.`);
         }
     }
@@ -130,7 +133,11 @@ function parseQuestion(q: RawQuestion | undefined, label: string, warnings: stri
     else if (type === 'true-false') warnings.push(`${label}: true-false question missing correctBoolean.`);
 
     if (q.matchingPairs?.length) {
-        question.matchingPairs = q.matchingPairs.map((p) => ({ id: nanoid(), left: p.left ?? '', right: p.right ?? '' }));
+        question.matchingPairs = q.matchingPairs.map((p) => ({
+            id: nanoid(),
+            left: p.left ?? '',
+            right: p.right ?? '',
+        }));
     }
     if (q.orderItems?.length) {
         question.orderItems = q.orderItems.map((o) => ({ id: nanoid(), text: o.text ?? '' }));
@@ -248,7 +255,10 @@ export function parseQuestionBankJson(text: string): QuestionBankImportResult {
 export async function parseQuestionBankFile(file: File): Promise<QuestionBankImportResult> {
     const ext = file.name.slice(file.name.lastIndexOf('.') + 1).toLowerCase();
     if (ext !== 'json') {
-        return { items: [], warnings: [`Unsupported file type ".${ext}" — the question bank importer accepts .json files.`] };
+        return {
+            items: [],
+            warnings: [`Unsupported file type ".${ext}" — the question bank importer accepts .json files.`],
+        };
     }
     return parseQuestionBankJson(await file.text());
 }

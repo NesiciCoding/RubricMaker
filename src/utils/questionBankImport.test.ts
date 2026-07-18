@@ -140,7 +140,13 @@ describe('parseQuestionBankJson', () => {
                             explanation: 'She writes about her dog.',
                             linkedGrammarItemId: 'gr-present-simple-affirmative',
                             linkedCefrDescriptors: [
-                                { descriptorId: 'r-a1-1', level: 'A1', skill: 'reading', descriptionEn: 'x', descriptionNl: 'y' },
+                                {
+                                    descriptorId: 'r-a1-1',
+                                    level: 'A1',
+                                    skill: 'reading',
+                                    descriptionEn: 'x',
+                                    descriptionNl: 'y',
+                                },
                             ],
                             linkedStandards: [
                                 {
@@ -175,8 +181,18 @@ describe('parseQuestionBankJson', () => {
                             title: 'Tekst 1 — Chat profiles',
                             content: '<p>Five teen chat profiles...</p>',
                             questions: [
-                                { prompt: 'Who likes dancing?', type: 'short-answer', points: 0.5, expectedAnswers: ['Shannon'] },
-                                { prompt: 'Who is from the US?', type: 'short-answer', points: 0.5, expectedAnswers: ['Alex'] },
+                                {
+                                    prompt: 'Who likes dancing?',
+                                    type: 'short-answer',
+                                    points: 0.5,
+                                    expectedAnswers: ['Shannon'],
+                                },
+                                {
+                                    prompt: 'Who is from the US?',
+                                    type: 'short-answer',
+                                    points: 0.5,
+                                    expectedAnswers: ['Alex'],
+                                },
                             ],
                         },
                     },

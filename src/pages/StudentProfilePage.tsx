@@ -35,6 +35,7 @@ import LearningGoalChart from '../components/Statistics/LearningGoalChart';
 import CefrProgressChart from '../components/Statistics/CefrProgressChart';
 import CefrTrackYearBand from '../components/CEFR/CefrTrackYearBand';
 import CefrBadge from '../components/CEFR/CefrBadge';
+import CefrPlacementCard from '../components/CEFR/CefrPlacementCard';
 import { getCefrStudentOverview } from '../utils/cefrStudentAggregator';
 import { getStudentMasteryProfile, withEvidenceOnly } from '../utils/masteryProfileAggregator';
 import { CEFR_LEVELS, CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
@@ -138,7 +139,7 @@ export default function StudentProfilePage() {
         );
     }, [student, tests, studentTests, rubrics, studentRubrics, flashcardDecks, flashcardAssignments, flashcardReviews]);
 
-    const trackYearProgress = useMemo(
+    const cefrSummary = useMemo(
         () =>
             student
                 ? getCefrStudentOverview(
@@ -148,11 +149,15 @@ export default function StudentProfilePage() {
                       selfAssessments,
                       undefined,
                       cls?.year,
-                      effectiveTrack
-                  ).trackYearProgress
+                      effectiveTrack,
+                      tests,
+                      studentTests
+                  )
                 : undefined,
-        [student, studentRubrics, rubrics, selfAssessments, cls?.year, effectiveTrack]
+        [student, studentRubrics, rubrics, selfAssessments, cls?.year, effectiveTrack, tests, studentTests]
     );
+    const trackYearProgress = cefrSummary?.trackYearProgress;
+    const placementEstimate = cefrSummary?.placement;
 
     // ── CEFR progress ──────────────────────────────────────────────────────────
     // A student "achieves" a CEFR level when their average score meets the per-rubric threshold (default 70%).
@@ -792,6 +797,13 @@ export default function StudentProfilePage() {
                             </div>
                         )}
                     </div>
+                )}
+
+                {activeTab === 'overview' && placementEstimate && (
+                    <CefrPlacementCard
+                        placement={placementEstimate}
+                        showCambridgeLabel={settings.showCambridgeLabels}
+                    />
                 )}
 
                 {activeTab === 'overview' &&

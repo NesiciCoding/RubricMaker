@@ -1035,13 +1035,34 @@ function GradingTab() {
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.gr_question_bank_title')}
                 </h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
                     {t('docs.gr_question_bank_body_prefix')} <code>/question-bank</code>{' '}
                     {t('docs.gr_question_bank_body_suffix')}
                 </p>
+                <FeatureList
+                    items={[
+                        t('docs.gr_question_bank_item_cefr'),
+                        t('docs.gr_question_bank_item_bundle_save'),
+                        t('docs.gr_question_bank_item_bundle_insert'),
+                    ]}
+                />
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginTop: 8 }}>
                     {t('docs.gr_question_bank_import_body')}
                 </p>
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.gr_generate_test_title')}
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
+                    {t('docs.gr_generate_test_body')}
+                </p>
+                <FeatureList
+                    items={[
+                        t('docs.gr_generate_test_item_criteria'),
+                        t('docs.gr_generate_test_item_organize'),
+                        t('docs.gr_generate_test_item_review'),
+                    ]}
+                />
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.gr_test_mode_title')}
@@ -1071,6 +1092,22 @@ function GradingTab() {
                         t('docs.gr_test_rich_authoring_item_passage'),
                         t('docs.gr_test_rich_authoring_item_option_image'),
                         t('docs.gr_test_rich_authoring_item_cloze_gap'),
+                    ]}
+                />
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.gr_placement_title')}
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
+                    {t('docs.gr_placement_body')}
+                </p>
+                <FeatureList
+                    items={[
+                        t('docs.gr_placement_item_routing'),
+                        t('docs.gr_placement_item_staircase'),
+                        t('docs.gr_placement_item_taking'),
+                        t('docs.gr_placement_item_results'),
+                        t('docs.gr_placement_item_provisional'),
                     ]}
                 />
 

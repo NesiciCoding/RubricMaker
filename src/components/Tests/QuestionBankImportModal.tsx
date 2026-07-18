@@ -90,7 +90,9 @@ export default function QuestionBankImportModal({ onImport, onClose }: Props) {
                     <div className="text-sm" style={{ fontWeight: 600, marginBottom: 8 }}>
                         {t('questionBank.import_preview', { count: items.length })}
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 260, overflowY: 'auto' }}>
+                    <div
+                        style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 260, overflowY: 'auto' }}
+                    >
                         {items.slice(0, PREVIEW_LIMIT).map((item, i) => (
                             <div
                                 key={i}
@@ -99,7 +101,9 @@ export default function QuestionBankImportModal({ onImport, onClose }: Props) {
                             >
                                 <div className="text-muted text-xs">
                                     {item.kind === 'section' && item.section
-                                        ? t('questionBank.section_bundle_meta', { count: item.section.questions.length })
+                                        ? t('questionBank.section_bundle_meta', {
+                                              count: item.section.questions.length,
+                                          })
                                         : `${t(`tests.question_type_${(item.question?.type ?? 'multiple-choice').replace(/-/g, '_')}`)} · ${t('tests.total_points', { points: item.question?.points ?? 0 })}`}
                                     {item.cefrLevel ? ` · ${item.cefrLevel}` : ''}
                                 </div>

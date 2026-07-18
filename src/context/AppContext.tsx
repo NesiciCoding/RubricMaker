@@ -879,12 +879,14 @@ interface AppContextValue extends StoreData {
         cefrLevel?: CefrLevel
     ) => QuestionBankItem;
     addSectionBankItem: (
-        section: { title: string; content?: string; audioUrl?: string },
+        section: Pick<NonNullable<QuestionBankItem['section']>, 'title' | 'content' | 'audioUrl'>,
         questions: Omit<TestQuestion, 'sectionId'>[],
         tags: string[],
         cefrLevel?: CefrLevel
     ) => QuestionBankItem;
-    addQuestionBankItems: (items: Array<Omit<QuestionBankItem, 'id' | 'createdAt' | 'updatedAt'>>) => QuestionBankItem[];
+    addQuestionBankItems: (
+        items: Array<Omit<QuestionBankItem, 'id' | 'createdAt' | 'updatedAt'>>
+    ) => QuestionBankItem[];
     updateQuestionBankItem: (item: QuestionBankItem) => void;
     deleteQuestionBankItem: (id: string) => void;
     addExportTemplate: (t: Omit<ExportTemplate, 'id' | 'addedAt'>) => ExportTemplate;
@@ -1097,7 +1099,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const merged = { ...mergedIn, classes: sanitizeClassYears(mergedIn.classes) };
         dispatch({ type: 'SET_ALL', payload: merged });
         if (seedDiffBaseline) {
-            // eslint-disable-next-line react-hooks/immutability -- cross-effect ref hand-off is intentional
             prevStateRef.current = merged;
         }
     }, []);
@@ -1416,7 +1417,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // ── Supabase: delta-sync after each mutation ───────────────────────────────
     useEffect(() => {
         const prev = prevStateRef.current;
-        // eslint-disable-next-line react-hooks/immutability -- also hand-off-written by applyHydrated above so a fresh server pull isn't re-diffed as a local edit
+
         prevStateRef.current = state;
         const db = getDb();
         if (!db?.storageSync.isConnected()) return;
@@ -1702,7 +1703,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     );
     const addSectionBankItem = useCallback(
         (
-            section: { title: string; content?: string; audioUrl?: string },
+            section: Pick<NonNullable<QuestionBankItem['section']>, 'title' | 'content' | 'audioUrl'>,
             questions: Omit<TestQuestion, 'sectionId'>[],
             tags: string[],
             cefrLevel?: CefrLevel
