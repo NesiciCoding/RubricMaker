@@ -4,6 +4,7 @@ import { ArrowLeft, TrendingUp, AlertTriangle, Users, ExternalLink, BookOpen, Pe
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import CefrBadge from '../components/CEFR/CefrBadge';
+import CefrPlacementCard from '../components/CEFR/CefrPlacementCard';
 import { useApp } from '../context/AppContext';
 import { getCefrStudentOverview } from '../utils/cefrStudentAggregator';
 import {
@@ -196,30 +197,10 @@ export default function StudentLearningPathPage() {
                 </div>
 
                 {studentOverview?.placement && (
-                    <div
-                        className="card"
-                        style={{
-                            marginBottom: 24,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 10,
-                            flexWrap: 'wrap',
-                            borderLeft: '3px solid var(--yellow)',
-                        }}
-                    >
-                        <CefrBadge
-                            level={studentOverview.placement.level}
-                            size="md"
-                            showCambridgeLabel={settings.showCambridgeLabels}
-                        />
-                        <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{t('cefrOverview.placement_badge')}</span>
-                        <span className="text-muted text-sm">
-                            {t('cefrOverview.placement_from', {
-                                testName: studentOverview.placement.testName,
-                                date: new Date(studentOverview.placement.assessedAt).toLocaleDateString(),
-                            })}
-                        </span>
-                    </div>
+                    <CefrPlacementCard
+                        placement={studentOverview.placement}
+                        showCambridgeLabel={settings.showCambridgeLabels}
+                    />
                 )}
 
                 <div className="card" style={{ marginBottom: 24 }}>

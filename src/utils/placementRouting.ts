@@ -8,9 +8,8 @@ function clamp(value: number, min: number, max: number): number {
     return Math.min(max, Math.max(min, value));
 }
 
-/** A staged (routed) test has at least one section with a routing rule. */
-export function isStagedTest(test: SectionedTest): boolean {
-    return (test.sections ?? []).some((s) => s.routing);
+export function isStagedTest(test: Pick<Test, 'mode' | 'sections'>): boolean {
+    return test.mode === 'placement' && (test.sections ?? []).some((s) => s.routing);
 }
 
 export function entrySectionId(test: SectionedTest): string | null {
@@ -29,18 +28,22 @@ export function sectionQuestions(test: SectionedTest, sectionId: string): TestQu
 }
 
 export function sectionMaxPoints(test: SectionedTest, sectionId: string): number {
-    return sectionQuestions(test, sectionId).reduce((sum, q) => sum + q.points, 0);
+    return sectionQuestions(test, sectionId)
+        .filter(isAutoScorable)
+        .reduce((sum, q) => sum + q.points, 0);
 }
 
 function sectionRawPoints(test: SectionedTest, sectionId: string, answers: TestAnswer[]): number {
     const latestByQuestionId = new Map<string, TestAnswer>();
     for (const answer of answers) latestByQuestionId.set(answer.questionId, answer);
-    return sectionQuestions(test, sectionId).reduce((sum, q) => {
-        const answer = latestByQuestionId.get(q.id);
-        if (!answer) return sum;
-        const earned = answer.pointsEarned ?? autoScoreResponse(q, answer.response);
-        return sum + earned;
-    }, 0);
+    return sectionQuestions(test, sectionId)
+        .filter(isAutoScorable)
+        .reduce((sum, q) => {
+            const answer = latestByQuestionId.get(q.id);
+            if (!answer) return sum;
+            const earned = answer.pointsEarned ?? autoScoreResponse(q, answer.response);
+            return sum + earned;
+        }, 0);
 }
 
 export function scoreSectionPct(test: SectionedTest, sectionId: string, answers: TestAnswer[]): number {
@@ -70,7 +73,6 @@ export function resolveNextSection(
     return nextId;
 }
 
-/** Total points available across only the sections a student actually saw, for path-aware scoring. */
 export function maxPointsForPath(test: SectionedTest, sectionPath: string[]): number {
     return sectionPath.reduce((sum, id) => sum + sectionMaxPoints(test, id), 0);
 }

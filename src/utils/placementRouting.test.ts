@@ -56,6 +56,10 @@ describe('isStagedTest', () => {
     it('is false when there are no sections', () => {
         expect(isStagedTest(makeTest({ sections: undefined }))).toBe(false);
     });
+
+    it('is false when routing metadata exists but the test mode is not placement', () => {
+        expect(isStagedTest(makeTest({ mode: 'assessment' }))).toBe(false);
+    });
 });
 
 describe('entrySectionId', () => {
@@ -109,6 +113,23 @@ describe('sectionMaxPoints / scoreSectionPct', () => {
 
     it('returns 0 when the section has no points', () => {
         expect(scoreSectionPct(makeTest({ questions: [] }), 'routing', [])).toBe(0);
+    });
+
+    it('excludes open (manually graded) questions from both the max and earned points', () => {
+        const openQuestion: TestQuestion = {
+            id: 'q2',
+            prompt: 'Explain',
+            type: 'open',
+            points: 10,
+            sectionId: 'routing',
+        };
+        const test = makeTest({ questions: [mcQuestion('q1', 'routing'), openQuestion] });
+        expect(sectionMaxPoints(test, 'routing')).toBe(10);
+        const pct = scoreSectionPct(test, 'routing', [
+            { questionId: 'q1', response: 'right' },
+            { questionId: 'q2', response: 'A long explanation' },
+        ]);
+        expect(pct).toBe(100);
     });
 });
 

@@ -1,4 +1,4 @@
-import type { Test, TestQuestion, CefrLevel } from '../types';
+import type { Test, TestQuestion, CefrLevel, StaircaseStep } from '../types';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
 import { isAutoScorable } from './placementRouting';
 import { seededShuffle } from './seededShuffle';
@@ -49,7 +49,7 @@ export function levelQuestions(test: SectionedTest, level: CefrLevel): TestQuest
  * the previous move's (the first move never reverses); moves are clamped at A1/C2 and a clamped
  * move (no actual level change) never counts as a reversal either.
  */
-export function computeStaircaseState(steps: { level: CefrLevel; correct: boolean }[]): StaircaseState {
+export function computeStaircaseState(steps: Pick<StaircaseStep, 'level' | 'correct'>[]): StaircaseState {
     let level: CefrLevel = STAIRCASE_START_LEVEL;
     let consecutiveCorrect = 0;
     let reversalCount = 0;
@@ -81,7 +81,7 @@ export function computeStaircaseState(steps: { level: CefrLevel; correct: boolea
  */
 export function resolveNextStaircaseQuestion(
     test: SectionedTest,
-    steps: { sectionId: string; level: CefrLevel; questionId: string; correct: boolean }[],
+    steps: StaircaseStep[],
     code: string
 ): { sectionId: string; level: CefrLevel; question: TestQuestion } | null {
     const state = computeStaircaseState(steps);
@@ -98,7 +98,7 @@ export function resolveNextStaircaseQuestion(
 }
 
 /** Total points available across only the questions actually asked, for path-aware scoring. */
-export function staircaseMaxPoints(test: SectionedTest, steps: { questionId: string }[]): number {
+export function staircaseMaxPoints(test: SectionedTest, steps: Pick<StaircaseStep, 'questionId'>[]): number {
     const askedIds = new Set(steps.map((s) => s.questionId));
     return test.questions.filter((q) => askedIds.has(q.id)).reduce((sum, q) => sum + q.points, 0);
 }

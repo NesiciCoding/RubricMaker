@@ -4,6 +4,7 @@ import { ArrowLeft, BookOpen, Award, Users, Copy, Check, ExternalLink } from 'lu
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import CefrBadge from '../components/CEFR/CefrBadge';
+import CefrPlacementCard from '../components/CEFR/CefrPlacementCard';
 import CefrOverviewGrid from '../components/CEFR/CefrOverviewGrid';
 import PracticeCefrProgressPanel from '../components/CEFR/PracticeCefrProgressPanel';
 import CefrProgressChart from '../components/Statistics/CefrProgressChart';
@@ -290,24 +291,10 @@ export default function StudentCefrOverviewPage() {
 
                 {/* Placement estimate — provisional, never blended into the assessed grid above */}
                 {overview?.placement && (
-                    <div className="card" style={{ marginBottom: 24, borderLeft: '3px solid var(--yellow)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                            <CefrBadge
-                                level={overview.placement.level}
-                                size="md"
-                                showCambridgeLabel={settings.showCambridgeLabels}
-                            />
-                            <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>
-                                {t('cefrOverview.placement_badge')}
-                            </span>
-                            <span className="text-muted text-sm">
-                                {t('cefrOverview.placement_from', {
-                                    testName: overview.placement.testName,
-                                    date: new Date(overview.placement.assessedAt).toLocaleDateString(),
-                                })}
-                            </span>
-                        </div>
-                    </div>
+                    <CefrPlacementCard
+                        placement={overview.placement}
+                        showCambridgeLabel={settings.showCambridgeLabels}
+                    />
                 )}
 
                 {/* CEFR Can-Do Grid */}

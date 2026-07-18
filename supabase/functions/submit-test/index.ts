@@ -26,6 +26,72 @@ function json(body: unknown, status = 200) {
     });
 }
 
+// ── Placement path integrity ────────────────────────────────────────────────
+// sectionPath/levelPath drive the provisional CEFR estimate and (via
+// maxPointsForPath/staircaseMaxPoints on the client) the score shown on the
+// results page, so a forged path — an unknown section/question id, a repeat,
+// or a hop that isn't actually reachable per the test's own routing rules —
+// must be rejected rather than silently trusted. This deliberately does NOT
+// replay auto-scoring to verify each routing *decision* was correct (that
+// would mean porting testCalc.ts's scoring engine to Deno, which the rest of
+// this function already avoids, see the file header) — it only checks that
+// the path is a structurally possible walk of the test's own graph.
+const MAX_STAIRCASE_STEPS = 12;
+
+interface MinimalSection {
+    id: string;
+    cefrLevel?: string;
+    routing?: { passSectionId: string; failSectionId: string };
+}
+interface MinimalQuestion {
+    id: string;
+    type: string;
+    sectionId?: string;
+}
+interface MinimalTest {
+    sections?: MinimalSection[];
+    questions?: MinimalQuestion[];
+}
+
+function isValidSectionPath(test: MinimalTest, sectionPath: string[]): boolean {
+    const sections = test.sections ?? [];
+    if (sections.length === 0 || sectionPath.length === 0) return false;
+    if (new Set(sectionPath).size !== sectionPath.length) return false;
+    if (sectionPath[0] !== sections[0].id) return false;
+
+    const byId = new Map(sections.map((s) => [s.id, s]));
+    for (let i = 0; i < sectionPath.length; i++) {
+        const section = byId.get(sectionPath[i]);
+        if (!section) return false;
+        if (i === sectionPath.length - 1) continue;
+        const next = sectionPath[i + 1];
+        if (!section.routing) return false;
+        if (section.routing.passSectionId !== next && section.routing.failSectionId !== next) return false;
+    }
+    return true;
+}
+
+function isValidLevelPath(
+    test: MinimalTest,
+    levelPath: { sectionId: string; level: string; questionId: string; correct: boolean }[]
+): boolean {
+    if (levelPath.length === 0 || levelPath.length > MAX_STAIRCASE_STEPS) return false;
+
+    const questionsById = new Map((test.questions ?? []).map((q) => [q.id, q]));
+    const seenQuestionIds = new Set<string>();
+    for (const step of levelPath) {
+        if (seenQuestionIds.has(step.questionId)) return false;
+        seenQuestionIds.add(step.questionId);
+
+        const question = questionsById.get(step.questionId);
+        if (!question || question.sectionId !== step.sectionId || question.type === 'open') return false;
+
+        const section = (test.sections ?? []).find((s) => s.id === step.sectionId);
+        if (!section || section.cefrLevel !== step.level) return false;
+    }
+    return true;
+}
+
 serve(async (req) => {
     if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
 
@@ -108,6 +174,23 @@ serve(async (req) => {
 
     if (assignment.expires_at && new Date(assignment.expires_at) < new Date()) {
         return json({ error: 'Assignment deadline has passed' }, 403);
+    }
+
+    if (sectionPath || levelPath) {
+        const { data: testRow, error: testErr } = await admin
+            .from('tests')
+            .select('data')
+            .eq('id', assignment.test_id)
+            .single();
+        if (testErr || !testRow) return json({ error: 'Test not found' }, 404);
+        const test = testRow.data as MinimalTest;
+
+        if (sectionPath && !isValidSectionPath(test, sectionPath)) {
+            return json({ error: 'Invalid section path' }, 400);
+        }
+        if (levelPath && !isValidLevelPath(test, levelPath)) {
+            return json({ error: 'Invalid level path' }, 400);
+        }
     }
 
     // Practice-mode assignments allow retakes: each attempt gets the next attempt_number so

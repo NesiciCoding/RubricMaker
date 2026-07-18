@@ -35,6 +35,7 @@ import LearningGoalChart from '../components/Statistics/LearningGoalChart';
 import CefrProgressChart from '../components/Statistics/CefrProgressChart';
 import CefrTrackYearBand from '../components/CEFR/CefrTrackYearBand';
 import CefrBadge from '../components/CEFR/CefrBadge';
+import CefrPlacementCard from '../components/CEFR/CefrPlacementCard';
 import { getCefrStudentOverview } from '../utils/cefrStudentAggregator';
 import { getStudentMasteryProfile, withEvidenceOnly } from '../utils/masteryProfileAggregator';
 import { CEFR_LEVELS, CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
@@ -799,30 +800,10 @@ export default function StudentProfilePage() {
                 )}
 
                 {activeTab === 'overview' && placementEstimate && (
-                    <div
-                        className="card"
-                        style={{
-                            marginBottom: 24,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 10,
-                            flexWrap: 'wrap',
-                            borderLeft: '3px solid var(--yellow)',
-                        }}
-                    >
-                        <CefrBadge
-                            level={placementEstimate.level}
-                            size="md"
-                            showCambridgeLabel={settings.showCambridgeLabels}
-                        />
-                        <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{t('cefrOverview.placement_badge')}</span>
-                        <span className="text-muted text-sm">
-                            {t('cefrOverview.placement_from', {
-                                testName: placementEstimate.testName,
-                                date: new Date(placementEstimate.assessedAt).toLocaleDateString(),
-                            })}
-                        </span>
-                    </div>
+                    <CefrPlacementCard
+                        placement={placementEstimate}
+                        showCambridgeLabel={settings.showCambridgeLabels}
+                    />
                 )}
 
                 {activeTab === 'overview' &&

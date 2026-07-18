@@ -88,9 +88,6 @@ Current functions:
 | `attachments`               | File attachment metadata                                                                                                                                         |
 | `grade_scales`              | Custom scoring scale definitions                                                                                                                                 |
 | `comment_snippets`          | Reusable comment bank entries                                                                                                                                    |
-| `essay_assignments`         | Essay prompts created by teachers                                                                                                                                |
-| `essay_submissions`         | Student essay submissions (anonymous via submission codes)                                                                                                       |
-| `test_assignments`          | Per-student test assignment records (migration 044), mirrors `essay_assignments` so the student portal can list assigned tests                                   |
 | `messages`                  | Student <-> teacher Q&A threads (migration 050), grouped client-side by `(student_id, context_type, context_id)`; portal-authenticated students only             |
 | `peer_reviews`              | Peer review entries on essay submissions                                                                                                                         |
 | `comment_bank`              | Shared/library comment bank entries                                                                                                                              |

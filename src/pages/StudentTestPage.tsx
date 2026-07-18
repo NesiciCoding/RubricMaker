@@ -90,10 +90,16 @@ function safeImgSrc(url: string | undefined): string | undefined {
     return undefined;
 }
 
-/** Returns the URL only when it's a well-formed absolute http(s) URL — blocks javascript: and other dangerous schemes. */
-const SAFE_AUDIO_URL_RE = /^https?:\/\/[^\s"'<>]+$/i;
+/** Returns the URL only when protocol is http(s), blocking javascript: and other dangerous schemes. */
 function safeAudioSrc(url: string | undefined): string | undefined {
-    return url && SAFE_AUDIO_URL_RE.test(url) ? url : undefined;
+    if (!url) return undefined;
+    try {
+        const u = new URL(url);
+        if (u.protocol === 'https:' || u.protocol === 'http:') return u.href;
+    } catch {
+        // not a valid absolute URL
+    }
+    return undefined;
 }
 
 function withAnswer(answers: Record<string, string>, key: string, value: string): Record<string, string> {
@@ -348,6 +354,28 @@ export default function StudentTestPage() {
             response: answers.get(q.id) ?? '',
         }));
 
+        // The timer can call this directly on timeout, before the student presses "Continue" on
+        // the currently-shown staircase question — without this, that presented-but-uncommitted
+        // question would be silently dropped from the trace instead of scored as a miss.
+        const effectiveLevelPath =
+            isStaircase &&
+            staircaseQuestion &&
+            !levelPath.some((step) => step.questionId === staircaseQuestion.question.id)
+                ? [
+                      ...levelPath,
+                      {
+                          sectionId: staircaseQuestion.sectionId,
+                          level: staircaseQuestion.level,
+                          questionId: staircaseQuestion.question.id,
+                          correct:
+                              autoScoreResponse(
+                                  staircaseQuestion.question,
+                                  answers.get(staircaseQuestion.question.id) ?? ''
+                              ) >= staircaseQuestion.question.points,
+                      },
+                  ]
+                : levelPath;
+
         const submissionPayload: TestSubmissionPayload = {
             testId: effectiveTestId,
             studentId: effectiveStudentId,
@@ -357,7 +385,7 @@ export default function StudentTestPage() {
             submittedAt,
             events: telemetry.flush(),
             sectionPath: staged && sectionPath.length > 0 ? sectionPath : undefined,
-            levelPath: isStaircase && levelPath.length > 0 ? levelPath : undefined,
+            levelPath: isStaircase && effectiveLevelPath.length > 0 ? effectiveLevelPath : undefined,
         };
         const legacyCode = encodeTestSubmission(submissionPayload);
 
@@ -407,6 +435,7 @@ export default function StudentTestPage() {
         sectionPath,
         isStaircase,
         levelPath,
+        staircaseQuestion,
     ]);
 
     const handleSubmitRef = useRef(handleSubmit);
@@ -533,6 +562,7 @@ export default function StudentTestPage() {
     // Find current question's section label
     const sections = test.sections ?? [];
     const currentSection = question?.sectionId ? sections.find((s) => s.id === question.sectionId) : null;
+    const sectionAudioSrc = safeAudioSrc(currentSection?.audioUrl);
 
     // For a staged test, the last question of a stage routes onward instead of submitting
     // directly — resolveNextSection returns null once the path reaches a terminal section.
@@ -856,10 +886,10 @@ export default function StudentTestPage() {
                                     <RichContent html={currentSection.content} />
                                 </div>
                             )}
-                            {safeAudioSrc(currentSection?.audioUrl) && (
+                            {sectionAudioSrc && (
                                 <audio
                                     controls
-                                    src={safeAudioSrc(currentSection?.audioUrl)}
+                                    src={sectionAudioSrc}
                                     aria-label={t('tests.taking.section_audio_alt')}
                                     style={{ marginBottom: 16, width: '100%' }}
                                 />
@@ -889,6 +919,7 @@ export default function StudentTestPage() {
                                 }}
                             >
                                 <button
+                                    type="button"
                                     onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
                                     disabled={isFirst || isRecordingAudio}
                                     className="btn btn-secondary"
@@ -899,7 +930,11 @@ export default function StudentTestPage() {
 
                                 {isLast && staged && nextStageId ? (
                                     <button
-                                        onClick={() => setSectionPath((prev) => [...prev, nextStageId])}
+                                        type="button"
+                                        onClick={() => {
+                                            setSectionPath((prev) => [...prev, nextStageId]);
+                                            setCurrentIndex(0);
+                                        }}
                                         className="btn btn-primary"
                                         style={{ padding: '10px 32px', fontWeight: 700, fontSize: '0.95rem' }}
                                     >
@@ -907,6 +942,7 @@ export default function StudentTestPage() {
                                     </button>
                                 ) : isLast && isStaircase && !staircaseTerminal && staircaseQuestion ? (
                                     <button
+                                        type="button"
                                         onClick={() => {
                                             const { sectionId, level, question: currentQuestion } = staircaseQuestion;
                                             const response = answers.get(currentQuestion.id) ?? '';
@@ -925,6 +961,7 @@ export default function StudentTestPage() {
                                     </button>
                                 ) : isLast ? (
                                     <button
+                                        type="button"
                                         onClick={handleSubmit}
                                         disabled={submitting || isRecordingAudio}
                                         style={{
@@ -952,6 +989,7 @@ export default function StudentTestPage() {
                                     </button>
                                 ) : (
                                     <button
+                                        type="button"
                                         onClick={() =>
                                             setCurrentIndex((i) => Math.min(orderedQuestions.length - 1, i + 1))
                                         }

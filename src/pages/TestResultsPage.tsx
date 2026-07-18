@@ -306,8 +306,20 @@ export default function TestResultsPage() {
         answer: answersById.get(question.id),
     }));
 
-    const rawPoints =
-        test && studentTest ? (studentTest.rawTotalPoints ?? calcStudentTestRawPoints(test, studentTest.answers)) : 0;
+    // For a staged/staircase submission, points must be scored only from the path the student
+    // actually took — including off-path answers (or a stale rawTotalPoints) would let points
+    // from a section/level the student never routed through inflate the path-scoped percentage.
+    const pathQuestionIds = new Set(pathQuestions.map((q) => q.id));
+    const rawPoints = !test
+        ? 0
+        : staged || isStaircase
+          ? calcStudentTestRawPoints(
+                test,
+                (studentTest?.answers ?? []).filter((a) => pathQuestionIds.has(a.questionId))
+            )
+          : studentTest
+            ? (studentTest.rawTotalPoints ?? calcStudentTestRawPoints(test, studentTest.answers))
+            : 0;
 
     const adjustmentPoints = studentTest?.adjustmentPoints ?? 0;
     const totalPoints = clamp(rawPoints + adjustmentPoints, 0, maxPoints);

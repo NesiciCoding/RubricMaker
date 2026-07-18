@@ -29,12 +29,17 @@ import QuestionEditor from '../components/Tests/QuestionEditor';
 import EssayEditor from '../components/Editor/EssayEditor';
 import QuestionBankModal from '../components/Tests/QuestionBankModal';
 import { cloneBankItemIntoTest } from '../utils/testQuestionClone';
-import type { TestQuestion, TestSection, CefrLevel, CefrSkill, QuestionBankItem } from '../types';
+import type { Test, TestQuestion, TestSection, CefrLevel, CefrSkill, QuestionBankItem } from '../types';
 import { CEFR_LEVELS, CEFR_SKILLS, CEFR_SKILL_LABELS } from '../data/cefrDescriptors';
 import { sectionQuestions, isAutoScorable, hasRoutingCycle } from '../utils/placementRouting';
 
 /** Soft heuristic for a staircase level pool's builder warning — enough headroom for a couple of up/down moves without exhausting the pool. */
 const MIN_QUESTIONS_PER_LEVEL = 3;
+
+function clampThresholdPct(value: number): number {
+    if (!Number.isFinite(value)) return 0;
+    return Math.min(100, Math.max(0, value));
+}
 
 function newQuestion(sectionId?: string): TestQuestion {
     return {
@@ -64,7 +69,7 @@ export default function TestBuilderPage() {
         ? (location.state as {
               generated?: {
                   name?: string;
-                  mode?: 'practice' | 'assessment' | 'placement';
+                  mode?: Test['mode'];
                   questions?: TestQuestion[];
                   sections?: TestSection[];
               };
@@ -93,9 +98,7 @@ export default function TestBuilderPage() {
     const [gradeScaleId, setGradeScaleId] = useState<string | undefined>(
         existing?.gradeScaleId ?? settings.defaultGradeScaleId
     );
-    const [mode, setMode] = useState<'practice' | 'assessment' | 'placement'>(
-        existing?.mode ?? generated?.mode ?? 'assessment'
-    );
+    const [mode, setMode] = useState<NonNullable<Test['mode']>>(existing?.mode ?? generated?.mode ?? 'assessment');
     const [placementEngine, setPlacementEngine] = useState<'mst' | 'staircase'>(existing?.placementEngine ?? 'mst');
     const [allowMultipleAttempts, setAllowMultipleAttempts] = useState(existing?.allowMultipleAttempts ?? false);
     const [cefrTargetLevel, setCefrTargetLevel] = useState<CefrLevel | ''>(existing?.cefrTargetLevel ?? '');
@@ -243,7 +246,23 @@ export default function TestBuilderPage() {
     }
 
     function removeSection(sectionId: string) {
-        setSections((prev) => prev.filter((s) => s.id !== sectionId));
+        setSections((prev) =>
+            prev
+                .filter((s) => s.id !== sectionId)
+                .map((s) => {
+                    if (!s.routing) return s;
+                    const { passSectionId, failSectionId } = s.routing;
+                    if (passSectionId !== sectionId && failSectionId !== sectionId) return s;
+                    return {
+                        ...s,
+                        routing: {
+                            ...s.routing,
+                            passSectionId: passSectionId === sectionId ? '' : passSectionId,
+                            failSectionId: failSectionId === sectionId ? '' : failSectionId,
+                        },
+                    };
+                })
+        );
         setQuestions((prev) => prev.map((q) => (q.sectionId === sectionId ? { ...q, sectionId: undefined } : q)));
     }
 
@@ -295,11 +314,15 @@ export default function TestBuilderPage() {
                   ? Number(trimmedDuration)
                   : undefined;
 
+        const sanitizedSections = sections.map((s) =>
+            s.routing ? { ...s, routing: { ...s.routing, thresholdPct: clampThresholdPct(s.routing.thresholdPct) } } : s
+        );
+
         const payload = {
             name: name.trim(),
             description: description.trim() || undefined,
             questions,
-            sections: sections.length > 0 ? sections : undefined,
+            sections: sanitizedSections.length > 0 ? sanitizedSections : undefined,
             durationMinutes: parsedDuration,
             dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
             shuffleQuestions,
@@ -431,7 +454,7 @@ export default function TestBuilderPage() {
                             <select
                                 id="test-mode"
                                 value={mode}
-                                onChange={(e) => setMode(e.target.value as 'practice' | 'assessment' | 'placement')}
+                                onChange={(e) => setMode(e.target.value as NonNullable<Test['mode']>)}
                             >
                                 <option value="assessment">{t('tests.mode_assessment')}</option>
                                 <option value="practice">{t('tests.mode_practice')}</option>
@@ -694,20 +717,24 @@ export default function TestBuilderPage() {
                                                         style={{
                                                             margin: 0,
                                                             color:
+                                                                !s.cefrLevel ||
                                                                 autoScorableCount < MIN_QUESTIONS_PER_LEVEL
                                                                     ? 'var(--yellow)'
                                                                     : undefined,
                                                         }}
                                                     >
-                                                        {autoScorableCount < MIN_QUESTIONS_PER_LEVEL && (
+                                                        {(!s.cefrLevel ||
+                                                            autoScorableCount < MIN_QUESTIONS_PER_LEVEL) && (
                                                             <AlertCircle
                                                                 size={12}
                                                                 style={{ verticalAlign: 'middle', marginRight: 4 }}
                                                             />
                                                         )}
-                                                        {t('tests.section_level_pool_count', {
-                                                            count: autoScorableCount,
-                                                        })}
+                                                        {!s.cefrLevel
+                                                            ? t('tests.section_level_pool_untagged')
+                                                            : t('tests.section_level_pool_count', {
+                                                                  count: autoScorableCount,
+                                                              })}
                                                     </p>
                                                 ) : (
                                                     <>
@@ -760,8 +787,8 @@ export default function TestBuilderPage() {
                                                                             updateSection(s.id, {
                                                                                 routing: {
                                                                                     ...s.routing!,
-                                                                                    thresholdPct: Number(
-                                                                                        e.target.value
+                                                                                    thresholdPct: clampThresholdPct(
+                                                                                        Number(e.target.value)
                                                                                     ),
                                                                                 },
                                                                             })

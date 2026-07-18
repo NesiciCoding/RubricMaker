@@ -32,6 +32,28 @@ describe('cloneQuestionWithFreshIds', () => {
         expect(clone.options![0].id).not.toBe(clone2.options![0].id);
     });
 
+    it('regenerates matchingPairs and orderItems ids without changing their content', () => {
+        const question: TestQuestion = {
+            id: 'q3',
+            prompt: 'Match and order',
+            type: 'matching',
+            points: 2,
+            matchingPairs: [{ id: 'p1', left: 'Cat', right: 'Meow' }],
+            orderItems: [
+                { id: 'i1', text: 'First' },
+                { id: 'i2', text: 'Second' },
+            ],
+        };
+        const clone = cloneQuestionWithFreshIds(question);
+        expect(clone.matchingPairs![0].id).not.toBe('p1');
+        expect(clone.matchingPairs![0].left).toBe('Cat');
+        expect(clone.matchingPairs![0].right).toBe('Meow');
+        expect(clone.orderItems![0].id).not.toBe('i1');
+        expect(clone.orderItems![1].id).not.toBe('i2');
+        expect(clone.orderItems![0].text).toBe('First');
+        expect(clone.orderItems![1].text).toBe('Second');
+    });
+
     it('remaps categorize item categoryId references to the new category ids', () => {
         const categorize: TestQuestion = {
             id: 'q2',
