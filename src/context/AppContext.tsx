@@ -43,6 +43,8 @@ import type {
     NewsFlash,
     NewsFlashRead,
     QuestionBankItem,
+    TestQuestion,
+    CefrLevel,
 } from '../types';
 import {
     loadStore,
@@ -180,6 +182,7 @@ type Action =
     | { type: 'SAVE_USER_TEMPLATE'; payload: UserTemplate }
     | { type: 'DELETE_USER_TEMPLATE'; id: string }
     | { type: 'ADD_QUESTION_BANK_ITEM'; payload: QuestionBankItem }
+    | { type: 'ADD_QUESTION_BANK_ITEMS'; payload: QuestionBankItem[] }
     | { type: 'UPDATE_QUESTION_BANK_ITEM'; payload: QuestionBankItem }
     | { type: 'DELETE_QUESTION_BANK_ITEM'; id: string };
 
@@ -790,6 +793,12 @@ function reducer(state: StoreData, action: Action): StoreData {
             if (isOffline()) saveQuestionBank(next);
             return { ...state, questionBank: next };
         }
+        case 'ADD_QUESTION_BANK_ITEMS': {
+            const now = new Date().toISOString();
+            const next = [...state.questionBank, ...action.payload.map((item) => ({ ...item, updatedAt: now }))];
+            if (isOffline()) saveQuestionBank(next);
+            return { ...state, questionBank: next };
+        }
         case 'UPDATE_QUESTION_BANK_ITEM': {
             const payload = { ...action.payload, updatedAt: new Date().toISOString() };
             const next = state.questionBank.map((i) => (i.id === payload.id ? payload : i));
@@ -864,7 +873,18 @@ interface AppContextValue extends StoreData {
     addCommentBankItem: (text: string, tags: string[]) => CommentBankItem;
     updateCommentBankItem: (item: CommentBankItem) => void;
     deleteCommentBankItem: (id: string) => void;
-    addQuestionBankItem: (question: QuestionBankItem['question'], tags: string[]) => QuestionBankItem;
+    addQuestionBankItem: (
+        question: Omit<TestQuestion, 'sectionId'>,
+        tags: string[],
+        cefrLevel?: CefrLevel
+    ) => QuestionBankItem;
+    addSectionBankItem: (
+        section: { title: string; content?: string; audioUrl?: string },
+        questions: Omit<TestQuestion, 'sectionId'>[],
+        tags: string[],
+        cefrLevel?: CefrLevel
+    ) => QuestionBankItem;
+    addQuestionBankItems: (items: Array<Omit<QuestionBankItem, 'id' | 'createdAt' | 'updatedAt'>>) => QuestionBankItem[];
     updateQuestionBankItem: (item: QuestionBankItem) => void;
     deleteQuestionBankItem: (id: string) => void;
     addExportTemplate: (t: Omit<ExportTemplate, 'id' | 'addedAt'>) => ExportTemplate;
@@ -1667,10 +1687,45 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const deleteCommentBankItem = useCallback((id: string) => dispatch({ type: 'DELETE_COMMENT_BANK_ITEM', id }), []);
 
     const addQuestionBankItem = useCallback(
-        (question: QuestionBankItem['question'], tags: string[]): QuestionBankItem => {
-            const item: QuestionBankItem = { id: nanoid(), question, tags, createdAt: new Date().toISOString() };
+        (question: Omit<TestQuestion, 'sectionId'>, tags: string[], cefrLevel?: CefrLevel): QuestionBankItem => {
+            const item: QuestionBankItem = {
+                id: nanoid(),
+                question,
+                cefrLevel,
+                tags,
+                createdAt: new Date().toISOString(),
+            };
             dispatch({ type: 'ADD_QUESTION_BANK_ITEM', payload: item });
             return item;
+        },
+        []
+    );
+    const addSectionBankItem = useCallback(
+        (
+            section: { title: string; content?: string; audioUrl?: string },
+            questions: Omit<TestQuestion, 'sectionId'>[],
+            tags: string[],
+            cefrLevel?: CefrLevel
+        ): QuestionBankItem => {
+            const item: QuestionBankItem = {
+                id: nanoid(),
+                kind: 'section',
+                cefrLevel,
+                section: { ...section, questions },
+                tags,
+                createdAt: new Date().toISOString(),
+            };
+            dispatch({ type: 'ADD_QUESTION_BANK_ITEM', payload: item });
+            return item;
+        },
+        []
+    );
+    const addQuestionBankItems = useCallback(
+        (items: Array<Omit<QuestionBankItem, 'id' | 'createdAt' | 'updatedAt'>>): QuestionBankItem[] => {
+            const createdAt = new Date().toISOString();
+            const created = items.map((i) => ({ ...i, id: nanoid(), createdAt }));
+            dispatch({ type: 'ADD_QUESTION_BANK_ITEMS', payload: created });
+            return created;
         },
         []
     );
@@ -2248,6 +2303,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
             updateCommentBankItem,
             deleteCommentBankItem,
             addQuestionBankItem,
+            addSectionBankItem,
+            addQuestionBankItems,
             updateQuestionBankItem,
             deleteQuestionBankItem,
             addExportTemplate,
@@ -2391,6 +2448,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
             updateCommentBankItem,
             deleteCommentBankItem,
             addQuestionBankItem,
+            addSectionBankItem,
+            addQuestionBankItems,
             updateQuestionBankItem,
             deleteQuestionBankItem,
             addExportTemplate,

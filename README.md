@@ -29,7 +29,7 @@ A comprehensive rubric creation and grading tool built with React and TypeScript
 - **Interactive grading**: Click levels, toggle sub-items, or use the slider for point ranges.
 - **Score modifiers**: Apply percentage, point, or level adjustments with a reason.
 - **Comment Bank**: Tag and insert reusable feedback snippets while grading. When a criterion has had a run of low scores, the bank opens with a "Suggested" group of comments tagged with that criterion's CEFR skill or level.
-- **Question Bank**: Save any test question to a reusable bank via a bookmark icon in the Test Builder's question editor, then insert saved questions into any other test. Tag and search saved questions from the `/question-bank` page.
+- **Question Bank**: Save any test question to a reusable bank via a bookmark icon in the Test Builder's question editor, then insert saved questions into any other test. Tag and search saved questions from the `/question-bank` page, or bulk-load a set of questions at once via the page's Import button (JSON file).
 - **Voice grading**: Dictate comments hands-free using speech recognition.
 - **Overall feedback**: Add general comments and file attachments per graded rubric.
 - **Comparative grading**: Grade two students side-by-side for consistency.
@@ -238,6 +238,7 @@ npm run db:reset     # Reset and re-apply all migrations
 | `src/utils/coGradingModerationQueue.ts` | Flags disputed co-graded submissions (delta above threshold) for the Moderation queue                                                                                               |
 | `src/utils/flashcardScheduler.ts`       | Thin wrapper around `ts-fsrs` (FSRS spaced repetition): rating, study queue, interval preview                                                                                       |
 | `src/utils/flashcardImport.ts`          | Flashcard import from CSV (papaparse), XLSX (read-excel-file), DOCX (mammoth), and plain text                                                                                       |
+| `src/utils/questionBankImport.ts`       | Bulk Question Bank import from a JSON file (all `TestQuestionType`s, CEFR/grammar/standard links, tags)                                                                             |
 | `src/utils/flashcardInsights.ts`        | Learner insights per deck: stage counts, due cards, focus words from FSRS state                                                                                                     |
 | `src/utils/displayOrder.ts`             | Shared sort/reorder helpers for manually-orderable list views                                                                                                                       |
 | `src/utils/cohortAggregator.ts`         | Derives a cohort's student set from current + past class memberships by year/track                                                                                                  |

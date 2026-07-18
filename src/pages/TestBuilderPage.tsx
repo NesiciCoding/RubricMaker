@@ -17,7 +17,7 @@ import { toLocalDatetimeInput } from '../utils/dateInput';
 import QuestionEditor from '../components/Tests/QuestionEditor';
 import EssayEditor from '../components/Editor/EssayEditor';
 import QuestionBankModal from '../components/Tests/QuestionBankModal';
-import { cloneQuestionWithFreshIds } from '../utils/testQuestionClone';
+import { cloneBankItemIntoTest } from '../utils/testQuestionClone';
 import type { TestQuestion, TestSection, CefrLevel, CefrSkill, QuestionBankItem } from '../types';
 import { CEFR_LEVELS, CEFR_SKILLS, CEFR_SKILL_LABELS } from '../data/cefrDescriptors';
 
@@ -167,7 +167,9 @@ export default function TestBuilderPage() {
     }
 
     function insertFromBank(item: QuestionBankItem) {
-        setQuestions((prev) => [...prev, cloneQuestionWithFreshIds(item.question as TestQuestion)]);
+        const { questions: cloned, section } = cloneBankItemIntoTest(item);
+        if (section) setSections((prev) => [...prev, section]);
+        setQuestions((prev) => [...prev, ...cloned]);
         setShowBankModal(false);
     }
 
