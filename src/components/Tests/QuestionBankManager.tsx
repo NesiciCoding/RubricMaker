@@ -87,7 +87,11 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
             >
                 {!onSelect && (
                     <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                        <button className="btn btn-secondary btn-sm" onClick={() => setShowImportModal(true)}>
+                        <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => setShowImportModal(true)}
+                        >
                             <Upload size={14} /> {t('questionBank.import_button')}
                         </button>
                     </div>

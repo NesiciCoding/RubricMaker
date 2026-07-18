@@ -37,19 +37,34 @@ describe('parseQuestionBankJson', () => {
     it('rejects invalid JSON', () => {
         const result = parseQuestionBankJson('not json');
         expect(result.items).toEqual([]);
-        expect(result.warnings[0]).toMatch(/Failed to parse JSON/);
+        expect(result.warnings[0].key).toBe('questionBank.import_warn_parse_failed');
+        expect(result.warnings[0].params?.message).toBeTruthy();
     });
 
     it('rejects a payload without an items array', () => {
         const result = parseQuestionBankJson(JSON.stringify({ foo: 'bar' }));
         expect(result.items).toEqual([]);
-        expect(result.warnings[0]).toMatch(/expected a top-level "items" array/);
+        expect(result.warnings[0].key).toBe('questionBank.import_warn_invalid_format');
+    });
+
+    it('rejects a non-object top-level payload', () => {
+        const result = parseQuestionBankJson(JSON.stringify([1, 2, 3]));
+        expect(result.items).toEqual([]);
+        expect(result.warnings[0].key).toBe('questionBank.import_warn_invalid_format');
+    });
+
+    it('skips a null/non-object item in the items array and warns, without crashing', () => {
+        const result = parseQuestionBankJson(
+            JSON.stringify({ items: [null, 'oops', { question: { prompt: 'Hi', type: 'open' } }] })
+        );
+        expect(result.items).toHaveLength(1);
+        expect(result.warnings.filter((w) => w.key === 'questionBank.import_warn_malformed_item')).toHaveLength(2);
     });
 
     it('skips items with no prompt and warns', () => {
         const result = parseQuestionBankJson(JSON.stringify({ items: [{ question: { type: 'open' } }] }));
         expect(result.items).toEqual([]);
-        expect(result.warnings[0]).toMatch(/missing prompt/);
+        expect(result.warnings[0].key).toBe('questionBank.import_warn_missing_prompt');
     });
 
     it('defaults an unknown type to multiple-choice and warns', () => {
@@ -57,7 +72,8 @@ describe('parseQuestionBankJson', () => {
             JSON.stringify({ items: [{ question: { prompt: 'Hi', type: 'essay' } }] })
         );
         expect(result.items[0].question!.type).toBe('multiple-choice');
-        expect(result.warnings[0]).toMatch(/unknown type "essay"/);
+        expect(result.warnings[0].key).toBe('questionBank.import_warn_unknown_type');
+        expect(result.warnings[0].params).toEqual({ item: 'Item 1', type: 'essay' });
     });
 
     it('warns when a multiple-choice question has no correct option', () => {
@@ -74,14 +90,14 @@ describe('parseQuestionBankJson', () => {
                 ],
             })
         );
-        expect(result.warnings[0]).toMatch(/no correct option marked/);
+        expect(result.warnings[0].key).toBe('questionBank.import_warn_no_correct_option');
     });
 
     it('warns when a true-false question is missing correctBoolean', () => {
         const result = parseQuestionBankJson(
             JSON.stringify({ items: [{ question: { prompt: 'True or false?', type: 'true-false' } }] })
         );
-        expect(result.warnings[0]).toMatch(/missing correctBoolean/);
+        expect(result.warnings[0].key).toBe('questionBank.import_warn_missing_correct_boolean');
     });
 
     it('resolves categorize items against categories by index and by label', () => {
@@ -124,7 +140,7 @@ describe('parseQuestionBankJson', () => {
                 ],
             })
         );
-        expect(result.warnings[0]).toMatch(/unknown category/);
+        expect(result.warnings[0].key).toBe('questionBank.import_warn_unknown_category');
     });
 
     it('carries through CEFR and grammar links, tags, and explanation', () => {
@@ -167,6 +183,30 @@ describe('parseQuestionBankJson', () => {
         expect(question!.linkedGrammarItemId).toBe('gr-present-simple-affirmative');
         expect(question!.linkedCefrDescriptors?.[0].descriptorId).toBe('r-a1-1');
         expect(question!.linkedStandards?.[0].standardSetTitle).toBe('SLO-Doelen');
+    });
+
+    it('drops a linkedCefrDescriptor with an invalid level or skill and warns, keeping valid ones', () => {
+        const result = parseQuestionBankJson(
+            JSON.stringify({
+                items: [
+                    {
+                        question: {
+                            prompt: 'Hi',
+                            type: 'open',
+                            linkedCefrDescriptors: [
+                                { descriptorId: 'bad-level', level: 'Z9', skill: 'reading' },
+                                { descriptorId: 'bad-skill', level: 'A1', skill: 'telepathy' },
+                                { descriptorId: 'good', level: 'A1', skill: 'reading' },
+                            ],
+                        },
+                    },
+                ],
+            })
+        );
+        const question = result.items[0].question!;
+        expect(question.linkedCefrDescriptors).toHaveLength(1);
+        expect(question.linkedCefrDescriptors?.[0].descriptorId).toBe('good');
+        expect(result.warnings.filter((w) => w.key === 'questionBank.import_warn_invalid_descriptor')).toHaveLength(2);
     });
 
     it('parses a section bundle with its nested questions', () => {
@@ -219,7 +259,7 @@ describe('parseQuestionBankJson', () => {
             JSON.stringify({ items: [{ kind: 'section', section: { questions: [{ prompt: 'Q', type: 'open' }] } }] })
         );
         expect(result.items).toEqual([]);
-        expect(result.warnings[0]).toMatch(/missing a title/);
+        expect(result.warnings[0].key).toBe('questionBank.import_warn_missing_title');
     });
 
     it('skips a section bundle with no valid questions and warns, without swallowing per-question warnings', () => {
@@ -229,8 +269,19 @@ describe('parseQuestionBankJson', () => {
             })
         );
         expect(result.items).toEqual([]);
-        expect(result.warnings).toContain('Item 1 question 1: skipped — missing prompt.');
-        expect(result.warnings.some((w) => /no valid questions/.test(w))).toBe(true);
+        expect(result.warnings).toContainEqual({
+            key: 'questionBank.import_warn_missing_prompt',
+            params: { item: 'Item 1 question 1' },
+        });
+        expect(result.warnings.some((w) => w.key === 'questionBank.import_warn_no_valid_questions')).toBe(true);
+    });
+
+    it('treats a non-array section.questions as empty rather than crashing', () => {
+        const result = parseQuestionBankJson(
+            JSON.stringify({ items: [{ kind: 'section', section: { title: 'Bad shape', questions: 'oops' } }] })
+        );
+        expect(result.items).toEqual([]);
+        expect(result.warnings[0].key).toBe('questionBank.import_warn_no_valid_questions');
     });
 
     it('warns on an unrecognized cefrLevel and drops it, without dropping the item', () => {
@@ -239,6 +290,17 @@ describe('parseQuestionBankJson', () => {
         );
         expect(result.items).toHaveLength(1);
         expect(result.items[0].cefrLevel).toBeUndefined();
-        expect(result.warnings[0]).toMatch(/unknown cefrLevel "Z9"/);
+        expect(result.warnings[0].key).toBe('questionBank.import_warn_unknown_cefr_level');
+        expect(result.warnings[0].params).toEqual({ item: 'Item 1', level: 'Z9' });
+    });
+
+    it('caps the number of processed items and warns about the truncation', () => {
+        const items = Array.from({ length: 505 }, (_, i) => ({ question: { prompt: `Q${i}`, type: 'open' } }));
+        const result = parseQuestionBankJson(JSON.stringify({ items }));
+        expect(result.items).toHaveLength(500);
+        expect(result.warnings[0]).toEqual({
+            key: 'questionBank.import_warn_too_many_items',
+            params: { max: 500, dropped: 5 },
+        });
     });
 });

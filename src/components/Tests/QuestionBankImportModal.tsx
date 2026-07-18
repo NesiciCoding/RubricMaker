@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { AlertTriangle, Upload, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Modal from '../ui/Modal';
-import { parseQuestionBankFile, type ParsedQuestionBankItem } from '../../utils/questionBankImport';
+import { parseQuestionBankFile, type ImportWarning, type ParsedQuestionBankItem } from '../../utils/questionBankImport';
 
 interface Props {
     onImport: (items: ParsedQuestionBankItem[]) => void;
@@ -15,7 +15,7 @@ export default function QuestionBankImportModal({ onImport, onClose }: Props) {
     const { t } = useTranslation();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [items, setItems] = useState<ParsedQuestionBankItem[] | null>(null);
-    const [warnings, setWarnings] = useState<string[]>([]);
+    const [warnings, setWarnings] = useState<ImportWarning[]>([]);
     const [parsing, setParsing] = useState(false);
 
     async function handleFile(file: File) {
@@ -34,7 +34,12 @@ export default function QuestionBankImportModal({ onImport, onClose }: Props) {
                 <h3 id="question-bank-import-title" style={{ margin: 0 }}>
                     {t('questionBank.import_title')}
                 </h3>
-                <button className="btn btn-ghost btn-icon btn-sm" aria-label={t('common.close')} onClick={onClose}>
+                <button
+                    type="button"
+                    className="btn btn-ghost btn-icon btn-sm"
+                    aria-label={t('common.close')}
+                    onClick={onClose}
+                >
                     <X size={16} />
                 </button>
             </div>
@@ -52,7 +57,12 @@ export default function QuestionBankImportModal({ onImport, onClose }: Props) {
                     e.target.value = '';
                 }}
             />
-            <button className="btn btn-secondary" disabled={parsing} onClick={() => fileInputRef.current?.click()}>
+            <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={parsing}
+                onClick={() => fileInputRef.current?.click()}
+            >
                 <Upload size={15} /> {parsing ? t('questionBank.import_parsing') : t('questionBank.import_choose_file')}
             </button>
 
@@ -72,8 +82,8 @@ export default function QuestionBankImportModal({ onImport, onClose }: Props) {
                         {t('questionBank.import_warnings_title')}
                     </div>
                     <ul style={{ margin: 0, paddingLeft: 20 }}>
-                        {warnings.map((w, i) => (
-                            <li key={i}>{w}</li>
+                        {warnings.map((w) => (
+                            <li key={`${w.key}:${JSON.stringify(w.params ?? {})}`}>{t(w.key, w.params)}</li>
                         ))}
                     </ul>
                 </div>
@@ -139,10 +149,11 @@ export default function QuestionBankImportModal({ onImport, onClose }: Props) {
                         </div>
                     )}
                     <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
-                        <button className="btn btn-secondary" onClick={onClose}>
+                        <button type="button" className="btn btn-secondary" onClick={onClose}>
                             {t('common.cancel')}
                         </button>
                         <button
+                            type="button"
                             className="btn btn-primary"
                             onClick={() => {
                                 onImport(items);

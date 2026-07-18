@@ -59,7 +59,7 @@ describe('QuestionBankImportModal', () => {
         await selectFile(jsonFile({ items: [{ question: { type: 'open' } }] }));
 
         await waitFor(() => expect(screen.getByText(/questionBank\.import_warnings_title/)).toBeInTheDocument());
-        expect(screen.getByText(/missing prompt/)).toBeInTheDocument();
+        expect(screen.getByText(/questionBank\.import_warn_missing_prompt/)).toBeInTheDocument();
         expect(screen.getByText(/questionBank\.import_no_items/)).toBeInTheDocument();
         expect(screen.queryByText(/questionBank\.import_confirm/)).not.toBeInTheDocument();
         expect(onImport).not.toHaveBeenCalled();
@@ -70,6 +70,17 @@ describe('QuestionBankImportModal', () => {
 
         await selectFile(new File(['front,back'], 'cards.csv', { type: 'text/csv' }));
 
-        await waitFor(() => expect(screen.getByText(/Unsupported file type/)).toBeInTheDocument());
+        await waitFor(() =>
+            expect(screen.getByText(/questionBank\.import_warn_unsupported_file_type/)).toBeInTheDocument()
+        );
+    });
+
+    it('rejects an oversized file without reading it', async () => {
+        render(<QuestionBankImportModal onImport={vi.fn()} onClose={vi.fn()} />);
+
+        const big = new File([new Uint8Array(6 * 1024 * 1024)], 'huge.json', { type: 'application/json' });
+        await selectFile(big);
+
+        await waitFor(() => expect(screen.getByText(/questionBank\.import_warn_file_too_large/)).toBeInTheDocument());
     });
 });
