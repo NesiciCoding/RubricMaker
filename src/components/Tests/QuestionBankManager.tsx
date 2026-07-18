@@ -1,9 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Trash2, Tag } from 'lucide-react';
+import { Search, Trash2, Tag, Upload } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
+import { useToast } from '../../hooks/useToast';
 import { CEFR_LEVELS } from '../../data/cefrDescriptors';
 import type { QuestionBankItem, CefrLevel } from '../../types';
+import QuestionBankImportModal from './QuestionBankImportModal';
 
 interface QuestionBankManagerProps {
     /** When set, items render as pick targets (insert-from-bank) instead of a plain manager list. */
@@ -12,12 +14,14 @@ interface QuestionBankManagerProps {
 
 export default function QuestionBankManager({ onSelect }: QuestionBankManagerProps) {
     const { t } = useTranslation();
-    const { questionBank, updateQuestionBankItem, deleteQuestionBankItem } = useApp();
+    const { questionBank, addQuestionBankItems, updateQuestionBankItem, deleteQuestionBankItem } = useApp();
+    const { showToast } = useToast();
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editTags, setEditTags] = useState('');
     const [editCefrLevel, setEditCefrLevel] = useState<CefrLevel | ''>('');
+    const [showImportModal, setShowImportModal] = useState(false);
 
     const allTags = useMemo(() => {
         const tags = new Set<string>();
@@ -81,6 +85,17 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
                     flexDirection: 'column',
                 }}
             >
+                {!onSelect && (
+                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => setShowImportModal(true)}
+                        >
+                            <Upload size={14} /> {t('questionBank.import_button')}
+                        </button>
+                    </div>
+                )}
                 <div className="input-group">
                     <Search size={16} style={{ color: 'var(--text-dim)' }} />
                     <input
@@ -251,6 +266,15 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
                     </div>
                 )}
             </div>
+            {showImportModal && (
+                <QuestionBankImportModal
+                    onClose={() => setShowImportModal(false)}
+                    onImport={(items) => {
+                        addQuestionBankItems(items);
+                        showToast(t('questionBank.import_success_toast', { count: items.length }), 'success');
+                    }}
+                />
+            )}
         </>
     );
 }

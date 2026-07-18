@@ -182,6 +182,7 @@ type Action =
     | { type: 'SAVE_USER_TEMPLATE'; payload: UserTemplate }
     | { type: 'DELETE_USER_TEMPLATE'; id: string }
     | { type: 'ADD_QUESTION_BANK_ITEM'; payload: QuestionBankItem }
+    | { type: 'ADD_QUESTION_BANK_ITEMS'; payload: QuestionBankItem[] }
     | { type: 'UPDATE_QUESTION_BANK_ITEM'; payload: QuestionBankItem }
     | { type: 'DELETE_QUESTION_BANK_ITEM'; id: string };
 
@@ -792,6 +793,12 @@ function reducer(state: StoreData, action: Action): StoreData {
             if (isOffline()) saveQuestionBank(next);
             return { ...state, questionBank: next };
         }
+        case 'ADD_QUESTION_BANK_ITEMS': {
+            const now = new Date().toISOString();
+            const next = [...state.questionBank, ...action.payload.map((item) => ({ ...item, updatedAt: now }))];
+            if (isOffline()) saveQuestionBank(next);
+            return { ...state, questionBank: next };
+        }
         case 'UPDATE_QUESTION_BANK_ITEM': {
             const payload = { ...action.payload, updatedAt: new Date().toISOString() };
             const next = state.questionBank.map((i) => (i.id === payload.id ? payload : i));
@@ -877,6 +884,9 @@ interface AppContextValue extends StoreData {
         tags: string[],
         cefrLevel?: CefrLevel
     ) => QuestionBankItem;
+    addQuestionBankItems: (
+        items: Array<Omit<QuestionBankItem, 'id' | 'createdAt' | 'updatedAt'>>
+    ) => QuestionBankItem[];
     updateQuestionBankItem: (item: QuestionBankItem) => void;
     deleteQuestionBankItem: (id: string) => void;
     addExportTemplate: (t: Omit<ExportTemplate, 'id' | 'addedAt'>) => ExportTemplate;
@@ -1711,6 +1721,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         },
         []
     );
+    const addQuestionBankItems = useCallback(
+        (items: Array<Omit<QuestionBankItem, 'id' | 'createdAt' | 'updatedAt'>>): QuestionBankItem[] => {
+            const createdAt = new Date().toISOString();
+            const created = items.map((i) => ({ ...i, id: nanoid(), createdAt }));
+            dispatch({ type: 'ADD_QUESTION_BANK_ITEMS', payload: created });
+            return created;
+        },
+        []
+    );
     const updateQuestionBankItem = useCallback(
         (item: QuestionBankItem) => dispatch({ type: 'UPDATE_QUESTION_BANK_ITEM', payload: item }),
         []
@@ -2286,6 +2305,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             deleteCommentBankItem,
             addQuestionBankItem,
             addSectionBankItem,
+            addQuestionBankItems,
             updateQuestionBankItem,
             deleteQuestionBankItem,
             addExportTemplate,
@@ -2430,6 +2450,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             deleteCommentBankItem,
             addQuestionBankItem,
             addSectionBankItem,
+            addQuestionBankItems,
             updateQuestionBankItem,
             deleteQuestionBankItem,
             addExportTemplate,
