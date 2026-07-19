@@ -32,6 +32,7 @@ import type {
     RubricVersion,
     QuestionBankItem,
     StaircaseStep,
+    DocumentComment,
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 import { nanoid } from '../utils/nanoid';
@@ -906,6 +907,7 @@ const KEYS = {
     newsFlashes: 'rm_news_flashes',
     newsFlashReads: 'rm_news_flash_reads',
     questionBank: 'rm_question_bank',
+    documentComments: 'rm_document_comments',
 };
 
 // ─── Generic helpers ───────────────────────────────────────────────────────────
@@ -1053,6 +1055,7 @@ export interface StoreData {
     newsFlashes: NewsFlash[];
     newsFlashReads: NewsFlashRead[];
     questionBank: QuestionBankItem[];
+    documentComments: DocumentComment[];
 }
 
 export function loadStore(): StoreData {
@@ -1098,6 +1101,7 @@ export function loadStore(): StoreData {
         newsFlashes: load<NewsFlash[]>(KEYS.newsFlashes, []),
         newsFlashReads: load<NewsFlashRead[]>(KEYS.newsFlashReads, []),
         questionBank: load<QuestionBankItem[]>(KEYS.questionBank, []),
+        documentComments: load<DocumentComment[]>(KEYS.documentComments, []),
     };
 }
 
@@ -1218,6 +1222,9 @@ export function saveNewsFlashReads(reads: NewsFlashRead[]) {
 }
 export function saveQuestionBank(items: QuestionBankItem[]) {
     save(KEYS.questionBank, items);
+}
+export function saveDocumentComments(comments: DocumentComment[]) {
+    save(KEYS.documentComments, comments);
 }
 
 // ─── Local data wipe (user switch / sign-out) ─────────────────────────────────
@@ -1525,6 +1532,20 @@ export function importFullBackup(json: string): boolean {
             )
                 saveQuestionBank(data.questionBank as QuestionBankItem[]);
             else console.warn('[importFullBackup] questionBank failed validation — skipped');
+        }
+        if (data.documentComments !== undefined) {
+            if (
+                Array.isArray(data.documentComments) &&
+                data.documentComments.every(
+                    (c) =>
+                        isPlainObject(c) &&
+                        typeof (c as Record<string, unknown>).id === 'string' &&
+                        typeof (c as Record<string, unknown>).attachmentId === 'string' &&
+                        isPlainObject((c as Record<string, unknown>).anchor)
+                )
+            )
+                saveDocumentComments(data.documentComments as DocumentComment[]);
+            else console.warn('[importFullBackup] documentComments failed validation — skipped');
         }
         return true;
     } catch (e) {

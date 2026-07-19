@@ -56,6 +56,12 @@ vi.mock('../Editor/EssayEditor', () => ({
     ),
 }));
 
+vi.mock('../Editor/CommentableDocumentView', () => ({
+    default: ({ content, attachmentId }: { content: string; attachmentId: string }) => (
+        <div data-testid="commentable-document-view" data-content={content} data-attachment-id={attachmentId} />
+    ),
+}));
+
 vi.mock('papaparse', () => ({
     default: {
         parse: vi.fn((_file: File, opts: any) => {
@@ -199,6 +205,29 @@ describe('AttachmentViewer', () => {
         expect(editor).toHaveAttribute('data-editable', 'false');
         expect(editor.getAttribute('data-content')).toContain('Hello');
         expect(container.querySelector('iframe')).toBeFalsy();
+    });
+
+    it('renders the commentable document view for essay html when commentable is set (26.3)', () => {
+        const html = '<p>Hello <strong>World</strong></p>';
+        const dataUrl = `data:text/html;base64,${btoa(unescape(encodeURIComponent(html)))}`;
+        const attachment = { ...makeAttachment('text/html', 'essay.html'), dataUrl, id: 'att-essay-1' };
+        render(<AttachmentViewer attachment={attachment} commentable />);
+        expect(screen.queryByTestId('essay-editor')).not.toBeInTheDocument();
+        const view = screen.getByTestId('commentable-document-view');
+        expect(view).toHaveAttribute('data-attachment-id', 'att-essay-1');
+        expect(view.getAttribute('data-content')).toContain('Hello');
+    });
+
+    it('renders the commentable document view for the docx formatted view when commentable is set (26.3)', async () => {
+        const attachment = {
+            ...makeAttachment('application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'doc.docx'),
+            id: 'att-docx-1',
+        };
+        render(<AttachmentViewer attachment={attachment} commentable />);
+        const view = await screen.findByTestId('commentable-document-view');
+        expect(view).toHaveAttribute('data-attachment-id', 'att-docx-1');
+        expect(view.getAttribute('data-content')).toContain('Converted docx content');
+        expect(screen.queryByTestId('essay-editor')).not.toBeInTheDocument();
     });
 
     it('renders fallback for unknown type', () => {

@@ -230,6 +230,24 @@ export interface Attachment {
 }
 
 /**
+ * An inline anchored comment on a graded document (essay or DOCX attachment, both
+ * rendered read-only through CommentableDocumentView). anchor positions are raw
+ * ProseMirror ints captured at creation time — stable because the underlying
+ * document content never changes after this comment is created (essays lock after
+ * submission; uploaded attachments are never edited).
+ */
+export interface DocumentComment {
+    id: string;
+    attachmentId: string;
+    authorId: string;
+    text: string;
+    createdAt: string;
+    updatedAt?: string;
+    resolved: boolean;
+    anchor: { from: number; to: number };
+}
+
+/**
  * A blank DOCX template used to style an export. Unset/'table' = a rubric template whose
  * column headers & header colour are extracted (levelHeaders/headerColor). 'style' = an
  * essay/period-report template whose heading/body font are extracted instead.

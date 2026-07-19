@@ -6,14 +6,17 @@ import { Download, FileText, ImageIcon, Loader } from 'lucide-react';
 import { Attachment } from '../../types';
 import { convertDocxToHtml } from '../../utils/textExtraction';
 import EssayEditor from '../Editor/EssayEditor';
+import CommentableDocumentView from '../Editor/CommentableDocumentView';
 
 interface Props {
     attachment: Attachment;
+    /** Enables inline anchored comments (26.3) on the formatted essay/docx view — grading views only. */
+    commentable?: boolean;
 }
 
 const noop = () => {};
 
-export default function AttachmentViewer({ attachment }: Props) {
+export default function AttachmentViewer({ attachment, commentable = false }: Props) {
     const { t } = useTranslation();
     const docxRef = useRef<HTMLDivElement>(null);
     const [loading, setLoading] = useState(false);
@@ -189,13 +192,17 @@ export default function AttachmentViewer({ attachment }: Props) {
                             }}
                         >
                             {docxHtml !== null ? (
-                                <EssayEditor
-                                    content={docxHtml}
-                                    onChange={noop}
-                                    editable={false}
-                                    defaultPageMode
-                                    allowPageMode={false}
-                                />
+                                commentable ? (
+                                    <CommentableDocumentView content={docxHtml} attachmentId={attachment.id} />
+                                ) : (
+                                    <EssayEditor
+                                        content={docxHtml}
+                                        onChange={noop}
+                                        editable={false}
+                                        defaultPageMode
+                                        allowPageMode={false}
+                                    />
+                                )
                             ) : (
                                 <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>
                                     <Loader size={20} className="spin" style={{ marginBottom: 8 }} />
@@ -249,13 +256,17 @@ export default function AttachmentViewer({ attachment }: Props) {
                         border: '1px solid var(--border)',
                     }}
                 >
-                    <EssayEditor
-                        content={essayHtml}
-                        onChange={noop}
-                        editable={false}
-                        defaultPageMode
-                        allowPageMode={false}
-                    />
+                    {commentable ? (
+                        <CommentableDocumentView content={essayHtml} attachmentId={attachment.id} />
+                    ) : (
+                        <EssayEditor
+                            content={essayHtml}
+                            onChange={noop}
+                            editable={false}
+                            defaultPageMode
+                            allowPageMode={false}
+                        />
+                    )}
                 </div>
             )}
 

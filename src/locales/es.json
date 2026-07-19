@@ -1729,7 +1729,15 @@
         "table_added": "Añadido",
         "table_actions": "Acciones",
         "view_formatted": "Vista con formato",
-        "view_original": "Ver como se envió"
+        "view_original": "Ver como se envió",
+        "comment_add": "Añadir comentario",
+        "comment_prompt": "Introduce tu comentario:",
+        "comment_resolve": "Resolver",
+        "comment_reopen": "Reabrir",
+        "comment_delete": "Eliminar",
+        "comment_author_you": "Tú",
+        "comment_author_teacher": "Profesor",
+        "comments_empty": "Aún no hay comentarios. Selecciona texto en el documento de arriba para añadir uno."
     },
     "exportPage": {
         "rubric_section_title": "Exportación de Rúbrica",
@@ -2472,6 +2480,7 @@
         "gr_feedback_item_attachments": "Archivos adjuntos — sube archivos de evidencia (imágenes, PDF) por rúbrica calificada.",
         "gr_document_view_title": "Vista de documento",
         "gr_document_view_body": "Las entregas de ensayos y los archivos Word (.docx) adjuntos se muestran ahora en la misma vista de documento paginada y con formato, tanto en la calificación individual como en la comparativa — sin más volcados de HTML sin formato ni un visor de Word inconsistente. Para archivos .docx, un interruptor \"Ver como se envió\" cambia a la representación del archivo original si la conversión con formato pierde detalles de diseño.",
+        "gr_document_comments_body": "Selecciona texto en esa vista de documento para dejar un comentario en línea, anclado directamente al pasaje al que se refiere. Los comentarios aparecen en una barra lateral debajo del documento — resuélvelos o elimínalos según sea necesario. Es una herramienta de anotación del lado del profesor; los estudiantes no ven ni pueden responder a estos comentarios.",
         "gr_comparative_title": "Calificación comparativa",
         "gr_comparative_body_prefix": "Haz clic en",
         "gr_comparative_button": "Comparar",

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useEditor, EditorContent } from '@tiptap/react';
+import type { AnyExtension, Editor } from '@tiptap/core';
 import { getTipTapExtensions, TIPTAP_CONTENT_STYLES } from './tiptapExtensions';
 import {
     Bold,
@@ -67,6 +68,12 @@ interface EssayEditorProps {
     allowPageMode?: boolean;
     /** id of an external <label> describing this editor, forwarded to the content-editable region for screen readers. */
     ariaLabelledBy?: string;
+    /** Additional TipTap extensions appended to the shared set (e.g. comment decorations). */
+    extraExtensions?: AnyExtension[];
+    /** Fired with the underlying TipTap editor instance once created (and with null on unmount) —
+     * lets a caller render something alongside this editor (e.g. a BubbleMenu) that needs direct
+     * access to the instance, without this component having to know about that concern itself. */
+    onEditorReady?: (editor: Editor | null) => void;
 }
 
 function Divider() {
@@ -127,6 +134,8 @@ export default function EssayEditor({
     minHeight = 420,
     allowPageMode = true,
     ariaLabelledBy,
+    extraExtensions,
+    onEditorReady,
 }: EssayEditorProps) {
     const { t } = useTranslation();
     const colorInputRef = useRef<HTMLInputElement>(null);
@@ -136,7 +145,7 @@ export default function EssayEditor({
     const lastTableInsertRef = useRef(0);
 
     const editor = useEditor({
-        extensions: getTipTapExtensions(),
+        extensions: extraExtensions ? [...getTipTapExtensions(), ...extraExtensions] : getTipTapExtensions(),
         content,
         editable,
         onUpdate: ({ editor }) => onChange(editor.getHTML()),
@@ -154,6 +163,12 @@ export default function EssayEditor({
             editor.setEditable(editable ?? true);
         }
     }, [editor, editable]);
+
+    useEffect(() => {
+        onEditorReady?.(editor ?? null);
+        return () => onEditorReady?.(null);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [editor]);
 
     if (!editor) return null;
 

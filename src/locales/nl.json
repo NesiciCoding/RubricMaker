@@ -1729,7 +1729,15 @@
         "table_added": "Toegevoegd",
         "table_actions": "Acties",
         "view_formatted": "Opgemaakte weergave",
-        "view_original": "Weergeven zoals verzonden"
+        "view_original": "Weergeven zoals verzonden",
+        "comment_add": "Opmerking toevoegen",
+        "comment_prompt": "Voer je opmerking in:",
+        "comment_resolve": "Afhandelen",
+        "comment_reopen": "Heropenen",
+        "comment_delete": "Verwijderen",
+        "comment_author_you": "Jij",
+        "comment_author_teacher": "Docent",
+        "comments_empty": "Nog geen opmerkingen. Selecteer tekst in het document hierboven om er een toe te voegen."
     },
     "exportPage": {
         "rubric_section_title": "Rubriekexport",
@@ -2472,6 +2480,7 @@
         "gr_feedback_item_attachments": "Bijlagen — upload bewijsbestanden (afbeeldingen, PDF's) per beoordeelde rubriek.",
         "gr_document_view_title": "Documentweergave",
         "gr_document_view_body": "Essayinzendingen en geüploade Word-bijlagen (.docx) worden weergegeven in dezelfde opgemaakte, gepagineerde documentweergave, zowel bij individuele als vergelijkende beoordeling — geen rauwe HTML-dump of afwijkende Word-viewer meer. Voor .docx-bestanden schakelt een knop \"Weergeven zoals verzonden\" over naar de originele bestandsweergave als de opgemaakte conversie lay-outdetails verliest.",
+        "gr_document_comments_body": "Selecteer tekst in die documentweergave om een inline opmerking te plaatsen, direct verankerd aan de passage waar hij over gaat. Opmerkingen verschijnen in een zijbalk onder het document — handel ze af of verwijder ze naar wens. Dit is een beoordelingstool voor de docent; leerlingen zien deze opmerkingen niet en kunnen er niet op reageren.",
         "gr_comparative_title": "Vergelijkend beoordelen",
         "gr_comparative_body_prefix": "Klik op",
         "gr_comparative_button": "Vergelijken",

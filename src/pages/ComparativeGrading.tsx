@@ -743,7 +743,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                             <div className="card" style={{ background: 'var(--bg-elevated)' }}>
                                 <h3 style={{ marginBottom: 12 }}>{t('comparativeGrading.attachments')}</h3>
                                 {attA.map((a) => (
-                                    <AttachmentViewer key={a.id} attachment={a} />
+                                    <AttachmentViewer key={a.id} attachment={a} commentable />
                                 ))}
                             </div>
                         )}
@@ -1408,7 +1408,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                             <div className="card" style={{ background: 'var(--bg-elevated)' }}>
                                 <h3 style={{ marginBottom: 12 }}>{t('comparativeGrading.attachments')}</h3>
                                 {attB.map((a) => (
-                                    <AttachmentViewer key={a.id} attachment={a} />
+                                    <AttachmentViewer key={a.id} attachment={a} commentable />
                                 ))}
                             </div>
                         )}

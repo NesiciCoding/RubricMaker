@@ -45,6 +45,7 @@ import type {
     QuestionBankItem,
     TestQuestion,
     CefrLevel,
+    DocumentComment,
 } from '../types';
 import {
     loadStore,
@@ -78,6 +79,7 @@ import {
     saveNewsFlashes,
     saveNewsFlashReads,
     saveQuestionBank,
+    saveDocumentComments,
     saveUserTemplates,
     importFullBackup,
     loadPendingQueue,
@@ -190,7 +192,10 @@ type Action =
           type: 'BULK_UPDATE_QUESTION_BANK_ITEMS';
           ids: string[];
           patch: { addTags?: string[]; removeTags?: string[]; cefrLevel?: CefrLevel | null };
-      };
+      }
+    | { type: 'ADD_DOCUMENT_COMMENT'; payload: DocumentComment }
+    | { type: 'RESOLVE_DOCUMENT_COMMENT'; id: string; resolved: boolean }
+    | { type: 'DELETE_DOCUMENT_COMMENT'; id: string };
 
 // Type-only handle on the lazily-loaded singleton's shape — pure type-level, so it
 // doesn't force the (heavy) module to be imported as a value just to describe it.
@@ -822,6 +827,23 @@ function reducer(state: StoreData, action: Action): StoreData {
             if (isOffline()) saveQuestionBank(next);
             return { ...state, questionBank: next };
         }
+        case 'ADD_DOCUMENT_COMMENT': {
+            const next = [...state.documentComments, action.payload];
+            if (isOffline()) saveDocumentComments(next);
+            return { ...state, documentComments: next };
+        }
+        case 'RESOLVE_DOCUMENT_COMMENT': {
+            const next = state.documentComments.map((c) =>
+                c.id === action.id ? { ...c, resolved: action.resolved, updatedAt: new Date().toISOString() } : c
+            );
+            if (isOffline()) saveDocumentComments(next);
+            return { ...state, documentComments: next };
+        }
+        case 'DELETE_DOCUMENT_COMMENT': {
+            const next = state.documentComments.filter((c) => c.id !== action.id);
+            if (isOffline()) saveDocumentComments(next);
+            return { ...state, documentComments: next };
+        }
         case 'BULK_UPDATE_QUESTION_BANK_ITEMS': {
             const idSet = new Set(action.ids);
             const now = new Date().toISOString();
@@ -925,6 +947,9 @@ interface AppContextValue extends StoreData {
         ids: string[],
         patch: { addTags?: string[]; removeTags?: string[]; cefrLevel?: CefrLevel | null }
     ) => void;
+    addDocumentComment: (c: Omit<DocumentComment, 'id' | 'createdAt' | 'resolved'>) => DocumentComment;
+    resolveDocumentComment: (id: string, resolved: boolean) => void;
+    deleteDocumentComment: (id: string) => void;
     addExportTemplate: (t: Omit<ExportTemplate, 'id' | 'addedAt'>) => ExportTemplate;
     deleteExportTemplate: (id: string) => void;
     // Peer Review
@@ -1107,6 +1132,7 @@ async function flushToLocalStorage(merged: StoreData) {
     saveNewsFlashes(merged.newsFlashes);
     saveNewsFlashReads(merged.newsFlashReads);
     saveQuestionBank(merged.questionBank);
+    saveDocumentComments(merged.documentComments);
 
     // Best-effort: a recording blob whose session was deleted on another device has no
     // app-level delete call to clean it up locally, so sweep for orphans after every sync.
@@ -1504,6 +1530,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         diff(prev.newsFlashes, state.newsFlashes, 'newsFlash', (f) => f.id);
         diff(prev.newsFlashReads, state.newsFlashReads, 'newsFlashRead', (r) => r.id);
         diff(prev.questionBank, state.questionBank, 'questionBankItem', (q) => q.id);
+        diff(prev.documentComments, state.documentComments, 'documentComment', (c) => c.id);
 
         if (prev.settings !== state.settings && JSON.stringify(prev.settings) !== JSON.stringify(state.settings)) {
             storageSync.pushOne('settings', 'upsert', state.settings);
@@ -1780,6 +1807,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
             dispatch({ type: 'BULK_UPDATE_QUESTION_BANK_ITEMS', ids, patch }),
         []
     );
+
+    const addDocumentComment = useCallback(
+        (c: Omit<DocumentComment, 'id' | 'createdAt' | 'resolved'>): DocumentComment => {
+            const comment: DocumentComment = {
+                ...c,
+                id: nanoid(),
+                createdAt: new Date().toISOString(),
+                resolved: false,
+            };
+            dispatch({ type: 'ADD_DOCUMENT_COMMENT', payload: comment });
+            return comment;
+        },
+        []
+    );
+    const resolveDocumentComment = useCallback(
+        (id: string, resolved: boolean) => dispatch({ type: 'RESOLVE_DOCUMENT_COMMENT', id, resolved }),
+        []
+    );
+    const deleteDocumentComment = useCallback((id: string) => dispatch({ type: 'DELETE_DOCUMENT_COMMENT', id }), []);
 
     const addExportTemplate = useCallback((t: Omit<ExportTemplate, 'id' | 'addedAt'>): ExportTemplate => {
         const template: ExportTemplate = { ...t, id: nanoid(), addedAt: new Date().toISOString() };
@@ -2355,6 +2401,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
             deleteQuestionBankItem,
             deleteQuestionBankItems,
             bulkUpdateQuestionBankItems,
+            addDocumentComment,
+            resolveDocumentComment,
+            deleteDocumentComment,
             addExportTemplate,
             deleteExportTemplate,
             savePeerReview,
@@ -2502,6 +2551,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
             deleteQuestionBankItem,
             deleteQuestionBankItems,
             bulkUpdateQuestionBankItems,
+            addDocumentComment,
+            resolveDocumentComment,
+            deleteDocumentComment,
             addExportTemplate,
             deleteExportTemplate,
             savePeerReview,

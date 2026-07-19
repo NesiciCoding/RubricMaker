@@ -1729,7 +1729,15 @@
         "table_added": "Added",
         "table_actions": "Actions",
         "view_formatted": "Formatted view",
-        "view_original": "View as sent"
+        "view_original": "View as sent",
+        "comment_add": "Add comment",
+        "comment_prompt": "Enter your comment:",
+        "comment_resolve": "Resolve",
+        "comment_reopen": "Reopen",
+        "comment_delete": "Delete",
+        "comment_author_you": "You",
+        "comment_author_teacher": "Teacher",
+        "comments_empty": "No comments yet. Select text in the document above to add one."
     },
     "exportPage": {
         "rubric_section_title": "Rubric Export",
@@ -2470,6 +2478,7 @@
         "gr_feedback_item_attachments": "File attachments — upload evidence files (images, PDFs) per graded rubric.",
         "gr_document_view_title": "Document view",
         "gr_document_view_body": "Essay submissions and uploaded Word (.docx) attachments render through the same paginated, formatted document view in both single-student and comparative grading — no more raw HTML dumps or a mismatched Word viewer. For .docx files, a \"View as sent\" toggle switches to the original file rendering if the formatted conversion loses layout detail.",
+        "gr_document_comments_body": "Select text in that document view to leave an inline comment, anchored right on the passage it refers to. Comments show in a sidebar below the document — resolve or delete them as needed. This is a grading-side annotation tool for the teacher; students don't see or reply to these comments.",
         "gr_comparative_title": "Comparative grading",
         "gr_comparative_body_prefix": "Click",
         "gr_comparative_button": "Compare",

@@ -38,6 +38,7 @@ import type {
     NewsFlash,
     NewsFlashRead,
     QuestionBankItem,
+    DocumentComment,
 } from '../../types';
 import type { DatabaseConfig, DbUser, SyncResult } from './types';
 import { nanoid } from '../../utils/nanoid';
@@ -930,6 +931,35 @@ export class SupabaseAdapter {
 
     async deleteQuestionBankItem(id: string): Promise<SyncResult> {
         const { error } = await this.db().from('question_bank_items').delete().eq('id', id).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    // ── Document Comments (roadmap 26.3) ──────────────────────────────────────────
+    // Owner-only — grading-side annotations, no student read/write path.
+
+    async fetchDocumentComments(): Promise<DocumentComment[]> {
+        const { data, error } = await this.db().from('document_comments').select('data').eq('owner_id', this.uid());
+        if (error) {
+            console.error('fetchDocumentComments', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as DocumentComment);
+    }
+
+    async upsertDocumentComment(comment: DocumentComment): Promise<SyncResult> {
+        const { error } = await this.db().from('document_comments').upsert(
+            {
+                id: comment.id,
+                owner_id: this.uid(),
+                data: comment,
+            },
+            { onConflict: 'id' }
+        );
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteDocumentComment(id: string): Promise<SyncResult> {
+        const { error } = await this.db().from('document_comments').delete().eq('id', id).eq('owner_id', this.uid());
         return error ? { success: false, error: error.message } : { success: true };
     }
 
