@@ -49,9 +49,13 @@ interface Props {
     dragHandleProps?: DraggableProvidedDragHandleProps | null;
     onChange: (question: TestQuestion) => void;
     onRemove: () => void;
+    /** Hide the remove/trash button — set false when the question IS the item being edited (e.g. a Question Bank item), where "remove" is meaningless. Defaults to true. */
+    showRemove?: boolean;
+    /** Hide the "save to bank" button — set false when already editing a bank item, where saving-to-bank is confusing. Defaults to true. */
+    showSaveToBank?: boolean;
 }
 
-const QUESTION_TYPES: TestQuestionType[] = [
+export const QUESTION_TYPES: TestQuestionType[] = [
     'multiple-choice',
     'multiple-response',
     'true-false',
@@ -77,6 +81,8 @@ export default function QuestionEditor({
     dragHandleProps,
     onChange,
     onRemove,
+    showRemove = true,
+    showSaveToBank = true,
 }: Props) {
     const { t } = useTranslation();
     const { settings, addQuestionBankItem } = useApp();
@@ -390,23 +396,27 @@ export default function QuestionEditor({
                     <span className="badge badge-blue">{t('tests.question_number', { number: index + 1 })}</span>
                 </div>
                 <div style={{ display: 'flex', gap: 4 }}>
-                    <button
-                        type="button"
-                        className="btn btn-ghost btn-icon btn-sm"
-                        aria-label={t('questionBank.save_to_bank')}
-                        title={t('questionBank.save_to_bank')}
-                        onClick={saveToBank}
-                    >
-                        <BookmarkPlus size={14} />
-                    </button>
-                    <button
-                        className="btn btn-ghost btn-icon btn-sm"
-                        aria-label={t('tests.remove_question')}
-                        style={{ color: 'var(--red)' }}
-                        onClick={onRemove}
-                    >
-                        <Trash2 size={14} />
-                    </button>
+                    {showSaveToBank && (
+                        <button
+                            type="button"
+                            className="btn btn-ghost btn-icon btn-sm"
+                            aria-label={t('questionBank.save_to_bank')}
+                            title={t('questionBank.save_to_bank')}
+                            onClick={saveToBank}
+                        >
+                            <BookmarkPlus size={14} />
+                        </button>
+                    )}
+                    {showRemove && (
+                        <button
+                            className="btn btn-ghost btn-icon btn-sm"
+                            aria-label={t('tests.remove_question')}
+                            style={{ color: 'var(--red)' }}
+                            onClick={onRemove}
+                        >
+                            <Trash2 size={14} />
+                        </button>
+                    )}
                 </div>
             </div>
 

@@ -28,7 +28,7 @@ import { toLocalDatetimeInput } from '../utils/dateInput';
 import QuestionEditor from '../components/Tests/QuestionEditor';
 import EssayEditor from '../components/Editor/EssayEditor';
 import QuestionBankModal from '../components/Tests/QuestionBankModal';
-import { cloneBankItemIntoTest } from '../utils/testQuestionClone';
+import { cloneBankItemIntoTest, newQuestion } from '../utils/testQuestionClone';
 import type { Test, TestQuestion, TestSection, CefrLevel, CefrSkill, QuestionBankItem } from '../types';
 import { CEFR_LEVELS, CEFR_SKILLS, CEFR_SKILL_LABELS } from '../data/cefrDescriptors';
 import { sectionQuestions, isAutoScorable, hasRoutingCycle } from '../utils/placementRouting';
@@ -39,20 +39,6 @@ const MIN_QUESTIONS_PER_LEVEL = 3;
 function clampThresholdPct(value: number): number {
     if (!Number.isFinite(value)) return 0;
     return Math.min(100, Math.max(0, value));
-}
-
-function newQuestion(sectionId?: string): TestQuestion {
-    return {
-        id: nanoid(),
-        prompt: '',
-        type: 'multiple-choice',
-        points: 1,
-        sectionId,
-        options: [
-            { id: nanoid(), text: '', isCorrect: true },
-            { id: nanoid(), text: '', isCorrect: false },
-        ],
-    };
 }
 
 export default function TestBuilderPage() {

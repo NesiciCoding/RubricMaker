@@ -184,7 +184,13 @@ type Action =
     | { type: 'ADD_QUESTION_BANK_ITEM'; payload: QuestionBankItem }
     | { type: 'ADD_QUESTION_BANK_ITEMS'; payload: QuestionBankItem[] }
     | { type: 'UPDATE_QUESTION_BANK_ITEM'; payload: QuestionBankItem }
-    | { type: 'DELETE_QUESTION_BANK_ITEM'; id: string };
+    | { type: 'DELETE_QUESTION_BANK_ITEM'; id: string }
+    | { type: 'DELETE_QUESTION_BANK_ITEMS'; ids: string[] }
+    | {
+          type: 'BULK_UPDATE_QUESTION_BANK_ITEMS';
+          ids: string[];
+          patch: { addTags?: string[]; removeTags?: string[]; cefrLevel?: CefrLevel | null };
+      };
 
 // Type-only handle on the lazily-loaded singleton's shape — pure type-level, so it
 // doesn't force the (heavy) module to be imported as a value just to describe it.
@@ -810,6 +816,31 @@ function reducer(state: StoreData, action: Action): StoreData {
             if (isOffline()) saveQuestionBank(next);
             return { ...state, questionBank: next };
         }
+        case 'DELETE_QUESTION_BANK_ITEMS': {
+            const idSet = new Set(action.ids);
+            const next = state.questionBank.filter((i) => !idSet.has(i.id));
+            if (isOffline()) saveQuestionBank(next);
+            return { ...state, questionBank: next };
+        }
+        case 'BULK_UPDATE_QUESTION_BANK_ITEMS': {
+            const idSet = new Set(action.ids);
+            const now = new Date().toISOString();
+            const { addTags, removeTags, cefrLevel } = action.patch;
+            const next = state.questionBank.map((i) => {
+                if (!idSet.has(i.id)) return i;
+                let tags = i.tags;
+                if (addTags?.length) tags = Array.from(new Set([...tags, ...addTags]));
+                if (removeTags?.length) tags = tags.filter((tag) => !removeTags.includes(tag));
+                return {
+                    ...i,
+                    tags,
+                    cefrLevel: cefrLevel === null ? undefined : (cefrLevel ?? i.cefrLevel),
+                    updatedAt: now,
+                };
+            });
+            if (isOffline()) saveQuestionBank(next);
+            return { ...state, questionBank: next };
+        }
         default:
             return state;
     }
@@ -889,6 +920,11 @@ interface AppContextValue extends StoreData {
     ) => QuestionBankItem[];
     updateQuestionBankItem: (item: QuestionBankItem) => void;
     deleteQuestionBankItem: (id: string) => void;
+    deleteQuestionBankItems: (ids: string[]) => void;
+    bulkUpdateQuestionBankItems: (
+        ids: string[],
+        patch: { addTags?: string[]; removeTags?: string[]; cefrLevel?: CefrLevel | null }
+    ) => void;
     addExportTemplate: (t: Omit<ExportTemplate, 'id' | 'addedAt'>) => ExportTemplate;
     deleteExportTemplate: (id: string) => void;
     // Peer Review
@@ -1735,6 +1771,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         []
     );
     const deleteQuestionBankItem = useCallback((id: string) => dispatch({ type: 'DELETE_QUESTION_BANK_ITEM', id }), []);
+    const deleteQuestionBankItems = useCallback(
+        (ids: string[]) => dispatch({ type: 'DELETE_QUESTION_BANK_ITEMS', ids }),
+        []
+    );
+    const bulkUpdateQuestionBankItems = useCallback(
+        (ids: string[], patch: { addTags?: string[]; removeTags?: string[]; cefrLevel?: CefrLevel | null }) =>
+            dispatch({ type: 'BULK_UPDATE_QUESTION_BANK_ITEMS', ids, patch }),
+        []
+    );
 
     const addExportTemplate = useCallback((t: Omit<ExportTemplate, 'id' | 'addedAt'>): ExportTemplate => {
         const template: ExportTemplate = { ...t, id: nanoid(), addedAt: new Date().toISOString() };
@@ -2308,6 +2353,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
             addQuestionBankItems,
             updateQuestionBankItem,
             deleteQuestionBankItem,
+            deleteQuestionBankItems,
+            bulkUpdateQuestionBankItems,
             addExportTemplate,
             deleteExportTemplate,
             savePeerReview,
@@ -2453,6 +2500,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
             addQuestionBankItems,
             updateQuestionBankItem,
             deleteQuestionBankItem,
+            deleteQuestionBankItems,
+            bulkUpdateQuestionBankItems,
             addExportTemplate,
             deleteExportTemplate,
             savePeerReview,
