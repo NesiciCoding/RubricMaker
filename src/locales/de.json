@@ -2479,7 +2479,7 @@
         "gr_feedback_item_notes": "Notizen pro Kriterium zusätzlich zum allgemeinen Feedbackfeld.",
         "gr_feedback_item_attachments": "Dateianhänge — lade Belegdateien (Bilder, PDFs) pro bewerteter Rubrik hoch.",
         "gr_document_view_title": "Dokumentenansicht",
-        "gr_document_view_body": "Aufsatzabgaben und hochgeladene Word-Anhänge (.docx) werden sowohl bei der Einzel- als auch bei der vergleichenden Bewertung über dieselbe paginierte, formatierte Dokumentenansicht dargestellt — kein roher HTML-Dump und kein abweichender Word-Viewer mehr. Bei .docx-Dateien wechselt ein Schalter „Wie gesendet anzeigen\" zur Originaldatei-Darstellung, falls die formatierte Konvertierung Layoutdetails verliert.",
+        "gr_document_view_body": "Aufsatzabgaben und hochgeladene Word-Anhänge (.docx) werden sowohl bei der Einzel- als auch bei der vergleichenden Bewertung über dieselbe paginierte, formatierte Dokumentenansicht dargestellt — kein roher HTML-Dump und kein abweichender Word-Viewer mehr. Bei .docx-Dateien wechselt ein Schalter „Wie gesendet anzeigen“ zur Originaldatei-Darstellung, falls die formatierte Konvertierung Layoutdetails verliert.",
         "gr_document_comments_body": "Wähle Text in dieser Dokumentenansicht aus, um einen Inline-Kommentar zu hinterlassen, der direkt an der betreffenden Textstelle verankert ist. Kommentare erscheinen in einer Seitenleiste unter dem Dokument — erledige oder lösche sie nach Bedarf. Dies ist ein Anmerkungswerkzeug für die Lehrkraft; Schüler sehen diese Kommentare nicht und können nicht darauf antworten.",
         "gr_comparative_title": "Vergleichende Bewertung",
         "gr_comparative_body_prefix": "Klicke auf",

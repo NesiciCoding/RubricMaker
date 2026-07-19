@@ -75,6 +75,27 @@ describe('CommentSidebar', () => {
         expect(onSelect).toHaveBeenCalledWith('c1');
     });
 
+    it('is keyboard-accessible: Enter and Space both trigger onSelect', () => {
+        const onSelect = vi.fn();
+        render(
+            <CommentSidebar
+                comments={[makeComment()]}
+                activeCommentId={null}
+                currentUserId="u1"
+                onSelect={onSelect}
+                onResolve={vi.fn()}
+                onDelete={vi.fn()}
+            />
+        );
+        const item = screen.getByTestId('comment-item');
+        expect(item).toHaveAttribute('role', 'button');
+        expect(item).toHaveAttribute('tabIndex', '0');
+        fireEvent.keyDown(item, { key: 'Enter' });
+        fireEvent.keyDown(item, { key: ' ' });
+        expect(onSelect).toHaveBeenCalledTimes(2);
+        expect(onSelect).toHaveBeenCalledWith('c1');
+    });
+
     it('calls onResolve with the toggled state and does not also trigger onSelect', () => {
         const onResolve = vi.fn();
         const onSelect = vi.fn();

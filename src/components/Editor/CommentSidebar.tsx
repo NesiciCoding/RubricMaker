@@ -45,7 +45,15 @@ export default function CommentSidebar({
                     <div
                         key={c.id}
                         data-testid="comment-item"
+                        role="button"
+                        tabIndex={0}
                         onClick={() => onSelect(c.id)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                onSelect(c.id);
+                            }
+                        }}
                         style={{
                             padding: '8px 10px',
                             borderRadius: 6,

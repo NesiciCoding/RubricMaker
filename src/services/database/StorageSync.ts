@@ -103,6 +103,7 @@ class StorageSyncService {
         { table: 'news_flashes', filterColumn: 'owner_id' },
         { table: 'news_flash_reads', filterColumn: 'owner_id' },
         { table: 'question_bank_items', filterColumn: 'owner_id' },
+        { table: 'document_comments', filterColumn: 'owner_id' },
     ];
     private static readonly REALTIME_DEBOUNCE_MS = 800;
 
