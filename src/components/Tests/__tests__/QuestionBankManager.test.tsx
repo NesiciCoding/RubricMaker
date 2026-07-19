@@ -281,6 +281,28 @@ describe('QuestionBankManager', () => {
         expect(screen.getAllByLabelText('questionBank.select_item_label')).toHaveLength(5);
     });
 
+    it('clamps currentPage after deletions shrink the page count (no filter change)', () => {
+        questionBank = Array.from({ length: 51 }, (_, i) => ({
+            id: `p${i}`,
+            question: { id: `sp${i}`, prompt: `Paginated question ${i}`, type: 'short-answer' as const, points: 1 },
+            tags: [],
+            createdAt: `2026-02-${String((i % 28) + 1).padStart(2, '0')}T00:00:00.000Z`,
+        }));
+        const { rerender } = render(<QuestionBankManager />);
+        fireEvent.click(screen.getByLabelText('questionBank.pagination_next'));
+        fireEvent.click(screen.getByLabelText('questionBank.pagination_next'));
+        expect(screen.getByText('questionBank.pagination_page_label:{"current":3,"total":3}')).toBeInTheDocument();
+
+        // Simulate the lone item on page 3 being deleted (e.g. via bulk delete) without any
+        // search/tag/filter change — filterSignature stays the same, so only the totalPages-driven
+        // clamp effect (not the filterSignature effect) can bring currentPage back in range.
+        questionBank = questionBank.slice(0, 50);
+        rerender(<QuestionBankManager />);
+
+        expect(screen.getByText('questionBank.pagination_page_label:{"current":2,"total":2}')).toBeInTheDocument();
+        expect(screen.getAllByLabelText('questionBank.select_item_label')).toHaveLength(25);
+    });
+
     it('resets to page 1 when a filter changes', () => {
         questionBank = Array.from({ length: 30 }, (_, i) => ({
             id: `p${i}`,

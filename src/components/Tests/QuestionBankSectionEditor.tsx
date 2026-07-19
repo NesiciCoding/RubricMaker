@@ -55,13 +55,14 @@ export default function QuestionBankSectionEditor({ section, onChange }: Props) 
             </div>
 
             <div className="form-group" style={{ marginBottom: 0 }}>
-                <label>{t('tests.section_passage_label')}</label>
+                <label id="bank-section-passage-label">{t('tests.section_passage_label')}</label>
                 <EssayEditor
                     content={section.content ?? ''}
                     onChange={(html) => patch({ content: html })}
                     placeholder={t('tests.section_passage_placeholder')}
                     minHeight={160}
                     allowPageMode={false}
+                    ariaLabelledBy="bank-section-passage-label"
                 />
             </div>
 

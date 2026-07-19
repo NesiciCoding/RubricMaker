@@ -131,6 +131,11 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
     }, [filterSignature]);
 
     const totalPages = manager ? Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE)) : 1;
+
+    useEffect(() => {
+        setCurrentPage((p) => Math.min(p, totalPages));
+    }, [totalPages]);
+
     const pagedItems = manager
         ? filteredItems.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
         : filteredItems;

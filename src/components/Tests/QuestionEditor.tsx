@@ -409,6 +409,7 @@ export default function QuestionEditor({
                     )}
                     {showRemove && (
                         <button
+                            type="button"
                             className="btn btn-ghost btn-icon btn-sm"
                             aria-label={t('tests.remove_question')}
                             style={{ color: 'var(--red)' }}
