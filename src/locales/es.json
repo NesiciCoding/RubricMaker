@@ -1727,7 +1727,9 @@
         "table_linked_rubric": "Rúbrica Vinculada",
         "table_linked_student": "Estudiante Vinculado",
         "table_added": "Añadido",
-        "table_actions": "Acciones"
+        "table_actions": "Acciones",
+        "view_formatted": "Vista con formato",
+        "view_original": "Ver como se envió"
     },
     "exportPage": {
         "rubric_section_title": "Exportación de Rúbrica",
@@ -2468,6 +2470,8 @@
         "gr_feedback_item_voice": "Calificación por voz — dicta comentarios con las manos libres usando la API de reconocimiento de voz del navegador.",
         "gr_feedback_item_notes": "Notas por criterio además del campo de retroalimentación general.",
         "gr_feedback_item_attachments": "Archivos adjuntos — sube archivos de evidencia (imágenes, PDF) por rúbrica calificada.",
+        "gr_document_view_title": "Vista de documento",
+        "gr_document_view_body": "Las entregas de ensayos y los archivos Word (.docx) adjuntos se muestran ahora en la misma vista de documento paginada y con formato, tanto en la calificación individual como en la comparativa — sin más volcados de HTML sin formato ni un visor de Word inconsistente. Para archivos .docx, un interruptor \"Ver como se envió\" cambia a la representación del archivo original si la conversión con formato pierde detalles de diseño.",
         "gr_comparative_title": "Calificación comparativa",
         "gr_comparative_body_prefix": "Haz clic en",
         "gr_comparative_button": "Comparar",

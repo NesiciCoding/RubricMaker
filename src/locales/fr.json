@@ -1727,7 +1727,9 @@
         "table_linked_rubric": "Rubrique liée",
         "table_linked_student": "Élève lié",
         "table_added": "Ajouté le",
-        "table_actions": "Actions"
+        "table_actions": "Actions",
+        "view_formatted": "Vue mise en forme",
+        "view_original": "Afficher tel qu'envoyé"
     },
     "exportPage": {
         "rubric_section_title": "Export de rubrique",
@@ -2468,6 +2470,8 @@
         "gr_feedback_item_voice": "Notation vocale — dictez des commentaires mains libres à l'aide de l'API de reconnaissance vocale du navigateur.",
         "gr_feedback_item_notes": "Notes par critère en plus du champ de feedback global.",
         "gr_feedback_item_attachments": "Pièces jointes — téléchargez des fichiers justificatifs (images, PDF) par rubrique notée.",
+        "gr_document_view_title": "Vue du document",
+        "gr_document_view_body": "Les copies d'essai et les pièces jointes Word (.docx) importées s'affichent désormais dans la même vue de document paginée et mise en forme, en notation individuelle comme comparative — fini le dump HTML brut ou la visionneuse Word incohérente. Pour les fichiers .docx, un bouton « Afficher tel qu'envoyé » bascule vers le rendu du fichier original si la conversion mise en forme perd des détails de mise en page.",
         "gr_comparative_title": "Notation comparative",
         "gr_comparative_body_prefix": "Cliquez sur",
         "gr_comparative_button": "Comparer",

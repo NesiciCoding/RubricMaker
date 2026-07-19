@@ -1727,7 +1727,9 @@
         "table_linked_rubric": "Gekoppelde Rubriek",
         "table_linked_student": "Gekoppelde Leerling",
         "table_added": "Toegevoegd",
-        "table_actions": "Acties"
+        "table_actions": "Acties",
+        "view_formatted": "Opgemaakte weergave",
+        "view_original": "Weergeven zoals verzonden"
     },
     "exportPage": {
         "rubric_section_title": "Rubriekexport",
@@ -2468,6 +2470,8 @@
         "gr_feedback_item_voice": "Spraakbeoordeling — dicteer opmerkingen handsfree met de spraakherkenning-API van de browser.",
         "gr_feedback_item_notes": "Opmerkingen per criterium naast het algemene feedbackveld.",
         "gr_feedback_item_attachments": "Bijlagen — upload bewijsbestanden (afbeeldingen, PDF's) per beoordeelde rubriek.",
+        "gr_document_view_title": "Documentweergave",
+        "gr_document_view_body": "Essayinzendingen en geüploade Word-bijlagen (.docx) worden weergegeven in dezelfde opgemaakte, gepagineerde documentweergave, zowel bij individuele als vergelijkende beoordeling — geen rauwe HTML-dump of afwijkende Word-viewer meer. Voor .docx-bestanden schakelt een knop \"Weergeven zoals verzonden\" over naar de originele bestandsweergave als de opgemaakte conversie lay-outdetails verliest.",
         "gr_comparative_title": "Vergelijkend beoordelen",
         "gr_comparative_body_prefix": "Klik op",
         "gr_comparative_button": "Vergelijken",

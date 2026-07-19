@@ -1,16 +1,27 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { renderAsync } from 'docx-preview';
+import DOMPurify from 'dompurify';
+import { useTranslation } from 'react-i18next';
 import { Download, FileText, ImageIcon, Loader } from 'lucide-react';
 import { Attachment } from '../../types';
+import { convertDocxToHtml } from '../../utils/textExtraction';
+import EssayEditor from '../Editor/EssayEditor';
 
 interface Props {
     attachment: Attachment;
 }
 
+const noop = () => {};
+
 export default function AttachmentViewer({ attachment }: Props) {
+    const { t } = useTranslation();
     const docxRef = useRef<HTMLDivElement>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [docxHtml, setDocxHtml] = useState<string | null>(null);
+    const [docxHtmlFailed, setDocxHtmlFailed] = useState(false);
+    const [viewMode, setViewMode] = useState<'formatted' | 'original'>('formatted');
+    const originalRendered = useRef(false);
 
     const isImage = attachment.mimeType.startsWith('image/');
     const isPdf = attachment.mimeType === 'application/pdf';
@@ -19,10 +30,44 @@ export default function AttachmentViewer({ attachment }: Props) {
         attachment.name.endsWith('.docx');
     const isHtml = attachment.mimeType === 'text/html' || attachment.name.endsWith('.html');
 
+    const essayHtml = useMemo(() => {
+        if (!isHtml || !attachment.dataUrl) return '';
+        try {
+            const base64 = attachment.dataUrl.split(',')[1];
+            const decoded = decodeURIComponent(escape(atob(base64)));
+            return DOMPurify.sanitize(decoded);
+        } catch {
+            return '';
+        }
+    }, [isHtml, attachment.dataUrl]);
+
+    // Mammoth's semantic HTML conversion feeds the shared read-only page view (default).
     useEffect(() => {
-        if (!isDocx || !attachment.dataUrl || !docxRef.current) return;
+        if (!isDocx || !attachment.dataUrl) return;
+        let cancelled = false;
+        convertDocxToHtml(attachment.dataUrl)
+            .then((html) => {
+                if (!cancelled) setDocxHtml(html);
+            })
+            .catch((err) => {
+                console.error('Error converting docx to html:', err);
+                if (!cancelled) {
+                    setDocxHtmlFailed(true);
+                    setViewMode('original');
+                }
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [isDocx, attachment.dataUrl]);
+
+    // docx-preview's own render — the "view as sent" fallback, only rendered once actually viewed.
+    useEffect(() => {
+        if (!isDocx || viewMode !== 'original' || originalRendered.current || !attachment.dataUrl || !docxRef.current)
+            return;
 
         const loadDocx = async () => {
+            originalRendered.current = true;
             setLoading(true);
             try {
                 // Convert base64 dataUrl back to Blob for docx-preview
@@ -50,7 +95,7 @@ export default function AttachmentViewer({ attachment }: Props) {
         };
 
         loadDocx();
-    }, [isDocx, attachment.dataUrl]);
+    }, [isDocx, viewMode, attachment.dataUrl]);
 
     return (
         <div
@@ -114,55 +159,107 @@ export default function AttachmentViewer({ attachment }: Props) {
             )}
 
             {isDocx && (
+                <div style={{ width: '100%', marginTop: 8 }}>
+                    {!docxHtmlFailed && (docxHtml !== null || viewMode === 'original') && (
+                        <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
+                            <button
+                                type="button"
+                                className={`btn btn-sm ${viewMode === 'formatted' ? 'btn-primary' : 'btn-ghost'}`}
+                                onClick={() => setViewMode('formatted')}
+                            >
+                                {t('attachments.view_formatted')}
+                            </button>
+                            <button
+                                type="button"
+                                className={`btn btn-sm ${viewMode === 'original' ? 'btn-primary' : 'btn-ghost'}`}
+                                onClick={() => setViewMode('original')}
+                            >
+                                {t('attachments.view_original')}
+                            </button>
+                        </div>
+                    )}
+
+                    {viewMode === 'formatted' && !docxHtmlFailed && (
+                        <div
+                            style={{
+                                maxHeight: 500,
+                                overflowY: 'auto',
+                                borderRadius: 4,
+                                border: '1px solid var(--border)',
+                            }}
+                        >
+                            {docxHtml !== null ? (
+                                <EssayEditor
+                                    content={docxHtml}
+                                    onChange={noop}
+                                    editable={false}
+                                    defaultPageMode
+                                    allowPageMode={false}
+                                />
+                            ) : (
+                                <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>
+                                    <Loader size={20} className="spin" style={{ marginBottom: 8 }} />
+                                    <div>Loading preview...</div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {viewMode === 'original' && (
+                        <div
+                            style={{
+                                background: '#fff',
+                                color: '#000',
+                                borderRadius: 4,
+                                border: '1px solid var(--border)',
+                                overflow: 'hidden',
+                            }}
+                        >
+                            {loading && (
+                                <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>
+                                    <Loader size={20} className="spin" style={{ marginBottom: 8 }} />
+                                    <div>Loading preview...</div>
+                                </div>
+                            )}
+                            {error && (
+                                <div style={{ padding: 20, textAlign: 'center', color: 'var(--red)' }}>{error}</div>
+                            )}
+                            <div
+                                ref={docxRef}
+                                style={{
+                                    width: '100%',
+                                    maxHeight: '400px',
+                                    overflowY: 'auto',
+                                    backgroundColor: '#f2f2f2', // Classic word viewer background
+                                }}
+                            />
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {isHtml && attachment.dataUrl && essayHtml && (
                 <div
                     style={{
                         width: '100%',
                         marginTop: 8,
-                        background: '#fff',
-                        color: '#000',
+                        maxHeight: 500,
+                        overflowY: 'auto',
                         borderRadius: 4,
                         border: '1px solid var(--border)',
-                        overflow: 'hidden',
                     }}
                 >
-                    {loading && (
-                        <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>
-                            <Loader size={20} className="spin" style={{ marginBottom: 8 }} />
-                            <div>Loading preview...</div>
-                        </div>
-                    )}
-                    {error && <div style={{ padding: 20, textAlign: 'center', color: 'var(--red)' }}>{error}</div>}
-                    <div
-                        ref={docxRef}
-                        style={{
-                            width: '100%',
-                            maxHeight: '400px',
-                            overflowY: 'auto',
-                            backgroundColor: '#f2f2f2', // Classic word viewer background
-                        }}
+                    <EssayEditor
+                        content={essayHtml}
+                        onChange={noop}
+                        editable={false}
+                        defaultPageMode
+                        allowPageMode={false}
                     />
                 </div>
             )}
 
-            {isHtml && attachment.dataUrl && (
-                <div style={{ width: '100%', height: '400px', marginTop: 8 }}>
-                    <iframe
-                        src={attachment.dataUrl}
-                        sandbox=""
-                        style={{
-                            width: '100%',
-                            height: '100%',
-                            borderRadius: 4,
-                            border: '1px solid var(--border)',
-                            background: '#fff',
-                            colorScheme: 'light',
-                        }}
-                        title={attachment.name}
-                    />
-                </div>
-            )}
-
-            {!isImage && !isPdf && !isDocx && !isHtml && (
+            {((!isImage && !isPdf && !isDocx && !isHtml) || (isHtml && attachment.dataUrl && !essayHtml)) && (
                 <div
                     className="text-xs text-muted"
                     style={{
