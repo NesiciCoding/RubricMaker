@@ -17,18 +17,32 @@ Key domains:
 
 ```bash
 npm run dev          # Vite dev server at http://localhost:5173
-npm run build        # Production build → dist/
-npm run typecheck    # tsc --noEmit (run before commits)
-npm run lint         # ESLint check
-npm run format       # Prettier
-npm test             # Vitest unit tests (watch mode)
-npm run coverage     # Coverage report (thresholds: 50% lines/statements)
+npm run build        # tsc && vite build → dist/
+npm run typecheck    # tsc --noEmit (run before commits; also runs in the pre-push hook)
+npm run lint         # ESLint check (src only)
+npm run format       # Prettier write
+npm test             # Vitest, single run (NOT watch mode — use `npx vitest` for watch)
+npm run coverage     # Coverage report (thresholds: 65% lines/statements, 60% functions, 58% branches)
+
+# Single test file / single test
+npx vitest run src/utils/gradeCalc.test.ts
+npx vitest run -t "test name substring"
+
+# Playwright e2e (testDir: e2e/specs, baseURL http://localhost:5173 — needs `npm run dev` running separately)
+npm run e2e              # all specs, chromium + firefox projects
+npm run e2e:chromium      # chromium only, faster local loop
+npm run e2e -- e2e/specs/04-grading.spec.ts   # single spec
+npm run e2e:ui            # Playwright UI mode
+npm run e2e:supabase      # the Supabase-dependent specs excluded from the default projects (needs `npm run db:start` first)
 
 # Supabase local dev
 npm run db:start     # Start local Supabase stack
 npm run db:stop      # Stop it
 npm run db:reset     # Reset and re-apply all migrations
+npm run db:status     # Print local stack connection info/ports
 ```
+
+A pre-commit hook runs `lint-staged` (ESLint --fix + Prettier on staged files); pre-push runs `npm run typecheck`.
 
 ## Tech stack
 
@@ -70,6 +84,12 @@ When a Supabase connection is live, `localStorage` is no longer a permanent dupl
 - On reconnect, `StorageSync.flushPendingQueue()` retries the queue; on initial connect/login, `hydrate()` pulls from Supabase and writes a merged snapshot back to `localStorage` purely as an offline-readiness cache for the next boot — not as a live mirror of every edit.
 
 Do not reintroduce code that writes a full entity array to `localStorage` unconditionally — gate it through `isOffline()` (or the existing pending-queue mechanism) so a connected session doesn't keep a redundant local copy.
+
+Conflict resolution for concurrent edits from different devices lives in `src/utils/syncMerge.ts` (per-record conflicts resolve last-write-wins by `updatedAt`, with in-flight pending-queue edits protected from being clobbered by a stale hydrate) and `src/utils/syncDiff.ts` (diffs a collection before/after a merge). Do not hand-roll merge logic elsewhere.
+
+`src/services/database/` (adapters, `StorageSync`, `@supabase/supabase-js` itself) is dynamically imported via `loadDb()`/`getDb()` in `src/services/database/lazyDb.ts` rather than imported at module scope everywhere — this keeps the Supabase client chunk (~450KB) out of routes/components that never need a DB connection (e.g. `LoginButtons`). Route-level pages that always need sync (`RubricList`, `AdminPage`, etc.) can import `services/database` directly since they're already code-split by React Router lazy-loading. Prefer `loadDb()`/`getDb()` for anything rendered outside a specific lazy-loaded route.
+
+`supabase/CLAUDE.md` has the full schema/migrations/RLS/edge-function reference — read it before touching anything under `supabase/`.
 
 ### State management
 
@@ -122,25 +142,33 @@ Write no comments unless the *why* is non-obvious. Never describe what the code 
 - Unit tests live alongside the file they test (`foo.ts` → `foo.test.ts`) or in a `__tests__/` subdirectory.
 - Use `src/test-utils/renderWithProviders.tsx` to render components that need context.
 - Do not mock `localStorage` globally; tests use the jsdom implementation.
-- Keep coverage above the thresholds: 50% lines/statements, 37% functions/branches.
+- Keep coverage above the thresholds: 65% lines/statements, 60% functions, 58% branches (`vite.config.ts`).
+- `src/locales/__tests__/` asserts every non-English locale has the same key set as `en.json` for at least the `cambridge` namespace — new locale keys that are only added to `en.json` will fail this test.
+- E2E specs (`e2e/specs/*.spec.ts`, Playwright) use a Page Object Model in `e2e/pages/` and shared fixtures/factories in `e2e/fixtures/`. Specs that require a live Supabase connection are excluded from the default `chromium`/`firefox` projects in `playwright.config.ts` and only run via `npm run e2e:supabase`.
 
 ## Directory structure
 
 ```
 src/
-  context/        React contexts (state)
-  store/          localStorage + Supabase persistence wrapper
-  services/       External integrations (Supabase adapters, Standards API)
-  utils/          Pure business logic (grade calc, CEFR aggregation, export, etc.)
+  context/        React contexts (state): AppContext, ToastContext, MobileMenuContext
+  store/          localStorage + Supabase persistence wrapper (storage.ts is the single write point)
+  services/       External integrations — services/database/ (Supabase adapters, StorageSync, lazyDb),
+                  services/logging/ (client logger), standardsApi, cambridgeApi, mediaStore
+  utils/          Pure business logic (grade calc, CEFR/placement/mastery aggregation, sync merge, export, etc.)
   hooks/          Custom React hooks
-  components/     Reusable UI (modals, editor, charts, CEFR, layout, auth)
-  pages/          Route-level page components
+  components/     Reusable UI, grouped by domain (CEFR, Editor, Essay, Flashcards, Tests, Vocabulary,
+                  Monitor, Recordings, Standards, Students, Statistics, auth, ui, Modals, Layout, ...)
+  pages/          Route-level page components (lazy-loaded by React Router)
   data/           Static reference data (CEFR descriptors, templates)
   types/          Domain model types
-  locales/        i18n JSON files (en, nl, fr, de, es)
+  locales/        i18n JSON files (en, nl, fr, de, es) + a key-parity test
 supabase/
-  migrations/     SQL migrations (numbered, sequential)
+  migrations/     SQL migrations (numbered, sequential) — see supabase/CLAUDE.md
   functions/      Edge functions (Deno)
+e2e/
+  specs/          Playwright test specs
+  pages/          Page Object Model classes
+  fixtures/       Shared fixtures, data factories, storage helpers
 ```
 
 ## Environment variables
@@ -150,7 +178,7 @@ VITE_SUPABASE_URL=       # optional — Supabase project URL
 VITE_SUPABASE_ANON_KEY=  # optional — public anon key
 ```
 
-When both are unset, all sync is disabled and the app runs fully offline.
+When both are unset, all sync is disabled and the app runs fully offline. `.env.docker.example`, `.env.observability.example`, and `.env.production.example` are for the Docker/self-hosted deployment stack (Caddy, backups, Loki/Promtail/Grafana), not the frontend build — see `docs/` and the README's Deployment section rather than this file for those.
 
 ## Deployment
 
@@ -194,19 +222,17 @@ Keep card descriptions short (one sentence, no jargon) and written from the user
 
 ## Key utility modules
 
+Non-exhaustive — pointers to the modules most likely to matter across files. For the complete, currently-maintained list see README.md's "Key utility modules" table (kept in sync per the documentation-maintenance rule above).
+
 | File | Purpose |
 |---|---|
 | `src/utils/gradeCalc.ts` | Score aggregation and weighted scoring engine |
 | `src/utils/cefrStudentAggregator.ts` | CEFR level computation across assessments |
-| `src/utils/learningGoalsAggregator.ts` | Learning goal progress tracking |
-| `src/utils/docxExport.ts` | DOCX generation via `docx` library |
-| `src/utils/docxTemplateExport.ts` | Mail-merge DOCX with field substitution |
-| `src/utils/pdfExport.ts` | PDF report generation |
+| `src/utils/syncMerge.ts` / `syncDiff.ts` | Cloud/local conflict resolution (last-write-wins) and collection diffing — see the Storage rule above |
+| `src/utils/placementRouting.ts` / `placementResult.ts` | Placement-test section routing and provisional CEFR estimate |
+| `src/utils/masteryProfileAggregator.ts` / `learningPathAggregator.ts` | Cross-domain grammar mastery and rule-based (no AI) learning-path recommendations |
+| `src/utils/globalSearch.ts` | Token-aware (`type:`/`class:`/`year:`/`track:`) app-wide search |
+| `src/utils/docxExport.ts` / `docxTemplateExport.ts` / `pdfExport.ts` | Export generation (raw and mail-merge DOCX, PDF) |
 | `src/utils/textExtraction.ts` | OCR (Tesseract) + DOCX parsing (Mammoth) |
-| `src/utils/essayShareCode.ts` | Shareable codes for essay access (no auth needed) |
-| `src/utils/pinHash.ts` | PIN hashing for student self-assessment locks |
-| `src/utils/clozeParse.ts` | Parses `{{...}}` cloze gap syntax and `[[...]]` hot-text fragment syntax for test questions |
-| `src/utils/flashcardScheduler.ts` | Thin `ts-fsrs` wrapper (FSRS spaced repetition): rating, study queue, interval preview |
-| `src/utils/flashcardImport.ts` | Flashcard import from CSV/XLSX/DOCX/TXT |
-| `src/utils/flashcardInsights.ts` | Per-deck learner insights (stage counts, due cards, focus words) from FSRS state |
+| `src/utils/flashcardScheduler.ts` | Thin `ts-fsrs` wrapper (FSRS spaced repetition) |
 | `src/services/standardsApi.ts` | Common Standards Project API (CCSS, NGSS) |
