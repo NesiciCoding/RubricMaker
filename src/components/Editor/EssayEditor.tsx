@@ -65,6 +65,8 @@ interface EssayEditorProps {
     /** Whether the A4 "page view" toggle is offered. Defaults to true; set false for short fields
      * (e.g. a question prompt) where a full simulated page makes no sense. */
     allowPageMode?: boolean;
+    /** id of an external <label> describing this editor, forwarded to the content-editable region for screen readers. */
+    ariaLabelledBy?: string;
 }
 
 function Divider() {
@@ -124,6 +126,7 @@ export default function EssayEditor({
     defaultPageMode = false,
     minHeight = 420,
     allowPageMode = true,
+    ariaLabelledBy,
 }: EssayEditorProps) {
     const { t } = useTranslation();
     const colorInputRef = useRef<HTMLInputElement>(null);
@@ -137,7 +140,12 @@ export default function EssayEditor({
         content,
         editable,
         onUpdate: ({ editor }) => onChange(editor.getHTML()),
-        editorProps: { attributes: { class: 'essay-editor-content' } },
+        editorProps: {
+            attributes: {
+                class: 'essay-editor-content',
+                ...(ariaLabelledBy ? { 'aria-labelledby': ariaLabelledBy } : {}),
+            },
+        },
     });
 
     // Sync the editable prop dynamically — TipTap only reads it at init time.

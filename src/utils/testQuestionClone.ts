@@ -1,6 +1,21 @@
 import { nanoid } from './nanoid';
 import type { TestQuestion, TestSection, QuestionBankItem } from '../types';
 
+/** Default shape for a freshly-added question — shared by the Test Builder and the Question Bank's section editor. */
+export function newQuestion(sectionId?: string): TestQuestion {
+    return {
+        id: nanoid(),
+        prompt: '',
+        type: 'multiple-choice',
+        points: 1,
+        sectionId,
+        options: [
+            { id: nanoid(), text: '', isCorrect: true },
+            { id: nanoid(), text: '', isCorrect: false },
+        ],
+    };
+}
+
 /**
  * Regenerates the question's own id plus every nested option/pair/item id.
  * Required when inserting a bank question into a test — reusing the stored
