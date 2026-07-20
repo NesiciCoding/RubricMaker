@@ -1317,9 +1317,20 @@ export class SupabaseAdapter {
      * 'test' session is the per-student teacherKey (matching what StudentTestPage actually
      * broadcasts on via useLiveSessionTelemetry) — testId/studentId alone can't derive it,
      * since TestAssignmentModal mints a fresh nanoid per share link.
+     *
+     * saveTestAssignment() upserts by `id` (the teacherKey), not by (test_id, student_id),
+     * so re-sharing the same test to the same student (e.g. reopening the assign modal)
+     * leaves the old row in place alongside the new one — two rows, two teacherKeys, one
+     * student. Ordering by created_at ascending means the later insert wins the map below
+     * (Object.fromEntries keeps the last duplicate key), matching the share link the
+     * student was actually just handed, rather than an arbitrary DB-returned order.
      */
     async fetchTestAssignmentTeacherKeys(testId: string): Promise<Record<string, string>> {
-        const { data, error } = await this.db().from('test_assignments').select('id, student_id').eq('test_id', testId);
+        const { data, error } = await this.db()
+            .from('test_assignments')
+            .select('id, student_id')
+            .eq('test_id', testId)
+            .order('created_at', { ascending: true });
         if (error || !data) return {};
         return Object.fromEntries(data.map((r) => [r.student_id, r.id]));
     }

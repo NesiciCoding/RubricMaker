@@ -33,7 +33,7 @@ test.describe('Marketplace', () => {
         await builder.waitForSaved();
         await supabasePage.waitForLoadState('networkidle', { timeout: 15_000 });
 
-        await supabasePage.goto('http://localhost:5173/#/marketplace');
+        await supabasePage.goto('/#/marketplace');
         await supabasePage.waitForSelector('.page-content', { timeout: 15_000 });
 
         await supabasePage.getByRole('button', { name: 'Publish' }).click();
@@ -48,7 +48,7 @@ test.describe('Marketplace', () => {
         await expect(ownListing.getByText('Rubric', { exact: true })).toBeVisible();
 
         // A colleague at the same school sees the published listing.
-        await colleaguePage.goto('http://localhost:5173/#/marketplace');
+        await colleaguePage.goto('/#/marketplace');
         await colleaguePage.waitForSelector('.page-content', { timeout: 15_000 });
         const colleagueListing = colleaguePage.locator('.card').filter({ hasText: 'Marketplace Rubric' });
         await expect(colleagueListing).toBeVisible({ timeout: 15_000 });
@@ -72,7 +72,7 @@ test.describe('Marketplace', () => {
         await builder.waitForSaved();
         await supabasePage.waitForLoadState('networkidle', { timeout: 15_000 });
 
-        await supabasePage.goto('http://localhost:5173/#/marketplace');
+        await supabasePage.goto('/#/marketplace');
         await supabasePage.waitForSelector('.page-content', { timeout: 15_000 });
 
         await supabasePage.getByRole('button', { name: 'Publish' }).click();

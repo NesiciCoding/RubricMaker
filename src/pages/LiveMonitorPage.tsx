@@ -94,9 +94,18 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     useEffect(() => {
         if (kind !== 'test' || !test || !hasDb) return;
         let cancelled = false;
-        fetchTestAssignmentTeacherKeys(test.id).then((keys) => {
-            if (!cancelled) setTestTeacherKeys(keys);
-        });
+        // Reset before fetching: this effect re-fires when `test.id` changes (the route
+        // doesn't remount LiveMonitorPage between two tests' monitor pages), and without
+        // this a student who overlaps between the two tests would transiently render
+        // keyed to the PREVIOUS test's teacherKey/channel until the new fetch resolves.
+        setTestTeacherKeys({});
+        fetchTestAssignmentTeacherKeys(test.id)
+            .then((keys) => {
+                if (!cancelled) setTestTeacherKeys(keys);
+            })
+            .catch(() => {
+                if (!cancelled) setTestTeacherKeys({});
+            });
         return () => {
             cancelled = true;
         };
