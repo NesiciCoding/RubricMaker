@@ -75,15 +75,17 @@ export function calcRawScore(entries: ScoreEntry[], criteria: RubricCriterion[])
 
 /** Maximum possible raw score (uses maxPoints per level) */
 export function calcMaxRawScore(criteria: RubricCriterion[]): number {
-    return criteria.reduce((sum, c) => {
-        const max = Math.max(...c.levels.map((l) => l.maxPoints), 0);
-        return sum + max;
-    }, 0);
+    return criteria.reduce((sum, c) => sum + criterionMaxPoints(c), 0);
 }
 
 /** Maximum points for a single criterion (uses maxPoints per level) */
 export function criterionMaxPoints(criterion: RubricCriterion): number {
     return Math.max(...criterion.levels.map((l) => l.maxPoints), 0);
+}
+
+/** Same as criterionMaxPoints, but floors at 1 to safely divide averaged (multi-student) scores. */
+export function criterionMaxPointsOrOne(criterion: RubricCriterion): number {
+    return criterionMaxPoints(criterion) || 1;
 }
 
 /** Percentage 0–100 a single scored entry earned against its criterion's max points */

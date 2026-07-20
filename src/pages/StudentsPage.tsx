@@ -80,7 +80,7 @@ function buildStudentSummary(
                 }
                 const level = entry.levelId ? c.levels.find((l) => l.id === entry.levelId) : null;
                 const pts = calcEntryPoints(entry, c);
-                const max = criterionMaxPoints(c) || 1;
+                const max = criterionMaxPoints(c);
                 const levelLabel = level ? `${level.label} (${pts}/${max} pts)` : `${pts}/${max} pts`;
                 lines.push(`  ${c.title}: ${levelLabel}`);
                 if (entry.comment) {

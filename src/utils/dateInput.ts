@@ -5,7 +5,6 @@ export function toLocalDatetimeInput(iso: string): string {
     return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
 }
 
-/** Locale-formatted short date, e.g. "Jul 20, 2026". */
 export function formatShortDate(iso: string): string {
     return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }

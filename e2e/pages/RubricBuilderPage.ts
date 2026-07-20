@@ -53,10 +53,7 @@ export class RubricBuilderPage extends BasePage {
         // page.  Accept either signal: the button text (edit flows) OR the URL
         // leaving /rubrics/new (create flows).
         await Promise.any([
-            this.page
-                .locator('.topbar button.btn-primary')
-                .filter({ hasText: /saved/i })
-                .waitFor({ timeout: 8_000 }),
+            this.page.locator('.topbar button.btn-primary').filter({ hasText: /saved/i }).waitFor({ timeout: 8_000 }),
             this.page.waitForURL(/\/#\/rubrics\/(?!new)[^/]*$/, { timeout: 8_000 }),
         ]);
     }
@@ -81,9 +78,9 @@ export class RubricBuilderPage extends BasePage {
     }
 
     async restoreVersion(index: number): Promise<void> {
-        this.page.once('dialog', (dialog) => dialog.accept());
         const restoreButtons = this.page.getByRole('button', { name: /restore/i });
         await restoreButtons.nth(index).click();
+        await this.page.getByRole('button', { name: /^confirm$/i }).click();
     }
 
     getNameError() {

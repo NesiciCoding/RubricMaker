@@ -25,7 +25,7 @@ export default function Avatar({ name, size, fontSize, style }: AvatarProps) {
                 ...style,
             }}
         >
-            {name.charAt(0).toUpperCase()}
+            {(name || '?').charAt(0).toUpperCase()}
         </div>
     );
 }

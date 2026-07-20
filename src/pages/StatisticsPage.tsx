@@ -15,7 +15,7 @@ import {
     calcGradeSummary,
     calcClassStats,
     calcEntryPoints,
-    criterionMaxPoints,
+    criterionMaxPointsOrOne,
     criterionPercentage,
     type GradeSummary,
 } from '../utils/gradeCalc';
@@ -204,7 +204,7 @@ export default function StatisticsPage() {
                     if (!entry) return 0;
                     return calcEntryPoints(entry, c);
                 });
-            const max = criterionMaxPoints(c) || 1;
+            const max = criterionMaxPointsOrOne(c);
             const avg = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
             return { name: c.title, avg: parseFloat(((avg / max) * 100).toFixed(1)), max };
         });
@@ -500,7 +500,7 @@ export default function StatisticsPage() {
                     const e = s.entries.find((e) => e.criterionId === c.id);
                     return e ? calcEntryPoints(e, c) : 0;
                 });
-            const max = criterionMaxPoints(c) || 1;
+            const max = criterionMaxPointsOrOne(c);
             classAvgMap[c.id] =
                 scores.length > 0
                     ? parseFloat(((scores.reduce((a, b) => a + b, 0) / scores.length / max) * 100).toFixed(1))

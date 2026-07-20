@@ -1,6 +1,7 @@
 import React from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { AlertTriangle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface ConfirmDialogProps {
     open: boolean;
@@ -17,12 +18,15 @@ export function ConfirmDialog({
     open,
     title,
     message,
-    confirmLabel = 'Confirm',
-    cancelLabel = 'Cancel',
+    confirmLabel,
+    cancelLabel,
     danger = true,
     onConfirm,
     onCancel,
 }: ConfirmDialogProps) {
+    const { t } = useTranslation();
+    const resolvedConfirmLabel = confirmLabel ?? t('common.confirm');
+    const resolvedCancelLabel = cancelLabel ?? t('common.cancel');
     return (
         <Dialog.Root open={open} onOpenChange={(v) => !v && onCancel()}>
             <Dialog.Portal>
@@ -56,14 +60,14 @@ export function ConfirmDialog({
                         style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}
                     >
                         <button className="btn btn-secondary" onClick={onCancel}>
-                            {cancelLabel}
+                            {resolvedCancelLabel}
                         </button>
                         <button
                             className={`btn ${danger ? 'btn-danger' : 'btn-primary'}`}
                             onClick={onConfirm}
                             autoFocus
                         >
-                            {confirmLabel}
+                            {resolvedConfirmLabel}
                         </button>
                     </div>
                 </Dialog.Content>

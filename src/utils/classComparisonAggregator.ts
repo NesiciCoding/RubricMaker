@@ -1,5 +1,5 @@
 import type { StudentRubric, Student, Rubric, RubricCriterion, GradeScale, Class } from '../types';
-import { calcGradeSummary, calcClassStats, calcEntryPoints, criterionMaxPoints } from './gradeCalc';
+import { calcGradeSummary, calcClassStats, calcEntryPoints, criterionMaxPointsOrOne } from './gradeCalc';
 
 export interface ClassComparisonResult {
     classId: string;
@@ -49,7 +49,7 @@ export function compareClasses(
                     const entry = sr.entries.find((e) => e.criterionId === c.id);
                     return entry ? calcEntryPoints(entry, c) : 0;
                 });
-                const maxPts = criterionMaxPoints(c) || 1;
+                const maxPts = criterionMaxPointsOrOne(c);
                 const avg = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
                 criterionAvgs[c.id] = parseFloat(((avg / maxPts) * 100).toFixed(1));
             }

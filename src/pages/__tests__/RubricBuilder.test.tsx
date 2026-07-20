@@ -483,7 +483,7 @@ describe('RubricBuilder', () => {
         // confirm the ConfirmDialog rendered with the restore message, then click its Confirm button.
         expect(await screen.findByText('rubricBuilder.confirm_restore')).toBeInTheDocument();
         await act(async () => {
-            fireEvent.click(screen.getByText('Confirm'));
+            fireEvent.click(screen.getByText('common.confirm'));
         });
         expect(mockRestoreRubricVersion).toHaveBeenCalledWith('r1', mockVersions[0].snapshot);
         expect(reloadSpy).toHaveBeenCalled();
@@ -604,7 +604,7 @@ describe('RubricBuilder', () => {
         // with the insert-speaking message, then click its Confirm button.
         expect(await screen.findByText('rubricBuilder.insert_speaking_confirm')).toBeInTheDocument();
         await act(async () => {
-            fireEvent.click(screen.getByText('Confirm'));
+            fireEvent.click(screen.getByText('common.confirm'));
         });
         expect(screen.getAllByPlaceholderText('rubricBuilder.placeholder_criterion_name')).toHaveLength(6);
     });
