@@ -448,6 +448,10 @@ class StorageSyncService {
         return this.adapter.fetchAssignedTestContent(testId);
     }
 
+    async fetchTestAssignmentTeacherKeys(testId: string): Promise<Record<string, string>> {
+        return this.adapter.fetchTestAssignmentTeacherKeys(testId);
+    }
+
     async fetchMyMessages() {
         return this.adapter.fetchMyMessages();
     }

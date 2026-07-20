@@ -3,7 +3,16 @@ import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AppProvider, useApp } from './AppContext';
 import * as storage from '../store/storage';
+import { storageSync } from '../services/database';
 import type { Rubric, GradeScale } from '../types';
+
+// vi.hoisted so this spy can be created before vi.mock('../hooks/useToast', ...) runs
+// (vi.mock factories are hoisted above regular imports/consts) and still be referenced
+// from inside tests below.
+const mockShowToast = vi.hoisted(() => vi.fn());
+vi.mock('../hooks/useToast', () => ({
+    useToast: () => ({ showToast: mockShowToast }),
+}));
 
 // Mock storage functions so we don't actually write to localStorage/IndexedDB during tests
 vi.mock('../store/storage', () => ({
@@ -60,7 +69,7 @@ vi.mock('../store/storage', () => ({
 // tests don't pull in real @supabase/supabase-js and leave dangling imports past teardown.
 vi.mock('../services/database', () => ({
     storageSync: {
-        isConnected: () => false,
+        isConnected: vi.fn(() => false),
         getCurrentUserId: () => null,
         adapter: { getClient: () => null },
         onNetworkReconnect: () => () => {},
@@ -574,5 +583,36 @@ describe('AppContext', () => {
 
         expect(result.current.settings.theme).toBe('dark');
         expect(storage.saveSettings).toHaveBeenCalled();
+    });
+
+    // isOffline() = !navigator.onLine || !storageSync.isConnected() — jsdom's
+    // navigator.onLine defaults to true, so these two branches are driven purely by
+    // storageSync.isConnected().
+    describe('storage-quota-exceeded toast gating', () => {
+        function triggerQuotaExceeded() {
+            const registered = vi.mocked(storage.onStorageQuotaExceeded).mock.calls[0]?.[0];
+            expect(registered).toBeDefined();
+            act(() => {
+                registered!();
+            });
+        }
+
+        it('shows the storage_full toast when the quota is exceeded while offline/disconnected', () => {
+            vi.mocked(storageSync.isConnected).mockReturnValue(false);
+            renderHook(() => useApp(), { wrapper });
+
+            triggerQuotaExceeded();
+
+            expect(mockShowToast).toHaveBeenCalledWith(expect.any(String), 'error');
+        });
+
+        it('stays silent when the quota is exceeded while connected — Supabase already has the real data', () => {
+            vi.mocked(storageSync.isConnected).mockReturnValue(true);
+            renderHook(() => useApp(), { wrapper });
+
+            triggerQuotaExceeded();
+
+            expect(mockShowToast).not.toHaveBeenCalled();
+        });
     });
 });

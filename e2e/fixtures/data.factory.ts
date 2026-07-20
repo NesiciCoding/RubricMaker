@@ -1,4 +1,4 @@
-import type { Rubric, Student, Class, StudentRubric, ScoreEntry, AppSettings } from '../../src/types';
+import type { Rubric, Student, Class, StudentRubric, ScoreEntry, AppSettings, QuestionBankItem } from '../../src/types';
 import { DEFAULT_FORMAT } from '../../src/types';
 
 let idCounter = 0;
@@ -73,6 +73,23 @@ export function buildStudentRubric(
         overallComment: '',
         isPeerReview: false,
         gradedAt: new Date().toISOString(),
+        ...overrides,
+    };
+}
+
+export function buildQuestionBankItem(overrides: Partial<QuestionBankItem> = {}): QuestionBankItem {
+    return {
+        id: uid(),
+        kind: 'question',
+        question: {
+            id: uid(),
+            prompt: 'What is the capital of France?',
+            type: 'short-answer',
+            points: 2,
+            expectedAnswer: 'Paris',
+        },
+        tags: [],
+        createdAt: new Date().toISOString(),
         ...overrides,
     };
 }

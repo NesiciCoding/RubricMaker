@@ -11,7 +11,10 @@ export class StudentsPage extends BasePage {
     }
 
     async openAddStudentModal(): Promise<void> {
-        await this.page.getByRole('button', { name: /add student/i }).first().click();
+        await this.page
+            .getByRole('button', { name: /add student/i })
+            .first()
+            .click();
         await this.page.locator('#student-name').waitFor({ timeout: 10_000 });
     }
 
@@ -28,9 +31,7 @@ export class StudentsPage extends BasePage {
     }
 
     async submitStudentForm(): Promise<void> {
-        const modal = this.page.getByRole('dialog').or(
-            this.page.locator('[aria-labelledby="student-modal-title"]')
-        );
+        const modal = this.page.getByRole('dialog').or(this.page.locator('[aria-labelledby="student-modal-title"]'));
         await modal.getByRole('button', { name: /add|save/i }).click();
     }
 

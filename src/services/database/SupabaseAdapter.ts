@@ -1311,6 +1311,19 @@ export class SupabaseAdapter {
         return data.data as Test;
     }
 
+    /**
+     * Map studentId -> teacherKey for every assignment row of one test, owner-scoped
+     * (RLS: `test_assignments_owner_all`). LiveMonitorPage's Realtime channel name for a
+     * 'test' session is the per-student teacherKey (matching what StudentTestPage actually
+     * broadcasts on via useLiveSessionTelemetry) — testId/studentId alone can't derive it,
+     * since TestAssignmentModal mints a fresh nanoid per share link.
+     */
+    async fetchTestAssignmentTeacherKeys(testId: string): Promise<Record<string, string>> {
+        const { data, error } = await this.db().from('test_assignments').select('id, student_id').eq('test_id', testId);
+        if (error || !data) return {};
+        return Object.fromEntries(data.map((r) => [r.student_id, r.id]));
+    }
+
     // ── Messages (student <-> teacher, portal-authenticated students only) ────
 
     private static rowToMessage(r: {
