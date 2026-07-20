@@ -44,7 +44,7 @@ export interface LiveMonitorPageProps {
 export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     const { t } = useTranslation();
     const params = useParams<{ testId?: string; assignmentId?: string }>();
-    const { tests, studentTests, students } = useApp();
+    const { tests, studentTests, students, fetchTestAssignmentTeacherKeys } = useApp();
     const dbStatus = useDbStatus();
     const config = loadSupabaseConfig();
 
@@ -57,6 +57,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         title: string;
     } | null>(null);
     const [essayAssignmentLoading, setEssayAssignmentLoading] = useState(kind === 'essay');
+    const [testTeacherKeys, setTestTeacherKeys] = useState<Record<string, string>>({});
 
     const { fetchEssayAssignmentByKey } = useApp();
 
@@ -88,12 +89,42 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         };
     }, [kind, params.assignmentId, hasDb, fetchEssayAssignmentByKey]);
 
+    // ── Test teacherKey lookup (Realtime channel name = the per-student teacherKey,
+    // not a testId/studentId guess — see assignmentKeyFor below) ─────────────────
+    useEffect(() => {
+        if (kind !== 'test' || !test || !hasDb) return;
+        let cancelled = false;
+        // Reset before fetching: this effect re-fires when `test.id` changes (the route
+        // doesn't remount LiveMonitorPage between two tests' monitor pages), and without
+        // this a student who overlaps between the two tests would transiently render
+        // keyed to the PREVIOUS test's teacherKey/channel until the new fetch resolves.
+        setTestTeacherKeys({});
+        fetchTestAssignmentTeacherKeys(test.id)
+            .then((keys) => {
+                if (!cancelled) setTestTeacherKeys(keys);
+            })
+            .catch(() => {
+                if (!cancelled) setTestTeacherKeys({});
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [kind, test, hasDb, fetchTestAssignmentTeacherKeys]);
+
     // ── Resolve the list of monitored students ───────────────────────────────────
     const monitorStudents = useMemo<MonitorStudent[]>(() => {
         if (kind === 'test') {
             if (!test) return [];
             const relevantStudentTests = studentTests.filter((st) => st.testId === test.id);
-            const studentIds = new Set(relevantStudentTests.map((st) => st.studentId));
+            // `student_tests` rows are only written on final submit (see submit-test edge
+            // function), so a student who has opened the test but not yet submitted has no
+            // row there. Union in every student with a resolved assignment teacherKey too,
+            // otherwise an in-progress student never appears here for a DB-mode test — the
+            // "live" in live monitor would only ever show already-finished attempts.
+            const studentIds = new Set([
+                ...relevantStudentTests.map((st) => st.studentId),
+                ...Object.keys(testTeacherKeys),
+            ]);
             return Array.from(studentIds)
                 .map((studentId) => {
                     const student = students.find((s) => s.id === studentId);
@@ -129,19 +160,21 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                 persistedAnswers: [],
             },
         ];
-    }, [kind, test, students, studentTests, essayAssignment]);
+    }, [kind, test, students, studentTests, essayAssignment, testTeacherKeys]);
 
     // ── Per-student assignmentKey derivation ──────────────────────────────────────
     // Essays: the route param IS the persisted teacherKey (essay_assignments.id), so
     // `${teacherKey}:${studentId}` matches exactly what StudentEssayPage broadcasts on.
-    // Tests: there is no persisted teacherKey reachable from `testId` alone (the
-    // TestAssignmentModal mints a fresh nanoid per share-link batch and it is never
-    // saved). We derive `${testId}:${studentId}` as the channel key; live presence
-    // therefore activates once test assignment links are generated using this same
-    // derivation. Until then this page still works fully from persisted StudentTest data.
+    // Tests: `testId`/`studentId` alone can't derive the channel key — TestAssignmentModal
+    // mints a fresh, unrelated nanoid per share link — so the bare per-student teacherKey
+    // (fetched into `testTeacherKeys` above) is used instead, matching StudentTestPage's
+    // `assignmentKey: assignment.teacherKey` exactly (no `:studentId` suffix on that side).
+    // A student with no resolved teacherKey yet (links not generated, or still loading)
+    // gets a key nothing will ever broadcast on — this page still works fully from
+    // persisted StudentTest data in that case.
     const assignmentKeyFor = (studentId: string): string => {
         if (kind === 'essay') return `${params.assignmentId}:${studentId}`;
-        return `${params.testId}:${studentId}`;
+        return testTeacherKeys[studentId] ?? `no-teacher-key:${studentId}`;
     };
 
     // ── Subscribe to one Realtime channel per monitored student ───────────────────
@@ -195,7 +228,14 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
             clientRef.current = null;
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [hasDb, kind, params.testId, params.assignmentId, monitorStudents.map((r) => r.studentId).join(',')]);
+    }, [
+        hasDb,
+        kind,
+        params.testId,
+        params.assignmentId,
+        monitorStudents.map((r) => r.studentId).join(','),
+        testTeacherKeys,
+    ]);
 
     function sendNudge(studentId: string) {
         channelsRef.current.get(studentId)?.send({

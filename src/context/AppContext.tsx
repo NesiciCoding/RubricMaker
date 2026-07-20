@@ -1063,6 +1063,7 @@ interface AppContextValue extends StoreData {
     saveTestAssignment: (a: TestAssignment) => Promise<SyncResult>;
     fetchMyTestAssignments: () => Promise<Awaited<ReturnType<StorageSyncInstance['fetchMyTestAssignments']>>>;
     fetchAssignedTestContent: (testId: string) => Promise<Test | null>;
+    fetchTestAssignmentTeacherKeys: (testId: string) => Promise<Record<string, string>>;
     // Messages (student portal side)
     fetchMyMessages: () => Promise<Awaited<ReturnType<StorageSyncInstance['fetchMyMessages']>>>;
     sendMessageAsStudent: (m: Message) => Promise<SyncResult>;
@@ -2181,6 +2182,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         async (testId: string) => (await loadDb()).storageSync.fetchAssignedTestContent(testId),
         []
     );
+    const fetchTestAssignmentTeacherKeys = useCallback(
+        async (testId: string) => (await loadDb()).storageSync.fetchTestAssignmentTeacherKeys(testId),
+        []
+    );
     const fetchMyMessages = useCallback(async () => (await loadDb()).storageSync.fetchMyMessages(), []);
     const sendMessageAsStudent = useCallback(
         async (m: Message) => (await loadDb()).storageSync.sendMessageAsStudent(m),
@@ -2481,6 +2486,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             saveTestAssignment,
             fetchMyTestAssignments,
             fetchAssignedTestContent,
+            fetchTestAssignmentTeacherKeys,
             fetchMyMessages,
             sendMessageAsStudent,
             markMessagesReadByStudent,
@@ -2631,6 +2637,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             saveTestAssignment,
             fetchMyTestAssignments,
             fetchAssignedTestContent,
+            fetchTestAssignmentTeacherKeys,
             fetchMyMessages,
             sendMessageAsStudent,
             markMessagesReadByStudent,

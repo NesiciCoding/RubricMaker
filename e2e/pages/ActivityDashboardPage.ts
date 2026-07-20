@@ -51,4 +51,27 @@ export class ActivityDashboardPage extends BasePage {
     dragHandle(rubricName: string): Locator {
         return this.rubricRow(rubricName).getByLabel(/drag to reorder/i);
     }
+
+    emptyState(): Locator {
+        return this.page.locator('.empty-state');
+    }
+
+    /** The cell for a given activity row × class column, addressed by 0-based column index among visible classes. */
+    cell(rubricName: string, classIndex = 0): Locator {
+        return this.rubricRow(rubricName)
+            .locator('td')
+            .nth(classIndex + 1);
+    }
+
+    async toggleLink(rubricName: string, classIndex = 0): Promise<void> {
+        await this.cell(rubricName, classIndex)
+            .getByRole('button', { name: /^(link|unlink)$/i })
+            .click();
+    }
+
+    // The filter <label> isn't associated with its <select> (no htmlFor/id) — scope by
+    // the containing .form-group instead of getByLabel.
+    async selectYearFilter(label: string): Promise<void> {
+        await this.page.locator('.form-group').filter({ hasText: 'Year' }).locator('select').selectOption({ label });
+    }
 }

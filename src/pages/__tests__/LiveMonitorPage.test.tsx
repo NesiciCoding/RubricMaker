@@ -93,6 +93,7 @@ describe('LiveMonitorPage', () => {
             ],
             classes: [],
             fetchEssayAssignmentByKey: vi.fn().mockResolvedValue(null),
+            fetchTestAssignmentTeacherKeys: vi.fn().mockResolvedValue({}),
         };
     });
 
