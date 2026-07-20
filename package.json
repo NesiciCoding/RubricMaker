@@ -34,7 +34,7 @@
     "@floating-ui/dom": "^1.8.0",
     "@hello-pangea/dnd": "^18.0.1",
     "@radix-ui/react-dialog": "^1.1.20",
-    "@supabase/supabase-js": "^2.110.2",
+    "@supabase/supabase-js": "^2.110.7",
     "@tiptap/core": "^3.28.0",
     "@tiptap/extension-bubble-menu": "^3.27.3",
     "@tiptap/extension-color": "^3.28.0",
