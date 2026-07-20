@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, TrendingUp, AlertTriangle, Users, ExternalLink, BookOpen, PenSquare } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
+import Avatar from '../components/ui/Avatar';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import CefrPlacementCard from '../components/CEFR/CefrPlacementCard';
 import { useApp } from '../context/AppContext';
@@ -156,23 +157,7 @@ export default function StudentLearningPathPage() {
             />
             <div className="page-content fade-in">
                 <div className="card" style={{ marginBottom: 24, display: 'flex', gap: 20, alignItems: 'center' }}>
-                    <div
-                        style={{
-                            width: 64,
-                            height: 64,
-                            borderRadius: '50%',
-                            background: 'var(--accent-soft)',
-                            color: 'var(--accent)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '1.6rem',
-                            fontWeight: 700,
-                            flexShrink: 0,
-                        }}
-                    >
-                        {student.name.charAt(0).toUpperCase()}
-                    </div>
+                    <Avatar name={student.name} size={64} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                         <h2 style={{ margin: '0 0 6px', fontSize: '1.4rem' }}>{student.name}</h2>
                         {cls && <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{cls.name}</div>}

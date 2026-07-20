@@ -1,6 +1,21 @@
-import type { RubricCriterion, ScoreEntry, GradeScale, GradeRange, StudentRubric, Modifier, Rubric } from '../types';
+import type {
+    RubricCriterion,
+    RubricLevel,
+    RubricFormat,
+    ScoreEntry,
+    GradeScale,
+    GradeRange,
+    StudentRubric,
+    Modifier,
+    Rubric,
+} from '../types';
 
 // ─── Score Calculation ─────────────────────────────────────────────────────────
+
+/** A criterion's levels in display order — reversed when the rubric format is 'worst-first'. */
+export function orderedLevels(criterion: RubricCriterion, format: Pick<RubricFormat, 'levelOrder'>): RubricLevel[] {
+    return format.levelOrder === 'worst-first' ? [...criterion.levels].reverse() : criterion.levels;
+}
 
 /**
  * Points earned for a single criterion entry.

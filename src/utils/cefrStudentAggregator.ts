@@ -45,6 +45,61 @@ export function overallLevel(cells: CefrCellData[], skills: CefrSkill[] = CEFR_S
     );
 }
 
+export interface CefrProgressEntry {
+    level: CefrLevel;
+    skill: CefrSkill;
+    avgScore: number;
+    count: number;
+    achieved: boolean;
+    threshold: number;
+    /** Most recent `dateStr` seen for this skill+level group, when the caller provides one. */
+    lastDate?: string;
+}
+
+/**
+ * Groups a student's graded rubric history by CEFR skill+level, averaging score and
+ * achieve-threshold per group. Shared by the student portal's own-progress view and the
+ * teacher-facing student profile page, which both build this from a `history` list of the
+ * same shape.
+ */
+export function aggregateCefrProgress(
+    history: {
+        rubric: Pick<Rubric, 'cefrTargetLevel' | 'cefrSkill' | 'cefrAchieveThreshold'>;
+        score: number;
+        dateStr?: string;
+    }[]
+): CefrProgressEntry[] {
+    const cefrHistory = history.filter((h) => h.rubric.cefrTargetLevel);
+    const groups = new Map<
+        string,
+        { scores: number[]; thresholds: number[]; skill: CefrSkill; level: CefrLevel; lastDate?: string }
+    >();
+    for (const h of cefrHistory) {
+        const level = h.rubric.cefrTargetLevel as CefrLevel;
+        const skill = (h.rubric.cefrSkill ?? 'writing') as CefrSkill;
+        const key = `${skill}__${level}`;
+        if (!groups.has(key)) groups.set(key, { scores: [], thresholds: [], skill, level, lastDate: h.dateStr });
+        groups.get(key)!.scores.push(h.score);
+        groups.get(key)!.thresholds.push(h.rubric.cefrAchieveThreshold ?? 70);
+        groups.get(key)!.lastDate = h.dateStr;
+    }
+    return Array.from(groups.values())
+        .map((g) => {
+            const avgScore = g.scores.reduce((a, b) => a + b, 0) / g.scores.length;
+            const threshold = g.thresholds.reduce((a, b) => a + b, 0) / g.thresholds.length;
+            return {
+                level: g.level,
+                skill: g.skill,
+                avgScore,
+                count: g.scores.length,
+                achieved: avgScore >= threshold,
+                threshold,
+                lastDate: g.lastDate,
+            };
+        })
+        .sort((a, b) => cefrLevelOrdinal(a.level) - cefrLevelOrdinal(b.level));
+}
+
 export interface CefrTrackYearProgress {
     year: SchoolYear;
     voTrack?: VoTrack;

@@ -159,6 +159,7 @@ vi.mock('../../utils/cefrStudentAggregator', () => ({
     })),
     highestLevelForSkill: vi.fn(() => null),
     overallLevel: vi.fn(() => null),
+    aggregateCefrProgress: vi.fn(() => []),
 }));
 
 // ─── Helper ────────────────────────────────────────────────────────────────────

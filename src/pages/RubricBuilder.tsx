@@ -70,6 +70,7 @@ import { logAuditEvent } from '../services/database/AuditLogger';
 import { getSpeakingDimensions } from '../data/speakingDimensions';
 import { useToast } from '../hooks/useToast';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
+import { useConfirm } from '../hooks/useConfirm';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
@@ -211,6 +212,7 @@ export default function RubricBuilder() {
         cefrAchieveThreshold,
     ]);
     const { dialogProps: unsavedDialogProps } = useUnsavedChangesGuard(isDirty);
+    const { confirm, dialogProps: confirmDialogProps } = useConfirm();
 
     // Version history lives outside rubric/AppContext state (Phase 18.4) — fetch it
     // only while the panel is actually open.
@@ -1263,10 +1265,14 @@ export default function RubricBuilder() {
                                 {(cefrSkill === 'speaking_production' || cefrSkill === 'speaking_interaction') && (
                                     <button
                                         className="btn btn-secondary btn-sm"
-                                        onClick={() => {
-                                            const msg =
-                                                criteria.length > 0 ? t('rubricBuilder.insert_speaking_confirm') : null;
-                                            if (!msg || window.confirm(msg)) {
+                                        onClick={async () => {
+                                            const ok =
+                                                criteria.length === 0 ||
+                                                (await confirm({
+                                                    title: t('rubricBuilder.insert_speaking_confirm_title'),
+                                                    message: t('rubricBuilder.insert_speaking_confirm'),
+                                                }));
+                                            if (ok) {
                                                 const dims = getSpeakingDimensions('');
                                                 setCriteria(criteria.length > 0 ? dims : dims);
                                             }
@@ -3430,8 +3436,12 @@ export default function RubricBuilder() {
                                             </button>
                                             <button
                                                 className="btn btn-secondary btn-sm"
-                                                onClick={() => {
-                                                    if (!window.confirm(t('rubricBuilder.confirm_restore'))) return;
+                                                onClick={async () => {
+                                                    const ok = await confirm({
+                                                        title: t('rubricBuilder.confirm_restore_title'),
+                                                        message: t('rubricBuilder.confirm_restore'),
+                                                    });
+                                                    if (!ok) return;
                                                     restoreRubricVersion(id, v.snapshot);
                                                     setShowVersionHistory(false);
                                                     window.location.reload();
@@ -3496,6 +3506,7 @@ export default function RubricBuilder() {
                 </div>
             )}
             <ConfirmDialog {...unsavedDialogProps} />
+            <ConfirmDialog {...confirmDialogProps} />
         </>
     );
 }

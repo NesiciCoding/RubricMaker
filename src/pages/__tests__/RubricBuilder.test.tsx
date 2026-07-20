@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen, fireEvent, within, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
@@ -471,7 +471,6 @@ describe('RubricBuilder', () => {
 
     it('restores a version after confirming', async () => {
         renderEditWithVersions();
-        const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
         const reloadSpy = vi.fn();
         const originalLocation = window.location;
         Object.defineProperty(window, 'location', {
@@ -480,9 +479,14 @@ describe('RubricBuilder', () => {
         });
         fireEvent.click(screen.getByText('rubricBuilder.version_history'));
         fireEvent.click(await screen.findByText('rubricBuilder.restore_version'));
+        // restoreRubricVersion's window.confirm was migrated to useConfirm()/ConfirmDialog —
+        // confirm the ConfirmDialog rendered with the restore message, then click its Confirm button.
+        expect(await screen.findByText('rubricBuilder.confirm_restore')).toBeInTheDocument();
+        await act(async () => {
+            fireEvent.click(screen.getByText('Confirm'));
+        });
         expect(mockRestoreRubricVersion).toHaveBeenCalledWith('r1', mockVersions[0].snapshot);
         expect(reloadSpy).toHaveBeenCalled();
-        confirmSpy.mockRestore();
         Object.defineProperty(window, 'location', { value: originalLocation, configurable: true });
     });
 
@@ -592,13 +596,17 @@ describe('RubricBuilder', () => {
 
     // ── Speaking dimensions insertion (CEFR speaking skill) ───────────────────────
 
-    it('shows the insert-speaking-dimensions action when the CEFR skill is speaking', () => {
+    it('shows the insert-speaking-dimensions action when the CEFR skill is speaking', async () => {
         renderNew();
         fireEvent.change(screen.getByLabelText('cefr.skill_label'), { target: { value: 'speaking_production' } });
-        const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
         fireEvent.click(screen.getByText('rubricBuilder.insert_speaking_dims'));
-        expect(confirmSpy).toHaveBeenCalled();
-        confirmSpy.mockRestore();
+        // window.confirm was migrated to useConfirm()/ConfirmDialog — confirm the dialog rendered
+        // with the insert-speaking message, then click its Confirm button.
+        expect(await screen.findByText('rubricBuilder.insert_speaking_confirm')).toBeInTheDocument();
+        await act(async () => {
+            fireEvent.click(screen.getByText('Confirm'));
+        });
+        expect(screen.getAllByPlaceholderText('rubricBuilder.placeholder_criterion_name')).toHaveLength(6);
     });
 
     // ── Designer (WYSIWYG grid) view ──────────────────────────────────────────────

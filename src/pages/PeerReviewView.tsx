@@ -7,6 +7,8 @@ import { nanoid } from '../utils/nanoid';
 import type { StudentRubric, ScoreEntry } from '../types';
 import Topbar from '../components/Layout/Topbar';
 import TiptapEditor from '../components/Editor/TiptapEditor';
+import { useConfirm } from '../hooks/useConfirm';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 
 export default function PeerReviewView() {
     const { rubricId, studentId } = useParams();
@@ -17,6 +19,7 @@ export default function PeerReviewView() {
     const navigate = useNavigate();
     const { t } = useTranslation();
     const { rubrics, students, peerReviews, savePeerReview } = useApp();
+    const { confirm, dialogProps: confirmDialogProps } = useConfirm();
 
     const [rubric] = useState(rubrics.find((r) => r.id === rubricId));
     const [student] = useState(students.find((s) => s.id === studentId));
@@ -165,8 +168,15 @@ export default function PeerReviewView() {
                             <button
                                 key={round}
                                 className={`btn ${activeRound === round ? 'btn-primary' : 'btn-secondary'}`}
-                                onClick={() => {
-                                    if (isDirty && !window.confirm('Unsaved changes will be lost. Continue?')) return;
+                                onClick={async () => {
+                                    if (
+                                        isDirty &&
+                                        !(await confirm({
+                                            title: t('peerReview.unsaved_round_switch_title'),
+                                            message: t('peerReview.unsaved_round_switch_message'),
+                                        }))
+                                    )
+                                        return;
                                     setActiveRound(round);
                                 }}
                             >
@@ -236,6 +246,7 @@ export default function PeerReviewView() {
                     />
                 </div>
             </div>
+            <ConfirmDialog {...confirmDialogProps} />
         </>
     );
 }

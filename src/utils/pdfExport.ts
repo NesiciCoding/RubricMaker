@@ -2,6 +2,7 @@ import type { Rubric, Student, StudentRubric, GradeScale, StudentTest, Test, Tes
 import { calcGradeSummary } from './gradeCalc';
 import { calcQuestionBreakdowns, calcSkillBreakdowns } from './testSummaryAggregator';
 import { formatPointsRange, stripCommentHtml } from './exportDataPrep';
+import { orderedLevels as sharedOrderedLevels } from './gradeCalc';
 
 function parseMd(text: string) {
     if (!text) return text;
@@ -67,8 +68,7 @@ function buildRubricGridHtml(rubric: Rubric, sr?: StudentRubric): string {
     if (rubric.scoringMode === 'single-point') return buildSinglePointGridHtml(rubric, sr);
 
     const fmt = rubric.format;
-    const orderedLevels = (criterion: (typeof rubric.criteria)[0]) =>
-        fmt.levelOrder === 'worst-first' ? [...criterion.levels].reverse() : criterion.levels;
+    const orderedLevels = (criterion: (typeof rubric.criteria)[0]) => sharedOrderedLevels(criterion, fmt);
 
     const rows = rubric.criteria
         .map((c, i) => {

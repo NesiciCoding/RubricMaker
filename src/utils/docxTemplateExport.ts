@@ -23,6 +23,7 @@ import {
 import { saveAs } from 'file-saver';
 import type { Rubric, RubricCriterion, ExportTemplate } from '../types';
 import { sanitizeFilename } from './exportDataPrep';
+import { orderedLevels } from './gradeCalc';
 
 // ─── Template parsing (mammoth extracts the HTML table header) ────────────────
 
@@ -64,21 +65,17 @@ export async function parseTemplateHeaders(file: File): Promise<{
 export async function exportRubricWithTemplate(rubric: Rubric, template: ExportTemplate): Promise<void> {
     const fmt = rubric.format;
 
+    const getLevels = (c: RubricCriterion) => orderedLevels(c, fmt);
+
     // Use template level headers if count matches; fall back to rubric's own labels
     const firstCriterion = rubric.criteria[0];
-    const rubricLevelLabels = firstCriterion
-        ? (fmt.levelOrder === 'worst-first' ? [...firstCriterion.levels].reverse() : firstCriterion.levels).map(
-              (l) => l.label
-          )
-        : [];
+    const rubricLevelLabels = firstCriterion ? getLevels(firstCriterion).map((l) => l.label) : [];
 
     const useTemplateHeaders =
         template.levelHeaders.length === rubricLevelLabels.length && template.levelHeaders.length > 0;
 
     const levelLabels = useTemplateHeaders ? template.levelHeaders : rubricLevelLabels;
     const headerBg = (template.headerColor ?? fmt.headerColor).replace('#', '');
-
-    const getLevels = (c: RubricCriterion) => (fmt.levelOrder === 'worst-first' ? [...c.levels].reverse() : c.levels);
 
     // ── Header Row ──────────────────────────────────────────────────────────────
     const headerRow = new TableRow({

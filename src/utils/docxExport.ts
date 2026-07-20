@@ -24,7 +24,7 @@ import type {
     Test,
     TestStrengthBucket,
 } from '../types';
-import { calcGradeSummary } from './gradeCalc';
+import { calcGradeSummary, orderedLevels } from './gradeCalc';
 import { calcQuestionBreakdowns, calcSkillBreakdowns } from './testSummaryAggregator';
 import { sanitizeFilename, formatPointsRange, stripHtmlTags, stripCommentHtml } from './exportDataPrep';
 
@@ -77,9 +77,7 @@ export function buildDocxStyles(fontFamily?: string, styleTemplate?: DocxStyleTe
 
 export async function exportRubricToDocx(rubric: Rubric) {
     const fmt = rubric.format;
-
-    // Helper to get ordered levels
-    const getLevels = (c: RubricCriterion) => (fmt.levelOrder === 'worst-first' ? [...c.levels].reverse() : c.levels);
+    const getLevels = (c: RubricCriterion) => orderedLevels(c, fmt);
 
     const headerLevels = rubric.criteria[0] ? getLevels(rubric.criteria[0]) : [];
 

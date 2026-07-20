@@ -44,7 +44,7 @@ import { useDbStatus } from '../hooks/useDbStatus';
 import TiptapEditor, { type TiptapEditorHandle } from '../components/Editor/TiptapEditor';
 import type { ScoreEntry, Modifier, EssayAssignment } from '../types';
 import type { DbUser } from '../services/database';
-import { calcGradeSummary } from '../utils/gradeCalc';
+import { calcGradeSummary, orderedLevels as sharedOrderedLevels } from '../utils/gradeCalc';
 import { stripCommentHtml } from '../utils/exportDataPrep';
 import { getCriterionInterventionFlags } from '../utils/learningPathAggregator';
 import { exportSinglePdf } from '../utils/pdfExport';
@@ -445,8 +445,7 @@ export default function GradeStudent() {
             if (focusedCriterionIdx !== null && /^[1-5]$/.test(e.key)) {
                 const criterion = rubric.criteria[focusedCriterionIdx];
                 if (!criterion || rubric.scoringMode === 'single-point') return;
-                const levels =
-                    rubric.format.levelOrder === 'worst-first' ? [...criterion.levels].reverse() : criterion.levels;
+                const levels = sharedOrderedLevels(criterion, rubric.format);
                 const level = levels[parseInt(e.key) - 1];
                 if (!level) return;
                 const currentEntry = sr.entries.find((en) => en.criterionId === criterion.id);
@@ -553,10 +552,7 @@ export default function GradeStudent() {
     };
 
     const fmt = rubric.format;
-    const orderedLevels =
-        fmt.levelOrder === 'worst-first'
-            ? (c: (typeof rubric.criteria)[0]) => [...c.levels].reverse()
-            : (c: (typeof rubric.criteria)[0]) => c.levels;
+    const orderedLevels = (c: (typeof rubric.criteria)[0]) => sharedOrderedLevels(c, fmt);
     const rubricAttachments = attachments.filter((a) => a.rubricId === rubricId);
     const studentAttachments = attachments.filter((a) => a.studentId === studentId);
     const existingAnalysisResult = analysisResults.find((r) => r.rubricId === rubricId && r.studentId === studentId);

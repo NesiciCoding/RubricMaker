@@ -30,9 +30,9 @@ import CefrProgressChart from '../components/Statistics/CefrProgressChart';
 import CriterionRadarChart from '../components/Statistics/CriterionRadarChart';
 import type { CriterionRadarDataPoint } from '../components/Statistics/CriterionRadarChart';
 import { CEFR_SKILL_LABELS } from '../data/cefrDescriptors';
-import { cefrLevelOrdinal } from '../utils/cefrOrdinal';
 import { getGrammarItemById } from '../data/grammarStandards';
-import { getCefrStudentOverview } from '../utils/cefrStudentAggregator';
+import { getCefrStudentOverview, aggregateCefrProgress } from '../utils/cefrStudentAggregator';
+import { formatShortDate } from '../utils/dateInput';
 import {
     getLearningPathRecommendations,
     buildCohortAverages,
@@ -56,8 +56,6 @@ import PortalSearchBar from '../components/Students/PortalSearchBar';
 import NewsFlashTimeline from '../components/Students/NewsFlashTimeline';
 import { nanoid } from '../utils/nanoid';
 import type {
-    CefrLevel,
-    CefrSkill,
     EssayAssignment,
     StudentEssayAssignmentSummary,
     StudentTestAssignmentSummary,
@@ -84,6 +82,24 @@ function criterionPct(
     const criterion = h.rubric.criteria.find((c) => c.id === criterionId);
     if (!criterion) return 0;
     return criterionPercentage(entry, criterion);
+}
+
+/** Averages criterion scores by (trimmed, case-insensitive) title across a set of graded rubrics. */
+function buildTitleAveragedRadarData(
+    rows: { sr: { entries: ScoreEntry[] }; rubric: { criteria: RubricCriterion[] } }[]
+): CriterionRadarDataPoint[] {
+    const byTitle = new Map<string, { display: string; scores: number[] }>();
+    for (const h of rows) {
+        for (const c of h.rubric.criteria) {
+            const key = c.title.trim().toLowerCase();
+            if (!byTitle.has(key)) byTitle.set(key, { display: c.title, scores: [] });
+            byTitle.get(key)!.scores.push(criterionPct(h, c.id));
+        }
+    }
+    return Array.from(byTitle.values()).map(({ display, scores }) => ({
+        name: display,
+        avg: parseFloat((scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1)),
+    }));
 }
 
 export default function StudentPortalPage() {
@@ -196,11 +212,7 @@ export default function StudentPortalPage() {
                     rubric,
                     scale,
                     summary,
-                    dateStr: new Date(sr.gradedAt!).toLocaleDateString(undefined, {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                    }),
+                    dateStr: formatShortDate(sr.gradedAt!),
                     score: parseFloat(summary.modifiedPercentage.toFixed(1)),
                 };
             })
@@ -214,44 +226,9 @@ export default function StudentPortalPage() {
         }[];
     }, [student, studentRubrics, rubrics, gradeScales, settings]);
 
-    interface CefrEntry {
-        level: CefrLevel;
-        skill: CefrSkill;
-        avgScore: number;
-        count: number;
-        achieved: boolean;
-        threshold: number;
-    }
-
-    const cefrProgress = useMemo((): CefrEntry[] => {
+    const cefrProgress = useMemo(() => {
         if (!student) return [];
-        const cefrHistory = history.filter((h) => h.rubric.cefrTargetLevel);
-        const groups = new Map<
-            string,
-            { scores: number[]; thresholds: number[]; skill: CefrSkill; level: CefrLevel }
-        >();
-        for (const h of cefrHistory) {
-            const level = h.rubric.cefrTargetLevel as CefrLevel;
-            const skill = (h.rubric.cefrSkill ?? 'writing') as CefrSkill;
-            const key = `${skill}__${level}`;
-            if (!groups.has(key)) groups.set(key, { scores: [], thresholds: [], skill, level });
-            groups.get(key)!.scores.push(h.score);
-            groups.get(key)!.thresholds.push(h.rubric.cefrAchieveThreshold ?? 70);
-        }
-        return Array.from(groups.values())
-            .map((g) => {
-                const avgScore = g.scores.reduce((a, b) => a + b, 0) / g.scores.length;
-                const threshold = g.thresholds.reduce((a, b) => a + b, 0) / g.thresholds.length;
-                return {
-                    level: g.level,
-                    skill: g.skill,
-                    avgScore,
-                    count: g.scores.length,
-                    achieved: avgScore >= threshold,
-                    threshold,
-                };
-            })
-            .sort((a, b) => cefrLevelOrdinal(a.level) - cefrLevelOrdinal(b.level));
+        return aggregateCefrProgress(history);
     }, [student, history]);
 
     // Per-rubric radars a student can pick between, plus one "combined" view averaging
@@ -267,37 +244,13 @@ export default function StudentPortalPage() {
         return Array.from(seen.entries()).map(([id, name]) => ({ id, name }));
     }, [history]);
 
-    const combinedRadarData = useMemo((): CriterionRadarDataPoint[] => {
-        const byTitle = new Map<string, { display: string; scores: number[] }>();
-        for (const h of history) {
-            for (const c of h.rubric.criteria) {
-                const key = c.title.trim().toLowerCase();
-                if (!byTitle.has(key)) byTitle.set(key, { display: c.title, scores: [] });
-                byTitle.get(key)!.scores.push(criterionPct(h, c.id));
-            }
-        }
-        return Array.from(byTitle.values()).map(({ display, scores }) => ({
-            name: display,
-            avg: parseFloat((scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1)),
-        }));
-    }, [history]);
+    const combinedRadarData = useMemo((): CriterionRadarDataPoint[] => buildTitleAveragedRadarData(history), [history]);
 
     const selectedRadarData = useMemo((): CriterionRadarDataPoint[] => {
         if (radarRubricId === 'combined') return combinedRadarData;
         const rows = history.filter((h) => h.sr.rubricId === radarRubricId);
         if (rows.length === 0) return [];
-        const byTitle = new Map<string, { display: string; scores: number[] }>();
-        for (const h of rows) {
-            for (const c of h.rubric.criteria) {
-                const key = c.title.trim().toLowerCase();
-                if (!byTitle.has(key)) byTitle.set(key, { display: c.title, scores: [] });
-                byTitle.get(key)!.scores.push(criterionPct(h, c.id));
-            }
-        }
-        return Array.from(byTitle.values()).map(({ display, scores }) => ({
-            name: display,
-            avg: parseFloat((scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1)),
-        }));
+        return buildTitleAveragedRadarData(rows);
     }, [radarRubricId, history, combinedRadarData]);
 
     const selfAssess = selfAssessments.filter((sa) => sa.studentId === studentId);
