@@ -1,3 +1,4 @@
+import DOMPurify from 'dompurify';
 import type { Attachment } from '../types';
 
 export class UnsupportedFormatError extends Error {
@@ -43,6 +44,17 @@ async function extractFromDocx(dataUrl: string): Promise<string> {
     const buffer = base64ToArrayBuffer(dataUrl);
     const result = await mammoth.extractRawText({ arrayBuffer: buffer });
     return result.value;
+}
+
+/**
+ * Converts a .docx attachment to sanitized TipTap-loadable HTML (Mammoth's semantic
+ * conversion, not extractFromDocx's plain-text one) for the shared read-only document view.
+ */
+export async function convertDocxToHtml(dataUrl: string): Promise<string> {
+    const mammoth = await import('mammoth');
+    const buffer = base64ToArrayBuffer(dataUrl);
+    const result = await mammoth.convertToHtml({ arrayBuffer: buffer });
+    return DOMPurify.sanitize(result.value);
 }
 
 function extractFromPlainText(dataUrl: string): string {

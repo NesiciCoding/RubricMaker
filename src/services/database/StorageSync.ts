@@ -47,6 +47,7 @@ import type {
     NewsFlash,
     NewsFlashRead,
     QuestionBankItem,
+    DocumentComment,
 } from '../../types';
 
 const LAST_SYNC_KEY = 'rm_last_sync_at';
@@ -102,6 +103,7 @@ class StorageSyncService {
         { table: 'news_flashes', filterColumn: 'owner_id' },
         { table: 'news_flash_reads', filterColumn: 'owner_id' },
         { table: 'question_bank_items', filterColumn: 'owner_id' },
+        { table: 'document_comments', filterColumn: 'owner_id' },
     ];
     private static readonly REALTIME_DEBOUNCE_MS = 800;
 
@@ -620,6 +622,7 @@ class StorageSyncService {
                 newsFlashes,
                 newsFlashReads,
                 questionBank,
+                documentComments,
             ] = await Promise.all([
                 this.adapter.fetchFlashcardDecks().catch(() => []),
                 this.adapter.fetchFlashcardAssignments().catch(() => []),
@@ -628,6 +631,7 @@ class StorageSyncService {
                 this.adapter.fetchNewsFlashes().catch(() => []),
                 this.adapter.fetchNewsFlashReads().catch(() => []),
                 this.adapter.fetchQuestionBank().catch(() => []),
+                this.adapter.fetchDocumentComments().catch(() => []),
             ]);
 
             // The profile.role is authoritative; always override whatever userRole
@@ -702,6 +706,7 @@ class StorageSyncService {
                 newsFlashes,
                 newsFlashReads,
                 questionBank,
+                documentComments,
                 attachments,
                 ...(mergedSettings ? { settings: mergedSettings as StoreData['settings'] } : {}),
             };
@@ -763,6 +768,7 @@ class StorageSyncService {
                 ...state.newsFlashes.map((f) => this.adapter.upsertNewsFlash(f)),
                 ...state.newsFlashReads.map((r) => this.adapter.upsertNewsFlashRead(r)),
                 ...state.questionBank.map((q) => this.adapter.upsertQuestionBankItem(q)),
+                ...state.documentComments.map((c) => this.adapter.upsertDocumentComment(c)),
                 this.adapter.saveSettings(state.settings),
             ];
             await Promise.all(ups);
@@ -842,6 +848,11 @@ class StorageSyncService {
                     if (action === 'upsert')
                         result = await this.adapter.upsertCommentBankItem(payload as CommentBankItem);
                     else if (id) result = await this.adapter.deleteCommentBankItem(id);
+                    break;
+                case 'documentComment':
+                    if (action === 'upsert')
+                        result = await this.adapter.upsertDocumentComment(payload as DocumentComment);
+                    else if (id) result = await this.adapter.deleteDocumentComment(id);
                     break;
                 case 'exportTemplate':
                     if (action === 'upsert') await this.attachmentSync.pushExportTemplate(payload as ExportTemplate);

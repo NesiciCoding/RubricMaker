@@ -117,6 +117,7 @@ Current functions:
 | `marketplace_listings`      | Published rubrics, tests, or flashcard decks on the school marketplace, discriminated by `kind`                                                                  |
 | `marketplace_upvotes`       | Upvotes on marketplace listings                                                                                                                                  |
 | `question_bank_items`       | Reusable test questions saved outside any one test (roadmap 24.1)                                                                                                |
+| `document_comments`         | Inline anchored comments on graded documents (essay/DOCX attachments), grading-side only (roadmap 26.3)                                                          |
 
 The full schema is spread across migrations — `001_initial_schema.sql` covers most core tables; see individual `NNN_description.sql` files (named after the feature) for the rest.
 

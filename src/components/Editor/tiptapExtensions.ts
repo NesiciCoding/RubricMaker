@@ -198,6 +198,8 @@ export const TIPTAP_CONTENT_STYLES = `
     .essay-editor-content .is-empty::before { content: attr(data-placeholder); color: var(--text-dim, #94a3b8); pointer-events: none; position: absolute; }
     .essay-editor-content sup { font-size: 0.72em; vertical-align: super; }
     .essay-editor-content sub { font-size: 0.72em; vertical-align: sub; }
+    .essay-editor-content .comment-highlight { background: rgba(99, 102, 241, 0.15); border-bottom: 2px solid rgba(99, 102, 241, 0.45); cursor: pointer; }
+    .essay-editor-content .comment-highlight-active { background: rgba(99, 102, 241, 0.32); border-bottom-color: #6366f1; }
 `;
 
 /** Shared rich-text extension set used by every TipTap editor instance in the app. */

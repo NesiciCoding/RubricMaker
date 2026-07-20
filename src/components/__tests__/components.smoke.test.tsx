@@ -4,6 +4,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import * as mammoth from 'mammoth';
 import type { Attachment, VocabularyItem } from '../../types';
 import AttachmentViewer from '../Attachments/AttachmentViewer';
 import VocabularyListEditor from '../Vocabulary/VocabularyListEditor';
@@ -44,6 +45,22 @@ vi.mock('../../context/AppContext', () => ({
 }));
 
 vi.mock('docx-preview', () => ({ renderAsync: vi.fn() }));
+
+vi.mock('mammoth', () => ({
+    convertToHtml: vi.fn().mockResolvedValue({ value: '<p>Converted docx content</p>' }),
+}));
+
+vi.mock('../Editor/EssayEditor', () => ({
+    default: ({ content, editable }: { content: string; editable?: boolean }) => (
+        <div data-testid="essay-editor" data-editable={String(!!editable)} data-content={content} />
+    ),
+}));
+
+vi.mock('../Editor/CommentableDocumentView', () => ({
+    default: ({ content, attachmentId }: { content: string; attachmentId: string }) => (
+        <div data-testid="commentable-document-view" data-content={content} data-attachment-id={attachmentId} />
+    ),
+}));
 
 vi.mock('papaparse', () => ({
     default: {
@@ -127,6 +144,92 @@ describe('AttachmentViewer', () => {
         expect(container.firstChild).toBeTruthy();
     });
 
+    it('renders the Mammoth-converted formatted view by default for docx, via the shared read-only editor', async () => {
+        render(
+            <AttachmentViewer
+                attachment={makeAttachment(
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'doc.docx'
+                )}
+            />
+        );
+        const editor = await screen.findByTestId('essay-editor');
+        expect(editor).toHaveAttribute('data-editable', 'false');
+        expect(editor.getAttribute('data-content')).toContain('Converted docx content');
+        expect(screen.getByText('attachments.view_formatted')).toBeInTheDocument();
+        expect(screen.getByText('attachments.view_original')).toBeInTheDocument();
+    });
+
+    it('switches to the docx-preview "view as sent" fallback when the toggle is clicked', async () => {
+        const origFetch = globalThis.fetch;
+        globalThis.fetch = vi.fn().mockRejectedValue(new Error('fetch failed'));
+        render(
+            <AttachmentViewer
+                attachment={makeAttachment(
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'doc.docx'
+                )}
+            />
+        );
+        const originalToggle = await screen.findByText('attachments.view_original');
+        fireEvent.click(originalToggle);
+        await waitFor(() => {
+            expect(screen.getByText(/Failed to preview Word document/i)).toBeInTheDocument();
+        });
+        globalThis.fetch = origFetch;
+    });
+
+    it('falls back to the original view with no toggle when Mammoth conversion fails', async () => {
+        vi.mocked(mammoth.convertToHtml).mockRejectedValueOnce(new Error('bad docx'));
+        render(
+            <AttachmentViewer
+                attachment={makeAttachment(
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'doc.docx'
+                )}
+            />
+        );
+        await waitFor(() => {
+            expect(screen.queryByTestId('essay-editor')).not.toBeInTheDocument();
+        });
+        expect(screen.queryByText('attachments.view_formatted')).not.toBeInTheDocument();
+    });
+
+    it('renders text/html essay attachments via the shared read-only editor, not an iframe', () => {
+        const html = '<p>Hello <strong>World</strong></p>';
+        const dataUrl = `data:text/html;base64,${btoa(unescape(encodeURIComponent(html)))}`;
+        const { container } = render(
+            <AttachmentViewer attachment={{ ...makeAttachment('text/html', 'essay.html'), dataUrl }} />
+        );
+        const editor = screen.getByTestId('essay-editor');
+        expect(editor).toHaveAttribute('data-editable', 'false');
+        expect(editor.getAttribute('data-content')).toContain('Hello');
+        expect(container.querySelector('iframe')).toBeFalsy();
+    });
+
+    it('renders the commentable document view for essay html when commentable is set (26.3)', () => {
+        const html = '<p>Hello <strong>World</strong></p>';
+        const dataUrl = `data:text/html;base64,${btoa(unescape(encodeURIComponent(html)))}`;
+        const attachment = { ...makeAttachment('text/html', 'essay.html'), dataUrl, id: 'att-essay-1' };
+        render(<AttachmentViewer attachment={attachment} commentable />);
+        expect(screen.queryByTestId('essay-editor')).not.toBeInTheDocument();
+        const view = screen.getByTestId('commentable-document-view');
+        expect(view).toHaveAttribute('data-attachment-id', 'att-essay-1');
+        expect(view.getAttribute('data-content')).toContain('Hello');
+    });
+
+    it('renders the commentable document view for the docx formatted view when commentable is set (26.3)', async () => {
+        const attachment = {
+            ...makeAttachment('application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'doc.docx'),
+            id: 'att-docx-1',
+        };
+        render(<AttachmentViewer attachment={attachment} commentable />);
+        const view = await screen.findByTestId('commentable-document-view');
+        expect(view).toHaveAttribute('data-attachment-id', 'att-docx-1');
+        expect(view.getAttribute('data-content')).toContain('Converted docx content');
+        expect(screen.queryByTestId('essay-editor')).not.toBeInTheDocument();
+    });
+
     it('renders fallback for unknown type', () => {
         render(<AttachmentViewer attachment={makeAttachment('text/plain', 'file.txt')} />);
         expect(screen.getByText(/Preview not available/)).toBeInTheDocument();
@@ -140,24 +243,6 @@ describe('AttachmentViewer', () => {
     it('shows file name', () => {
         render(<AttachmentViewer attachment={makeAttachment('image/png', 'my-image.png')} />);
         expect(screen.getByText('my-image.png')).toBeInTheDocument();
-    });
-
-    it('shows error message when docx rendering fails', async () => {
-        // Make fetch throw so the catch block in the useEffect fires
-        const origFetch = globalThis.fetch;
-        globalThis.fetch = vi.fn().mockRejectedValue(new Error('fetch failed'));
-        render(
-            <AttachmentViewer
-                attachment={makeAttachment(
-                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                    'doc.docx'
-                )}
-            />
-        );
-        await waitFor(() => {
-            expect(screen.getByText(/Failed to preview Word document/i)).toBeInTheDocument();
-        });
-        globalThis.fetch = origFetch;
     });
 });
 

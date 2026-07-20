@@ -36,6 +36,7 @@
     "@radix-ui/react-dialog": "^1.1.19",
     "@supabase/supabase-js": "^2.110.2",
     "@tiptap/core": "^3.27.3",
+    "@tiptap/extension-bubble-menu": "^3.27.3",
     "@tiptap/extension-color": "^3.27.3",
     "@tiptap/extension-highlight": "^3.27.3",
     "@tiptap/extension-link": "^3.23.6",

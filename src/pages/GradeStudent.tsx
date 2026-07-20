@@ -1630,7 +1630,7 @@ export default function GradeStudent() {
                                 </p>
                                 <div>
                                     {studentAttachments.map((att) => (
-                                        <AttachmentViewer key={att.id} attachment={att} />
+                                        <AttachmentViewer key={att.id} attachment={att} commentable />
                                     ))}
                                 </div>
                             </>
@@ -1645,7 +1645,7 @@ export default function GradeStudent() {
                                 </p>
                                 <div>
                                     {rubricAttachments.map((att) => (
-                                        <AttachmentViewer key={att.id} attachment={att} />
+                                        <AttachmentViewer key={att.id} attachment={att} commentable />
                                     ))}
                                 </div>
                             </>
